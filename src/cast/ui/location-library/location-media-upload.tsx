@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useRef } from 'react';
 import { Button } from '@/ui/shadcn/button';
 import {
@@ -35,6 +36,8 @@ export const LocationMediaUpload: React.FC<LocationMediaUploadProps> = ({
   onUploadingChange,
   disabled,
 }) => {
+  const { t } = useTranslation('cast');
+
   // Stored URL per file. Reported from the handlers that change it, so the
   // parent's list moves with no effect.
   const urlsByFile = useRef(new Map<string, string>());
@@ -95,10 +98,10 @@ export const LocationMediaUpload: React.FC<LocationMediaUploadProps> = ({
     >
       <FileUploadDropzone className="min-h-[120px] focus:border-ring/50 focus:bg-accent/30">
         <Upload className="h-8 w-8 text-muted-foreground/50" />
-        <p className="text-sm font-medium">Drag & drop or paste</p>
+        <p className="text-sm font-medium">{t('Drag & drop or paste')}</p>
         <FileUploadTrigger asChild>
           <Button type="button" variant="outline" size="sm">
-            Browse files
+            {t('Browse files')}
           </Button>
         </FileUploadTrigger>
       </FileUploadDropzone>
@@ -117,7 +120,7 @@ export const LocationMediaUpload: React.FC<LocationMediaUploadProps> = ({
                 type="button"
                 variant="destructive"
                 size="icon"
-                aria-label={`Remove ${file.name}`}
+                aria-label={t('Remove {{value1}}', { value1: file.name })}
                 className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
               >
                 <X className="h-4 w-4" />

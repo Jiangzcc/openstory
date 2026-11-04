@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { isReloadPending, isStaleChunkError } from '@/ui/chunk-reload';
 import { use } from 'react';
 import { Button } from '@/ui/shadcn/button';
@@ -21,17 +22,21 @@ export function isAppUpdatedError(error: unknown): boolean {
 const LEAVING = new Promise<never>(() => {});
 
 export const AppUpdatedNotice: React.FC = () => {
+  const { t } = useTranslation('interface');
+
   // The page is leaving: suspend, so the screen the visitor was on stays up
   // until the reload lands. Same move the router makes for its own reload.
   if (isReloadPending()) use(LEAVING);
   return (
     <Empty className="flex-1">
       <EmptyHeader>
-        <EmptyTitle>OpenStory was updated</EmptyTitle>
-        <EmptyDescription>Reload to get the new version.</EmptyDescription>
+        <EmptyTitle>{t('OpenStory was updated')}</EmptyTitle>
+        <EmptyDescription>
+          {t('Reload to get the new version.')}
+        </EmptyDescription>
       </EmptyHeader>
       <Button variant="outline" size="sm" onClick={() => location.reload()}>
-        Reload
+        {t('Reload')}
       </Button>
     </Empty>
   );

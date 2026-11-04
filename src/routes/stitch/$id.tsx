@@ -1,3 +1,5 @@
+import { localizeMeta } from '@/ui/i18n/head';
+import { LanguageSwitcher } from '@/ui/i18n/language-switcher';
 import { RouteErrorFallback } from '@/ui/error/route-error-fallback';
 import { getStitchFn } from '@/stitches/stitch.fn';
 import { StitchPage } from '@/stitches/ui/stitch-page';
@@ -11,10 +13,10 @@ export const Route = createFileRoute('/stitch/$id')({
   loader: ({ params }) => getStitchFn({ data: { id: params.id } }),
   // The social card shows the cut's opening picture (#2140). With none, the
   // site's own card stays.
-  head: ({ loaderData }) => {
+  head: ({ match, loaderData }) => {
     const preview = loaderData?.preview;
     return {
-      meta: [
+      meta: localizeMeta(match.context.i18n, 'pages', [
         { title: TITLE },
         { name: 'robots', content: 'noindex' },
         { name: 'description', content: DESCRIPTION },
@@ -43,7 +45,7 @@ export const Route = createFileRoute('/stitch/$id')({
               { name: 'twitter:image', content: preview.url },
             ]
           : []),
-      ],
+      ]),
     };
   },
   errorComponent: RouteErrorFallback,
@@ -51,5 +53,13 @@ export const Route = createFileRoute('/stitch/$id')({
 });
 
 function StitchRoute() {
-  return <StitchPage cut={Route.useLoaderData().cut} />;
+  const { cut } = Route.useLoaderData();
+  return (
+    <>
+      <div className="flex justify-end px-4 py-2">
+        <LanguageSwitcher />
+      </div>
+      <StitchPage cut={cut} />
+    </>
+  );
 }

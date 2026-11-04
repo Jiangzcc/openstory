@@ -1,3 +1,7 @@
+import { FirstAppearance } from '@/cast/ui/first-appearance';
+import { localizeSheetRetry } from '@/cast/ui/localize-sheet-status';
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { InButtonCost } from '@/billing/ui/action-cost';
 import { ImageModelSelector } from '@/models/ui/pickers/image-model-selector';
 import { UploadMediaButton } from '@/shots/ui/upload-media-button';
@@ -79,6 +83,10 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
   locationId,
   header = 'sequence',
 }) => {
+  const translateEvent = useLiveTranslation('cast');
+
+  const { i18n, t } = useTranslation('cast');
+
   const queryClient = useQueryClient();
   // Through a sequence, the row of its own list: it carries the link (first
   // mention) and names the locations Replace must not offer. From no
@@ -124,16 +132,16 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
               to: '/sequences/$id/locations',
               params: { id: sequenceId },
             });
-            toast(`Removed ${name}`, {
+            toast(translateEvent('Removed {{value1}}', { value1: name }), {
               duration: 60_000,
               action: {
-                label: 'Undo',
+                label: translateEvent('Undo'),
                 onClick: () =>
                   void restoreSequenceLocation(queryClient, {
                     sequenceId,
                     locationDbId: locationId,
                   }).catch((error: Error) =>
-                    toast.error('Failed to restore location', {
+                    toast.error(translateEvent('Failed to restore location'), {
                       description: errorMessage(error),
                     })
                   ),
@@ -141,13 +149,13 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
             });
           },
           onError: (error) =>
-            toast.error('Failed to remove location', {
+            toast.error(translateEvent('Failed to remove location'), {
               description: errorMessage(error),
             }),
         }
       );
     },
-    [softDelete, sequenceId, locationId, navigate, queryClient]
+    [translateEvent, softDelete, sequenceId, locationId, navigate, queryClient]
   );
 
   // Dialog states for recasting
@@ -258,11 +266,14 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
         undiscardVariant.mutate(
           { sequenceId, variantId: variant.id },
           {
-            onSuccess: () => toast.success('Alternate restored'),
+            onSuccess: () =>
+              toast.success(translateEvent('Alternate restored')),
             onError: (error) => {
-              toast.error('Failed to restore alternate', {
+              toast.error(translateEvent('Failed to restore alternate'), {
                 description:
-                  error instanceof Error ? error.message : 'Unknown error',
+                  error instanceof Error
+                    ? error.message
+                    : translateEvent('Unknown error'),
               });
             },
           }
@@ -272,20 +283,22 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
         {
           onSuccess: () => {
             setCompareVariant(null);
-            toast('Alternate discarded', {
-              action: { label: 'Undo', onClick: restore },
+            toast(translateEvent('Alternate discarded'), {
+              action: { label: translateEvent('Undo'), onClick: restore },
             });
           },
           onError: (error) => {
-            toast.error('Failed to discard alternate', {
+            toast.error(translateEvent('Failed to discard alternate'), {
               description:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
             });
           },
         }
       );
     },
-    [sequenceId, discardVariant, undiscardVariant]
+    [translateEvent, sequenceId, discardVariant, undiscardVariant]
   );
 
   const handlePromote = useCallback(
@@ -295,18 +308,20 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
         {
           onSuccess: () => {
             setCompareVariant(null);
-            toast.success('Alternate promoted');
+            toast.success(translateEvent('Alternate promoted'));
           },
           onError: (error) => {
-            toast.error('Failed to promote alternate', {
+            toast.error(translateEvent('Failed to promote alternate'), {
               description:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
             });
           },
         }
       );
     },
-    [sequenceId, promoteVariant]
+    [translateEvent, sequenceId, promoteVariant]
   );
 
   // Determine if currently regenerating
@@ -326,10 +341,10 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
     location?.referenceGeneratedAt || location?.selectedReferenceVersionId
   );
   const sheetBusyLabel =
-    retryLabel ??
+    localizeSheetRetry(i18n, retryLabel) ??
     (hasPriorSheet
-      ? 'Regenerating location reference…'
-      : 'Generating location reference…');
+      ? t('Regenerating location reference…')
+      : t('Generating location reference…'));
   const selectedSheetModel = resolveSheetImageModel({
     explicit: sheetModel,
     liveVersionModel: (versionHistory?.versions ?? []).find(
@@ -359,12 +374,12 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
       },
       {
         onError: (error) =>
-          toast.error('Failed to regenerate reference', {
+          toast.error(translateEvent('Failed to regenerate reference'), {
             description: errorMessage(error),
           }),
       }
     );
-  }, [regenerateSheet, sequenceId, locationId, sheetModel]);
+  }, [translateEvent, regenerateSheet, sequenceId, locationId, sheetModel]);
 
   // Replace (#1695): the sequence is re-pointed at another team location,
   // so this page's location is no longer in it. Open the one it uses now.
@@ -398,7 +413,9 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
     return (
       <div className="flex h-full items-center justify-center p-6">
         <div className="text-center">
-          <p className="text-sm text-destructive">Failed to load location</p>
+          <p className="text-sm text-destructive">
+            {t('Failed to load location')}
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">{error.message}</p>
         </div>
       </div>
@@ -428,13 +445,13 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
       <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
         <MapPin className="h-16 w-16 text-muted-foreground/30" />
         <div className="text-center">
-          <p className="text-sm font-medium">Location not found</p>
+          <p className="text-sm font-medium">{t('Location not found')}</p>
           {sequenceId === null ? (
             <Link
               to="/locations"
               className="mt-2 text-sm text-primary hover:underline"
             >
-              Back to Locations
+              {t('Back to Locations')}
             </Link>
           ) : (
             <Link
@@ -442,7 +459,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
               params={{ id: sequenceId }}
               className="mt-2 text-sm text-primary hover:underline"
             >
-              Back to locations
+              {t('Back to locations')}
             </Link>
           )}
         </div>
@@ -458,7 +475,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
             <Link
               to="/sequences/$id/locations"
               params={{ id: sequenceId }}
-              aria-label="Back to locations"
+              aria-label={t('Back to locations')}
             >
               <ArrowLeft />
             </Link>
@@ -494,7 +511,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium">Reference</p>
+                <p className="text-sm font-medium">{t('Reference')}</p>
                 {isSheetStale && (
                   <StalenessIndicator
                     artifact="sheet"
@@ -534,7 +551,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                     <div className="flex h-full w-full flex-col items-center justify-center gap-2">
                       <MapPin className="h-16 w-16 text-muted-foreground/20" />
                       <p className="text-sm text-muted-foreground">
-                        No reference yet
+                        {t('No reference yet')}
                       </p>
                     </div>
                   )}
@@ -553,7 +570,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                   </p>
                 ) : null}
                 <SheetVersionStrip
-                  label="Versions"
+                  label={t('Versions')}
                   selectingId={
                     selectVersion.isPending
                       ? selectVersion.variables.versionId
@@ -564,9 +581,12 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                       { sequenceId, locationDbId: locationId, versionId },
                       {
                         onError: (error) =>
-                          toast.error('Failed to switch reference', {
-                            description: errorMessage(error),
-                          }),
+                          toast.error(
+                            translateEvent('Failed to switch reference'),
+                            {
+                              description: errorMessage(error),
+                            }
+                          ),
                       }
                     )
                   }
@@ -587,7 +607,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                 disabled={regenerateSheet.isPending || isSheetGenerating}
               />
               <p className="text-xs text-muted-foreground">
-                Used for this location's reference only.
+                {t("Used for this location's reference only.")}
               </p>
               <Button
                 onClick={handleRegenerateSheet}
@@ -596,13 +616,13 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                 <InButtonCost estimate={sheetCostEstimate}>
                   {regenerateSheet.isPending
                     ? hasPriorSheet
-                      ? 'Regenerating…'
-                      : 'Generating…'
+                      ? t('Regenerating…')
+                      : t('Generating…')
                     : hasPriorSheet
                       ? isSheetGenerating
-                        ? 'Generate again'
-                        : 'Regenerate Reference'
-                      : 'Generate Reference'}
+                        ? t('Generate again')
+                        : t('Regenerate Reference')
+                      : t('Generate Reference')}
                 </InButtonCost>
               </Button>
 
@@ -613,11 +633,11 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                     onClick={() => setIsPickerOpen(true)}
                     disabled={isSheetGenerating}
                   >
-                    Replace
+                    {t('Replace')}
                   </Button>
                 )}
                 <UploadMediaButton
-                  label="Upload Reference"
+                  label={t('Upload Reference')}
                   pendingLabel="Uploading…"
                   accept="image/*"
                   isPending={uploadReference.isPending}
@@ -627,11 +647,16 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                       { file, sequenceId, locationDbId: locationId },
                       {
                         onSuccess: () =>
-                          toast.success('Location reference uploaded'),
+                          toast.success(
+                            translateEvent('Location reference uploaded')
+                          ),
                         onError: (error) =>
-                          toast.error('Reference upload failed', {
-                            description: errorMessage(error),
-                          }),
+                          toast.error(
+                            translateEvent('Reference upload failed'),
+                            {
+                              description: errorMessage(error),
+                            }
+                          ),
                       }
                     )
                   }
@@ -642,7 +667,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                     onClick={() => setIsRemoveConfirmOpen(true)}
                     disabled={softDelete.isPending}
                   >
-                    {softDelete.isPending ? 'Removing…' : 'Remove'}
+                    {softDelete.isPending ? t('Removing…') : t('Remove')}
                   </Button>
                 )}
               </div>
@@ -654,8 +679,10 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
 
               {shotData && shotData.count > 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Used in {shotData.count}{' '}
-                  {shotData.count === 1 ? 'shot' : 'shots'}
+                  {t('Used in {{value1}} {{value2}}', {
+                    value1: shotData.count,
+                    value2: shotData.count === 1 ? t('shot') : t('shots'),
+                  })}
                 </p>
               )}
             </div>
@@ -666,25 +693,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
                 sequenceId={sequenceId}
                 location={location}
               />
-              {link?.firstMentionSceneId && (
-                <div className="flex flex-col gap-1 rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    First Appears
-                  </p>
-                  <p className="text-sm">
-                    {`Scene ${link.firstMentionSceneId}${
-                      link.firstMentionLine
-                        ? `, Line ${link.firstMentionLine}`
-                        : ''
-                    }`}
-                  </p>
-                  {link.firstMentionText && (
-                    <p className="border-l-2 border-muted-foreground/30 pl-3 text-xs italic text-muted-foreground">
-                      "{link.firstMentionText}"
-                    </p>
-                  )}
-                </div>
-              )}
+              <FirstAppearance mention={link} />
               {location.consistencyTag && (
                 <span className="w-fit rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
                   {location.consistencyTag}
@@ -702,20 +711,23 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remove {location.name} from this sequence?
+              {t('Remove {{value1}} from this sequence?', {
+                value1: location.name,
+              })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              It leaves this sequence and its prompts, and stays in your
-              locations. Undo is on the toast.
+              {t(
+                'It leaves this sequence and its prompts, and stays in your locations. Undo is on the toast.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               disabled={softDelete.isPending}
               onClick={() => handleRemove(location.name)}
             >
-              {softDelete.isPending ? 'Removing…' : 'Remove'}
+              {softDelete.isPending ? t('Removing…') : t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

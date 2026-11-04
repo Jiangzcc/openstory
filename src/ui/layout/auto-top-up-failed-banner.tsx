@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * App-wide notice that auto-reload is paused after a card decline (#1499).
  *
@@ -11,6 +12,8 @@ import { Link } from '@tanstack/react-router';
 import { AlertTriangle } from 'lucide-react';
 
 export const AutoTopUpFailedBanner: React.FC = () => {
+  const { t } = useTranslation('interface');
+
   const { data } = useBillingGateQuery();
   if (!data?.autoTopUpFailed) return null;
 
@@ -19,11 +22,12 @@ export const AutoTopUpFailedBanner: React.FC = () => {
       <AlertTriangle className="h-4 w-4" />
       <AlertDescription className="flex items-center justify-between gap-4">
         <span>
-          Auto-reload is paused — your card was declined. Generation stops when
-          your balance runs out.
+          {t(
+            'Auto-reload is paused — your card was declined. Generation stops when your balance runs out.'
+          )}
         </span>
         <Link to="/credits" className="shrink-0 font-medium underline">
-          Update card →
+          {t('Update card →')}
         </Link>
       </AlertDescription>
     </Alert>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCallback, useEffect } from 'react';
 import { Button } from '@/ui/shadcn/button';
@@ -18,16 +19,20 @@ function ToastHarness({
   isZeroBalance,
   runCostUsd,
 }: Omit<LowBalanceToastProps, 'onAddCredits' | 'onOtherOptions'>) {
+  const { i18n } = useTranslation('billing');
   const show = useCallback(
     () =>
-      showLowBalanceToast({
-        balanceUsd,
-        isZeroBalance,
-        runCostUsd,
-        onAddCredits: () => console.log('Add credits'),
-        onOtherOptions: () => console.log('Other options'),
-      }),
-    [balanceUsd, isZeroBalance, runCostUsd]
+      showLowBalanceToast(
+        {
+          balanceUsd,
+          isZeroBalance,
+          runCostUsd,
+          onAddCredits: () => console.log('Add credits'),
+          onOtherOptions: () => console.log('Other options'),
+        },
+        i18n
+      ),
+    [balanceUsd, isZeroBalance, runCostUsd, i18n]
   );
 
   useEffect(() => {

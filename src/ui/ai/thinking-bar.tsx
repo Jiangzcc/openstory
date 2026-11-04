@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Collapsible, CollapsibleContent } from '@/ui/shadcn/collapsible';
 import { useAutoScroll } from '@/ui/use-auto-scroll';
 import { cn } from '@/ui/utils';
@@ -31,6 +32,8 @@ export const ThinkingBar: FC<{
   text?: string;
   className?: string;
 }> = ({ active, text, className }) => {
+  const { t } = useTranslation('interface');
+
   const [open, setOpen] = useState(false);
   const { ref } = useAutoScroll<HTMLDivElement>({
     enabled: active && open,
@@ -56,7 +59,7 @@ export const ThinkingBar: FC<{
           className="size-3.5 shrink-0 animate-pulse motion-reduce:animate-none"
           aria-hidden
         />
-        <span>Thinking…</span>
+        <span>{t('Thinking…')}</span>
       </div>
     );
   }
@@ -82,7 +85,7 @@ export const ThinkingBar: FC<{
         {/* The status line is the live region, not the transcript below: a
             token-by-token stream through aria-live would flood a screen reader
             with scratch work. */}
-        <span aria-live="polite">Thinking…</span>
+        <span aria-live="polite">{t('Thinking…')}</span>
         <ChevronRight
           className={cn(
             'size-3.5 shrink-0 transition-transform motion-reduce:transition-none',

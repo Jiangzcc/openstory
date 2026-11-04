@@ -12,6 +12,7 @@
  * sequence with no scenes has an empty plan.
  */
 
+import type { TFunction } from 'i18next';
 import {
   includesStage,
   stageIndex,
@@ -387,7 +388,7 @@ export function switchLocks(plan: readonly PlanUnit[]): {
   };
 }
 
-const KIND_NOUN: Record<PlanUnitKind, [one: string, many: string]> = {
+const KIND_NOUN = {
   'sheet:character': ['reference', 'references'],
   'sheet:location': ['reference', 'references'],
   'ref:element': ['reference', 'references'],
@@ -400,14 +401,20 @@ const KIND_NOUN: Record<PlanUnitKind, [one: string, many: string]> = {
   clip: ['video', 'videos'],
   'prompt:music': ['prompt', 'prompts'],
   music: ['music track', 'music tracks'],
-};
+} as const satisfies Record<PlanUnitKind, readonly [one: string, many: string]>;
 
 /**
  * `2 references, 12 prompts, 12 images` — counts per noun, in plan order.
  * Shown under the button, which stays one word so it never overflows.
  */
-export function planWorkSummary(units: readonly PlanUnitRef[]): string {
-  const counts = new Map<string, { n: number; noun: [string, string] }>();
+export function planWorkSummary(
+  units: readonly PlanUnitRef[],
+  translate?: TFunction<'sequences'>
+): string {
+  const counts = new Map<
+    string,
+    { n: number; noun: (typeof KIND_NOUN)[PlanUnitKind] }
+  >();
   for (const unit of units) {
     const noun = KIND_NOUN[unit.kind];
     const entry = counts.get(noun[1]) ?? { n: 0, noun };
@@ -415,8 +422,12 @@ export function planWorkSummary(units: readonly PlanUnitRef[]): string {
     counts.set(noun[1], entry);
   }
   return [...counts.values()]
-    .map(({ n, noun }) => `${n} ${n === 1 ? noun[0] : noun[1]}`)
-    .join(', ');
+    .map(({ n, noun }) =>
+      translate
+        ? translate(`{{count}} ${noun[0]}`, { count: n })
+        : `${n} ${n === 1 ? noun[0] : noun[1]}`
+    )
+    .join(translate?.(', ') ?? ', ');
 }
 
 /**
@@ -424,24 +435,40 @@ export function planWorkSummary(units: readonly PlanUnitRef[]): string {
  * redoes stale work, the redo is named apart — `8 videos · redo 8 images` —
  * so moving the thumb forward never hides a re-roll inside `Generate`.
  */
-export function planWorkLine(work: readonly PlanUnit[]): string {
+export function planWorkLine(
+  work: readonly PlanUnit[],
+  translate?: TFunction<'sequences'>
+): string {
   const fresh = work.filter((u) => u.state !== 'stale');
   const redo = work.filter((u) => u.state === 'stale');
-  const line =
-    fresh.length === 0 || redo.length === 0
-      ? planWorkSummary(work)
-      : `${planWorkSummary(fresh)} · redo ${planWorkSummary(redo)}`;
+  if (fresh.length === 0 || redo.length === 0)
+    return planWorkSummary(work, translate);
+  const made = planWorkSummary(fresh, translate);
+  const redoing = planWorkSummary(redo, translate);
   // A sheet found finished elsewhere is pointed at, not drawn (#2017).
-  return line;
+  return translate
+    ? translate('{{value1}} · redo {{value2}}', {
+        value1: made,
+        value2: redoing,
+      })
+    : `${made} · redo ${redoing}`;
 }
 
 /**
  * Footer button: `Generate`, or `Regenerate` when every unit already exists
  * and is only out of date. {@link planWorkLine} says what.
  */
-export function planWorkLabel(work: readonly PlanUnit[]): string {
-  if (work.length === 0) return 'Nothing to generate';
-  return work.every((u) => u.state === 'stale') ? 'Regenerate' : 'Generate';
+export function planWorkLabel(
+  work: readonly PlanUnit[],
+  translate?: TFunction<'sequences'>
+): string {
+  const label =
+    work.length === 0
+      ? 'Nothing to generate'
+      : work.every((u) => u.state === 'stale')
+        ? 'Regenerate'
+        : 'Generate';
+  return translate?.(label) ?? label;
 }
 
 /**
@@ -452,7 +479,8 @@ export function planWorkLabel(work: readonly PlanUnit[]): string {
 export function blockedLines(
   plan: readonly PlanUnit[],
   stopAt: GenerationStage,
-  nameOf: (ref: PlanUnitRef) => string | undefined
+  nameOf: (ref: PlanUnitRef) => string | undefined,
+  translate?: TFunction<'sequences'>
 ): string[] {
   const blocked = plan.filter(
     (u) =>
@@ -464,25 +492,53 @@ export function blockedLines(
     byNoun.set(noun, [...(byNoun.get(noun) ?? []), unit]);
   }
   return [...byNoun.values()].map((units) => {
-    const blockers = new Map<string, PlanUnitRef>();
-    for (const unit of units)
-      for (const ref of unit.blockedBy ?? [])
-        blockers.set(`${ref.kind}:${ref.id}`, ref);
-    const named: string[] = [];
-    const counted: PlanUnitRef[] = [];
-    for (const ref of blockers.values()) {
-      const name = nameOf(ref);
-      if (name) named.push(`${name} ${KIND_NOUN[ref.kind][0]}`);
-      else counted.push(ref);
-    }
-    const reasons = [
-      ...named,
-      ...(counted.length ? [planWorkSummary(counted)] : []),
-    ];
-    return `${planWorkSummary(units)} blocked: ${
-      reasons.length ? `waiting on ${reasons.join(', ')}` : 'couldn’t check'
-    }`;
+    const reasons = planBlockerReasons(units, nameOf, translate);
+    const summary = planWorkSummary(units, translate);
+    if (reasons.length === 0)
+      return (
+        translate?.('{{value1}} blocked: couldn’t check', {
+          value1: summary,
+        }) ?? `${summary} blocked: couldn’t check`
+      );
+    const waiting = reasons.join(translate?.(', ') ?? ', ');
+    return translate
+      ? translate('{{value1}} blocked: waiting on {{value2}}', {
+          value1: summary,
+          value2: waiting,
+        })
+      : `${summary} blocked: waiting on ${waiting}`;
   });
+}
+
+function planBlockerReasons(
+  units: readonly PlanUnit[],
+  nameOf: (ref: PlanUnitRef) => string | undefined,
+  translate?: TFunction<'sequences'>
+): string[] {
+  const blockers = new Map<string, PlanUnitRef>();
+  for (const unit of units)
+    for (const ref of unit.blockedBy ?? [])
+      blockers.set(`${ref.kind}:${ref.id}`, ref);
+  const named: string[] = [];
+  const counted: PlanUnitRef[] = [];
+  for (const ref of blockers.values()) {
+    const name = nameOf(ref);
+    const noun = KIND_NOUN[ref.kind][0];
+    if (name)
+      named.push(
+        translate
+          ? translate('{{value1}} {{value2}}', {
+              value1: name,
+              value2: translate(noun),
+            })
+          : `${name} ${noun}`
+      );
+    else counted.push(ref);
+  }
+  return [
+    ...named,
+    ...(counted.length ? [planWorkSummary(counted, translate)] : []),
+  ];
 }
 
 /** Unit counts per kind — what a run up to a stop is priced on. */

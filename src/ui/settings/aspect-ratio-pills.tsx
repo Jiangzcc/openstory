@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AspectRatioIcon } from '@/ui/icons/aspect-ratio-icon';
 import { ToggleGroup, ToggleGroupItem } from '@/ui/shadcn/toggle-group';
 import {
@@ -20,6 +21,8 @@ export const AspectRatioPills: FC<AspectRatioPillsProps> = ({
   value,
   onChange,
 }) => {
+  const { t } = useTranslation('interface');
+
   return (
     <ToggleGroup
       type="single"
@@ -38,7 +41,7 @@ export const AspectRatioPills: FC<AspectRatioPillsProps> = ({
           key={ratio.value}
           value={ratio.value}
           className="flex h-9 min-w-0 flex-1 shrink items-center justify-center gap-2 px-2 sm:px-3"
-          aria-label={`${ratio.label} aspect ratio`}
+          aria-label={t('{{value1}} aspect ratio', { value1: ratio.label })}
         >
           <AspectRatioIcon
             width={ratio.width}

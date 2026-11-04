@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { TeamCharacter } from '@/cast/server/db/characters';
 import { sheetSquareImageClassName } from '@/cast/sheet-tile';
 import { AppImage } from '@/ui/shadcn/app-image';
@@ -7,11 +9,23 @@ import { User } from 'lucide-react';
 import type React from 'react';
 
 /** Which sequences cast a character, in a line. */
-function castLine(sequences: TeamCharacter['sequences']): string {
+function castLine(
+  sequences: TeamCharacter['sequences'],
+  translate?: TFunction<'cast'>
+): string {
   const [latest] = sequences;
-  if (!latest) return 'Not in a sequence';
+  if (!latest)
+    return (
+      translate?.('Not in a sequence', { ns: 'cast' }) ?? 'Not in a sequence'
+    );
   if (sequences.length === 1) return latest.title;
-  return `${sequences.length} sequences · latest ${latest.title}`;
+  return (
+    translate?.('{{value1}} sequences · latest {{value2}}', {
+      ns: 'cast',
+      value1: sequences.length,
+      value2: latest.title,
+    }) ?? `${sequences.length} sequences · latest ${latest.title}`
+  );
 }
 
 /**
@@ -21,6 +35,7 @@ function castLine(sequences: TeamCharacter['sequences']): string {
 export const TeamCharacterCard: React.FC<{ character: TeamCharacter }> = ({
   character,
 }) => {
+  const { t } = useTranslation('cast');
   // The portrait drawn from the sheet; a sheet from before portraits is cropped.
   const portraitUrl = character.sheetPortraitUrl;
   const sheetUrl = portraitUrl ?? character.sheetImageUrl;
@@ -55,7 +70,7 @@ export const TeamCharacterCard: React.FC<{ character: TeamCharacter }> = ({
             {character.name}
           </h3>
           <p className="text-xs text-muted-foreground line-clamp-1">
-            {castLine(character.sequences)}
+            {castLine(character.sequences, t)}
           </p>
           {character.physicalDescription && (
             <p className="text-sm text-muted-foreground line-clamp-2">

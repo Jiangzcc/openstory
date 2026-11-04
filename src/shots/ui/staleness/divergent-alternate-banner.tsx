@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/ui/shadcn/alert';
 import { Button } from '@/ui/shadcn/button';
@@ -45,7 +47,16 @@ export const DivergentAlternateBanner: React.FC<
   density = 'inline',
   className,
 }) => {
-  const ariaLabel = `Divergent alternate ${ARTIFACT_LABEL[artifact]} available for this ${entityType}`;
+  const { t } = useTranslation('shots');
+  const translateLabel = useLabelTranslation('labels');
+
+  const ariaLabel = t(
+    'Divergent alternate {{value1}} available for this {{value2}}',
+    {
+      value1: translateLabel(ARTIFACT_LABEL[artifact]),
+      value2: translateLabel(entityType),
+    }
+  );
 
   if (density === 'corner-dot') {
     return (
@@ -53,7 +64,7 @@ export const DivergentAlternateBanner: React.FC<
         type="button"
         onClick={onCompare}
         aria-label={ariaLabel}
-        title="Alternate version available — click to compare"
+        title={t('Alternate version available — click to compare')}
         data-slot="divergent-alternate-dot"
         data-variant-id={variantId}
         data-artifact={artifact}
@@ -83,25 +94,27 @@ export const DivergentAlternateBanner: React.FC<
       className={className}
     >
       <Info aria-hidden="true" />
-      <AlertTitle>Alternate version available</AlertTitle>
+      <AlertTitle>{t('Alternate version available')}</AlertTitle>
       <AlertDescription>
-        An alternate {ARTIFACT_LABEL[artifact]} was generated with the inputs
-        you had at the time.
+        {t(
+          'An alternate {{value1}} was generated with the inputs you had at the time.',
+          { value1: ARTIFACT_LABEL[artifact] }
+        )}
       </AlertDescription>
       <div className="col-start-2 mt-2 flex flex-wrap items-center gap-2">
         {onCompare && (
           <Button type="button" size="sm" variant="outline" onClick={onCompare}>
-            Compare
+            {t('Compare')}
           </Button>
         )}
         {onPromote && (
           <Button type="button" size="sm" onClick={onPromote}>
-            Promote
+            {t('Promote')}
           </Button>
         )}
         {onDiscard && (
           <Button type="button" size="sm" variant="ghost" onClick={onDiscard}>
-            Discard
+            {t('Discard')}
           </Button>
         )}
       </div>

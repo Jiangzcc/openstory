@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_app/images/')({
     }
   },
   component: ImagesPage,
-  staticData: { breadcrumb: 'Images' },
+  staticData: { breadcrumb: { label: 'Images', translationKey: 'Images' } },
 });
 
 function ImagesPage() {

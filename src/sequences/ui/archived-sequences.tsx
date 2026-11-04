@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 /**
  * Collapsed "Archived" strip under the sequences list (#1108 Phase 4):
  * renders only when the team has archived sequences, expands to a compact
@@ -18,6 +21,10 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 export const ArchivedSequences: React.FC = () => {
+  const translateEvent = useLiveTranslation('sequences');
+  const { locale } = useLocaleFormatting();
+  const { t } = useTranslation('sequences');
+
   const [open, setOpen] = useState(false);
   const { data: archived } = useArchivedSequences();
   const unarchive = useUnarchiveSequence();
@@ -41,7 +48,7 @@ export const ArchivedSequences: React.FC = () => {
           ) : (
             <ChevronRight className="h-4 w-4" />
           )}
-          <span>Archived ({archived.length})</span>
+          <span>{t('Archived ({{value1}})', { value1: archived.length })}</span>
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
@@ -53,10 +60,15 @@ export const ArchivedSequences: React.FC = () => {
             >
               <div className="min-w-0">
                 <p className="truncate text-sm">
-                  {sequence.title || 'Untitled Sequence'}
+                  {sequence.title || t('Untitled Sequence')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Archived {formatDistanceToNow(new Date(sequence.updatedAt))}
+                  {t('Archived {{value1}}', {
+                    value1: formatDistanceToNow(
+                      new Date(sequence.updatedAt),
+                      locale
+                    ),
+                  })}
                 </p>
               </div>
               <Button
@@ -67,16 +79,23 @@ export const ArchivedSequences: React.FC = () => {
                 onClick={() =>
                   unarchive.mutate(sequence.id, {
                     onSuccess: () =>
-                      toast.success(`Restored ${sequence.title || 'sequence'}`),
+                      toast.success(
+                        translateEvent('Restored {{value1}}', {
+                          value1: sequence.title || translateEvent('sequence'),
+                        })
+                      ),
                     onError: (error) =>
-                      toast.error('Failed to unarchive sequence', {
-                        description: errorMessage(error),
-                      }),
+                      toast.error(
+                        translateEvent('Failed to unarchive sequence'),
+                        {
+                          description: errorMessage(error),
+                        }
+                      ),
                   })
                 }
               >
                 <ArchiveRestore className="mr-2 h-4 w-4" />
-                {unarchive.isPending ? 'Restoring…' : 'Unarchive'}
+                {unarchive.isPending ? t('Restoring…') : t('Unarchive')}
               </Button>
             </li>
           ))}

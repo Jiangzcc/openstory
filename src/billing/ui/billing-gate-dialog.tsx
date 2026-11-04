@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { usePageContext } from '@/assistant/ui/use-page-context';
 /**
@@ -119,6 +120,8 @@ export const BillingGateDialog: React.FC<BillingGateDialogProps> = ({
   context = 'generation',
   reason = 'manual',
 }) => {
+  const { t } = useTranslation('billing');
+
   const posthog = usePostHog();
   // Only a sequence page can ask what finishing costs (#2155).
   const inSequence = usePageContext().some((item) => item.kind === 'sequence');
@@ -143,13 +146,15 @@ export const BillingGateDialog: React.FC<BillingGateDialogProps> = ({
         <DialogHeader>
           <DialogTitle>
             {context === 'onboarding'
-              ? 'Get started with OpenStory'
-              : 'Set up billing to continue'}
+              ? t('Get started with OpenStory')
+              : t('Set up billing to continue')}
           </DialogTitle>
           <DialogDescription>
             {context === 'onboarding'
-              ? 'Add credits or connect your own API key to start creating.'
-              : 'This action uses AI credits. Add credits or connect your own key.'}
+              ? t('Add credits or connect your own API key to start creating.')
+              : t(
+                  'This action uses AI credits. Add credits or connect your own key.'
+                )}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,8 +164,10 @@ export const BillingGateDialog: React.FC<BillingGateDialogProps> = ({
               {/* Opens the add-credits modal on top of the gate (#1099) */}
               <OptionCard
                 icon={<CreditCard className="size-4" />}
-                title="Add credits"
-                description="Pay as you go. Auto-reload keeps you generating."
+                title={t('Add credits')}
+                description={t(
+                  'Pay as you go. Auto-reload keeps you generating.'
+                )}
                 variant="primary"
                 onClick={() => openAddCreditsDialog('billing_gate')}
               />
@@ -171,8 +178,10 @@ export const BillingGateDialog: React.FC<BillingGateDialogProps> = ({
             <OptionCard
               to="/settings/api-keys"
               icon={<Key className="size-4" />}
-              title="Use your own key"
-              description="Connect fal.ai — images, video, audio, and script analysis."
+              title={t('Use your own key')}
+              description={t(
+                'Connect fal.ai — images, video, audio, and script analysis.'
+              )}
               variant="primary"
               onClick={handleNav}
             />
@@ -188,7 +197,7 @@ export const BillingGateDialog: React.FC<BillingGateDialogProps> = ({
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 transition-colors hover:text-muted-foreground"
             >
               <Gift className="size-3.5" />
-              Redeem a gift code
+              {t('Redeem a gift code')}
             </Link>
             <Link
               to="/settings/api-keys"
@@ -196,7 +205,7 @@ export const BillingGateDialog: React.FC<BillingGateDialogProps> = ({
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 transition-colors hover:text-muted-foreground"
             >
               <Key className="size-3.5" />
-              Use your own key
+              {t('Use your own key')}
             </Link>
           </div>
           <div className="flex items-center gap-1">
@@ -213,7 +222,7 @@ export const BillingGateDialog: React.FC<BillingGateDialogProps> = ({
               className="text-muted-foreground/70 hover:text-muted-foreground"
               onClick={() => onOpenChange(false)}
             >
-              {hasFalKey ? 'Continue' : 'Set up later'}
+              {hasFalKey ? t('Continue') : t('Set up later')}
             </Button>
           </div>
         </div>

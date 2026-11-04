@@ -1,3 +1,7 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 /**
  * Auto Top-Up Dialog (#1099)
  * "Auto-reload credits" modal: enable toggle, the balance that triggers a
@@ -74,7 +78,15 @@ const AmountField: React.FC<AmountFieldProps> = ({
   </div>
 );
 
+const AMOUNT_ERROR =
+  'Enter an amount between ${{value1}} and ${{value2}}, greater than the balance that triggers it';
+
 export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
+  const translateEvent = useLiveTranslation('billing');
+  const { formatNumber } = useLocaleFormatting();
+  const translateLabel = useLabelTranslation('billing');
+  const { t } = useTranslation('billing');
+
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const { data: balanceData } = useBillingBalance();
@@ -83,6 +95,15 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
   const [threshold, setThreshold] = useState('5');
   const [amount, setAmount] = useState('100');
   const [error, setError] = useState<string | null>(null);
+  const errorMessage =
+    error === AMOUNT_ERROR
+      ? t(AMOUNT_ERROR, {
+          value1: MIN_TOPUP_AMOUNT_USD,
+          value2: formatNumber(MAX_TOPUP_AMOUNT_USD),
+        })
+      : error
+        ? translateLabel(error)
+        : null;
 
   // Seed from saved settings on the OPEN transition only. Keying this on
   // `balanceData` would re-run on every balance refetch (staleTime 30s, plus
@@ -134,7 +155,11 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
           amount_usd: amountUsd,
         });
       }
-      toast.success(enabled ? 'Auto-reload enabled' : 'Auto-reload disabled');
+      toast.success(
+        enabled
+          ? translateEvent('Auto-reload enabled')
+          : translateEvent('Auto-reload disabled')
+      );
       onOpenChange(false);
     },
     onError: (err) => {
@@ -146,9 +171,7 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
 
   const handleSave = () => {
     if (!isValid) {
-      setError(
-        `Enter an amount between $${MIN_TOPUP_AMOUNT_USD} and $${MAX_TOPUP_AMOUNT_USD.toLocaleString()}, greater than the balance that triggers it`
-      );
+      setError(AMOUNT_ERROR);
       return;
     }
     setError(null);
@@ -159,15 +182,15 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Auto-reload credits</DialogTitle>
+          <DialogTitle>{t('Auto-reload credits')}</DialogTitle>
           <DialogDescription className="sr-only">
-            Automatically add credits when your balance runs low.
+            {t('Automatically add credits when your balance runs low.')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between gap-4">
-            <Label htmlFor="auto-topup-enabled">Use auto-reload</Label>
+            <Label htmlFor="auto-topup-enabled">{t('Use auto-reload')}</Label>
             <Switch
               id="auto-topup-enabled"
               checked={enabled}
@@ -178,14 +201,14 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
             />
           </div>
           <p className="text-sm text-muted-foreground">
-            Automatically add credits when your balance runs low.
+            {t('Automatically add credits when your balance runs low.')}
           </p>
         </div>
 
         <div className="flex flex-col gap-3">
           <AmountField
             id="auto-topup-threshold"
-            label="When my balance reaches:"
+            label={t('When my balance reaches:')}
             value={threshold}
             disabled={!enabled}
             onChange={(value) => {
@@ -195,7 +218,7 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
           />
           <AmountField
             id="auto-topup-amount"
-            label="Add to my balance:"
+            label={t('Add to my balance:')}
             value={amount}
             disabled={!enabled}
             onChange={(value) => {
@@ -208,7 +231,9 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
         <div className="flex flex-col gap-2">
           <Separator />
           <div className="flex items-center justify-between gap-4 text-sm tabular-nums">
-            <span className="text-muted-foreground">Amount charged:</span>
+            <span className="text-muted-foreground">
+              {t('Amount charged:')}
+            </span>
             <span>
               {chargeBreakdown
                 ? `$${chargeBreakdown.totalUsd.toFixed(2)}`
@@ -217,8 +242,13 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
           </div>
           {chargeBreakdown && (
             <p className="text-xs text-muted-foreground">
-              Includes the {formatPlatformFeePercent()} platform fee. Charged
-              each time your balance falls to ${thresholdUsd.toFixed(2)}.
+              {t(
+                'Includes the {{value1}} platform fee. Charged each time your balance falls to ${{value2}}.',
+                {
+                  value1: formatPlatformFeePercent(),
+                  value2: thresholdUsd.toFixed(2),
+                }
+              )}
             </p>
           )}
           <Separator />
@@ -226,7 +256,7 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
 
         {error && (
           <p role="alert" className="text-xs text-destructive">
-            {error}
+            {errorMessage}
           </p>
         )}
 
@@ -236,13 +266,13 @@ export function AutoTopUpDialog({ open, onOpenChange }: AutoTopUpDialogProps) {
             onClick={() => onOpenChange(false)}
             disabled={mutation.isPending}
           >
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button
             onClick={handleSave}
             disabled={mutation.isPending || !isValid}
           >
-            {mutation.isPending ? 'Saving…' : 'Save'}
+            {mutation.isPending ? t('Saving…') : t('Save')}
           </Button>
         </DialogFooter>
       </DialogContent>

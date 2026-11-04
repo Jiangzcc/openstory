@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Terminal block from Skills & MCP (`/connect`). One copy button for every line.
  */
@@ -18,15 +20,20 @@ export function Terminal({
   lines: readonly string[];
   prompt?: boolean;
 }) {
+  const translateEvent = useLiveTranslation('interface');
+  const { t } = useTranslation('interface');
+
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
     if (!(await copyTextToClipboard(lines.join('\n')))) {
-      toast.error('Could not copy', { description: 'Select it and copy.' });
+      toast.error(translateEvent('Could not copy'), {
+        description: translateEvent('Select it and copy.'),
+      });
       return;
     }
     setCopied(true);
-    toast.success('Copied');
+    toast.success(translateEvent('Copied'));
   };
 
   return (
@@ -44,7 +51,7 @@ export function Terminal({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`Copy ${label}`}
+          aria-label={t('Copy {{value1}}', { value1: label })}
           onClick={() => void copy()}
         >
           {copied ? <Check /> : <Copy />}

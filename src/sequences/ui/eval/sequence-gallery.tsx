@@ -1,3 +1,5 @@
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Film, ArrowUpRight } from 'lucide-react';
 import type { SequenceWithShots } from '../use-sequences-with-shots';
@@ -47,11 +49,15 @@ export function SequenceGallery({
   supportMode: boolean;
   styleNameById: Map<string, string>;
 }) {
+  const { locale } = useLocaleFormatting();
+  const { t } = useTranslation('sequences');
+
   return (
     <div className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-4">
       <output className="text-sm text-muted-foreground">
-        {sequences.length} {sequences.length === 1 ? 'sequence' : 'sequences'}
-        {supportMode && <span> loaded across all teams</span>}
+        {sequences.length}{' '}
+        {sequences.length === 1 ? t('sequence') : t('sequences')}
+        {supportMode && <span>{t('loaded across all teams')}</span>}
       </output>
       <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 pb-4">
         {sequences.map((sequence) => {
@@ -82,7 +88,9 @@ export function SequenceGallery({
                     'relative flex aspect-video items-center justify-center overflow-hidden bg-muted focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2',
                     insetPoster && 'bg-muted/50'
                   )}
-                  aria-label={`Open ${sequence.title || 'Untitled Sequence'}`}
+                  aria-label={t('Open {{value1}}', {
+                    value1: sequence.title || 'Untitled Sequence',
+                  })}
                 >
                   {sequence.posterUrl ? (
                     <div
@@ -110,8 +118,8 @@ export function SequenceGallery({
                       <Film className="size-9 opacity-40" strokeWidth={1} />
                       <span className="text-xs tracking-widest uppercase">
                         {sequence.status === 'draft'
-                          ? 'A story in the making'
-                          : 'Your story'}
+                          ? t('A story in the making')
+                          : t('Your story')}
                       </span>
                     </div>
                   )}
@@ -138,13 +146,13 @@ export function SequenceGallery({
                       className="min-w-0 flex-1 truncate font-medium hover:underline"
                       title={sequence.title}
                     >
-                      {sequence.title || 'Untitled Sequence'}
+                      {sequence.title || t('Untitled Sequence')}
                     </Link>
                     {!supportMode && <SequenceRowMenu sequence={sequence} />}
                   </div>
                   <p className="truncate text-xs text-muted-foreground">
-                    {styleNameById.get(sequence.styleId) ?? 'Custom style'} ·{' '}
-                    {formatDistanceToNow(new Date(sequence.createdAt))}
+                    {styleNameById.get(sequence.styleId) ?? t('Custom style')} ·{' '}
+                    {formatDistanceToNow(new Date(sequence.createdAt), locale)}
                   </p>
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                     {ratioData && (
@@ -176,7 +184,7 @@ export function SequenceGallery({
                         className="truncate"
                         title={creator.email ?? undefined}
                       >
-                        {creator.email ?? 'Unknown creator'}
+                        {creator.email ?? t('Unknown creator')}
                       </p>
                     </div>
                   )}

@@ -4,6 +4,8 @@
  */
 
 import { AuthForm } from '@/platform/ui/auth/auth-form';
+import { usePageTitle } from '@/ui/i18n/use-page-title';
+import { useTranslation } from 'react-i18next';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { PageContainer } from '@/ui/layout/page-container';
 import { loginRedirect } from '@/platform/ui/auth/last-page';
@@ -18,10 +20,17 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/_auth/login')({
   validateSearch: searchSchema,
+  head: ({ match }) => ({
+    meta: [
+      { title: match.context.i18n.t('Sign in · OpenStory', { ns: 'auth' }) },
+    ],
+  }),
   component: LoginPage,
 });
 
 function LoginPage() {
+  const { t } = useTranslation('auth');
+  usePageTitle(t('Sign in · OpenStory'));
   const search = Route.useSearch();
   const { authOptions } = Route.useRouteContext();
   const hydrated = useHydrated();
@@ -37,7 +46,7 @@ function LoginPage() {
               <OpenStoryLogo size="lg" />
             </Link>
             <p className="text-muted-foreground">
-              AI video production, from script to screen.
+              {t('AI video production, from script to screen.')}
             </p>
           </div>
           <AuthForm

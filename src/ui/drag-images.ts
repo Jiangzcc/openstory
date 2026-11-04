@@ -1,3 +1,4 @@
+import type { i18n as I18n } from 'i18next';
 /**
  * Extract image File objects from a drag-and-drop DataTransfer.
  *
@@ -169,9 +170,11 @@ export async function extractImagesFromSnapshot(
   return { files, failedUrls };
 }
 
-export function toastDragImportCorsError() {
-  toast.error("Couldn't import dragged image", {
-    description:
-      'The source blocked cross-site access (CORS). Save it locally and drag from Finder.',
+export function toastDragImportCorsError(i18n: I18n) {
+  const t = i18n.getFixedT(null, 'interface');
+  toast.error(t("Couldn't import dragged image"), {
+    description: t(
+      'The source blocked cross-site access (CORS). Save it locally and drag from Finder.'
+    ),
   });
 }

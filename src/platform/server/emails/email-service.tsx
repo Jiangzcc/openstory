@@ -11,6 +11,9 @@ import { env as workerEnv } from 'cloudflare:workers';
 import { AbuseReportEmail } from './abuse-report-email';
 import { FeedbackEmail } from './feedback-email';
 import { OtpEmail } from './otp-email';
+import { DEFAULT_LOCALE } from '@/platform/i18n/locale';
+import type { Locale } from '@/platform/i18n/locale';
+import { createI18n } from '@/platform/i18n/runtime';
 import { renderEmail } from './render-email';
 import { getLogger } from '@/platform/logger';
 
@@ -107,12 +110,13 @@ export async function sendEmail({
  */
 export async function sendOtpEmail(
   email: string,
-  otp: string
+  otp: string,
+  locale: Locale = DEFAULT_LOCALE
 ): Promise<{ success: boolean; error?: string }> {
   return sendEmail({
     to: email,
-    subject: 'Your sign-in code',
-    body: <OtpEmail appName={getAppName()} otp={otp} />,
+    subject: createI18n(locale).t('Your sign-in code', { ns: 'mail' }),
+    body: <OtpEmail appName={getAppName()} otp={otp} locale={locale} />,
   });
 }
 

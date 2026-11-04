@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import type React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -34,6 +36,9 @@ export const NewLocationDialog: React.FC<{
   trigger?: React.ReactNode;
   onCreated: (location: { id: string; name: string }) => void;
 }> = ({ trigger, onCreated }) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
@@ -56,7 +61,7 @@ export const NewLocationDialog: React.FC<{
       Object.fromEntries(new FormData(event.currentTarget))
     );
     if (!result.success) {
-      toast.error('Check the location fields', {
+      toast.error(translateEvent('Check the location fields'), {
         description: result.error.issues[0]?.message,
       });
       return;
@@ -74,7 +79,7 @@ export const NewLocationDialog: React.FC<{
           onCreated(location);
         },
         onError: (error) =>
-          toast.error('Location not created', {
+          toast.error(translateEvent('Location not created'), {
             description: errorMessage(error),
           }),
       }
@@ -87,29 +92,29 @@ export const NewLocationDialog: React.FC<{
       onOpenChange={(next) => (next ? setOpen(true) : close())}
     >
       <DialogTrigger asChild>
-        {trigger ?? <Button disabled={!hydrated}>New location</Button>}
+        {trigger ?? <Button disabled={!hydrated}>{t('New location')}</Button>}
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>New location</DialogTitle>
+          <DialogTitle>{t('New location')}</DialogTitle>
           <DialogDescription>
-            Its sheet is drawn from the photos, or from the description.
+            {t('Its sheet is drawn from the photos, or from the description.')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="new-team-location-name">Name</Label>
+            <Label htmlFor="new-team-location-name">{t('Name')}</Label>
             <Input
               id="new-team-location-name"
               name="name"
               autoComplete="off"
-              placeholder="Coffee shop…"
+              placeholder={t('Coffee shop…')}
               required
             />
           </div>
           <div className="flex flex-col gap-1">
             <Label htmlFor="new-team-location-description">
-              Description (optional)
+              {t('Description (optional)')}
             </Label>
             <Textarea
               id="new-team-location-description"
@@ -118,7 +123,7 @@ export const NewLocationDialog: React.FC<{
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label>Photos (optional)</Label>
+            <Label>{t('Photos (optional)')}</Label>
             <LocationMediaUpload
               files={files}
               onFilesChange={setFiles}
@@ -133,10 +138,10 @@ export const NewLocationDialog: React.FC<{
               disabled={createLocation.isPending || uploading}
             >
               {createLocation.isPending
-                ? 'Creating…'
+                ? t('Creating…')
                 : uploading
-                  ? 'Uploading…'
-                  : 'Create'}
+                  ? t('Uploading…')
+                  : t('Create')}
             </Button>
           </div>
         </form>

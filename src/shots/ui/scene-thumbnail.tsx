@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BlobLoaderContainer } from '@/ui/shadcn/blob-loader';
 import {
   CONTENT_REJECTION_USER_TITLE,
@@ -99,6 +100,8 @@ const SceneThumbnailComponent: React.FC<SceneThumbnailProps> = ({
   videoStartSeconds = 0,
   draftLabel = null,
 }) => {
+  const { t } = useTranslation('shots');
+
   const showOverlay = hasUpscaleOverlay({
     gridUrl: gridSheetUrl,
     variantIndex: pendingUpscaleIndex,
@@ -172,7 +175,7 @@ const SceneThumbnailComponent: React.FC<SceneThumbnailProps> = ({
         <div className="pointer-events-none absolute top-1 right-1 flex flex-col items-end gap-0.5">
           {isPreview && (
             <span className="rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground backdrop-blur-sm">
-              Storyboard
+              {t('Storyboard')}
             </span>
           )}
           {draftLabel && (
@@ -188,7 +191,7 @@ const SceneThumbnailComponent: React.FC<SceneThumbnailProps> = ({
           title={
             isContentRejectionError(clipError)
               ? CONTENT_REJECTION_USER_TITLE
-              : 'Clip failed to generate'
+              : t('Clip failed to generate')
           }
           className="pointer-events-none absolute bottom-1 left-1 flex size-4 items-center justify-center rounded-full bg-background/80 text-destructive backdrop-blur-sm"
         >
@@ -200,7 +203,7 @@ const SceneThumbnailComponent: React.FC<SceneThumbnailProps> = ({
           <span className="sr-only">
             {isContentRejectionError(clipError)
               ? CONTENT_REJECTION_USER_TITLE
-              : 'Clip failed to generate'}
+              : t('Clip failed to generate')}
           </span>
         </span>
       )}
@@ -216,7 +219,7 @@ const SceneThumbnailComponent: React.FC<SceneThumbnailProps> = ({
             ) : (
               <>
                 <AlertCircle className="h-6 w-6" />
-                <span className="text-xs">Failed to generate</span>
+                <span className="text-xs">{t('Failed to generate')}</span>
               </>
             )}
           </div>

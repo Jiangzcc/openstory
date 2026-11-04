@@ -45,11 +45,12 @@ import {
   parseAst,
 } from '@tanstack/router-utils';
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { asStub } from '@/test/as-stub';
 
 const SRC = resolve(__dirname, '..', '..');
+const SCRIPT_EXTENSION = /\.[cm]?[jt]sx?$/;
 
 /** Bare specifiers (or prefixes) that must never be reachable from client code. */
 const SERVER_ONLY = [
@@ -72,8 +73,12 @@ const SERVER_ONLY = [
 /** Client-side entry points of packages whose root is server-only. */
 const CLIENT_SAFE = ['better-auth/client', 'better-auth/react'];
 
+function projectPath(file: string): string {
+  return relative(SRC, file).replaceAll('\\', '/');
+}
+
 function isClientRootFile(file: string): boolean {
-  const rel = file.replace(`${SRC}/`, '');
+  const rel = projectPath(file);
   if (rel.includes('/server/')) return false;
   if (rel.startsWith('src/mocks/')) return false;
   if (rel === 'src/server.ts' || rel === 'src/instrumentation.ts') return false;
@@ -82,7 +87,7 @@ function isClientRootFile(file: string): boolean {
 
 /** A file under a domain `server/` directory. */
 function isServerOnlyFile(file: string): boolean {
-  return file.includes('/server/');
+  return projectPath(file).includes('/server/');
 }
 
 function isServerOnly(spec: string): boolean {
@@ -101,7 +106,12 @@ function resolveLocal(fromFile: string, spec: string): string | null {
   else return null; // bare specifier — checked against SERVER_ONLY, not walked
   for (const suffix of ['.ts', '.tsx', '/index.ts', '/index.tsx', '']) {
     const candidate = base + suffix;
-    if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
+    if (
+      SCRIPT_EXTENSION.test(candidate) &&
+      existsSync(candidate) &&
+      statSync(candidate).isFile()
+    )
+      return candidate;
   }
   return null;
 }
@@ -115,7 +125,7 @@ function resolveLocal(fromFile: string, spec: string): string | null {
  * their graphs are not walked here.
  */
 function isServerRoute(file: string): boolean {
-  return file.includes('/routes/api/');
+  return projectPath(file).startsWith('src/routes/api/');
 }
 
 function* walkFiles(dir: string): Generator<string> {
@@ -289,6 +299,36 @@ export function clientRetainedImports(source: string): string[] {
 }
 
 describe('client/server import boundary', () => {
+  test.each(['/', '\\'])(
+    'path classification preserves server boundaries with %s separators',
+    (separator) => {
+      const file = (...parts: string[]) => join(SRC, parts.join(separator));
+      expect(isClientRootFile(file('src', 'cast', 'server', 'sheet.ts'))).toBe(
+        false
+      );
+      expect(isServerOnlyFile(file('src', 'cast', 'server', 'sheet.ts'))).toBe(
+        true
+      );
+      expect(isServerRoute(file('src', 'routes', 'api', 'example.ts'))).toBe(
+        true
+      );
+      expect(isClientRootFile(file('src', 'mocks', 'handlers.ts'))).toBe(false);
+      expect(isClientRootFile(file('src', 'server.ts'))).toBe(false);
+      expect(isClientRootFile(file('src', 'models', 'catalog.ts'))).toBe(true);
+    }
+  );
+
+  test('follows local script imports and leaves static resources out of the code graph', () => {
+    const from = join(SRC, 'src', 'router.tsx');
+    expect(resolveLocal(from, './ui/cookie')).toBe(
+      join(SRC, 'src', 'ui', 'cookie.ts')
+    );
+    expect(resolveLocal(from, './ui/providers')).toBe(
+      join(SRC, 'src', 'ui', 'providers.tsx')
+    );
+    expect(resolveLocal(from, '../package.json')).toBeNull();
+  });
+
   // The repo walk below can only catch the model being too strict (a leak it
   // wrongly reports). These cases pin the opposite direction — the one a
   // regression would silently disarm: imports that MUST be treated as
@@ -436,11 +476,11 @@ describe('client/server import boundary', () => {
     }
 
     const trailTo = (file: string): string[] => {
-      const trail: string[] = [file.replace(`${SRC}/`, '')];
+      const trail: string[] = [projectPath(file)];
       for (let at = file; cameFrom.has(at);) {
         const prev = cameFrom.get(at);
         if (prev === undefined) break;
-        trail.unshift(prev.replace(`${SRC}/`, ''));
+        trail.unshift(projectPath(prev));
         at = prev;
       }
       return trail;

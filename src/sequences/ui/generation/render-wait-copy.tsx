@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 type RenderWaitCopyProps = {
   /** Whole minutes remaining, at least 1. */
   etaMinutes: number;
@@ -12,9 +13,16 @@ type RenderWaitCopyProps = {
 export const RenderWaitCopy: React.FC<RenderWaitCopyProps> = ({
   etaMinutes,
   willEmail,
-}) => (
-  <span>
-    Rendering, about {etaMinutes} min.
-    {willEmail && <> We&rsquo;ll email you when it&rsquo;s ready.</>}
-  </span>
-);
+}) => {
+  const { t } = useTranslation('sequences');
+  return (
+    <span>
+      {
+        <>
+          {t('Rendering, about {{value1}} min.', { value1: etaMinutes })}
+          {willEmail && <> {t('We’ll email you when it’s ready.')}</>}
+        </>
+      }
+    </span>
+  );
+};

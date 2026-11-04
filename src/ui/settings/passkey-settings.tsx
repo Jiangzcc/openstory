@@ -1,3 +1,5 @@
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 /**
  * Passkey Settings Component
  * Displays list of passkeys with add/delete functionality
@@ -24,6 +26,9 @@ type PasskeySettingsProps = {
 };
 
 export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
+  const { formatDate } = useLocaleFormatting();
+  const { t } = useTranslation('interface');
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +68,7 @@ export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
       setError(null);
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Failed to add passkey');
+      setError(err instanceof Error ? err.message : t('Failed to add passkey'));
     },
   });
 
@@ -80,7 +85,9 @@ export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
       setError(null);
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Failed to delete passkey');
+      setError(
+        err instanceof Error ? err.message : t('Failed to delete passkey')
+      );
     },
   });
 
@@ -103,12 +110,14 @@ export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
             </div>
             <div>
               <CardTitle>
-                {isSetupFlow ? 'Set up a passkey' : 'Passkeys'}
+                {isSetupFlow ? t('Set up a passkey') : t('Passkeys')}
               </CardTitle>
               <CardDescription>
                 {isSetupFlow
-                  ? 'Sign in instantly with Face ID, Touch ID, or your device PIN'
-                  : 'Manage your passkeys for passwordless sign-in'}
+                  ? t(
+                      'Sign in instantly with Face ID, Touch ID, or your device PIN'
+                    )
+                  : t('Manage your passkeys for passwordless sign-in')}
               </CardDescription>
             </div>
           </div>
@@ -121,7 +130,7 @@ export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
                 {error ||
                   (fetchError instanceof Error
                     ? fetchError.message
-                    : 'Failed to load passkeys')}
+                    : t('Failed to load passkeys'))}
               </AlertDescription>
             </Alert>
           )}
@@ -141,9 +150,13 @@ export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
                   <div className="flex items-center gap-3">
                     <Fingerprint className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">{passkey.name || 'Passkey'}</p>
+                      <p className="font-medium">
+                        {passkey.name || t('Passkey')}
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        Added {new Date(passkey.createdAt).toLocaleDateString()}
+                        {t('Added {{value1}}', {
+                          value1: formatDate(new Date(passkey.createdAt)),
+                        })}
                       </p>
                     </div>
                   </div>
@@ -152,7 +165,7 @@ export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
                     size="icon"
                     onClick={() => deletePasskeyMutation.mutate(passkey.id)}
                     disabled={deletePasskeyMutation.isPending}
-                    aria-label="Delete passkey"
+                    aria-label={t('Delete passkey')}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -161,7 +174,7 @@ export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-4">
-              No passkeys registered yet
+              {t('No passkeys registered yet')}
             </p>
           )}
 
@@ -171,17 +184,17 @@ export function PasskeySettings({ isSetupFlow }: PasskeySettingsProps) {
             className="w-full"
           >
             <Plus className="mr-2 h-4 w-4" />
-            {addPasskeyMutation.isPending ? 'Adding…' : 'Add passkey'}
+            {addPasskeyMutation.isPending ? t('Adding…') : t('Add passkey')}
           </Button>
 
           {isSetupFlow && (
             <div className="flex gap-2 pt-2">
               <Button variant="outline" className="flex-1" onClick={handleSkip}>
-                Skip for now
+                {t('Skip for now')}
               </Button>
               {passkeys && passkeys.length > 0 && (
                 <Button className="flex-1" onClick={handleContinue}>
-                  Continue
+                  {t('Continue')}
                 </Button>
               )}
             </div>

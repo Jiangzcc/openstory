@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { SignInPrompt } from '@/platform/ui/auth/sign-in-prompt';
 import { EvalView } from '@/sequences/ui/eval/eval-view';
 import { PageContainer } from '@/ui/layout/page-container';
@@ -60,17 +61,21 @@ export const Route = createFileRoute('/_app/sequences/')({
     }
   },
   component: SequencesPage,
-  staticData: { breadcrumb: 'Sequences' },
+  staticData: {
+    breadcrumb: { label: 'Sequences', translationKey: 'Sequences' },
+  },
 });
 
 function SequencesPage() {
+  const { t } = useTranslation('pages');
+
   const search = Route.useSearch();
   const { data: currentUser } = useUser();
 
   return (
     <>
-      <PageIntro title="Sequences" maxWidth="full">
-        Your films, from first draft to final cut.
+      <PageIntro title={t('Sequences')} maxWidth="full">
+        {t('Your films, from first draft to final cut.')}
       </PageIntro>
       <PageContainer
         maxWidth="full"
@@ -82,8 +87,10 @@ function SequencesPage() {
         ) : (
           <SignInPrompt
             icon={<Video className="h-12 w-12" />}
-            title="Sign in to see your sequences"
-            description="Your generated sequences live here once you create an account."
+            title={t('Sign in to see your sequences')}
+            description={t(
+              'Your generated sequences live here once you create an account.'
+            )}
           />
         )}
       </PageContainer>

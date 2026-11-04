@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from 'react-i18next';
 /**
  * The `+` panel for the studio composer (#1274): a left nav of sources
  * (Generations / Uploads / Sequences / Cast / Locations / Audio / Draw), a
@@ -237,6 +238,8 @@ function TileGrid({
   multiple,
   onToggle,
 }: TileGridProps) {
+  const { t } = useTranslation('studio');
+
   return (
     <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
       {items.map((item) => {
@@ -288,7 +291,7 @@ function TileGrid({
               {item.kind === 'video' && (
                 <span className="absolute bottom-1 left-1 flex items-center gap-1 rounded bg-background/85 px-1 font-mono text-[10px] leading-4">
                   <Film className="size-3" aria-hidden="true" />
-                  clip
+                  {t('clip')}
                 </span>
               )}
               {ticked && (
@@ -329,6 +332,8 @@ function SequenceDetail({
   sequence: SequenceWithShots;
   onBack: () => void;
 } & Omit<TileGridProps, 'items'>) {
+  const { t } = useTranslation('studio');
+
   const { data: elements } = useSequenceElements(sequence.id);
   const { data: characters } = useSequenceCharacters(sequence.id);
   const { data: locations } = useSequenceLocations(sequence.id);
@@ -377,11 +382,11 @@ function SequenceDetail({
       <div className="flex items-center gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft aria-hidden="true" />
-          Sequences
+          {t('Sequences')}
         </Button>
         <span className="truncate text-sm font-medium">{sequence.title}</span>
       </div>
-      <Section title="Shots" items={shots} {...grid} />
+      <Section title={t('Shots')} items={shots} {...grid} />
       {loading ? (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
           {Array.from({ length: 5 }, (_, i) => (
@@ -390,16 +395,16 @@ function SequenceDetail({
         </div>
       ) : (
         <>
-          <Section title="Elements" items={elementRefs} {...grid} />
-          <Section title="Cast" items={castRefs} {...grid} />
-          <Section title="Locations" items={locationRefs} {...grid} />
+          <Section title={t('Elements')} items={elementRefs} {...grid} />
+          <Section title={t('Cast')} items={castRefs} {...grid} />
+          <Section title={t('Locations')} items={locationRefs} {...grid} />
           {shots.length +
             elementRefs.length +
             castRefs.length +
             locationRefs.length ===
             0 && (
             <p className="text-sm text-muted-foreground">
-              Nothing generated in this sequence yet.
+              {t('Nothing generated in this sequence yet.')}
             </p>
           )}
         </>
@@ -437,6 +442,8 @@ export function StudioReferencePicker({
   onUpload,
   acceptAlso,
 }: StudioReferencePickerProps) {
+  const { t } = useTranslation('studio');
+
   const fileInput = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<Source>('generations');
   const [sequenceId, setSequenceId] = useState<string | null>(null);
@@ -497,10 +504,17 @@ export function StudioReferencePicker({
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
               {!multiple
-                ? 'Pick one, upload, or paste.'
+                ? t('Pick one, upload, or paste.')
                 : limited
-                  ? `Up to ${slots.image} stills${slots.video > 0 ? `, ${slots.video} clips` : ''}${slots.audio > 0 ? `, ${slots.audio} audio` : ''}. Upload or paste.`
-                  : 'Pick any, upload, or paste.'}
+                  ? t(
+                      'Up to {{value1}} stills{{value2}}{{value3}}. Upload or paste.',
+                      {
+                        value1: slots.image,
+                        value2: slots.video > 0 ? `, ${slots.video} clips` : '',
+                        value3: slots.audio > 0 ? `, ${slots.audio} audio` : '',
+                      }
+                    )
+                  : t('Pick any, upload, or paste.')}
             </DialogDescription>
           </div>
           <input
@@ -526,14 +540,14 @@ export function StudioReferencePicker({
               onClick={() => fileInput.current?.click()}
             >
               <Upload aria-hidden="true" />
-              {source === 'audio' ? 'Upload audio' : 'Upload'}
+              {source === 'audio' ? t('Upload audio') : t('Upload')}
             </Button>
           )}
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1">
           <nav
-            aria-label="Reference source"
+            aria-label={t('Reference source')}
             className="flex w-40 shrink-0 flex-col gap-1 border-r p-2"
           >
             {sources.map(({ key, label, icon: Icon }) => (
@@ -574,13 +588,18 @@ export function StudioReferencePicker({
                 <p className="text-sm text-muted-foreground">
                   {limited ? (
                     <span>
-                      MP3 or WAV, up to {slots.audio} more. Seedance: 15 seconds
-                      combined. Each clip becomes{' '}
-                      <span className="font-mono">@Audio1</span>,{' '}
-                      <span className="font-mono">@Audio2</span>… in the prompt.
+                      <Trans
+                        ns="studio"
+                        i18nKey="MP3 or WAV, up to {{value1}} more. Seedance: 15 seconds combined. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt."
+                        components={[
+                          <span key="0" className="font-mono" />,
+                          <span key="1" className="font-mono" />,
+                        ]}
+                        values={{ value1: slots.audio }}
+                      />
                     </span>
                   ) : (
-                    <span>MP3 or WAV.</span>
+                    <span>{t('MP3 or WAV.')}</span>
                   )}
                 </p>
                 <Button
@@ -589,7 +608,7 @@ export function StudioReferencePicker({
                   onClick={() => fileInput.current?.click()}
                 >
                   <Upload aria-hidden="true" />
-                  Upload audio
+                  {t('Upload audio')}
                 </Button>
               </div>
             ) : source === 'sequences' ? (
@@ -634,7 +653,9 @@ export function StudioReferencePicker({
                           {sequence.title}
                         </span>
                         <span className="px-1 pb-0.5 font-mono text-[10px] text-muted-foreground">
-                          {sequence.shotCount} shots
+                          {t('{{value1}} shots', {
+                            value1: sequence.shotCount,
+                          })}
                         </span>
                       </button>
                     </li>
@@ -654,7 +675,7 @@ export function StudioReferencePicker({
         {multiple && source !== 'draw' && (
           <DialogFooter className="mx-0 mb-0 border-t px-4 py-3">
             <Button type="button" variant="ghost" onClick={close}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               type="button"
@@ -664,7 +685,9 @@ export function StudioReferencePicker({
                 close();
               }}
             >
-              {pending.length > 0 ? `Add ${pending.length}` : 'Add'}
+              {pending.length > 0
+                ? t('Add {{value1}}', { value1: pending.length })
+                : t('Add')}
             </Button>
           </DialogFooter>
         )}

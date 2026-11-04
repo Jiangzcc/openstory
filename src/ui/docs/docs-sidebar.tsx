@@ -1,3 +1,4 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -54,6 +55,8 @@ function buildNavTree() {
 const navTree = buildNavTree();
 
 export const DocsSidebar: React.FC = () => {
+  const translateLabel = useLabelTranslation('interface');
+
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
@@ -61,7 +64,7 @@ export const DocsSidebar: React.FC = () => {
     <>
       {navTree.map(({ section, items }) => (
         <SidebarGroup key={section}>
-          <SidebarGroupLabel>{section}</SidebarGroupLabel>
+          <SidebarGroupLabel>{translateLabel(section)}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((doc) => {
@@ -74,10 +77,10 @@ export const DocsSidebar: React.FC = () => {
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
-                      tooltip={doc.title}
+                      tooltip={translateLabel(doc.title)}
                     >
                       <Link to={href}>
-                        <span>{doc.title}</span>
+                        <span>{translateLabel(doc.title)}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

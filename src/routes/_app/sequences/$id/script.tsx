@@ -6,7 +6,7 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/sequences/$id/script')({
   component: ScriptPage,
-  staticData: { breadcrumb: 'Script' },
+  staticData: { breadcrumb: { label: 'Script', translationKey: 'Script' } },
   /**
    * Once a sequence is analysed its script lives in `scene_script_versions` and
    * is edited scene-by-scene in the Scenes script view (#1037). This page only

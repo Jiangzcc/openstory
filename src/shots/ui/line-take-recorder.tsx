@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Record one line at the mic (#1802), from the line itself: Record beside
  * it, then hear the take back under it and Use it or Discard it. The take
@@ -32,6 +34,8 @@ type TakeState =
 export function useMicTake(
   onUse: (line: LineRef, take: Blob) => Promise<void>
 ) {
+  const translateEvent = useLiveTranslation('shots');
+
   const [state, setState] = useState<TakeState>({ kind: 'idle' });
   const recorder = useRef<MediaRecorder | null>(null);
   const start = async (line: LineRef) => {
@@ -39,7 +43,7 @@ export function useMicTake(
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (error) {
-      toast.error('Microphone not available', {
+      toast.error(translateEvent('Microphone not available'), {
         description: error instanceof Error ? error.message : String(error),
       });
       return;
@@ -101,6 +105,8 @@ export const LineTakeButton: React.FC<{
   /** Why this line cannot be recorded now, or null. */
   blockedBecause: string | null;
 }> = ({ take, line, name, blockedBecause }) => {
+  const { t } = useTranslation('shots');
+
   const { state } = take;
   if (state.kind === 'recording' && sameLine(state.line, line)) {
     return (
@@ -110,12 +116,12 @@ export const LineTakeButton: React.FC<{
             size="icon-sm"
             variant="destructive"
             onClick={take.stop}
-            aria-label={`Stop recording ${name}'s line`}
+            aria-label={t("Stop recording {{value1}}'s line", { value1: name })}
           >
             <Square />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Stop recording</TooltipContent>
+        <TooltipContent>{t('Stop recording')}</TooltipContent>
       </Tooltip>
     );
   }
@@ -129,8 +135,11 @@ export const LineTakeButton: React.FC<{
       // a keyboard user never sees the tooltip.
       aria-label={
         blockedBecause
-          ? `Record ${name}'s line — ${blockedBecause}`
-          : `Record ${name}'s line`
+          ? t("Record {{value1}}'s line — {{value2}}", {
+              value1: name,
+              value2: blockedBecause,
+            })
+          : t("Record {{value1}}'s line", { value1: name })
       }
     >
       <Mic />
@@ -146,7 +155,7 @@ export const LineTakeButton: React.FC<{
           button
         )}
       </TooltipTrigger>
-      <TooltipContent>{blockedBecause ?? 'Record'}</TooltipContent>
+      <TooltipContent>{blockedBecause ?? t('Record')}</TooltipContent>
     </Tooltip>
   );
 };
@@ -157,6 +166,8 @@ export const LineTakeReview: React.FC<{
   line: LineRef;
   name: string;
 }> = ({ take, line, name }) => {
+  const { t } = useTranslation('shots');
+
   const { state } = take;
   const mine = state.kind !== 'idle' && sameLine(state.line, line);
   return (
@@ -169,7 +180,7 @@ export const LineTakeReview: React.FC<{
             : 'hidden'
         }
       >
-        Recording… up to {MIC_TAKE_MAX_SECONDS}s
+        {t('Recording… up to {{value1}}s', { value1: MIC_TAKE_MAX_SECONDS })}
       </p>
       {mine && (state.kind === 'review' || state.kind === 'sending') ? (
         <div className="flex flex-col gap-2">
@@ -178,7 +189,7 @@ export const LineTakeReview: React.FC<{
             controls
             src={state.url}
             className="w-full"
-            aria-label={`Your take of ${name}'s line`}
+            aria-label={t("Your take of {{value1}}'s line", { value1: name })}
           />
           <div className="flex gap-2">
             <Button
@@ -186,7 +197,9 @@ export const LineTakeReview: React.FC<{
               disabled={state.kind === 'sending'}
               onClick={take.use}
             >
-              {state.kind === 'sending' ? 'Sending…' : `Use in ${name}'s voice`}
+              {state.kind === 'sending'
+                ? t('Sending…')
+                : t("Use in {{value1}}'s voice", { value1: name })}
             </Button>
             <Button
               size="sm"
@@ -194,7 +207,7 @@ export const LineTakeReview: React.FC<{
               disabled={state.kind === 'sending'}
               onClick={take.discard}
             >
-              Discard
+              {t('Discard')}
             </Button>
           </div>
         </div>

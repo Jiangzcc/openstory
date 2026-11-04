@@ -1,7 +1,13 @@
+import { localizeMeta } from '@/ui/i18n/head';
 // Used only inside createIsomorphicFn().server(…) below. The Start compiler
 // strips that body from the client build; the boundary test models the strip.
 // oxlint-disable-next-line boundaries/no-server-imports
 import { getProductionDeploymentAppUrl } from '@/platform/server/env/environment';
+import { LocalizedHead } from '@/ui/i18n/localized-head';
+import { readLocale } from '@/platform/i18n/preference';
+import { resolveLocale } from '@/platform/i18n/locale';
+import type { i18n as I18n } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { IS_PREVIEW_DEPLOYMENT } from '@/platform/flags';
 import { LastPageTracker } from '@/platform/ui/auth/last-page-tracker';
 import { DocsReferrerTracker } from '@/ui/docs/docs-referrer-tracker';
@@ -30,6 +36,7 @@ import { getRequest } from '@tanstack/react-start/server';
 
 type RouterContext = {
   queryClient: QueryClient;
+  i18n: I18n;
 };
 const getCanonicalOriginFn = createIsomorphicFn().server(() => {
   const request = getRequest();
@@ -49,17 +56,18 @@ const getCanonicalOriginFn = createIsomorphicFn().server(() => {
 });
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async ({ location, context }) => {
     // This is to redirect from git origins to the hash origin on preview branches
     const canonicalOrigin = getCanonicalOriginFn();
     if (canonicalOrigin) {
       throw redirect({ href: canonicalOrigin + location.href });
     }
+    await context.i18n.changeLanguage(readLocale());
   },
-  head: () => {
+  head: ({ match }) => {
     const isPreview = IS_PREVIEW_DEPLOYMENT;
     return {
-      meta: [
+      meta: localizeMeta(match.context.i18n, 'pages', [
         ...(isPreview
           ? [{ name: 'robots', content: 'noindex, nofollow' }]
           : []),
@@ -86,7 +94,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         { name: 'twitter:description', content: SITE_CONFIG.description },
         { name: 'twitter:image', content: SITE_CONFIG.ogImage },
         { name: 'twitter:url', content: SITE_CONFIG.url },
-      ],
+      ]),
       scripts: [
         {
           type: 'application/ld+json',
@@ -139,10 +147,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   const { queryClient } = Route.useRouteContext();
+  const { i18n } = useTranslation();
   return (
-    <html lang="en" className="dark">
+    <html lang={resolveLocale(i18n.resolvedLanguage)} className="dark">
       <head>
         <HeadContent />
+        <LocalizedHead />
       </head>
       <body>
         <Providers queryClient={queryClient}>
@@ -157,6 +167,8 @@ function RootLayout() {
 }
 
 function ErrorBoundary({ error, reset }: ErrorComponentProps) {
+  const { t } = useTranslation('pages');
+
   const router = useRouter();
 
   if (isAppUpdatedError(error)) {
@@ -169,11 +181,11 @@ function ErrorBoundary({ error, reset }: ErrorComponentProps) {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-4xl font-bold">Something went wrong</h1>
+      <h1 className="text-4xl font-bold">{t('Something went wrong')}</h1>
       <p className="text-muted-foreground max-w-md text-center">
         {error instanceof Error
           ? error.message
-          : 'An unexpected error occurred'}
+          : t('An unexpected error occurred')}
       </p>
       <div className="flex gap-2">
         <Button
@@ -183,10 +195,10 @@ function ErrorBoundary({ error, reset }: ErrorComponentProps) {
             void router.invalidate();
           }}
         >
-          Try again
+          {t('Try again')}
         </Button>
         <Button asChild>
-          <Link to="/">Go home</Link>
+          <Link to="/">{t('Go home')}</Link>
         </Button>
       </div>
     </div>

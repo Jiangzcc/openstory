@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { RouteErrorFallback } from '@/ui/error/route-error-fallback';
 import { PageContainer } from '@/ui/layout/page-container';
 import { isSystemAdminFn } from '@/billing/gift-tokens.fn';
@@ -13,10 +14,13 @@ export const Route = createFileRoute('/_app/admin')({
     }
   },
   component: AdminLayout,
-  staticData: { breadcrumb: { label: 'Admin', to: '/admin/usage' } },
-  errorComponent: (props) => (
-    <RouteErrorFallback {...props} heading="Admin error" />
-  ),
+  staticData: {
+    breadcrumb: { translationKey: 'Admin', label: 'Admin', to: '/admin/usage' },
+  },
+  errorComponent: function RouteComponent(props) {
+    const { t } = useTranslation('admin');
+    return <RouteErrorFallback {...props} heading={t('Admin error')} />;
+  },
 });
 
 function AdminLayout() {

@@ -1,3 +1,6 @@
+import { LanguageSwitcher } from '@/ui/i18n/language-switcher';
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { Alert, AlertDescription } from '@/ui/shadcn/alert';
 import { Button } from '@/ui/shadcn/button';
@@ -69,21 +72,27 @@ function GiftCodePage() {
 
 const CenteredLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
-}) => (
-  <div className="flex min-h-screen items-center justify-center bg-background p-4">
-    <div className="w-full max-w-sm space-y-8">
-      <div className="flex flex-col items-center gap-4 text-center">
-        <Link to="/">
-          <OpenStoryLogo size="lg" />
-        </Link>
-        <p className="text-muted-foreground">
-          AI video production, from script to screen.
-        </p>
+}) => {
+  const { t } = useTranslation('pages');
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
       </div>
-      <Card className="text-center">{children}</Card>
+      <div className="w-full max-w-sm space-y-8">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Link to="/">
+            <OpenStoryLogo size="lg" />
+          </Link>
+          <p className="text-muted-foreground">
+            {t('AI video production, from script to screen.')}
+          </p>
+        </div>
+        <Card className="text-center">{children}</Card>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const CodeDisplay: React.FC<{ code: string }> = ({ code }) => (
   <div className="rounded-lg border bg-muted/50 px-4 py-3">
@@ -116,6 +125,9 @@ type GiftCodeViewProps = {
 };
 
 function AutoRedeemView({ code }: GiftCodeViewProps) {
+  const translateEvent = useLiveTranslation('pages');
+  const { t } = useTranslation('pages');
+
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const posthog = usePostHog();
@@ -139,9 +151,16 @@ function AutoRedeemView({ code }: GiftCodeViewProps) {
         new_balance: result.newBalance,
       });
 
-      toast.success(`$${result.amountUsd.toFixed(2)} added to your balance`, {
-        description: `New balance: $${result.newBalance.toFixed(2)}`,
-      });
+      toast.success(
+        translateEvent('${{value1}} added to your balance', {
+          value1: result.amountUsd.toFixed(2),
+        }),
+        {
+          description: translateEvent('New balance: ${{value1}}', {
+            value1: result.newBalance.toFixed(2),
+          }),
+        }
+      );
 
       const returnTo = localStorage.getItem(RETURN_KEY);
       if (returnTo) {
@@ -190,12 +209,12 @@ function AutoRedeemView({ code }: GiftCodeViewProps) {
                 type="button"
                 onClick={() => openAddCreditsDialog('gift_code')}
               >
-                Top up credits
+                {t('Top up credits')}
               </Button>
             ) : (
               <Button variant="ghost" asChild>
                 <Link to="/credits" search={{ tab: 'gift-codes' }}>
-                  Enter a different code
+                  {t('Enter a different code')}
                 </Link>
               </Button>
             )}
@@ -212,7 +231,7 @@ function AutoRedeemView({ code }: GiftCodeViewProps) {
           <IconBadge variant="destructive">
             <Gift className="h-7 w-7 text-destructive" />
           </IconBadge>
-          <CardTitle className="text-2xl">Redemption failed</CardTitle>
+          <CardTitle className="text-2xl">{t('Redemption failed')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Alert variant="destructive">
@@ -222,11 +241,11 @@ function AutoRedeemView({ code }: GiftCodeViewProps) {
           </Alert>
           <div className="flex flex-col gap-2">
             <Button type="button" onClick={redeem} disabled={isPending}>
-              Try again
+              {t('Try again')}
             </Button>
             <Button variant="ghost" asChild>
               <Link to="/credits" search={{ tab: 'gift-codes' }}>
-                Enter code manually
+                {t('Enter code manually')}
               </Link>
             </Button>
           </div>
@@ -241,8 +260,8 @@ function AutoRedeemView({ code }: GiftCodeViewProps) {
         <IconBadge variant="primary">
           <Loader2 className="h-7 w-7 animate-spin text-primary" />
         </IconBadge>
-        <CardTitle className="text-2xl">Redeeming your gift…</CardTitle>
-        <CardDescription>Adding credits to your account</CardDescription>
+        <CardTitle className="text-2xl">{t('Redeeming your gift…')}</CardTitle>
+        <CardDescription>{t('Adding credits to your account')}</CardDescription>
       </CardHeader>
       <CardContent>
         <CodeDisplay code={code} />
@@ -252,6 +271,8 @@ function AutoRedeemView({ code }: GiftCodeViewProps) {
 }
 
 function GiftLandingPage({ code }: GiftCodeViewProps) {
+  const { t } = useTranslation('pages');
+
   useEffect(() => {
     sessionStorage.setItem(STORAGE_KEY, code);
   }, [code]);
@@ -262,16 +283,16 @@ function GiftLandingPage({ code }: GiftCodeViewProps) {
         <IconBadge variant="primary">
           <Gift className="h-7 w-7 text-primary" />
         </IconBadge>
-        <CardTitle className="text-2xl">Credits incoming!</CardTitle>
+        <CardTitle className="text-2xl">{t('Credits incoming!')}</CardTitle>
         <CardDescription>
-          Sign in to redeem your gift and start creating.
+          {t('Sign in to redeem your gift and start creating.')}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <CodeDisplay code={code} />
         <Button asChild size="lg">
           <Link to="/login" search={{ redirectTo: `/gift/${code}` }}>
-            Sign in to redeem
+            {t('Sign in to redeem')}
           </Link>
         </Button>
       </CardContent>

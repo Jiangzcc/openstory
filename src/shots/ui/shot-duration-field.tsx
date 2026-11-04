@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Shot Duration Field — the duration control for a shot, on the video surface.
  *
@@ -64,6 +66,9 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
   filmSeconds,
   dialogueSeconds,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   // `undefined` = no draft (the Select mirrors the saved value). Mount this
   // component with `key={shot.id}` so switching shots drops the draft.
   const [editedSeconds, setEditedSeconds] = useState<number | undefined>(
@@ -122,11 +127,14 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
           queryKey: sequenceKeys.detail(sequenceId),
         }),
       ]);
-      toast.success('Duration saved');
+      toast.success(translateEvent('Duration saved'));
     },
     onError: (error) => {
-      toast.error('Failed to save duration', {
-        description: error instanceof Error ? error.message : 'Unknown error',
+      toast.error(translateEvent('Failed to save duration'), {
+        description:
+          error instanceof Error
+            ? error.message
+            : translateEvent('Unknown error'),
       });
     },
   });
@@ -142,11 +150,16 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
     onSuccess: ({ durationSeconds }) => {
       const snapped = snapDuration(durationSeconds, motionModel);
       setEditedSeconds(snapped);
-      toast.success(`Suggested duration: ${snapped}s`);
+      toast.success(
+        translateEvent('Suggested duration: {{value1}}s', { value1: snapped })
+      );
     },
     onError: (error) => {
-      toast.error('Duration estimate failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
+      toast.error(translateEvent('Duration estimate failed'), {
+        description:
+          error instanceof Error
+            ? error.message
+            : translateEvent('Unknown error'),
       });
     },
   });
@@ -158,7 +171,7 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
   return (
     <div className="space-y-2">
       <label htmlFor="shot-duration-input" className="text-sm font-medium">
-        Duration (seconds)
+        {t('Duration (seconds)')}
       </label>
       <div className="flex flex-wrap items-center gap-2">
         <Select
@@ -192,18 +205,22 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
           ) : (
             <Sparkles className="mr-2 h-4 w-4" />
           )}
-          {isEstimating ? 'Estimating…' : 'Estimate'}
+          {isEstimating ? t('Estimating…') : t('Estimate')}
         </Button>
 
         {sceneSeconds !== undefined && filmSeconds !== undefined && (
           <span className="text-xs tabular-nums text-muted-foreground">
-            Scene {formatSeconds(sceneSeconds)} · Film{' '}
-            {formatSeconds(filmSeconds)}
+            {t('Scene {{value1}} · Film {{value2}}', {
+              value1: formatSeconds(sceneSeconds),
+              value2: formatSeconds(filmSeconds),
+            })}
           </span>
         )}
         {dialogueLonger && dialogueSeconds != null && (
           <span className="text-xs tabular-nums text-muted-foreground">
-            Dialogue {formatSeconds(dialogueSeconds)}
+            {t('Dialogue {{value1}}', {
+              value1: formatSeconds(dialogueSeconds),
+            })}
           </span>
         )}
 
@@ -215,7 +232,7 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
               onClick={() => setEditedSeconds(undefined)}
               disabled={busy}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               size="sm"
@@ -223,7 +240,7 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
               disabled={!shot || busy}
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSaving ? 'Saving…' : 'Save'}
+              {isSaving ? t('Saving…') : t('Save')}
             </Button>
           </div>
         )}
@@ -235,12 +252,17 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
           that isn't on screen. */}
       {isDirty ? (
         <p className="text-xs text-muted-foreground">
-          Saving will mark the rendered video as stale. Prompts are unaffected.
+          {t(
+            'Saving will mark the rendered video as stale. Prompts are unaffected.'
+          )}
         </p>
       ) : rendersSnapped ? (
         <p className="text-xs text-muted-foreground">
-          Stored as {savedSeconds}s — {videoModelDisplayName(motionModel)}{' '}
-          renders it at {snappedSavedSeconds}s.
+          {t('Stored as {{value1}}s — {{value2}} renders it at {{value3}}s.', {
+            value1: savedSeconds,
+            value2: videoModelDisplayName(motionModel),
+            value3: snappedSavedSeconds,
+          })}
         </p>
       ) : null}
       {dialogueLonger &&
@@ -248,8 +270,22 @@ export const ShotDurationField: React.FC<ShotDurationFieldProps> = ({
         raisedForDialogue != null && (
           <p className="text-xs text-muted-foreground">
             {raisedForDialogue < dialogueSeconds
-              ? `Dialogue is ${formatSeconds(dialogueSeconds)} — ${videoModelDisplayName(motionModel)} maxes at ${formatSeconds(raisedForDialogue)}, so the take won't attach.`
-              : `Dialogue is ${formatSeconds(dialogueSeconds)} — this shot is ${formatSeconds(currentSeconds)}. Generate will render at ${formatSeconds(raisedForDialogue)}.`}
+              ? t(
+                  "Dialogue is {{value1}} — {{value2}} maxes at {{value3}}, so the take won't attach.",
+                  {
+                    value1: formatSeconds(dialogueSeconds),
+                    value2: videoModelDisplayName(motionModel),
+                    value3: formatSeconds(raisedForDialogue),
+                  }
+                )
+              : t(
+                  'Dialogue is {{value1}} — this shot is {{value2}}. Generate will render at {{value3}}.',
+                  {
+                    value1: formatSeconds(dialogueSeconds),
+                    value2: formatSeconds(currentSeconds),
+                    value3: formatSeconds(raisedForDialogue),
+                  }
+                )}
           </p>
         )}
     </div>

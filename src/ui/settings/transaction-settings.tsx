@@ -1,3 +1,5 @@
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 /**
  * Transaction Settings Component
  * Full transaction history with infinite scroll
@@ -24,6 +26,9 @@ type TransactionData = {
 const PAGE_SIZE = 50;
 
 function TransactionRow({ tx }: { tx: TransactionData }) {
+  const { formatDateTime } = useLocaleFormatting();
+  const { t } = useTranslation('interface');
+
   return (
     <div className="flex items-center justify-between rounded-lg border p-3">
       <div className="flex-1 min-w-0">
@@ -31,7 +36,7 @@ function TransactionRow({ tx }: { tx: TransactionData }) {
           {tx.description ?? tx.type}
         </p>
         <p className="text-xs text-muted-foreground">
-          {new Date(tx.createdAt).toLocaleString()}
+          {formatDateTime(new Date(tx.createdAt))}
         </p>
       </div>
       <div className="flex items-center gap-2 ml-4">
@@ -53,7 +58,7 @@ function TransactionRow({ tx }: { tx: TransactionData }) {
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground"
-            aria-label="View receipt"
+            aria-label={t('View receipt')}
           >
             <ExternalLink className="h-4 w-4" />
           </a>
@@ -64,6 +69,8 @@ function TransactionRow({ tx }: { tx: TransactionData }) {
 }
 
 export function TransactionSettings() {
+  const { t } = useTranslation('interface');
+
   const sentinelRef = React.useRef<HTMLDivElement>(null);
 
   const {
@@ -112,7 +119,7 @@ export function TransactionSettings() {
         <p className="text-sm text-destructive">
           {error instanceof Error
             ? error.message
-            : 'Failed to load transactions'}
+            : t('Failed to load transactions')}
         </p>
       )}
 
@@ -121,8 +128,10 @@ export function TransactionSettings() {
           <CreditCard className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Transaction History</h2>
-          <p className="text-sm text-muted-foreground">All credit activity</p>
+          <h2 className="text-lg font-semibold">{t('Transaction History')}</h2>
+          <p className="text-sm text-muted-foreground">
+            {t('All credit activity')}
+          </p>
         </div>
       </div>
 
@@ -134,7 +143,7 @@ export function TransactionSettings() {
         </div>
       ) : allTransactions.length === 0 ? (
         <p className="text-center text-muted-foreground py-4">
-          No transactions yet
+          {t('No transactions yet')}
         </p>
       ) : (
         <div className="space-y-2">
@@ -144,7 +153,7 @@ export function TransactionSettings() {
           <div ref={sentinelRef}>
             {isFetchingNextPage && (
               <p className="text-center text-sm text-muted-foreground py-2">
-                Loading more…
+                {t('Loading more…')}
               </p>
             )}
           </div>

@@ -37,3 +37,7 @@ A second sync reads `manifest.json` and skips a path whose `versionId` matches a
 A default look's null sheet pointer is the character id, and a location's null sheet pointer is the location id: those are the rows the backfill stored. Sheet fallback bytes are used only when that stored pointer is null and there are no version rows. A pointer that names a missing row contributes nothing.
 
 Studio `generated_assets` and the BytePlus pool stay out. A container zip is not this feature.
+
+## Secondary-development localization
+
+Secondary-development localization adapts the UI labels and known download-result sentences at render time. Asset manifests, paths, commands, HTTP statuses, stored version IDs and folder write/skip behavior stay unchanged. Unknown diagnostics retain their source text. The asset page adapts known group and kind-specific label templates through `localize-asset-label.ts`; user element tokens and embedded names remain verbatim. The adapter never rewrites the manifest.

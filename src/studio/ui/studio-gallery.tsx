@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { Trans, useTranslation } from 'react-i18next';
 import { playHoverPreview } from '@/ui/play-hover-preview';
 import {
   AlertDialog,
@@ -152,13 +154,15 @@ function StudioFailure({
   style?: CSSProperties;
   children?: ReactNode;
 }) {
+  const { t } = useTranslation('studio');
+
   return (
     <section
-      aria-label={`Couldn't generate ${label}`}
+      aria-label={t("Couldn't generate {{value1}}", { value1: label })}
       className="flex w-full flex-col items-center justify-center gap-3 p-4 text-center"
       style={style}
     >
-      <p className="text-sm font-medium">Couldn't generate</p>
+      <p className="text-sm font-medium">{t("Couldn't generate")}</p>
       <p
         className={cn(
           'max-w-prose text-sm break-words text-muted-foreground select-text',
@@ -185,6 +189,9 @@ function StudioCard({
   supportMode: boolean;
   onReuse?: (reuse: StudioReuse) => void;
 }) {
+  const { t } = useTranslation('studio');
+  const { t: translateDraft } = useTranslation('motion');
+
   const reuse = studioReuse(asset);
   const favorite = useToggleStudioFavorite();
   const renderAtQuality = useRenderStudioAssetAtQuality();
@@ -214,17 +221,17 @@ function StudioCard({
       {asset.status === 'failed' ? (
         <StudioFailure
           error={asset.error}
-          label={prompt || 'this asset'}
+          label={prompt || t('this asset')}
           className="line-clamp-4 sm:line-clamp-6"
           style={{ aspectRatio: studioAspectRatio(asset).replace(':', ' / ') }}
         >
           {onReuse && reuse && (
             <Button type="button" size="sm" onClick={() => onReuse(reuse)}>
-              Try again
+              {t('Try again')}
             </Button>
           )}
           <Button type="button" size="sm" variant="outline" onClick={onOpen}>
-            Details
+            {t('Details')}
           </Button>
         </StudioFailure>
       ) : (
@@ -233,7 +240,7 @@ function StudioCard({
           onClick={onOpen}
           className="block w-full overflow-hidden text-left"
           style={{ aspectRatio: studioAspectRatio(asset).replace(':', ' / ') }}
-          aria-label={prompt || 'Generated asset'}
+          aria-label={prompt || t('Generated asset')}
         >
           {inFlight ? (
             <Skeleton className="h-full w-full rounded-none" />
@@ -262,14 +269,14 @@ function StudioCard({
           ) : primary ? (
             <AppImage
               src={primary.url}
-              alt={prompt || 'Generated image'}
+              alt={prompt || t('Generated image')}
               width={768}
               height={768}
               className="h-full w-full object-cover"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              No output
+              {t('No output')}
             </div>
           )}
         </button>
@@ -277,7 +284,7 @@ function StudioCard({
       {/* A draft tile says so, with the days left to render its final (#1756). */}
       {asset.draftTaskId && asset.status === 'completed' && (
         <span className="pointer-events-none absolute top-2 left-2 z-10 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground backdrop-blur-sm">
-          {draftBadgeLabel(asset.createdAt)}
+          {draftBadgeLabel(asset.createdAt, undefined, translateDraft)}
         </span>
       )}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end gap-1 p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 group-has-[[data-state=open]]:opacity-100">
@@ -287,7 +294,9 @@ function StudioCard({
             size="icon"
             variant="secondary"
             className="pointer-events-auto"
-            aria-label={asset.isFavorite ? 'Remove from favorites' : 'Favorite'}
+            aria-label={
+              asset.isFavorite ? t('Remove from favorites') : t('Favorite')
+            }
             aria-pressed={asset.isFavorite}
             onClick={() =>
               favorite.mutate({
@@ -310,14 +319,14 @@ function StudioCard({
                 size="icon"
                 variant="secondary"
                 className="pointer-events-auto"
-                aria-label="Render final"
+                aria-label={t('Render final')}
                 disabled={renderAtQuality.isPending}
                 onClick={() => renderAtQuality.mutate(asset.id)}
               >
                 <Sparkles aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Render final</TooltipContent>
+            <TooltipContent>{t('Render final')}</TooltipContent>
           </Tooltip>
         )}
         <StudioShareMenu asset={asset} className="pointer-events-auto" />
@@ -336,7 +345,7 @@ function StudioCard({
           aria-live="polite"
           className="absolute inset-x-0 bottom-0 bg-background/80 px-2 py-1 text-xs text-muted-foreground tabular-nums"
         >
-          {asset.status === 'queued' ? 'Queued…' : 'Generating…'}
+          {asset.status === 'queued' ? t('Queued…') : t('Generating…')}
           <span>{` ${progress ?? 0}%`}</span>
         </p>
       )}
@@ -345,7 +354,7 @@ function StudioCard({
 }
 
 /** Ways to begin, each handed to the assistant as a first line (#2155). */
-const ASSISTANT_STARTERS: Record<StudioActivity, readonly string[]> = {
+const ASSISTANT_STARTERS = {
   image: [
     'A reference still for a character I describe',
     'A mood board for a scene from one of my sequences',
@@ -356,12 +365,14 @@ const ASSISTANT_STARTERS: Record<StudioActivity, readonly string[]> = {
     'A looping background for a title card',
     'Animate a character sheet into a turnaround',
   ],
-};
+} as const satisfies Record<StudioActivity, readonly string[]>;
 
 function AssistantStarters({ activity }: { activity: StudioActivity }) {
+  const { t } = useTranslation('studio');
+
   return (
     <div className="flex flex-col items-center gap-3">
-      <p className="text-muted-foreground">What do you want to make?</p>
+      <p className="text-muted-foreground">{t('What do you want to make?')}</p>
       <div className="flex flex-wrap justify-center gap-2">
         {ASSISTANT_STARTERS[activity].map((starter) => (
           <Button
@@ -371,7 +382,7 @@ function AssistantStarters({ activity }: { activity: StudioActivity }) {
             size="sm"
             onClick={() => openAssistant({ context: [], prompt: starter })}
           >
-            {starter}
+            {t(starter)}
           </Button>
         ))}
       </div>
@@ -381,6 +392,8 @@ function AssistantStarters({ activity }: { activity: StudioActivity }) {
 
 /** Stand-in for a generation whose rows have not landed in the list yet (#1455). */
 function PendingCard({ aspectRatio }: { aspectRatio: string }) {
+  const { t } = useTranslation('studio');
+
   return (
     <article className="relative overflow-hidden rounded-lg border bg-muted">
       <Skeleton
@@ -391,7 +404,7 @@ function PendingCard({ aspectRatio }: { aspectRatio: string }) {
         aria-live="polite"
         className="absolute inset-x-0 bottom-0 bg-background/80 px-2 py-1 text-xs text-muted-foreground"
       >
-        Starting…
+        {t('Starting…')}
       </p>
     </article>
   );
@@ -407,6 +420,9 @@ function StudioShareMenu({
   asset: GeneratedAsset;
   className?: string;
 }) {
+  const translateEvent = useLiveTranslation('studio');
+  const { t } = useTranslation('studio');
+
   const posthog = usePostHog();
   const primary = studioPrimaryOutput(asset);
   if (!primary || asset.status !== 'completed') return null;
@@ -421,10 +437,10 @@ function StudioShareMenu({
     });
     const shareable = studioShareUrl(primary.url, window.location.origin);
     if (!(await copyTextToClipboard(shareable))) {
-      toast.error('Failed to copy URL');
+      toast.error(translateEvent('Failed to copy URL'));
       return;
     }
-    toast.success('Copied');
+    toast.success(translateEvent('Copied'));
   };
 
   const download = () => {
@@ -448,13 +464,13 @@ function StudioShareMenu({
             type="button"
             variant="secondary"
             size="icon"
-            aria-label="Download"
+            aria-label={t('Download')}
             onClick={download}
           >
             <Download aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Download</TooltipContent>
+        <TooltipContent>{t('Download')}</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -462,13 +478,13 @@ function StudioShareMenu({
             type="button"
             variant="secondary"
             size="icon"
-            aria-label="Share link"
+            aria-label={t('Share link')}
             onClick={() => void copyLink()}
           >
             <Link aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Share link</TooltipContent>
+        <TooltipContent>{t('Share link')}</TooltipContent>
       </Tooltip>
     </div>
   );
@@ -490,6 +506,8 @@ function studioPlayerWidth(aspect: AspectRatio): string {
 
 /** The opened asset at viewer size: the media fills the dialog, letterboxed. */
 function StudioViewer({ asset }: { asset: GeneratedAsset }) {
+  const { t } = useTranslation('studio');
+
   const primary = studioPrimaryOutput(asset);
   const poster = studioPosterOutput(asset);
   const prompt = studioPrompt(asset);
@@ -499,7 +517,7 @@ function StudioViewer({ asset }: { asset: GeneratedAsset }) {
     return (
       <StudioFailure
         error={asset.error}
-        label={prompt || 'this asset'}
+        label={prompt || t('this asset')}
         className="min-h-0 overflow-y-auto"
       />
     );
@@ -527,7 +545,7 @@ function StudioViewer({ asset }: { asset: GeneratedAsset }) {
         ) : (
           <img
             src={primary.url}
-            alt={prompt || 'Generated image'}
+            alt={prompt || t('Generated image')}
             className="block max-h-full max-w-full object-contain"
           />
         )}
@@ -583,13 +601,15 @@ function referenceContentType(reference: StudioShownReference): string {
 }
 
 function ReferenceDownload({ reference }: { reference: StudioShownReference }) {
+  const { t } = useTranslation('studio');
+
   const id = reference.label.replace(/^@/, '');
   return (
     <Button asChild variant="secondary" size="icon">
       <a
         href={studioDownloadHref(reference.url)}
         download={studioDownloadFilename(id, referenceContentType(reference))}
-        aria-label={`Download ${reference.label}`}
+        aria-label={t('Download {{value1}}', { value1: reference.label })}
       >
         <Download aria-hidden="true" />
       </a>
@@ -638,6 +658,8 @@ function ReferenceTile({
   onOpen?: () => void;
   triggerRef?: (node: HTMLButtonElement | null) => void;
 }) {
+  const { t } = useTranslation('studio');
+
   return (
     <li className="w-16 shrink-0">
       <figure className="flex flex-col items-center gap-1">
@@ -647,7 +669,7 @@ function ReferenceTile({
               ref={triggerRef}
               type="button"
               className="block size-16 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              aria-label={`Open ${reference.label}`}
+              aria-label={t('Open {{value1}}', { value1: reference.label })}
               onClick={onOpen}
             >
               <ReferencePreview reference={reference} />
@@ -665,6 +687,8 @@ function ReferenceTile({
 }
 
 function ReferenceList({ references }: { references: StudioShownReference[] }) {
+  const { t } = useTranslation('studio');
+
   const visual = references.filter((reference) => reference.kind !== 'audio');
   const [openAt, setOpenAt] = useState<number | null>(null);
   const triggers = useRef<(HTMLButtonElement | null)[]>([]);
@@ -674,7 +698,7 @@ function ReferenceList({ references }: { references: StudioShownReference[] }) {
     <>
       <ul
         className="flex shrink-0 gap-2 overflow-x-auto"
-        aria-label="References"
+        aria-label={t('References')}
       >
         {references.map((reference) => {
           const visualIndex = visual.indexOf(reference);
@@ -719,9 +743,9 @@ function ReferenceList({ references }: { references: StudioShownReference[] }) {
           }}
         >
           <DialogHeader>
-            <DialogTitle>{open?.label ?? 'Reference'}</DialogTitle>
+            <DialogTitle>{open?.label ?? t('Reference')}</DialogTitle>
             <DialogDescription>
-              Reference used for this generation
+              {t('Reference used for this generation')}
             </DialogDescription>
           </DialogHeader>
           {open && (
@@ -764,16 +788,21 @@ function EditHistory({
   /** An opener for a step still in the gallery; undefined otherwise. */
   onOpen?: (id: string) => (() => void) | undefined;
 }) {
+  const { t } = useTranslation('studio');
+
   const { data: history } = useStudioEditHistory(assetId);
   const earlier = history.slice(0, -1);
   if (earlier.length === 0) return null;
   return (
-    <section className="flex shrink-0 flex-col gap-2" aria-label="History">
-      <h3 className="text-sm font-medium">History</h3>
+    <section className="flex shrink-0 flex-col gap-2" aria-label={t('History')}>
+      <h3 className="text-sm font-medium">{t('History')}</h3>
       <ol className="flex max-h-48 flex-col gap-2 overflow-y-auto">
         {earlier.map((step, index) => {
-          const text = readableStudioPrompt(step.prompt) || 'No prompt';
-          const label = index === 0 ? 'Original' : `Edit ${index}`;
+          const text = readableStudioPrompt(step.prompt) || t('No prompt');
+          const label =
+            index === 0
+              ? t('Original')
+              : t('Edit {{value1}}', { value1: index });
           const open = onOpen?.(step.id);
           return (
             <li key={step.id} className="flex flex-col gap-0.5 text-sm">
@@ -811,6 +840,8 @@ function EditVideoForm({
   pending: boolean;
   onEdit: (prompt: string, draft: boolean) => void;
 }) {
+  const { t } = useTranslation('studio');
+
   return (
     <form
       className="flex shrink-0 flex-col gap-2"
@@ -824,14 +855,14 @@ function EditVideoForm({
       }}
     >
       <label htmlFor="studio-edit-prompt" className="text-sm font-medium">
-        Edit video
+        {t('Edit video')}
       </label>
       <Textarea
         id="studio-edit-prompt"
         name="prompt"
         required
         rows={3}
-        placeholder="Make it night, keep everything else"
+        placeholder={t('Make it night, keep everything else')}
         className="text-base md:text-sm"
         onKeyDown={(event) => {
           if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -843,10 +874,16 @@ function EditVideoForm({
       {!sourceIsDraft && (
         <div className="flex items-center justify-between gap-4">
           <label htmlFor="studio-edit-draft" className="text-sm">
-            Draft first
-            <span className="block text-xs text-muted-foreground">
-              480p now; render the final later
-            </span>
+            <Trans
+              ns="studio"
+              i18nKey="Draft first<0>480p now; render the final later</0>"
+              components={[
+                <span
+                  key="0"
+                  className="block text-xs text-muted-foreground"
+                />,
+              ]}
+            />
           </label>
           <Switch id="studio-edit-draft" name="draft" defaultChecked />
         </div>
@@ -856,12 +893,12 @@ function EditVideoForm({
         className="self-start pointer-coarse:h-11"
         disabled={pending}
       >
-        {pending ? 'Starting…' : 'Edit'}
+        {pending ? t('Starting…') : t('Edit')}
       </Button>
       <p className="text-xs text-muted-foreground">
         {sourceIsDraft
-          ? 'Seedance 2.5 · keeps the length · stays a draft'
-          : 'Seedance 2.5 · keeps the length'}
+          ? t('Seedance 2.5 · keeps the length · stays a draft')
+          : t('Seedance 2.5 · keeps the length')}
       </p>
     </form>
   );
@@ -929,6 +966,8 @@ export function GenerationDetail({
   /** Runs as the assistant opens with this asset (#2155); absent in support mode. */
   onAskAssistant?: () => void;
 }) {
+  const { t } = useTranslation('studio');
+
   const prompt = readableStudioPrompt(studioPrompt(asset));
   const references = studioShownReferences(asset);
   const reuse = studioReuse(asset);
@@ -950,7 +989,7 @@ export function GenerationDetail({
             type="button"
             variant="secondary"
             size="icon"
-            aria-label="Previous generation"
+            aria-label={t('Previous generation')}
             className="absolute top-1/2 left-4 -translate-y-1/2 rounded-full pointer-coarse:size-11"
             onClick={onPrev}
           >
@@ -962,7 +1001,7 @@ export function GenerationDetail({
             type="button"
             variant="secondary"
             size="icon"
-            aria-label="Next generation"
+            aria-label={t('Next generation')}
             className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full pointer-coarse:size-11"
             onClick={onNext}
           >
@@ -972,7 +1011,7 @@ export function GenerationDetail({
       </div>
       <aside className="flex max-h-[40%] w-full shrink-0 flex-col gap-3 overflow-y-auto border-t bg-popover p-4 md:max-h-full md:w-96 md:self-start md:overflow-hidden md:border-t-0 md:border-l md:pr-12">
         <DialogHeader className="shrink-0">
-          <DialogTitle>{asset.modelName || 'Generation'}</DialogTitle>
+          <DialogTitle>{asset.modelName || t('Generation')}</DialogTitle>
           <DialogDescription>{facts.join(' · ')}</DialogDescription>
         </DialogHeader>
         {references.length > 0 && <ReferenceList references={references} />}
@@ -984,7 +1023,7 @@ export function GenerationDetail({
               className="text-sm leading-relaxed break-words select-text"
             />
           ) : (
-            <p className="text-sm text-muted-foreground">No prompt</p>
+            <p className="text-sm text-muted-foreground">{t('No prompt')}</p>
           )}
         </div>
         {asset.activity === 'video' && !supportMode && (
@@ -1015,11 +1054,11 @@ export function GenerationDetail({
             variant="outline"
             className="pointer-coarse:h-11"
             disabled={!prompt}
-            aria-label={copied ? 'Copied prompt' : 'Copy prompt'}
+            aria-label={copied ? t('Copied prompt') : t('Copy prompt')}
             onClick={() => onCopy(prompt)}
           >
             <Copy aria-hidden="true" />
-            {copied ? 'Copied' : 'Copy prompt'}
+            {copied ? t('Copied') : t('Copy prompt')}
           </Button>
           {onReuse && reuse && (
             <Button
@@ -1029,7 +1068,7 @@ export function GenerationDetail({
             >
               <RotateCcw aria-hidden="true" />
               {/* Loads this run's own settings, draft included. */}
-              {asset.status === 'failed' ? 'Try again' : 'Use again'}
+              {asset.status === 'failed' ? t('Try again') : t('Use again')}
             </Button>
           )}
           {/* Edit = back to the prompt box with this image as the reference
@@ -1061,7 +1100,7 @@ export function GenerationDetail({
                   })
                 }
               >
-                Edit image
+                {t('Edit image')}
               </Button>
             )}
           {onRenderAtQuality &&
@@ -1075,7 +1114,7 @@ export function GenerationDetail({
                 disabled={renderAtQualityPending}
                 onClick={onRenderAtQuality}
               >
-                {renderAtQualityPending ? 'Starting…' : 'Render final'}
+                {renderAtQualityPending ? t('Starting…') : t('Render final')}
               </Button>
             )}
           {!supportMode &&
@@ -1089,22 +1128,24 @@ export function GenerationDetail({
                     variant="destructive"
                     className="ml-auto pointer-coarse:size-11"
                     disabled={deletePending}
-                    aria-label="Delete"
+                    aria-label={t('Delete')}
                   >
                     <Trash2 aria-hidden="true" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this generation?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      {t('Delete this generation?')}
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      It is removed from your library for good.
+                      {t('It is removed from your library for good.')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Keep</AlertDialogCancel>
+                    <AlertDialogCancel>{t('Keep')}</AlertDialogCancel>
                     <AlertDialogAction onClick={onDelete}>
-                      Delete
+                      {t('Delete')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -1157,6 +1198,8 @@ export function StudioGallery({
   /** Load this generation's prompt and references into the composer. */
   onReuse?: (reuse: StudioReuse) => void;
 }) {
+  const { t } = useTranslation('studio');
+
   const [openId, setOpenId] = useState<string | null>(null);
   const assistant = useAssistantState();
   const isMobile = useIsMobile();
@@ -1231,20 +1274,22 @@ export function StudioGallery({
         title={
           supportMode
             ? activity === 'video'
-              ? 'No matching videos'
-              : 'No matching images'
+              ? t('No matching videos')
+              : t('No matching images')
             : isAuthenticated
-              ? 'Nothing here yet'
-              : 'Sign in to generate'
+              ? t('Nothing here yet')
+              : t('Sign in to generate')
         }
         description={
           supportMode
             ? activity === 'video'
-              ? 'No clips match this search across any users.'
-              : 'No stills match this search across any users.'
+              ? t('No clips match this search across any users.')
+              : t('No stills match this search across any users.')
             : isAuthenticated
               ? undefined
-              : 'Browse the composer, then sign in to generate and keep a library.'
+              : t(
+                  'Browse the composer, then sign in to generate and keep a library.'
+                )
         }
         action={
           supportMode ? undefined : isAuthenticated ? (
@@ -1285,7 +1330,7 @@ export function StudioGallery({
             disabled={isFetchingNextPage}
             onClick={onLoadMore}
           >
-            {isFetchingNextPage ? 'Loading…' : 'Load more'}
+            {isFetchingNextPage ? t('Loading…') : t('Load more')}
           </Button>
         </div>
       )}

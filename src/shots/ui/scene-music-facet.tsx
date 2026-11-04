@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { MusicView, MusicViewSkeleton } from '@/audio/ui/music-view';
 import { UploadMediaButton } from './upload-media-button';
@@ -158,6 +160,10 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
   sequenceId,
   editable,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+
+  const { t } = useTranslation('shots');
+
   const { data: sequence, isLoading } = useSequence(sequenceId);
   const { data: shots } = useShotsBySequence(sequenceId, {
     refetchInterval: false,
@@ -242,9 +248,11 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
           { sequenceId, variantId: variant.id },
           {
             onError: (error) => {
-              toast.error('Failed to restore alternate', {
+              toast.error(translateEvent('Failed to restore alternate'), {
                 description:
-                  error instanceof Error ? error.message : 'Unknown error',
+                  error instanceof Error
+                    ? error.message
+                    : translateEvent('Unknown error'),
               });
             },
           }
@@ -254,20 +262,22 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
         { sequenceId, variantId: variant.id },
         {
           onSuccess: () => {
-            toast('Alternate discarded', {
-              action: { label: 'Undo', onClick: restore },
+            toast(translateEvent('Alternate discarded'), {
+              action: { label: translateEvent('Undo'), onClick: restore },
             });
           },
           onError: (error) => {
-            toast.error('Failed to discard alternate', {
+            toast.error(translateEvent('Failed to discard alternate'), {
               description:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
             });
           },
         }
       );
     },
-    [sequenceId, discardVariant, undiscardVariant]
+    [translateEvent, sequenceId, discardVariant, undiscardVariant]
   );
 
   const handlePromote = useCallback(
@@ -275,17 +285,19 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
       promoteVariant.mutate(
         { sequenceId, variantId: variant.id },
         {
-          onSuccess: () => toast.success('Alternate promoted'),
+          onSuccess: () => toast.success(translateEvent('Alternate promoted')),
           onError: (error) => {
-            toast.error('Failed to promote alternate', {
+            toast.error(translateEvent('Failed to promote alternate'), {
               description:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
             });
           },
         }
       );
     },
-    [sequenceId, promoteVariant]
+    [translateEvent, sequenceId, promoteVariant]
   );
 
   const handleSetModel = useCallback(
@@ -293,17 +305,19 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
       setMusicModel.mutate(
         { sequenceId, model },
         {
-          onSuccess: () => toast.success('Music model set'),
+          onSuccess: () => toast.success(translateEvent('Music model set')),
           onError: (error) => {
-            toast.error('Failed to set music model', {
+            toast.error(translateEvent('Failed to set music model'), {
               description:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
             });
           },
         }
       );
     },
-    [sequenceId, setMusicModel]
+    [translateEvent, sequenceId, setMusicModel]
   );
 
   const generateMusic = useMutation({
@@ -346,8 +360,11 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
           context.previous
         );
       }
-      toast.error('Music generation failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
+      toast.error(translateEvent('Music generation failed'), {
+        description:
+          error instanceof Error
+            ? error.message
+            : translateEvent('Unknown error'),
       });
     },
   });
@@ -367,7 +384,9 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
       saveMusicPromptFn({ data: { sequenceId, prompt } }),
     onSuccess: async (result) => {
       toast.success(
-        result.unchanged ? 'No changes to save' : 'Music prompt saved'
+        result.unchanged
+          ? translateEvent('No changes to save')
+          : translateEvent('Music prompt saved')
       );
       await queryClient.invalidateQueries({
         queryKey: sequenceKeys.detail(sequenceId),
@@ -377,8 +396,11 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
       });
     },
     onError: (error) => {
-      toast.error('Failed to save music prompt', {
-        description: error instanceof Error ? error.message : 'Unknown error',
+      toast.error(translateEvent('Failed to save music prompt'), {
+        description:
+          error instanceof Error
+            ? error.message
+            : translateEvent('Unknown error'),
       });
     },
   });
@@ -398,7 +420,7 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
     mutationFn: () => regenerateMusicPromptFn({ data: { sequenceId } }),
     onSuccess: async (result) => {
       if (result.alreadyUpToDate) {
-        toast.info('Music prompt is already up to date');
+        toast.info(translateEvent('Music prompt is already up to date'));
       }
       await queryClient.invalidateQueries({
         queryKey: stalenessKey,
@@ -408,8 +430,11 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
       });
     },
     onError: (error) => {
-      toast.error('Music prompt regenerate failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
+      toast.error(translateEvent('Music prompt regenerate failed'), {
+        description:
+          error instanceof Error
+            ? error.message
+            : translateEvent('Unknown error'),
       });
     },
   });
@@ -426,10 +451,10 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
             <Music className="h-6 w-6 text-muted-foreground/60" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Music is edited at sequence scope.
+            {t('Music is edited at sequence scope.')}
           </p>
           <p className="mt-1 text-xs text-muted-foreground/70">
-            Clear your selection to edit the sequence track.
+            {t('Clear your selection to edit the sequence track.')}
           </p>
         </div>
         {sequence.musicUrl && (
@@ -437,7 +462,7 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
             src={sequence.musicUrl}
             controls
             className="w-full"
-            aria-label="Sequence music preview"
+            aria-label={t('Sequence music preview')}
           >
             <track kind="captions" />
           </audio>
@@ -489,7 +514,7 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
       <div className="flex flex-wrap justify-center gap-2">
         <AskAssistantButton context={[]} />
         <UploadMediaButton
-          label="Upload Audio"
+          label={t('Upload Audio')}
           pendingLabel="Uploading…"
           accept="audio/*"
           isPending={uploadMusic.isPending}
@@ -498,11 +523,14 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
             uploadMusic.mutate(
               { file, sequenceId },
               {
-                onSuccess: () => toast.success('Music track uploaded'),
+                onSuccess: () =>
+                  toast.success(translateEvent('Music track uploaded')),
                 onError: (error) =>
-                  toast.error('Music upload failed', {
+                  toast.error(translateEvent('Music upload failed'), {
                     description:
-                      error instanceof Error ? error.message : 'Unknown error',
+                      error instanceof Error
+                        ? error.message
+                        : translateEvent('Unknown error'),
                   }),
               }
             )

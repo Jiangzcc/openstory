@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { type BannerPhase, ProgressBanner } from './progress-banner';
 import { runChipModel, type WorkflowRun } from './sequence-runs';
 import {
@@ -50,6 +51,8 @@ export const GenerationProgressBanner: React.FC<
   willEmail = false,
   runs = [],
 }) => {
+  const { t } = useTranslation('interface');
+
   const [isOpen, setIsOpen] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const startTimeRef = useRef(startedAt?.getTime() ?? Date.now());
@@ -115,13 +118,17 @@ export const GenerationProgressBanner: React.FC<
       isOpen={isOpen}
       onOpenChange={setIsOpen}
       leaveHint={
-        willEmail ? (
-          <>We&rsquo;ll email you when it&rsquo;s ready.</>
-        ) : undefined
+        willEmail ? <>{t('We’ll email you when it’s ready.')}</> : undefined
       }
       runs={chip.kind === 'runs' ? chip.items : undefined}
       showRemaining={chip.kind !== 'runs' || chip.showRemaining}
-      closedLabel={chip.kind === 'runs' && chip.label ? chip.label : undefined}
+      closedLabel={
+        chip.kind === 'runs' && chip.label
+          ? chip.items.length > 1
+            ? t('{{count}} running', { count: chip.items.length })
+            : chip.label
+          : undefined
+      }
     />
   );
 };

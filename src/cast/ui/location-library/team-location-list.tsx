@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { LibraryVirtualGrid } from '@/cast/ui/library-virtual-grid';
 import { TeamLocationCard } from '@/cast/ui/location-library/team-location-card';
@@ -19,6 +20,8 @@ export const TeamLocationList: React.FC<{
   /** The page's `?search=`: matched against name and description. */
   search: string;
 }> = ({ scrollRef, search }) => {
+  const { t } = useTranslation('cast');
+
   const { data: all } = useTeamLocations();
   const q = search.trim().toLowerCase();
   const locations = q
@@ -34,11 +37,11 @@ export const TeamLocationList: React.FC<{
     return (
       <EmptyState
         icon={<MapPin className="h-12 w-12" />}
-        title={q ? 'No location matches' : 'No locations yet'}
+        title={q ? t('No location matches') : t('No locations yet')}
         description={
           q
-            ? 'Try another search.'
-            : 'Make one with New location, or analyse a sequence.'
+            ? t('Try another search.')
+            : t('Make one with New location, or analyse a sequence.')
         }
         action={q ? undefined : <AskAssistantButton context={[]} />}
       />

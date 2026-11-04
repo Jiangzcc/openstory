@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { useElevenLabsVoices } from '@/cast/ui/use-elevenlabs-voices';
 import {
   DEFAULT_VOICE_LANGUAGE,
@@ -57,45 +59,48 @@ const VoiceRow: React.FC<{
   selected: boolean;
   disabled: boolean;
   onSelect: () => void;
-}> = ({ voice, selected, disabled, onSelect }) => (
-  <li
-    className={cn(
-      'flex flex-col gap-2 rounded-lg border p-3',
-      selected ? 'border-primary ring-2 ring-primary/40' : 'border-border'
-    )}
-  >
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{voice.name}</p>
-        {voice.labels.length > 0 && (
-          <p className="truncate text-xs text-muted-foreground">
-            {voice.labels.join(' · ')}
-          </p>
-        )}
+}> = ({ voice, selected, disabled, onSelect }) => {
+  const { t } = useTranslation('cast');
+  return (
+    <li
+      className={cn(
+        'flex flex-col gap-2 rounded-lg border p-3',
+        selected ? 'border-primary ring-2 ring-primary/40' : 'border-border'
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{voice.name}</p>
+          {voice.labels.length > 0 && (
+            <p className="truncate text-xs text-muted-foreground">
+              {voice.labels.join(' · ')}
+            </p>
+          )}
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant={selected ? 'secondary' : 'outline'}
+          disabled={disabled || selected}
+          onClick={onSelect}
+        >
+          {selected ? t('In use') : t('Use')}
+        </Button>
       </div>
-      <Button
-        type="button"
-        size="sm"
-        variant={selected ? 'secondary' : 'outline'}
-        disabled={disabled || selected}
-        onClick={onSelect}
-      >
-        {selected ? 'In use' : 'Use'}
-      </Button>
-    </div>
-    {voice.previewUrl ? (
-      // oxlint-disable-next-line jsx-a11y/media-has-caption -- a voice sample has no words to caption
-      <audio
-        controls
-        preload="none"
-        src={voice.previewUrl}
-        className="w-full"
-      />
-    ) : (
-      <p className="text-xs text-muted-foreground">No preview</p>
-    )}
-  </li>
-);
+      {voice.previewUrl ? (
+        // oxlint-disable-next-line jsx-a11y/media-has-caption -- a voice sample has no words to caption
+        <audio
+          controls
+          preload="none"
+          src={voice.previewUrl}
+          className="w-full"
+        />
+      ) : (
+        <p className="text-xs text-muted-foreground">{t('No preview')}</p>
+      )}
+    </li>
+  );
+};
 
 function FilterPills<T extends string>({
   label,
@@ -108,6 +113,10 @@ function FilterPills<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T | undefined) => void;
 }) {
+  const translateLabel = useLabelTranslation('cast');
+
+  const { t } = useTranslation('cast');
+
   return (
     <div className="flex items-center justify-between gap-2">
       <p className="w-24 shrink-0 text-sm font-medium">{label}</p>
@@ -125,7 +134,7 @@ function FilterPills<T extends string>({
             )}
             onClick={() => onChange(option.value)}
           >
-            {option.label}
+            {translateLabel(option.label)}
           </Button>
         ))}
         <Button
@@ -139,7 +148,7 @@ function FilterPills<T extends string>({
           )}
           onClick={() => onChange(undefined)}
         >
-          Any
+          {t('Any')}
         </Button>
       </div>
     </div>
@@ -153,13 +162,17 @@ function LanguageSelect({
   value: string;
   onChange: (next: Pick<CatalogVoiceFilters, 'language' | 'accent'>) => void;
 }) {
+  const translateLabel = useLabelTranslation('cast');
+
+  const { t } = useTranslation('cast');
+
   return (
     <div className="flex items-center justify-between gap-2">
       <label
         htmlFor="voice-library-language"
         className="w-24 shrink-0 text-sm font-medium"
       >
-        Language
+        {t('Language')}
       </label>
       <select
         id="voice-library-language"
@@ -167,21 +180,21 @@ function LanguageSelect({
         onChange={(event) => onChange(parseVoiceLocale(event.target.value))}
         className="h-8 min-w-40 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
       >
-        <optgroup label="English">
-          <option value={DEFAULT_VOICE_LANGUAGE}>English</option>
+        <optgroup label={t('English')}>
+          <option value={DEFAULT_VOICE_LANGUAGE}>{t('English')}</option>
           {VOICE_NATIONALITIES.map((nationality) => (
             <option
               key={nationality.value}
               value={voiceLocaleKey(DEFAULT_VOICE_LANGUAGE, nationality.value)}
             >
-              {nationality.label}
+              {translateLabel(nationality.label)}
             </option>
           ))}
         </optgroup>
-        <optgroup label="Other languages">
+        <optgroup label={t('Other languages')}>
           {OTHER_VOICE_LANGUAGES.map((language) => (
             <option key={language.value} value={language.value}>
-              {language.label}
+              {translateLabel(language.label)}
             </option>
           ))}
         </optgroup>
@@ -199,6 +212,8 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
   characterName,
   recommended,
 }) => {
+  const { t } = useTranslation('cast');
+
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<CatalogVoiceFilters>(recommended);
@@ -238,9 +253,11 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
     >
       <DialogContent className="flex h-[min(90vh,44rem)] w-full flex-col gap-3 sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Voice library</DialogTitle>
+          <DialogTitle>{t('Voice library')}</DialogTitle>
           <DialogDescription className="sr-only">
-            Pick an ElevenLabs voice for {characterName}.
+            {t('Pick an ElevenLabs voice for {{value1}}.', {
+              value1: characterName,
+            })}
           </DialogDescription>
         </DialogHeader>
         <div className="relative">
@@ -248,7 +265,11 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
           <Input
             type="search"
             autoComplete="off"
-            placeholder={`Search voices${characterName ? ` for ${characterName}` : ''}…`}
+            placeholder={
+              characterName
+                ? t('Search voices for {{value1}}…', { value1: characterName })
+                : t('Search voices…')
+            }
             value={input}
             onChange={(event) => handleSearchChange(event.target.value)}
             className="pl-9"
@@ -266,7 +287,7 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
             }
           />
           <FilterPills
-            label="Quality"
+            label={t('Quality')}
             value={filters.quality}
             options={QUALITY_OPTIONS}
             onChange={(quality) =>
@@ -274,7 +295,7 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
             }
           />
           <FilterPills
-            label="Gender"
+            label={t('Gender')}
             value={filters.gender}
             options={GENDER_OPTIONS}
             onChange={(gender) =>
@@ -282,7 +303,7 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
             }
           />
           <FilterPills
-            label="Age"
+            label={t('Age')}
             value={filters.age}
             options={AGE_OPTIONS}
             onChange={(age) => setFilters((current) => ({ ...current, age }))}
@@ -295,7 +316,7 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
             disabled={!hasFilters}
             onClick={() => setFilters({ language: DEFAULT_VOICE_LANGUAGE })}
           >
-            Clear filters
+            {t('Clear filters')}
           </Button>
         </div>
         <ScrollArea className="min-h-0 flex-1">
@@ -310,8 +331,8 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
               <Library className="h-10 w-10 text-muted-foreground/30" />
               <p className="mt-3 text-sm text-muted-foreground">
                 {search || hasFilters
-                  ? 'No voices matching these filters'
-                  : 'No voices available'}
+                  ? t('No voices matching these filters')
+                  : t('No voices available')}
               </p>
             </div>
           ) : (
@@ -338,13 +359,13 @@ export const VoiceLibraryDialog: React.FC<VoiceLibraryDialogProps> = ({
               disabled={query.isFetchingNextPage}
               onClick={() => void query.fetchNextPage()}
             >
-              {query.isFetchingNextPage ? 'Loading…' : 'Load more'}
+              {query.isFetchingNextPage ? t('Loading…') : t('Load more')}
             </Button>
           ) : null}
         </div>
         <p className="h-5 text-sm text-destructive">
           <span className={query.isError ? undefined : 'invisible'}>
-            Could not load voices. Try again in a moment.
+            {t('Could not load voices. Try again in a moment.')}
           </span>
         </p>
       </DialogContent>

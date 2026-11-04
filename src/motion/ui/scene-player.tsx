@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { Trans, useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import type { TabValue } from '@/shots/ui/scene-script-prompts';
 import { shotDraftLabel } from '@/motion/draft-mode';
@@ -142,6 +144,10 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
   onEnded,
   onSelectShot,
 }) => {
+  const translateEvent = useLiveTranslation('motion');
+
+  const { t } = useTranslation('motion');
+
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
   const [packedPlayback] = useState(createPackedPlayback);
   const posthog = usePostHog();
@@ -235,14 +241,15 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
       const absoluteUrl = new URL(currentShot.image.url, window.location.origin)
         .href;
       if (!(await copyTextToClipboard(absoluteUrl))) {
-        toast.error('Failed to copy URL');
+        toast.error(translateEvent('Failed to copy URL'));
         return;
       }
-      toast.success('Start frame URL copied');
+      toast.success(translateEvent('Start frame URL copied'));
     } catch {
-      toast.error('Failed to copy URL');
+      toast.error(translateEvent('Failed to copy URL'));
     }
   }, [
+    translateEvent,
     currentShot?.image?.url,
     currentShot?.sequenceId,
     currentShot?.id,
@@ -260,14 +267,15 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
       const absoluteUrl = new URL(currentShot.video.url, window.location.origin)
         .href;
       if (!(await copyTextToClipboard(absoluteUrl))) {
-        toast.error('Failed to copy URL');
+        toast.error(translateEvent('Failed to copy URL'));
         return;
       }
-      toast.success('Segment URL copied');
+      toast.success(translateEvent('Segment URL copied'));
     } catch {
-      toast.error('Failed to copy URL');
+      toast.error(translateEvent('Failed to copy URL'));
     }
   }, [
+    translateEvent,
     currentShot?.video?.url,
     currentShot?.sequenceId,
     currentShot?.id,
@@ -339,7 +347,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
                   className="absolute inset-0 h-full w-full object-cover"
                 />
                 <span className="absolute top-2 right-2 z-10 rounded bg-background/80 px-2 py-1 text-xs font-medium text-muted-foreground backdrop-blur-sm">
-                  Preview
+                  {t('Preview')}
                 </span>
                 <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent p-4">
                   <p className="text-center text-sm font-medium text-white">
@@ -383,7 +391,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
               className="h-full w-full object-cover"
             />
             <span className="absolute top-2 right-2 z-10 rounded bg-background/80 px-2 py-1 text-xs font-medium text-muted-foreground backdrop-blur-sm">
-              Preview
+              {t('Preview')}
             </span>
           </div>
         </div>
@@ -402,8 +410,8 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
     return (
       <EmptyState
         icon={<VideoIcon />}
-        title={'No selected shot'}
-        description={'Please select a shot to play.'}
+        title={t('No selected shot')}
+        description={t('Please select a shot to play.')}
       />
     );
   }
@@ -419,7 +427,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
       : undefined;
   const title =
     plainSceneTitle(currentScene?.title) ||
-    (sceneNumber ? `Scene ${sceneNumber}` : undefined);
+    (sceneNumber ? t('Scene {{value1}}', { value1: sceneNumber }) : undefined);
 
   // Per-scene video-variant preview (#545): on the motion tab, play the
   // override variant for this shot instead of its primary video.
@@ -451,7 +459,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
   // The selected clip is an Ark draft (#1756): 480p, final not yet rendered.
   const draftLabel =
     playbackVideoUrl && !isVariantVideoPreview
-      ? shotDraftLabel(currentShot)
+      ? shotDraftLabel(currentShot, undefined, t)
       : null;
 
   return (
@@ -476,7 +484,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
             >
               <AppImage
                 src={displayImage}
-                alt={title || 'Scene thumbnail'}
+                alt={title || t('Scene thumbnail')}
                 className="w-full h-full object-cover"
                 width={imageDimensions.width}
                 height={imageDimensions.height}
@@ -492,7 +500,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
                   variant="ghost"
                   size="icon"
                   className="absolute top-2 right-2 z-20 h-11 w-11 bg-black/50 text-white hover:bg-black/70 md:h-8 md:w-8"
-                  aria-label="Share image"
+                  aria-label={t('Share image')}
                 >
                   <Share2 className="h-5 w-5 md:h-4 md:w-4" />
                 </Button>
@@ -506,11 +514,14 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
                     })
                   }
                 >
-                  Chat about this
+                  {t('Chat about this')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => void handleCopyImageUrl()}>
-                  <Link className="h-4 w-4" />
-                  Copy start frame URL
+                  <Trans
+                    ns="motion"
+                    i18nKey="<0/>Copy start frame URL"
+                    components={[<Link key="0" className="h-4 w-4" />]}
+                  />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -538,7 +549,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
                   variant="ghost"
                   size="icon"
                   className="absolute top-2 right-2 z-20 h-11 w-11 bg-black/50 text-white hover:bg-black/70 md:h-8 md:w-8"
-                  aria-label="Share"
+                  aria-label={t('Share')}
                 >
                   <Share2 className="h-5 w-5 md:h-4 md:w-4" />
                 </Button>
@@ -552,24 +563,27 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
                     })
                   }
                 >
-                  Chat about this
+                  {t('Chat about this')}
                 </DropdownMenuItem>
                 {currentShot.image?.url && (
                   <DropdownMenuItem onClick={() => void handleCopyImageUrl()}>
-                    <Link className="h-4 w-4" />
-                    Copy start frame URL
+                    <Trans
+                      ns="motion"
+                      i18nKey="<0/>Copy start frame URL"
+                      components={[<Link key="0" className="h-4 w-4" />]}
+                    />
                   </DropdownMenuItem>
                 )}
                 {currentShot.video?.url && (
                   <DropdownMenuItem onClick={() => void handleCopyVideoUrl()}>
                     <VideoIcon className="h-4 w-4" />
-                    Copy segment URL
+                    {t('Copy segment URL')}
                   </DropdownMenuItem>
                 )}
                 {hasCompletedVideo && downloadData?.downloadUrl && (
                   <DropdownMenuItem onClick={handleDownloadVideo}>
                     <Download className="h-4 w-4" />
-                    Download segment video
+                    {t('Download segment video')}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -586,7 +600,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               className="absolute inset-0 z-[5] cursor-pointer"
-              aria-label="Open image in new tab"
+              aria-label={t('Open image in new tab')}
             />
           )}
           <VideoPlayer
@@ -646,7 +660,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
           <div className="pointer-events-none absolute top-2 right-15 z-10 flex flex-col items-end gap-1 md:right-12">
             {isPreviewImage && !isVariantPreview && (
               <span className="rounded bg-background/80 px-2 py-1 text-xs font-medium text-muted-foreground backdrop-blur-sm">
-                Storyboard
+                {t('Storyboard')}
               </span>
             )}
             {draftLabel && (
@@ -669,7 +683,7 @@ export const ScenePlayer: React.FC<ScenePlayerProps> = ({
         )}
         aria-hidden={!isPreviewImage}
       >
-        Fast preview — may not match the final image.
+        {t('Fast preview — may not match the final image.')}
       </p>
       {/* Preload next video in background if it's completed */}
       {nextShot?.video?.url && nextShot.videoStatus === 'completed' && (

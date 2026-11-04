@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { DeleteLocationButton } from '@/cast/ui/location-library/delete-location-button';
 import { LocationDetailView } from '@/cast/ui/locations/location-detail-view';
 import {
@@ -29,7 +30,7 @@ export const Route = createFileRoute('/_app/locations/$locationId')({
     breadcrumb: (match) => {
       const { locationId } = routeParams<{ locationId: string }>(match);
       return [
-        { label: 'Locations', to: '/locations' },
+        { translationKey: 'Locations', label: 'Locations', to: '/locations' },
         { label: <LocationCrumbLabel id={locationId} /> },
       ];
     },
@@ -37,6 +38,8 @@ export const Route = createFileRoute('/_app/locations/$locationId')({
 });
 
 function TeamLocationContent({ id }: { id: string }) {
+  const { t } = useTranslation('pages');
+
   const { sequence: pickedSequenceId } = Route.useSearch();
   const { data: location } = useTeamLocation(id);
   // Gone or another team's. Reached from a stale link.
@@ -44,11 +47,11 @@ function TeamLocationContent({ id }: { id: string }) {
     return (
       <EmptyState
         icon={<MapPin className="h-12 w-12" />}
-        title="Location not found"
-        description="It was deleted, or it belongs to another team."
+        title={t('Location not found')}
+        description={t('It was deleted, or it belongs to another team.')}
         action={
           <Button variant="outline" asChild>
-            <Link to="/locations">Back to Locations</Link>
+            <Link to="/locations">{t('Back to Locations')}</Link>
           </Button>
         }
       />
@@ -66,7 +69,7 @@ function TeamLocationContent({ id }: { id: string }) {
       <div className="flex shrink-0 flex-col gap-3 border-b px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
-            <Link to="/locations" aria-label="Back to Locations">
+            <Link to="/locations" aria-label={t('Back to Locations')}>
               <ArrowLeft />
             </Link>
           </Button>
@@ -85,13 +88,18 @@ function TeamLocationContent({ id }: { id: string }) {
         </div>
         {sequences.length > 0 && (
           <nav
-            aria-label="Sequences that use this location"
+            aria-label={t('Sequences that use this location')}
             className="flex flex-col gap-2"
           >
             <p className="text-sm text-muted-foreground">
-              Used in {sequences.length}{' '}
-              {sequences.length === 1 ? 'sequence' : 'sequences'}. Edits change
-              this location in every sequence.
+              {t(
+                'Used in {{value1}} {{value2}}. Edits change this location in every sequence.',
+                {
+                  value1: sequences.length,
+                  value2:
+                    sequences.length === 1 ? t('sequence') : t('sequences'),
+                }
+              )}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               {sequences.map((sequence) => (
@@ -119,7 +127,7 @@ function TeamLocationContent({ id }: { id: string }) {
                     to="/sequences/$id/locations/$locationId"
                     params={{ id: shown.id, locationId: id }}
                   >
-                    Open in {shown.title}
+                    {t('Open in {{value1}}', { value1: shown.title })}
                   </Link>
                 </Button>
               )}
@@ -130,7 +138,7 @@ function TeamLocationContent({ id }: { id: string }) {
 
       {pickedSequenceId && !shown ? (
         <p className="p-4 text-sm font-medium">
-          Not used in that sequence. Pick one above.
+          {t('Not used in that sequence. Pick one above.')}
         </p>
       ) : (
         <div className="min-h-0 flex-1">
@@ -147,6 +155,8 @@ function TeamLocationContent({ id }: { id: string }) {
 }
 
 function TeamLocationPage() {
+  const { t } = useTranslation('pages');
+
   const { locationId } = Route.useParams();
   const { data: session, isPending } = useAuthSession();
 
@@ -154,8 +164,8 @@ function TeamLocationPage() {
     return (
       <EmptyState
         icon={<MapPin className="h-12 w-12" />}
-        title="Sign in to see this location"
-        description="Locations belong to your team."
+        title={t('Sign in to see this location')}
+        description={t('Locations belong to your team.')}
         action={<SignInButton />}
       />
     );

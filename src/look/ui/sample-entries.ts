@@ -83,7 +83,10 @@ function pickSampleVideo(style: Style): StyleSampleVideo | null {
  * gallery/showcase order is the styles' own order. Styles with no sample video
  * and no derivable `canonical.mp4` are skipped.
  */
-export function buildSampleEntries(styles: Style[]): SampleEntry[] {
+export function buildSampleEntries(
+  styles: Style[],
+  displayName?: (style: Style) => string
+): SampleEntry[] {
   const entries: SampleEntry[] = [];
   for (const style of styles) {
     const video = pickSampleVideo(style);
@@ -92,7 +95,7 @@ export function buildSampleEntries(styles: Style[]): SampleEntry[] {
     entries.push({
       key: `${style.id}:${video.kind}`,
       styleId: style.id,
-      styleName: style.name,
+      styleName: displayName?.(style) ?? style.name,
       slug: styleSlug(style.name),
       video,
       aspectRatio: aspectRatioOf(style),

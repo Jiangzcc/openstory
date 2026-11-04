@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import { Drawer, DrawerContent, DrawerTitle } from '@/ui/shadcn/drawer';
 import { shotDraftLabel } from '@/motion/draft-mode';
@@ -22,6 +23,9 @@ export const MobileSceneDrawer: React.FC<
     onSettingsOpenChange: (open: boolean) => void;
   }
 > = ({ settingsOpen, onSettingsOpenChange, ...listProps }) => {
+  const { t } = useTranslation('shots');
+  const { t: translateDraft } = useTranslation('motion');
+
   const { shots, scenes, selection, aspectRatio } = listProps;
   const selectedShotId = selection.shotId;
   const selectedSceneIds = selection.sceneIds;
@@ -60,16 +64,21 @@ export const MobileSceneDrawer: React.FC<
 
   const sceneNumber = (focusedScene?.orderIndex ?? 0) + 1;
   const sceneTitle =
-    plainSceneTitle(focusedScene?.title) || `Scene ${sceneNumber}`;
+    plainSceneTitle(focusedScene?.title) ||
+    t('Scene {{value1}}', { value1: sceneNumber });
   const shotOrdinal = selectedShot
     ? sceneShots.findIndex((s) => s.id === selectedShot.id) + 1
     : 0;
   const isSequence = !selectedShotId && selectedSceneIds.length === 0;
 
   const label = isSequence
-    ? 'All scenes'
+    ? t('All scenes')
     : sceneShots.length > 1 && shotOrdinal > 0
-      ? `${sceneTitle} · Shot ${shotOrdinal} of ${sceneShots.length}`
+      ? t('{{value1}} · Shot {{value2}} of {{value3}}', {
+          value1: sceneTitle,
+          value2: shotOrdinal,
+          value3: sceneShots.length,
+        })
       : sceneTitle;
 
   const previewShot =
@@ -87,7 +96,7 @@ export const MobileSceneDrawer: React.FC<
           className="flex min-h-11 min-w-0 flex-1 items-center gap-3 px-4 py-2 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           aria-haspopup="dialog"
           aria-expanded={jumpOpen}
-          aria-label={`${label}. Open scene list`}
+          aria-label={t('{{value1}}. Open scene list', { value1: label })}
           onClick={() => setOpenFor(selection)}
         >
           <SceneThumbnail
@@ -95,11 +104,15 @@ export const MobileSceneDrawer: React.FC<
             previewThumbnailUrl={previewShot?.previewThumbnailUrl}
             thumbnailStatus={previewShot?.imageStatus || undefined}
             videoUrl={previewClipUrl}
-            draftLabel={previewClipUrl ? shotDraftLabel(previewShot) : null}
+            draftLabel={
+              previewClipUrl
+                ? shotDraftLabel(previewShot, undefined, translateDraft)
+                : null
+            }
             gridSheetUrl={previewShot?.gridSheet?.url}
             pendingUpscaleIndex={previewShot?.pendingUpscaleIndex}
             pendingUpscaleUrl={previewShot?.pendingUpscaleUrl}
-            alt={isSequence ? 'Sequence' : sceneTitle}
+            alt={isSequence ? t('Sequence') : sceneTitle}
             aspectRatio={aspectRatio}
             className="aspect-square h-10 w-10 shrink-0 rounded"
           />
@@ -112,7 +125,7 @@ export const MobileSceneDrawer: React.FC<
           variant="ghost"
           size="icon"
           className="size-11 shrink-0"
-          aria-label="Open settings"
+          aria-label={t('Open settings')}
           aria-haspopup="dialog"
           aria-expanded={settingsOpen}
           onClick={() => onSettingsOpenChange(!settingsOpen)}
@@ -127,7 +140,7 @@ export const MobileSceneDrawer: React.FC<
         onOpenChange={(open) => setOpenFor(open ? selection : null)}
       >
         <DrawerContent className="pb-[env(safe-area-inset-bottom)] [--drawer-content-height:92dvh] data-[swipe-axis=y]:[--drawer-content-max-height:92dvh]">
-          <DrawerTitle className="sr-only">Scenes</DrawerTitle>
+          <DrawerTitle className="sr-only">{t('Scenes')}</DrawerTitle>
           <SceneList
             {...listProps}
             scrollToSelection

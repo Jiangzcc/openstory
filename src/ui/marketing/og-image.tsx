@@ -1,9 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import { GitHubIcon } from '@/ui/icons/github-icon';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { Button } from '@/ui/shadcn/button';
 import { SITE_CONFIG } from './constants';
 
 export const OgImage: React.FC = () => {
+  const { t } = useTranslation('interface');
+
   return (
     <div className="relative flex h-[630px] w-[1200px] flex-col items-center justify-center overflow-hidden bg-black">
       <div className="absolute inset-0">
@@ -27,9 +30,9 @@ export const OgImage: React.FC = () => {
         <OpenStoryLogo className="mb-8 h-16 w-auto text-white" />
 
         <h1 className="font-heading text-[7rem] font-bold tracking-tighter leading-[0.95] text-white">
-          Open Video
+          {t('Open Video')}
           <br />
-          <span className="text-editorial">Generation.</span>
+          <span className="text-editorial">{t('Generation.')}</span>
         </h1>
 
         <p className="mt-5 max-w-md text-xl text-white/70">
@@ -41,7 +44,7 @@ export const OgImage: React.FC = () => {
             size="lg"
             className="rounded-full bg-white px-8 text-black hover:bg-white/90"
           >
-            Get Started
+            {t('Get Started')}
           </Button>
           <Button
             variant="outline"
@@ -49,7 +52,7 @@ export const OgImage: React.FC = () => {
             className="rounded-full border-white/25 bg-white/5 px-8 text-white backdrop-blur-sm hover:bg-white/15 hover:text-white"
           >
             <GitHubIcon className="size-4" />
-            View on GitHub
+            {t('View on GitHub')}
           </Button>
         </div>
       </div>

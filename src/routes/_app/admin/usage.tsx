@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/ui/shadcn/badge';
 import { Button } from '@/ui/shadcn/button';
 import { Card, CardContent } from '@/ui/shadcn/card';
@@ -20,7 +22,7 @@ import { Suspense, useMemo, useState } from 'react';
 
 export const Route = createFileRoute('/_app/admin/usage')({
   component: AdminUsagePage,
-  staticData: { breadcrumb: 'Usage' },
+  staticData: { breadcrumb: { label: 'Usage', translationKey: 'Usage' } },
 });
 
 type SortField =
@@ -37,11 +39,13 @@ type SortField =
 type SortDirection = 'asc' | 'desc';
 
 function AdminUsagePage() {
+  const { t } = useTranslation('admin');
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="sr-only">User Activity</h1>
+      <h1 className="sr-only">{t('User Activity')}</h1>
       <p className="text-muted-foreground">
-        Overview of all users, their sequences, and credit activity.
+        {t('Overview of all users, their sequences, and credit activity.')}
       </p>
       <Suspense fallback={<PageSkeleton />}>
         <UsageContent />
@@ -51,6 +55,8 @@ function AdminUsagePage() {
 }
 
 function UsageContent() {
+  const { t } = useTranslation('admin');
+
   const { data: rows = [] } = useQuery({
     queryKey: ['admin-user-activity'],
     queryFn: () => listUserActivityFn(),
@@ -128,19 +134,22 @@ function UsageContent() {
   return (
     <>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <SummaryCard label="Total Users" value={String(totals.users)} />
-        <SummaryCard label="Total Sequences" value={String(totals.sequences)} />
-        <SummaryCard label="Failed" value={String(totals.failed)} />
+        <SummaryCard label={t('Total Users')} value={String(totals.users)} />
         <SummaryCard
-          label="Total Spent"
+          label={t('Total Sequences')}
+          value={String(totals.sequences)}
+        />
+        <SummaryCard label={t('Failed')} value={String(totals.failed)} />
+        <SummaryCard
+          label={t('Total Spent')}
           value={microsToDisplayUsd(micros(totals.spent))}
         />
         <SummaryCard
-          label="Purchased"
+          label={t('Purchased')}
           value={microsToDisplayUsd(micros(totals.purchased))}
         />
         <SummaryCard
-          label="Gifted"
+          label={t('Gifted')}
           value={microsToDisplayUsd(micros(totals.gifted))}
         />
       </div>
@@ -149,14 +158,17 @@ function UsageContent() {
         <div className="relative max-w-sm flex-1">
           <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name, email, or team..."
+            placeholder={t('Search by name, email, or team...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
         <span className="text-sm text-muted-foreground">
-          {sorted.length} of {rows.length} users
+          {t('{{value1}} of {{value2}} users', {
+            value1: sorted.length,
+            value2: rows.length,
+          })}
         </span>
         <Button
           variant="outline"
@@ -165,36 +177,36 @@ function UsageContent() {
           disabled={sorted.length === 0}
         >
           <Download className="h-4 w-4 mr-1" />
-          Export CSV
+          {t('Export CSV')}
         </Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full text-sm">
+        <table className="w-full whitespace-nowrap text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
               <SortableHeader
-                label="User"
+                label={t('User')}
                 field="name"
                 current={sortField}
                 direction={sortDir}
                 onSort={toggleSort}
               />
               <SortableHeader
-                label="Joined"
+                label={t('Joined')}
                 field="createdAt"
                 current={sortField}
                 direction={sortDir}
                 onSort={toggleSort}
               />
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                Status
+                {t('Status')}
               </th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                Team
+                {t('Team')}
               </th>
               <SortableHeader
-                label="Sequences"
+                label={t('Sequences')}
                 field="sequenceCount"
                 current={sortField}
                 direction={sortDir}
@@ -202,7 +214,7 @@ function UsageContent() {
                 align="right"
               />
               <SortableHeader
-                label="Errors"
+                label={t('Errors')}
                 field="failedCount"
                 current={sortField}
                 direction={sortDir}
@@ -210,7 +222,7 @@ function UsageContent() {
                 align="right"
               />
               <SortableHeader
-                label="Avg Time"
+                label={t('Avg Time')}
                 field="avgAnalysisDurationMs"
                 current={sortField}
                 direction={sortDir}
@@ -218,7 +230,7 @@ function UsageContent() {
                 align="right"
               />
               <SortableHeader
-                label="Spent"
+                label={t('Spent')}
                 field="creditsSpentMicros"
                 current={sortField}
                 direction={sortDir}
@@ -226,7 +238,7 @@ function UsageContent() {
                 align="right"
               />
               <SortableHeader
-                label="Purchased"
+                label={t('Purchased')}
                 field="creditsPurchasedMicros"
                 current={sortField}
                 direction={sortDir}
@@ -234,7 +246,7 @@ function UsageContent() {
                 align="right"
               />
               <SortableHeader
-                label="Gifted"
+                label={t('Gifted')}
                 field="creditsGiftedMicros"
                 current={sortField}
                 direction={sortDir}
@@ -242,7 +254,7 @@ function UsageContent() {
                 align="right"
               />
               <SortableHeader
-                label="Balance"
+                label={t('Balance')}
                 field="currentBalanceMicros"
                 current={sortField}
                 direction={sortDir}
@@ -250,7 +262,7 @@ function UsageContent() {
                 align="right"
               />
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                Support
+                {t('Support')}
               </th>
             </tr>
           </thead>
@@ -261,7 +273,9 @@ function UsageContent() {
                   colSpan={12}
                   className="px-4 py-8 text-center text-muted-foreground"
                 >
-                  {search ? 'No users match your search.' : 'No users found.'}
+                  {search
+                    ? t('No users match your search.')
+                    : t('No users found.')}
                 </td>
               </tr>
             ) : (
@@ -335,6 +349,9 @@ function formatDuration(ms: number | null): string {
 }
 
 const UserRow: React.FC<{ row: UserActivityRow }> = ({ row }) => {
+  const translateLabel = useLabelTranslation('admin');
+  const { t } = useTranslation('admin');
+
   const statusVariant =
     row.status === 'active'
       ? 'default'
@@ -355,7 +372,9 @@ const UserRow: React.FC<{ row: UserActivityRow }> = ({ row }) => {
         {formatDate(row.createdAt)}
       </td>
       <td className="px-4 py-3">
-        <Badge variant={statusVariant}>{row.status ?? 'unknown'}</Badge>
+        <Badge variant={statusVariant}>
+          {translateLabel(row.status ?? 'unknown')}
+        </Badge>
       </td>
       <td className="px-4 py-3 text-muted-foreground">{row.teamName}</td>
       <td className="px-4 py-3 text-right tabular-nums">{row.sequenceCount}</td>
@@ -385,26 +404,32 @@ const UserRow: React.FC<{ row: UserActivityRow }> = ({ row }) => {
             to="/sequences"
             search={{ user: row.email }}
             className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-            aria-label={`Open sequence support view for ${row.email}`}
+            aria-label={t('Open sequence support view for {{value1}}', {
+              value1: row.email,
+            })}
           >
             <LifeBuoy className="h-4 w-4" />
-            Sequences
+            {t('Sequences')}
           </Link>
           <Link
             to="/images"
             search={{ user: row.email }}
             className="text-sm text-primary hover:underline"
-            aria-label={`Open image support view for ${row.email}`}
+            aria-label={t('Open image support view for {{value1}}', {
+              value1: row.email,
+            })}
           >
-            Images
+            {t('Images')}
           </Link>
           <Link
             to="/clips"
             search={{ user: row.email }}
             className="text-sm text-primary hover:underline"
-            aria-label={`Open video support view for ${row.email}`}
+            aria-label={t('Open video support view for {{value1}}', {
+              value1: row.email,
+            })}
           >
-            Clips
+            {t('Clips')}
           </Link>
         </div>
       </td>

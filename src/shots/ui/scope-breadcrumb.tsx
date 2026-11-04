@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { plainSceneTitle } from '@/platform/markdown-plain';
 import type { ShotView } from '@/shots/shot-view';
 import {
@@ -24,11 +26,23 @@ type Crumb = { label: string; search: { scenes?: string; shot?: string } };
 const crumbKey = (crumb: Crumb) =>
   crumb.search.shot ?? crumb.search.scenes ?? 'sequence';
 
-const sceneLabel = (scene: SceneWithScript) =>
-  plainSceneTitle(scene.title) || `Scene ${scene.orderIndex + 1}`;
+const sceneLabel = (scene: SceneWithScript, translate?: TFunction<'shots'>) =>
+  plainSceneTitle(scene.title) ||
+  (translate?.('Scene {{value1}}', {
+    ns: 'shots',
+    value1: scene.orderIndex + 1,
+  }) ??
+    `Scene ${scene.orderIndex + 1}`);
 
-const shotLabel = (shot: ShotView, siblings: ShotView[]) =>
-  `Shot ${shot.shotNumber ?? siblings.indexOf(shot) + 1}`;
+const shotLabel = (
+  shot: ShotView,
+  siblings: ShotView[],
+  translate?: TFunction<'shots'>
+) =>
+  translate?.('Shot {{value1}}', {
+    ns: 'shots',
+    value1: shot.shotNumber ?? siblings.indexOf(shot) + 1,
+  }) ?? `Shot ${shot.shotNumber ?? siblings.indexOf(shot) + 1}`;
 
 /**
  * Inspector header (#1713): Sequence › Scene › Shot. A crumb walks up; the last
@@ -42,6 +56,8 @@ export const ScopeBreadcrumb: React.FC<{
   scenes?: SceneWithScript[];
   shots?: ShotView[];
 }> = ({ selection, scenes = [], shots = [] }) => {
+  const { t } = useTranslation('shots');
+
   const shot = shots.find((s) => s.id === selection.shotId);
   const sceneIds = shot?.sceneId ? [shot.sceneId] : selection.sceneIds;
   const selectedScenes = scenes.filter((s) => sceneIds.includes(s.id));
@@ -49,33 +65,36 @@ export const ScopeBreadcrumb: React.FC<{
     (s) => s.sceneId != null && sceneIds.includes(s.sceneId)
   );
 
-  const trail: Crumb[] = [{ label: 'Sequence', search: {} }];
+  const trail: Crumb[] = [{ label: t('Sequence'), search: {} }];
   if (selectedScenes.length > 0) {
     trail.push({
       label:
         selectedScenes.length === 1 && selectedScenes[0]
-          ? sceneLabel(selectedScenes[0])
-          : `${selectedScenes.length} scenes`,
+          ? sceneLabel(selectedScenes[0], t)
+          : t('{{value1}} scenes', { value1: selectedScenes.length }),
       search: { scenes: sceneIds.join(',') },
     });
   }
   if (shot) {
     trail.push({
-      label: shotLabel(shot, sceneShots),
+      label: shotLabel(shot, sceneShots, t),
       search: { shot: shot.id },
     });
   }
 
   const menu: Crumb[] =
     trail.length === 1
-      ? scenes.map((s) => ({ label: sceneLabel(s), search: { scenes: s.id } }))
+      ? scenes.map((s) => ({
+          label: sceneLabel(s, t),
+          search: { scenes: s.id },
+        }))
       : sceneShots.map((s) => ({
-          label: shotLabel(s, sceneShots),
+          label: shotLabel(s, sceneShots, t),
           search: { shot: s.id },
         }));
   // A lone shot's sibling menu would list only itself.
   const showMenu = menu.length > (shot ? 1 : 0);
-  const menuLabel = trail.length === 1 ? 'Scenes' : 'Shots';
+  const menuLabel = trail.length === 1 ? t('Scenes') : t('Shots');
   const current = trail[trail.length - 1];
 
   const crumbLink = (crumb: Crumb, className?: string) => (
@@ -94,7 +113,7 @@ export const ScopeBreadcrumb: React.FC<{
   );
 
   return (
-    <Breadcrumb aria-label="Selection" className="min-w-0 flex-1">
+    <Breadcrumb aria-label={t('Selection')} className="min-w-0 flex-1">
       <BreadcrumbList className="flex-nowrap gap-1 text-xs font-semibold sm:gap-1">
         {trail.slice(0, -1).map((crumb, i) => (
           <Fragment key={crumbKey(crumb)}>

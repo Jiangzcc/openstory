@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { personLockMessage } from '@/cast/likeness';
 import type { PersonLock } from '@/cast/likeness';
 import { BibleField } from '@/cast/ui/bible-field';
@@ -70,6 +72,9 @@ export const CharacterBibleForm: React.FC<{
   sequenceId: string | null;
   character: BibleFormCharacter & Pick<CharacterWithSheet, 'voiceDescription'>;
 }> = (props) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+
   const { character } = props;
   const updateSequenceCharacter = useUpdateSequenceCharacter();
   const updateTeamCharacter = useUpdateTeamCharacter();
@@ -89,15 +94,15 @@ export const CharacterBibleForm: React.FC<{
     if (!result.success) {
       // Native `required` covers the empty name; this is the length ceiling,
       // which would otherwise make Save look like it did nothing.
-      toast.error('Check the character fields', {
+      toast.error(translateEvent('Check the character fields'), {
         description: result.error.issues[0]?.message,
       });
       return;
     }
     const callbacks = {
-      onSuccess: () => toast.success('Character saved'),
+      onSuccess: () => toast.success(translateEvent('Character saved')),
       onError: (error: Error) =>
-        toast.error('Failed to save character', {
+        toast.error(translateEvent('Failed to save character'), {
           description: errorMessage(error),
         }),
     };
@@ -122,7 +127,7 @@ export const CharacterBibleForm: React.FC<{
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <BibleField
         idPrefix="character"
-        label="Name"
+        label={t('Name')}
         name="name"
         defaultValue={character.name}
         required
@@ -130,14 +135,14 @@ export const CharacterBibleForm: React.FC<{
       <div className="grid grid-cols-2 gap-4">
         <BibleField
           idPrefix="character"
-          label="Age"
+          label={t('Age')}
           name="age"
           defaultValue={character.age}
         />
         {showAppearance(character.gender) && (
           <BibleField
             idPrefix="character"
-            label="Gender"
+            label={t('Gender')}
             name="gender"
             defaultValue={character.gender}
           />
@@ -146,7 +151,7 @@ export const CharacterBibleForm: React.FC<{
       {showAppearance(character.ethnicity) && (
         <BibleField
           idPrefix="character"
-          label="Ethnicity"
+          label={t('Ethnicity')}
           name="ethnicity"
           defaultValue={character.ethnicity}
         />
@@ -154,7 +159,7 @@ export const CharacterBibleForm: React.FC<{
       {showAppearance(character.physicalDescription) && (
         <BibleField
           idPrefix="character"
-          label="Physical Description"
+          label={t('Physical Description')}
           name="physicalDescription"
           defaultValue={character.physicalDescription}
           textarea
@@ -163,7 +168,7 @@ export const CharacterBibleForm: React.FC<{
       {/* Always shown: unticking Voice only needs it in the same save. */}
       <BibleField
         idPrefix="character"
-        label="Rendered as"
+        label={t('Rendered as')}
         name="rendering"
         defaultValue={character.rendering}
         required={!character.voiceOnly}
@@ -173,7 +178,7 @@ export const CharacterBibleForm: React.FC<{
           htmlFor="character-isPerson"
           className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
         >
-          Person
+          {t('Person')}
         </Label>
         {/* Locked (#2065): shows Person, and with no `name` it is not
             submitted, so the server keeps what it holds. */}
@@ -186,8 +191,8 @@ export const CharacterBibleForm: React.FC<{
             character.personLock || character.isPerson ? 'true' : 'false'
           }
           items={{
-            true: 'Person',
-            false: 'Not a person',
+            true: t('Person'),
+            false: t('Not a person'),
           }}
         >
           <SelectTrigger
@@ -199,8 +204,8 @@ export const CharacterBibleForm: React.FC<{
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="true">Person</SelectItem>
-            <SelectItem value="false">Not a person</SelectItem>
+            <SelectItem value="true">{t('Person')}</SelectItem>
+            <SelectItem value="false">{t('Not a person')}</SelectItem>
           </SelectContent>
         </Select>
         {character.personLock && (
@@ -221,12 +226,12 @@ export const CharacterBibleForm: React.FC<{
           defaultChecked={character.voiceOnly}
         />
         <Label htmlFor="character-voiceOnly">
-          Voice only — heard, never seen
+          {t('Voice only — heard, never seen')}
         </Label>
       </div>
       <BibleField
         idPrefix="character"
-        label="Personality"
+        label={t('Personality')}
         name="personality"
         defaultValue={character.personality}
         textarea
@@ -234,7 +239,7 @@ export const CharacterBibleForm: React.FC<{
       {showAppearance(character.movement) && (
         <BibleField
           idPrefix="character"
-          label="Body movement"
+          label={t('Body movement')}
           name="movement"
           defaultValue={character.movement}
           textarea
@@ -243,16 +248,20 @@ export const CharacterBibleForm: React.FC<{
       <BibleField
         key={`${character.id}-voice-${character.voiceDescription ?? ''}`}
         idPrefix="character"
-        label="Voice"
+        label={t('Voice')}
         name="voiceDescription"
         defaultValue={character.voiceDescription}
         textarea
-        placeholder="Native English. Female, mid-50s. Excellent quality. Persona: dry detective. Emotion: unhurried, precise."
-        hint="Language, age, quality, persona, emotion, timbre — what can be heard, not how they look."
+        placeholder={t(
+          'Native English. Female, mid-50s. Excellent quality. Persona: dry detective. Emotion: unhurried, precise.'
+        )}
+        hint={t(
+          'Language, age, quality, persona, emotion, timbre — what can be heard, not how they look.'
+        )}
       />
       <div className="flex justify-end">
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Saving…' : 'Save'}
+          {isPending ? t('Saving…') : t('Save')}
         </Button>
       </div>
     </form>

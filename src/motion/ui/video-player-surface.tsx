@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * The Video.js-dependent half of {@link VideoPlayer}.
  *
@@ -18,6 +19,7 @@
 
 import type { Media, Video as VideoMedia } from '@videojs/media';
 import { Poster, useMedia } from '@videojs/react';
+import { I18nProvider } from '@videojs/react/i18n';
 import { NeutralVideoSkin, Video, VideoPlayer } from '@videojs/react/video';
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import type { CSSProperties } from 'react';
@@ -60,6 +62,8 @@ const VideoPlayerInner: React.FC<VideoPlayerSurfaceProps> = ({
   onPlay,
   onError,
 }) => {
+  const { t } = useTranslation('motion');
+
   const media = useMedia();
   const callbacksRef = useRef({
     onLoadedMetadata,
@@ -162,7 +166,7 @@ const VideoPlayerInner: React.FC<VideoPlayerSurfaceProps> = ({
             kind="captions"
             src={subtitlesUrl}
             srcLang="en"
-            label="Dialogue"
+            label={t('Dialogue')}
             default
           />
         )}
@@ -170,7 +174,7 @@ const VideoPlayerInner: React.FC<VideoPlayerSurfaceProps> = ({
       {media && isVideoMedia(media) ? <ShotCaptions media={media} /> : null}
       {!src && posterSrc && (
         <Poster.Root>
-          <Poster.Image src={posterSrc} alt="Video thumbnail" />
+          <Poster.Image src={posterSrc} alt={t('Video thumbnail')} />
         </Poster.Root>
       )}
     </NeutralVideoSkin>
@@ -243,9 +247,11 @@ const ShotCaptions: React.FC<{ media: VideoMedia }> = ({ media }) => {
  * which requires a module whose default is the component.
  */
 const VideoPlayerSurface: React.FC<VideoPlayerSurfaceProps> = (props) => (
-  <VideoPlayer>
-    <VideoPlayerInner {...props} />
-  </VideoPlayer>
+  <I18nProvider>
+    <VideoPlayer>
+      <VideoPlayerInner {...props} />
+    </VideoPlayer>
+  </I18nProvider>
 );
 
 export default VideoPlayerSurface;

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   giftRedeemMessage,
   giftRedeemOffersTopUp,
@@ -12,6 +13,8 @@ import { openAddCreditsDialog } from './use-add-credits-dialog';
  * Used-up codes get a top-up button instead of another Redeem click (#2033).
  */
 export function GiftRedeemNotice({ reason }: { reason: GiftRedeemReason }) {
+  const { t } = useTranslation('billing');
+
   return (
     <div className="flex flex-col gap-3">
       <Alert>
@@ -19,7 +22,7 @@ export function GiftRedeemNotice({ reason }: { reason: GiftRedeemReason }) {
       </Alert>
       {giftRedeemOffersTopUp(reason) ? (
         <Button type="button" onClick={() => openAddCreditsDialog('gift_code')}>
-          Top up credits
+          {t('Top up credits')}
         </Button>
       ) : null}
     </div>

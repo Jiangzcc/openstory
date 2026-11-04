@@ -10,6 +10,9 @@
  * mode that is supposed to skip it.
  */
 
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { getI18n, I18nextProvider } from 'react-i18next';
 import { describe, expect, it, vi } from 'vitest';
 
 type CreateCall = { data: Record<string, unknown> };
@@ -27,9 +30,7 @@ vi.doMock('@/sequences/sequences.fn', () => ({
   setSequenceModelsFn,
   setSequenceTargetDurationFn,
 }));
-// `useMutation` returns its own options object, so `mutationFn` is callable
-// straight off the hook — a pure payload check needs no React renderer. Kept
-// here (not a shared helper) because it is a lie only this file wants.
+// Mock mutation handles keep the options inspectable without running a real request.
 const mutationOptions = new WeakMap<object, MutationOptions>();
 type MutationOptions = {
   mutationFn: (input: unknown) => Promise<unknown>;
@@ -58,11 +59,20 @@ vi.doMock('@tanstack/react-query', () => ({
 }));
 
 /** The `mutationFn` the hook handed to `useMutation`. */
-function mutationFnOf(hookResult: object): MutationOptions['mutationFn'] {
-  return optionsOf(hookResult).mutationFn;
+function mutationFnOf(useHook: () => object): MutationOptions['mutationFn'] {
+  return optionsOf(useHook).mutationFn;
 }
-function optionsOf(hookResult: object): MutationOptions {
-  const options = mutationOptions.get(hookResult);
+function optionsOf(useHook: () => object): MutationOptions {
+  const capture = vi.fn<(result: object) => void>();
+  function Probe() {
+    capture(useHook());
+    return null;
+  }
+  renderToStaticMarkup(
+    createElement(I18nextProvider, { i18n: getI18n() }, createElement(Probe))
+  );
+  const result = capture.mock.calls[0]?.[0];
+  const options = result ? mutationOptions.get(result) : undefined;
   if (!options) throw new Error('useMutation was not called by the hook');
   return options;
 }
@@ -102,7 +112,7 @@ const INPUT = {
 describe('useCreateSequence forwards the full input', () => {
   it('sends every field the caller set, generateStartFrames included', async () => {
     createSequenceFn.mockClear();
-    await mutationFnOf(useCreateSequence())(INPUT);
+    await mutationFnOf(useCreateSequence)(INPUT);
 
     const sent = createSequenceFn.mock.calls[0]?.[0];
     expect(sent).toBeDefined();
@@ -118,7 +128,7 @@ describe('useCreateSequence forwards the full input', () => {
 
   it('still defaults a blank title rather than sending one', async () => {
     createSequenceFn.mockClear();
-    await mutationFnOf(useCreateSequence())({ ...INPUT, title: '' });
+    await mutationFnOf(useCreateSequence)({ ...INPUT, title: '' });
 
     const sent = createSequenceFn.mock.calls[0]?.[0];
     expect(sent?.data.title).toBe('Untitled Sequence');
@@ -129,7 +139,7 @@ describe('useCreateSequence forwards the full input', () => {
 describe('useSetSequenceModels', () => {
   it('sends the sequence id and the picked model', async () => {
     setSequenceModelsFn.mockClear();
-    await mutationFnOf(useSetSequenceModels('seq_1'))({
+    await mutationFnOf(() => useSetSequenceModels('seq_1'))({
       videoModel: 'seedance_v2_5',
     });
 
@@ -145,7 +155,7 @@ describe('useSetSequenceTargetDuration', () => {
   it('shows the pick at once and puts the old target back if the save fails', async () => {
     const key = sequenceKeys.detail('seq_1');
     queryClient.setQueryData(key, { id: 'seq_1', targetDurationSeconds: 30 });
-    const options = optionsOf(useSetSequenceTargetDuration('seq_1'));
+    const options = optionsOf(() => useSetSequenceTargetDuration('seq_1'));
 
     const ctx = await options.onMutate?.(60);
     expect(queryClient.getQueryData(key)).toMatchObject({

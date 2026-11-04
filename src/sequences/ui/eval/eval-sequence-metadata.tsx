@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import type React from 'react';
 import { AspectRatioIcon } from '@/ui/icons/aspect-ratio-icon';
@@ -43,10 +46,13 @@ export const EvalSequenceMetadata: React.FC<EvalSequenceMetadataProps> = ({
   sequence,
   divergence,
 }) => {
+  const { locale } = useLocaleFormatting();
+  const { t } = useTranslation('sequences');
+
   const ratioData = getAspectRatioData(sequence.aspectRatio);
   const imageModel = getImageModelById(sequence.imageModel);
   const dotTitle = divergence?.hasMusic
-    ? 'Alternate music track available — click to compare'
+    ? t('Alternate music track available — click to compare')
     : null;
 
   return (
@@ -64,9 +70,9 @@ export const EvalSequenceMetadata: React.FC<EvalSequenceMetadataProps> = ({
           to="/sequences/$id/scenes"
           params={{ id: sequence.id }}
           className="min-w-0 flex-1 font-medium text-sm text-foreground line-clamp-2 hover:underline"
-          title={sequence.title || 'Untitled Sequence'}
+          title={sequence.title || t('Untitled Sequence')}
         >
-          {sequence.title || 'Untitled Sequence'}
+          {sequence.title || t('Untitled Sequence')}
         </Link>
         <SequenceRowMenu sequence={sequence} />
       </div>
@@ -88,7 +94,9 @@ export const EvalSequenceMetadata: React.FC<EvalSequenceMetadataProps> = ({
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
-          <span>{formatDistanceToNow(new Date(sequence.createdAt))}</span>
+          <span>
+            {formatDistanceToNow(new Date(sequence.createdAt), locale)}
+          </span>
         </div>
 
         {ratioData && (
@@ -105,7 +113,7 @@ export const EvalSequenceMetadata: React.FC<EvalSequenceMetadataProps> = ({
 
       <div className="text-xs text-muted-foreground">
         {sequence.shots.length}{' '}
-        {sequence.shots.length === 1 ? 'scene' : 'scenes'}
+        {sequence.shots.length === 1 ? t('scene') : t('scenes')}
       </div>
 
       <SequenceListStatus sequence={sequence} />
@@ -120,6 +128,9 @@ export const EvalSequenceMetadata: React.FC<EvalSequenceMetadataProps> = ({
 export const SequenceRowMenu: React.FC<{
   sequence: Pick<SequenceWithShots, 'id' | 'title'>;
 }> = ({ sequence }) => {
+  const translateEvent = useLiveTranslation('sequences');
+  const { t } = useTranslation('sequences');
+
   const archive = useArchiveSequence();
   return (
     <DropdownMenu>
@@ -129,7 +140,9 @@ export const SequenceRowMenu: React.FC<{
           variant="ghost"
           size="icon"
           className="h-6 w-6 shrink-0"
-          aria-label={`Actions for ${sequence.title || 'Untitled Sequence'}`}
+          aria-label={t('Actions for {{value1}}', {
+            value1: sequence.title || 'Untitled Sequence',
+          })}
         >
           <MoreVertical className="h-4 w-4" />
         </Button>
@@ -148,25 +161,32 @@ export const SequenceRowMenu: React.FC<{
             })
           }
         >
-          Chat about this
+          {t('Chat about this')}
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={archive.isPending}
           onClick={() =>
             archive.mutate(sequence.id, {
               onSuccess: () =>
-                toast.success(`Archived ${sequence.title || 'sequence'}`, {
-                  description: 'Restore it from the Archived section below.',
-                }),
+                toast.success(
+                  translateEvent('Archived {{value1}}', {
+                    value1: sequence.title || translateEvent('sequence'),
+                  }),
+                  {
+                    description: translateEvent(
+                      'Restore it from the Archived section below.'
+                    ),
+                  }
+                ),
               onError: (error) =>
-                toast.error('Failed to archive sequence', {
+                toast.error(translateEvent('Failed to archive sequence'), {
                   description: errorMessage(error),
                 }),
             })
           }
         >
           <Archive className="h-4 w-4" />
-          {archive.isPending ? 'Archiving…' : 'Archive sequence'}
+          {archive.isPending ? t('Archiving…') : t('Archive sequence')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -230,6 +250,8 @@ export function sequenceListFailure(sequence: SequenceListFailureInput): {
 export const SequenceListStatus: React.FC<{
   sequence: SequenceListFailureInput;
 }> = ({ sequence }) => {
+  const { t } = useTranslation('sequences');
+
   const { creditsShort, errorCount } = sequenceListFailure(sequence);
   if (!creditsShort && errorCount === 0) return null;
 
@@ -245,7 +267,7 @@ export const SequenceListStatus: React.FC<{
         <div className="flex items-center gap-1 text-xs text-destructive">
           <AlertTriangle className="h-3 w-3 shrink-0" />
           <span>
-            {errorCount} {errorCount === 1 ? 'error' : 'errors'}
+            {errorCount} {errorCount === 1 ? t('error') : t('errors')}
           </span>
         </div>
       )}

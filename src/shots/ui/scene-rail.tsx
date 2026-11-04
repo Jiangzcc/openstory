@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { AspectRatio } from '@/models/aspect-ratios';
 import { shotDraftLabel } from '@/motion/draft-mode';
 import { plainSceneTitle } from '@/platform/markdown-plain';
@@ -39,10 +40,13 @@ export const SceneRail: React.FC<{
   onExpand,
   className,
 }) => {
+  const { t } = useTranslation('shots');
+  const { t: translateDraft } = useTranslation('motion');
+
   const isWholeSequence = selection.sceneIds.length === 0 && !selection.shotId;
   return (
     <nav
-      aria-label="Scenes"
+      aria-label={t('Scenes')}
       className={cn(
         'flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-background',
         className
@@ -53,8 +57,8 @@ export const SceneRail: React.FC<{
         variant="ghost"
         size="icon"
         className="h-11 w-full shrink-0 rounded-none border-b"
-        aria-label="Expand scenes list"
-        title="Expand scenes list"
+        aria-label={t('Expand scenes list')}
+        title={t('Expand scenes list')}
         onClick={onExpand}
       >
         <PanelLeftOpen className="size-4" />
@@ -62,8 +66,8 @@ export const SceneRail: React.FC<{
       <Link
         from="/sequences/$id/scenes"
         search={(prev) => ({ ...prev, scenes: undefined, shot: undefined })}
-        aria-label="Whole sequence"
-        title="Whole sequence"
+        aria-label={t('Whole sequence')}
+        title={t('Whole sequence')}
         aria-current={isWholeSequence ? 'true' : undefined}
         className={cn(
           'flex h-9 shrink-0 items-center justify-center border-b text-muted-foreground outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
@@ -76,7 +80,8 @@ export const SceneRail: React.FC<{
         <ol className="flex flex-col gap-3 p-2">
           {scenes.map((scene) => {
             const label =
-              plainSceneTitle(scene.title) || `Scene ${scene.orderIndex + 1}`;
+              plainSceneTitle(scene.title) ||
+              t('Scene {{value1}}', { value1: scene.orderIndex + 1 });
             const sceneSelected = selection.sceneIds.includes(scene.id);
             return (
               <li key={scene.id} className="flex flex-col gap-1">
@@ -101,7 +106,10 @@ export const SceneRail: React.FC<{
                 {shots
                   .filter((shot) => shot.sceneId === scene.id)
                   .map((shot, i) => {
-                    const shotLabel = `${label} — Shot ${shot.shotNumber ?? i + 1}`;
+                    const shotLabel = t('{{value1}} — Shot {{value2}}', {
+                      value1: label,
+                      value2: shot.shotNumber ?? i + 1,
+                    });
                     const active = shot.id === selection.shotId;
                     const playing = shot.id === playingShotId;
                     return (
@@ -113,7 +121,11 @@ export const SceneRail: React.FC<{
                           scenes: undefined,
                           shot: shot.id,
                         })}
-                        title={playing ? `${shotLabel} (playing)` : shotLabel}
+                        title={
+                          playing
+                            ? t('{{value1}} (playing)', { value1: shotLabel })
+                            : shotLabel
+                        }
                         aria-current={active || playing ? 'true' : undefined}
                         data-playing={playing ? 'true' : undefined}
                         className={cn(
@@ -135,7 +147,9 @@ export const SceneRail: React.FC<{
                               : null
                           }
                           draftLabel={
-                            shownClipUrl(shot) ? shotDraftLabel(shot) : null
+                            shownClipUrl(shot)
+                              ? shotDraftLabel(shot, undefined, translateDraft)
+                              : null
                           }
                           alt={shotLabel}
                           aspectRatio={aspectRatio}
@@ -143,11 +157,11 @@ export const SceneRail: React.FC<{
                         />
                         {staleShotIds?.has(shot.id) && (
                           <span
-                            title="Out of date since your last edit"
+                            title={t('Out of date since your last edit')}
                             className="pointer-events-none absolute top-0.5 right-0.5 block size-2 rounded-full bg-amber-500 ring-2 ring-amber-500/30"
                           >
                             <span className="sr-only">
-                              Out of date since your last edit
+                              {t('Out of date since your last edit')}
                             </span>
                           </span>
                         )}

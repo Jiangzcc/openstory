@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AppImage } from '@/ui/shadcn/app-image';
 import { Skeleton } from '@/ui/shadcn/skeleton';
 import {
@@ -104,6 +105,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   sequenceId,
   shotId,
 }) => {
+  const { t } = useTranslation('motion');
+
   const mounted = useMounted();
   const posthog = usePostHog();
 
@@ -158,13 +161,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   if (!src && posterSrc) {
     return (
       <div className={playerFrameClassName(aspectRatio, className)}>
-        <PlayerPlaceholder posterSrc={posterSrc} alt="Scene thumbnail" />
+        <PlayerPlaceholder posterSrc={posterSrc} alt={t('Scene thumbnail')} />
       </div>
     );
   }
 
   const placeholder = (
-    <PlayerPlaceholder posterSrc={null} alt="Video thumbnail" />
+    <PlayerPlaceholder posterSrc={null} alt={t('Video thumbnail')} />
   );
 
   return (

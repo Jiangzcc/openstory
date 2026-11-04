@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   Dialog,
@@ -43,6 +45,10 @@ export const StartingFrameVariants: React.FC<StartingFrameVariantsProps> = ({
   generating,
   onGenerateStart,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+
+  const { t } = useTranslation('shots');
+
   const [open, setOpen] = useState(false);
   const generateVariants = useGenerateVariants();
   const selectVariant = useSelectVariant();
@@ -70,11 +76,21 @@ export const StartingFrameVariants: React.FC<StartingFrameVariantsProps> = ({
         model: imageModel,
       });
     } catch (error) {
-      toast.error('Scene variants generation failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
+      toast.error(translateEvent('Scene variants generation failed'), {
+        description:
+          error instanceof Error
+            ? error.message
+            : translateEvent('Unknown error'),
       });
     }
-  }, [onGenerateStart, generateVariants, sequenceId, shot.id, imageModel]);
+  }, [
+    translateEvent,
+    onGenerateStart,
+    generateVariants,
+    sequenceId,
+    shot.id,
+    imageModel,
+  ]);
 
   const handleSelect = useCallback(
     async (index: number) => {
@@ -89,12 +105,15 @@ export const StartingFrameVariants: React.FC<StartingFrameVariantsProps> = ({
       try {
         await run;
       } catch (error) {
-        toast.error('Failed to select variant', {
-          description: error instanceof Error ? error.message : 'Unknown error',
+        toast.error(translateEvent('Failed to select variant'), {
+          description:
+            error instanceof Error
+              ? error.message
+              : translateEvent('Unknown error'),
         });
       }
     },
-    [selectVariant, sequenceId, shot.id]
+    [translateEvent, selectVariant, sequenceId, shot.id]
   );
 
   return (
@@ -112,7 +131,9 @@ export const StartingFrameVariants: React.FC<StartingFrameVariantsProps> = ({
         size="sm"
         onClick={() => setOpen(true)}
         className="absolute top-2 left-2 z-20 h-8 gap-1.5 bg-black/50 px-2 text-xs text-white hover:bg-black/70"
-        aria-label={isUpscaling ? 'Upscaling frame variant' : 'Frame variants'}
+        aria-label={
+          isUpscaling ? t('Upscaling frame variant') : t('Frame variants')
+        }
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-busy={isUpscaling || isGeneratingGrid}
@@ -123,19 +144,20 @@ export const StartingFrameVariants: React.FC<StartingFrameVariantsProps> = ({
           <Grid2x2 className="h-4 w-4" />
         )}
         {isUpscaling
-          ? 'Upscaling…'
+          ? t('Upscaling…')
           : isGeneratingGrid
-            ? 'Generating…'
-            : 'Frame variants'}
+            ? t('Generating…')
+            : t('Frame variants')}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Frame variants</DialogTitle>
+            <DialogTitle>{t('Frame variants')}</DialogTitle>
             <DialogDescription>
-              Pick an alternate for this shot&apos;s starting frame, or generate
-              a new set.
+              {t(
+                "Pick an alternate for this shot's starting frame, or generate a new set."
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -150,7 +172,7 @@ export const StartingFrameVariants: React.FC<StartingFrameVariantsProps> = ({
             />
           ) : (
             <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center text-sm text-muted-foreground">
-              No variants yet. Generate options for this starting frame.
+              {t('No variants yet. Generate options for this starting frame.')}
             </div>
           )}
 
@@ -171,10 +193,10 @@ export const StartingFrameVariants: React.FC<StartingFrameVariantsProps> = ({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               {isGeneratingGrid
-                ? 'Generating…'
+                ? t('Generating…')
                 : shot.gridSheet?.url
-                  ? 'Regenerate frame variants'
-                  : 'Generate frame variants'}
+                  ? t('Regenerate frame variants')
+                  : t('Generate frame variants')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   includesStage,
   sliderStages,
@@ -81,6 +82,8 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
   onIncludeMusicChange,
   disabled = false,
 }) => {
+  const { t } = useTranslation('sequences');
+
   const stages = sliderStages(!generateStartFrames, generateVoices);
   const lastStop = stages.length - 1;
   const ticks: Tick[] = draftFirst ? [...stages, FINALS_TICK] : stages;
@@ -133,7 +136,7 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
               key={tick}
               type="button"
               disabled={disabled || locked}
-              title={ghost ? 'After you approve the drafts' : undefined}
+              title={ghost ? t('After you approve the drafts') : undefined}
               onClick={() => {
                 if (locked) return;
                 onChange(stopAtFromSliderIndex(index, stages));
@@ -198,7 +201,7 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
             )
           );
         }}
-        aria-label="How far generation should run"
+        aria-label={t('How far generation should run')}
       />
       {tickRow('below')}
       {/* A switch shows only when it changes a step this run takes. */}
@@ -222,13 +225,13 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
               disabled={disabled}
             />
             <Label htmlFor="generate-start-frames" className="text-sm">
-              Use start frames
+              {t('Use start frames')}
             </Label>
           </div>
           <p className="text-xs text-muted-foreground">
             {generateStartFrames
-              ? 'Each shot’s video starts from a generated still.'
-              : 'Video is generated straight from the reference sheets.'}
+              ? t('Each shot’s video starts from a generated still.')
+              : t('Video is generated straight from the reference sheets.')}
           </p>
         </div>
       )}
@@ -242,13 +245,13 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
               disabled={disabled}
             />
             <Label htmlFor="include-music" className="text-sm">
-              Music
+              {t('Music')}
             </Label>
           </div>
           <p className="text-xs text-muted-foreground">
             {includeMusic
-              ? 'One track for the whole sequence.'
-              : 'No music track.'}
+              ? t('One track for the whole sequence.')
+              : t('No music track.')}
           </p>
         </div>
       )}
@@ -262,13 +265,15 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
               disabled={disabled || draftFirstLocked}
             />
             <Label htmlFor="draft-first" className="text-sm">
-              Draft first
+              {t('Draft first')}
             </Label>
           </div>
           <p className="text-xs text-muted-foreground">
             {draftFirst
-              ? 'Clips render at 480p first. Approve them, then render the 1080p finals. Drafts last seven days.'
-              : 'Clips render at full quality straight away.'}
+              ? t(
+                  'Clips render at 480p first. Approve them, then render the 1080p finals. Drafts last seven days.'
+                )
+              : t('Clips render at full quality straight away.')}
           </p>
         </div>
       )}

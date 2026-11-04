@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { GitHubIcon } from '@/ui/icons/github-icon';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 
 export const OgImageGitHub: React.FC = () => {
+  const { t } = useTranslation('interface');
+
   return (
     <div className="flex h-[630px] w-[1200px] flex-col items-center justify-center bg-white p-20">
       <div className="flex flex-col items-center gap-10 text-center">
@@ -12,9 +15,9 @@ export const OgImageGitHub: React.FC = () => {
         </div>
 
         <h1 className="font-heading text-[5.5rem] font-bold tracking-tight leading-[1] text-black">
-          Open source
+          {t('Open source')}
           <br />
-          video generation
+          {t('video generation')}
         </h1>
 
         <p className="font-mono text-2xl text-black/60">

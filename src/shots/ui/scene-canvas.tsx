@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import { Button } from '@/ui/shadcn/button';
 import { ScenePlayer } from '@/motion/ui/scene-player';
@@ -96,6 +97,9 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
   onPlayingShot,
   playingShotId,
 }) => {
+  const { t } = useTranslation('shots');
+  const { t: translateDraft } = useTranslation('motion');
+
   const scope = selectionScope(selection);
   const scopedShots = useMemo(
     () => (shots ? selectionShots(selection, shots) : []),
@@ -107,8 +111,8 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
     [scopedShots, aspectRatio]
   );
   const draftLabel = useMemo(
-    () => theatreDraftLabel(scopedShots),
-    [scopedShots]
+    () => theatreDraftLabel(scopedShots, undefined, translateDraft),
+    [scopedShots, translateDraft]
   );
 
   const setMusicEnabled = useSetSequenceMusic(sequence?.id ?? '');
@@ -120,7 +124,7 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
           role="alert"
           className="max-w-md text-center text-sm text-destructive"
         >
-          Failed to load shots: {loadError.message}
+          {t('Failed to load shots: {{value1}}', { value1: loadError.message })}
         </p>
       </div>
     );
@@ -203,9 +207,11 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 py-16">
         <Film className="h-8 w-8 text-muted-foreground" />
-        <p className="text-muted-foreground">No scenes ready to play yet</p>
+        <p className="text-muted-foreground">
+          {t('No scenes ready to play yet')}
+        </p>
         <p className="max-w-md text-center text-sm text-muted-foreground">
-          Add shots to preview playback here.
+          {t('Add shots to preview playback here.')}
         </p>
       </div>
     );
@@ -264,7 +270,9 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
                             kind: 'shot',
                             id: playing.id,
                             label: playing.shotNumber
-                              ? `Shot ${playing.shotNumber}`
+                              ? t('Shot {{value1}}', {
+                                  value1: playing.shotNumber,
+                                })
                               : 'This shot',
                           },
                         ]
@@ -272,7 +280,7 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
                   });
                 }}
               >
-                Chat about this
+                {t('Chat about this')}
               </Button>
               <SequenceDownloadMenu
                 sequenceId={sequence.id}

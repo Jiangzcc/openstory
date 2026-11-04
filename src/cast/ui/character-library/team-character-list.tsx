@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { TeamCharacterCard } from '@/cast/ui/character-library/team-character-card';
 import { LibraryVirtualGrid } from '@/cast/ui/library-virtual-grid';
@@ -16,6 +17,8 @@ export const TeamCharacterList: React.FC<{
   /** The search box: matches name or description, any case. */
   query: string;
 }> = ({ scrollRef, query }) => {
+  const { t } = useTranslation('cast');
+
   const { data: everyCharacter } = useTeamCharacters();
   const needle = query.trim().toLowerCase();
   const characters = needle
@@ -30,8 +33,10 @@ export const TeamCharacterList: React.FC<{
     return (
       <EmptyState
         icon={<User className="h-12 w-12" />}
-        title="No characters match"
-        description={`Nothing matches “${query.trim()}”.`}
+        title={t('No characters match')}
+        description={t('Nothing matches “{{value1}}”.', {
+          value1: query.trim(),
+        })}
       />
     );
   }
@@ -40,8 +45,8 @@ export const TeamCharacterList: React.FC<{
     return (
       <EmptyState
         icon={<User className="h-12 w-12" />}
-        title="No characters yet"
-        description="Make one with New character, or analyse a sequence."
+        title={t('No characters yet')}
+        description={t('Make one with New character, or analyse a sequence.')}
         action={<AskAssistantButton context={[]} />}
       />
     );

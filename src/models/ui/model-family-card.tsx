@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/ui/shadcn/badge';
 import type { ModelFamily } from '@/models/model-families';
 import { Link } from '@tanstack/react-router';
@@ -13,6 +15,10 @@ import { ReleaseBadge } from './release-badge';
  * grouped by version.
  */
 export const ModelFamilyCard: FC<{ family: ModelFamily }> = ({ family }) => {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('models');
+
   if (family.variants.length === 1) {
     return <ModelCard model={family.representative} />;
   }
@@ -24,7 +30,7 @@ export const ModelFamilyCard: FC<{ family: ModelFamily }> = ({ family }) => {
       to="/models/family/$"
       params={{ _splat: family.family }}
       search={{ activity: family.activity }}
-      aria-label={`${family.title} model family`}
+      aria-label={t('{{value1}} model family', { value1: family.title })}
       className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:scale-[1.02] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <div
@@ -48,11 +54,15 @@ export const ModelFamilyCard: FC<{ family: ModelFamily }> = ({ family }) => {
           {family.family}
         </span>
         <div className="flex flex-wrap items-center gap-1">
-          <Badge variant="secondary">{ACTIVITY_LABELS[family.activity]}</Badge>
+          <Badge variant="secondary">
+            {translateLabel(ACTIVITY_LABELS[family.activity])}
+          </Badge>
           {family.latestVersion && (
             <Badge variant="outline">{family.latestVersion}</Badge>
           )}
-          <Badge variant="outline">{family.variants.length} variants</Badge>
+          <Badge variant="outline">
+            {t('{{value1}} variants', { value1: family.variants.length })}
+          </Badge>
         </div>
       </div>
     </Link>

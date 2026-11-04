@@ -1,3 +1,6 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { localizeMeta } from '@/ui/i18n/head';
+import { Trans, useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { DependencyGraphView } from '@/ui/docs/dependency-graph-view';
@@ -20,16 +23,20 @@ const searchSchema = z.object({
 // transcribed from the hash bodies in `src/shots/input-hash.ts`.
 export const Route = createFileRoute('/docs/dependency-graph')({
   validateSearch: searchSchema,
-  head: () => ({
-    meta: [
+  head: ({ match }) => ({
+    meta: localizeMeta(match.context.i18n, 'documentation', [
       { title: `${title} - OpenStory Docs` },
       { name: 'description', content: description },
-    ],
+    ]),
   }),
   component: DependencyGraphArticle,
 });
 
 function DependencyGraphArticle() {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('documentation');
+
   const { node = 'character', mode = 'reference-only' } = Route.useSearch();
   const navigate = Route.useNavigate();
 
@@ -37,22 +44,26 @@ function DependencyGraphArticle() {
     <article className="flex flex-col gap-8">
       <header>
         <p className="text-sm font-medium text-muted-foreground">
-          Developer Guide
+          {t('Developer Guide')}
         </p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-2 text-lg text-muted-foreground">{description}</p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight">
+          {translateLabel(title)}
+        </h1>
+        <p className="mt-2 text-lg text-muted-foreground">
+          {translateLabel(description)}
+        </p>
       </header>
       <div className="prose dark:prose-invert max-w-none text-sm">
         <p>
-          Every generated artifact stores a hash of the inputs it was made from.
-          Staleness is never a flag we set: on every read we recompute the hash
-          from the current inputs and compare. A mismatch is{' '}
-          <strong>stale</strong>. A row with no stored hash is{' '}
-          <strong>untracked</strong> and never stale. Versioned things (green
-          border) keep every generation as a row and a pointer picks one.
-          Renders record which <em>version</em> of a prompt or sheet they used,
-          so selecting a different version is what makes them stale, not editing
-          the text.
+          <Trans
+            ns="documentation"
+            i18nKey="Every generated artifact stores a hash of the inputs it was made from. Staleness is never a flag we set: on every read we recompute the hash from the current inputs and compare. A mismatch is <0>stale</0>. A row with no stored hash is <1>untracked</1> and never stale. Versioned things (green border) keep every generation as a row and a pointer picks one. Renders record which <2>version</2> of a prompt or sheet they used, so selecting a different version is what makes them stale, not editing the text."
+            components={[
+              <strong key="0" />,
+              <strong key="1" />,
+              <em key="2" />,
+            ]}
+          />
         </p>
       </div>
       <DependencyGraphView

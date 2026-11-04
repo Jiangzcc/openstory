@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { BibleField } from '@/cast/ui/bible-field';
 import { Button } from '@/ui/shadcn/button';
 import { Label } from '@/ui/shadcn/label';
@@ -37,6 +39,9 @@ export const LocationBibleForm: React.FC<{
   sequenceId: string | null;
   location: LocationWithReference;
 }> = ({ sequenceId, location }) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+
   const updateInSequence = useUpdateSequenceLocation();
   const updateForTeam = useUpdateTeamLocation();
   const isPending = updateInSequence.isPending || updateForTeam.isPending;
@@ -49,15 +54,15 @@ export const LocationBibleForm: React.FC<{
     if (!result.success) {
       // See the character twin: without this, a too-long field makes Save
       // look like a no-op.
-      toast.error('Check the location fields', {
+      toast.error(translateEvent('Check the location fields'), {
         description: result.error.issues[0]?.message,
       });
       return;
     }
     const handlers = {
-      onSuccess: () => toast.success('Location saved'),
+      onSuccess: () => toast.success(translateEvent('Location saved')),
       onError: (error: Error) =>
-        toast.error('Failed to save location', {
+        toast.error(translateEvent('Failed to save location'), {
           description: errorMessage(error),
         }),
     };
@@ -78,7 +83,7 @@ export const LocationBibleForm: React.FC<{
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <BibleField
         idPrefix="location"
-        label="Name"
+        label={t('Name')}
         name="name"
         defaultValue={location.name}
         required
@@ -89,7 +94,7 @@ export const LocationBibleForm: React.FC<{
             htmlFor="location-type"
             className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
           >
-            Type
+            {t('Type')}
           </Label>
           <Select
             name="type"
@@ -99,58 +104,58 @@ export const LocationBibleForm: React.FC<{
                 : 'interior'
             }
             items={{
-              interior: 'Interior',
-              exterior: 'Exterior',
-              both: 'Interior/Exterior',
+              interior: t('Interior'),
+              exterior: t('Exterior'),
+              both: t('Interior/Exterior'),
             }}
           >
             <SelectTrigger id="location-type">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="interior">Interior</SelectItem>
-              <SelectItem value="exterior">Exterior</SelectItem>
-              <SelectItem value="both">Interior/Exterior</SelectItem>
+              <SelectItem value="interior">{t('Interior')}</SelectItem>
+              <SelectItem value="exterior">{t('Exterior')}</SelectItem>
+              <SelectItem value="both">{t('Interior/Exterior')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
       <BibleField
         idPrefix="location"
-        label="Description"
+        label={t('Description')}
         name="description"
         defaultValue={location.description}
         textarea
       />
       <BibleField
         idPrefix="location"
-        label="Architectural Style"
+        label={t('Architectural Style')}
         name="architecturalStyle"
         defaultValue={location.architecturalStyle}
       />
       <BibleField
         idPrefix="location"
-        label="Key Features"
+        label={t('Key Features')}
         name="keyFeatures"
         defaultValue={location.keyFeatures}
         textarea
       />
       <BibleField
         idPrefix="location"
-        label="Ambiance"
+        label={t('Ambiance')}
         name="ambiance"
         defaultValue={location.ambiance}
       />
       <BibleField
         idPrefix="location"
-        label="Rendered as"
+        label={t('Rendered as')}
         name="rendering"
         defaultValue={location.rendering}
         required
       />
       <div className="flex justify-end">
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Saving…' : 'Save'}
+          {isPending ? t('Saving…') : t('Save')}
         </Button>
       </div>
     </form>

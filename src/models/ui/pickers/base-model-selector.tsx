@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   DropdownMenu,
@@ -80,17 +82,19 @@ const STATUS_ICON: Record<
 };
 
 function ModelStatusIcon({ status }: { status?: ModelGenerationStatus }) {
+  const translateLabel = useLabelTranslation('models');
+
   if (!status || status === 'pending') return null;
   const { Icon, className, label } = STATUS_ICON[status];
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="shrink-0" aria-label={label}>
+          <span className="shrink-0" aria-label={translateLabel(label)}>
             <Icon className={`size-3.5 ${className}`} />
           </span>
         </TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
+        <TooltipContent>{translateLabel(label)}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -120,6 +124,10 @@ export const BaseModelSelector: React.FC<BaseModelSelectorProps> = ({
   size = 'default',
   variant = 'outline',
 }) => {
+  const translateLabel = useLabelTranslation('models');
+
+  const { t } = useTranslation('models');
+
   const [open, setOpen] = useState(false);
   const [multipleEnabled, setMultipleEnabled] = useState(
     selectedIds.length > 1
@@ -178,7 +186,7 @@ export const BaseModelSelector: React.FC<BaseModelSelectorProps> = ({
   // Display label for button
   const displayLabel = useMemo(() => {
     if (selectedIds.length === 0) {
-      return `Select ${label.toLowerCase()}`;
+      return t('Select {{value1}}', { value1: label.toLowerCase() });
     }
 
     const firstModel = models.find((m) => m.id === selectedIds[0]);
@@ -189,7 +197,7 @@ export const BaseModelSelector: React.FC<BaseModelSelectorProps> = ({
     }
 
     return `${firstName} +${selectedIds.length - 1}`;
-  }, [selectedIds, models, label]);
+  }, [selectedIds, models, label, t]);
 
   // Format group label (capitalize, format nicely)
   const formatGroupLabel = (group: string) => {
@@ -222,14 +230,16 @@ export const BaseModelSelector: React.FC<BaseModelSelectorProps> = ({
         className="w-[min(300px,calc(100vw-2rem))] max-h-[min(24rem,var(--radix-dropdown-menu-content-available-height,24rem))] overflow-y-auto"
       >
         <div className="flex items-center justify-between px-2 py-1.5">
-          <DropdownMenuLabel className="p-0 text-xs">{label}</DropdownMenuLabel>
+          <DropdownMenuLabel className="p-0 text-xs">
+            {translateLabel(label)}
+          </DropdownMenuLabel>
           {multiSelect && (
             <div className="flex items-center gap-1.5">
               <label
                 htmlFor="multi-toggle"
                 className="text-[10px] text-muted-foreground"
               >
-                Multiple
+                {t('Multiple')}
               </label>
               <Switch
                 id="multi-toggle"
@@ -282,7 +292,7 @@ export const BaseModelSelector: React.FC<BaseModelSelectorProps> = ({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                                Recommended
+                                {t('Recommended')}
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -293,7 +303,7 @@ export const BaseModelSelector: React.FC<BaseModelSelectorProps> = ({
                       )}
                       {model.badge === 'open-weight' && (
                         <span className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-500">
-                          Open Weight
+                          {t('Open Weight')}
                         </span>
                       )}
                     </span>

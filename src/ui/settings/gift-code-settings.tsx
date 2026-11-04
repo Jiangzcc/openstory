@@ -1,3 +1,7 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { Trans, useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/ui/shadcn/alert';
 import { Badge } from '@/ui/shadcn/badge';
 import { Button } from '@/ui/shadcn/button';
@@ -55,6 +59,9 @@ export function GiftCodeSettings() {
 }
 
 function RedeemSection() {
+  const translateEvent = useLiveTranslation('interface');
+  const { t } = useTranslation('interface');
+
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
@@ -95,18 +102,32 @@ function RedeemSection() {
       const returnTo = localStorage.getItem(RETURN_KEY);
       if (returnTo) {
         localStorage.removeItem(RETURN_KEY);
-        toast.success(`$${result.amountUsd.toFixed(2)} added to your balance`, {
-          description: `New balance: $${result.newBalance.toFixed(2)}`,
-          action: {
-            label: 'Continue creating',
-            onClick: () => void navigate({ to: returnTo }),
-          },
-          duration: 15_000,
-        });
+        toast.success(
+          translateEvent('${{value1}} added to your balance', {
+            value1: result.amountUsd.toFixed(2),
+          }),
+          {
+            description: translateEvent('New balance: ${{value1}}', {
+              value1: result.newBalance.toFixed(2),
+            }),
+            action: {
+              label: translateEvent('Continue creating'),
+              onClick: () => void navigate({ to: returnTo }),
+            },
+            duration: 15_000,
+          }
+        );
       } else {
-        toast.success(`$${result.amountUsd.toFixed(2)} added to your balance`, {
-          description: `New balance: $${result.newBalance.toFixed(2)}`,
-        });
+        toast.success(
+          translateEvent('${{value1}} added to your balance', {
+            value1: result.amountUsd.toFixed(2),
+          }),
+          {
+            description: translateEvent('New balance: ${{value1}}', {
+              value1: result.newBalance.toFixed(2),
+            }),
+          }
+        );
       }
     },
     onError: (err) => {
@@ -152,9 +173,9 @@ function RedeemSection() {
             <Gift className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle>Redeem Gift Code</CardTitle>
+            <CardTitle>{t('Redeem Gift Code')}</CardTitle>
             <CardDescription>
-              Enter a gift code to add credits to your team
+              {t('Enter a gift code to add credits to your team')}
             </CardDescription>
           </div>
         </div>
@@ -163,7 +184,7 @@ function RedeemSection() {
         <form onSubmit={handleSubmit} className="flex gap-3">
           <Input
             name="code"
-            placeholder="Enter code…"
+            placeholder={t('Enter code…')}
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             className="font-mono uppercase tracking-wider"
@@ -173,7 +194,7 @@ function RedeemSection() {
             required
           />
           <Button type="submit" disabled={!submitAllowed}>
-            {redeemMutation.isPending ? 'Redeeming…' : 'Redeem'}
+            {redeemMutation.isPending ? t('Redeeming…') : t('Redeem')}
           </Button>
         </form>
         {locked && refusal ? <GiftRedeemNotice reason={refusal} /> : null}
@@ -205,6 +226,9 @@ const INITIAL_BATCH_FORM = {
 };
 
 function BatchCreateCard() {
+  const translateEvent = useLiveTranslation('interface');
+  const { t } = useTranslation('interface');
+
   const queryClient = useQueryClient();
   const [form, setForm] = useState(INITIAL_BATCH_FORM);
   const [createdCodes, setCreatedCodes] = useState<string[] | null>(null);
@@ -223,11 +247,17 @@ function BatchCreateCard() {
       setCreatedCodes(result.codes);
       setForm(INITIAL_BATCH_FORM);
       void queryClient.invalidateQueries({ queryKey: ['gift-tokens'] });
-      toast.success(`${result.codes.length} gift codes created`);
+      toast.success(
+        translateEvent('{{value1}} gift codes created', {
+          value1: result.codes.length,
+        })
+      );
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to create batch'
+        err instanceof Error
+          ? err.message
+          : translateEvent('Failed to create batch')
       );
     },
   });
@@ -251,9 +281,10 @@ function BatchCreateCard() {
   const handleCopyAll = async () => {
     if (!createdCodes) return;
     if (!(await copyTextToClipboard(createdCodes.join('\n')))) {
-      toast.error('Failed to copy the codes', {
-        description:
-          'Your browser blocked clipboard access. Select the codes to copy them manually.',
+      toast.error(translateEvent('Failed to copy the codes'), {
+        description: translateEvent(
+          'Your browser blocked clipboard access. Select the codes to copy them manually.'
+        ),
       });
       return;
     }
@@ -269,9 +300,9 @@ function BatchCreateCard() {
             <Layers className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle>Batch Create Gift Codes</CardTitle>
+            <CardTitle>{t('Batch Create Gift Codes')}</CardTitle>
             <CardDescription>
-              Generate multiple single-use codes (e.g. for promotions)
+              {t('Generate multiple single-use codes (e.g. for promotions)')}
             </CardDescription>
           </div>
         </div>
@@ -280,7 +311,7 @@ function BatchCreateCard() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="space-y-2">
-              <Label htmlFor="batch-count">Count</Label>
+              <Label htmlFor="batch-count">{t('Count')}</Label>
               <Input
                 id="batch-count"
                 type="number"
@@ -296,7 +327,7 @@ function BatchCreateCard() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="batch-amount">Amount (USD)</Label>
+              <Label htmlFor="batch-amount">{t('Amount (USD)')}</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   $
@@ -316,23 +347,23 @@ function BatchCreateCard() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="batch-expires">Expires in (days)</Label>
+              <Label htmlFor="batch-expires">{t('Expires in (days)')}</Label>
               <Input
                 id="batch-expires"
                 type="number"
                 min="1"
                 step="1"
-                placeholder="No expiry"
+                placeholder={t('No expiry')}
                 value={form.expiresInDays}
                 onChange={(e) => updateField('expiresInDays', e.target.value)}
                 autoComplete="off"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="batch-note">Note</Label>
+              <Label htmlFor="batch-note">{t('Note')}</Label>
               <Input
                 id="batch-note"
-                placeholder="e.g. Promo batch…"
+                placeholder={t('e.g. Promo batch…')}
                 value={form.note}
                 onChange={(e) => updateField('note', e.target.value)}
                 autoComplete="off"
@@ -344,15 +375,19 @@ function BatchCreateCard() {
             disabled={!form.count || !form.amount || batchMutation.isPending}
           >
             {batchMutation.isPending
-              ? `Creating ${form.count} codes…`
-              : `Create ${form.count} Codes`}
+              ? t('Creating {{value1}} codes…', { value1: form.count })
+              : t('Create {{value1}} Codes', { value1: form.count })}
           </Button>
         </form>
 
         {createdCodes && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>{createdCodes.length} codes generated</Label>
+              <Label>
+                {t('{{value1}} codes generated', {
+                  value1: createdCodes.length,
+                })}
+              </Label>
               <Button
                 variant="outline"
                 size="sm"
@@ -364,7 +399,7 @@ function BatchCreateCard() {
                 ) : (
                   <Copy className="h-3.5 w-3.5" />
                 )}
-                {copied ? 'Copied' : 'Copy All'}
+                {copied ? t('Copied') : t('Copy All')}
               </Button>
             </div>
             <textarea
@@ -392,6 +427,9 @@ const INITIAL_GIFT_FORM = {
 };
 
 function CreateGiftCodeCard() {
+  const translateEvent = useLiveTranslation('interface');
+  const { t } = useTranslation('interface');
+
   const queryClient = useQueryClient();
   const [form, setForm] = useState(INITIAL_GIFT_FORM);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
@@ -412,7 +450,9 @@ function CreateGiftCodeCard() {
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to create gift code'
+        err instanceof Error
+          ? err.message
+          : translateEvent('Failed to create gift code')
       );
     },
   });
@@ -440,9 +480,9 @@ function CreateGiftCodeCard() {
             <ShieldCheck className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle>Create Gift Code</CardTitle>
+            <CardTitle>{t('Create Gift Code')}</CardTitle>
             <CardDescription>
-              Generate a new gift code (admin only)
+              {t('Generate a new gift code (admin only)')}
             </CardDescription>
           </div>
         </div>
@@ -451,7 +491,7 @@ function CreateGiftCodeCard() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="gift-amount">Amount (USD)</Label>
+              <Label htmlFor="gift-amount">{t('Amount (USD)')}</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   $
@@ -471,7 +511,9 @@ function CreateGiftCodeCard() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="gift-max-redemptions">Max redemptions</Label>
+              <Label htmlFor="gift-max-redemptions">
+                {t('Max redemptions')}
+              </Label>
               <Input
                 id="gift-max-redemptions"
                 type="number"
@@ -485,13 +527,13 @@ function CreateGiftCodeCard() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="gift-expires">Expires in (days)</Label>
+              <Label htmlFor="gift-expires">{t('Expires in (days)')}</Label>
               <Input
                 id="gift-expires"
                 type="number"
                 min="1"
                 step="1"
-                placeholder="No expiry"
+                placeholder={t('No expiry')}
                 value={form.expiresInDays}
                 onChange={(e) => updateField('expiresInDays', e.target.value)}
                 autoComplete="off"
@@ -499,10 +541,10 @@ function CreateGiftCodeCard() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="gift-note">Note (optional)</Label>
+            <Label htmlFor="gift-note">{t('Note (optional)')}</Label>
             <Input
               id="gift-note"
-              placeholder="e.g. Beta tester reward…"
+              placeholder={t('e.g. Beta tester reward…')}
               value={form.note}
               onChange={(e) => updateField('note', e.target.value)}
               autoComplete="off"
@@ -512,7 +554,7 @@ function CreateGiftCodeCard() {
             type="submit"
             disabled={!form.amount || createMutation.isPending}
           >
-            {createMutation.isPending ? 'Creating…' : 'Create Gift Code'}
+            {createMutation.isPending ? t('Creating…') : t('Create Gift Code')}
           </Button>
         </form>
 
@@ -520,10 +562,17 @@ function CreateGiftCodeCard() {
           <Alert>
             <AlertDescription className="flex items-center justify-between">
               <span>
-                Gift code created:{' '}
-                <span className="font-mono font-bold tracking-wider">
-                  {createdCode}
-                </span>
+                <Trans
+                  ns="interface"
+                  i18nKey="Gift code created: <0>{{value1}}</0>"
+                  components={[
+                    <span
+                      key="0"
+                      className="font-mono font-bold tracking-wider"
+                    />,
+                  ]}
+                  values={{ value1: createdCode }}
+                />
               </span>
               <div className="flex items-center gap-1">
                 <CopyButton text={createdCode} />
@@ -538,6 +587,8 @@ function CreateGiftCodeCard() {
 }
 
 function GiftCodeListCard() {
+  const { t } = useTranslation('interface');
+
   const { data: tokens, isLoading } = useQuery({
     queryKey: ['gift-tokens'],
     queryFn: () => listGiftTokensFn(),
@@ -547,8 +598,10 @@ function GiftCodeListCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gift Codes</CardTitle>
-        <CardDescription>All gift codes created by admins</CardDescription>
+        <CardTitle>{t('Gift Codes')}</CardTitle>
+        <CardDescription>
+          {t('All gift codes created by admins')}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -559,7 +612,7 @@ function GiftCodeListCard() {
           </div>
         ) : !tokens?.length ? (
           <p className="text-center text-muted-foreground py-4">
-            No gift codes yet
+            {t('No gift codes yet')}
           </p>
         ) : (
           <div className="space-y-2">
@@ -588,6 +641,8 @@ type GiftTokenRowProps = {
 };
 
 function GiftTokenRow({ token }: GiftTokenRowProps) {
+  const { t } = useTranslation('interface');
+  const { formatDate } = useLocaleFormatting();
   return (
     <div className="flex items-center justify-between rounded-lg border p-3">
       <div className="flex-1 min-w-0">
@@ -603,9 +658,11 @@ function GiftTokenRow({ token }: GiftTokenRowProps) {
         <p className="text-xs text-muted-foreground truncate">
           {[
             token.note,
-            new Date(token.createdAt).toLocaleDateString(),
+            formatDate(new Date(token.createdAt)),
             token.expiresAt &&
-              `Expires ${new Date(token.expiresAt).toLocaleDateString()}`,
+              t('Expires {{value1}}', {
+                value1: formatDate(new Date(token.expiresAt)),
+              }),
           ]
             .filter(Boolean)
             .join(' · ')}
@@ -645,18 +702,24 @@ function getStatusLabel(status: string): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const translateLabel = useLabelTranslation('interface');
   return (
-    <Badge variant={getStatusVariant(status)}>{getStatusLabel(status)}</Badge>
+    <Badge variant={getStatusVariant(status)}>
+      {translateLabel(getStatusLabel(status))}
+    </Badge>
   );
 }
 
 function CopyLinkButton({ code }: { code: string }) {
+  const translateEvent = useLiveTranslation('interface');
+  const { t } = useTranslation('interface');
+
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     const url = `${window.location.origin}/gift/${code}`;
     if (!(await copyTextToClipboard(url))) {
-      toast.error('Failed to copy the gift link');
+      toast.error(translateEvent('Failed to copy the gift link'));
       return;
     }
     setCopied(true);
@@ -669,7 +732,7 @@ function CopyLinkButton({ code }: { code: string }) {
       size="icon"
       className="h-8 w-8"
       onClick={() => void handleCopy()}
-      aria-label="Copy gift link"
+      aria-label={t('Copy gift link')}
     >
       {copied ? (
         <Check className="h-4 w-4 text-green-600" />
@@ -681,11 +744,14 @@ function CopyLinkButton({ code }: { code: string }) {
 }
 
 function CopyButton({ text }: { text: string }) {
+  const translateEvent = useLiveTranslation('interface');
+  const { t } = useTranslation('interface');
+
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     if (!(await copyTextToClipboard(text))) {
-      toast.error('Failed to copy the code');
+      toast.error(translateEvent('Failed to copy the code'));
       return;
     }
     setCopied(true);
@@ -698,7 +764,7 @@ function CopyButton({ text }: { text: string }) {
       size="icon"
       className="h-8 w-8"
       onClick={() => void handleCopy()}
-      aria-label="Copy code"
+      aria-label={t('Copy code')}
     >
       {copied ? (
         <Check className="h-4 w-4 text-green-600" />

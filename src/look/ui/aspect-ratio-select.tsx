@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { AspectRatioIcon } from '@/ui/icons/aspect-ratio-icon';
 import { Button } from '@/ui/shadcn/button';
 import {
@@ -38,6 +40,9 @@ export const AspectRatioSelect = ({
   variant = 'horizontal',
   className,
 }: AspectRatioSelectProps) => {
+  const { t } = useTranslation('look');
+  const translateLabel = useLabelTranslation('look');
+
   const selectedRatio = ASPECT_RATIOS.find((r) => r.value === value);
 
   if (variant === 'vertical') {
@@ -49,7 +54,7 @@ export const AspectRatioSelect = ({
             size={size}
             disabled={disabled}
             className={cn('flex-col h-auto gap-2', className)}
-            aria-label="Select aspect ratio"
+            aria-label={t('Select aspect ratio')}
           >
             {selectedRatio ? (
               <>
@@ -61,7 +66,9 @@ export const AspectRatioSelect = ({
                 <span className="font-semibold">{selectedRatio.label}</span>
               </>
             ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
+              <span className="text-muted-foreground">
+                {translateLabel(placeholder)}
+              </span>
             )}
           </Button>
         </DropdownMenuTrigger>
@@ -98,7 +105,7 @@ export const AspectRatioSelect = ({
           size={size}
           disabled={disabled}
           className={className}
-          aria-label="Select aspect ratio"
+          aria-label={t('Select aspect ratio')}
         >
           {selectedRatio ? (
             <>
@@ -110,7 +117,9 @@ export const AspectRatioSelect = ({
               <span className="font-mono">{selectedRatio.value}</span>
             </>
           ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
+            <span className="text-muted-foreground">
+              {translateLabel(placeholder)}
+            </span>
           )}
           <ChevronDown className="size-4" />
         </Button>

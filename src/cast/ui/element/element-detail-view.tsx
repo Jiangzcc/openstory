@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { Trans, useTranslation } from 'react-i18next';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { ElementTokenButton } from './element-token-button';
 import { ReplaceElementPopover } from './replace-element-popover';
@@ -62,6 +64,9 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
   sequenceId,
   elementId,
 }) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+
   const navigate = useNavigate();
   const { data: elements, isLoading, error } = useSequenceElements(sequenceId);
   const { data: shotCounts } = useShotCountsForAllElements(sequenceId);
@@ -86,15 +91,27 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
       token: nextToken,
     });
     const updates: string[] = [];
-    if (result.scriptUpdated) updates.push('script');
+    if (result.scriptUpdated) updates.push(translateEvent('script'));
     if (result.shotsUpdated > 0) {
       updates.push(
-        `${result.shotsUpdated} shot${result.shotsUpdated === 1 ? '' : 's'}`
+        translateEvent('{{value1}} shot{{value2}}', {
+          value1: result.shotsUpdated,
+          value2: result.shotsUpdated === 1 ? '' : 's',
+        })
       );
     }
     const suffix =
-      updates.length > 0 ? ` — updated ${updates.join(' + ')}` : '';
-    toast.success(`Renamed to ${nextToken}${suffix}`);
+      updates.length > 0
+        ? translateEvent(' — updated {{value1}}', {
+            value1: updates.join(' + '),
+          })
+        : '';
+    toast.success(
+      translateEvent('Renamed to {{value1}}{{value2}}', {
+        value1: nextToken,
+        value2: suffix,
+      })
+    );
   };
 
   const handleDelete = () => {
@@ -102,15 +119,22 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
       { elementId, sequenceId },
       {
         onSuccess: () => {
-          toast.success(`Deleted ${element?.token ?? 'element'}`);
+          toast.success(
+            translateEvent('Deleted {{value1}}', {
+              value1: element?.token ?? 'element',
+            })
+          );
           void navigate({
             to: '/sequences/$id/elements',
             params: { id: sequenceId },
           });
         },
         onError: (err) => {
-          toast.error('Failed to delete element', {
-            description: err instanceof Error ? err.message : 'Unknown error',
+          toast.error(translateEvent('Failed to delete element'), {
+            description:
+              err instanceof Error
+                ? err.message
+                : translateEvent('Unknown error'),
           });
         },
       }
@@ -121,7 +145,9 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
     return (
       <div className="flex h-full items-center justify-center p-6">
         <div className="text-center">
-          <p className="text-sm text-destructive">Failed to load element</p>
+          <p className="text-sm text-destructive">
+            {t('Failed to load element')}
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">{error.message}</p>
         </div>
       </div>
@@ -151,13 +177,13 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
       <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
         <ImagePlus className="h-16 w-16 text-muted-foreground/30" />
         <div className="text-center">
-          <p className="text-sm font-medium">Element not found</p>
+          <p className="text-sm font-medium">{t('Element not found')}</p>
           <Link
             to="/sequences/$id/elements"
             params={{ id: sequenceId }}
             className="mt-2 text-sm text-primary hover:underline"
           >
-            Back to elements
+            {t('Back to elements')}
           </Link>
         </div>
       </div>
@@ -171,7 +197,7 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
           to="/sequences/$id/elements"
           params={{ id: sequenceId }}
           className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
-          aria-label="Back to elements"
+          aria-label={t('Back to elements')}
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
@@ -181,15 +207,21 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
       <ScrollArea className="flex-1 min-h-0">
         <div className="flex flex-col gap-6 p-4">
           <p className="text-sm text-muted-foreground">
-            Type @ in a prompt or script to insert{' '}
-            <span className="font-mono">{element.token}</span>.
+            <Trans
+              ns="cast"
+              i18nKey="Type @ in a prompt or script to insert <0>{{value1}}</0>."
+              components={[<span key="0" className="font-mono" />]}
+              values={{ value1: element.token }}
+            />
           </p>
 
           <div className="group relative aspect-video overflow-hidden rounded-lg bg-muted">
             {isAnalyzing ? (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70 backdrop-blur-sm">
                 <Loader2 className="size-8 animate-spin text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Analyzing…</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('Analyzing…')}
+                </p>
               </div>
             ) : null}
             {element.kind === 'video' && element.imageUrl ? (
@@ -219,7 +251,7 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
               <div className="flex h-full w-full flex-col items-center justify-center gap-2">
                 <ImagePlus className="size-12 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">
-                  No reference yet — generated at the References stage
+                  {t('No reference yet — generated at the References stage')}
                 </p>
               </div>
             )}
@@ -247,10 +279,10 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
               variant="outline"
               disabled={deleteElement.isPending || isAnalyzing}
               onClick={() => setDeleteOpen(true)}
-              aria-label={`Delete ${element.token}`}
+              aria-label={t('Delete {{value1}}', { value1: element.token })}
             >
               <Trash2 className="h-4 w-4" />
-              Delete
+              {t('Delete')}
             </Button>
             <AskAssistantButton size="default" context={[]} />
           </div>
@@ -259,14 +291,16 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
             {isAnalyzing ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
-                Analyzing image…
+                {t('Analyzing image…')}
               </div>
             ) : element.visionStatus === 'failed' ? (
               <p className="text-sm text-destructive">
-                Vision failed: {element.visionError ?? 'unknown error'}
+                {t('Vision failed: {{value1}}', {
+                  value1: element.visionError ?? t('unknown error'),
+                })}
               </p>
             ) : element.kind === 'image' ? (
-              <DetailRow label="Description" value={element.description} />
+              <DetailRow label={t('Description')} value={element.description} />
             ) : (
               // Nothing looked at this file, so the description is the user's
               // to write (#1559): a transcript, "upbeat synth bed", "puppet
@@ -274,7 +308,7 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
               // mention.
               <div className="space-y-1">
                 <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Description
+                  {t('Description')}
                 </dt>
                 <dd>
                   <Textarea
@@ -283,8 +317,10 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
                     rows={3}
                     placeholder={
                       element.kind === 'audio'
-                        ? 'What is this? e.g. a transcript, or "upbeat synth bed"'
-                        : 'What is this? e.g. "handheld walk cycle, side on"'
+                        ? t(
+                            'What is this? e.g. a transcript, or "upbeat synth bed"'
+                          )
+                        : t('What is this? e.g. "handheld walk cycle, side on"')
                     }
                     disabled={setDescription.isPending}
                     onBlur={(event) => {
@@ -294,12 +330,15 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
                         { sequenceId, elementId, description: next },
                         {
                           onError: (err) =>
-                            toast.error("Couldn't save the description", {
-                              description:
-                                err instanceof Error
-                                  ? err.message
-                                  : 'Unknown error',
-                            }),
+                            toast.error(
+                              translateEvent("Couldn't save the description"),
+                              {
+                                description:
+                                  err instanceof Error
+                                    ? err.message
+                                    : translateEvent('Unknown error'),
+                              }
+                            ),
                         }
                       );
                     }}
@@ -310,12 +349,12 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
             {element.kind !== 'image' && (
               <>
                 <DetailRow
-                  label="Length"
+                  label={t('Length')}
                   value={formatElementDuration(element.durationSeconds)}
                 />
                 <div className="space-y-1">
                   <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Model support
+                    {t('Model support')}
                   </dt>
                   <dd className="flex items-start gap-2 text-sm leading-relaxed">
                     <ElementSupportBadge
@@ -330,7 +369,8 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
                       {elementSupportSummary(
                         element.kind,
                         element.durationSeconds,
-                        element.imageUrl
+                        element.imageUrl,
+                        t
                       )}
                     </span>
                   </dd>
@@ -339,17 +379,24 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
             )}
             {affectedShotCount > 0 ? (
               <DetailRow
-                label="Used in"
-                value={`${affectedShotCount} shot${affectedShotCount === 1 ? '' : 's'}${
-                  affectedVideoCount > 0
-                    ? ` (${affectedVideoCount} with video)`
-                    : ''
-                }`}
+                label={t('Used in')}
+                value={t('{{value1}} shot{{value2}}{{value3}}', {
+                  value1: affectedShotCount,
+                  value2: affectedShotCount === 1 ? '' : 's',
+                  value3:
+                    affectedVideoCount > 0
+                      ? t(' ({{value1}} with video)', {
+                          value1: affectedVideoCount,
+                        })
+                      : '',
+                })}
               />
             ) : (
               <DetailRow
-                label="Used in"
-                value="No shots yet — mention it with @ in a prompt or script"
+                label={t('Used in')}
+                value={t(
+                  'No shots yet — mention it with @ in a prompt or script'
+                )}
               />
             )}
           </dl>
@@ -359,17 +406,31 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {element.token}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('Delete {{value1}}?', { value1: element.token })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the reference image from the sequence.
-              {affectedShotCount > 0 && (
-                <span>{` ${affectedShotCount} shot${affectedShotCount === 1 ? '' : 's'} still mention it — those prompts will keep the token until you edit them.`}</span>
-              )}
+              {
+                <>
+                  {t('This removes the reference image from the sequence.')}
+                  {affectedShotCount > 0 && (
+                    <span>
+                      {t(
+                        ' {{value1}} shot{{value2}} still mention it — those prompts will keep the token until you edit them.',
+                        {
+                          value1: affectedShotCount,
+                          value2: affectedShotCount === 1 ? '' : 's',
+                        }
+                      )}
+                    </span>
+                  )}
+                </>
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteElement.isPending}>
-              Cancel
+              {t('Cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
@@ -379,7 +440,9 @@ export const ElementDetailView: React.FC<ElementDetailViewProps> = ({
               {deleteElement.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              <span>{deleteElement.isPending ? 'Deleting…' : 'Delete'}</span>
+              <span>
+                {deleteElement.isPending ? t('Deleting…') : t('Delete')}
+              </span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

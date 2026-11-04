@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 /**
  * Copy the whole script — the composed document (#1037).
  *
@@ -49,6 +51,9 @@ const STATUS: Record<
 export const CopyScriptButton: React.FC<{ sequenceId: string }> = ({
   sequenceId,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const translateLabel = useLabelTranslation('shots');
+
   const { data: composed } = useComposedScript(sequenceId);
   const [status, setStatus] = useState<CopyStatus>('idle');
   // Bumped on every attempt so a repeat tap restarts the reset timer — keyed on
@@ -69,10 +74,11 @@ export const CopyScriptButton: React.FC<{ sequenceId: string }> = ({
     setAttempt((n) => n + 1);
     if (copied) return;
     // Stable id: three taps in half a second should not stack three toasts.
-    toast.error('Could not copy the script', {
+    toast.error(translateEvent('Could not copy the script'), {
       id: 'copy-script-failed',
-      description:
-        'Your browser blocked clipboard access. Select the script text to copy it manually.',
+      description: translateEvent(
+        'Your browser blocked clipboard access. Select the script text to copy it manually.'
+      ),
     });
   };
 
@@ -98,7 +104,9 @@ export const CopyScriptButton: React.FC<{ sequenceId: string }> = ({
         {announced}
       </span>
       {/* Labelled only when the view bar has room (canvas-view-toggle). */}
-      <span className="hidden @[40rem]/viewbar:inline">{label}</span>
+      <span className="hidden @[40rem]/viewbar:inline">
+        {translateLabel(label)}
+      </span>
     </Button>
   );
 };

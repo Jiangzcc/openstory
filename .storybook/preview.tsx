@@ -14,6 +14,20 @@ import { setupWorker } from 'msw/browser';
 import { handlers } from '../src/mocks/handlers';
 
 import '../src/styles/global.css';
+import { useMemo } from 'react';
+import { I18nextProvider } from 'react-i18next';
+import { createApplicationI18n } from '../src/ui/i18n/runtime';
+import { resolveLocale } from '../src/platform/i18n/locale';
+
+const withI18n: Decorator = function WithI18n(Story, context) {
+  const locale = resolveLocale(context.globals.locale);
+  const i18n = useMemo(() => createApplicationI18n(locale), [locale]);
+  return (
+    <I18nextProvider i18n={i18n}>
+      <Story />
+    </I18nextProvider>
+  );
+};
 
 /*
  * Initializes MSW with our API handlers
@@ -53,6 +67,19 @@ const withProviders: Decorator = (Story) => (
 );
 
 const preview: Preview = {
+  globalTypes: {
+    locale: {
+      description: 'Language / 语言',
+      toolbar: {
+        icon: 'globe',
+        items: [
+          { value: 'zh-CN', title: '简体中文' },
+          { value: 'en', title: 'English' },
+        ],
+        dynamicTitle: true,
+      },
+    },
+  },
   parameters: {
     controls: {
       matchers: {
@@ -92,6 +119,7 @@ const preview: Preview = {
   ],
 
   decorators: [
+    withI18n,
     withProviders,
     withRouter,
     withThemeByClassName({
@@ -104,6 +132,7 @@ const preview: Preview = {
   ],
 
   initialGlobals: {
+    locale: 'zh-CN',
     viewport: {
       value: 'responsive',
       isRotated: false,

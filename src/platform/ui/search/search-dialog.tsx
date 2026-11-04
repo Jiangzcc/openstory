@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 /**
  * Global search (#2100): one box over everything the team has made. Results
  * are grouped by kind and each one is a link.
@@ -93,6 +95,9 @@ type SearchDialogProps = {
 };
 
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
+  const { t } = useTranslation('platform');
+  const translateLabel = useLabelTranslation('platform');
+
   const [query, setQuery] = useState('');
   const term = query.trim();
   const searching = term.length >= SEARCH_MIN_LENGTH;
@@ -131,9 +136,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   };
 
   let status = '';
-  if (isError) status = 'Search failed.';
+  if (isError) status = t('Search failed.');
   else if (searching && hits.length === 0)
-    status = isFetching ? 'Searching…' : `Nothing matches “${term}”.`;
+    status = isFetching
+      ? t('Searching…')
+      : t('Nothing matches “{{value1}}”.', { value1: term });
 
   return (
     <Dialog open={open} onOpenChange={close}>
@@ -142,17 +149,19 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         onKeyDown={onKeyDown}
       >
         <DialogHeader>
-          <DialogTitle>Search</DialogTitle>
+          <DialogTitle>{t('Search')}</DialogTitle>
           <DialogDescription>
-            Sequences, scenes, shots, characters, locations, images and clips.
+            {t(
+              'Sequences, scenes, shots, characters, locations, images and clips.'
+            )}
           </DialogDescription>
         </DialogHeader>
         <Input
           type="search"
           name="query"
           autoComplete="off"
-          aria-label="Search"
-          placeholder="Search…"
+          aria-label={t('Search')}
+          placeholder={t('Search…')}
           maxLength={SEARCH_MAX_LENGTH}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -170,7 +179,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
             return (
               <section key={kind} className="flex flex-col gap-1">
                 <h3 className="px-2 text-xs font-medium text-muted-foreground">
-                  {GROUP_LABELS[kind]}
+                  {translateLabel(GROUP_LABELS[kind])}
                 </h3>
                 <ul className="flex flex-col">
                   {group.map((hit) => (

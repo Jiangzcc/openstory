@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { useSetSequenceModel } from '@/sequences/ui/use-sequences';
 import type { ModelCoverage } from './sequence-model-coverage';
 import { toast } from 'sonner';
@@ -21,6 +23,9 @@ export const SetModelButton = ({
   modelName: string;
   coverage?: ModelCoverage;
 }) => {
+  const translateEvent = useLiveTranslation('models');
+  const { t } = useTranslation('models');
+
   const setModel = useSetSequenceModel();
 
   if (!coverage || coverage.status === 'set' || coverage.completed === 0) {
@@ -40,7 +45,11 @@ export const SetModelButton = ({
           {
             onSuccess: (r) =>
               toast.success(
-                `Set ${modelName} on ${r.count} scene${r.count === 1 ? '' : 's'}`
+                translateEvent('Set {{value1}} on {{value2}} scene{{value3}}', {
+                  value1: modelName,
+                  value2: r.count,
+                  value3: r.count === 1 ? '' : 's',
+                })
               ),
             onError: (err) => toast.error(err.message),
           }
@@ -48,7 +57,7 @@ export const SetModelButton = ({
       }}
       className="rounded border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
     >
-      Set
+      {t('Set')}
     </button>
   );
 };

@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/ui/shadcn/badge';
 import type { CatalogModel } from '@/models/catalog';
 import { Link } from '@tanstack/react-router';
@@ -31,6 +33,10 @@ export function categoryLabel(category: string): string {
  * carries no thumbnails for fal, so the visual is an activity glyph.
  */
 export const ModelCard: FC<{ model: CatalogModel }> = ({ model }) => {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('models');
+
   const Icon = ACTIVITY_ICONS[model.activity];
 
   return (
@@ -38,7 +44,7 @@ export const ModelCard: FC<{ model: CatalogModel }> = ({ model }) => {
       to="/models/$"
       params={{ _splat: model.endpointId }}
       search={{ activity: model.activity }}
-      aria-label={`${model.displayName} model details`}
+      aria-label={t('{{value1}} model details', { value1: model.displayName })}
       className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:scale-[1.02] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <div
@@ -68,9 +74,13 @@ export const ModelCard: FC<{ model: CatalogModel }> = ({ model }) => {
           {model.endpointId}
         </span>
         <div className="flex flex-wrap items-center gap-1">
-          <Badge variant="secondary">{ACTIVITY_LABELS[model.activity]}</Badge>
+          <Badge variant="secondary">
+            {translateLabel(ACTIVITY_LABELS[model.activity])}
+          </Badge>
           {model.category && (
-            <Badge variant="outline">{categoryLabel(model.category)}</Badge>
+            <Badge variant="outline">
+              {translateLabel(categoryLabel(model.category))}
+            </Badge>
           )}
         </div>
       </div>

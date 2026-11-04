@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -82,6 +84,10 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
   onNavigateUp,
   onNavigateDown,
 }) => {
+  const translateLabel = useLabelTranslation('sequences');
+
+  const { t } = useTranslation('sequences');
+
   const prompt = getVisualPrompt(shot);
   const motionPrompt = getMotionPrompt(shot);
   const script = getSceneScript(scene);
@@ -153,10 +159,13 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
       <DialogContent className="max-w-[calc(100vw-1rem)]! sm:max-w-[80vw]! max-h-[80vh] w-full h-full flex flex-col">
         <DialogHeader>
           <DialogTitle>
-            {sequenceTitle} - Scene {sceneNumber}
+            {t('{{value1}} - Scene {{value2}}', {
+              value1: sequenceTitle,
+              value2: sceneNumber,
+            })}
           </DialogTitle>
           <DialogDescription>
-            View scene details, prompts, and generated images.
+            {t('View scene details, prompts, and generated images.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -171,7 +180,10 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
           <div className="sm:hidden mb-4">
             <Select
               value={selectedTab}
-              items={DIALOG_TABS}
+              items={DIALOG_TABS.map((tab) => ({
+                ...tab,
+                label: translateLabel(tab.label),
+              }))}
               onValueChange={(value) => {
                 if (value && isDialogTab(value)) setSelectedTab(value);
               }}
@@ -182,7 +194,7 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
               <SelectContent>
                 {DIALOG_TABS.map((tab) => (
                   <SelectItem key={tab.value} value={tab.value}>
-                    {tab.label}
+                    {translateLabel(tab.label)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -207,19 +219,19 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
             >
               <TabsTrigger value="script">
                 <FileTextIcon className="h-4 w-4 mr-2" />
-                Script
+                {t('Script')}
               </TabsTrigger>
               <TabsTrigger value="prompts">
                 <TextIcon className="h-4 w-4 mr-2" />
-                Prompts
+                {t('Prompts')}
               </TabsTrigger>
               <TabsTrigger value="images">
                 <ImageIcon className="h-4 w-4 mr-2" />
-                Image
+                {t('Image')}
               </TabsTrigger>
               <TabsTrigger value="motion">
                 <Clapperboard className="h-4 w-4 mr-2" />
-                Motion
+                {t('Motion')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -227,7 +239,7 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
           <TabsContent value="script" className="flex-1 min-h-0 mt-0">
             {!script ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                No script available
+                {t('No script available')}
               </div>
             ) : (
               <ScrollArea className="h-full">
@@ -241,14 +253,14 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
           <TabsContent value="prompts" className="flex-1 min-h-0 mt-0">
             {!prompt && !motionPrompt ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                No prompts available
+                {t('No prompts available')}
               </div>
             ) : (
               <ScrollArea className="h-full">
                 {prompt && (
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-1">
-                      Visual
+                      {t('Visual')}
                     </p>
                     <HighlightedPrompt
                       text={prompt}
@@ -261,7 +273,7 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
                 {motionPrompt && (
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-1">
-                      Motion
+                      {t('Motion')}
                     </p>
                     <HighlightedPrompt
                       text={motionPrompt}
@@ -277,13 +289,13 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
           <TabsContent value="images" className="flex-1 min-h-0 mt-0">
             {!shot.imageUrl ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                No image available
+                {t('No image available')}
               </div>
             ) : (
               <div className="flex justify-center items-center h-full">
                 <AppImage
                   src={shot.imageUrl}
-                  alt={`Scene ${sceneNumber}`}
+                  alt={t('Scene {{value1}}', { value1: sceneNumber })}
                   className="max-w-full max-h-full object-contain rounded-lg"
                   width={1000}
                   height={1000}
@@ -299,7 +311,9 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
                   <div className="relative w-full max-w-4xl">
                     <AppImage
                       src={shot.imageUrl}
-                      alt={`Scene ${sceneNumber} preview`}
+                      alt={t('Scene {{value1}} preview', {
+                        value1: sceneNumber,
+                      })}
                       className="w-full h-auto object-contain rounded-lg opacity-60"
                       width={1920}
                       height={1080}
@@ -307,15 +321,15 @@ export const EvalCellDialog: React.FC<EvalCellDialogProps> = ({
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <span className="text-sm font-medium text-foreground bg-background/85 backdrop-blur-sm px-3 py-1.5 rounded-md border">
                         {shot.videoStatus === 'generating'
-                          ? 'Generating video…'
-                          : 'No video yet'}
+                          ? t('Generating video…')
+                          : t('No video yet')}
                       </span>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No video available
+                  {t('No video available')}
                 </div>
               )
             ) : (

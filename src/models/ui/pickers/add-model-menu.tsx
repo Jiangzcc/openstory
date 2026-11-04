@@ -1,3 +1,6 @@
+import type { TFunction } from 'i18next';
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -46,7 +49,12 @@ type Candidate = {
   group: SelectorGroup;
 };
 
-const scenes = (n: number) => `${n} scene${n === 1 ? '' : 's'}`;
+const scenes = (n: number, translate?: TFunction<'models'>) =>
+  translate?.('{{value1}} scene{{value2}}', {
+    ns: 'models',
+    value1: n,
+    value2: n === 1 ? '' : 's',
+  }) ?? `${n} scene${n === 1 ? '' : 's'}`;
 
 /**
  * "Add a model" section for the header model dropdowns (#547). Lists models of
@@ -71,6 +79,9 @@ export const AddModelMenuSection = ({
   variantType: VariantType;
   usedModels: string[];
 }) => {
+  const translateEvent = useLiveTranslation('models');
+  const { t } = useTranslation('models');
+
   const addModel = useAddModelToSequence();
   const { data: shots } = useShotsBySequence(sequenceId);
   const { data: sceneRows } = useScenesBySequence(sequenceId);
@@ -116,7 +127,7 @@ export const AddModelMenuSection = ({
         .map((key) => ({
           key,
           name: IMAGE_MODELS[key].name,
-          scope: count ? scenes(count) : 'all scenes',
+          scope: count ? scenes(count, t) : t('all scenes'),
           group: selectorGroup(key, TURBO_IMAGE_MODELS),
         }));
     }
@@ -171,7 +182,7 @@ export const AddModelMenuSection = ({
           name: IMAGE_TO_VIDEO_MODELS[key].name,
           // Matches the image branch: before any still is rendered the scope is
           // every scene, not the literal zero that have one today.
-          scope: count ? scenes(count) : 'all scenes',
+          scope: count ? scenes(count, t) : t('all scenes'),
           group: selectorGroup(key, TURBO_VIDEO_MODELS),
         }));
     }
@@ -195,7 +206,7 @@ export const AddModelMenuSection = ({
       .map((key) => ({
         key,
         name: AUDIO_MODELS[key].name,
-        scope: '1 track',
+        scope: t('1 track'),
         group: selectorGroup(key, TURBO_AUDIO_MODELS),
       }));
   }, [
@@ -208,6 +219,7 @@ export const AddModelMenuSection = ({
     generateStartFrames,
     referenceOnlyModels,
     vias,
+    t,
   ]);
 
   if (candidates.length === 0) return null;
@@ -217,14 +229,18 @@ export const AddModelMenuSection = ({
     variantType === 'audio' && !(sequence?.musicPrompt && sequence.musicTags);
 
   const handleAdd = ({ key, name, scope }: Candidate) => {
-    toast(`Add ${name}?`, {
+    toast(translateEvent('Add {{value1}}?', { value1: name }), {
       description: audioBlocked
-        ? 'Generate music once before adding another audio model.'
-        : `Generates ${scope} using the existing prompts.`,
+        ? translateEvent(
+            'Generate music once before adding another audio model.'
+          )
+        : translateEvent('Generates {{value1}} using the existing prompts.', {
+            value1: scope,
+          }),
       action: audioBlocked
         ? undefined
         : {
-            label: 'Add',
+            label: translateEvent('Add'),
             onClick: () => {
               addModel.mutate(
                 { sequenceId, variantType, model: key },
@@ -232,8 +248,17 @@ export const AddModelMenuSection = ({
                   onSuccess: (r) =>
                     toast.success(
                       r.failed > 0
-                        ? `Generating ${name} (${r.count}) — ${r.failed} failed to start`
-                        : `Generating ${name} (${r.count})…`
+                        ? translateEvent(
+                            'Generating {{value1}} ({{value2}}) — {{value3}} failed to start',
+                            { value1: name, value2: r.count, value3: r.failed }
+                          )
+                        : translateEvent(
+                            'Generating {{value1}} ({{value2}})…',
+                            {
+                              value1: name,
+                              value2: r.count,
+                            }
+                          )
                     ),
                   onError: (e) => toast.error(e.message),
                 }
@@ -247,7 +272,7 @@ export const AddModelMenuSection = ({
     <>
       <DropdownMenuSeparator />
       <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider font-normal">
-        Add a model
+        {t('Add a model')}
       </DropdownMenuLabel>
       {SELECTOR_GROUP_ORDER.map((group, groupIndex) => {
         const groupCandidates = candidates.filter((c) => c.group === group);
@@ -256,7 +281,7 @@ export const AddModelMenuSection = ({
           <div key={group}>
             {groupIndex > 0 && <DropdownMenuSeparator />}
             <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider font-normal">
-              {group === 'fast' ? 'Fast' : 'Quality'}
+              {group === 'fast' ? t('Fast') : t('Quality')}
             </DropdownMenuLabel>
             {groupCandidates.map((c) => (
               <DropdownMenuItem

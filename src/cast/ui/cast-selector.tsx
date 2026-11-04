@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Who a new sequence is cast with (#2017): one button, one picker.
  * A character is added directly: every pick is cast, whether or not the
@@ -65,6 +66,8 @@ export const CastSelector: React.FC<CastSelectorProps> = ({
   onSelectionChange,
   disabled,
 }) => {
+  const { t } = useTranslation('cast');
+
   const [open, setOpen] = useState(false);
   // Server-rendered before its handler exists: a click then does nothing.
   // Disabled until hydrated, like the library filters.
@@ -98,7 +101,7 @@ export const CastSelector: React.FC<CastSelectorProps> = ({
           disabled={disabled || !hydrated}
           className="text-muted-foreground"
         >
-          Cast
+          {t('Cast')}
         </Button>
         {selected.length + gone.length > 0 && (
           <div className="flex items-center -space-x-2">
@@ -109,7 +112,7 @@ export const CastSelector: React.FC<CastSelectorProps> = ({
                 </div>
                 <button
                   type="button"
-                  aria-label="Remove deleted character"
+                  aria-label={t('Remove deleted character')}
                   onClick={() => toggle(id)}
                   className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground"
                 >
@@ -124,7 +127,9 @@ export const CastSelector: React.FC<CastSelectorProps> = ({
                 </div>
                 <button
                   type="button"
-                  aria-label={`Remove ${character.name}`}
+                  aria-label={t('Remove {{value1}}', {
+                    value1: character.name,
+                  })}
                   onClick={() => toggle(character.id)}
                   className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                 >
@@ -158,18 +163,22 @@ export const CastSelector: React.FC<CastSelectorProps> = ({
             className="flex flex-col gap-4"
           >
             <DialogHeader>
-              <DialogTitle>Cast</DialogTitle>
+              <DialogTitle>{t('Cast')}</DialogTitle>
               <DialogDescription>
-                Add your characters. Characters the script adds are made new.
+                {t(
+                  'Add your characters. Characters the script adds are made new.'
+                )}
               </DialogDescription>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Each one joins this sequence with its looks, sheets and voice.
+              {t(
+                'Each one joins this sequence with its looks, sheets and voice.'
+              )}
             </p>
             <Input
               type="search"
-              aria-label="Search characters"
-              placeholder="Search characters…"
+              aria-label={t('Search characters')}
+              placeholder={t('Search characters…')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               // Enter would submit the form and close the picker mid-search.
@@ -180,7 +189,7 @@ export const CastSelector: React.FC<CastSelectorProps> = ({
             <ScrollArea className="h-[min(400px,40dvh)]">
               {failed ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">
-                  Could not load characters.
+                  {t('Could not load characters.')}
                 </p>
               ) : !shown ? (
                 <div className="grid grid-cols-3 gap-4 p-1 sm:grid-cols-4">
@@ -195,14 +204,14 @@ export const CastSelector: React.FC<CastSelectorProps> = ({
                 <div className="flex flex-col items-center gap-3 py-12 text-center">
                   <p className="text-sm text-muted-foreground">
                     {search.trim()
-                      ? 'No character matches.'
+                      ? t('No character matches.')
                       : signedOut
-                        ? 'Sign in to add your characters.'
-                        : 'No characters yet.'}
+                        ? t('Sign in to add your characters.')
+                        : t('No characters yet.')}
                   </p>
                   {!search.trim() && !signedOut && (
                     <Button asChild variant="outline" size="sm">
-                      <Link to="/characters">Open Characters</Link>
+                      <Link to="/characters">{t('Open Characters')}</Link>
                     </Button>
                   )}
                 </div>
@@ -246,8 +255,8 @@ export const CastSelector: React.FC<CastSelectorProps> = ({
             <div className="flex justify-end">
               <Button type="submit">
                 {selectedIds.length > 0
-                  ? `Cast ${selectedIds.length}`
-                  : 'Continue'}
+                  ? t('Cast {{value1}}', { value1: selectedIds.length })
+                  : t('Continue')}
               </Button>
             </div>
           </form>

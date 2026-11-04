@@ -1,3 +1,6 @@
+import { localizeAssetMessage } from './localize-asset-message';
+import { localizeAssetGroup, localizeAssetLabel } from './localize-asset-label';
+import { useTranslation } from 'react-i18next';
 /**
  * Asset page (#2209). Groups the manifest, downloads one file, and in
  * Chromium downloads the folder. Other browsers keep the per-row download.
@@ -49,6 +52,8 @@ export function SequenceAssetsView({
   onScope: (scope: 'selected' | 'history') => void;
   onExports: (include: boolean) => void;
 }) {
+  const { i18n, t } = useTranslation('sequences');
+
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const groups = groupAssets(body.assets);
@@ -60,11 +65,20 @@ export function SequenceAssetsView({
     origin: typeof window === 'undefined' ? undefined : window.location.origin,
   });
 
-  const fileCount = `${body.assets.length} ${body.assets.length === 1 ? 'file' : 'files'}`;
+  const fileCount =
+    body.assets.length === 1
+      ? t('{{count}} file', { count: body.assets.length })
+      : t('{{count}} files', { count: body.assets.length });
   const folderName = sequenceAssetFolderName(body);
   const hint = folderSave
-    ? `${fileCount}. Download folder opens in Movies and writes a folder named ${folderName}. Chrome blocks your home folder, Desktop, Documents, and Downloads.`
-    : `${fileCount}. This browser saves one file at a time. Use Download on a row, or the command below.`;
+    ? t(
+        '{{files}}. Download folder opens in Movies and writes a folder named {{folder}}. Chrome blocks your home folder, Desktop, Documents, and Downloads.',
+        { files: fileCount, folder: folderName }
+      )
+    : t(
+        '{{files}}. This browser saves one file at a time. Use Download on a row, or the command below.',
+        { files: fileCount }
+      );
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -80,8 +94,12 @@ export function SequenceAssetsView({
               if (next === 'selected' || next === 'history') onScope(next);
             }}
           >
-            <ToggleGroupItem value="selected">Current cut</ToggleGroupItem>
-            <ToggleGroupItem value="history">All versions</ToggleGroupItem>
+            <ToggleGroupItem value="selected">
+              {t('Current cut')}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="history">
+              {t('All versions')}
+            </ToggleGroupItem>
           </ToggleGroup>
           <Button
             type="button"
@@ -90,7 +108,7 @@ export function SequenceAssetsView({
             aria-pressed={includeExports}
             onClick={() => onExports(!includeExports)}
           >
-            Include renders
+            {t('Include renders')}
           </Button>
         </div>
         <Button
@@ -119,27 +137,29 @@ export function SequenceAssetsView({
               .finally(() => setSaving(false));
           }}
         >
-          {saving ? 'Downloading…' : 'Download folder'}
+          {saving ? t('Downloading…') : t('Download folder')}
         </Button>
       </div>
       <output className="block shrink-0 px-4 pt-3 text-sm text-muted-foreground md:px-6">
-        {note ?? hint}
+        {note ? localizeAssetMessage(i18n, note) : hint}
       </output>
       <div className="shrink-0 px-4 pt-3 md:px-6">
         <Terminal
-          label="Pull command"
-          comment="Run this to download these files."
+          label={t('Pull command')}
+          comment={t('Run this to download these files.')}
           lines={[command]}
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-6 md:px-6">
         {body.assets.length === 0 ? (
-          <p>This sequence has no stored files yet.</p>
+          <p>{t('This sequence has no stored files yet.')}</p>
         ) : (
           <div className="flex flex-col gap-6">
             {groups.map(([group, assets]) => (
               <section key={group} className="flex flex-col gap-1">
-                <h2 className="text-sm text-muted-foreground">{group}</h2>
+                <h2 className="text-sm text-muted-foreground">
+                  {localizeAssetGroup(i18n, group)}
+                </h2>
                 <ul className="flex flex-col">
                   {assets.map((asset) => (
                     <li
@@ -148,7 +168,9 @@ export function SequenceAssetsView({
                     >
                       <span className="min-w-0">
                         <span className="block truncate text-sm">
-                          {`${asset.label}${asset.discarded ? ' (discarded)' : ''}${asset.shared ? ' (shared)' : ''}`}
+                          {localizeAssetLabel(i18n, asset)}
+                          {asset.discarded ? t(' (discarded)') : ''}
+                          {asset.shared ? t(' (shared)') : ''}
                         </span>
                         <span className="block truncate text-xs text-muted-foreground">
                           {asset.relativePath}
@@ -157,7 +179,7 @@ export function SequenceAssetsView({
                       {asset.url ? (
                         <Button variant="outline" size="sm" asChild>
                           <a href={asset.url} download>
-                            Download
+                            {t('Download')}
                           </a>
                         </Button>
                       ) : null}

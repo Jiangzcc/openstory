@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * One tool call as a compact card (#2155): what ran, its key inputs, and
  * its result or error behind a native `<details>`. A call waiting for the
@@ -104,6 +106,9 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
   onDeny,
   onViewMessage,
 }) => {
+  const { t } = useTranslation('assistant');
+  const translateLabel = useLabelTranslation('assistant');
+
   const status = toolCardStatus(part, result);
   const inputs = keyInputs(part.input);
   // The engine's "discover it first" is bookkeeping, not a result to read.
@@ -131,14 +136,14 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
           )}
         />
         <span className="min-w-0 flex-1 truncate font-medium">
-          {toolTitle(part.name)}
+          {translateLabel(toolTitle(part.name))}
         </span>
         <span className="shrink-0 text-xs text-muted-foreground">
           {denied
-            ? 'Denied'
+            ? t('Denied')
             : needsDiscovery(part, result)
-              ? 'Loaded, called again'
-              : STATUS_LABEL[status]}
+              ? t('Loaded, called again')
+              : translateLabel(STATUS_LABEL[status])}
         </span>
       </div>
       {inputs.length > 0 && (
@@ -155,15 +160,15 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
         <div className="flex flex-col gap-2">
           {estimate && (
             <p className="text-xs text-muted-foreground">
-              Estimated cost {estimate}
+              {t('Estimated cost {{value1}}', { value1: estimate })}
             </p>
           )}
           <div className="flex gap-2">
             <Button size="sm" onClick={onApprove}>
-              Allow
+              {t('Allow')}
             </Button>
             <Button size="sm" variant="outline" onClick={onDeny}>
-              Deny
+              {t('Deny')}
             </Button>
           </div>
         </div>
@@ -174,7 +179,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
       {details && (
         <details className="group text-xs">
           <summary className="cursor-pointer text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            {status === 'error' ? 'What went wrong' : 'Result'}
+            {status === 'error' ? t('What went wrong') : t('Result')}
           </summary>
           <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-2">
             {details}

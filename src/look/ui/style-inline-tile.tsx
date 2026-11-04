@@ -1,3 +1,5 @@
+import { useTemplateTranslation } from '@/look/ui/use-template-translation';
+import { useTranslation } from 'react-i18next';
 import type { Style } from '@/platform/server/db/schema/libraries';
 import { cn } from '@/ui/utils';
 import { Info, Sparkles } from 'lucide-react';
@@ -28,6 +30,10 @@ export function StyleInlineTile({
   onShowDetails,
   onKeyDown,
 }: StyleInlineTileProps) {
+  const translateTemplate = useTemplateTranslation(style);
+
+  const { t } = useTranslation('look');
+
   return (
     <button
       type="button"
@@ -48,7 +54,9 @@ export function StyleInlineTile({
           ? 'border-primary shadow-md scale-105'
           : 'border-transparent hover:border-primary/50'
       )}
-      aria-label={`View ${style.name} details`}
+      aria-label={t('View {{value1}} details', {
+        value1: translateTemplate(style.name),
+      })}
       title={reasoning}
     >
       <StyleHoverPreview
@@ -70,7 +78,7 @@ export function StyleInlineTile({
       )}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/60 to-transparent p-2">
         <p className="line-clamp-2 whitespace-normal text-center text-xs font-medium text-white">
-          {style.name}
+          {translateTemplate(style.name)}
         </p>
       </div>
       {selected && (

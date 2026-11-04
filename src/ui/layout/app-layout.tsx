@@ -12,6 +12,7 @@ import { UploadRightsGateProvider } from '@/cast/ui/upload-rights-gate';
 import { AddCreditsDialog } from '@/billing/ui/add-credits-dialog';
 import { GlobalBillingGateDialog } from '@/billing/ui/billing-gate-dialog';
 import { AppSidebar } from './app-sidebar';
+import { LanguageSwitcher } from '@/ui/i18n/language-switcher';
 import { AutoTopUpFailedBanner } from './auto-top-up-failed-banner';
 import { Breadcrumbs } from './breadcrumbs';
 import { SEQUENCE_HEADER_SLOT_ID } from '@/sequences/ui/sequence-header-slot';
@@ -146,6 +147,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   id={SEQUENCE_HEADER_SLOT_ID}
                   className="@container flex min-w-0 flex-1 items-center justify-end empty:hidden"
                 />
+                <LanguageSwitcher />
                 <AssistantToggle />
               </header>
               <ComplianceRestrictionBanner />

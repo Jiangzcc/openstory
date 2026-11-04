@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Scene Script Tab
  * Edits the scene script extract. Duration is NOT edited here — it is a video
@@ -48,6 +49,8 @@ export const SceneScriptTab: React.FC<SceneScriptTabProps> = ({
   setting,
   dialogue,
 }) => {
+  const { t } = useTranslation('shots');
+
   const { ref: editorRef, voice } = useEditorDictation();
 
   const savedScript = scriptText ?? '';
@@ -60,8 +63,9 @@ export const SceneScriptTab: React.FC<SceneScriptTabProps> = ({
   if (!sceneId) {
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">
-        Select a single scene to edit its script, or use the Script view to edit
-        them all in one document.
+        {t(
+          'Select a single scene to edit its script, or use the Script view to edit them all in one document.'
+        )}
       </p>
     );
   }
@@ -71,14 +75,14 @@ export const SceneScriptTab: React.FC<SceneScriptTabProps> = ({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label htmlFor="script-extract-input" className="text-sm font-medium">
-            Scene script
+            {t('Scene script')}
           </label>
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground">
-              {currentScript.length} characters
+              {t('{{value1}} characters', { value1: currentScript.length })}
             </span>
             <VoiceInputButton
-              label="scene script"
+              label={t('scene script')}
               disabled={isSaving}
               {...voice}
             />
@@ -90,7 +94,9 @@ export const SceneScriptTab: React.FC<SceneScriptTabProps> = ({
             ref={editorRef}
             value={currentScript}
             onValueChange={(value) => onEditedScriptChange(value)}
-            placeholder="Enter the script text for this scene… (type @ to insert elements, cast, locations)"
+            placeholder={t(
+              'Enter the script text for this scene… (type @ to insert elements, cast, locations)'
+            )}
             className="min-h-[180px] pr-10"
             disabled={!sceneId || isSaving}
             mentionItems={mentionItems}
@@ -101,7 +107,7 @@ export const SceneScriptTab: React.FC<SceneScriptTabProps> = ({
             variant="ghost"
             onClick={() => onCopy(currentScript)}
             disabled={!currentScript}
-            aria-label="Copy scene script"
+            aria-label={t('Copy scene script')}
             className="absolute right-1 top-1 h-8 w-8"
           >
             {isCopied ? (
@@ -120,7 +126,7 @@ export const SceneScriptTab: React.FC<SceneScriptTabProps> = ({
           onClick={() => onEditedScriptChange(undefined)}
           disabled={!isDirty || isSaving}
         >
-          Cancel
+          {t('Cancel')}
         </Button>
         <Button
           size="sm"
@@ -128,13 +134,13 @@ export const SceneScriptTab: React.FC<SceneScriptTabProps> = ({
           disabled={!canSave}
         >
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isSaving ? 'Saving…' : 'Save'}
+          {isSaving ? t('Saving…') : t('Save')}
         </Button>
       </div>
 
       {isDirty && (
         <p className="text-xs text-muted-foreground">
-          Saving will mark the image and motion prompts as stale.
+          {t('Saving will mark the image and motion prompts as stale.')}
         </p>
       )}
 

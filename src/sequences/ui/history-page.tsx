@@ -1,3 +1,15 @@
+import type { Locale } from '@/platform/i18n/locale';
+import {
+  formatJustNow,
+  formatRelativeUnit,
+} from '@/platform/i18n/relative-time';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import {
+  localizeHistorySummary,
+  localizeHistoryTarget,
+} from './localize-history';
+import { useTranslation } from 'react-i18next';
 import { getSequenceHistoryFn } from '@/sequences/history.fn';
 import { hideAutoSelectedRenders } from '@/sequences/history-changes';
 import type { HistoryScope } from '@/sequences/history-changes';
@@ -21,16 +33,16 @@ import { useRef } from 'react';
 const linkClass =
   'rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, locale: Locale): string {
   const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return formatJustNow(locale);
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return formatRelativeUnit(minutes, 'minute', locale);
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return formatRelativeUnit(hours, 'hour', locale);
   const days = Math.round(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
+  if (days < 30) return formatRelativeUnit(days, 'day', locale);
+  return new Date(iso).toLocaleDateString(locale);
 }
 
 function TargetLink({ label, link }: { label: string; link: HistoryLink }) {
@@ -68,9 +80,12 @@ function TargetLink({ label, link }: { label: string; link: HistoryLink }) {
 }
 
 function ChangeDiff({ change }: { change: HistoryChange }) {
+  const translateLabel = useLabelTranslation('labels');
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs text-muted-foreground">{change.label}</span>
+      <span className="text-xs text-muted-foreground">
+        {translateLabel(change.label)}
+      </span>
       {change.to === null ? (
         <p className="text-sm text-muted-foreground">
           <del>{change.from}</del>
@@ -112,17 +127,28 @@ function HistoryStills({ entry }: { entry: HistoryEntry }) {
 }
 
 function HistoryRow({ entry }: { entry: HistoryEntry }) {
-  const when = new Date(entry.createdAt).toLocaleString();
+  const { i18n } = useTranslation('history');
+  const targetLabel =
+    entry.link?.to === '/sequences/$id/scenes' ||
+    /^(shot|shots|scene|scenes|image|video|prompt|dialogue|preview)\./.test(
+      entry.kind
+    )
+      ? localizeHistoryTarget(i18n, entry.targetLabel)
+      : entry.targetLabel;
+  const { formatDateTime, locale } = useLocaleFormatting();
+  const when = formatDateTime(new Date(entry.createdAt));
   return (
     <div className="flex flex-col gap-2 rounded-md border p-3">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm">{entry.summary}</p>
+        <p className="text-sm">
+          {localizeHistorySummary(i18n, entry.kind, entry.summary)}
+        </p>
         <time
           dateTime={entry.createdAt}
           title={when}
           className="shrink-0 text-xs text-muted-foreground tabular-nums"
         >
-          {relativeTime(entry.createdAt)}
+          {relativeTime(entry.createdAt, locale)}
         </time>
       </div>
       <HistoryStills entry={entry} />
@@ -136,9 +162,9 @@ function HistoryRow({ entry }: { entry: HistoryEntry }) {
       <p className="flex flex-wrap items-baseline gap-2 text-xs text-muted-foreground">
         <span>{entry.actorName}</span>
         {entry.link ? (
-          <TargetLink label={entry.targetLabel} link={entry.link} />
+          <TargetLink label={targetLabel} link={entry.link} />
         ) : (
-          <span>{entry.targetLabel}</span>
+          <span>{targetLabel}</span>
         )}
       </p>
     </div>
@@ -177,6 +203,8 @@ function HistoryList({
   history: ReturnType<typeof useHistory>;
   className?: string;
 }) {
+  const { t } = useTranslation('sequences');
+
   const events = hideAutoSelectedRenders(
     history.data.pages.flatMap((page) => page.events)
   );
@@ -218,7 +246,7 @@ function HistoryList({
     >
       {events.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Nothing has happened yet.
+          {t('Nothing has happened yet.')}
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -244,7 +272,7 @@ function HistoryList({
           </div>
           {isFetchNextPageError ? (
             <p role="alert" className="text-sm text-destructive">
-              Older history did not load.
+              {t('Older history did not load.')}
             </p>
           ) : null}
           {hasNextPage ? (
@@ -254,7 +282,7 @@ function HistoryList({
               disabled={isFetchingNextPage}
               onClick={() => void fetchNextPage()}
             >
-              {isFetchingNextPage ? 'Loading…' : 'Load older'}
+              {isFetchingNextPage ? t('Loading…') : t('Load older')}
             </Button>
           ) : null}
         </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * "Chat about this" (#2155): opens a fresh thread with this thing as
  * context and nothing typed; the empty thread's starters follow the
@@ -16,6 +17,8 @@ export const AskAssistantButton: React.FC<{
   /** Runs first, before the panel opens (the Studio viewer resets its copied state). */
   onOpen?: () => void;
 }> = ({ context, size = 'sm', variant = 'outline', onOpen }) => {
+  const { t } = useTranslation('assistant');
+
   const { requireAuth } = useAuthGate();
   return (
     <Button
@@ -28,7 +31,7 @@ export const AskAssistantButton: React.FC<{
         openAssistant({ context });
       }}
     >
-      Chat about this
+      {t('Chat about this')}
     </Button>
   );
 };

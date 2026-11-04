@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/ui/shadcn/alert';
 import { getComplianceStatusFn } from '@/platform/compliance.fn';
 import { useAuthSession } from '@/platform/ui/auth/session-query';
@@ -6,6 +7,8 @@ import { Link } from '@tanstack/react-router';
 import { ShieldAlert } from 'lucide-react';
 
 export const ComplianceRestrictionBanner: React.FC = () => {
+  const { t } = useTranslation('interface');
+
   // The app shell is anonymous-browsable; the status fn requires auth, so
   // don't fire (and error-log) it without a session.
   const { data: session } = useAuthSession();
@@ -25,7 +28,7 @@ export const ComplianceRestrictionBanner: React.FC = () => {
       <AlertDescription className="flex items-center justify-between gap-4">
         <span>{data.restrictionNotice}</span>
         <Link to="/report" className="shrink-0 font-medium underline">
-          Appeal or report →
+          {t('Appeal or report →')}
         </Link>
       </AlertDescription>
     </Alert>

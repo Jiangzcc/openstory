@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { InButtonCost } from '@/billing/ui/action-cost';
 import type { ModelGenerationStatus } from '@/models/ui/pickers/base-model-selector';
 import { MusicModelSelector } from '@/models/ui/pickers/music-model-selector';
@@ -194,6 +195,8 @@ export const MusicView: React.FC<MusicViewProps> = ({
   isSavingMusicPrompt = false,
   promptEditedSinceTrack = false,
 }) => {
+  const { t } = useTranslation('audio');
+
   const { musicStatus, musicUrl, musicError, musicPrompt, musicTags } =
     sequence;
 
@@ -245,10 +248,10 @@ export const MusicView: React.FC<MusicViewProps> = ({
       variant="outline"
       size="sm"
       onClick={() => setHistoryOpen(true)}
-      aria-label="Show music prompt history"
+      aria-label={t('Show music prompt history')}
     >
       <History className="mr-2 h-4 w-4" />
-      History
+      {t('History')}
     </Button>
   );
 
@@ -301,9 +304,9 @@ export const MusicView: React.FC<MusicViewProps> = ({
     <LoadingButton
       onClick={() => onSetModel(selectedModel)}
       isLoading={isSettingModel}
-      loadingText="Setting…"
+      loadingText={t('Setting…')}
     >
-      Set Music
+      {t('Set Music')}
     </LoadingButton>
   ) : (
     <LoadingButton
@@ -313,12 +316,12 @@ export const MusicView: React.FC<MusicViewProps> = ({
       isLoading={isGeneratingMusic}
       loadingText={
         <InButtonCost estimate={musicCostEstimate} onPrimary={!selectedIsSet}>
-          {selectedIsSet ? 'Regenerating…' : 'Generating…'}
+          {selectedIsSet ? t('Regenerating…') : t('Generating…')}
         </InButtonCost>
       }
     >
       <InButtonCost estimate={musicCostEstimate} onPrimary={!selectedIsSet}>
-        {selectedIsSet ? 'Regenerate Music' : 'Generate Music'}
+        {selectedIsSet ? t('Regenerate Music') : t('Generate Music')}
       </InButtonCost>
     </LoadingButton>
   );
@@ -341,7 +344,7 @@ export const MusicView: React.FC<MusicViewProps> = ({
           <track kind="captions" />
         </audio>
 
-        <FormField label="Model" muted>
+        <FormField label={t('Model')} muted>
           <MusicModelSelector
             selectedModel={selectedModel}
             onModelChange={onModelChange}
@@ -354,21 +357,24 @@ export const MusicView: React.FC<MusicViewProps> = ({
             button below stays the explicit re-render path. */}
         {onSaveMusicPrompt ? (
           <FormField
-            label="Prompt"
+            label={t('Prompt')}
             htmlFor="music-prompt-completed"
-            action={<VoiceInputButton label="music prompt" {...promptVoice} />}
+            action={
+              <VoiceInputButton label={t('music prompt')} {...promptVoice} />
+            }
           >
             <Textarea
               id="music-prompt-completed"
               value={editPrompt}
               onChange={(e) => setEditPrompt(e.target.value)}
               rows={4}
-              placeholder="Descriptive music prompt…"
+              placeholder={t('Descriptive music prompt…')}
             />
             {promptEditedSinceTrack && !promptDirty && (
               <p className="text-xs text-muted-foreground">
-                Edited since this track was generated — Regenerate Music to hear
-                the new prompt.
+                {t(
+                  'Edited since this track was generated — Regenerate Music to hear the new prompt.'
+                )}
               </p>
             )}
             {promptDirty && (
@@ -380,7 +386,7 @@ export const MusicView: React.FC<MusicViewProps> = ({
                   onClick={() => setEditPrompt(musicPrompt ?? '')}
                   disabled={isSavingMusicPrompt}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button
                   type="button"
@@ -390,18 +396,18 @@ export const MusicView: React.FC<MusicViewProps> = ({
                     isSavingMusicPrompt || editPrompt.trim().length === 0
                   }
                 >
-                  {isSavingMusicPrompt ? 'Saving…' : 'Save'}
+                  {isSavingMusicPrompt ? t('Saving…') : t('Save')}
                 </Button>
               </div>
             )}
           </FormField>
         ) : (
           <ReadOnlyField
-            label="Prompt"
+            label={t('Prompt')}
             value={musicPrompt ?? 'Missing prompt'}
           />
         )}
-        <ReadOnlyField label="Tags" value={musicTags ?? 'Missing tags'} />
+        <ReadOnlyField label={t('Tags')} value={musicTags ?? 'Missing tags'} />
 
         {onIncludeMusicChange && (
           <label
@@ -415,7 +421,7 @@ export const MusicView: React.FC<MusicViewProps> = ({
                 onIncludeMusicChange(checked === true)
               }
             />
-            <span>Include music in playback &amp; export</span>
+            <span>{t('Include music in playback & export')}</span>
           </label>
         )}
 
@@ -434,7 +440,7 @@ export const MusicView: React.FC<MusicViewProps> = ({
         icon={
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         }
-        message="Generating music…"
+        message={t('Generating music…')}
       />
     );
   }
@@ -445,14 +451,16 @@ export const MusicView: React.FC<MusicViewProps> = ({
         icon={<AlertCircle className="h-8 w-8 text-destructive" />}
         contentWidth="sm"
       >
-        <p className="text-destructive text-center">Music generation failed</p>
+        <p className="text-destructive text-center">
+          {t('Music generation failed')}
+        </p>
         {musicError && (
           <p className="text-sm text-muted-foreground text-center">
             {musicError}
           </p>
         )}
 
-        <FormField label="Model" muted>
+        <FormField label={t('Model')} muted>
           <MusicModelSelector
             selectedModel={selectedModel}
             onModelChange={onModelChange}
@@ -470,16 +478,16 @@ export const MusicView: React.FC<MusicViewProps> = ({
   return (
     <StatusPanel
       icon={<Music className="h-8 w-8 text-muted-foreground" />}
-      message={promptPending ? 'Preparing music…' : 'Music prompt ready'}
+      message={promptPending ? t('Preparing music…') : t('Music prompt ready')}
     >
       {stalenessBanner}
       {trackStalenessBanner}
       <FormField
-        label="Prompt"
+        label={t('Prompt')}
         htmlFor="music-prompt"
         action={
           <VoiceInputButton
-            label="music prompt"
+            label={t('music prompt')}
             disabled={promptPending}
             {...promptVoice}
           />
@@ -493,21 +501,21 @@ export const MusicView: React.FC<MusicViewProps> = ({
           disabled={promptPending}
           placeholder={
             promptPending
-              ? 'Generating music prompt…'
-              : 'Descriptive music prompt…'
+              ? t('Generating music prompt…')
+              : t('Descriptive music prompt…')
           }
         />
       </FormField>
 
-      <FormField label="Tags" muted>
+      <FormField label={t('Tags')} muted>
         {musicTags ? (
           <p className="text-sm text-muted-foreground">{musicTags}</p>
         ) : (
-          <p className="text-sm text-muted-foreground/60">Generating…</p>
+          <p className="text-sm text-muted-foreground/60">{t('Generating…')}</p>
         )}
       </FormField>
 
-      <FormField label="Model">
+      <FormField label={t('Model')}>
         <MusicModelSelector
           selectedModel={selectedModel}
           onModelChange={onModelChange}
@@ -515,7 +523,7 @@ export const MusicView: React.FC<MusicViewProps> = ({
         />
       </FormField>
 
-      <FormField label="Duration (seconds)" htmlFor="music-duration">
+      <FormField label={t('Duration (seconds)')} htmlFor="music-duration">
         <Input
           id="music-duration"
           type="number"
@@ -527,8 +535,9 @@ export const MusicView: React.FC<MusicViewProps> = ({
         {durationExceedsMax && (
           <p className="flex items-center gap-1.5 text-xs text-warning">
             <AlertTriangle className="h-3.5 w-3.5" />
-            Video is {Math.round(effectiveDuration)}s but {selectedModel} max is{' '}
-            {durationLimits.max}s — music will be clamped.
+            {t('Video is')} {Math.round(effectiveDuration)}
+            {t('s but')} {selectedModel} {t('max is')} {durationLimits.max}
+            {t('s — music will be clamped.')}
           </p>
         )}
       </FormField>

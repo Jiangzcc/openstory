@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 /**
  * Admin moderation console (#1180).
  *
@@ -47,10 +50,14 @@ const searchSchema = z.object({
 export const Route = createFileRoute('/_app/admin/moderation')({
   validateSearch: searchSchema,
   component: ModerationPage,
-  staticData: { breadcrumb: 'Moderation' },
+  staticData: {
+    breadcrumb: { label: 'Moderation', translationKey: 'Moderation' },
+  },
 });
 
 function ModerationPage() {
+  const { t } = useTranslation('admin');
+
   const { tab } = Route.useSearch();
   const navigate = Route.useNavigate();
 
@@ -58,11 +65,12 @@ function ModerationPage() {
     <div className="flex flex-1 flex-col gap-6 overflow-auto">
       <div className="flex flex-col gap-1">
         <h1 className="font-heading text-2xl font-bold tracking-tight">
-          Moderation
+          {t('Moderation')}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Triage reports, trace generated content to the account that produced
-          it, and record enforcement.
+          {t(
+            'Triage reports, trace generated content to the account that produced it, and record enforcement.'
+          )}
         </p>
       </div>
 
@@ -74,8 +82,8 @@ function ModerationPage() {
         }}
       >
         <TabsList>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="trace">Trace content</TabsTrigger>
+          <TabsTrigger value="reports">{t('Reports')}</TabsTrigger>
+          <TabsTrigger value="trace">{t('Trace content')}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -92,6 +100,10 @@ function ModerationPage() {
 // ============================================================================
 
 const ReportsTab: React.FC = () => {
+  const translateEvent = useLiveTranslation('admin');
+  const { formatDateTime } = useLocaleFormatting();
+  const { t } = useTranslation('admin');
+
   const navigate = Route.useNavigate();
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -113,10 +125,12 @@ const ReportsTab: React.FC = () => {
     }) => resolveContentReportFn({ data: input }),
     onSuccess: () => {
       invalidate();
-      toast.success('Report updated');
+      toast.success(translateEvent('Report updated'));
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : 'Update failed'),
+      toast.error(
+        error instanceof Error ? error.message : translateEvent('Update failed')
+      ),
   });
 
   const enforceMutation = useMutation({
@@ -130,11 +144,13 @@ const ReportsTab: React.FC = () => {
     }) => applyEnforcementFn({ data: input }),
     onSuccess: () => {
       invalidate();
-      toast.success('Enforcement recorded');
+      toast.success(translateEvent('Enforcement recorded'));
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : 'Enforcement failed'
+        error instanceof Error
+          ? error.message
+          : translateEvent('Enforcement failed')
       ),
   });
 
@@ -144,16 +160,16 @@ const ReportsTab: React.FC = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <SummaryCard label="Open" value={counts?.open ?? 0} emphasize />
-        <SummaryCard label="Triaged" value={counts?.triaged ?? 0} />
-        <SummaryCard label="Actioned" value={counts?.actioned ?? 0} />
-        <SummaryCard label="Dismissed" value={counts?.dismissed ?? 0} />
+        <SummaryCard label={t('Open')} value={counts?.open ?? 0} emphasize />
+        <SummaryCard label={t('Triaged')} value={counts?.triaged ?? 0} />
+        <SummaryCard label={t('Actioned')} value={counts?.actioned ?? 0} />
+        <SummaryCard label={t('Dismissed')} value={counts?.dismissed ?? 0} />
       </div>
 
       {reports.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No open reports.
+            {t('No open reports.')}
           </CardContent>
         </Card>
       ) : (
@@ -166,7 +182,7 @@ const ReportsTab: React.FC = () => {
                   {report.priority === 0 ? (
                     <Badge variant="destructive" className="gap-1">
                       <ShieldAlert className="size-3" aria-hidden />
-                      Urgent
+                      {t('Urgent')}
                     </Badge>
                   ) : null}
                   <Badge variant="secondary">
@@ -174,7 +190,7 @@ const ReportsTab: React.FC = () => {
                   </Badge>
                   <span className="text-sm text-muted-foreground">
                     {report.targetType} ·{' '}
-                    {new Date(report.createdAt).toLocaleString()}
+                    {formatDateTime(new Date(report.createdAt))}
                   </span>
                   <code className="ml-auto text-xs text-muted-foreground">
                     {formatReportReference(report.id)}
@@ -182,20 +198,20 @@ const ReportsTab: React.FC = () => {
                 </div>
 
                 <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                  <Field label="Target">
+                  <Field label={t('Target')}>
                     <span className="break-all">{report.targetId}</span>
                   </Field>
-                  <Field label="Reporter">
+                  <Field label={t('Reporter')}>
                     {report.reporterUserEmail ??
                       report.reporterEmail ??
-                      'Anonymous'}
+                      t('Anonymous')}
                   </Field>
-                  <Field label="Owner">
+                  <Field label={t('Owner')}>
                     {report.subjectUserEmail ??
                       report.subjectTeamName ??
-                      'Not yet attributed'}
+                      t('Not yet attributed')}
                   </Field>
-                  <Field label="Trace">{report.traceId ?? '—'}</Field>
+                  <Field label={t('Trace')}>{report.traceId ?? '—'}</Field>
                 </dl>
 
                 {report.details ? (
@@ -206,7 +222,7 @@ const ReportsTab: React.FC = () => {
 
                 <Textarea
                   rows={2}
-                  placeholder="Resolution notes (recorded on the report)"
+                  placeholder={t('Resolution notes (recorded on the report)')}
                   value={notes[report.id] ?? ''}
                   onChange={(event) =>
                     setNotes((prev) => ({
@@ -231,7 +247,7 @@ const ReportsTab: React.FC = () => {
                       })
                     }
                   >
-                    Trace target
+                    {t('Trace target')}
                   </Button>
                   <Button
                     size="sm"
@@ -245,7 +261,7 @@ const ReportsTab: React.FC = () => {
                       })
                     }
                   >
-                    Mark triaged
+                    {t('Mark triaged')}
                   </Button>
                   <Button
                     size="sm"
@@ -266,11 +282,13 @@ const ReportsTab: React.FC = () => {
                     }
                     title={
                       report.subjectUserId || report.subjectTeamId
-                        ? 'Pause new generations on the reported account'
-                        : 'Attribute the report to an account first — use Trace content'
+                        ? t('Pause new generations on the reported account')
+                        : t(
+                            'Attribute the report to an account first — use Trace content'
+                          )
                     }
                   >
-                    Pause generation
+                    {t('Pause generation')}
                   </Button>
                   <Button
                     size="sm"
@@ -290,7 +308,7 @@ const ReportsTab: React.FC = () => {
                       })
                     }
                   >
-                    Suspend account
+                    {t('Suspend account')}
                   </Button>
                   <Button
                     size="sm"
@@ -304,7 +322,7 @@ const ReportsTab: React.FC = () => {
                       })
                     }
                   >
-                    Dismiss
+                    {t('Dismiss')}
                   </Button>
                   <Button
                     size="sm"
@@ -317,7 +335,7 @@ const ReportsTab: React.FC = () => {
                       })
                     }
                   >
-                    Close as actioned
+                    {t('Close as actioned')}
                   </Button>
                 </div>
               </CardContent>
@@ -334,6 +352,10 @@ const ReportsTab: React.FC = () => {
 // ============================================================================
 
 const TraceTab: React.FC = () => {
+  const translateEvent = useLiveTranslation('admin');
+  const { formatDateTime } = useLocaleFormatting();
+  const { t } = useTranslation('admin');
+
   const { q, reportId, reason } = Route.useSearch();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState(q ?? '');
@@ -355,11 +377,13 @@ const TraceTab: React.FC = () => {
     }) => attributeContentReportFn({ data: input }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['moderation-reports'] });
-      toast.success('Report attributed to this account');
+      toast.success(translateEvent('Report attributed to this account'));
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : 'Attribution failed'
+        error instanceof Error
+          ? error.message
+          : translateEvent('Attribution failed')
       ),
   });
 
@@ -373,11 +397,13 @@ const TraceTab: React.FC = () => {
     }) => applyEnforcementFn({ data: input }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['moderation-reports'] });
-      toast.success('Enforcement recorded');
+      toast.success(translateEvent('Enforcement recorded'));
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : 'Enforcement failed'
+        error instanceof Error
+          ? error.message
+          : translateEvent('Enforcement failed')
       ),
   });
 
@@ -396,17 +422,20 @@ const TraceTab: React.FC = () => {
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="OS-01J… · videos/teams/…/shot.mp4 · https://… · sha256 · fal request id"
+          placeholder={t(
+            'OS-01J… · videos/teams/…/shot.mp4 · https://… · sha256 · fal request id'
+          )}
           autoComplete="off"
         />
         <Button type="submit" disabled={query.trim().length < 3}>
           <Search className="size-4" aria-hidden />
-          Trace
+          {t('Trace')}
         </Button>
       </form>
       <p className="text-sm text-muted-foreground">
-        Paste anything a complainant sent: our own reference, the asset URL or
-        R2 key, a SHA-256 of the file, or the provider’s request id.
+        {t(
+          'Paste anything a complainant sent: our own reference, the asset URL or R2 key, a SHA-256 of the file, or the provider’s request id.'
+        )}
       </p>
 
       {isFetching ? <Skeleton className="h-32 w-full" /> : null}
@@ -414,9 +443,9 @@ const TraceTab: React.FC = () => {
       {submitted && !isFetching && results.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No provenance record matched. Uploaded reference photos and assets
-            generated before provenance recording shipped will not resolve here
-            — check the sequence or the account’s attestations.
+            {t(
+              'No provenance record matched. Uploaded reference photos and assets generated before provenance recording shipped will not resolve here — check the sequence or the account’s attestations.'
+            )}
           </CardContent>
         </Card>
       ) : null}
@@ -430,36 +459,41 @@ const TraceTab: React.FC = () => {
                 {row.traceId}
               </code>
               <span className="ml-auto text-sm text-muted-foreground">
-                {new Date(row.createdAt).toLocaleString()}
+                {formatDateTime(new Date(row.createdAt))}
               </span>
             </div>
             <dl className="grid gap-2 text-sm sm:grid-cols-2">
-              <Field label="Account">
-                {row.userEmail ?? row.userName ?? row.userId ?? 'Unknown user'}
+              <Field label={t('Account')}>
+                {row.userEmail ??
+                  row.userName ??
+                  row.userId ??
+                  t('Unknown user')}
               </Field>
-              <Field label="Team">{row.teamName ?? row.teamId}</Field>
-              <Field label="Model">
+              <Field label={t('Team')}>{row.teamName ?? row.teamId}</Field>
+              <Field label={t('Model')}>
                 {row.provider} · {row.model}
               </Field>
-              <Field label="Provider request">
+              <Field label={t('Provider request')}>
                 {row.providerRequestId ?? '—'}
               </Field>
-              <Field label="Storage key">
+              <Field label={t('Storage key')}>
                 <span className="break-all">{row.storageKey ?? '—'}</span>
               </Field>
-              <Field label="Content SHA-256">
+              <Field label={t('Content SHA-256')}>
                 <span className="break-all">{row.contentSha256 ?? '—'}</span>
               </Field>
-              <Field label="Reference images">
+              <Field label={t('Reference images')}>
                 {row.usedReferenceImages
-                  ? `Yes (${row.referenceImageCount})`
-                  : 'No'}
+                  ? t('Yes ({{value1}})', { value1: row.referenceImageCount })
+                  : t('No')}
               </Field>
-              <Field label="Sequence">{row.sequenceId ?? '—'}</Field>
+              <Field label={t('Sequence')}>{row.sequenceId ?? '—'}</Field>
             </dl>
             <p className="text-xs text-muted-foreground">
-              Prompt hash {row.promptSha256 ?? '—'} · workflow{' '}
-              {row.workflowRunId ?? '—'}
+              {t('Prompt hash {{value1}} · workflow {{value2}}', {
+                value1: row.promptSha256 ?? '—',
+                value2: row.workflowRunId ?? '—',
+              })}
             </p>
             <div className="flex flex-wrap gap-2">
               {reportId ? (
@@ -477,7 +511,7 @@ const TraceTab: React.FC = () => {
                     })
                   }
                 >
-                  Attribute to this account
+                  {t('Attribute to this account')}
                 </Button>
               ) : null}
               <Button
@@ -496,7 +530,7 @@ const TraceTab: React.FC = () => {
                   })
                 }
               >
-                Pause generation
+                {t('Pause generation')}
               </Button>
               <Button
                 size="sm"
@@ -514,7 +548,7 @@ const TraceTab: React.FC = () => {
                   })
                 }
               >
-                Suspend account
+                {t('Suspend account')}
               </Button>
             </div>
           </CardContent>

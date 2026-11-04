@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Opens the assistant (#2155): the header button and Cmd/Ctrl+J. J is free
  * of the six global handlers listed in #2134 (B sidebar, K search, arrows,
@@ -13,6 +14,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/ui/shadcn/tooltip';
 import { toggleAssistant, useAssistantState } from './assistant-store';
 
 export const AssistantToggle: React.FC = () => {
+  const { t } = useTranslation('assistant');
+
   const { open } = useAssistantState();
   const { requireAuth } = useAuthGate();
 
@@ -63,7 +66,7 @@ export const AssistantToggle: React.FC = () => {
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={open ? 'Close assistant' : 'Open assistant'}
+          aria-label={open ? t('Close assistant') : t('Open assistant')}
           aria-pressed={open}
           onClick={() => {
             if (requireAuth()) toggleAssistant();
@@ -73,7 +76,7 @@ export const AssistantToggle: React.FC = () => {
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        Assistant <Kbd>⌘J</Kbd>
+        {t('Assistant')} <Kbd>⌘J</Kbd>
       </TooltipContent>
     </Tooltip>
   );

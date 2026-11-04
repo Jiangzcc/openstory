@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { librarySearchFor } from '@/cast/ui/library-search';
 import type React from 'react';
 import { useNavigate } from '@tanstack/react-router';
@@ -29,6 +31,9 @@ export const DeleteCharacterButton: React.FC<{
   characterId: string;
   name: string;
 }> = ({ characterId, name }) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+
   const remove = useDeleteTeamCharacter();
   const restore = useRestoreTeamCharacter();
   const navigate = useNavigate();
@@ -38,57 +43,68 @@ export const DeleteCharacterButton: React.FC<{
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button variant="outline" disabled={!hydrated || remove.isPending}>
-          {remove.isPending ? 'Deleting…' : 'Delete'}
+          {remove.isPending ? t('Deleting…') : t('Delete')}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {name}?</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t('Delete {{value1}}?', { value1: name })}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            It leaves your characters and the @ picker. A saved voice is
-            released.
+            {t(
+              'It leaves your characters and the @ picker. A saved voice is released.'
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={() =>
               remove.mutate(
                 { characterId },
                 {
                   onSuccess: () => {
-                    toast.success(`Deleted ${name}`, {
-                      // Undo is the only way back from this page.
-                      duration: 60_000,
-                      action: {
-                        label: 'Undo',
-                        onClick: () =>
-                          restore.mutate(
-                            { characterId },
-                            {
-                              onSuccess: () =>
-                                void navigate({
-                                  to: '/characters/$id',
-                                  params: { id: characterId },
-                                }),
-                            }
-                          ),
-                      },
-                    });
+                    toast.success(
+                      translateEvent('Deleted {{value1}}', { value1: name }),
+                      {
+                        // Undo is the only way back from this page.
+                        duration: 60_000,
+                        action: {
+                          label: translateEvent('Undo'),
+                          onClick: () =>
+                            restore.mutate(
+                              { characterId },
+                              {
+                                onSuccess: () =>
+                                  void navigate({
+                                    to: '/characters/$id',
+                                    params: { id: characterId },
+                                  }),
+                              }
+                            ),
+                        },
+                      }
+                    );
                     void navigate({
                       to: '/characters',
                       search: librarySearchFor(),
                     });
                   },
                   onError: (error) =>
-                    toast.error(`Could not delete ${name}`, {
-                      description: errorMessage(error),
-                    }),
+                    toast.error(
+                      translateEvent('Could not delete {{value1}}', {
+                        value1: name,
+                      }),
+                      {
+                        description: errorMessage(error),
+                      }
+                    ),
                 }
               )
             }
           >
-            Delete
+            {t('Delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

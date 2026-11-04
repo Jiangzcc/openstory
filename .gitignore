@@ -97,6 +97,7 @@ dist/
 .open-next
 
 .tmp/
+.idea
 
 # doppler
 doppler.json

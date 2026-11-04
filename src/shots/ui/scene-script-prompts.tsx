@@ -1,3 +1,7 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
+import { localizeReferenceProblem } from '@/motion/ui/localize-reference-problem';
 import { ThinkingBar } from '@/ui/ai/thinking-bar';
 import { InButtonCost, costButtonClassName } from '@/billing/ui/action-cost';
 import type { ModelGenerationStatus } from '@/models/ui/pickers/base-model-selector';
@@ -389,6 +393,12 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
   scenes,
   onSelectScene,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+
+  const translateLabel = useLabelTranslation('shots');
+
+  const { i18n, t } = useTranslation('shots');
+
   const scriptSceneId = scene?.id;
   const scriptText = scene?.script?.extract;
   const divergentImageVariant = useMemo(
@@ -478,14 +488,14 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
         { sequenceId, shotId: shot.id, versionId },
         {
           onError: (error) => {
-            toast.error('Failed to switch video version', {
+            toast.error(translateEvent('Failed to switch video version'), {
               description: errorMessage(error),
             });
           },
         }
       );
     },
-    [shot, sequenceId, selectSegmentVideoVersion]
+    [translateEvent, shot, sequenceId, selectSegmentVideoVersion]
   );
   const { needsBillingSetup: falNeedsBillingSetup, showGate: showFalGate } =
     useFalBillingGate();
@@ -585,17 +595,17 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
     },
     onSuccess: (result, vars) => {
       if (result.alreadyUpToDate) {
-        toast.info('Prompt is already up to date');
+        toast.info(translateEvent('Prompt is already up to date'));
       } else if (result.alreadyInFlight) {
-        toast.info('This prompt is already being regenerated');
+        toast.info(translateEvent('This prompt is already being regenerated'));
       } else if (result.rebuilt) {
-        toast.success('Rebuilt the prompts from the shot spec');
+        toast.success(translateEvent('Rebuilt the prompts from the shot spec'));
         if (shot?.id) {
           void invalidateRebuiltPrompts(queryClient, sequenceId, shot.id);
         }
       } else {
         markPromptPending(vars.promptType);
-        toast.success('Rewriting the shot…');
+        toast.success(translateEvent('Rewriting the shot…'));
       }
       // Deliberately no staleness invalidation here: the workflow has only been
       // enqueued, so a refetch now would answer 'stale' and undo the optimistic
@@ -603,7 +613,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
     },
     onError: (error, _vars, context) => {
       context?.rollback?.();
-      toast.error('Prompt regenerate failed', {
+      toast.error(translateEvent('Prompt regenerate failed'), {
         description: errorMessage(error),
       });
     },
@@ -636,7 +646,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       );
     },
     onSuccess: async () => {
-      toast.success('Rendering final');
+      toast.success(translateEvent('Rendering final'));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: shotKeys.list(sequenceId) }),
         queryClient.invalidateQueries({
@@ -648,7 +658,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       ]);
     },
     onError: (error) => {
-      toast.error('Failed to render the final', {
+      toast.error(translateEvent('Failed to render the final'), {
         description: errorMessage(error),
       });
       void queryClient.invalidateQueries({
@@ -676,8 +686,8 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
     onSuccess: async (result) => {
       toast.success(
         result.cancelled
-          ? 'Video generation cancelled'
-          : 'Video had already finished'
+          ? translateEvent('Video generation cancelled')
+          : translateEvent('Video had already finished')
       );
       if (shot?.id) {
         await queryClient.invalidateQueries({
@@ -696,7 +706,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       ]);
     },
     onError: (error) =>
-      toast.error('Failed to cancel video', {
+      toast.error(translateEvent('Failed to cancel video'), {
         description: errorMessage(error),
       }),
   });
@@ -722,16 +732,23 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
         {
           onSuccess: (r) => {
             dirtyImageRef.current = false;
-            toast.success(r.unchanged ? 'No changes to save' : 'Prompt saved');
+            toast.success(
+              r.unchanged
+                ? translateEvent('No changes to save')
+                : translateEvent('Prompt saved')
+            );
           },
           onError: (e) =>
-            toast.error('Save failed', {
-              description: e instanceof Error ? e.message : 'Unknown error',
+            toast.error(translateEvent('Save failed'), {
+              description:
+                e instanceof Error
+                  ? e.message
+                  : translateEvent('Unknown error'),
             }),
         }
       );
     },
-    [saveVisualPrompt]
+    [translateEvent, saveVisualPrompt]
   );
 
   const handleSaveMotionPrompt = useCallback(
@@ -741,16 +758,23 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
         {
           onSuccess: (r) => {
             dirtyMotionRef.current = false;
-            toast.success(r.unchanged ? 'No changes to save' : 'Prompt saved');
+            toast.success(
+              r.unchanged
+                ? translateEvent('No changes to save')
+                : translateEvent('Prompt saved')
+            );
           },
           onError: (e) =>
-            toast.error('Save failed', {
-              description: e instanceof Error ? e.message : 'Unknown error',
+            toast.error(translateEvent('Save failed'), {
+              description:
+                e instanceof Error
+                  ? e.message
+                  : translateEvent('Unknown error'),
             }),
         }
       );
     },
-    [saveMotionPrompt]
+    [translateEvent, saveMotionPrompt]
   );
 
   const isAwaitingVisualPrompt =
@@ -770,18 +794,18 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
   const motionError = shotPromptStream.motion.error;
   useEffect(() => {
     if (shotPromptStream.visual.status === 'failed' && visualError) {
-      toast.error('Visual prompt regenerate failed', {
+      toast.error(translateEvent('Visual prompt regenerate failed'), {
         description: visualError,
       });
     }
-  }, [shotPromptStream.visual.status, visualError]);
+  }, [translateEvent, shotPromptStream.visual.status, visualError]);
   useEffect(() => {
     if (shotPromptStream.motion.status === 'failed' && motionError) {
-      toast.error('Motion prompt regenerate failed', {
+      toast.error(translateEvent('Motion prompt regenerate failed'), {
         description: motionError,
       });
     }
-  }, [shotPromptStream.motion.status, motionError]);
+  }, [translateEvent, shotPromptStream.motion.status, motionError]);
 
   // When a streamed regen lands, the workflow has already written the new
   // variant to the DB and emitted `generation.shot:updated` — refetch so
@@ -828,10 +852,10 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       {
         onSuccess: () => {
           setEditedScript(undefined);
-          toast.success('Scene saved');
+          toast.success(translateEvent('Scene saved'));
         },
         onError: (error) => {
-          toast.error('Failed to save scene', {
+          toast.error(translateEvent('Failed to save scene'), {
             description: errorMessage(error),
           });
         },
@@ -856,17 +880,18 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       if (!text) return;
 
       if (!(await copyTextToClipboard(text))) {
-        toast.error('Failed to copy', {
+        toast.error(translateEvent('Failed to copy'), {
           id: 'copy-prompt-failed',
-          description:
-            'Your browser blocked clipboard access. Select the prompt text to copy it manually.',
+          description: translateEvent(
+            'Your browser blocked clipboard access. Select the prompt text to copy it manually.'
+          ),
         });
         return;
       }
       setCopiedTab(tabName);
       setTimeout(() => setCopiedTab(null), 2000);
     },
-    []
+    [translateEvent]
   );
 
   const imageModel = safeTextToImageModel(
@@ -940,7 +965,14 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       // Persist immediately — a shortened prompt is a real edit, not a throwaway
       // draft. Without this it'd be lost on the next refetch.
       handleSaveVisualPrompt(result.shortenedPrompt);
-      const msg = `Prompt shortened by ${result.reductionPercent}% (${result.originalLength} → ${result.shortenedLength} chars)`;
+      const msg = translateEvent(
+        'Prompt shortened by {{value1}}% ({{value2}} → {{value3}} chars)',
+        {
+          value1: result.reductionPercent,
+          value2: result.originalLength,
+          value3: result.shortenedLength,
+        }
+      );
       setShortenStatus({ loading: false, error: null, success: msg });
       // Clear success message after 5 seconds
       setTimeout(
@@ -953,7 +985,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
         error instanceof Error ? error.message : 'Failed to shorten prompt';
       setShortenStatus({ loading: false, error: errorMessage, success: null });
     }
-  }, [editedImagePrompt, imagePrompt, handleSaveVisualPrompt]);
+  }, [editedImagePrompt, imagePrompt, handleSaveVisualPrompt, translateEvent]);
 
   // A regenerate with an edited prompt auto-links @-mentioned cast/elements/
   // locations into the scene continuity server-side (#683); refetch the scene
@@ -1194,14 +1226,16 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
   // submit refuses these, so say it here and hold Generate rather than let
   // the click come back as a failed job. Computed server-side from the exact
   // references the render will bind.
-  const unusableElementLines = promptPreview?.motionUnusable ?? [];
+  const unusableElementLines = (promptPreview?.motionUnusable ?? []).map(
+    (line) => localizeReferenceProblem(i18n, line)
+  );
   useEffect(() => {
     if (promptPreviewError) {
-      toast.error('Prompt preview failed', {
+      toast.error(translateEvent('Prompt preview failed'), {
         description: errorMessage(promptPreviewError),
       });
     }
-  }, [promptPreviewError]);
+  }, [translateEvent, promptPreviewError]);
   const assembledPrompt = promptPreview?.assembledMotionPrompt ?? null;
   const imageRequestPreview = promptPreview?.image ?? null;
   const motionRequestPreview = promptPreview?.motion ?? null;
@@ -1450,23 +1484,33 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
             if (result.promptChanged) dirtyImageRef.current = false;
             toast.success(
               result.promptChanged
-                ? 'Image replaced and prompt saved'
-                : 'Image replaced',
+                ? translateEvent('Image replaced and prompt saved')
+                : translateEvent('Image replaced'),
               result.cropped
                 ? {
-                    description: `Cropped to ${ratio} so motion generation matches the sequence.`,
+                    description: translateEvent(
+                      'Cropped to {{value1}} so motion generation matches the sequence.',
+                      { value1: ratio }
+                    ),
                   }
                 : undefined
             );
           },
           onError: (error) =>
-            toast.error('Image upload failed', {
+            toast.error(translateEvent('Image upload failed'), {
               description: errorMessage(error),
             }),
         }
       );
     },
-    [shot, visualPromptDirty, editedImagePrompt, replaceFrameImage, aspectRatio]
+    [
+      translateEvent,
+      shot,
+      visualPromptDirty,
+      editedImagePrompt,
+      replaceFrameImage,
+      aspectRatio,
+    ]
   );
 
   const handleReplaceVideoFile = useCallback(
@@ -1475,15 +1519,15 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       replaceShotVideo.mutate(
         { file, sequenceId: shot.sequenceId, shotId: shot.id },
         {
-          onSuccess: () => toast.success('Video replaced'),
+          onSuccess: () => toast.success(translateEvent('Video replaced')),
           onError: (error) =>
-            toast.error('Video upload failed', {
+            toast.error(translateEvent('Video upload failed'), {
               description: errorMessage(error),
             }),
         }
       );
     },
-    [shot, replaceShotVideo]
+    [translateEvent, shot, replaceShotVideo]
   );
 
   // Anything on this shot out of date? Drives the status line (#1077). The
@@ -1527,7 +1571,9 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
         <StalenessIndicator
           entityType="shot"
           density="status-line"
-          message={shotHasStale ? undefined : 'Updating out-of-date artifacts…'}
+          message={
+            shotHasStale ? undefined : t('Updating out-of-date artifacts…')
+          }
           // Busy while OUR run is in flight, or while everything left is
           // already covered by a server-side claim (#1085) — clicking again
           // would just no-op against the dedup.
@@ -1544,7 +1590,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
           entityType="shot"
           density="status-line"
           tone="unknown"
-          message="Couldn’t check whether this shot is up to date"
+          message={t('Couldn’t check whether this shot is up to date')}
         />
       )}
 
@@ -1570,7 +1616,10 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       <div className="@[360px]/inspector:hidden">
         <Select
           value={selectedTab}
-          items={visibleTabs}
+          items={visibleTabs.map((tab) => ({
+            ...tab,
+            label: translateLabel(tab.label),
+          }))}
           onValueChange={(value) => {
             if (value && isValidTabValue(value)) {
               onTabChange(value);
@@ -1583,7 +1632,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
           <SelectContent>
             {visibleTabs.map((t) => (
               <SelectItem key={t.value} value={t.value}>
-                {t.label}
+                {translateLabel(t.label)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -1595,7 +1644,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       <TabsList className="hidden @[360px]/inspector:inline-flex">
         {visibleTabs.map((t) => (
           <TabsTrigger key={t.value} value={t.value}>
-            {t.label}
+            {translateLabel(t.label)}
             {t.value === 'image-prompt' &&
               (staleness?.visualPrompt === 'stale' ||
                 staleness?.visualPrompt === 'updating') && (
@@ -1697,7 +1746,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   htmlFor="image-prompt-input"
                   className="text-sm font-medium"
                 >
-                  Prompt
+                  {t('Prompt')}
                 </label>
                 {/* Quiet stale chip on the artifact itself (#1077); the
                     optimistic 'fresh' write clears it the moment Regenerate
@@ -1719,24 +1768,23 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               </span>
               <div className="flex items-center gap-1">
                 <span className="text-xs text-muted-foreground">
-                  {
-                    (isAwaitingVisualPrompt
+                  {t('{{value1}} characters', {
+                    value1: (isAwaitingVisualPrompt
                       ? shotPromptStream.visual.text
                       : editedImagePrompt || imagePrompt || ''
-                    ).length
-                  }{' '}
-                  characters
+                    ).length,
+                  })}
                 </span>
                 <PromptCopyButton
                   text={editedImagePrompt || imagePrompt || ''}
                   copyKey="image-prompt-field"
                   copiedTab={copiedTab}
                   onCopy={(text, key) => void handleCopy(text, key)}
-                  label="Copy image prompt"
+                  label={t('Copy image prompt')}
                 />
                 <VoiceInputButton
                   key={shot?.id}
-                  label="image prompt"
+                  label={t('image prompt')}
                   size="icon-xs"
                   disabled={isAwaitingVisualPrompt}
                   {...imageVoice}
@@ -1770,9 +1818,11 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               placeholder={
                 isAwaitingVisualPrompt
                   ? isStreamingVisualPrompt
-                    ? 'Streaming prompt…'
-                    : 'Regenerating prompt…'
-                  : 'Enter image prompt… (type @ to insert elements, cast, locations)'
+                    ? t('Streaming prompt…')
+                    : t('Regenerating prompt…')
+                  : t(
+                      'Enter image prompt… (type @ to insert elements, cast, locations)'
+                    )
               }
               className="min-h-[120px]"
               // Lock while streaming so local edits can't fight the LLM.
@@ -1791,7 +1841,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   }}
                   disabled={saveVisualPrompt.isPending}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button
                   size="sm"
@@ -1801,7 +1851,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   {saveVisualPrompt.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {saveVisualPrompt.isPending ? 'Saving…' : 'Save'}
+                  {saveVisualPrompt.isPending ? t('Saving…') : t('Save')}
                 </Button>
               </div>
             )}
@@ -1811,7 +1861,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               from the shot's selected image version and picking a different one
               applies to the next generation. */}
           <div className="space-y-2">
-            <span className="text-sm font-medium">Model</span>
+            <span className="text-sm font-medium">{t('Model')}</span>
             <ImageModelSelector
               selectedModel={effectiveImageModel}
               onModelChange={(model) => onImageModelChange?.(model)}
@@ -1820,8 +1870,9 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               generatedStatuses={imageModelStatuses}
             />
             <p className="text-xs text-muted-foreground">
-              Changing the model applies to the next generation. In-flight gens
-              still finish into history.
+              {t(
+                'Changing the model applies to the next generation. In-flight gens still finish into history.'
+              )}
             </p>
           </div>
 
@@ -1835,7 +1886,9 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
             onCopy={(text, key) => void handleCopy(text, key)}
             footnote={
               !storageDomain
-                ? 'Relative /r2/ image URLs are made publicly fetchable at submit'
+                ? t(
+                    'Relative /r2/ image URLs are made publicly fetchable at submit'
+                  )
                 : null
             }
           />
@@ -1856,17 +1909,17 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               {!shortenStatus.loading && <Minimize2 className="mr-2 h-4 w-4" />}
-              {shortenStatus.loading ? 'Shortening…' : 'Shorten Prompt'}
+              {shortenStatus.loading ? t('Shortening…') : t('Shorten Prompt')}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => setHistoryOpen('visual')}
               disabled={!shot}
-              aria-label="Show visual history"
+              aria-label={t('Show visual history')}
             >
               <History className="mr-2 h-4 w-4" />
-              History
+              {t('History')}
             </Button>
           </div>
 
@@ -1923,10 +1976,10 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 {isGenerating || variantIsGenerating
-                  ? 'Generating…'
+                  ? t('Generating…')
                   : imageModelGenerated
-                    ? 'Regenerate Image'
-                    : 'Generate Image'}
+                    ? t('Regenerate Image')
+                    : t('Generate Image')}
               </InButtonCost>
             </Button>
             <p
@@ -1946,7 +1999,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
           {/* Manual still inject (#1108) — upload replaces the selected image;
               a pending prompt edit is saved atomically with it (§4.3 C). */}
           <UploadMediaButton
-            label="Replace Image"
+            label={t('Replace Image')}
             pendingLabel="Uploading…"
             accept="image/*"
             isPending={replaceFrameImage.isPending}
@@ -1955,13 +2008,16 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Off-ratio stills are cropped to{' '}
-            {aspectRatio ?? DEFAULT_ASPECT_RATIO} so video models get a matching
-            start frame.
+            {t(
+              'Off-ratio stills are cropped to {{value1}} so video models get a matching start frame.',
+              { value1: aspectRatio ?? DEFAULT_ASPECT_RATIO }
+            )}
           </p>
           {visualPromptDirty ? (
             <p className="text-xs text-muted-foreground">
-              Replacing the image will also save your edited prompt with it.
+              {t(
+                'Replacing the image will also save your edited prompt with it.'
+              )}
             </p>
           ) : null}
         </div>
@@ -2024,7 +2080,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   htmlFor="motion-prompt-input"
                   className="text-sm font-medium"
                 >
-                  Prompt
+                  {t('Prompt')}
                 </label>
                 {/* Quiet stale chip — same pattern as the image tab (#1077). */}
                 {(staleness?.motionPrompt === 'stale' ||
@@ -2044,24 +2100,23 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               </span>
               <div className="flex items-center gap-1">
                 <span className="text-xs text-muted-foreground">
-                  {
-                    (isAwaitingMotionPrompt
+                  {t('{{value1}} characters', {
+                    value1: (isAwaitingMotionPrompt
                       ? shotPromptStream.motion.text
                       : editedMotionPrompt || rawMotionPrompt
-                    ).length
-                  }{' '}
-                  characters
+                    ).length,
+                  })}
                 </span>
                 <PromptCopyButton
                   text={editedMotionPrompt || rawMotionPrompt}
                   copyKey="motion-prompt-field"
                   copiedTab={copiedTab}
                   onCopy={(text, key) => void handleCopy(text, key)}
-                  label="Copy motion prompt"
+                  label={t('Copy motion prompt')}
                 />
                 <VoiceInputButton
                   key={shot?.id}
-                  label="motion prompt"
+                  label={t('motion prompt')}
                   size="icon-xs"
                   disabled={isAwaitingMotionPrompt}
                   {...motionVoice}
@@ -2092,9 +2147,11 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               placeholder={
                 isAwaitingMotionPrompt
                   ? isStreamingMotionPrompt
-                    ? 'Streaming prompt…'
-                    : 'Regenerating prompt…'
-                  : 'Enter motion prompt… (type @ to insert elements, cast, locations)'
+                    ? t('Streaming prompt…')
+                    : t('Regenerating prompt…')
+                  : t(
+                      'Enter motion prompt… (type @ to insert elements, cast, locations)'
+                    )
               }
               className="min-h-[120px]"
               // Lock while streaming so local edits can't fight the LLM.
@@ -2113,7 +2170,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   }}
                   disabled={saveMotionPrompt.isPending}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button
                   size="sm"
@@ -2123,7 +2180,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   {saveMotionPrompt.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {saveMotionPrompt.isPending ? 'Saving…' : 'Save'}
+                  {saveMotionPrompt.isPending ? t('Saving…') : t('Save')}
                 </Button>
               </div>
             )}
@@ -2132,7 +2189,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
           {/* Model selector — per-asset (#1066): seeded from the shot's selected
               video version; a pick applies to the next generation. */}
           <div className="space-y-2">
-            <span className="text-sm font-medium">Model</span>
+            <span className="text-sm font-medium">{t('Model')}</span>
             <MotionModelSelector
               selectedModel={effectiveMotionModel}
               onModelChange={(model) => onVideoModelChange?.(model)}
@@ -2147,7 +2204,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               referenceOnly={!shotUsesStartFrame}
             />
             <p className="text-xs text-muted-foreground">
-              Changing the model applies to the next generation.
+              {t('Changing the model applies to the next generation.')}
             </p>
           </div>
 
@@ -2176,7 +2233,9 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
             footnote={
               [
                 promptPreview?.packedSpanLabel
-                  ? `${promptPreview.packedSpanLabel} · one generation`
+                  ? t('{{value1}} · one generation', {
+                      value1: promptPreview.packedSpanLabel,
+                    })
                   : null,
                 promptPreview?.packedLimitWarning,
                 !storageDomain
@@ -2195,10 +2254,10 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
             onClick={() => setHistoryOpen('motion')}
             disabled={!shot}
             className="w-full"
-            aria-label="Show motion history"
+            aria-label={t('Show motion history')}
           >
             <History className="mr-2 h-4 w-4" />
-            History
+            {t('History')}
           </Button>
 
           {/* Explicit regenerate-prompt button — streams a fresh LLM
@@ -2244,7 +2303,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                 }
                 disabled={isGenerating || isGeneratingMotion}
               />
-              <span>Include SFX &amp; dialogue</span>
+              <span>{t('Include SFX & dialogue')}</span>
             </label>
           )}
 
@@ -2270,28 +2329,33 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               }
             />
             <span>
-              Use start frame
-              {!startFrameAvailable && !shotUsesStartFrame && (
-                <span className="text-muted-foreground/70">
-                  {' '}
-                  — generate one first
-                </span>
-              )}
+              {
+                <>
+                  {t('Use start frame')}
+                  {!startFrameAvailable && !shotUsesStartFrame && (
+                    <span className="text-muted-foreground/70">
+                      {t('— generate one first')}
+                    </span>
+                  )}
+                </>
+              }
             </span>
           </label>
 
           {modelCannotRenderReferenceOnly && (
             <p className="text-xs text-muted-foreground">
-              {IMAGE_TO_VIDEO_MODELS[effectiveMotionModel].name} needs a start
-              frame. Pick another model, or tick Use start frame.
+              {t(
+                '{{value1}} needs a start frame. Pick another model, or tick Use start frame.',
+                { value1: IMAGE_TO_VIDEO_MODELS[effectiveMotionModel].name }
+              )}
             </p>
           )}
 
           {noReferencesMatched && (
             <p className="text-xs text-muted-foreground">
-              No character, location or element references match this scene, so
-              it will render from the prompt alone — same price, but nothing
-              holds the cast or set consistent with the other shots.
+              {t(
+                'No character, location or element references match this scene, so it will render from the prompt alone — same price, but nothing holds the cast or set consistent with the other shots.'
+              )}
             </p>
           )}
 
@@ -2335,7 +2399,9 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                 onClick={() => renderAtQuality.mutate()}
               >
                 <InButtonCost estimate={finalCostEstimate} amountWidth="double">
-                  {renderAtQuality.isPending ? 'Starting…' : 'Render final'}
+                  {renderAtQuality.isPending
+                    ? t('Starting…')
+                    : t('Render final')}
                 </InButtonCost>
               </Button>
             </div>
@@ -2377,7 +2443,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                 amountWidth="double"
               >
                 {isGeneratingMotion || videoVariantIsGenerating
-                  ? 'Generating…'
+                  ? t('Generating…')
                   : motionGenerateLabel(
                       packedShotCount,
                       videoModelGenerated,
@@ -2405,18 +2471,22 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
           >
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Generate without audio?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {t('Generate without audio?')}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  SFX &amp; dialogue is off, so {silencedVoiceLines.join(', ')}{' '}
-                  won&apos;t be heard. The clip will be silent.
+                  {t(
+                    "SFX & dialogue is off, so {{value1}} won't be heard. The clip will be silent.",
+                    { value1: silencedVoiceLines.join(', ') }
+                  )}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => void handleRegenerateMotion()}
                 >
-                  Generate silent
+                  {t('Generate silent')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -2435,15 +2505,15 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               }
             >
               {cancelVideoRender.isPending
-                ? 'Cancelling…'
-                : 'Cancel Generation'}
+                ? t('Cancelling…')
+                : t('Cancel Generation')}
             </Button>
           )}
 
           {/* Manual clip inject (#1108) — upload appends + selects a video
               version whose manifest snapshots the current pointers. */}
           <UploadMediaButton
-            label="Replace Video"
+            label={t('Replace Video')}
             pendingLabel="Uploading…"
             accept="video/*"
             isPending={replaceShotVideo.isPending}
@@ -2503,15 +2573,21 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Replace your written prompt?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('Replace your written prompt?')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {rewritesShot
-                ? 'Rewrite shot refills the shot spec. Replace your text with a prompt built from it, or keep your text.'
-                : 'Replace your text with a prompt built from the shot spec.'}
+                ? t(
+                    'Rewrite shot refills the shot spec. Replace your text with a prompt built from it, or keep your text.'
+                  )
+                : t(
+                    'Replace your text with a prompt built from the shot spec.'
+                  )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             {rewritesShot && (
               <AlertDialogAction
                 onClick={() => {
@@ -2523,7 +2599,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   }
                 }}
               >
-                Keep mine
+                {t('Keep mine')}
               </AlertDialogAction>
             )}
             <AlertDialogAction
@@ -2537,7 +2613,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                 }
               }}
             >
-              Replace
+              {t('Replace')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

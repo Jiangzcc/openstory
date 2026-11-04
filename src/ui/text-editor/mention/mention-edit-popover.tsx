@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Edit affordance for an already-inserted mention pill (#1475). Clicking a
  * pill opens this: a preview of what it points at plus the same sectioned
@@ -73,6 +74,8 @@ export const MentionEditPopover: React.FC<{
   onRename?: (item: MentionItem, name: string) => void;
   onClose: () => void;
 }> = ({ attrs, items, onReplace, onRemove, onRename, onClose }) => {
+  const { t } = useTranslation('interface');
+
   const current = findMentionItem(items, attrs);
   const [query, setQuery] = useState('');
   const [name, setName] = useState(current?.tag ?? '');
@@ -118,7 +121,7 @@ export const MentionEditPopover: React.FC<{
           variant="ghost"
           size="icon"
           className="ml-auto"
-          aria-label="Remove mention"
+          aria-label={t('Remove mention')}
           onClick={onRemove}
         >
           <Trash2 aria-hidden="true" />
@@ -136,11 +139,11 @@ export const MentionEditPopover: React.FC<{
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            aria-label="Rename target"
+            aria-label={t('Rename target')}
             className="h-8"
           />
           <Button type="submit" size="sm" disabled={!renameDirty}>
-            Rename
+            {t('Rename')}
           </Button>
         </form>
       )}
@@ -150,8 +153,8 @@ export const MentionEditPopover: React.FC<{
         data-mention-filter=""
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Point at…"
-        aria-label="Replace mention target"
+        placeholder={t('Point at…')}
+        aria-label={t('Replace mention target')}
         className="h-8"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {

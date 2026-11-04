@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AppImage } from '@/ui/shadcn/app-image';
 import { cn } from '@/ui/utils';
 import { Loader2 } from 'lucide-react';
@@ -21,6 +22,8 @@ export const SheetVersionStrip: React.FC<{
   onSelect: (versionId: string) => void;
   label: string;
 }> = ({ versions, selectingId, onSelect, label }) => {
+  const { t } = useTranslation('cast');
+
   if (versions.length < 2) return null;
 
   return (
@@ -39,7 +42,10 @@ export const SheetVersionStrip: React.FC<{
                 }}
                 disabled={busy || !version.url}
                 aria-current={version.selected ? 'true' : undefined}
-                aria-label={`Version ${ordinal}${version.selected ? ', current' : ''}`}
+                aria-label={t('Version {{value1}}{{value2}}', {
+                  value1: ordinal,
+                  value2: version.selected ? t(', current') : '',
+                })}
                 aria-pressed={version.selected}
                 className={cn(
                   'relative block h-16 w-24 overflow-hidden rounded-md border bg-muted',

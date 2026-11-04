@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { InButtonCost, costButtonClassName } from '@/billing/ui/action-cost';
 import { GenerationStopSlider } from '@/sequences/ui/generation/generation-stop-slider';
 import { MotionModelSelector } from '@/models/ui/pickers/motion-model-selector';
@@ -277,6 +280,13 @@ const SceneListComponent: React.FC<SceneListProps> = ({
   onIncludeMusicChange,
   onRenderDraftsAtQuality,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+
+  const { t } = useTranslation('shots');
+  const { t: translateDraft } = useTranslation('motion');
+  const { t: translatePlan } = useTranslation('sequences');
+  const translateLabel = useLabelTranslation('shots');
+
   const rootRef = useRef<HTMLDivElement>(null);
   const divergentByShotId = useMemo(() => {
     const map = new Map<string, ShotVariant>();
@@ -314,12 +324,12 @@ const SceneListComponent: React.FC<SceneListProps> = ({
       next[swapWith] = a;
       reorderScenes.mutate(next, {
         onError: (error) =>
-          toast.error('Failed to reorder scenes', {
+          toast.error(translateEvent('Failed to reorder scenes'), {
             description: errorMessage(error),
           }),
       });
     },
-    [reorderScenes]
+    [translateEvent, reorderScenes]
   );
 
   const handleAddScene = () => {
@@ -328,7 +338,7 @@ const SceneListComponent: React.FC<SceneListProps> = ({
         onSelectScene(scene.id, false);
       },
       onError: (error) =>
-        toast.error('Failed to add scene', {
+        toast.error(translateEvent('Failed to add scene'), {
           description: errorMessage(error),
         }),
     });
@@ -435,7 +445,7 @@ const SceneListComponent: React.FC<SceneListProps> = ({
     try {
       await run();
     } catch (error) {
-      toast.error(label, { description: errorMessage(error) });
+      toast.error(translateLabel(label), { description: errorMessage(error) });
     } finally {
       setIsGenerating(false);
     }
@@ -555,7 +565,8 @@ const SceneListComponent: React.FC<SceneListProps> = ({
   const continueBlocked = blockedLines(
     footerPlan,
     continueStopAtClamped,
-    nameOf
+    nameOf,
+    translatePlan
   );
 
   const handleContinue = async () => {
@@ -660,9 +671,12 @@ const SceneListComponent: React.FC<SceneListProps> = ({
       draftSegments: live,
       expiredDrafts: expired,
       soonestDraftExpiry:
-        soonest === null ? null : (draftExpirySuffix(soonest)?.trim() ?? null),
+        soonest === null
+          ? null
+          : (draftExpirySuffix(soonest, undefined, translateDraft)?.trim() ??
+            null),
     };
-  }, [segments]);
+  }, [segments, translateDraft]);
   const draftFinalCostEstimate = useMemo(():
     | Microdollars
     | null
@@ -719,8 +733,10 @@ const SceneListComponent: React.FC<SceneListProps> = ({
             onPrimary={!showButton}
             amountWidth="double"
           >
-            Render {draftSegments.length}{' '}
-            {draftSegments.length === 1 ? 'final' : 'finals'}
+            {t('Render {{value1}} {{value2}}', {
+              value1: draftSegments.length,
+              value2: draftSegments.length === 1 ? t('final') : t('finals'),
+            })}
           </InButtonCost>
         </Button>
       )}
@@ -728,9 +744,14 @@ const SceneListComponent: React.FC<SceneListProps> = ({
         <p className="text-xs text-muted-foreground">
           {[
             soonestDraftExpiry &&
-              `Earliest draft: ${soonestDraftExpiry.replace(/^· /, '')}`,
+              t('Earliest draft: {{value1}}', {
+                value1: soonestDraftExpiry.replace(/^· /, ''),
+              }),
             expiredDrafts > 0 &&
-              `${expiredDrafts} ${expiredDrafts === 1 ? 'draft' : 'drafts'} expired — regenerate to render`,
+              t('{{value1}} {{value2}} expired — regenerate to render', {
+                value1: expiredDrafts,
+                value2: expiredDrafts === 1 ? t('draft') : t('drafts'),
+              }),
           ]
             .filter(Boolean)
             .join(' · ')}
@@ -845,12 +866,14 @@ const SceneListComponent: React.FC<SceneListProps> = ({
                   : 'single'
               }
             >
-              {isGenerating ? 'Generating…' : continueLabel}
+              {isGenerating
+                ? t('Generating…')
+                : planWorkLabel(continueWork, translatePlan)}
             </InButtonCost>
           </Button>
           {continueWork.length > 0 && (
             <p className="text-xs text-muted-foreground">
-              {planWorkLine(continueWork)}
+              {planWorkLine(continueWork, translatePlan)}
             </p>
           )}
           {continueBlocked.map((line) => (
@@ -947,15 +970,15 @@ const SceneListComponent: React.FC<SceneListProps> = ({
               variant="ghost"
               size="icon"
               className="-ml-2 size-7"
-              aria-label="Collapse scenes list"
-              title="Collapse scenes list"
+              aria-label={t('Collapse scenes list')}
+              title={t('Collapse scenes list')}
               onClick={onCollapse}
             >
               <PanelLeftClose className="size-4" />
             </Button>
           )}
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Scenes
+            {t('Scenes')}
           </h2>
         </div>
         {shots && (
@@ -975,15 +998,15 @@ const SceneListComponent: React.FC<SceneListProps> = ({
         }}
         title={
           isWholeSequence
-            ? 'Play the whole sequence'
-            : 'Show the whole sequence (Esc zooms out one level at a time)'
+            ? t('Play the whole sequence')
+            : t('Show the whole sequence (Esc zooms out one level at a time)')
         }
         className={cn(
           'flex min-h-11 w-full items-center justify-between gap-2 border-b px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/40 md:min-h-0',
           isWholeSequence && 'bg-primary/5 font-medium text-primary'
         )}
       >
-        Whole sequence
+        {t('Whole sequence')}
         <CirclePlay
           className="size-3.5 shrink-0 text-muted-foreground"
           aria-hidden
@@ -994,13 +1017,17 @@ const SceneListComponent: React.FC<SceneListProps> = ({
         <div className="flex flex-col gap-3 p-4">
           {loadError && (
             <p role="alert" className="text-sm text-destructive">
-              Failed to load scenes: {loadError.message}
+              {t('Failed to load scenes: {{value1}}', {
+                value1: loadError.message,
+              })}
             </p>
           )}
 
           {!loadError && segmentsError && (
             <p role="alert" className="text-xs text-destructive">
-              Failed to load video segments: {segmentsError.message}
+              {t('Failed to load video segments: {{value1}}', {
+                value1: segmentsError.message,
+              })}
             </p>
           )}
 
@@ -1017,7 +1044,9 @@ const SceneListComponent: React.FC<SceneListProps> = ({
             !isLoading &&
             groupedScenes.length === 0 &&
             unassignedShots.length === 0 && (
-              <p className="text-sm text-muted-foreground">No scenes yet.</p>
+              <p className="text-sm text-muted-foreground">
+                {t('No scenes yet.')}
+              </p>
             )}
 
           {groupedScenes.map(({ scene, shots: sceneShots }, index) => (
@@ -1078,7 +1107,7 @@ const SceneListComponent: React.FC<SceneListProps> = ({
               onClick={handleAddScene}
               disabled={!isHydrated || createScene.isPending}
             >
-              {createScene.isPending ? 'Adding scene…' : 'Add scene'}
+              {createScene.isPending ? t('Adding scene…') : t('Add scene')}
             </Button>
           )}
         </div>
@@ -1130,12 +1159,16 @@ const SceneListComponent: React.FC<SceneListProps> = ({
                     amountWidth="double"
                   >
                     {isGenerating
-                      ? 'Generating…'
+                      ? t('Generating…')
                       : !motionPromptsReady
-                        ? 'Writing motion prompts…'
+                        ? t('Writing motion prompts…')
                         : includeMusic && !musicPromptsReady
-                          ? 'Composing music…'
-                          : `Generate ${notStartedShots.length} / ${totalShots} ${totalShots === 1 ? 'shot' : 'shots'}`}
+                          ? t('Composing music…')
+                          : t('Generate {{value1}} / {{value2}} {{value3}}', {
+                              value1: notStartedShots.length,
+                              value2: totalShots,
+                              value3: totalShots === 1 ? t('shot') : t('shots'),
+                            })}
                   </InButtonCost>
                 </Button>
               </div>
@@ -1153,7 +1186,7 @@ const SceneListComponent: React.FC<SceneListProps> = ({
                     }
                   />
                   <span>
-                    Draft first — 480p now, 1080p finals once approved
+                    {t('Draft first — 480p now, 1080p finals once approved')}
                   </span>
                 </label>
               )}
@@ -1179,10 +1212,10 @@ const SceneListComponent: React.FC<SceneListProps> = ({
                 disabled={isGenerating || !musicPromptsReady}
               >
                 {isGenerating
-                  ? 'Generating…'
+                  ? t('Generating…')
                   : !musicPromptsReady
-                    ? 'Composing music…'
-                    : 'Generate Music'}
+                    ? t('Composing music…')
+                    : t('Generate Music')}
               </Button>
               {renderDraftsButton}
             </div>

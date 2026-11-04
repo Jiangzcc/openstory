@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,27 +36,42 @@ export const LocationRecastConfirmDialog: React.FC<
   affectedShotCount,
   isLoading,
 }) => {
+  const { t } = useTranslation('cast');
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Replace {locationName} with {withLocationName}?
+            {t('Replace {{value1}} with {{value2}}?', {
+              value1: locationName,
+              value2: withLocationName,
+            })}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {`This sequence uses ${withLocationName} instead. ${
-              affectedShotCount === 0
-                ? 'No shot is set here.'
-                : affectedShotCount === 1
-                  ? '1 shot set here re-renders.'
-                  : `${affectedShotCount} shots set here re-render.`
-            } ${locationName} stays in your locations.`}
+            {t(
+              'This sequence uses {{value1}} instead. {{value2}} {{value3}} stays in your locations.',
+              {
+                value1: withLocationName,
+                value2:
+                  affectedShotCount === 0
+                    ? t('No shot is set here.')
+                    : affectedShotCount === 1
+                      ? t('1 shot set here re-renders.')
+                      : t('{{value1}} shots set here re-render.', {
+                          value1: affectedShotCount,
+                        }),
+                value3: locationName,
+              }
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>
+            {t('Cancel')}
+          </AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} disabled={isLoading}>
-            {isLoading ? 'Replacing…' : 'Replace'}
+            {isLoading ? t('Replacing…') : t('Replace')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

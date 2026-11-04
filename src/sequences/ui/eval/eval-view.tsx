@@ -1,3 +1,5 @@
+import { translateStaticLabel } from '@/platform/i18n/labels';
+import { useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import type React from 'react';
 import { lazy, Suspense, useMemo, useState } from 'react';
@@ -187,6 +189,8 @@ export const EvalView: React.FC<EvalViewProps> = ({
   prefs,
   setPrefs,
 }) => {
+  const { i18n, t } = useTranslation('sequences');
+
   const [viewMode, setViewMode] = useState<ListViewMode>('gallery');
   const [sortCriteria, setSortCriteria] = useState<SortCriteria[]>([
     { field: 'createdAt', direction: 'desc' },
@@ -241,13 +245,19 @@ export const EvalView: React.FC<EvalViewProps> = ({
   // Styles let search match a style's name and resolve ids → names for the
   // filter dropdown. The list covers the team's styles plus public ones.
   const { data: styles } = useStyles();
+  const locale = i18n.resolvedLanguage;
   const styleNameById = useMemo(() => {
     const map = new Map<string, string>();
     for (const style of styles ?? []) {
-      map.set(style.id, style.name);
+      map.set(
+        style.id,
+        style.isTemplate
+          ? translateStaticLabel(i18n, 'presets', style.name, locale)
+          : style.name
+      );
     }
     return map;
-  }, [styles]);
+  }, [styles, i18n, locale]);
 
   const sequences: SequenceWithShots[] = supportMode
     ? adminData.data
@@ -273,8 +283,8 @@ export const EvalView: React.FC<EvalViewProps> = ({
     const options = [...seen.entries()]
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label));
-    return [{ value: 'all', label: 'All Styles' }, ...options];
-  }, [sequences, styleNameById]);
+    return [{ value: 'all', label: t('All styles') }, ...options];
+  }, [sequences, styleNameById, t]);
 
   // Team-scoped divergence flags so own-data rows show a "variants available"
   // dot. In support mode rows belong to other teams, so the flag is irrelevant.
@@ -363,7 +373,9 @@ export const EvalView: React.FC<EvalViewProps> = ({
       {error ? (
         <Card className="p-8 text-center" role="alert">
           <p className="text-destructive">
-            Failed to load sequences: {error.message}
+            {t('Failed to load sequences: {{value1}}', {
+              value1: error.message,
+            })}
           </p>
         </Card>
       ) : isLoading ? (
@@ -383,23 +395,27 @@ export const EvalView: React.FC<EvalViewProps> = ({
           icon={<VideoIcon className="h-12 w-12" />}
           title={
             sequences.length > 0 || filters.search
-              ? 'No matching sequences'
-              : 'No sequences yet'
+              ? t('No matching sequences')
+              : t('No sequences yet')
           }
           description={
             filters.search
-              ? `No sequences match "${filters.search}".`
+              ? t('No sequences match "{{value1}}".', {
+                  value1: filters.search,
+                })
               : sequences.length > 0
-                ? 'Try changing or clearing your filters.'
+                ? t('Try changing or clearing your filters.')
                 : supportMode
-                  ? 'No sequences found across any users.'
-                  : 'Get started by creating your first video sequence. Transform your script into professional video content with AI assistance.'
+                  ? t('No sequences found across any users.')
+                  : t(
+                      'Get started by creating your first video sequence. Transform your script into professional video content with AI assistance.'
+                    )
           }
           action={
             !filters.search && !supportMode && sequences.length === 0 ? (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button asChild size="lg">
-                  <Link to="/">Create Your First Sequence</Link>
+                  <Link to="/">{t('Create Your First Sequence')}</Link>
                 </Button>
                 <Button
                   type="button"
@@ -411,7 +427,7 @@ export const EvalView: React.FC<EvalViewProps> = ({
                     })
                   }
                 >
-                  Chat about this
+                  {t('Chat about this')}
                 </Button>
               </div>
             ) : undefined
@@ -449,7 +465,9 @@ export const EvalView: React.FC<EvalViewProps> = ({
           onClick={handleLoadMore}
           disabled={adminData.isFetchingNextPage}
         >
-          {adminData.isFetchingNextPage ? 'Loading…' : 'Load more sequences'}
+          {adminData.isFetchingNextPage
+            ? t('Loading…')
+            : t('Load more sequences')}
         </Button>
       )}
       {/* Archived strip (#1108 Phase 4) — own-data only; renders nothing when

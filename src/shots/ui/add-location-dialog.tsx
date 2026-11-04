@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   Dialog,
@@ -48,6 +50,10 @@ export const AddLocationDialog: React.FC<{
   /** Locations the sequence already uses: not offered again. */
   usedLocationIds: ReadonlySet<string>;
 }> = ({ sequenceId, usedLocationIds }) => {
+  const { t: translateCast } = useTranslation('cast');
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState('');
@@ -72,12 +78,19 @@ export const AddLocationDialog: React.FC<{
       {
         onSuccess: () => {
           close();
-          toast.success(`Added ${location.name}`);
+          toast.success(
+            translateEvent('Added {{value1}}', { value1: location.name })
+          );
         },
         onError: (error) =>
-          toast.error(`Could not add ${location.name}`, {
-            description: errorMessage(error),
-          }),
+          toast.error(
+            translateEvent('Could not add {{value1}}', {
+              value1: location.name,
+            }),
+            {
+              description: errorMessage(error),
+            }
+          ),
       }
     );
 
@@ -87,7 +100,7 @@ export const AddLocationDialog: React.FC<{
       Object.fromEntries(new FormData(event.currentTarget))
     );
     if (!result.success) {
-      toast.error('Check the location fields', {
+      toast.error(translateEvent('Check the location fields'), {
         description: result.error.issues[0]?.message,
       });
       return;
@@ -97,10 +110,12 @@ export const AddLocationDialog: React.FC<{
       {
         onSuccess: (location) => {
           close();
-          toast.success(`Added ${location.name}`);
+          toast.success(
+            translateEvent('Added {{value1}}', { value1: location.name })
+          );
         },
         onError: (error) =>
-          toast.error('Failed to add location', {
+          toast.error(translateEvent('Failed to add location'), {
             description: errorMessage(error),
           }),
       }
@@ -114,46 +129,46 @@ export const AddLocationDialog: React.FC<{
     >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Add Location
+          {t('Add Location')}
         </Button>
       </DialogTrigger>
       {creating ? (
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New location</DialogTitle>
+            <DialogTitle>{t('New location')}</DialogTitle>
             <DialogDescription>
-              The rest of the bible and the sheet are on its page.
+              {t('The rest of the bible and the sheet are on its page.')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
-              <Label htmlFor="new-location-name">Name</Label>
+              <Label htmlFor="new-location-name">{t('Name')}</Label>
               <Input id="new-location-name" name="name" required />
             </div>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="new-location-type">Type</Label>
+              <Label htmlFor="new-location-type">{t('Type')}</Label>
               <Select
                 name="type"
                 defaultValue="interior"
                 items={{
-                  interior: 'Interior',
-                  exterior: 'Exterior',
-                  both: 'Interior/Exterior',
+                  interior: t('Interior'),
+                  exterior: t('Exterior'),
+                  both: t('Interior/Exterior'),
                 }}
               >
                 <SelectTrigger id="new-location-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="interior">Interior</SelectItem>
-                  <SelectItem value="exterior">Exterior</SelectItem>
-                  <SelectItem value="both">Interior/Exterior</SelectItem>
+                  <SelectItem value="interior">{t('Interior')}</SelectItem>
+                  <SelectItem value="exterior">{t('Exterior')}</SelectItem>
+                  <SelectItem value="both">{t('Interior/Exterior')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="new-location-description">
-                Description (optional)
+                {t('Description (optional)')}
               </Label>
               <Textarea
                 id="new-location-description"
@@ -168,10 +183,10 @@ export const AddLocationDialog: React.FC<{
                 size="sm"
                 onClick={() => setCreating(false)}
               >
-                Back to locations
+                {t('Back to locations')}
               </Button>
               <Button type="submit" disabled={createLocation.isPending}>
-                {createLocation.isPending ? 'Creating…' : 'Create'}
+                {createLocation.isPending ? t('Creating…') : t('Create')}
               </Button>
             </div>
           </form>
@@ -179,17 +194,19 @@ export const AddLocationDialog: React.FC<{
       ) : (
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add location</DialogTitle>
+            <DialogTitle>{t('Add location')}</DialogTitle>
             <DialogDescription>
-              Adds the location with its sheet. Later edits reach this sequence.
+              {t(
+                'Adds the location with its sheet. Later edits reach this sequence.'
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <Input
                 type="search"
-                placeholder="Search locations…"
-                aria-label="Search locations"
+                placeholder={t('Search locations…')}
+                aria-label={t('Search locations')}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -198,7 +215,7 @@ export const AddLocationDialog: React.FC<{
                 variant="outline"
                 onClick={() => setCreating(true)}
               >
-                New location
+                {t('New location')}
               </Button>
             </div>
             <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
@@ -210,7 +227,7 @@ export const AddLocationDialog: React.FC<{
                 ))}
               {offered?.length === 0 && (
                 <li className="py-6 text-center text-sm text-muted-foreground">
-                  {q ? 'No location matches' : 'No other locations yet'}
+                  {q ? t('No location matches') : t('No other locations yet')}
                 </li>
               )}
               {offered?.map((location) => {
@@ -238,10 +255,10 @@ export const AddLocationDialog: React.FC<{
                       </span>
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate text-sm">
-                          {pending ? 'Adding…' : location.name}
+                          {pending ? t('Adding…') : location.name}
                         </span>
                         <span className="truncate text-xs text-muted-foreground">
-                          {locationUseLine(location.sequences)}
+                          {locationUseLine(location.sequences, translateCast)}
                         </span>
                       </span>
                     </button>

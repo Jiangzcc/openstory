@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { Trans, useTranslation } from 'react-i18next';
 /**
  * /device — approve a device-code login (#1219). The agent shows the user a
  * short code and this URL; the user signs in, confirms the code, and approves.
@@ -37,10 +39,14 @@ export const Route = createFileRoute('/_app/device')({
     await requireSessionOrRedirect(queryClient, location.href);
   },
   component: DevicePage,
-  staticData: { breadcrumb: 'Device login' },
+  staticData: {
+    breadcrumb: { label: 'Device login', translationKey: 'Device login' },
+  },
 });
 
 function DevicePage() {
+  const { t } = useTranslation('pages');
+
   const { user_code } = Route.useSearch();
   const navigate = Route.useNavigate();
 
@@ -55,10 +61,11 @@ function DevicePage() {
     <div className="mx-auto w-full max-w-md p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Device login</CardTitle>
+          <CardTitle>{t('Device login')}</CardTitle>
           <CardDescription>
-            Enter the code shown by your agent or CLI to give it access to the
-            OpenStory API.
+            {t(
+              'Enter the code shown by your agent or CLI to give it access to the OpenStory API.'
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -66,7 +73,7 @@ function DevicePage() {
             <Input
               name="user_code"
               defaultValue={user_code ?? ''}
-              placeholder="ABCD-EFGH"
+              placeholder={t('ABCD-EFGH')}
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
@@ -74,7 +81,7 @@ function DevicePage() {
               required
             />
             <Button type="submit" variant="outline">
-              Check
+              {t('Check')}
             </Button>
           </form>
           {user_code && (
@@ -89,6 +96,9 @@ function DevicePage() {
 }
 
 function GrantDecision({ userCode }: { userCode: string }) {
+  const translateEvent = useLiveTranslation('pages');
+  const { t } = useTranslation('pages');
+
   const [decided, setDecided] = useState<'approved' | 'denied' | null>(null);
   const { data } = useSuspenseQuery({
     queryKey: ['deviceGrant', userCode],
@@ -102,8 +112,12 @@ function GrantDecision({ userCode }: { userCode: string }) {
       if (error) {
         toast.error(
           error === 'access_denied'
-            ? 'This code was requested under a different account. Sign in as that account to approve it.'
-            : 'This code is no longer valid. Ask your agent for a new one.'
+            ? translateEvent(
+                'This code was requested under a different account. Sign in as that account to approve it.'
+              )
+            : translateEvent(
+                'This code is no longer valid. Ask your agent for a new one.'
+              )
         );
         void queryClient.invalidateQueries({
           queryKey: ['deviceGrant', userCode],
@@ -113,47 +127,74 @@ function GrantDecision({ userCode }: { userCode: string }) {
       setDecided(approve ? 'approved' : 'denied');
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : 'Something went wrong'),
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : translateEvent('Something went wrong')
+      ),
   });
 
   if (decided === 'approved') {
     return (
       <output className="block">
-        Approved. Return to your agent — it now has a key named “Agent login”,
-        which you can revoke any time under Settings → Developer.
+        {t(
+          'Approved. Return to your agent — it now has a key named “Agent login”, which you can revoke any time under Settings → Developer.'
+        )}
       </output>
     );
   }
   if (decided === 'denied') {
     return (
       <output className="block">
-        Denied. The agent will not receive a key.
+        {t('Denied. The agent will not receive a key.')}
       </output>
     );
   }
   if (data.status === 'approved' || data.status === 'denied') {
     return (
       <output className="block">
-        Code <code className="font-mono">{userCode}</code> has already been{' '}
-        {data.status}.
+        <Trans
+          ns="pages"
+          i18nKey="Code <0/> has already been {{value1}}."
+          components={[
+            <code key="0" className="font-mono">
+              {userCode}
+            </code>,
+          ]}
+          values={{ value1: t(data.status) }}
+        />
       </output>
     );
   }
   if (data.status === 'invalid') {
     return (
       <p role="alert">
-        Code <code className="font-mono">{userCode}</code> isn’t valid or has
-        expired. Check it and try again, or ask your agent for a new one.
+        <Trans
+          ns="pages"
+          i18nKey="Code <0/> isn’t valid or has expired. Check it and try again, or ask your agent for a new one."
+          components={[
+            <code key="0" className="font-mono">
+              {userCode}
+            </code>,
+          ]}
+        />
       </p>
     );
   }
   return (
     <div className="flex flex-col gap-3">
       <p>
-        Give the device showing{' '}
-        <code className="font-mono font-semibold">{userCode}</code> an API key
-        for team <strong>{data.teamName}</strong>? Only approve codes you
-        requested yourself.
+        <Trans
+          ns="pages"
+          i18nKey="Give the device showing <0/> an API key for team <1>{{value1}}</1>? Only approve codes you requested yourself."
+          components={[
+            <code key="0" className="font-mono font-semibold">
+              {userCode}
+            </code>,
+            <strong key="1" />,
+          ]}
+          values={{ value1: data.teamName }}
+        />
       </p>
       <div className="flex justify-end gap-2">
         <Button
@@ -161,10 +202,10 @@ function GrantDecision({ userCode }: { userCode: string }) {
           disabled={decide.isPending}
           onClick={() => decide.mutate(false)}
         >
-          Deny
+          {t('Deny')}
         </Button>
         <Button disabled={decide.isPending} onClick={() => decide.mutate(true)}>
-          {decide.isPending ? 'Working…' : 'Approve'}
+          {decide.isPending ? t('Working…') : t('Approve')}
         </Button>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * OTP Verification Form Component
  * Auto-verifies when 6 digits entered or pasted
@@ -29,6 +31,10 @@ type VerifyFormProps = {
 };
 
 export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
+  const translateEvent = useLiveTranslation('platform');
+
+  const { t } = useTranslation('platform');
+
   const navigate = useNavigate();
   const hydrated = useHydrated();
   const [otp, setOtp] = useState('');
@@ -49,7 +55,7 @@ export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
           });
 
           if (result.error) {
-            setError(result.error.message || 'Invalid code');
+            setError(result.error.message || translateEvent('Invalid code'));
             return;
           }
 
@@ -57,11 +63,15 @@ export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
           await finishSignInRedirect(navigate, redirectTo);
         } catch (err) {
           logger.error('Verify OTP error:', { err });
-          setError(err instanceof Error ? err.message : 'Verification failed');
+          setError(
+            err instanceof Error
+              ? err.message
+              : translateEvent('Verification failed')
+          );
         }
       });
     },
-    [email, navigate, redirectTo]
+    [translateEvent, email, navigate, redirectTo]
   );
 
   // Auto-verify when OTP is complete (6 digits)
@@ -88,7 +98,7 @@ export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
         });
 
         if (result.error) {
-          setError(result.error.message || 'Failed to resend code');
+          setError(result.error.message || t('Failed to resend code'));
           return;
         }
 
@@ -96,7 +106,9 @@ export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
         setOtp('');
       } catch (err) {
         logger.error('Resend OTP error:', { err });
-        setError(err instanceof Error ? err.message : 'Failed to resend code');
+        setError(
+          err instanceof Error ? err.message : t('Failed to resend code')
+        );
       }
     });
   };
@@ -104,8 +116,10 @@ export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Check your email</CardTitle>
-        <CardDescription>Enter the code sent to {email}</CardDescription>
+        <CardTitle>{t('Check your email')}</CardTitle>
+        <CardDescription>
+          {t('Enter the code sent to {{value1}}', { value1: email })}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
@@ -146,7 +160,7 @@ export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
             className="w-full"
             disabled={!hydrated || isPending || otp.length !== 6}
           >
-            {isPending ? 'Verifying…' : 'Verify'}
+            {isPending ? t('Verifying…') : t('Verify')}
           </Button>
         </form>
 
@@ -156,7 +170,7 @@ export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
             search={{ redirectTo }}
             className="text-muted-foreground hover:underline"
           >
-            &larr; Back
+            {t('← Back')}
           </Link>
           <button
             type="button"
@@ -164,7 +178,7 @@ export function VerifyForm({ email, redirectTo = '/' }: VerifyFormProps) {
             className="text-primary hover:underline"
             disabled={!hydrated || isPending}
           >
-            Resend code
+            {t('Resend code')}
           </button>
         </div>
       </CardContent>

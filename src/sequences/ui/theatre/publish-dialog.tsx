@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+import { Trans, useTranslation } from 'react-i18next';
 /**
  * Publish to social (#1267). Three steps: pick the profile, platforms and
  * caption; review exactly what will be sent; then follow each platform's
@@ -105,6 +107,8 @@ type Step =
   | { kind: 'review'; input: PublishInput };
 
 export function PublishDialog(props: PublishDialogProps) {
+  const { t } = useTranslation('sequences');
+
   const { onClose, teamId, exportId } = props;
   const current = useTracked(exportId);
   const [step, setStep] = useState<Step>({ kind: 'form', draft: null });
@@ -118,9 +122,11 @@ export function PublishDialog(props: PublishDialogProps) {
     >
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Publish to social</DialogTitle>
+          <DialogTitle>{t('Publish to social')}</DialogTitle>
           <DialogDescription>
-            Post this render to your connected accounts through Upload-Post.
+            {t(
+              'Post this render to your connected accounts through Upload-Post.'
+            )}
           </DialogDescription>
         </DialogHeader>
         {current ? (
@@ -154,7 +160,7 @@ export function PublishDialog(props: PublishDialogProps) {
                     </p>
                     <DialogFooter>
                       <Button type="button" variant="outline" onClick={onClose}>
-                        Close
+                        {t('Close')}
                       </Button>
                       <Button
                         type="button"
@@ -163,7 +169,7 @@ export function PublishDialog(props: PublishDialogProps) {
                           reset();
                         }}
                       >
-                        Try again
+                        {t('Try again')}
                       </Button>
                     </DialogFooter>
                   </div>
@@ -205,6 +211,8 @@ function PublishForm({
   draft: PublishInput | null;
   onReview: (input: PublishInput) => void;
 }) {
+  const { t } = useTranslation('sequences');
+
   const id = useId();
   const { data: profiles } = useSuspenseQuery({
     queryKey: ['social-profiles', teamId],
@@ -226,20 +234,25 @@ function PublishForm({
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          No Upload-Post profiles. Create one at{' '}
-          <a
-            href="https://app.upload-post.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-          >
-            app.upload-post.com
-          </a>
-          .
+          <Trans
+            ns="sequences"
+            i18nKey="No Upload-Post profiles. Create one at <0>app.upload-post.com</0>."
+            components={[
+              <a
+                key="0"
+                href="https://app.upload-post.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2"
+              >
+                {t('Open link', { ns: 'labels' })}
+              </a>,
+            ]}
+          />
         </p>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            Close
+            {t('Close')}
           </Button>
         </DialogFooter>
       </div>
@@ -260,7 +273,7 @@ function PublishForm({
       tiktokPrivacy: form.get('tiktokPrivacy'),
     });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Check the form');
+      setError(parsed.error.issues[0]?.message ?? t('Check the form'));
       return;
     }
     setError(null);
@@ -270,7 +283,7 @@ function PublishForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label>Upload-Post profile</Label>
+        <Label>{t('Upload-Post profile')}</Label>
         <Select
           value={profileName}
           onValueChange={(value) => {
@@ -278,8 +291,8 @@ function PublishForm({
             setPlatforms([]);
           }}
         >
-          <SelectTrigger aria-label="Upload-Post profile">
-            <SelectValue placeholder="Choose a profile" />
+          <SelectTrigger aria-label={t('Upload-Post profile')}>
+            <SelectValue placeholder={t('Choose a profile')} />
           </SelectTrigger>
           <SelectContent>
             {profiles.map((p) => (
@@ -293,10 +306,10 @@ function PublishForm({
 
       {profile && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium">Platforms</legend>
+          <legend className="text-sm font-medium">{t('Platforms')}</legend>
           {profile.platforms.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No accounts connected on this profile.
+              {t('No accounts connected on this profile.')}
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
@@ -323,7 +336,7 @@ function PublishForm({
       )}
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${id}-title`}>Caption</Label>
+        <Label htmlFor={`${id}-title`}>{t('Caption')}</Label>
         <Input
           id={`${id}-title`}
           name="title"
@@ -333,13 +346,18 @@ function PublishForm({
         />
         {limit && (
           <p className="text-xs text-muted-foreground">
-            {limit.label}: {limit.max} characters max.
+            {t('{{value1}}: {{value2}} characters max.', {
+              value1: limit.label,
+              value2: limit.max,
+            })}
           </p>
         )}
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${id}-description`}>Description (optional)</Label>
+        <Label htmlFor={`${id}-description`}>
+          {t('Description (optional)')}
+        </Label>
         <Textarea
           id={`${id}-description`}
           name="description"
@@ -347,7 +365,7 @@ function PublishForm({
           defaultValue={draft?.description}
         />
         <p className="text-xs text-muted-foreground">
-          Used on YouTube, LinkedIn and Facebook.
+          {t('Used on YouTube, LinkedIn and Facebook.')}
         </p>
       </div>
 
@@ -357,7 +375,7 @@ function PublishForm({
           platforms.includes('youtube') ? 'flex flex-col gap-2' : 'hidden'
         }
       >
-        <Label htmlFor={`${id}-youtube`}>YouTube visibility</Label>
+        <Label htmlFor={`${id}-youtube`}>{t('YouTube visibility')}</Label>
         <Select
           name="youtubePrivacy"
           defaultValue={draft?.youtubePrivacy ?? 'private'}
@@ -380,7 +398,7 @@ function PublishForm({
           platforms.includes('tiktok') ? 'flex flex-col gap-2' : 'hidden'
         }
       >
-        <Label htmlFor={`${id}-tiktok`}>TikTok visibility</Label>
+        <Label htmlFor={`${id}-tiktok`}>{t('TikTok visibility')}</Label>
         <Select
           name="tiktokPrivacy"
           defaultValue={draft?.tiktokPrivacy ?? 'account_default'}
@@ -406,10 +424,10 @@ function PublishForm({
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
+          {t('Cancel')}
         </Button>
         <Button type="submit" disabled={platforms.length === 0}>
-          Review
+          {t('Review')}
         </Button>
       </DialogFooter>
     </form>
@@ -427,6 +445,8 @@ function PublishReview({
   onBack: () => void;
   onPublished: (outcome: Omit<Tracked, 'startedAt'>) => void;
 }) {
+  const { t } = useTranslation('sequences');
+
   const posthog = usePostHog();
   const publish = useMutation({
     mutationFn: async (): Promise<PublishOutcome> => {
@@ -456,15 +476,15 @@ function PublishReview({
   return (
     <div className="flex flex-col gap-4">
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-        <dt className="text-muted-foreground">Profile</dt>
+        <dt className="text-muted-foreground">{t('Profile')}</dt>
         <dd>{input.profile}</dd>
-        <dt className="text-muted-foreground">Platforms</dt>
+        <dt className="text-muted-foreground">{t('Platforms')}</dt>
         <dd>{input.platforms.map(socialPlatformLabel).join(', ')}</dd>
-        <dt className="text-muted-foreground">Caption</dt>
+        <dt className="text-muted-foreground">{t('Caption')}</dt>
         <dd className="break-words">{input.title}</dd>
         {input.description && (
           <>
-            <dt className="text-muted-foreground">Description</dt>
+            <dt className="text-muted-foreground">{t('Description')}</dt>
             <dd className="break-words whitespace-pre-wrap">
               {input.description}
             </dd>
@@ -478,18 +498,19 @@ function PublishReview({
         )}
         {input.platforms.includes('tiktok') && (
           <>
-            <dt className="text-muted-foreground">TikTok</dt>
+            <dt className="text-muted-foreground">{t('TikTok')}</dt>
             <dd>{TIKTOK_PRIVACY_LABELS[input.tiktokPrivacy]}</dd>
           </>
         )}
       </dl>
       <p className="text-xs text-muted-foreground">
-        Posts are labelled as AI-generated where the platform supports it.
-        Published posts can't be undone from here.
+        {t(
+          "Posts are labelled as AI-generated where the platform supports it. Published posts can't be undone from here."
+        )}
       </p>
       {notSent && (
         <p role="alert" className="text-sm text-destructive">
-          Not sent: {notSent}
+          {t('Not sent: {{value1}}', { value1: notSent })}
         </p>
       )}
       <DialogFooter>
@@ -499,14 +520,14 @@ function PublishReview({
           onClick={onBack}
           disabled={publish.isPending}
         >
-          Back
+          {t('Back')}
         </Button>
         <Button
           type="button"
           onClick={() => publish.mutate()}
           disabled={publish.isPending}
         >
-          {publish.isPending ? 'Publishing…' : 'Publish'}
+          {publish.isPending ? t('Publishing…') : t('Publish')}
         </Button>
       </DialogFooter>
     </div>
@@ -524,33 +545,63 @@ const POLL_MS = 5_000;
 function trackingMessage(
   tracked: Tracked,
   status: PublishStatus | undefined,
-  age: number
+  age: number,
+  translate?: TFunction<'sequences'>
 ): string {
-  const progress = progressMessage(tracked, status, age);
+  const progress = progressMessage(tracked, status, age, translate);
   return tracked.state === 'resumed'
-    ? `This exact post was already sent, so nothing was sent again. ${progress}`
+    ? (translate?.(
+        'This exact post was already sent, so nothing was sent again. {{value1}}',
+        { ns: 'sequences', value1: progress }
+      ) ??
+        `This exact post was already sent, so nothing was sent again. ${progress}`)
     : progress;
 }
 
 function progressMessage(
   tracked: Tracked,
   status: PublishStatus | undefined,
-  age: number
+  age: number,
+  translate?: TFunction<'sequences'>
 ): string {
-  if (status?.state === 'done') return 'Finished.';
+  if (status?.state === 'done')
+    return translate?.('Finished.', { ns: 'sequences' }) ?? 'Finished.';
   if (status?.state === 'failed') {
-    return `Publishing failed${status.message ? `: ${status.message}` : '.'}`;
+    return (
+      translate?.('Publishing failed{{value1}}', {
+        ns: 'sequences',
+        value1: status.message ? `: ${status.message}` : '.',
+      }) ?? `Publishing failed${status.message ? `: ${status.message}` : '.'}`
+    );
   }
   if (status?.state === 'not_found' && age > REGISTER_GRACE_MS) {
-    return 'Upload-Post has no record of this post yet. It may still appear — check again in a few minutes before publishing again.';
+    return (
+      translate?.(
+        'Upload-Post has no record of this post yet. It may still appear — check again in a few minutes before publishing again.',
+        { ns: 'sequences' }
+      ) ??
+      'Upload-Post has no record of this post yet. It may still appear — check again in a few minutes before publishing again.'
+    );
   }
   if (status?.state === 'running' && age > MAX_TRACK_MS) {
-    return 'Still processing at Upload-Post. See app.upload-post.com for the result.';
+    return (
+      translate?.(
+        'Still processing at Upload-Post. See app.upload-post.com for the result.',
+        { ns: 'sequences' }
+      ) ??
+      'Still processing at Upload-Post. See app.upload-post.com for the result.'
+    );
   }
   if (tracked.state === 'unconfirmed') {
-    return 'Upload-Post did not confirm the request. Checking whether it arrived…';
+    return (
+      translate?.(
+        'Upload-Post did not confirm the request. Checking whether it arrived…',
+        { ns: 'sequences' }
+      ) ??
+      'Upload-Post did not confirm the request. Checking whether it arrived…'
+    );
   }
-  return 'Publishing…';
+  return translate?.('Publishing…', { ns: 'sequences' }) ?? 'Publishing…';
 }
 
 function PublishTracking({
@@ -564,6 +615,8 @@ function PublishTracking({
   onClose: () => void;
   onNewPost: () => void;
 }) {
+  const { t } = useTranslation('sequences');
+
   const { requestId, startedAt } = tracked;
   const {
     data: status,
@@ -598,11 +651,11 @@ function PublishTracking({
   return (
     <div className="flex flex-col gap-4">
       <p aria-live="polite" className="text-sm">
-        {trackingMessage(tracked, status, age)}
+        {trackingMessage(tracked, status, age, t)}
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">
-          Couldn't check progress: {error.message}
+          {t("Couldn't check progress: {{value1}}", { value1: error.message })}
         </p>
       )}
       {status && status.results.length > 0 && (
@@ -611,7 +664,7 @@ function PublishTracking({
             <li key={result.platform} className="flex flex-col gap-0.5">
               <span className="font-medium">
                 {socialPlatformLabel(result.platform)} —{' '}
-                {result.state === 'pending' ? 'in progress' : result.state}
+                {result.state === 'pending' ? t('in progress') : result.state}
               </span>
               {result.url && (
                 <a
@@ -638,7 +691,7 @@ function PublishTracking({
       <DialogFooter>
         {finished && (
           <Button type="button" variant="outline" onClick={onNewPost}>
-            New post
+            {t('New post')}
           </Button>
         )}
         {stopped && (
@@ -648,11 +701,11 @@ function PublishTracking({
             onClick={() => void refetch()}
             disabled={isFetching}
           >
-            {isFetching ? 'Checking…' : 'Check again'}
+            {isFetching ? t('Checking…') : t('Check again')}
           </Button>
         )}
         <Button type="button" onClick={onClose}>
-          Close
+          {t('Close')}
         </Button>
       </DialogFooter>
     </div>

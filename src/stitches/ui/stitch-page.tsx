@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { useStitchPlayerLabels } from '@/motion/ui/use-stitch-player-labels';
 import { StitchedPlayer } from '@openstory/stitch/react';
 import { useState } from 'react';
 import type { StitchCut } from '@/stitches/cut';
@@ -12,6 +14,9 @@ import { Button } from '@/ui/shadcn/button';
  * retry, as the CLI's page does.
  */
 export function StitchPage({ cut }: { cut: StitchCut }) {
+  const { t } = useTranslation('stitches');
+  const playerLabels = useStitchPlayerLabels();
+
   const [musicOn, setMusicOn] = useState(cut.musicUrl !== null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -26,6 +31,7 @@ export function StitchPage({ cut }: { cut: StitchCut }) {
       >
         {error === null ? (
           <StitchedPlayer
+            labels={playerLabels}
             key={attempt}
             clips={cut.clips}
             musicUrl={cut.musicUrl}
@@ -49,7 +55,7 @@ export function StitchPage({ cut }: { cut: StitchCut }) {
                 setAttempt((n) => n + 1);
               }}
             >
-              Try again
+              {t('Try again')}
             </Button>
           </div>
         )}

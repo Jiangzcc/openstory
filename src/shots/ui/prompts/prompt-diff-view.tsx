@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { computeWordDiff, type WordDiffSegment } from './word-diff';
 import { cn } from '@/ui/utils';
 import { useMemo } from 'react';
@@ -12,7 +14,11 @@ function assertNever(x: never): never {
   throw new Error(`Unexpected diff segment kind: ${JSON.stringify(x)}`);
 }
 
-const renderSegment = (seg: WordDiffSegment, i: number) => {
+const renderSegment = (
+  seg: WordDiffSegment,
+  i: number,
+  translate: TFunction<'shots'>
+) => {
   switch (seg.kind) {
     case 'eq':
       // eslint-disable-next-line react/no-array-index-key -- diff segments have no stable id
@@ -22,7 +28,7 @@ const renderSegment = (seg: WordDiffSegment, i: number) => {
         <ins
           // eslint-disable-next-line react/no-array-index-key -- diff segments have no stable id
           key={i}
-          aria-label="added"
+          aria-label={translate('added')}
           className="rounded bg-emerald-100 text-emerald-900 no-underline dark:bg-emerald-950 dark:text-emerald-100"
         >
           {seg.text}
@@ -33,7 +39,7 @@ const renderSegment = (seg: WordDiffSegment, i: number) => {
         <del
           // eslint-disable-next-line react/no-array-index-key -- diff segments have no stable id
           key={i}
-          aria-label="removed"
+          aria-label={translate('removed')}
           className="rounded bg-rose-100 text-rose-900 line-through dark:bg-rose-950 dark:text-rose-100"
         >
           {seg.text}
@@ -49,6 +55,7 @@ export const PromptDiffView: React.FC<PromptDiffViewProps> = ({
   after,
   className,
 }) => {
+  const { t } = useTranslation('shots');
   const segments = useMemo(
     () => computeWordDiff(before, after),
     [before, after]
@@ -62,7 +69,7 @@ export const PromptDiffView: React.FC<PromptDiffViewProps> = ({
         className
       )}
     >
-      {segments.map(renderSegment)}
+      {segments.map((segment, index) => renderSegment(segment, index, t))}
     </p>
   );
 };

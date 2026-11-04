@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import { useCallback, useRef, useState, type PointerEvent } from 'react';
 import { toast } from 'sonner';
@@ -82,6 +84,9 @@ export function StudioDrawingCanvas({
   onCancel,
   onSubmit,
 }: StudioDrawingCanvasProps) {
+  const translateEvent = useLiveTranslation('studio');
+  const { t } = useTranslation('studio');
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const strokeRef = useRef<Stroke | null>(null);
   const [tool, setTool] = useState<DrawingTool>('pen');
@@ -163,7 +168,7 @@ export function StudioDrawingCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
     void canvasToPngFile(canvas).then(onSubmit, () =>
-      toast.error('Could not export the drawing')
+      toast.error(translateEvent('Could not export the drawing'))
     );
   };
 
@@ -177,7 +182,7 @@ export function StudioDrawingCanvas({
           aria-pressed={tool === 'pen'}
           onClick={() => setTool('pen')}
         >
-          Pen
+          {t('Pen')}
         </Button>
         <Button
           type="button"
@@ -187,7 +192,7 @@ export function StudioDrawingCanvas({
           disabled={!hasInk}
           onClick={() => setTool('erase')}
         >
-          Erase
+          {t('Erase')}
         </Button>
         <Button
           type="button"
@@ -196,7 +201,7 @@ export function StudioDrawingCanvas({
           disabled={undoStack.length === 0}
           onClick={handleUndo}
         >
-          Undo
+          {t('Undo')}
         </Button>
         <Button
           type="button"
@@ -205,7 +210,7 @@ export function StudioDrawingCanvas({
           disabled={!hasInk}
           onClick={handleClear}
         >
-          Clear
+          {t('Clear')}
         </Button>
       </div>
 
@@ -213,7 +218,7 @@ export function StudioDrawingCanvas({
         ref={initCanvas}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        aria-label="Drawing canvas"
+        aria-label={t('Drawing canvas')}
         className="block aspect-video w-full touch-none rounded-md border"
         style={{ cursor: PEN_CURSOR }}
         onPointerDown={handlePointerDown}
@@ -222,14 +227,14 @@ export function StudioDrawingCanvas({
         onPointerCancel={finishStroke}
       />
 
-      <p className="text-sm text-muted-foreground">Drag to draw.</p>
+      <p className="text-sm text-muted-foreground">{t('Drag to draw.')}</p>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
+          {t('Cancel')}
         </Button>
         <Button type="button" disabled={!hasInk} onClick={handleSubmit}>
-          Add drawing
+          {t('Add drawing')}
         </Button>
       </div>
     </div>

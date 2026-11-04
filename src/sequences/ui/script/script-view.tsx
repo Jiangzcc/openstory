@@ -1,3 +1,6 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import { elementKindFromFilename } from '@/cast/element-kind';
 import { ThinkingBar } from '@/ui/ai/thinking-bar';
@@ -231,16 +234,24 @@ function DurationFitHint({
   videoModel: ImageToVideoModel;
   script: string;
 }) {
+  const { t } = useTranslation('sequences');
+
   const fit = assessDurationFit(script, videoModel);
   const grid = formatClipGrid(fit.clipGrid);
   const modelName = videoModelDisplayName(videoModel);
   const snapped =
     fit.snappedSeconds != null
-      ? ` This script renders at ${fit.snappedSeconds}s.`
+      ? t(' This script renders at {{value1}}s.', {
+          value1: fit.snappedSeconds,
+        })
       : '';
   return (
     <p className="max-w-xs text-xs text-muted-foreground">
-      {`${modelName} clips: ${grid}.${snapped}`}
+      {t('{{value1}} clips: {{value2}}.{{value3}}', {
+        value1: modelName,
+        value2: grid,
+        value3: snapped,
+      })}
     </p>
   );
 }
@@ -291,6 +302,10 @@ export const ScriptView: FC<{
   onStyleChange,
   allowScriptEdit = false,
 }) => {
+  const translateGenerationLabel = useLabelTranslation('labels');
+  const translateEvent = useLiveTranslation('sequences');
+  const { i18n, t } = useTranslation('sequences');
+
   const queryClient = useQueryClient();
   const isEditing = !!sequence?.id;
   const voiceDesignAvailable = useVoiceDesignAvailable();
@@ -532,7 +547,7 @@ export const ScriptView: FC<{
         return;
       }
       if (failedUrls.length > 0) {
-        toastDragImportCorsError();
+        toastDragImportCorsError(i18n);
       }
     });
   };
@@ -737,9 +752,14 @@ export const ScriptView: FC<{
           { sequenceId: mentionSequenceId, locationId },
           {
             onError: (error) =>
-              toast.error(`Could not add ${item.label}`, {
-                description: errorMessage(error),
-              }),
+              toast.error(
+                translateEvent('Could not add {{value1}}', {
+                  value1: item.label,
+                }),
+                {
+                  description: errorMessage(error),
+                }
+              ),
           }
         );
       } else {
@@ -760,9 +780,14 @@ export const ScriptView: FC<{
         { sequenceId: mentionSequenceId, characterId },
         {
           onError: (error) =>
-            toast.error(`Could not add ${item.label}`, {
-              description: errorMessage(error),
-            }),
+            toast.error(
+              translateEvent('Could not add {{value1}}', {
+                value1: item.label,
+              }),
+              {
+                description: errorMessage(error),
+              }
+            ),
         }
       );
     } else {
@@ -994,7 +1019,9 @@ export const ScriptView: FC<{
       ? recommendations
       : undefined;
   const isRecommended = !!activeRecommendations && !isRecommending;
-  const recommendButtonLabel = isRecommended ? 'Recommended' : 'Recommend';
+  const recommendButtonLabel = isRecommended
+    ? t('Recommended')
+    : t('Recommend');
   // The shortlist ran but turned up nothing usable (or errored). Distinguish
   // this from "never asked" so we can tell the user instead of silently
   // reverting to the trigger button (which invites a re-click + re-charge).
@@ -1423,7 +1450,9 @@ export const ScriptView: FC<{
   // "Surprise me" over by the styles, which swaps in a canned sample rather
   // than writing anything (#1481).
   const enhanceInvents = scriptValue.trim().length === 0;
-  const enhanceLabel = enhanceInvents ? 'Invent script' : 'Enhance Script';
+  const enhanceLabel = enhanceInvents
+    ? t('Invent script')
+    : t('Enhance Script');
   // Match script (the default) passes no style to the enhancer, so the draft
   // really is any genre at all.
   const inventStyleName = styles.find((s) => s.id === styleId)?.name;
@@ -1439,7 +1468,7 @@ export const ScriptView: FC<{
           onClick={handleUndoEnhance}
         >
           <Undo2 className="size-3.5" />
-          Undo
+          {t('Undo')}
         </Button>
       )}
       {isEnhancing ? (
@@ -1454,7 +1483,7 @@ export const ScriptView: FC<{
             <Loader2 className="absolute inset-0 size-5 animate-spin" />
             <Square className="absolute inset-[5px] size-[10px] fill-current" />
           </span>
-          Stop
+          {t('Stop')}
         </Button>
       ) : (
         <Popover open={enhancePopoverOpen} onOpenChange={setEnhancePopoverOpen}>
@@ -1472,7 +1501,9 @@ export const ScriptView: FC<{
           </PopoverTrigger>
           <PopoverContent align="end" side="top" className="w-auto">
             <div className="flex flex-col gap-3">
-              <p className="text-sm font-medium">Target video duration</p>
+              <p className="text-sm font-medium">
+                {t('Target video duration')}
+              </p>
               <ToggleGroup
                 type="single"
                 value={String(targetDuration)}
@@ -1492,8 +1523,10 @@ export const ScriptView: FC<{
               {enhanceInvents ? (
                 <p className="max-w-xs text-xs text-muted-foreground">
                   {inventStyleName
-                    ? `An original ${inventStyleName} script, yours to edit.`
-                    : 'An original script, any genre, yours to edit.'}
+                    ? t('An original {{value1}} script, yours to edit.', {
+                        value1: inventStyleName,
+                      })
+                    : t('An original script, any genre, yours to edit.')}
                 </p>
               ) : (
                 <DurationFitHint
@@ -1516,7 +1549,7 @@ export const ScriptView: FC<{
                 }}
               >
                 <Sparkles className="size-3.5" />
-                {enhanceInvents ? 'Draft it' : 'Enhance'}
+                {enhanceInvents ? t('Draft it') : t('Enhance')}
               </Button>
             </div>
           </PopoverContent>
@@ -1559,10 +1592,10 @@ export const ScriptView: FC<{
         <div className="pointer-events-none absolute inset-2 z-50 flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-primary/60 bg-background/80 backdrop-blur-sm">
           <ImagePlus className="size-10 text-primary" />
           <p className="text-base font-medium">
-            Drop images to add as elements
+            {t('Drop images to add as elements')}
           </p>
           <p className="text-xs text-muted-foreground">
-            They'll be referenced by UPPERCASE tokens in your script
+            {t("They'll be referenced by UPPERCASE tokens in your script")}
           </p>
         </div>
       )}
@@ -1612,7 +1645,7 @@ export const ScriptView: FC<{
                 className="md:hidden gap-1.5 shrink-0"
               >
                 <Library className="size-3.5" />
-                References
+                {t('References')}
                 {referenceCount > 0 && (
                   <span className="ml-1 rounded-full bg-primary/10 px-1.5 text-xs">
                     {referenceCount}
@@ -1624,14 +1657,20 @@ export const ScriptView: FC<{
               <SheetHeader className="px-0">
                 <SheetTitle>
                   {isEditing
-                    ? 'Locations & elements'
-                    : 'Cast, locations & elements'}
+                    ? t('Locations & elements')
+                    : t('Cast, locations & elements')}
                 </SheetTitle>
                 <SheetDescription>
-                  {isEditing
-                    ? 'Pin locations, or add reference images.'
-                    : 'Cast characters, pin locations, or add reference images.'}{' '}
-                  Anything you skip is extracted from the script.
+                  {t(
+                    '{{value1}} Anything you skip is extracted from the script.',
+                    {
+                      value1: isEditing
+                        ? t('Pin locations, or add reference images.')
+                        : t(
+                            'Cast characters, pin locations, or add reference images.'
+                          ),
+                    }
+                  )}
                 </SheetDescription>
               </SheetHeader>
               <div className="flex flex-col items-start gap-3">
@@ -1660,8 +1699,9 @@ export const ScriptView: FC<{
               this row off so the placeholder is the instruction (#1255). */}
           {!isEditing && sampleStyleId ? (
             <p className="hidden shrink-0 text-xs text-muted-foreground md:block short-h:hidden">
-              Sample script — make it yours, or hit Generate to see it come to
-              life.
+              {t(
+                'Sample script — make it yours, or hit Generate to see it come to life.'
+              )}
             </p>
           ) : null}
           {/* Grows with content above the editor floor until the card hits
@@ -1681,7 +1721,7 @@ export const ScriptView: FC<{
                 if (canUndoEnhance) setEnhance('canUndoEnhance', false);
               }}
               maxLength={50000}
-              placeholder={COMPOSER_SCRIPT_PLACEHOLDER}
+              placeholder={t(COMPOSER_SCRIPT_PLACEHOLDER)}
               disabled={loading || isDerivedScript}
               showCharacterCount={false}
               mentionItems={mentionItems}
@@ -1723,7 +1763,7 @@ export const ScriptView: FC<{
                 onClick={requestShuffle}
               >
                 <Shuffle className="size-3.5" />
-                Surprise me
+                {t('Surprise me')}
               </Button>
             )}
             {/* CSS-only placement so SSR and hydration match — no useIsMobile
@@ -1758,11 +1798,11 @@ export const ScriptView: FC<{
                   });
                 }}
               >
-                Chat about this
+                {t('Chat about this')}
               </Button>
               {enhanceControls}
               <VoiceInputButton
-                label="script"
+                label={t('script')}
                 variant="outline"
                 size="icon-sm"
                 disabled={loading || isEnhancing || isDerivedScript}
@@ -1787,8 +1827,8 @@ export const ScriptView: FC<{
           {(recommendEmpty || recommendFailed) && (
             <p className="text-xs text-muted-foreground">
               {recommendFailed
-                ? "Couldn't suggest styles — try again or pick one below."
-                : 'No standout matches — try again or pick a style below.'}
+                ? t("Couldn't suggest styles — try again or pick one below.")
+                : t('No standout matches — try again or pick a style below.')}
             </p>
           )}
         </div>
@@ -1804,7 +1844,7 @@ export const ScriptView: FC<{
                   <span className="text-muted-foreground">+</span>
                   <Kbd>⏎</Kbd>
                 </KbdGroup>
-                <span className="ml-1">to generate</span>
+                <span className="ml-1">{t('to generate')}</span>
               </span>
             </div>
 
@@ -1818,7 +1858,7 @@ export const ScriptView: FC<{
                     variant="secondary"
                     onClick={handleCancel}
                   >
-                    Cancel
+                    {t('Cancel')}
                   </Button>
                 )}
                 <Button
@@ -1845,14 +1885,14 @@ export const ScriptView: FC<{
                         <GenerateSequenceIcon className="size-4" />
                       )}
                       {isSubmitting
-                        ? 'Generating…'
+                        ? t('Generating…')
                         : isElementBusy
-                          ? 'Analyzing elements…'
+                          ? t('Analyzing elements…')
                           : !isAuthenticated
-                            ? 'Sign in to Generate'
+                            ? t('Sign in to Generate')
                             : isEditing
-                              ? 'Generate Copy'
-                              : 'Generate'}
+                              ? t('Generate Copy')
+                              : t('Generate')}
                     </InButtonCost>
                   </span>
                   {/* Shine effect */}
@@ -1867,16 +1907,20 @@ export const ScriptView: FC<{
                   setShowStopAlert(true);
                 }}
               >
-                {generateScopeLabel}
+                {translateGenerationLabel(generateScopeLabel)}
               </button>
               <span className="hidden text-xs text-muted-foreground sm:block sm:text-right">
                 {isEditing
                   ? analysisModels.length === 1
-                    ? '1 copy will be created'
-                    : `${analysisModels.length} copies will be created`
+                    ? t('1 copy will be created')
+                    : t('{{value1}} copies will be created', {
+                        value1: analysisModels.length,
+                      })
                   : analysisModels.length === 1
-                    ? '1 sequence will be created'
-                    : `${analysisModels.length} sequences will be created`}
+                    ? t('1 sequence will be created')
+                    : t('{{value1}} sequences will be created', {
+                        value1: analysisModels.length,
+                      })}
               </span>
             </div>
           </div>
@@ -1889,22 +1933,23 @@ export const ScriptView: FC<{
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Generate a copy of this sequence?
+              {t('Generate a copy of this sequence?')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              A copy will be created from this script. Your original sequence
-              won't change.
+              {t(
+                "A copy will be created from this script. Your original sequence won't change."
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setEnhance('showRegenerateConfirm', false);
                 requestGenerate();
               }}
             >
-              Generate Copy
+              {t('Generate Copy')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1925,17 +1970,16 @@ export const ScriptView: FC<{
         >
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Your script is just a starting point
+              {t('Your script is just a starting point')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Short scripts produce simpler sequences. Enhance your script to
-              create a detailed screenplay with visual descriptions, camera
-              directions, and scene breakdowns — tailored to your selected
-              style.
+              {t(
+                'Short scripts produce simpler sequences. Enhance your script to create a detailed screenplay with visual descriptions, camera directions, and scene breakdowns — tailored to your selected style.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex flex-col gap-2 py-2">
-            <p className="text-sm font-medium">Target video duration</p>
+            <p className="text-sm font-medium">{t('Target video duration')}</p>
             <ToggleGroup
               type="single"
               value={String(targetDuration)}
@@ -1958,7 +2002,7 @@ export const ScriptView: FC<{
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <div className="flex-1" />
             <AlertDialogAction
               className={buttonVariants({ variant: 'secondary' })}
@@ -1967,7 +2011,7 @@ export const ScriptView: FC<{
                 requestGenerate();
               }}
             >
-              Generate As-Is
+              {t('Generate As-Is')}
             </AlertDialogAction>
             <AlertDialogAction
               onClick={() => {
@@ -1976,7 +2020,7 @@ export const ScriptView: FC<{
               }}
             >
               <Sparkles className="size-3.5" />
-              Enhance Script
+              {t('Enhance Script')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1999,7 +2043,9 @@ export const ScriptView: FC<{
         }
         description={
           isEditing
-            ? "A copy will be created from this script. Your original sequence won't change."
+            ? t(
+                "A copy will be created from this script. Your original sequence won't change."
+              )
             : undefined
         }
         estimateBase={draftEstimateBase}
@@ -2037,15 +2083,19 @@ export const ScriptView: FC<{
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Replace your script?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Replace your script?')}</AlertDialogTitle>
             <AlertDialogDescription>
               {sampleReplaceConfirm?.kind === 'try'
-                ? "This swaps in the style's sample script. What you've written here will be replaced."
-                : "Surprise me swaps in a sample script for a random style. What you've written here will be replaced."}
+                ? t(
+                    "This swaps in the style's sample script. What you've written here will be replaced."
+                  )
+                : t(
+                    "Surprise me swaps in a sample script for a random style. What you've written here will be replaced."
+                  )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep my script</AlertDialogCancel>
+            <AlertDialogCancel>{t('Keep my script')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 const pending = sampleReplaceConfirm;
@@ -2059,7 +2109,7 @@ export const ScriptView: FC<{
               ) : (
                 <Shuffle className="size-3.5" />
               )}
-              <span>Replace</span>
+              <span>{t('Replace')}</span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

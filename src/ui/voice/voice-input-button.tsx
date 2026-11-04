@@ -1,3 +1,7 @@
+import type { TFunction } from 'i18next';
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Mic button for dictating into a script or prompt field. Click to start, click
  * again (or press Escape while the mic is focused) to stop. Words stream into
@@ -38,11 +42,16 @@ type VoiceInputButtonProps = {
   language?: string;
 };
 
-function reportDictationError(error: DictationError) {
-  toast.error('Dictation stopped', {
+function reportDictationError(
+  error: DictationError,
+  translateEvent: TFunction<'interface'>
+) {
+  toast.error(translateEvent('Dictation stopped'), {
     description:
       error.code === 'not-allowed' || error.code === 'service-not-allowed'
-        ? 'Allow microphone access for this site in your browser settings, then try again.'
+        ? translateEvent(
+            'Allow microphone access for this site in your browser settings, then try again.'
+          )
         : error.message,
   });
 }
@@ -77,12 +86,16 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
   className,
   language,
 }) => {
+  const { t } = useTranslation('interface');
+  const translateEvent = useLiveTranslation('interface');
+  const translateLabel = useLabelTranslation('labels');
+
   const { status, isSupported, startedAt, toggle, stop, abort } =
     useSpeechDictation({
       onTranscript,
       onStart,
       onEnd,
-      onError: reportDictationError,
+      onError: (error) => reportDictationError(error, translateEvent),
       language,
     });
   const hydrated = useHydrated();
@@ -99,7 +112,9 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
   // it becomes live; only a browser that cannot dictate hides it.
   if (hydrated && !isSupported) return null;
 
-  const actionLabel = listening ? 'Stop dictating' : `Dictate ${label}`;
+  const actionLabel = listening
+    ? t('Stop dictating')
+    : t('Dictate {{label}}', { label: translateLabel(label) });
 
   return (
     <div
@@ -142,8 +157,8 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
       {/* One text fiber whose value changes — never mounted/unmounted (#1283). */}
       <span className="sr-only" aria-live="polite">
         {listening
-          ? 'Listening. Your words appear as you speak. Click again to stop.'
-          : 'Dictation ready.'}
+          ? t('Listening. Your words appear as you speak. Click again to stop.')
+          : t('Dictation ready.')}
       </span>
     </div>
   );

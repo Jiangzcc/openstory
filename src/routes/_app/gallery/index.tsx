@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { PageContainer } from '@/ui/layout/page-container';
 import { SampleVideoCard } from '@/look/ui/sample-video-showcase';
 import { EmptyState } from '@/ui/shadcn/empty-state';
@@ -9,17 +11,22 @@ import { Clapperboard } from 'lucide-react';
 
 export const Route = createFileRoute('/_app/gallery/')({
   component: GalleryPage,
-  staticData: { breadcrumb: 'Gallery' },
+  staticData: { breadcrumb: { label: 'Gallery', translationKey: 'Gallery' } },
 });
 
 function GalleryPage() {
+  const { t } = useTranslation('pages');
+  const translateTemplate = useLabelTranslation('presets');
+
   const { data: styles, isPending } = useStyles();
-  const entries = buildSampleEntries(styles ?? []);
+  const entries = buildSampleEntries(styles ?? [], (style) =>
+    style.isTemplate ? translateTemplate(style.name) : style.name
+  );
 
   return (
     <div className="h-full overflow-auto">
       <PageContainer>
-        <h1 className="sr-only">Gallery</h1>
+        <h1 className="sr-only">{t('Gallery')}</h1>
 
         {isPending ? (
           // Masonry columns mirror the final layout's mixed aspect ratios.
@@ -34,8 +41,10 @@ function GalleryPage() {
         ) : entries.length === 0 ? (
           <EmptyState
             icon={<Clapperboard className="h-12 w-12" />}
-            title="No sample videos yet"
-            description="Style samples will appear here once they've been generated."
+            title={t('No sample videos yet')}
+            description={t(
+              "Style samples will appear here once they've been generated."
+            )}
           />
         ) : (
           <div className="columns-2 gap-4 md:columns-3 lg:columns-4">

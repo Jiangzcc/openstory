@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Collapsed-by-default preview of the assembled prompt the selected model
  * will actually receive (#1242). The inspector used to accordion every
@@ -33,6 +35,8 @@ export const OptimisedPromptPanel: React.FC<{
   idPrefix: string;
   defaultOpen?: boolean;
 }> = ({ preview, copiedKey, onCopy, footnote, idPrefix, defaultOpen }) => {
+  const { t } = useTranslation('shots');
+
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [view, setView] = useState<PreviewView>('prompt');
   // Over the model's RECOMMENDATION, not a block (#1754) — the prompt is
@@ -66,7 +70,7 @@ export const OptimisedPromptPanel: React.FC<{
           />
           <span className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
             <span id={headingId} className="font-medium">
-              Optimised prompt
+              {t('Optimised prompt')}
             </span>
             <span className="flex min-w-0 items-baseline gap-2">
               <span className="truncate text-xs font-normal text-muted-foreground">
@@ -105,9 +109,11 @@ export const OptimisedPromptPanel: React.FC<{
                   variant="outline"
                   size="sm"
                   spacing={0}
-                  aria-label="Optimised prompt view"
+                  aria-label={t('Optimised prompt view')}
                 >
-                  <ToggleGroupItem value="prompt">Prompt</ToggleGroupItem>
+                  <ToggleGroupItem value="prompt">
+                    {t('Prompt')}
+                  </ToggleGroupItem>
                   <ToggleGroupItem value="json">JSON</ToggleGroupItem>
                 </ToggleGroup>
               ) : (
@@ -124,8 +130,12 @@ export const OptimisedPromptPanel: React.FC<{
                 disabled={!copyText}
                 aria-label={
                   showingJson
-                    ? `Copy ${preview.modelName} request JSON`
-                    : `Copy ${preview.modelName} optimised prompt`
+                    ? t('Copy {{value1}} request JSON', {
+                        value1: preview.modelName,
+                      })
+                    : t('Copy {{value1}} optimised prompt', {
+                        value1: preview.modelName,
+                      })
                 }
               >
                 {copiedKey === copyKey ? (
@@ -181,13 +191,17 @@ export const OptimisedPromptPanel: React.FC<{
  * only put PNG and text on the clipboard, so there is nothing to paste.
  */
 const CopyImageButton: React.FC<{ image: BoundPromptImage }> = ({ image }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     if (!(await copyImageToClipboard(image.url))) {
-      toast.error('Failed to copy image', {
-        description:
-          'Your browser blocked clipboard access, or the image could not be fetched.',
+      toast.error(translateEvent('Failed to copy image'), {
+        description: translateEvent(
+          'Your browser blocked clipboard access, or the image could not be fetched.'
+        ),
       });
       return;
     }
@@ -203,7 +217,9 @@ const CopyImageButton: React.FC<{ image: BoundPromptImage }> = ({ image }) => {
       className="absolute top-0.5 right-0.5 h-6 w-6 bg-background/80"
       onClick={() => void handleCopy()}
       aria-label={
-        copied ? `Copied ${image.label}` : `Copy ${image.label} image`
+        copied
+          ? t('Copied {{value1}}', { value1: image.label })
+          : t('Copy {{value1}} image', { value1: image.label })
       }
     >
       {copied ? (
@@ -222,9 +238,11 @@ const BoundMediaList: React.FC<{
   clips: BoundPromptImage[];
   audio: BoundPromptImage[];
 }> = ({ images, clips, audio }) => {
+  const { t } = useTranslation('shots');
+
   if (images.length + clips.length + audio.length === 0) return null;
   return (
-    <ul className="flex flex-wrap gap-2" aria-label="Bound references">
+    <ul className="flex flex-wrap gap-2" aria-label={t('Bound references')}>
       {images.map((image) => (
         <li key={`${image.label}-${image.url}`} className="shrink-0">
           <figure className="flex flex-col items-center gap-1">

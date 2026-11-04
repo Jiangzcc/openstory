@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   BaseModelSelector,
   type ModelGenerationStatus,
@@ -64,6 +65,8 @@ export const MusicModelSelector: React.FC<MusicModelSelectorProps> = ({
   generatedStatuses,
   allowedIds,
 }) => {
+  const { t } = useTranslation('models');
+
   const baseModels = useMusicModels(allowedIds);
   const models = useMemo(
     () =>
@@ -76,7 +79,7 @@ export const MusicModelSelector: React.FC<MusicModelSelectorProps> = ({
 
   return (
     <BaseModelSelector
-      label="Music Model"
+      label={t('Music Model')}
       models={models}
       groupOrder={SELECTOR_GROUP_ORDER}
       selectedIds={[selectedModel]}
@@ -102,11 +105,13 @@ type MusicModelMultiSelectorProps = {
 export const MusicModelMultiSelector: React.FC<
   MusicModelMultiSelectorProps
 > = ({ selectedModels, onModelsChange, disabled = false, allowedIds }) => {
+  const { t } = useTranslation('models');
+
   const models = useMusicModels(allowedIds);
 
   return (
     <BaseModelSelector
-      label="Music Models"
+      label={t('Music Models')}
       models={models}
       groupOrder={SELECTOR_GROUP_ORDER}
       selectedIds={selectedModels}

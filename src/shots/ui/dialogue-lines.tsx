@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * A shot's lines as every dialogue list shows them (#1802): who says what,
  * with Record and Edit beside each line. The tone shows only while a line is
@@ -88,6 +90,8 @@ export const invalidateLinesMoved = (
  * no prompt row, no other shot.
  */
 export function useSaveShotLines(sequenceId: string) {
+  const translateEvent = useLiveTranslation('shots');
+
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { shotId: string; lines: DialogueLine[] }) =>
@@ -95,12 +99,16 @@ export function useSaveShotLines(sequenceId: string) {
     onSuccess: (_, input) =>
       invalidateLinesMoved(queryClient, sequenceId, input.shotId),
     onError: (error: Error) =>
-      toast.error('Lines not saved', { description: error.message }),
+      toast.error(translateEvent('Lines not saved'), {
+        description: error.message,
+      }),
   });
 }
 
 /** A line at the mic (#1802), sent on Use; one take at a time on screen. */
 export function useLineTake(sequenceId: string): MicTake {
+  const translateEvent = useLiveTranslation('shots');
+
   const queryClient = useQueryClient();
   return useMicTake(async ({ shotId, index }, blob) => {
     try {
@@ -123,7 +131,7 @@ export function useLineTake(sequenceId: string): MicTake {
         }),
       ]);
     } catch (error) {
-      toast.error('Line not recorded', {
+      toast.error(translateEvent('Line not recorded'), {
         description: error instanceof Error ? error.message : String(error),
       });
       throw error;
@@ -219,6 +227,8 @@ export const PlayDialogueButton: React.FC<{
   clips: PlayerClip[];
   label: string;
 }> = ({ player, clips, label }) => {
+  const { t } = useTranslation('shots');
+
   const playing = clips.some((clip) => clip.shotIds.some(player.isPlaying));
   return (
     <Tooltip>
@@ -229,15 +239,17 @@ export const PlayDialogueButton: React.FC<{
           disabled={clips.length === 0}
           aria-label={
             playing
-              ? `Stop dialogue for ${label}`
-              : `Play dialogue for ${label}`
+              ? t('Stop dialogue for {{value1}}', { value1: label })
+              : t('Play dialogue for {{value1}}', { value1: label })
           }
           onClick={() => (playing ? player.stop() : player.play(clips))}
         >
           {playing ? <Square /> : <Play />}
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{playing ? 'Stop' : 'Play dialogue'}</TooltipContent>
+      <TooltipContent>
+        {playing ? t('Stop') : t('Play dialogue')}
+      </TooltipContent>
     </Tooltip>
   );
 };
@@ -293,6 +305,9 @@ export const RegenerateSceneDialogueButton: React.FC<{
   /** What the recording costs: the whole conversation, one call. Undefined while the cast loads. */
   estimate: Microdollars | undefined;
 }> = ({ sequenceId, shotIds, label, estimate }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const queryClient = useQueryClient();
   const regenerate = useMutation({
     mutationFn: () =>
@@ -302,7 +317,9 @@ export const RegenerateSceneDialogueButton: React.FC<{
     onSuccess: () =>
       invalidateRecordingStarted(queryClient, sequenceId, shotIds),
     onError: (error: Error) =>
-      toast.error('Dialogue not generated', { description: error.message }),
+      toast.error(translateEvent('Dialogue not generated'), {
+        description: error.message,
+      }),
   });
   // Generating until every shot's new reading has landed: the claim is the
   // only record of a speech in flight. One read for the sequence, not one
@@ -320,11 +337,11 @@ export const RegenerateSceneDialogueButton: React.FC<{
       variant="outline"
       size="sm"
       disabled={shotIds.length === 0 || busy}
-      aria-label={`Regenerate dialogue for ${label}`}
+      aria-label={t('Regenerate dialogue for {{value1}}', { value1: label })}
       onClick={() => regenerate.mutate()}
     >
       <InButtonCost estimate={estimate} onPrimary={false}>
-        {busy ? 'Generating…' : 'Regenerate'}
+        {busy ? t('Generating…') : t('Regenerate')}
       </InButtonCost>
     </Button>
   );
@@ -348,10 +365,12 @@ const SpeakerSelect: React.FC<{
   current: string;
   label: string;
 }> = ({ speakers, current, label }) => {
+  const { t } = useTranslation('shots');
+
   const names =
     current && !speakers.includes(current) ? [...speakers, current] : speakers;
   const items: Record<string, string> = {
-    [NO_SPEAKER]: 'Unattributed',
+    [NO_SPEAKER]: t('Unattributed'),
     ...Object.fromEntries(names.map((name) => [name, name])),
   };
   return (
@@ -365,7 +384,7 @@ const SpeakerSelect: React.FC<{
             {name}
           </SelectItem>
         ))}
-        <SelectItem value={NO_SPEAKER}>Unattributed</SelectItem>
+        <SelectItem value={NO_SPEAKER}>{t('Unattributed')}</SelectItem>
       </SelectContent>
     </Select>
   );
@@ -381,69 +400,72 @@ const LineForm: React.FC<{
   /** Null for a line being added. */
   onRemove: (() => void) | null;
   onCancel: () => void;
-}> = ({ line, label, speakers, saving, onSave, onRemove, onCancel }) => (
-  <form
-    className="flex flex-col gap-2 rounded-md border p-3"
-    onSubmit={(event) => {
-      event.preventDefault();
-      const form = new FormData(event.currentTarget);
-      onSave({
-        character:
-          field(form, 'character') === NO_SPEAKER
-            ? ''
-            : field(form, 'character'),
-        line: field(form, 'line'),
-        tone: field(form, 'tone'),
-      });
-    }}
-  >
-    <div className="flex items-center gap-2">
-      <SpeakerSelect
-        speakers={speakers}
-        current={line?.character ?? ''}
-        label={`${label} character`}
-      />
-      <Input
-        name="tone"
-        defaultValue={line?.tone ?? ''}
-        placeholder="Tone"
-        aria-label={`${label} tone`}
-        autoComplete="off"
-      />
-    </div>
-    <Textarea
-      name="line"
-      defaultValue={line?.line ?? ''}
-      placeholder="What they say"
-      aria-label={`${label} words`}
-      required
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-          event.preventDefault();
-          event.currentTarget.form?.requestSubmit();
-        }
+}> = ({ line, label, speakers, saving, onSave, onRemove, onCancel }) => {
+  const { t } = useTranslation('shots');
+  return (
+    <form
+      className="flex flex-col gap-2 rounded-md border p-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        onSave({
+          character:
+            field(form, 'character') === NO_SPEAKER
+              ? ''
+              : field(form, 'character'),
+          line: field(form, 'line'),
+          tone: field(form, 'tone'),
+        });
       }}
-      rows={2}
-    />
-    <div className="flex items-center justify-between gap-2">
-      {onRemove ? (
-        <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
-          Remove
-        </Button>
-      ) : (
-        <span />
-      )}
+    >
       <div className="flex items-center gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" size="sm" disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
+        <SpeakerSelect
+          speakers={speakers}
+          current={line?.character ?? ''}
+          label={t('{{value1}} character', { value1: label })}
+        />
+        <Input
+          name="tone"
+          defaultValue={line?.tone ?? ''}
+          placeholder={t('Tone')}
+          aria-label={t('{{value1}} tone', { value1: label })}
+          autoComplete="off"
+        />
       </div>
-    </div>
-  </form>
-);
+      <Textarea
+        name="line"
+        defaultValue={line?.line ?? ''}
+        placeholder={t('What they say')}
+        aria-label={t('{{value1}} words', { value1: label })}
+        required
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+            event.preventDefault();
+            event.currentTarget.form?.requestSubmit();
+          }
+        }}
+        rows={2}
+      />
+      <div className="flex items-center justify-between gap-2">
+        {onRemove ? (
+          <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
+            {t('Remove')}
+          </Button>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            {t('Cancel')}
+          </Button>
+          <Button type="submit" size="sm" disabled={saving}>
+            {saving ? t('Saving…') : t('Save')}
+          </Button>
+        </div>
+      </div>
+    </form>
+  );
+};
 
 const LineWords: React.FC<{ name: string; words: string }> = ({
   name,
@@ -490,6 +512,8 @@ export const DialogueLineRows: React.FC<{
   canAdd,
   onSelect,
 }) => {
+  const { t } = useTranslation('shots');
+
   const [editing, setEditing] = useState<number | 'new' | null>(null);
   const save = (next: DialogueLine[]) => {
     onSave(next);
@@ -507,7 +531,7 @@ export const DialogueLineRows: React.FC<{
                 <li key={`${shotId}-${index}`}>
                   <LineForm
                     line={line}
-                    label={`Line ${index + 1}`}
+                    label={t('Line {{value1}}', { value1: index + 1 })}
                     speakers={speakers}
                     saving={saving}
                     onSave={(edit) =>
@@ -562,25 +586,28 @@ export const DialogueLineRows: React.FC<{
                         <Button
                           size="icon-sm"
                           variant="ghost"
-                          aria-label={`Edit ${name}'s line`}
+                          aria-label={t("Edit {{value1}}'s line", {
+                            value1: name,
+                          })}
                           disabled={editing !== null}
                           onClick={() => setEditing(index)}
                         >
                           <Pencil />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Edit</TooltipContent>
+                      <TooltipContent>{t('Edit')}</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
                 {unclear.has(index) ? (
                   <p className="flex items-center gap-1 px-2 text-xs text-amber-600">
                     <AlertTriangle aria-hidden className="h-3 w-3 shrink-0" />
-                    May not be said clearly ·{' '}
-                    {Math.round((unclear.get(index) ?? 0) * 100)}% heard.{' '}
+                    {t('May not be said clearly ·')}{' '}
+                    {Math.round((unclear.get(index) ?? 0) * 100)}
+                    {t('% heard.')}{' '}
                     {MIC_TAKES_ENABLED
-                      ? 'Record it, or regenerate.'
-                      : 'Regenerate it.'}
+                      ? t('Record it, or regenerate.')
+                      : t('Regenerate it.')}
                   </p>
                 ) : null}
                 {take ? (
@@ -591,12 +618,14 @@ export const DialogueLineRows: React.FC<{
           })}
         </ul>
       ) : (
-        <p className="px-2 py-1 text-sm text-muted-foreground">No lines</p>
+        <p className="px-2 py-1 text-sm text-muted-foreground">
+          {t('No lines')}
+        </p>
       )}
       {editing === 'new' ? (
         <LineForm
           line={null}
-          label={`Line ${lines.length + 1}`}
+          label={t('Line {{value1}}', { value1: lines.length + 1 })}
           speakers={speakers}
           saving={saving}
           onSave={(added) =>
@@ -613,7 +642,7 @@ export const DialogueLineRows: React.FC<{
           disabled={editing !== null}
           onClick={() => setEditing('new')}
         >
-          Add line
+          {t('Add line')}
         </Button>
       ) : null}
     </div>

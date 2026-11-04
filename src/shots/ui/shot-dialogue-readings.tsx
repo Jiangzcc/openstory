@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * A shot's dialogue, fetched (#1657) — the data half of the presentational
  * pieces in `motion-dialogue-panel.tsx`. It all sits under the shot's video
@@ -87,8 +89,11 @@ type ReadingsProps = {
 };
 
 const Readings: React.FC<ReadingsProps> = ({ sequenceId, shotId, lines }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const queryClient = useQueryClient();
-  const spokenBy = shotSpokenByNote(lines);
+  const spokenBy = shotSpokenByNote(lines, t);
   const { data: characters } = useSequenceCharacters(sequenceId);
   const voiceDesign = useVoiceDesignAvailable();
   const seedVoices = useSeedVoices();
@@ -115,7 +120,7 @@ const Readings: React.FC<ReadingsProps> = ({ sequenceId, shotId, lines }) => {
         takes: SEED_VOICE_DEFAULT_TAKES,
       });
     } catch (error) {
-      toast.error('Voice not generated', {
+      toast.error(translateEvent('Voice not generated'), {
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -142,7 +147,9 @@ const Readings: React.FC<ReadingsProps> = ({ sequenceId, shotId, lines }) => {
         }),
       ]),
     onError: (error: Error) =>
-      toast.error('Reading not used', { description: error.message }),
+      toast.error(translateEvent('Reading not used'), {
+        description: error.message,
+      }),
   });
   const discardReading = useMutation({
     mutationFn: (sectionId: string) =>
@@ -161,7 +168,9 @@ const Readings: React.FC<ReadingsProps> = ({ sequenceId, shotId, lines }) => {
         queryClient.invalidateQueries({ queryKey: shotStalenessNamespace }),
       ]),
     onError: (error: Error) =>
-      toast.error('Reading not discarded', { description: error.message }),
+      toast.error(translateEvent('Reading not discarded'), {
+        description: error.message,
+      }),
   });
   // Speeches in flight. Refreshed by the same realtime event as the list:
   // the key sits under `dialogueSections`.
@@ -181,7 +190,9 @@ const Readings: React.FC<ReadingsProps> = ({ sequenceId, shotId, lines }) => {
         }),
       ]),
     onError: (error: Error) =>
-      toast.error('Generation not cancelled', { description: error.message }),
+      toast.error(translateEvent('Generation not cancelled'), {
+        description: error.message,
+      }),
   });
   // The claim lands a moment after the trigger; the realtime event then
   // refetches it and "Generating…" takes over from the button.
@@ -193,7 +204,9 @@ const Readings: React.FC<ReadingsProps> = ({ sequenceId, shotId, lines }) => {
     onSuccess: () =>
       invalidateRecordingStarted(queryClient, sequenceId, [shotId]),
     onError: (error: Error) =>
-      toast.error('Dialogue not generated', { description: error.message }),
+      toast.error(translateEvent('Dialogue not generated'), {
+        description: error.message,
+      }),
   });
   const recording = claims.some((claim) => claim.willBecomeCurrent);
   // The shot's audio is its current reading; it is out of date once the voice
@@ -234,10 +247,10 @@ const Readings: React.FC<ReadingsProps> = ({ sequenceId, shotId, lines }) => {
           artifact="audio"
           message={
             staleBecause === 'voice'
-              ? 'Dialogue out of date — voice changed'
-              : 'Dialogue out of date — lines changed'
+              ? t('Dialogue out of date — voice changed')
+              : t('Dialogue out of date — lines changed')
           }
-          actionLabel="Regenerate"
+          actionLabel={t('Regenerate')}
           isRegenerating={record.isPending}
           onRegenerate={() => record.mutate()}
         />
@@ -250,10 +263,10 @@ const Readings: React.FC<ReadingsProps> = ({ sequenceId, shotId, lines }) => {
           onClick={() => record.mutate()}
         >
           {record.isPending
-            ? 'Starting…'
+            ? t('Starting…')
             : readings.length > 0
-              ? 'Regenerate dialogue'
-              : 'Generate dialogue'}
+              ? t('Regenerate dialogue')
+              : t('Generate dialogue')}
         </Button>
       )}
       <ShotSpeechesInFlight
@@ -294,6 +307,8 @@ const DialogueHistory: React.FC<{ sequenceId: string; shotId: string }> = ({
   sequenceId,
   shotId,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+
   const queryClient = useQueryClient();
   const { data: versions } = useSuspenseQuery({
     queryKey: shotKeys.dialogueVersions(shotId),
@@ -304,7 +319,9 @@ const DialogueHistory: React.FC<{ sequenceId: string; shotId: string }> = ({
       selectShotDialogueVersionFn({ data: { sequenceId, shotId, versionId } }),
     onSuccess: () => invalidateLinesMoved(queryClient, sequenceId, shotId),
     onError: (error: Error) =>
-      toast.error('Lines not restored', { description: error.message }),
+      toast.error(translateEvent('Lines not restored'), {
+        description: error.message,
+      }),
   });
   return (
     <ShotDialogueHistory
@@ -364,6 +381,8 @@ const DialogueUnderVideo: React.FC<UnderVideoProps> = ({
   shot,
   videoModel,
 }) => {
+  const { t } = useTranslation('shots');
+
   // Read once here: while a speech is on its way, no line is recorded.
   const { data: claims } = useSuspenseQuery(
     claimsQuery(shot.sequenceId, shot.id)
@@ -399,7 +418,7 @@ const DialogueUnderVideo: React.FC<UnderVideoProps> = ({
           <PlayDialogueButton
             player={player}
             clips={url ? [{ shotIds: [shot.id], url }] : []}
-            label="this shot"
+            label={t('this shot')}
           />
         }
         lineList={
@@ -441,6 +460,8 @@ export const SceneDialogueLines: React.FC<{
   sequenceId: string;
   shots: readonly ShotView[];
 }> = ({ sequenceId, shots }) => {
+  const { t } = useTranslation('shots');
+
   const { data: characters } = useSequenceCharacters(sequenceId);
   const take = useLineTake(sequenceId);
   const save = useSaveShotLines(sequenceId);
@@ -450,15 +471,15 @@ export const SceneDialogueLines: React.FC<{
   );
   const speakers = (characters ?? []).map((character) => character.name);
   return (
-    <section aria-label="Dialogue" className="flex flex-col gap-2">
-      <span className="text-sm font-medium">Dialogue</span>
+    <section aria-label={t('Dialogue')} className="flex flex-col gap-2">
+      <span className="text-sm font-medium">{t('Dialogue')}</span>
       <ul className="flex flex-col gap-2">
         {ordered.map((shot, index) => {
           const lines = shot.dialogue?.presence ? shot.dialogue.lines : [];
           return (
             <li key={shot.id} className="flex flex-col gap-1">
               <span className="text-xs font-medium">
-                Shot {shot.shotNumber ?? index + 1}
+                {t('Shot {{value1}}', { value1: shot.shotNumber ?? index + 1 })}
               </span>
               <DialogueLineRows
                 shotId={shot.id}

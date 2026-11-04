@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Studio prompt bar (#1274). One card: reference tiles on the left, the
  * @-mention editor in the middle, a settings strip along the bottom.
@@ -13,6 +16,7 @@
 import { readMediaDuration } from '@/cast/element-kind';
 import { isSeedanceEdit } from '@/motion/seedance-edit';
 import { unusableShotReferenceLines } from '@/motion/reference-support';
+import { localizeReferenceProblem } from '@/motion/ui/localize-reference-problem';
 import { useAuthGate } from '@/platform/ui/auth/auth-gate-provider';
 import { ActionCost } from '@/billing/ui/action-cost';
 import { AspectRatioIcon } from '@/ui/icons/aspect-ratio-icon';
@@ -228,7 +232,7 @@ function Tile({
   reference,
   badge,
   onRemove,
-  removeLabel = `Remove ${reference.label}`,
+  removeLabel,
   checking = false,
   realPerson,
 }: {
@@ -241,6 +245,8 @@ function Tile({
   /** A cleared still the user can mark as a real person (#1847). */
   realPerson?: { marked: boolean; onToggle: () => void };
 }) {
+  const { t } = useTranslation('studio');
+
   return (
     <div
       className={cn(
@@ -291,7 +297,7 @@ function Tile({
             className="size-4 motion-safe:animate-spin"
             aria-hidden="true"
           />
-          Checking…
+          {t('Checking…')}
         </span>
       )}
       <span className="absolute bottom-1 left-1 flex items-center gap-1 rounded bg-background/85 px-1 font-mono text-[10px] leading-4">
@@ -310,8 +316,8 @@ function Tile({
             !realPerson.marked &&
               'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
           )}
-          aria-label={`${badge} shows a real person`}
-          title="This shows a real person"
+          aria-label={t('{{value1}} shows a real person', { value1: badge })}
+          title={t('This shows a real person')}
           aria-pressed={realPerson.marked}
           onClick={realPerson.onToggle}
         >
@@ -323,7 +329,9 @@ function Tile({
         size="icon-xs"
         variant="secondary"
         className="absolute top-1 right-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-        aria-label={removeLabel}
+        aria-label={
+          removeLabel ?? t('Remove {{label}}', { label: reference.label })
+        }
         onClick={onRemove}
       >
         <X aria-hidden="true" />
@@ -360,6 +368,11 @@ export function StudioComposer({
   generatingPrompts,
   ref,
 }: StudioComposerProps) {
+  const translateEvent = useLiveTranslation('studio');
+
+  const { i18n, t } = useTranslation('studio');
+  const translateLabel = useLabelTranslation('studio');
+
   const { requireAuth, isAuthenticated } = useAuthGate();
   const posthog = usePostHog();
   const { pricing, isPending: pricingPending } = useFalPricing();
@@ -477,9 +490,9 @@ export function StudioComposer({
           tile(url, `Image ${index + 1}`, 'image')
         )
       );
-      toast.success('Loaded into the prompt bar');
+      toast.success(translateEvent('Loaded into the prompt bar'));
     },
-    [activity]
+    [translateEvent, activity]
   );
 
   useEffect(() => {
@@ -587,7 +600,7 @@ export function StudioComposer({
   const resolution = clampResolution(pickedResolution, resolutionTiers);
   const resolutionNote =
     resolutionTiers.length === 0
-      ? `${activeModelName} renders at a fixed size`
+      ? t('{{value1}} renders at a fixed size', { value1: activeModelName })
       : null;
   const snappedDuration = snapStudioVideoDuration(
     duration,
@@ -878,12 +891,21 @@ export function StudioComposer({
     const { kind } = reference;
     const index = counts[kind];
     if (index >= limits[kind]) {
-      toast.error(`Up to ${limits[kind]} reference ${kind}s`);
+      toast.error(
+        translateEvent('Up to {{value1}} reference {{value2}}s', {
+          value1: limits[kind],
+          value2: kind,
+        })
+      );
       return -1;
     }
     const used = counts.image + counts.video + counts.audio;
     if (combinedRefCap != null && used >= combinedRefCap) {
-      toast.error(`Up to ${combinedRefCap} reference files total`);
+      toast.error(
+        translateEvent('Up to {{value1}} reference files total', {
+          value1: combinedRefCap,
+        })
+      );
       return -1;
     }
     setListFor[kind]((prev) => [...prev, reference]);
@@ -934,7 +956,7 @@ export function StudioComposer({
         durationSeconds: ref.durationSeconds,
       })),
       { hasStartFrame: false, prompt, onArk: vias.byteplus === true }
-    );
+    ).map((line) => localizeReferenceProblem(i18n, line));
 
   const uploadFiles = async (files: File[], target: PickerTarget) => {
     const taken: Record<StudioReferenceKind, number> = {
@@ -950,8 +972,11 @@ export function StudioComposer({
       if (taken[kind] >= room) {
         toast.error(
           target === 'reference'
-            ? `Up to ${limits[kind]} reference ${kind}s`
-            : 'One image per frame'
+            ? translateEvent('Up to {{value1}} reference {{value2}}s', {
+                value1: limits[kind],
+                value2: kind,
+              })
+            : translateEvent('One image per frame')
         );
         continue;
       }
@@ -979,7 +1004,11 @@ export function StudioComposer({
         );
         void queryClient.invalidateQueries({ queryKey: studioUploadKeys.all });
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Upload failed');
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : translateEvent('Upload failed')
+        );
       } finally {
         setUploading((n) => n - 1);
       }
@@ -995,7 +1024,7 @@ export function StudioComposer({
     const snapshot = snapshotDataTransfer(event.dataTransfer);
     const target = dropTarget();
     void extractImagesFromSnapshot(snapshot).then(({ files, failedUrls }) => {
-      if (failedUrls.length > 0) toastDragImportCorsError();
+      if (failedUrls.length > 0) toastDragImportCorsError(i18n);
       if (files.length > 0) void uploadFiles(files, target);
     });
   };
@@ -1018,8 +1047,8 @@ export function StudioComposer({
       label: reference.label,
       sublabel:
         reference.kind === 'video'
-          ? `Attach as @Video${videoRefs.length + 1}`
-          : `Attach as @Image${references.length + 1}`,
+          ? t('Attach as @Video{{value1}}', { value1: videoRefs.length + 1 })
+          : t('Attach as @Image{{value1}}', { value1: references.length + 1 }),
       // Never in the prompt — a library row only ever reaches it via
       // `onMentionSelect`, which swaps it for the attached `ImageN`. An
       // empty tag is skipped by the matcher.
@@ -1044,6 +1073,7 @@ export function StudioComposer({
     refsCapable,
     slots,
     videoRefs,
+    t,
   ]);
 
   /**
@@ -1252,9 +1282,16 @@ export function StudioComposer({
     const dropped = requested - total;
     toast.success(
       total > 0
-        ? `Imported the prompt and ${total} reference${total === 1 ? '' : 's'}` +
-            (dropped > 0 ? ` (${dropped} over the model's limit dropped)` : '')
-        : 'Imported the prompt'
+        ? translateEvent(
+            'Imported the prompt and {{value1}} reference{{value2}}',
+            { value1: total, value2: total === 1 ? '' : 's' }
+          ) +
+            (dropped > 0
+              ? translateEvent(" ({{value1}} over the model's limit dropped)", {
+                  value1: dropped,
+                })
+              : '')
+        : translateEvent('Imported the prompt')
     );
   };
 
@@ -1303,22 +1340,22 @@ export function StudioComposer({
   const submitLabel =
     activity === 'video'
       ? count > 1
-        ? `Generate ${count} videos`
-        : 'Generate video'
+        ? t('Generate {{value1}} videos', { value1: count })
+        : t('Generate video')
       : count > 1
-        ? `Generate ${count} images`
-        : 'Generate image';
+        ? t('Generate {{value1}} images', { value1: count })
+        : t('Generate image');
 
   const placeholder =
     effectiveMode === 'reference'
-      ? 'Describe the shot. Type @ to reference an attached image…'
+      ? t('Describe the shot. Type @ to reference an attached image…')
       : effectiveMode === 'frames'
-        ? 'Describe how the start frame moves…'
+        ? t('Describe how the start frame moves…')
         : activity === 'video'
-          ? 'A red fox turns toward camera in morning fog…'
+          ? t('A red fox turns toward camera in morning fog…')
           : imageRefLimit > 0
-            ? 'Describe the still. Type @ to reference an attached image…'
-            : 'A red fox in fog at dawn, cinematic lighting…';
+            ? t('Describe the still. Type @ to reference an attached image…')
+            : t('A red fox in fog at dawn, cinematic lighting…');
 
   const aspect = ASPECT_RATIOS.find((r) => r.value === aspectRatio);
   const summary = [
@@ -1328,10 +1365,10 @@ export function StudioComposer({
       : null,
     isVideo && durationCapable
       ? pricedDuration === 'auto'
-        ? 'Auto length'
+        ? t('Auto length')
         : `${pricedDuration}s`
       : null,
-    isVideo && audioCapable ? (generateAudio ? 'Audio' : 'Silent') : null,
+    isVideo && audioCapable ? (generateAudio ? t('Audio') : t('Silent')) : null,
     `×${count}`,
   ].filter(Boolean);
 
@@ -1394,7 +1431,9 @@ export function StudioComposer({
           <div
             className="flex shrink-0 gap-2 overflow-x-auto md:max-w-[19rem] md:flex-wrap"
             aria-label={
-              mode === 'frames' ? 'Start and end frames' : 'Reference images'
+              mode === 'frames'
+                ? t('Start and end frames')
+                : t('Reference images')
             }
           >
             {(isVideo ? mode === 'reference' : true) && (
@@ -1429,7 +1468,7 @@ export function StudioComposer({
                 ))}
                 {slots.image + slots.video + slots.audio > uploading && (
                   <AddTile
-                    label="Reference"
+                    label={t('Reference')}
                     onClick={() => setPicker('reference')}
                   />
                 )}
@@ -1443,12 +1482,12 @@ export function StudioComposer({
                     badge="Start"
                     checking={checking.has(startFrame.url)}
                     realPerson={realPersonToggle(startFrame.url)}
-                    removeLabel="Remove start frame"
+                    removeLabel={t('Remove start frame')}
                     onRemove={() => setStartFrame(null)}
                   />
                 ) : (
                   <AddTile
-                    label="Start frame"
+                    label={t('Start frame')}
                     onClick={() => setPicker('start')}
                   />
                 )}
@@ -1459,13 +1498,13 @@ export function StudioComposer({
                       badge="End"
                       checking={checking.has(endFrame.url)}
                       realPerson={realPersonToggle(endFrame.url)}
-                      removeLabel="Remove end frame"
+                      removeLabel={t('Remove end frame')}
                       onRemove={() => setEndFrame(null)}
                     />
                   ) : (
                     <AddTile
-                      label="End frame"
-                      hint="optional"
+                      label={t('End frame')}
+                      hint={t('optional')}
                       onClick={() => setPicker('end')}
                     />
                   ))}
@@ -1482,7 +1521,7 @@ export function StudioComposer({
           onValueChange={setPrompt}
           ref={promptEditorRef}
           placeholder={placeholder}
-          aria-label="Prompt"
+          aria-label={t('Prompt')}
           data-testid="studio-prompt"
           className={cn(
             'min-h-24 flex-1 border-0 bg-transparent px-1 py-1 shadow-none focus-within:ring-0 dark:bg-transparent',
@@ -1508,16 +1547,23 @@ export function StudioComposer({
         >
           {unresolvedSlots.length > 0 && (
             <p>
-              {unresolvedSlots.join(', ')}{' '}
-              {unresolvedSlots.length === 1 ? "isn't" : "aren't"} attached.
+              {t('{{value1}} {{value2}} attached.', {
+                value1: unresolvedSlots.join(', '),
+                value2: unresolvedSlots.length === 1 ? t("isn't") : t("aren't"),
+              })}
             </p>
           )}
           {unresolvedNames.length > 0 && (
             <p>
-              {unresolvedNames.join(', ')}{' '}
-              {unresolvedNames.length === 1 ? "isn't" : "aren't"} in your
-              library. {unresolvedNames.length === 1 ? 'It' : 'They'} will be
-              sent as words.
+              {t(
+                '{{value1}} {{value2}} in your library. {{value3}} will be sent as words.',
+                {
+                  value1: unresolvedNames.join(', '),
+                  value2:
+                    unresolvedNames.length === 1 ? t("isn't") : t("aren't"),
+                  value3: unresolvedNames.length === 1 ? t('It') : t('They'),
+                }
+              )}
             </p>
           )}
         </div>
@@ -1544,7 +1590,10 @@ export function StudioComposer({
                 className="flex flex-wrap items-baseline gap-1 text-xs text-destructive"
               >
                 <span>
-                  Couldn't check {badgeFor(c.url)}: {c.query.error?.message}
+                  {t("Couldn't check {{value1}}: {{value2}}", {
+                    value1: badgeFor(c.url),
+                    value2: c.query.error?.message,
+                  })}
                 </span>
                 {isInsufficientCreditsError(c.query.error) ? (
                   <Button
@@ -1554,7 +1603,7 @@ export function StudioComposer({
                     className="h-auto p-0 text-xs"
                     onClick={() => openAddCreditsDialog('studio-rights-check')}
                   >
-                    Add credits
+                    {t('Add credits')}
                   </Button>
                 ) : null}
                 <Button
@@ -1570,7 +1619,7 @@ export function StudioComposer({
                     })
                   }
                 >
-                  {retryCheck.isPending ? 'Retrying…' : 'Retry'}
+                  {retryCheck.isPending ? t('Retrying…') : t('Retry')}
                 </Button>
               </p>
             ))}
@@ -1585,7 +1634,9 @@ export function StudioComposer({
               onAuthorizationBasisChange={setAuthorizationBasis}
             >
               <p className="text-xs font-medium">
-                Real person in {badges(portraitUrls)}
+                {t('Real person in {{value1}}', {
+                  value1: badges(portraitUrls),
+                })}
               </p>
             </PortraitAttestationFields>
           )}
@@ -1597,7 +1648,7 @@ export function StudioComposer({
                 disabled={!rightsTicked || attest.isPending}
                 onClick={confirmRights}
               >
-                {attest.isPending ? 'Saving…' : 'Confirm rights'}
+                {attest.isPending ? t('Saving…') : t('Confirm rights')}
               </Button>
             </div>
           )}
@@ -1618,8 +1669,11 @@ export function StudioComposer({
               }
             }}
           >
-            <SelectTrigger aria-label="Video mode" className="w-auto gap-1.5">
-              <SelectValue>{MODE_LABELS[mode]}</SelectValue>
+            <SelectTrigger
+              aria-label={t('Video mode')}
+              className="w-auto gap-1.5"
+            >
+              <SelectValue>{translateLabel(MODE_LABELS[mode])}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {(['text', 'reference', 'frames'] as const).map((value) => (
@@ -1628,12 +1682,11 @@ export function StudioComposer({
                   value={value}
                   disabled={!studioSupportsMode(compatibleVideoModel, value)}
                 >
-                  {MODE_LABELS[value]}
+                  {translateLabel(MODE_LABELS[value])}
                   {value === 'reference' &&
                     !studioSupportsMode(compatibleVideoModel, value) && (
                       <span className="text-muted-foreground">
-                        {' '}
-                        · not on this model
+                        {t('· not on this model')}
                       </span>
                     )}
                 </SelectItem>
@@ -1647,7 +1700,7 @@ export function StudioComposer({
             <Button
               type="button"
               variant="outline"
-              aria-label="Generation settings"
+              aria-label={t('Generation settings')}
               className="gap-2"
             >
               {aspect && (
@@ -1671,7 +1724,7 @@ export function StudioComposer({
           >
             <div className="flex flex-col gap-4">
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium">Model</h3>
+                <h3 className="text-sm font-medium">{t('Model')}</h3>
                 {activity === 'image' ? (
                   <ImageModelSelector
                     selectedModel={imageModel}
@@ -1689,8 +1742,9 @@ export function StudioComposer({
                 )}
                 {isVideo && referenceLimit === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {IMAGE_TO_VIDEO_MODELS[compatibleVideoModel].name} takes
-                    frames, not reference images.
+                    {t('{{value1}} takes frames, not reference images.', {
+                      value1: IMAGE_TO_VIDEO_MODELS[compatibleVideoModel].name,
+                    })}
                   </p>
                 )}
                 {isVideo &&
@@ -1701,14 +1755,15 @@ export function StudioComposer({
                   )}
                 {!isVideo && imageRefLimit === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    This model has no edit endpoint, so it cannot take reference
-                    images.
+                    {t(
+                      'This model has no edit endpoint, so it cannot take reference images.'
+                    )}
                   </p>
                 )}
               </section>
               <Separator />
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium">Aspect ratio</h3>
+                <h3 className="text-sm font-medium">{t('Aspect ratio')}</h3>
                 <AspectRatioPills
                   value={aspectRatio}
                   onChange={setAspectRatio}
@@ -1716,14 +1771,14 @@ export function StudioComposer({
               </section>
               <Separator />
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium">Resolution</h3>
+                <h3 className="text-sm font-medium">{t('Resolution')}</h3>
                 <ResolutionPills
                   value={resolution}
                   onChange={setResolution}
                   available={resolutionTiers}
                   note={
                     draftOn
-                      ? 'Drafts render at 480p, the final at 1080p'
+                      ? t('Drafts render at 480p, the final at 1080p')
                       : resolutionNote
                   }
                 />
@@ -1732,7 +1787,7 @@ export function StudioComposer({
                 <>
                   <Separator />
                   <section className="flex flex-col gap-2">
-                    <h3 className="text-sm font-medium">Duration</h3>
+                    <h3 className="text-sm font-medium">{t('Duration')}</h3>
                     <Select
                       value={String(pricedDuration)}
                       disabled={followsReferenceVideo}
@@ -1747,7 +1802,7 @@ export function StudioComposer({
                       }}
                     >
                       <SelectTrigger
-                        aria-label="Clip duration"
+                        aria-label={t('Clip duration')}
                         className="w-28 font-mono text-xs"
                       >
                         <SelectValue />
@@ -1758,7 +1813,7 @@ export function StudioComposer({
                             value="auto"
                             className="font-mono text-xs"
                           >
-                            Auto
+                            {t('Auto')}
                           </SelectItem>
                         )}
                         {studioVideoDurations(compatibleVideoModel).map(
@@ -1776,7 +1831,7 @@ export function StudioComposer({
                     </Select>
                     {followsReferenceVideo && (
                       <p className="text-xs text-muted-foreground">
-                        An edit keeps the clip's length.
+                        {t("An edit keeps the clip's length.")}
                       </p>
                     )}
                   </section>
@@ -1790,7 +1845,7 @@ export function StudioComposer({
                       htmlFor="studio-generate-audio"
                       className="text-sm font-medium"
                     >
-                      Native audio
+                      {t('Native audio')}
                     </label>
                     <Switch
                       id="studio-generate-audio"
@@ -1802,7 +1857,7 @@ export function StudioComposer({
               )}
               <Separator />
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium">Count</h3>
+                <h3 className="text-sm font-medium">{t('Count')}</h3>
                 <ToggleGroup
                   type="single"
                   value={String(count)}
@@ -1812,7 +1867,7 @@ export function StudioComposer({
                   }}
                   variant="outline"
                   spacing={0}
-                  aria-label="How many to generate"
+                  aria-label={t('How many to generate')}
                 >
                   {COUNTS.map((value) => (
                     <ToggleGroupItem
@@ -1838,7 +1893,7 @@ export function StudioComposer({
                 htmlFor="studio-draft"
                 className="flex h-9 items-center gap-2 rounded-md border px-3 text-xs font-medium"
               >
-                Draft 480p
+                {t('Draft 480p')}
                 <Switch
                   id="studio-draft"
                   checked={draftMode}
@@ -1848,8 +1903,14 @@ export function StudioComposer({
             </TooltipTrigger>
             <TooltipContent className="max-w-64">
               {draftMode
-                ? 'On: renders a 480p draft first. Render the 1080p final from its card within seven days.'
-                : `Off: renders straight at ${RESOLUTION_OPTIONS.find((r) => r.value === resolution)?.label ?? resolution}.`}
+                ? t(
+                    'On: renders a 480p draft first. Render the 1080p final from its card within seven days.'
+                  )
+                : t('Off: renders straight at {{value1}}.', {
+                    value1:
+                      RESOLUTION_OPTIONS.find((r) => r.value === resolution)
+                        ?.label ?? resolution,
+                  })}
             </TooltipContent>
           </Tooltip>
         )}
@@ -1883,7 +1944,7 @@ export function StudioComposer({
           onClick={requestShuffle}
         >
           <Shuffle className="size-3.5" aria-hidden="true" />
-          Shuffle
+          {t('Shuffle')}
         </Button>
         {canDraft && (
           <Button
@@ -1895,7 +1956,7 @@ export function StudioComposer({
             disabled={draft.isPending}
           >
             <Sparkles className="size-3.5" aria-hidden="true" />
-            {draft.isPending ? 'Drafting…' : 'Draft prompt'}
+            {draft.isPending ? t('Drafting…') : t('Draft prompt')}
           </Button>
         )}
         <AskAssistantButton variant="ghost" context={[]} />
@@ -1910,7 +1971,7 @@ export function StudioComposer({
               onClick={clearAll}
             >
               <RotateCcw className="size-3.5" aria-hidden="true" />
-              Clear all
+              {t('Clear all')}
             </Button>
           )}
           <ActionCost
@@ -1918,7 +1979,7 @@ export function StudioComposer({
             align="end"
             amountWidth={activity === 'video' ? 'double' : 'single'}
           />
-          <VoiceInputButton label="prompt" {...promptVoice} />
+          <VoiceInputButton label={t('prompt')} {...promptVoice} />
           <Button
             type="submit"
             size="icon-lg"
@@ -1933,8 +1994,12 @@ export function StudioComposer({
 
       {dragging && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-background/80 text-sm font-medium">
-          Drop to add{' '}
-          {dropTarget() === 'reference' ? 'reference' : `${dropTarget()} frame`}
+          {t('Drop to add {{value1}}', {
+            value1:
+              dropTarget() === 'reference'
+                ? t('reference')
+                : t('{{value1}} frame', { value1: dropTarget() }),
+          })}
         </div>
       )}
 
@@ -1945,10 +2010,10 @@ export function StudioComposer({
         }}
         title={
           picker === 'start'
-            ? 'Start frame'
+            ? t('Start frame')
             : picker === 'end'
-              ? 'End frame'
-              : 'Add reference'
+              ? t('End frame')
+              : t('Add reference')
         }
         library={library}
         attached={
@@ -1979,14 +2044,20 @@ export function StudioComposer({
       <AlertDialog open={promptTooLongOpen} onOpenChange={setPromptTooLongOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Prompt too long</AlertDialogTitle>
+            <AlertDialogTitle>{t('Prompt too long')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {activeModelName} maxes out at {promptHardLimit} characters. Yours
-              is {prompt.length}.
+              {t(
+                '{{value1}} maxes out at {{value2}} characters. Yours is {{value3}}.',
+                {
+                  value1: activeModelName,
+                  value2: promptHardLimit,
+                  value3: prompt.length,
+                }
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction>Got it</AlertDialogAction>
+            <AlertDialogAction>{t('Got it')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1994,10 +2065,12 @@ export function StudioComposer({
       <AlertDialog open={emptyPrompt} onOpenChange={setEmptyPrompt}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>What should we make?</AlertDialogTitle>
+            <AlertDialogTitle>{t('What should we make?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              The prompt is empty. Describe the {isVideo ? 'shot' : 'still'} you
-              want, or we'll write one for you to look over.
+              {t(
+                "The prompt is empty. Describe the {{value1}} you want, or we'll write one for you to look over.",
+                { value1: isVideo ? t('shot') : t('still') }
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2010,7 +2083,7 @@ export function StudioComposer({
                 })
               }
             >
-              I'll write it
+              {t("I'll write it")}
             </AlertDialogCancel>
             <AlertDialogAction
               // Keep the dialog up while the draft streams — closing on click
@@ -2022,7 +2095,9 @@ export function StudioComposer({
               disabled={draft.isPending}
             >
               <Sparkles className="size-3.5" />
-              {draft.isPending ? 'Writing a prompt…' : 'Try something random'}
+              {draft.isPending
+                ? t('Writing a prompt…')
+                : t('Try something random')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2036,14 +2111,15 @@ export function StudioComposer({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Replace the prompt bar?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Replace the prompt bar?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Use again loads that generation's prompt, references, and
-              settings. What you've written here will be replaced.
+              {t(
+                "Use again loads that generation's prompt, references, and settings. What you've written here will be replaced."
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep what's here</AlertDialogCancel>
+            <AlertDialogCancel>{t("Keep what's here")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (!pendingSeed) return;
@@ -2051,7 +2127,7 @@ export function StudioComposer({
               }}
             >
               <RotateCcw className="size-3.5" />
-              Use again
+              {t('Use again')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2060,14 +2136,15 @@ export function StudioComposer({
       <AlertDialog open={replaceConfirm} onOpenChange={setReplaceConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Replace your prompt?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Replace your prompt?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Shuffle swaps in a sample prompt. What you've written here will be
-              replaced.
+              {t(
+                "Shuffle swaps in a sample prompt. What you've written here will be replaced."
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep my prompt</AlertDialogCancel>
+            <AlertDialogCancel>{t('Keep my prompt')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setReplaceConfirm(false);
@@ -2075,7 +2152,7 @@ export function StudioComposer({
               }}
             >
               <Shuffle className="size-3.5" />
-              Replace
+              {t('Replace')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

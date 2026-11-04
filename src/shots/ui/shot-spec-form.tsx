@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * The shot spec above a prompt (#1929). The still's tab edits framing and
  * action; the video's tab edits action, camera move, pacing, direction and
@@ -143,6 +146,8 @@ export function ShotSpecForm({
   shotId: string;
   part: Part;
 }) {
+  const { t } = useTranslation('shots');
+
   const { data } = useShotSpec({ sequenceId, shotId });
   if (!data) {
     return (
@@ -155,7 +160,7 @@ export function ShotSpecForm({
   if (!data.spec) {
     return (
       <p className="text-xs text-muted-foreground">
-        No shot spec yet. Rewrite shot writes one.
+        {t('No shot spec yet. Rewrite shot writes one.')}
       </p>
     );
   }
@@ -191,6 +196,11 @@ function SpecFields({
   visualWritten: boolean;
   motionWritten: boolean;
 }) {
+  const translateEvent = useLiveTranslation('shots');
+  const translateLabel = useLabelTranslation('shots');
+
+  const { t } = useTranslation('shots');
+
   const save = useSaveShotSpec(sequenceId);
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState<StoredShotSpec | null>(null);
@@ -210,10 +220,10 @@ function SpecFields({
       {
         onSuccess: () => {
           setDirty(false);
-          toast.success('Shot spec saved');
+          toast.success(translateEvent('Shot spec saved'));
         },
         onError: (error) =>
-          toast.error('Could not save the shot spec', {
+          toast.error(translateEvent('Could not save the shot spec'), {
             description: errorMessage(error),
           }),
       }
@@ -231,7 +241,7 @@ function SpecFields({
           specFromForm(new FormData(event.currentTarget), spec)
         );
         if (!parsed.success) {
-          toast.error('Could not save the shot spec', {
+          toast.error(translateEvent('Could not save the shot spec'), {
             description: parsed.error.issues[0]?.message,
           });
           return;
@@ -241,15 +251,15 @@ function SpecFields({
       }}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">Shot spec</span>
+        <span className="text-sm font-medium">{t('Shot spec')}</span>
         {verdict === 'stale' && (
           <span className="text-xs text-muted-foreground">
-            Script changed since it was written
+            {t('Script changed since it was written')}
           </span>
         )}
         {updating && (
           <span className="text-xs text-muted-foreground" aria-live="polite">
-            Rewriting…
+            {t('Rewriting…')}
           </span>
         )}
       </div>
@@ -262,7 +272,7 @@ function SpecFields({
           const listId = field.suggestions ? `${id}-suggestions` : undefined;
           return (
             <label key={field.name} className="text-xs" htmlFor={id}>
-              {field.label}
+              {translateLabel(field.label)}
               <Input
                 id={id}
                 name={field.name}
@@ -292,10 +302,10 @@ function SpecFields({
             variant="outline"
             disabled={save.isPending}
           >
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button type="submit" size="sm" disabled={save.isPending || updating}>
-            {save.isPending ? 'Saving…' : 'Save'}
+            {save.isPending ? t('Saving…') : t('Save')}
           </Button>
         </div>
       )}
@@ -308,27 +318,31 @@ function SpecFields({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Replace your written prompt?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('Replace your written prompt?')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You wrote the {writtenLabel(visualWritten, motionWritten)}.
-              Replace it with one built from this spec, or keep your text.
+              {t(
+                'You wrote the {{value1}}. Replace it with one built from this spec, or keep your text.',
+                { value1: writtenLabel(visualWritten, motionWritten) }
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (pending) submit(pending, false);
               }}
             >
-              Keep mine
+              {t('Keep mine')}
             </AlertDialogAction>
             <AlertDialogAction
               onClick={() => {
                 if (pending) submit(pending, true);
               }}
             >
-              Replace
+              {t('Replace')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

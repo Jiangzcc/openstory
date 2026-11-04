@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * The assistant's home (#2155): a docked, resizable panel right of the page
  * on desktop and a bottom drawer on a phone. Mounted once in the app
@@ -77,6 +79,9 @@ const ThreadMenu: React.FC<{ threadId: string; enabled: boolean }> = ({
   threadId,
   enabled,
 }) => {
+  const translateEvent = useLiveTranslation('assistant');
+  const { t } = useTranslation('assistant');
+
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const threads = useQuery({
@@ -94,7 +99,7 @@ const ThreadMenu: React.FC<{ threadId: string; enabled: boolean }> = ({
       startAssistantThread();
     },
     onError: (error) => {
-      toast.error('Could not delete this chat', {
+      toast.error(translateEvent('Could not delete this chat'), {
         description: error.message,
       });
     },
@@ -105,7 +110,7 @@ const ThreadMenu: React.FC<{ threadId: string; enabled: boolean }> = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button type="button" variant="ghost" size="sm">
-          History
+          {t('History')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
@@ -114,21 +119,23 @@ const ThreadMenu: React.FC<{ threadId: string; enabled: boolean }> = ({
             variant="destructive"
             onSelect={() => setConfirming(true)}
           >
-            Delete this chat
+            {t('Delete this chat')}
           </DropdownMenuItem>
         )}
         {threads.error && (
           <DropdownMenuLabel className="text-destructive">
-            Could not load history: {threads.error.message}
+            {t('Could not load history: {{value1}}', {
+              value1: threads.error.message,
+            })}
           </DropdownMenuLabel>
         )}
         {!current && others.length === 0 && !threads.error && (
-          <DropdownMenuLabel>No earlier chats</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('No earlier chats')}</DropdownMenuLabel>
         )}
         {others.length > 0 && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Recent</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('Recent')}</DropdownMenuLabel>
             {others.slice(0, 12).map((thread) => (
               <DropdownMenuItem
                 key={thread.id}
@@ -143,18 +150,20 @@ const ThreadMenu: React.FC<{ threadId: string; enabled: boolean }> = ({
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Delete this chat?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Its messages go for good. Nothing it did to your work is undone.
+              {t(
+                'Its messages go for good. Nothing it did to your work is undone.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogCancel>{t('Keep it')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => remove.mutate()}
               disabled={remove.isPending}
             >
-              {remove.isPending ? 'Deleting…' : 'Delete'}
+              {remove.isPending ? t('Deleting…') : t('Delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -170,6 +179,8 @@ const PanelBody: React.FC<AssistantPanelProps & { titleId: string }> = ({
   uploadStub,
   titleId,
 }) => {
+  const { t } = useTranslation('assistant');
+
   const { threadId, draft, dismissedContext, extraContext } =
     useAssistantState();
   const { isAuthenticated } = useAuthGate();
@@ -189,7 +200,7 @@ const PanelBody: React.FC<AssistantPanelProps & { titleId: string }> = ({
           id={titleId}
           className="min-w-0 flex-1 truncate text-sm font-medium"
         >
-          Assistant
+          {t('Assistant')}
         </h2>
         <Button
           type="button"
@@ -197,14 +208,14 @@ const PanelBody: React.FC<AssistantPanelProps & { titleId: string }> = ({
           size="sm"
           onClick={() => startAssistantThread()}
         >
-          New chat
+          {t('New chat')}
         </Button>
         <ThreadMenu threadId={threadId} enabled={isAuthenticated} />
         <Button
           type="button"
           variant="ghost"
           size="icon-xs"
-          aria-label="Close assistant"
+          aria-label={t('Close assistant')}
           onClick={closeAssistant}
         >
           <XIcon />
@@ -225,8 +236,9 @@ const PanelBody: React.FC<AssistantPanelProps & { titleId: string }> = ({
       ) : (
         <div className="flex flex-1 flex-col items-start gap-3 p-4">
           <p className="text-sm text-muted-foreground">
-            Sign in to chat about your work. The assistant acts on your team, so
-            it needs to know who you are.
+            {t(
+              'Sign in to chat about your work. The assistant acts on your team, so it needs to know who you are.'
+            )}
           </p>
           <SignInButton />
         </div>
@@ -236,6 +248,8 @@ const PanelBody: React.FC<AssistantPanelProps & { titleId: string }> = ({
 };
 
 export const AssistantPanel: React.FC<AssistantPanelProps> = (props) => {
+  const { t } = useTranslation('assistant');
+
   const { open, width } = useAssistantState();
   const isMobile = useIsMobile();
   const titleId = useId();
@@ -252,9 +266,9 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = (props) => {
     return (
       <Drawer open={open} onOpenChange={(next) => !next && closeAssistant()}>
         <DrawerContent className="h-[88svh]">
-          <DrawerTitle className="sr-only">Assistant</DrawerTitle>
+          <DrawerTitle className="sr-only">{t('Assistant')}</DrawerTitle>
           <DrawerDescription className="sr-only">
-            Chat with the OpenStory assistant
+            {t('Chat with the OpenStory assistant')}
           </DrawerDescription>
           {open && <PanelBody {...props} titleId={titleId} />}
         </DrawerContent>
@@ -304,7 +318,9 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = (props) => {
           keys; its label says what it does since it has no text. */}
       <button
         type="button"
-        aria-label="Resize assistant. Left arrow widens, right arrow narrows."
+        aria-label={t(
+          'Resize assistant. Left arrow widens, right arrow narrows.'
+        )}
         onPointerDown={startDrag}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft') commitWidth(width + KEY_STEP);

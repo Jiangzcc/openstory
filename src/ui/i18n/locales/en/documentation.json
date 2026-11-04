@@ -1,0 +1,7 @@
+{
+  "Page not found": "Page not found",
+  "This documentation page does not exist.": "This documentation page does not exist.",
+  "Developer Guide": "Developer Guide",
+  "Every generated artifact stores a hash of the inputs it was made from. Staleness is never a flag we set: on every read we recompute the hash from the current inputs and compare. A mismatch is <0>stale</0>. A row with no stored hash is <1>untracked</1> and never stale. Versioned things (green border) keep every generation as a row and a pointer picks one. Renders record which <2>version</2> of a prompt or sheet they used, so selecting a different version is what makes them stale, not editing the text.": "Every generated artifact stores a hash of the inputs it was made from. Staleness is never a flag we set: on every read we recompute the hash from the current inputs and compare. A mismatch is <0>stale</0>. A row with no stored hash is <1>untracked</1> and never stale. Versioned things (green border) keep every generation as a row and a pointer picks one. Renders record which <2>version</2> of a prompt or sheet they used, so selecting a different version is what makes them stale, not editing the text.",
+  "Support": "Support"
+}

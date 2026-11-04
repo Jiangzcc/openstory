@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Upload rights gate (#1581) — the one dialog every inline upload goes
  * through. An upload hook calls `ensureUploadRights(refs)` after the bytes
@@ -84,6 +85,8 @@ export function UploadRightsGateProvider({
 }: {
   children: ReactNode;
 }) {
+  const { t } = useTranslation('cast');
+
   const queryClient = useQueryClient();
   const [pending, setPending] = useState<Pending | null>(null);
   const [attested, setAttested] = useState(false);
@@ -134,7 +137,7 @@ export function UploadRightsGateProvider({
       await queryClient.invalidateQueries({ queryKey: uploadRightsKeys.all });
       close('confirmed');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not save');
+      setError(cause instanceof Error ? cause.message : t('Could not save'));
     } finally {
       setSaving(false);
     }
@@ -169,12 +172,21 @@ export function UploadRightsGateProvider({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Real person detected</DialogTitle>
+            <DialogTitle>{t('Real person detected')}</DialogTitle>
             <DialogDescription>
-              {names.length === 1
-                ? `${names[0]} shows a real person.`
-                : `${names.length} uploads show a real person.`}{' '}
-              Confirm you have the rights to their likeness to continue.
+              {t(
+                '{{value1}} Confirm you have the rights to their likeness to continue.',
+                {
+                  value1:
+                    names.length === 1
+                      ? t('{{value1}} shows a real person.', {
+                          value1: names[0],
+                        })
+                      : t('{{value1}} uploads show a real person.', {
+                          value1: names.length,
+                        }),
+                }
+              )}
             </DialogDescription>
           </DialogHeader>
           <PortraitAttestationFields
@@ -191,14 +203,14 @@ export function UploadRightsGateProvider({
               variant="outline"
               onClick={() => close('declined')}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               type="button"
               disabled={!canConfirm || saving}
               onClick={() => void confirm()}
             >
-              {saving ? 'Saving…' : 'Confirm rights'}
+              {saving ? t('Saving…') : t('Confirm rights')}
             </Button>
           </DialogFooter>
         </DialogContent>

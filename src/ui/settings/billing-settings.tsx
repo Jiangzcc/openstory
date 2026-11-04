@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 /**
  * Billing Settings Component
  * Credit balance, add-credits + auto-top-up dialogs, and invoices (#1099).
@@ -108,6 +111,11 @@ export function BillingSettings({
   sessionId,
   cardSaved,
 }: BillingSettingsProps) {
+  const translateEvent = useLiveTranslation('interface');
+
+  const { formatDateTime } = useLocaleFormatting();
+  const { t } = useTranslation('interface');
+
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [autoTopUpPrompt, setAutoTopUpPrompt] = useState<number | null>(null);
@@ -121,7 +129,7 @@ export function BillingSettings({
       return;
     checkoutHandledRef.current = true;
 
-    if (cardSaved) toast.success('Card saved');
+    if (cardSaved) toast.success(translateEvent('Card saved'));
 
     // Clear pending flash marker on cancel
     if (canceled) {
@@ -146,10 +154,10 @@ export function BillingSettings({
       const returnTo = localStorage.getItem(RETURN_KEY);
       if (returnTo) {
         localStorage.removeItem(RETURN_KEY);
-        toast.success('Credits added successfully', {
-          description: 'Your balance has been updated.',
+        toast.success(translateEvent('Credits added successfully'), {
+          description: translateEvent('Your balance has been updated.'),
           action: {
-            label: 'Continue creating',
+            label: translateEvent('Continue creating'),
             onClick: () => void navigate({ to: returnTo }),
           },
           duration: 15_000,
@@ -162,7 +170,15 @@ export function BillingSettings({
       window.history.replaceState({}, '', '/credits');
     }, 5000);
     return () => clearTimeout(timer);
-  }, [success, canceled, sessionId, cardSaved, queryClient, navigate]);
+  }, [
+    translateEvent,
+    success,
+    canceled,
+    sessionId,
+    cardSaved,
+    queryClient,
+    navigate,
+  ]);
 
   const {
     data: balanceData,
@@ -226,7 +242,7 @@ export function BillingSettings({
     },
     onError: (err) => {
       setError(
-        err instanceof Error ? err.message : 'Failed to update auto top-up'
+        err instanceof Error ? err.message : t('Failed to update auto top-up')
       );
     },
   });
@@ -237,7 +253,7 @@ export function BillingSettings({
       window.location.href = url;
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Could not add card');
+      setError(err instanceof Error ? err.message : t('Could not add card'));
     },
   });
 
@@ -249,7 +265,7 @@ export function BillingSettings({
       {success && (
         <Alert className="mb-4">
           <AlertDescription>
-            Credits added successfully. Your balance has been updated.
+            {t('Credits added successfully. Your balance has been updated.')}
           </AlertDescription>
         </Alert>
       )}
@@ -257,7 +273,7 @@ export function BillingSettings({
       {canceled && (
         <Alert className="mb-4">
           <AlertDescription>
-            Top-up canceled. No charges were made.
+            {t('Top-up canceled. No charges were made.')}
           </AlertDescription>
         </Alert>
       )}
@@ -265,15 +281,17 @@ export function BillingSettings({
       <AlertDialog open={autoTopUpPrompt !== null}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Enable auto-reload?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Enable auto-reload?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Automatically top your balance back up to ${autoTopUpPrompt} when
-              it drops below ${autoTopUpThreshold}.
+              {t(
+                'Automatically top your balance back up to ${{value1}} when it drops below ${{value2}}.',
+                { value1: autoTopUpPrompt, value2: autoTopUpThreshold }
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setAutoTopUpPrompt(null)}>
-              No thanks
+              {t('No thanks')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
@@ -286,7 +304,9 @@ export function BillingSettings({
               }}
               disabled={autoTopUpMutation.isPending}
             >
-              {autoTopUpMutation.isPending ? 'Enabling…' : 'Enable auto-reload'}
+              {autoTopUpMutation.isPending
+                ? t('Enabling…')
+                : t('Enable auto-reload')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -305,14 +325,16 @@ export function BillingSettings({
         <CardHeader>
           <SectionHeader
             icon={Wallet}
-            title="Credit Balance"
-            description="Pay-as-you-go wallet for AI generation at provider cost"
+            title={t('Credit Balance')}
+            description={t(
+              'Pay-as-you-go wallet for AI generation at provider cost'
+            )}
             action={
               stripeEnabled ? (
                 <Button
                   onClick={() => openAddCreditsDialog('billing_settings')}
                 >
-                  Add credits
+                  {t('Add credits')}
                 </Button>
               ) : undefined
             }
@@ -337,7 +359,7 @@ export function BillingSettings({
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">
-              Credits can be added via gift codes.
+              {t('Credits can be added via gift codes.')}
             </p>
             <div className="pt-2">
               <Link
@@ -345,7 +367,7 @@ export function BillingSettings({
                 search={{ tab: 'transactions' }}
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
-                View all transactions
+                {t('View all transactions')}
               </Link>
             </div>
           </CardContent>
@@ -359,15 +381,17 @@ export function BillingSettings({
             <CardHeader>
               <SectionHeader
                 icon={RefreshCw}
-                title="Auto-reload"
-                description="Automatically add credits when your balance runs low"
+                title={t('Auto-reload')}
+                description={t(
+                  'Automatically add credits when your balance runs low'
+                )}
                 action={
                   !pmData?.canManage ? null : hasCard ? (
                     <Button
                       variant="outline"
                       onClick={() => setAutoTopUpDialogOpen(true)}
                     >
-                      Modify
+                      {t('Modify')}
                     </Button>
                   ) : (
                     <Button
@@ -375,7 +399,9 @@ export function BillingSettings({
                       disabled={addCardMutation.isPending}
                       onClick={() => addCardMutation.mutate()}
                     >
-                      {addCardMutation.isPending ? 'Opening…' : 'Add card'}
+                      {addCardMutation.isPending
+                        ? t('Opening…')
+                        : t('Add card')}
                     </Button>
                   )
                 }
@@ -386,32 +412,41 @@ export function BillingSettings({
                 <Skeleton className="h-5 w-64" />
               ) : pmError ? (
                 <p className="text-sm text-destructive">
-                  Could not load your cards: {pmError.message}
+                  {t('Could not load your cards: {{value1}}', {
+                    value1: pmError.message,
+                  })}
                 </p>
               ) : !pmData?.canManage ? (
                 <p className="text-sm text-muted-foreground">
-                  Only a team admin can manage cards.
+                  {t('Only a team admin can manage cards.')}
                 </p>
               ) : !hasCard || !balanceData ? (
                 <p className="text-sm text-muted-foreground">
-                  Add a card to enable auto-reload.
+                  {t('Add a card to enable auto-reload.')}
                 </p>
               ) : balanceData.autoTopUp.enabled ? (
                 <p className="text-sm text-muted-foreground tabular-nums">
-                  Adds ${balanceData.autoTopUp.amountUsd?.toFixed(2)} when your
-                  balance falls below $
-                  {balanceData.autoTopUp.thresholdUsd?.toFixed(2)}.
+                  {t(
+                    'Adds ${{value1}} when your balance falls below ${{value2}}.',
+                    {
+                      value1: balanceData.autoTopUp.amountUsd?.toFixed(2),
+                      value2: balanceData.autoTopUp.thresholdUsd?.toFixed(2),
+                    }
+                  )}
                 </p>
               ) : (
-                <p className="text-sm text-muted-foreground">Off</p>
+                <p className="text-sm text-muted-foreground">{t('Off')}</p>
               )}
               {balanceData?.autoTopUp.lastFailure && (
                 <Alert variant="destructive">
                   <AlertCircle />
-                  <AlertTitle>Auto top-up failed — update your card</AlertTitle>
+                  <AlertTitle>
+                    {t('Auto top-up failed — update your card')}
+                  </AlertTitle>
                   <AlertDescription>
-                    We paused auto-reload after your card was declined. Add a
-                    working payment method to resume.
+                    {t(
+                      'We paused auto-reload after your card was declined. Add a working payment method to resume.'
+                    )}
                   </AlertDescription>
                 </Alert>
               )}
@@ -428,8 +463,8 @@ export function BillingSettings({
             <CardHeader>
               <SectionHeader
                 icon={CreditCard}
-                title="Invoices"
-                description="Recent purchases"
+                title={t('Invoices')}
+                description={t('Recent purchases')}
               />
             </CardHeader>
             <CardContent>
@@ -441,7 +476,7 @@ export function BillingSettings({
                 </div>
               ) : invoiceData?.transactions.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">
-                  No purchases yet
+                  {t('No purchases yet')}
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -452,10 +487,10 @@ export function BillingSettings({
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {tx.description ?? 'Credit purchase'}
+                          {tx.description ?? t('Credit purchase')}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(tx.createdAt).toLocaleString()}
+                          {formatDateTime(new Date(tx.createdAt))}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 ml-4">
@@ -468,7 +503,7 @@ export function BillingSettings({
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-muted-foreground hover:text-foreground"
-                            aria-label="View receipt"
+                            aria-label={t('View receipt')}
                           >
                             <ExternalLink className="h-4 w-4" />
                           </a>
@@ -483,7 +518,7 @@ export function BillingSettings({
                       search={{ tab: 'transactions' }}
                       className="text-sm text-muted-foreground hover:text-foreground"
                     >
-                      View all transactions
+                      {t('View all transactions')}
                     </Link>
                   </div>
                 </div>
@@ -497,20 +532,22 @@ export function BillingSettings({
 }
 
 function ShowCostsToggle() {
+  const { t } = useTranslation('interface');
+
   const { showCosts, setShowCosts } = useShowCosts();
 
   return (
     <div className="flex items-center justify-between border-t pt-4">
       <div>
-        <p className="text-sm font-medium">Show costs</p>
+        <p className="text-sm font-medium">{t('Show costs')}</p>
         <p className="text-xs text-muted-foreground">
-          Balance in the sidebar and estimates under generation actions
+          {t('Balance in the sidebar and estimates under generation actions')}
         </p>
       </div>
       <Switch
         checked={showCosts}
         onCheckedChange={setShowCosts}
-        aria-label="Show costs"
+        aria-label={t('Show costs')}
       />
     </div>
   );

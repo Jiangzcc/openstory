@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { NewCharacterDialog } from '@/cast/ui/character-library/new-character-dialog';
 import { TeamCharacterList } from '@/cast/ui/character-library/team-character-list';
 import { LibraryGridSkeleton } from '@/cast/ui/library-virtual-grid';
@@ -24,10 +25,14 @@ const searchParamsSchema = z.object({
 export const Route = createFileRoute('/_app/characters/')({
   validateSearch: searchParamsSchema,
   component: CharactersPage,
-  staticData: { breadcrumb: 'Characters' },
+  staticData: {
+    breadcrumb: { label: 'Characters', translationKey: 'Characters' },
+  },
 });
 
 function CharactersPage() {
+  const { t } = useTranslation('pages');
+
   const search = Route.useSearch();
   // Not onEnter: the router skips it on the first, server-rendered load.
   rememberLibrarySearch(search);
@@ -37,10 +42,10 @@ function CharactersPage() {
   return (
     <div ref={scrollRef} className="h-full overflow-auto">
       <PageIntro
-        title="Characters"
+        title={t('Characters')}
         actions={session ? <NewCharacterDialog /> : undefined}
       >
-        Every character your team has. Use one in a script with @.
+        {t('Every character your team has. Use one in a script with @.')}
       </PageIntro>
       <PageContainer padding="none" className="pb-8">
         {session ? (
@@ -52,8 +57,8 @@ function CharactersPage() {
               {/* Uncontrolled, so the URL trails the keystrokes. */}
               <InputGroupInput
                 type="search"
-                placeholder="Search characters"
-                aria-label="Search characters"
+                placeholder={t('Search characters')}
+                aria-label={t('Search characters')}
                 defaultValue={search.q}
                 onChange={(event) =>
                   void navigate({
@@ -72,8 +77,8 @@ function CharactersPage() {
         ) : (
           <EmptyState
             icon={<User className="h-12 w-12" />}
-            title="Sign in to see your characters"
-            description="Characters belong to your team."
+            title={t('Sign in to see your characters')}
+            description={t('Characters belong to your team.')}
             action={<SignInButton />}
           />
         )}

@@ -9,6 +9,8 @@
  * `@react-email/components` at Worker startup (#1414).
  */
 
+import { createI18n } from '@/platform/i18n/runtime';
+import type { Locale } from '@/platform/i18n/locale';
 import {
   Body,
   Container,
@@ -96,6 +98,7 @@ const ASSETS_DOMAIN =
 const LOGO_URL = `https://${ASSETS_DOMAIN}/brand/openstory-logo-dark.png`;
 
 interface EmailLayoutProps {
+  locale?: Locale;
   appName: string;
   /** Inbox preview snippet shown next to the subject line. */
   preview: string;
@@ -159,36 +162,41 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
   preview,
   children,
   footerNote,
-}) => (
-  <Html>
-    <Head />
-    <Preview>{preview}</Preview>
-    <Body style={bodyStyle}>
-      <Container style={containerStyle}>
-        <Section style={logoSectionStyle}>
-          {/* Inline SVG is stripped by most email clients, so the wordmark
+  locale = 'en',
+}) => {
+  const t = createI18n(locale).getFixedT(locale, 'mail');
+  return (
+    <Html lang={locale}>
+      <Head />
+      <Preview>{preview}</Preview>
+      <Body style={bodyStyle}>
+        <Container style={containerStyle}>
+          <Section style={logoSectionStyle}>
+            {/* Inline SVG is stripped by most email clients, so the wordmark
               ships as a hosted PNG. alt covers blocked-image clients. */}
-          <Img
-            src={LOGO_URL}
-            width="183"
-            height="40"
-            alt={appName}
-            style={logoStyle}
-          />
-        </Section>
-        {children}
-        <Section style={footerSectionStyle}>
-          {footerNote ? (
-            <Text style={footerNoteStyle}>{footerNote}</Text>
-          ) : null}
-          <Text style={footerTextStyle}>
-            © {new Date().getFullYear()} {appName}. All rights reserved.
-          </Text>
-        </Section>
-      </Container>
-    </Body>
-  </Html>
-);
+            <Img
+              src={LOGO_URL}
+              width="183"
+              height="40"
+              alt={appName}
+              style={logoStyle}
+            />
+          </Section>
+          {children}
+          <Section style={footerSectionStyle}>
+            {footerNote ? (
+              <Text style={footerNoteStyle}>{footerNote}</Text>
+            ) : null}
+            <Text style={footerTextStyle}>
+              © {new Date().getFullYear()} {appName}.{' '}
+              {t('All rights reserved.')}
+            </Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  );
+};
 
 interface WarningBoxProps {
   title: string;

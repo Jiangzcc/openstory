@@ -1,3 +1,6 @@
+import { useTemplateTranslation } from '@/look/ui/use-template-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { AppImage } from '@/ui/shadcn/app-image';
 import { Badge } from '@/ui/shadcn/badge';
 import { Button } from '@/ui/shadcn/button';
@@ -82,59 +85,67 @@ const SampleClip: FC<{
   autoPlay?: boolean;
   /** In-composer Try: swap in this style's sample instead of navigating. */
   onTry?: () => void;
-}> = ({ src, poster, styleName, slug, label, autoPlay, onTry }) => (
-  <div className="flex flex-col gap-1">
-    {label && (
-      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-    )}
-    <div className="flex justify-center">
-      <div className="relative inline-block">
-        <video
-          src={src}
-          poster={poster}
-          className="block max-h-[60vh] w-auto max-w-full rounded-lg border bg-muted object-contain"
-          autoPlay={autoPlay}
-          muted
-          loop
-          playsInline
-          controls
-          aria-label={`${styleName} ${label ?? 'sample'} video`}
-        />
-        {onTry ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={onTry}
-            aria-label={`Try the ${styleName} style`}
-            className="absolute right-2 top-2 gap-1.5 opacity-90 backdrop-blur-sm transition-opacity hover:opacity-100"
-          >
-            <Wand2 className="size-3.5" />
-            Try
-          </Button>
-        ) : (
-          <Button
-            asChild
-            size="sm"
-            variant="secondary"
-            className="absolute right-2 top-2 gap-1.5 opacity-90 backdrop-blur-sm transition-opacity hover:opacity-100"
-          >
-            <Link
-              to="/"
-              search={{ style: slug }}
-              hash="compose"
-              aria-label={`Try the ${styleName} style`}
+}> = ({ src, poster, styleName, slug, label, autoPlay, onTry }) => {
+  const { t } = useTranslation('look');
+  return (
+    <div className="flex flex-col gap-1">
+      {label && (
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+      )}
+      <div className="flex justify-center">
+        <div className="relative inline-block">
+          <video
+            src={src}
+            poster={poster}
+            className="block max-h-[60vh] w-auto max-w-full rounded-lg border bg-muted object-contain"
+            autoPlay={autoPlay}
+            muted
+            loop
+            playsInline
+            controls
+            aria-label={t('{{value1}} {{value2}} video', {
+              value1: styleName,
+              value2: label ?? t('sample'),
+            })}
+          />
+          {onTry ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onTry}
+              aria-label={t('Try the {{value1}} style', { value1: styleName })}
+              className="absolute right-2 top-2 gap-1.5 opacity-90 backdrop-blur-sm transition-opacity hover:opacity-100"
             >
               <Wand2 className="size-3.5" />
-              Try
-            </Link>
-          </Button>
-        )}
+              {t('Try')}
+            </Button>
+          ) : (
+            <Button
+              asChild
+              size="sm"
+              variant="secondary"
+              className="absolute right-2 top-2 gap-1.5 opacity-90 backdrop-blur-sm transition-opacity hover:opacity-100"
+            >
+              <Link
+                to="/"
+                search={{ style: slug }}
+                hash="compose"
+                aria-label={t('Try the {{value1}} style', {
+                  value1: styleName,
+                })}
+              >
+                <Wand2 className="size-3.5" />
+                {t('Try')}
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ConfigRow: FC<{ label: string; value: string }> = ({ label, value }) => (
   <div className="flex flex-col gap-0.5">
@@ -227,6 +238,12 @@ const StyleDetailContent: FC<{
   readOnly?: boolean;
   useStyleRef?: RefObject<HTMLButtonElement | null>;
 }> = ({ style, onUseStyle, onTryStyle, readOnly = false, useStyleRef }) => {
+  const translateTemplate = useTemplateTranslation(style);
+
+  const translateLabel = useLabelTranslation('look');
+
+  const { t } = useTranslation('look');
+
   const canonicalUrl = styleCanonicalVideoUrl(style);
   const videoSrc = canonicalUrl ? optimizedVideoUrl(canonicalUrl) : null;
   const poster = canonicalUrl ? videoPosterUrl(canonicalUrl) : undefined;
@@ -253,16 +270,18 @@ const StyleDetailContent: FC<{
     <div className="flex min-h-0 flex-col">
       <DialogHeader className="space-y-2 px-6 pt-6">
         <div className="flex flex-wrap items-center gap-2">
-          <DialogTitle className="text-xl">{style.name}</DialogTitle>
+          <DialogTitle className="text-xl">
+            {translateTemplate(style.name)}
+          </DialogTitle>
           {style.category && (
             <Badge variant="secondary">
-              {styleCategoryLabel(style.category)}
+              {translateLabel(styleCategoryLabel(style.category))}
             </Badge>
           )}
         </div>
         {style.description && (
           <DialogDescription className="text-sm leading-relaxed">
-            {style.description}
+            {translateTemplate(style.description)}
           </DialogDescription>
         )}
       </DialogHeader>
@@ -276,9 +295,9 @@ const StyleDetailContent: FC<{
             <SampleClip
               src={videoSrc}
               poster={poster}
-              styleName={style.name}
+              styleName={translateTemplate(style.name)}
               slug={slug}
-              label={bespokeSrc ? 'Sample' : undefined}
+              label={bespokeSrc ? t('Sample') : undefined}
               autoPlay
               onTry={onTryStyle}
             />
@@ -292,9 +311,9 @@ const StyleDetailContent: FC<{
             <SampleClip
               src={bespokeSrc}
               poster={bespokePoster}
-              styleName={style.name}
+              styleName={translateTemplate(style.name)}
               slug={slug}
-              label="Showcase"
+              label={t('Showcase')}
               onTry={onTryStyle}
             />
           )}
@@ -305,7 +324,10 @@ const StyleDetailContent: FC<{
                 <PreviewStill
                   key={src}
                   src={src}
-                  alt={`${style.name} preview ${i + 1}`}
+                  alt={t('{{value1}} preview {{value2}}', {
+                    value1: translateTemplate(style.name),
+                    value2: i + 1,
+                  })}
                 />
               ))}
             </div>
@@ -317,7 +339,7 @@ const StyleDetailContent: FC<{
           {palette.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Palette
+                {t('Palette')}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {palette.map((color) => (
@@ -334,7 +356,11 @@ const StyleDetailContent: FC<{
 
           <dl className="flex flex-col gap-3">
             {configRows.map((row) => (
-              <ConfigRow key={row.label} label={row.label} value={row.value} />
+              <ConfigRow
+                key={row.label}
+                label={translateLabel(row.label)}
+                value={row.value}
+              />
             ))}
           </dl>
 
@@ -343,7 +369,7 @@ const StyleDetailContent: FC<{
               <Separator />
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Reference films
+                  {t('Reference films')}
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {display.references.map((film) => (
@@ -359,7 +385,7 @@ const StyleDetailContent: FC<{
           {tags.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Tags
+                {t('Tags')}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {tags.map((tag) => (
@@ -386,9 +412,11 @@ const StyleDetailContent: FC<{
             type="button"
             onClick={onUseStyle}
             aria-keyshortcuts="Enter"
-            aria-label={`Use the ${style.name} style`}
+            aria-label={t('Use the {{value1}} style', {
+              value1: translateTemplate(style.name),
+            })}
           >
-            Use this style
+            {t('Use this style')}
             <Kbd className="bg-primary-foreground/20 text-primary-foreground">
               ⏎
             </Kbd>
@@ -400,9 +428,11 @@ const StyleDetailContent: FC<{
               search={{ style: styleSlug(style.name), prefill: 'style' }}
               hash="compose"
               aria-keyshortcuts="Enter"
-              aria-label={`Use the ${style.name} style`}
+              aria-label={t('Use the {{value1}} style', {
+                value1: translateTemplate(style.name),
+              })}
             >
-              Use this style
+              {t('Use this style')}
               <Kbd className="bg-primary-foreground/20 text-primary-foreground">
                 ⏎
               </Kbd>

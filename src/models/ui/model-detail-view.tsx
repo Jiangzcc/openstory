@@ -1,3 +1,6 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 /**
  * Model detail page body (#458): header, schema-driven parameter form, run →
  * poll → result loop, and the team's recent runs of this endpoint.
@@ -152,6 +155,8 @@ const ModelDetailContent: FC<{
   endpointId: string;
   activity: CatalogActivity | undefined;
 }> = ({ endpointId, activity }) => {
+  const { t } = useTranslation('models');
+
   const { data: detail } = useSuspenseQuery({
     queryKey: ['model-detail', endpointId, activity ?? 'auto'],
     queryFn: () => fetchModelDetail(endpointId, activity),
@@ -162,8 +167,11 @@ const ModelDetailContent: FC<{
     return (
       <EmptyState
         icon={<SearchX className="h-12 w-12" />}
-        title="No schema available"
-        description={`We couldn't find a parameter schema for “${endpointId}”. It may be new, renamed, or not runnable directly.`}
+        title={t('No schema available')}
+        description={t(
+          "We couldn't find a parameter schema for “{{value1}}”. It may be new, renamed, or not runnable directly.",
+          { value1: endpointId }
+        )}
       />
     );
   }
@@ -172,6 +180,10 @@ const ModelDetailContent: FC<{
 };
 
 const ModelRunPanel: FC<{ detail: ModelDetail }> = ({ detail }) => {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('models');
+
   const { model, inputSchema } = detail;
   const queryClient = useQueryClient();
   const { requireAuth, isAuthenticated } = useAuthGate();
@@ -249,10 +261,12 @@ const ModelRunPanel: FC<{ detail: ModelDetail }> = ({ detail }) => {
           </h1>
           <Badge variant="secondary">
             <Icon aria-hidden="true" />
-            {ACTIVITY_LABELS[model.activity]}
+            {translateLabel(ACTIVITY_LABELS[model.activity])}
           </Badge>
           {model.category && (
-            <Badge variant="outline">{categoryLabel(model.category)}</Badge>
+            <Badge variant="outline">
+              {translateLabel(categoryLabel(model.category))}
+            </Badge>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -263,16 +277,16 @@ const ModelRunPanel: FC<{ detail: ModelDetail }> = ({ detail }) => {
             rel="noopener noreferrer"
             className="flex items-center gap-1 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            View on fal.ai
+            {t('View on fal.ai')}
             <ExternalLink aria-hidden="true" className="size-3.5" />
           </a>
         </div>
       </header>
 
       <div className="grid gap-10 lg:grid-cols-2">
-        <section aria-label="Parameters" className="flex flex-col gap-4">
+        <section aria-label={t('Parameters')} className="flex flex-col gap-4">
           <h2 className="text-sm font-medium text-muted-foreground">
-            Parameters
+            {t('Parameters')}
           </h2>
           <SchemaForm
             schema={inputSchema}
@@ -293,18 +307,21 @@ const ModelRunPanel: FC<{ detail: ModelDetail }> = ({ detail }) => {
               className="w-fit"
             >
               <Sparkles aria-hidden="true" />
-              {runMutation.isPending ? 'Starting…' : 'Run'}
+              {runMutation.isPending ? t('Starting…') : t('Run')}
             </Button>
           </SchemaForm>
         </section>
 
-        <section aria-label="Result" className="flex flex-col gap-4">
-          <h2 className="text-sm font-medium text-muted-foreground">Result</h2>
+        <section aria-label={t('Result')} className="flex flex-col gap-4">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            {t('Result')}
+          </h2>
           {activeAssetError ? (
             <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-dashed">
               <p role="alert" className="text-sm text-destructive">
-                Couldn't load the run status — check Recent runs below, or run
-                again.
+                {t(
+                  "Couldn't load the run status — check Recent runs below, or run again."
+                )}
               </p>
             </div>
           ) : activeAsset ? (
@@ -312,7 +329,7 @@ const ModelRunPanel: FC<{ detail: ModelDetail }> = ({ detail }) => {
           ) : (
             <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-dashed">
               <p className="text-sm text-muted-foreground">
-                Run the model to see the result here.
+                {t('Run the model to see the result here.')}
               </p>
             </div>
           )}
@@ -320,9 +337,9 @@ const ModelRunPanel: FC<{ detail: ModelDetail }> = ({ detail }) => {
       </div>
 
       {isAuthenticated && (
-        <section aria-label="Recent runs" className="flex flex-col gap-4">
+        <section aria-label={t('Recent runs')} className="flex flex-col gap-4">
           <h2 className="text-sm font-medium text-muted-foreground">
-            Recent runs
+            {t('Recent runs')}
           </h2>
           <Suspense
             fallback={
@@ -357,6 +374,8 @@ const ModelRunPanel: FC<{ detail: ModelDetail }> = ({ detail }) => {
  * never blocks on it.
  */
 const VariantSwitcher: FC<{ model: ModelDetail['model'] }> = ({ model }) => {
+  const { t } = useTranslation('models');
+
   const navigate = useNavigate();
   const { data: family } = useQuery({
     queryKey: ['model-family', model.endpointId, model.activity],
@@ -395,7 +414,11 @@ const VariantSwitcher: FC<{ model: ModelDetail['model'] }> = ({ model }) => {
         });
       }}
     >
-      <SelectTrigger size="sm" aria-label="Switch variant" className="w-fit">
+      <SelectTrigger
+        size="sm"
+        aria-label={t('Switch variant')}
+        className="w-fit"
+      >
         <SelectValue>
           <code className="font-mono text-xs">{model.endpointId}</code>
         </SelectValue>
@@ -428,6 +451,8 @@ const VariantSwitcher: FC<{ model: ModelDetail['model'] }> = ({ model }) => {
 // ---------------------------------------------------------------------------
 
 const RunThumbnail: FC<{ asset: GeneratedAsset }> = ({ asset }) => {
+  const { t } = useTranslation('models');
+
   if (asset.status === 'failed') {
     return (
       <AlertCircle aria-hidden="true" className="size-6 text-destructive" />
@@ -436,7 +461,7 @@ const RunThumbnail: FC<{ asset: GeneratedAsset }> = ({ asset }) => {
   if (asset.status !== 'completed') {
     return (
       <span className="text-xs text-muted-foreground" aria-hidden="true">
-        {asset.status === 'queued' ? 'Queued…' : 'Running…'}
+        {asset.status === 'queued' ? t('Queued…') : t('Running…')}
       </span>
     );
   }
@@ -472,6 +497,9 @@ const RecentRuns: FC<{
   activeAssetId: string | undefined;
   onSelect: (id: string) => void;
 }> = ({ endpointId, activeAssetId, onSelect }) => {
+  const { formatDateTime } = useLocaleFormatting();
+  const { t } = useTranslation('models');
+
   // Self-polls while any listed run is still in flight, so rows settle into
   // their thumbnails without the panel having to orchestrate invalidations.
   // Stops on refetch errors and ignores stalled rows (see `isStalled`) so a
@@ -494,7 +522,7 @@ const RecentRuns: FC<{
   if (data.assets.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No runs of this model yet.
+        {t('No runs of this model yet.')}
       </p>
     );
   }
@@ -505,7 +533,9 @@ const RecentRuns: FC<{
         <button
           key={asset.id}
           type="button"
-          aria-label={`View run from ${asset.createdAt.toLocaleString()}`}
+          aria-label={t('View run from {{value1}}', {
+            value1: formatDateTime(asset.createdAt),
+          })}
           aria-pressed={asset.id === activeAssetId}
           onClick={() => onSelect(asset.id)}
           className={`flex aspect-square items-center justify-center overflow-hidden rounded-lg border bg-muted transition-colors hover:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${

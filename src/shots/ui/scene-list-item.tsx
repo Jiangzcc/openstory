@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { DivergentAlternateBanner } from '@/shots/ui/staleness/divergent-alternate-banner';
 import { shotDraftLabel } from '@/motion/draft-mode';
 import { Button } from '@/ui/shadcn/button';
@@ -82,6 +83,9 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
   onRequestDelete,
   videoStartSeconds,
 }) => {
+  const { t } = useTranslation('shots');
+  const { t: translateDraft } = useTranslation('motion');
+
   const hasShotMenu = !!(onMoveUp || onMoveDown || onRequestDelete);
   // Divergent alternate takes precedence: promoting it resolves staleness too.
   const showDivergentDot = !!divergentVariantId;
@@ -100,9 +104,12 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
   const sceneNumber = (scene?.orderIndex ?? 0) + 1;
   const title = !shot
     ? undefined
-    : `Shot ${shot.shotNumber ?? 1} · ${Math.round((shot.durationMs ?? 3000) / 1000)}s`;
+    : t('Shot {{value1}} · {{value2}}s', {
+        value1: shot.shotNumber ?? 1,
+        value2: Math.round((shot.durationMs ?? 3000) / 1000),
+      });
   const linkLabel = shot
-    ? `${plainSceneTitle(scene?.title) || `Scene ${sceneNumber}`} — ${title}`
+    ? `${plainSceneTitle(scene?.title) || t('Scene {{value1}}', { value1: sceneNumber })} — ${title}`
     : undefined;
   const preview = !shot ? undefined : (shot.motionPrompt?.fullPrompt ?? '');
 
@@ -213,8 +220,12 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
                     ? (shot.primaryVideo?.error ?? 'Failed')
                     : null
                 }
-                draftLabel={clipUrl ? shotDraftLabel(shot) : null}
-                alt={linkLabel ?? 'Shot thumbnail'}
+                draftLabel={
+                  clipUrl
+                    ? shotDraftLabel(shot, undefined, translateDraft)
+                    : null
+                }
+                alt={linkLabel ?? t('Shot thumbnail')}
                 aspectRatio={aspectRatio}
                 className="w-full rounded-md"
                 gridSheetUrl={shot?.gridSheet?.url}
@@ -224,10 +235,10 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
               {!showDivergentDot && shot && !isRegeneratingImage && isStale && (
                 <span
                   className="pointer-events-none absolute top-1 right-1"
-                  title="Out of date since your last edit"
+                  title={t('Out of date since your last edit')}
                 >
                   <span className="sr-only">
-                    Out of date since your last edit
+                    {t('Out of date since your last edit')}
                   </span>
                   <span
                     aria-hidden="true"
@@ -238,7 +249,9 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
               {(hasVideo || isGeneratingVideo) && (
                 <span
                   aria-label={
-                    isGeneratingVideo ? 'Generating motion…' : 'Motion ready'
+                    isGeneratingVideo
+                      ? t('Generating motion…')
+                      : t('Motion ready')
                   }
                   className={cn(
                     'absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-background/60 text-foreground/80',
@@ -256,7 +269,7 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
               {title ?? <Skeleton className="w-24 h-4" />}
               {isPlaying && (
                 <span className="text-xs font-normal text-primary">
-                  Playing
+                  {t('Playing')}
                 </span>
               )}
             </CardTitle>
@@ -283,7 +296,7 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/scene-item:opacity-100 data-[state=open]:opacity-100"
-                aria-label="Shot actions"
+                aria-label={t('Shot actions')}
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
@@ -297,23 +310,23 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
                         kind: 'shot',
                         id: shot.id,
                         label: shot.shotNumber
-                          ? `Shot ${shot.shotNumber}`
+                          ? t('Shot {{value1}}', { value1: shot.shotNumber })
                           : 'This shot',
                       },
                     ],
                   });
                 }}
               >
-                Chat about this
+                {t('Chat about this')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled={!onMoveUp} onClick={onMoveUp}>
                 <ArrowUp className="h-4 w-4" />
-                Move up
+                {t('Move up')}
               </DropdownMenuItem>
               <DropdownMenuItem disabled={!onMoveDown} onClick={onMoveDown}>
                 <ArrowDown className="h-4 w-4" />
-                Move down
+                {t('Move down')}
               </DropdownMenuItem>
               {onRequestDelete && (
                 <>
@@ -323,7 +336,7 @@ const SceneListItemComponent: React.FC<SceneListItemProps> = ({
                     onClick={onRequestDelete}
                   >
                     <Trash2 className="h-4 w-4" />
-                    Remove shot
+                    {t('Remove shot')}
                   </DropdownMenuItem>
                 </>
               )}

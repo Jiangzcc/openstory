@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from 'react-i18next';
 import {
   BaseModelSelector,
   type ModelGenerationStatus,
@@ -60,6 +61,7 @@ function useMotionModels({
   referenceOnly,
   keepId,
 }: MotionModelFilterProps) {
+  const { t } = useTranslation('models');
   // Resolved server-side per team and seeded by the `_app` route loader, so the
   // list is right on first paint. Grok Imagine appears here only where an xAI
   // key resolves — on fal its id is an image-to-video endpoint.
@@ -103,8 +105,8 @@ function useMotionModels({
           const isRecommended = key === recommendedVideoModel;
           const recommendedFor = isRecommended
             ? styleName
-              ? `Recommended for ${styleName}`
-              : 'Recommended for this style'
+              ? t('Recommended for {{value1}}', { value1: styleName })
+              : t('Recommended for this style')
             : undefined;
           return {
             id: key,
@@ -124,6 +126,7 @@ function useMotionModels({
       keepId,
       referenceOnlyModels,
       vias,
+      t,
     ]
   );
 }
@@ -163,6 +166,8 @@ function RecommendationHint({
   recommendedVideoModel: string | null | undefined;
   styleName: string | undefined;
 }) {
+  const { t } = useTranslation('models');
+
   const recommendedModelName =
     recommendedVideoModel && isValidImageToVideoModel(recommendedVideoModel)
       ? IMAGE_TO_VIDEO_MODELS[recommendedVideoModel].name
@@ -171,26 +176,45 @@ function RecommendationHint({
   if (status === 'incompatible-ratio' && recommendedModelName) {
     return (
       <p className="text-[10px] text-muted-foreground">
-        {styleName ? `${styleName} recommends` : 'Recommended'}{' '}
-        <span className="font-medium">{recommendedModelName}</span>, but it's
-        not compatible with the current aspect ratio.
+        <Trans
+          ns="models"
+          i18nKey="{{value1}} <0>{{value2}}</0>, but it's not compatible with the current aspect ratio."
+          components={[<span key="0" className="font-medium" />]}
+          values={{
+            value1: styleName
+              ? t('{{value1}} recommends', { value1: styleName })
+              : t('Recommended'),
+            value2: recommendedModelName,
+          }}
+        />
       </p>
     );
   }
   if (status === 'unknown') {
     return (
       <p className="text-[10px] text-muted-foreground">
-        {styleName ? `${styleName} recommends` : 'Recommended'} a model that's
-        no longer available.
+        {t("{{value1}} a model that's no longer available.", {
+          value1: styleName
+            ? t('{{value1}} recommends', { value1: styleName })
+            : t('Recommended'),
+        })}
       </p>
     );
   }
   if (status === 'hidden-by-filter' && recommendedModelName) {
     return (
       <p className="text-[10px] text-muted-foreground">
-        {styleName ? `${styleName} recommends` : 'Recommended'}{' '}
-        <span className="font-medium">{recommendedModelName}</span>, but it's
-        not available in this selector.
+        <Trans
+          ns="models"
+          i18nKey="{{value1}} <0>{{value2}}</0>, but it's not available in this selector."
+          components={[<span key="0" className="font-medium" />]}
+          values={{
+            value1: styleName
+              ? t('{{value1}} recommends', { value1: styleName })
+              : t('Recommended'),
+            value2: recommendedModelName,
+          }}
+        />
       </p>
     );
   }
@@ -219,6 +243,8 @@ export const MotionModelSelector: React.FC<MotionModelSelectorProps> = ({
   generatedStatuses,
   allowedIds,
 }) => {
+  const { t } = useTranslation('models');
+
   const baseModels = useMotionModels({
     aspectRatio,
     styleCategory,
@@ -245,7 +271,7 @@ export const MotionModelSelector: React.FC<MotionModelSelectorProps> = ({
   return (
     <div className="flex flex-col gap-1">
       <BaseModelSelector
-        label="Motion Model"
+        label={t('Motion Model')}
         models={models}
         groupOrder={SELECTOR_GROUP_ORDER}
         selectedIds={[selectedModel]}
@@ -289,6 +315,8 @@ export const MotionModelMultiSelector: React.FC<
   allowedIds,
   referenceOnly,
 }) => {
+  const { t } = useTranslation('models');
+
   const models = useMotionModels({
     aspectRatio,
     styleCategory,
@@ -306,7 +334,7 @@ export const MotionModelMultiSelector: React.FC<
   return (
     <div className="flex flex-col gap-1">
       <BaseModelSelector
-        label="Motion Models"
+        label={t('Motion Models')}
         models={models}
         groupOrder={SELECTOR_GROUP_ORDER}
         selectedIds={selectedModels}

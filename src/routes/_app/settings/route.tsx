@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Settings Layout Route
  * Provides tab navigation between settings sub-pages
@@ -19,10 +21,17 @@ export const Route = createFileRoute('/_app/settings')({
   beforeLoad: async ({ context: { queryClient }, location }) => {
     await requireSessionOrRedirect(queryClient, location.href);
   },
-  staticData: { breadcrumb: { label: 'Settings', to: '/settings' } },
-  errorComponent: (props) => (
-    <RouteErrorFallback {...props} heading="Settings error" />
-  ),
+  staticData: {
+    breadcrumb: {
+      translationKey: 'Settings',
+      label: 'Settings',
+      to: '/settings',
+    },
+  },
+  errorComponent: function RouteComponent(props) {
+    const { t } = useTranslation('pages');
+    return <RouteErrorFallback {...props} heading={t('Settings error')} />;
+  },
 });
 
 const tabs = [
@@ -47,6 +56,8 @@ const tabs = [
 ];
 
 function SettingsLayout() {
+  const translateLabel = useLabelTranslation('pages');
+
   const location = useLocation();
 
   // Determine active tab from current route
@@ -61,7 +72,7 @@ function SettingsLayout() {
             <TabsTrigger key={tab.value} value={tab.value} asChild>
               <Link to={tab.href} className="flex items-center gap-2">
                 {tab.icon}
-                {tab.label}
+                {translateLabel(tab.label)}
               </Link>
             </TabsTrigger>
           ))}

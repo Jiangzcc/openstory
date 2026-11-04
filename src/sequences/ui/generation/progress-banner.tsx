@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Generation progress as a chip, not a banner (#1427).
  *
@@ -76,6 +78,9 @@ export const ProgressBanner: React.FC<ProgressBannerProps> = ({
   showRemaining = true,
   closedLabel,
 }) => {
+  const { t } = useTranslation('sequences');
+  const translateLabel = useLabelTranslation('labels');
+
   const [isExiting, setIsExiting] = useState(false);
 
   const prefersReducedMotion =
@@ -111,8 +116,8 @@ export const ProgressBanner: React.FC<ProgressBannerProps> = ({
 
   const showCompleted = isComplete && completedLabel;
   const label = showCompleted
-    ? completedLabel
-    : (closedLabel ?? activePhase?.name ?? defaultLabel);
+    ? translateLabel(completedLabel)
+    : translateLabel(closedLabel ?? activePhase?.name ?? defaultLabel);
 
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
@@ -123,10 +128,16 @@ export const ProgressBanner: React.FC<ProgressBannerProps> = ({
         max={phases.length}
         aria-label={
           closedLabel
-            ? `${ariaPrefix} progress: ${closedLabel}`
+            ? t('{{value1}} progress: {{value2}}', {
+                value1: translateLabel(ariaPrefix),
+                value2: translateLabel(closedLabel),
+              })
             : activePhase
-              ? `${ariaPrefix} progress: ${activePhase.name}`
-              : `${ariaPrefix} progress`
+              ? t('{{value1}} progress: {{value2}}', {
+                  value1: translateLabel(ariaPrefix),
+                  value2: translateLabel(activePhase.name),
+                })
+              : t('{{value1}} progress', { value1: translateLabel(ariaPrefix) })
         }
         className="sr-only"
       />
@@ -172,16 +183,20 @@ export const ProgressBanner: React.FC<ProgressBannerProps> = ({
         {showRemaining ? (
           <span className="relative tabular-nums" aria-live="polite">
             {showCompleted && completedBadge ? (
-              completedBadge
+              translateLabel(completedBadge)
             ) : (
               <>
-                {formatTimeRemaining(remaining)}
-                <span className="sr-only"> remaining</span>
+                {translateLabel(formatTimeRemaining(remaining))}
+                <span className="sr-only">{t('remaining')}</span>
               </>
             )}
           </span>
         ) : null}
-        <span className="sr-only">Show {ariaPrefix.toLowerCase()} detail</span>
+        <span className="sr-only">
+          {t('Show {{value1}} detail', {
+            value1: translateLabel(ariaPrefix.toLowerCase()),
+          })}
+        </span>
       </PopoverTrigger>
 
       {/* Right-anchored trigger, so open leftwards from its right edge. */}
@@ -192,7 +207,7 @@ export const ProgressBanner: React.FC<ProgressBannerProps> = ({
             {runs.map((run) => (
               <li key={run.key} className="flex flex-col gap-1.5">
                 <p className="truncate text-xs font-medium text-foreground">
-                  {run.label}
+                  {translateLabel(run.label)}
                 </p>
                 {run.showPhases ? (
                   <PhaseList
@@ -207,7 +222,7 @@ export const ProgressBanner: React.FC<ProgressBannerProps> = ({
                         key={child.key}
                         className="truncate text-xs text-muted-foreground"
                       >
-                        {child.label}
+                        {translateLabel(child.label)}
                       </li>
                     ))}
                   </ul>
@@ -225,14 +240,14 @@ export const ProgressBanner: React.FC<ProgressBannerProps> = ({
         {(showRemaining || runs?.some((run) => run.showPhases)) &&
         activePhase?.description ? (
           <p className="text-xs text-muted-foreground">
-            {activePhase.description}
+            {translateLabel(activePhase.description)}
           </p>
         ) : null}
 
         <p className="text-xs text-muted-foreground/50">
           {leaveHint ?? (
             <>
-              Click around or create something else while you&rsquo;re waiting
+              {t('Click around or create something else while you’re waiting')}
             </>
           )}
         </p>
@@ -248,6 +263,7 @@ function PhaseList({
   phases: BannerPhase[];
   prefersReducedMotion: boolean;
 }) {
+  const translateLabel = useLabelTranslation('labels');
   return (
     <ol className="flex flex-col gap-1.5">
       {phases.map((phase) => (
@@ -270,7 +286,7 @@ function PhaseList({
               phase.status === 'pending' && 'bg-border'
             )}
           />
-          <span className="truncate">{phase.shortName}</span>
+          <span className="truncate">{translateLabel(phase.shortName)}</span>
         </li>
       ))}
     </ol>

@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Scene Location Tab
  * Displays the location for the current shot with reference image and details
@@ -75,6 +77,9 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
   shotIds,
   scene,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const { data: locations, isLoading } = useSequenceLocations(sequenceId);
   const { data: facetMaps } = useSceneFacetMaps(sequenceId);
   const queryClient = useQueryClient();
@@ -88,24 +93,27 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
       {
         onSuccess: () => {
           setPendingDelete(null);
-          toast(`Removed ${location.name}`, {
-            duration: 60_000,
-            action: {
-              label: 'Undo',
-              onClick: () =>
-                void restoreSequenceLocation(queryClient, {
-                  sequenceId,
-                  locationDbId: location.id,
-                }).catch((error: Error) =>
-                  toast.error('Failed to restore location', {
-                    description: errorMessage(error),
-                  })
-                ),
-            },
-          });
+          toast(
+            translateEvent('Removed {{value1}}', { value1: location.name }),
+            {
+              duration: 60_000,
+              action: {
+                label: translateEvent('Undo'),
+                onClick: () =>
+                  void restoreSequenceLocation(queryClient, {
+                    sequenceId,
+                    locationDbId: location.id,
+                  }).catch((error: Error) =>
+                    toast.error(translateEvent('Failed to restore location'), {
+                      description: errorMessage(error),
+                    })
+                  ),
+              },
+            }
+          );
         },
         onError: (error) =>
-          toast.error('Failed to remove location', {
+          toast.error(translateEvent('Failed to remove location'), {
             description: errorMessage(error),
           }),
       }
@@ -165,8 +173,10 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
           </div>
           <p className="text-sm text-muted-foreground">
             {canAdd
-              ? 'No locations yet'
-              : 'No locations in this selection — clear the selection to add one'}
+              ? t('No locations yet')
+              : t(
+                  'No locations in this selection — clear the selection to add one'
+                )}
           </p>
           {canAdd && addLocation}
         </div>
@@ -179,7 +189,7 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
       {picker}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-          <span>{canAdd ? 'All Locations' : 'Locations'}</span>
+          <span>{canAdd ? t('All Locations') : t('Locations')}</span>
           <span className="text-muted-foreground/50">·</span>
           <span>{scopedLocations.length}</span>
         </div>
@@ -196,10 +206,10 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
                   <span className="text-muted-foreground/50">·</span>
                   <span>
                     {shotLocation.type === 'interior'
-                      ? 'Interior'
+                      ? t('Interior')
                       : shotLocation.type === 'exterior'
-                        ? 'Exterior'
-                        : 'Int/Ext'}
+                        ? t('Exterior')
+                        : t('Int/Ext')}
                   </span>
                 </>
               )}
@@ -211,7 +221,7 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
                 search
                 className="flex items-center gap-1 text-xs text-primary hover:underline"
               >
-                View Details
+                {t('View Details')}
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Button
@@ -219,7 +229,9 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
-                aria-label={`Remove ${shotLocation.name} from sequence`}
+                aria-label={t('Remove {{value1}} from sequence', {
+                  value1: shotLocation.name,
+                })}
                 onClick={() => setPendingDelete(shotLocation)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -245,31 +257,37 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
                 <MapPin className="h-12 w-12 text-muted-foreground/20" />
                 <p className="text-xs text-muted-foreground">
                   {shotLocation.referenceStatus === 'generating'
-                    ? 'Generating reference…'
-                    : 'No reference image'}
+                    ? t('Generating reference…')
+                    : t('No reference image')}
                 </p>
               </div>
             )}
             {shotLocation.type && shotLocation.referenceImageUrl && (
               <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
                 {shotLocation.type === 'interior'
-                  ? 'INT'
+                  ? t('INT')
                   : shotLocation.type === 'exterior'
-                    ? 'EXT'
-                    : 'INT/EXT'}
+                    ? t('EXT')
+                    : t('INT/EXT')}
               </div>
             )}
           </div>
 
           <dl className="space-y-3">
-            <DetailRow label="Description" value={shotLocation.description} />
+            <DetailRow
+              label={t('Description')}
+              value={shotLocation.description}
+            />
             <div className="grid grid-cols-2 gap-3">
               <DetailRow
-                label="Architectural Style"
+                label={t('Architectural Style')}
                 value={shotLocation.architecturalStyle}
               />
             </div>
-            <DetailRow label="Key Features" value={shotLocation.keyFeatures} />
+            <DetailRow
+              label={t('Key Features')}
+              value={shotLocation.keyFeatures}
+            />
             {shotLocation.consistencyTag && (
               <div className="pt-2">
                 <span className="rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
@@ -290,15 +308,18 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remove {pendingDelete?.name} from this sequence?
+              {t('Remove {{value1}} from this sequence?', {
+                value1: pendingDelete?.name,
+              })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              The location is hidden from the sequence and prompt context. You
-              can undo from the toast right after removing.
+              {t(
+                'The location is hidden from the sequence and prompt context. You can undo from the toast right after removing.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               disabled={softDelete.isPending}
               // Radix's Action closes on click; hold it open so the pending
@@ -308,7 +329,7 @@ export const SceneLocationTab: React.FC<SceneLocationTabProps> = ({
                 if (pendingDelete) handleConfirmDelete(pendingDelete);
               }}
             >
-              {softDelete.isPending ? 'Removing…' : 'Remove'}
+              {softDelete.isPending ? t('Removing…') : t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -331,6 +352,9 @@ function SceneLocationPicker({
   scene: SceneWithScript;
   locations: SequenceLocationWithReference[];
 }) {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const update = useUpdateScene(sequenceId);
   // Scene-split may stamp several tags, comma-joined.
   const tags = (scene.continuity?.environmentTag ?? '')
@@ -345,7 +369,7 @@ function SceneLocationPicker({
   );
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-medium">Scene location</span>
+      <span className="text-sm font-medium">{t('Scene location')}</span>
       <Select
         value={current?.id ?? null}
         items={items}
@@ -361,15 +385,18 @@ function SceneLocationPicker({
             },
             {
               onError: (error) =>
-                toast.error('Could not set the scene location', {
-                  description: errorMessage(error),
-                }),
+                toast.error(
+                  translateEvent('Could not set the scene location'),
+                  {
+                    description: errorMessage(error),
+                  }
+                ),
             }
           );
         }}
       >
-        <SelectTrigger className="w-full" aria-label="Scene location">
-          <SelectValue placeholder="Choose a location" />
+        <SelectTrigger className="w-full" aria-label={t('Scene location')}>
+          <SelectValue placeholder={t('Choose a location')} />
         </SelectTrigger>
         <SelectContent>
           {locations.map((location) => (

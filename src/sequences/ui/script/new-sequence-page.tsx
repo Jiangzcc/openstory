@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { BillingGateDialog } from '@/billing/ui/billing-gate-dialog';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { PageContainer } from '@/ui/layout/page-container';
@@ -37,12 +39,14 @@ function dismissBillingPrompt() {
 }
 
 function GalleryLink() {
+  const { t } = useTranslation('sequences');
+
   return (
     <Link
       to="/gallery"
       className="mt-4 inline-flex shrink-0 items-center justify-center gap-1 self-center text-sm font-medium text-muted-foreground hover:text-foreground short-h:hidden"
     >
-      Browse the gallery to see what you can create
+      {t('Browse the gallery to see what you can create')}
       <ArrowRight className="size-4" />
     </Link>
   );
@@ -70,6 +74,8 @@ export function NewSequencePage({
   from,
   composerPath,
 }: NewSequencePageProps) {
+  const translateLabel = useLabelTranslation('labels');
+
   const navigate = useNavigate();
   // Copy mode (#1037): hand the composer the source sequence and it seeds its
   // script + every generation setting from it, and creates with
@@ -258,8 +264,11 @@ export function NewSequencePage({
     return (
       <div className="flex h-full flex-col overflow-hidden">
         {billingGate}
-        <PageIntro title={SITE_CONFIG.tagline} maxWidth="narrow">
-          {SITE_CONFIG.taglineSub}
+        <PageIntro
+          title={translateLabel(SITE_CONFIG.tagline)}
+          maxWidth="narrow"
+        >
+          {translateLabel(SITE_CONFIG.taglineSub)}
         </PageIntro>
         <PageContainer
           maxWidth="narrow"
@@ -308,10 +317,10 @@ export function NewSequencePage({
           <OpenStoryLogo className="h-8 sm:h-12 short-h:h-8" />
           <div className="flex flex-col items-center gap-1">
             <h1 className="text-center text-xl font-semibold tracking-tight sm:text-2xl">
-              {SITE_CONFIG.tagline}
+              {translateLabel(SITE_CONFIG.tagline)}
             </h1>
             <p className="text-center text-sm text-muted-foreground text-pretty max-w-md">
-              {SITE_CONFIG.taglineSub}
+              {translateLabel(SITE_CONFIG.taglineSub)}
             </p>
           </div>
         </div>

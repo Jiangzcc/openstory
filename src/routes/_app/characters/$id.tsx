@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { DeleteCharacterButton } from '@/cast/ui/character-library/delete-character-button';
 import { CharacterDetailView } from '@/cast/ui/talent/character-detail-view';
 import {
@@ -32,6 +33,7 @@ export const Route = createFileRoute('/_app/characters/$id')({
       const { id } = routeParams<{ id: string }>(match);
       return [
         {
+          translationKey: 'Characters',
           label: 'Characters',
           to: '/characters',
           search: librarySearchFor(),
@@ -42,9 +44,6 @@ export const Route = createFileRoute('/_app/characters/$id')({
   },
 });
 
-const shotsLabel = (count: number) =>
-  `${count} ${count === 1 ? 'shot' : 'shots'}`;
-
 /** Shots the character is in: one sequence, or all of them. */
 function ShotCount({
   characterId,
@@ -53,16 +52,23 @@ function ShotCount({
   characterId: string;
   sequenceId: string | null;
 }) {
+  const { t } = useTranslation('pages');
   const { data: counts } = useTeamCharacterShotCounts(characterId);
-  if (sequenceId === null) {
-    return <>{shotsLabel(Object.values(counts).reduce((a, b) => a + b, 0))}</>;
-  }
-  const count = counts[sequenceId];
-  // A sequence that started casting the character after the counts loaded.
-  return <>{count === undefined ? '…' : shotsLabel(count)}</>;
+  const count =
+    sequenceId === null
+      ? Object.values(counts).reduce((total, value) => total + value, 0)
+      : counts[sequenceId];
+  if (count === undefined) return <>…</>;
+  return (
+    <>
+      {count} {count === 1 ? t('shot') : t('shots')}
+    </>
+  );
 }
 
 function TeamCharacterContent({ id }: { id: string }) {
+  const { t } = useTranslation('pages');
+
   const { sequence: pickedSequenceId } = Route.useSearch();
   const { data: character } = useTeamCharacter(id);
   // Gone or another team's. Reached from a stale link.
@@ -70,12 +76,12 @@ function TeamCharacterContent({ id }: { id: string }) {
     return (
       <EmptyState
         icon={<User className="h-12 w-12" />}
-        title="Character not found"
-        description="It was deleted, or it belongs to another team."
+        title={t('Character not found')}
+        description={t('It was deleted, or it belongs to another team.')}
         action={
           <Button variant="outline" asChild>
             <Link to="/characters" search={librarySearchFor()}>
-              Back to Characters
+              {t('Back to Characters')}
             </Link>
           </Button>
         }
@@ -96,7 +102,7 @@ function TeamCharacterContent({ id }: { id: string }) {
             <Link
               to="/characters"
               search={librarySearchFor()}
-              aria-label="Back to Characters"
+              aria-label={t('Back to Characters')}
             >
               <ArrowLeft />
             </Link>
@@ -116,16 +122,16 @@ function TeamCharacterContent({ id }: { id: string }) {
         </div>
         {sequences.length > 0 && (
           <nav
-            aria-label="Sequences that cast this character"
+            aria-label={t('Sequences that cast this character')}
             className="flex flex-col gap-2"
           >
             <p className="text-sm text-muted-foreground">
-              Cast in {sequences.length}{' '}
-              {sequences.length === 1 ? 'sequence' : 'sequences'},{' '}
+              {t('Cast in')} {sequences.length}{' '}
+              {sequences.length === 1 ? t('sequence') : t('sequences')},{' '}
               <Suspense fallback="…">
                 <ShotCount characterId={id} sequenceId={null} />
               </Suspense>
-              . Edits change this character in every sequence.
+              {t('. Edits change this character in every sequence.')}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               {sequences.map((sequence) => (
@@ -156,7 +162,7 @@ function TeamCharacterContent({ id }: { id: string }) {
                     to="/sequences/$id/cast/$characterId"
                     params={{ id: shown.id, characterId: id }}
                   >
-                    Open in {shown.title}
+                    {t('Open in {{value1}}', { value1: shown.title })}
                   </Link>
                 </Button>
               )}
@@ -186,7 +192,7 @@ function TeamCharacterContent({ id }: { id: string }) {
         </div>
       ) : (
         <p className="p-4 text-sm font-medium">
-          Not cast in that sequence. Pick one above.
+          {t('Not cast in that sequence. Pick one above.')}
         </p>
       )}
     </div>
@@ -194,6 +200,8 @@ function TeamCharacterContent({ id }: { id: string }) {
 }
 
 function TeamCharacterPage() {
+  const { t } = useTranslation('pages');
+
   const { id } = Route.useParams();
   const { data: session, isPending } = useAuthSession();
 
@@ -201,8 +209,8 @@ function TeamCharacterPage() {
     return (
       <EmptyState
         icon={<User className="h-12 w-12" />}
-        title="Sign in to see this character"
-        description="Characters belong to your team."
+        title={t('Sign in to see this character')}
+        description={t('Characters belong to your team.')}
         action={<SignInButton />}
       />
     );

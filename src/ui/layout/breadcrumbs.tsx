@@ -1,3 +1,4 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,6 +14,7 @@ import { Fragment } from 'react';
 
 export type BreadcrumbCrumb = {
   label: React.ReactNode;
+  translationKey?: string;
   to?: string;
   /** Search params for `to`, e.g. a list's filter to return to. */
   search?: Record<string, unknown>;
@@ -84,8 +86,14 @@ export function mobileCrumbIndex(crumbs: BreadcrumbCrumb[]): number {
 }
 
 export const Breadcrumbs: React.FC = () => {
+  const translateLabel = useLabelTranslation('labels');
   const matches = useMatches();
-  const crumbs = matches.flatMap(resolveCrumbs);
+  const crumbs = matches.flatMap(resolveCrumbs).map((crumb) => ({
+    ...crumb,
+    label: crumb.translationKey
+      ? translateLabel(crumb.translationKey)
+      : crumb.label,
+  }));
 
   if (crumbs.length === 0) return null;
   const mobileIndex = mobileCrumbIndex(crumbs);

@@ -8,5 +8,5 @@ export const Route = createFileRoute('/_app/sequences/$id/theatre')({
       params: { id: params.id },
     });
   },
-  staticData: { breadcrumb: 'Theatre' },
+  staticData: { breadcrumb: { label: 'Theatre', translationKey: 'Theatre' } },
 });

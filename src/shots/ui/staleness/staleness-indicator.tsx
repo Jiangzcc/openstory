@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { AlertTriangle, Loader2, X } from 'lucide-react';
 import {
@@ -118,6 +120,9 @@ const ARTIFACT_LABEL: Record<StalenessArtifact, string> = {
 export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
   props
 ) => {
+  const { t } = useTranslation('shots');
+  const translateLabel = useLabelTranslation('labels');
+
   const { entityType, isRegenerating = false, className } = props;
   const [dismissed, setDismissed] = useState(false);
   // Status-line "Update all" opens the depth confirm dialog (#1085).
@@ -127,8 +132,17 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
 
   const artifact = 'artifact' in props ? props.artifact : undefined;
   const ariaLabel = artifact
-    ? `Stale ${ARTIFACT_LABEL[artifact]} on this ${entityType} — inputs changed since it was generated`
-    : `Stale artifacts on this ${entityType} — inputs changed since they were generated`;
+    ? t(
+        'Stale {{artifact}} on this {{entity}} — inputs changed since it was generated',
+        {
+          artifact: translateLabel(ARTIFACT_LABEL[artifact]),
+          entity: translateLabel(entityType),
+        }
+      )
+    : t(
+        'Stale artifacts on this {{entity}} — inputs changed since they were generated',
+        { entity: translateLabel(entityType) }
+      );
 
   if (props.density === 'corner-dot') {
     // Non-interactive: corner-dot is a presentational signal that nests inside
@@ -137,13 +151,17 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
     // artifact is required on this density branch.
     const cornerArtifact = props.artifact;
     const dotLabel = isRegenerating
-      ? `Regenerating ${ARTIFACT_LABEL[cornerArtifact]}…`
+      ? t('Regenerating {{artifact}}…', {
+          artifact: translateLabel(ARTIFACT_LABEL[cornerArtifact]),
+        })
       : ariaLabel;
     return (
       <span
         aria-busy={isRegenerating || undefined}
         title={
-          isRegenerating ? 'Regenerating…' : 'Inputs changed since generation'
+          isRegenerating
+            ? t('Regenerating…')
+            : t('Inputs changed since generation')
         }
         data-slot="staleness-indicator-dot"
         data-artifact={cornerArtifact}
@@ -170,8 +188,8 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
   }
 
   if (props.density === 'status-line') {
-    const message = props.message ?? 'Out of date since your last edit';
-    const actionLabel = props.actionLabel ?? 'Update all';
+    const message = props.message ?? t('Out of date since your last edit');
+    const actionLabel = props.actionLabel ?? t('Update all');
     const unknown = props.tone === 'unknown';
     return (
       <div
@@ -211,7 +229,7 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
                   className="mr-1 h-3 w-3 animate-spin motion-reduce:animate-none"
                 />
               )}
-              {isRegenerating ? 'Updating…' : actionLabel}
+              {isRegenerating ? t('Updating…') : actionLabel}
             </Button>
             <UpdateAllDialog
               open={updateAllOpen}
@@ -241,7 +259,7 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
                 className="mr-1 h-3 w-3 animate-spin motion-reduce:animate-none"
               />
             )}
-            {isRegenerating ? 'Updating…' : actionLabel}
+            {isRegenerating ? t('Updating…') : actionLabel}
           </Button>
         ) : null}
       </div>
@@ -264,7 +282,7 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
           aria-hidden="true"
           className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
         />
-        <span>Outdated</span>
+        <span>{t('Outdated')}</span>
         <span aria-hidden="true">·</span>
         <Button
           type="button"
@@ -274,7 +292,7 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
           onClick={props.onRegenerate}
           disabled={isRegenerating}
           aria-busy={isRegenerating}
-          aria-label={`Regenerate — ${ariaLabel}`}
+          aria-label={t('Regenerate — {{value1}}', { value1: ariaLabel })}
         >
           {isRegenerating && (
             <Loader2
@@ -282,7 +300,7 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
               className="mr-1 h-3 w-3 animate-spin motion-reduce:animate-none"
             />
           )}
-          {isRegenerating ? 'Regenerating…' : 'Regenerate'}
+          {isRegenerating ? t('Regenerating…') : t('Regenerate')}
         </Button>
       </span>
     );
@@ -306,9 +324,11 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
       )}
     >
       <AlertTriangle aria-hidden="true" />
-      <AlertTitle>Inputs changed</AlertTitle>
+      <AlertTitle>{t('Inputs changed')}</AlertTitle>
       <AlertDescription>
-        This {ARTIFACT_LABEL[inlineArtifact]} was generated from earlier inputs.
+        {t('This {{value1}} was generated from earlier inputs.', {
+          value1: ARTIFACT_LABEL[inlineArtifact],
+        })}
       </AlertDescription>
       <AlertAction className="flex items-center gap-1">
         <Button
@@ -325,7 +345,7 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
               className="mr-2 h-3 w-3 animate-spin motion-reduce:animate-none"
             />
           )}
-          {isRegenerating ? 'Regenerating…' : 'Regenerate'}
+          {isRegenerating ? t('Regenerating…') : t('Regenerate')}
         </Button>
         {onDismiss && (
           <Button
@@ -333,7 +353,7 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
             size="icon-sm"
             variant="ghost"
             onClick={handleDismiss}
-            aria-label="Dismiss staleness indicator"
+            aria-label={t('Dismiss staleness indicator')}
           >
             <X aria-hidden="true" />
           </Button>

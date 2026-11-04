@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import {
   useAddLocationPhotos,
   useLocationPhotos,
@@ -32,6 +34,9 @@ export const LocationPhotos: React.FC<{
   /** While a sheet run is reading the photos. */
   disabled: boolean;
 }> = ({ locationId, disabled }) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+
   const { data: photos } = useLocationPhotos(locationId);
   const addPhotos = useAddLocationPhotos();
   const removePhoto = useRemoveLocationPhoto();
@@ -40,11 +45,11 @@ export const LocationPhotos: React.FC<{
 
   return (
     <section
-      aria-label="Reference photos"
+      aria-label={t('Reference photos')}
       className="flex flex-col gap-3 rounded-lg border p-3"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Photos</p>
+        <p className="text-sm font-medium">{t('Photos')}</p>
         <input
           ref={inputRef}
           type="file"
@@ -64,7 +69,7 @@ export const LocationPhotos: React.FC<{
                     files.length === 1 ? 'Photo added' : 'Photos added'
                   ),
                 onError: (error) =>
-                  toast.error('Photos not added', {
+                  toast.error(translateEvent('Photos not added'), {
                     description: errorMessage(error),
                   }),
               }
@@ -78,14 +83,14 @@ export const LocationPhotos: React.FC<{
           disabled={disabled || addPhotos.isPending}
           onClick={() => inputRef.current?.click()}
         >
-          {addPhotos.isPending ? 'Adding…' : 'Add photos'}
+          {addPhotos.isPending ? t('Adding…') : t('Add photos')}
         </Button>
       </div>
       {!photos ? (
         <Skeleton className="h-20 w-full" />
       ) : photos.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No photos. The sheet is drawn from the description.
+          {t('No photos. The sheet is drawn from the description.')}
         </p>
       ) : (
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -96,7 +101,7 @@ export const LocationPhotos: React.FC<{
             >
               <AppImage
                 src={photo.url}
-                alt={`Photo ${index + 1}`}
+                alt={t('Photo {{value1}}', { value1: index + 1 })}
                 width={240}
                 height={135}
                 className="h-full w-full object-cover"
@@ -105,7 +110,7 @@ export const LocationPhotos: React.FC<{
                 type="button"
                 variant="secondary"
                 size="icon"
-                aria-label={`Remove photo ${index + 1}`}
+                aria-label={t('Remove photo {{value1}}', { value1: index + 1 })}
                 className="absolute right-1 top-1 h-7 w-7"
                 disabled={disabled || removePhoto.isPending}
                 onClick={() => setRemovingId(photo.id)}
@@ -124,13 +129,13 @@ export const LocationPhotos: React.FC<{
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove this photo?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Remove this photo?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              The sheet reads stale until it is regenerated.
+              {t('The sheet reads stale until it is regenerated.')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (removingId === null) return;
@@ -138,14 +143,14 @@ export const LocationPhotos: React.FC<{
                   { locationId, photoId: removingId },
                   {
                     onError: (error) =>
-                      toast.error('Photo not removed', {
+                      toast.error(translateEvent('Photo not removed'), {
                         description: errorMessage(error),
                       }),
                   }
                 );
               }}
             >
-              Remove
+              {t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

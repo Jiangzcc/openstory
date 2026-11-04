@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Where a new sequence is set (#1695): one button, one picker of the team's
  * locations. A pick is a suggestion: analysis matches the script's places
@@ -62,6 +63,8 @@ export const LocationSuggestionSelector: React.FC<
   onSelectionChange,
   disabled,
 }) => {
+  const { t } = useTranslation('cast');
+
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   // Server-rendered before its handler exists: a click then does nothing.
@@ -89,7 +92,7 @@ export const LocationSuggestionSelector: React.FC<
     <NewLocationDialog
       trigger={
         <Button type="button" variant="outline" size="sm">
-          New location
+          {t('New location')}
         </Button>
       }
       // Picked as it is made, so it need not be found in the grid.
@@ -112,7 +115,7 @@ export const LocationSuggestionSelector: React.FC<
           disabled={disabled || !hydrated}
           className="text-muted-foreground"
         >
-          Locations
+          {t('Locations')}
         </Button>
 
         {selected.length + gone.length > 0 && (
@@ -124,7 +127,7 @@ export const LocationSuggestionSelector: React.FC<
                 </div>
                 <button
                   type="button"
-                  aria-label="Remove deleted location"
+                  aria-label={t('Remove deleted location')}
                   onClick={() => toggle(id)}
                   className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground"
                 >
@@ -139,7 +142,7 @@ export const LocationSuggestionSelector: React.FC<
                 </div>
                 <button
                   type="button"
-                  aria-label={`Remove ${location.name}`}
+                  aria-label={t('Remove {{value1}}', { value1: location.name })}
                   onClick={() => toggle(location.id)}
                   className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                 >
@@ -173,17 +176,18 @@ export const LocationSuggestionSelector: React.FC<
             className="flex flex-col gap-4"
           >
             <DialogHeader>
-              <DialogTitle>Locations</DialogTitle>
+              <DialogTitle>{t('Locations')}</DialogTitle>
               <DialogDescription>
-                Places the script names are matched to your picks. The rest are
-                made new.
+                {t(
+                  'Places the script names are matched to your picks. The rest are made new.'
+                )}
               </DialogDescription>
             </DialogHeader>
 
             <Input
               type="search"
-              aria-label="Search locations"
-              placeholder="Search locations…"
+              aria-label={t('Search locations')}
+              placeholder={t('Search locations…')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               // Enter would submit the form and close the picker mid-search.
@@ -195,7 +199,7 @@ export const LocationSuggestionSelector: React.FC<
             <ScrollArea className="h-[min(400px,40dvh)]">
               {failed ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">
-                  Could not load locations.
+                  {t('Could not load locations.')}
                 </p>
               ) : !shown ? (
                 <div className="grid grid-cols-2 gap-4 p-1 sm:grid-cols-3">
@@ -209,10 +213,10 @@ export const LocationSuggestionSelector: React.FC<
               ) : shown.length === 0 ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">
                   {search.trim()
-                    ? 'No location matches.'
+                    ? t('No location matches.')
                     : signedOut
-                      ? 'Sign in to pick your locations.'
-                      : 'No locations yet.'}
+                      ? t('Sign in to pick your locations.')
+                      : t('No locations yet.')}
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-4 p-1 sm:grid-cols-3">
@@ -255,8 +259,8 @@ export const LocationSuggestionSelector: React.FC<
               {signedOut ? <span /> : newLocation}
               <Button type="submit">
                 {selectedLocationIds.length > 0
-                  ? `Use ${selectedLocationIds.length}`
-                  : 'Continue'}
+                  ? t('Use {{value1}}', { value1: selectedLocationIds.length })
+                  : t('Continue')}
               </Button>
             </div>
           </form>

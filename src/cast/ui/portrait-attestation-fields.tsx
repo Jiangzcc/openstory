@@ -1,3 +1,6 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
+import { AttestationStatementText } from './attestation-statement-text';
 import { Checkbox } from '@/ui/shadcn/checkbox';
 import { Label } from '@/ui/shadcn/label';
 import { Textarea } from '@/ui/shadcn/textarea';
@@ -27,6 +30,10 @@ export function PortraitAttestationFields({
   onAuthorizationBasisChange,
   children,
 }: PortraitAttestationFieldsProps) {
+  const translateLabel = useLabelTranslation('cast');
+
+  const { t } = useTranslation('cast');
+
   return (
     <div
       className={
@@ -45,25 +52,22 @@ export function PortraitAttestationFields({
         />
         <div className="flex flex-col gap-2">
           <Label htmlFor={id} className="leading-snug">
-            {statement.label}
+            {translateLabel(statement.label)}
           </Label>
-          <p
-            id={`${id}-text`}
-            className="text-xs leading-relaxed text-muted-foreground"
-          >
-            {statement.text}
-          </p>
+          <AttestationStatementText id={`${id}-text`} text={statement.text} />
         </div>
       </div>
       {statement.requiresBasis ? (
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${id}-basis`}>Basis for authorization</Label>
+          <Label htmlFor={`${id}-basis`}>{t('Basis for authorization')}</Label>
           {/* Multi-line: a basis can be a long sentence. Ctrl/Cmd+Enter confirms. */}
           <Textarea
             id={`${id}-basis`}
             value={authorizationBasis}
             onChange={(event) => onAuthorizationBasisChange(event.target.value)}
-            placeholder="e.g. signed release on file, this is me, contract #123"
+            placeholder={t(
+              'e.g. signed release on file, this is me, contract #123'
+            )}
             autoComplete="off"
             rows={3}
             maxLength={500}

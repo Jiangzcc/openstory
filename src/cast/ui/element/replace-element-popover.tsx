@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/shadcn/popover';
 import { useReplaceSequenceElement } from '@/cast/ui/use-sequence-elements';
@@ -47,6 +49,10 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
   disabled = false,
   trigger = 'icon',
 }) => {
+  const translateEvent = useLiveTranslation('cast');
+
+  const { i18n, t } = useTranslation('cast');
+
   const [open, setOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -98,21 +104,34 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
         onSuccess: () => {
           setOpen(false);
           setPendingFile(null);
-          toast.success(`Replaced ${token}`, {
-            description:
-              affectedShotCount > 0
-                ? `${affectedShotCount} shot${affectedShotCount === 1 ? '' : 's'} will show as out of date`
-                : undefined,
-          });
+          toast.success(
+            translateEvent('Replaced {{value1}}', { value1: token }),
+            {
+              description:
+                affectedShotCount > 0
+                  ? translateEvent(
+                      '{{value1}} shot{{value2}} will show as out of date',
+                      {
+                        value1: affectedShotCount,
+                        value2: affectedShotCount === 1 ? '' : 's',
+                      }
+                    )
+                  : undefined,
+            }
+          );
         },
         onError: (err) => {
-          toast.error('Failed to replace element', {
-            description: err instanceof Error ? err.message : 'Unknown error',
+          toast.error(translateEvent('Failed to replace element'), {
+            description:
+              err instanceof Error
+                ? err.message
+                : translateEvent('Unknown error'),
           });
         },
       }
     );
   }, [
+    translateEvent,
     affectedShotCount,
     elementId,
     pendingFile,
@@ -141,10 +160,10 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
             variant="outline"
             className="flex-1"
             disabled={disabled}
-            aria-label={`Replace ${token}`}
+            aria-label={t('Replace {{value1}}', { value1: token })}
           >
             <RefreshCw className="h-4 w-4" />
-            Replace
+            {t('Replace')}
           </Button>
         ) : (
           <Button
@@ -152,8 +171,8 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
             variant="ghost"
             size="icon"
             disabled={disabled}
-            aria-label={`Replace ${token}`}
-            title="Replace"
+            aria-label={t('Replace {{value1}}', { value1: token })}
+            title={t('Replace')}
           >
             <RefreshCw className="size-4" />
           </Button>
@@ -163,18 +182,36 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">
-              Replace <span className="font-mono">{token}</span>
+              <Trans
+                ns="cast"
+                i18nKey="Replace <0>{{value1}}</0>"
+                components={[<span key="0" className="font-mono" />]}
+                values={{ value1: token }}
+              />
             </p>
             <p className="text-xs text-muted-foreground">
               {pendingFile
                 ? affectedShotCount > 0
-                  ? `This replaces the reference. ${affectedShotCount} shot${affectedShotCount === 1 ? '' : 's'}${
-                      affectedVideoCount > 0
-                        ? ` (${affectedVideoCount} with video)`
-                        : ''
-                    } that use it will show as out of date until you update them.`
-                  : `This replaces the reference image for ${token}.`
-                : `Drop a new file to replace ${token}. You'll get a chance to confirm before anything changes.`}
+                  ? t(
+                      'This replaces the reference. {{value1}} shot{{value2}}{{value3}} that use it will show as out of date until you update them.',
+                      {
+                        value1: affectedShotCount,
+                        value2: affectedShotCount === 1 ? '' : 's',
+                        value3:
+                          affectedVideoCount > 0
+                            ? t(' ({{value1}} with video)', {
+                                value1: affectedVideoCount,
+                              })
+                            : '',
+                      }
+                    )
+                  : t('This replaces the reference image for {{value1}}.', {
+                      value1: token,
+                    })
+                : t(
+                    "Drop a new file to replace {{value1}}. You'll get a chance to confirm before anything changes.",
+                    { value1: token }
+                  )}
             </p>
           </div>
 
@@ -207,7 +244,7 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
                     size="icon"
                     className="absolute top-1 right-1 size-6"
                     onClick={clearPending}
-                    aria-label="Choose a different image"
+                    aria-label={t('Choose a different image')}
                   >
                     <X className="size-3" />
                   </Button>
@@ -227,7 +264,7 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
                   onClick={clearPending}
                   disabled={isPending}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button
                   type="button"
@@ -238,7 +275,11 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
                   {isPending && (
                     <Loader2 className="mr-2 size-4 animate-spin" />
                   )}
-                  <span>{isPending ? 'Replacing…' : `Replace ${token}`}</span>
+                  <span>
+                    {isPending
+                      ? t('Replacing…')
+                      : t('Replace {{value1}}', { value1: token })}
+                  </span>
                 </Button>
               </div>
             </div>
@@ -281,7 +322,7 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
                     if (files.length > 0) {
                       handleFiles(files);
                     } else if (failedUrls.length > 0) {
-                      toastDragImportCorsError();
+                      toastDragImportCorsError(i18n);
                     }
                   }
                 );
@@ -305,7 +346,9 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
               )}
             >
               <Upload className="size-6 text-muted-foreground/50" />
-              <span className="text-sm font-medium">Drag & drop or paste</span>
+              <span className="text-sm font-medium">
+                {t('Drag & drop or paste')}
+              </span>
               <Button
                 type="button"
                 variant="outline"
@@ -315,15 +358,17 @@ export const ReplaceElementPopover: React.FC<ReplaceElementPopoverProps> = ({
                   inputRef.current?.click();
                 }}
               >
-                Browse
+                {t('Browse')}
               </Button>
             </div>
           )}
 
           {!pendingFile && (
             <p className="text-[11px] text-muted-foreground">
-              Vision will re-analyze the new image and may rename {token} if a
-              better identifier is visible.
+              {t(
+                'Vision will re-analyze the new image and may rename {{value1}} if a better identifier is visible.',
+                { value1: token }
+              )}
             </p>
           )}
         </div>

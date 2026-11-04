@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Likely cost label under a generation action (#1140).
  *
@@ -119,6 +120,8 @@ export function ActionCost({
   amountWidth = 'single',
   hideLoggedOutPrice = false,
 }: ActionCostProps) {
+  const { t } = useTranslation('billing');
+
   const { showCosts } = useShowCosts();
   const { data: session } = useAuthSession();
   const { balance } = useBillingBalance();
@@ -160,7 +163,7 @@ export function ActionCost({
           : { 'aria-label': 'Estimated cost shown after sign in' })}
       >
         {prefix}
-        <span>~$x.xx</span>
+        <span>{t('~$x.xx')}</span>
       </span>
     );
   }
@@ -210,8 +213,10 @@ export function ActionCost({
 
   const amount = microsToDisplayUsd(estimate);
   const label = exceedsBalance
-    ? `Estimated cost about ${amount}, more than your credit balance`
-    : `Estimated cost about ${amount}`;
+    ? t('Estimated cost about {{value1}}, more than your credit balance', {
+        value1: amount,
+      })
+    : t('Estimated cost about {{value1}}', { value1: amount });
 
   return (
     <span

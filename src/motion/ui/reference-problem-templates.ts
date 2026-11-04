@@ -1,0 +1,18 @@
+export const REFERENCE_PROBLEM_TEMPLATES = [
+  "{{model}} can't use {{token}} — it is {{format}}, and models take {{formats}}. Replace it with an {{formats}} file.",
+  "{{model}} can't use {{token}} — it takes no reference clips. Use {{models}}.",
+  "{{model}} can't use {{token}} — it takes no reference audio. Use {{models}}.",
+  "{{model}} can't use {{token}} — it takes no reference clips.",
+  "{{model}} can't use {{token}} — it takes no reference audio.",
+  "{{model}} can't use {{token}} — {{seconds}}s, over its {{limit}}s limit. Trim it, or use {{models}}.",
+  "{{model}} can't use {{token}} — {{seconds}}s, over its {{limit}}s limit. Trim it.",
+  "{{model}} can't use {{token}} — {{seconds}}s, under its {{limit}}s minimum. Use a longer clip, or use {{models}}.",
+  "{{model}} can't use {{token}} — {{seconds}}s, under its {{limit}}s minimum. Use a longer audio file, or use {{models}}.",
+  "{{model}} can't use {{token}} — {{seconds}}s, under its {{limit}}s minimum. Use a longer clip.",
+  "{{model}} can't use {{token}} — {{seconds}}s, under its {{limit}}s minimum. Use a longer audio file.",
+  "{{model}} can't use {{tokens}} together — {{seconds}}s of clips, over its {{limit}}s combined limit. Remove one, or trim them.",
+  "{{model}} can't use {{tokens}} together — {{seconds}}s of audio files, over its {{limit}}s combined limit. Remove one, or trim them.",
+  "{{model}} can't send {{tokens}} on its own — it needs a reference image or clip alongside. Add a cast member, location or element to this shot, or use a start frame.",
+  "{{voice}}, the voice on {{character}}'s line, was deleted — pick another voice.",
+  'Seedance can only edit a video between {{min}} and {{max}} seconds. This one is {{seconds}}s.',
+] as const;

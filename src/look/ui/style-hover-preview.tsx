@@ -1,3 +1,5 @@
+import { useTemplateTranslation } from '@/look/ui/use-template-translation';
+import { useTranslation } from 'react-i18next';
 import { AppImage } from '@/ui/shadcn/app-image';
 import { optimizedVideoUrl } from '../cloudflare-video';
 import { styleHoverVideoUrl } from './style-assets';
@@ -50,6 +52,10 @@ export const StyleHoverPreview: FC<StyleHoverPreviewProps> = ({
   sizes,
   videoWidth = 400,
 }) => {
+  const translateTemplate = useTemplateTranslation(style);
+
+  const { t } = useTranslation('look');
+
   const [imgError, setImgError] = useState(false);
   const [hovered, setHovered] = useState(false);
   // Mount the <video> only once hovered for the first time (lazy load), then
@@ -112,7 +118,9 @@ export const StyleHoverPreview: FC<StyleHoverPreviewProps> = ({
         <AppImage
           key={style.id}
           src={style.previewUrl ?? ''}
-          alt={`${style.name} style preview`}
+          alt={t('{{value1}} style preview', {
+            value1: translateTemplate(style.name),
+          })}
           className="h-full w-full object-cover"
           onError={() => setImgError(true)}
           {...(width && height

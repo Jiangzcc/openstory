@@ -16,7 +16,8 @@ import type { Style } from '@/platform/server/db/schema';
 export function filterStyles(
   styles: Style[],
   category: string,
-  searchQuery: string
+  searchQuery: string,
+  displayTexts?: (style: Style) => readonly string[]
 ): Style[] {
   let filtered = styles;
 
@@ -48,7 +49,12 @@ export function filterStyles(
         tag.toLowerCase().includes(query)
       );
 
-      return nameMatch || descMatch || categoryMatch || tagsMatch;
+      const displayMatch = displayTexts?.(style).some((text) =>
+        text.toLowerCase().includes(query)
+      );
+      return (
+        nameMatch || descMatch || categoryMatch || tagsMatch || displayMatch
+      );
     });
   }
 

@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import type { SceneWithScript } from './use-scenes';
 import { useUpdateScene } from './use-scene-structure';
@@ -23,6 +25,9 @@ export function SceneSettingForm({
   scene: SceneWithScript;
   sequenceId: string;
 }) {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const update = useUpdateScene(sequenceId);
   return (
     <form
@@ -32,7 +37,7 @@ export function SceneSettingForm({
         const fields = new FormData(event.currentTarget);
         const parsed = settingSchema.safeParse(Object.fromEntries(fields));
         if (!parsed.success) {
-          toast.error('Could not save scene setting', {
+          toast.error(translateEvent('Could not save scene setting'), {
             description: parsed.error.issues[0]?.message,
           });
           return;
@@ -48,9 +53,10 @@ export function SceneSettingForm({
             },
           },
           {
-            onSuccess: () => toast.success('Scene setting saved'),
+            onSuccess: () =>
+              toast.success(translateEvent('Scene setting saved')),
             onError: (error) =>
-              toast.error('Could not save scene setting', {
+              toast.error(translateEvent('Could not save scene setting'), {
                 description: errorMessage(error),
               }),
           }
@@ -58,41 +64,42 @@ export function SceneSettingForm({
       }}
     >
       <label className="text-xs" htmlFor={`${scene.id}-timeOfDay`}>
-        Time of day
+        {t('Time of day')}
         <Input
           id={`${scene.id}-timeOfDay`}
           name="timeOfDay"
           defaultValue={scene.timeOfDay ?? ''}
           maxLength={2000}
-          placeholder="Day, night, dawn…"
+          placeholder={t('Day, night, dawn…')}
         />
       </label>
       <label className="text-xs" htmlFor={`${scene.id}-lightingSetup`}>
-        Lighting
+        {t('Lighting')}
         <Input
           id={`${scene.id}-lightingSetup`}
           name="lightingSetup"
           defaultValue={scene.continuity?.lightingSetup ?? ''}
           maxLength={2000}
-          placeholder="Defaults from time of day"
+          placeholder={t('Defaults from time of day')}
         />
       </label>
       <label className="text-xs" htmlFor={`${scene.id}-colorPalette`}>
-        Palette override
+        {t('Palette override')}
         <Input
           id={`${scene.id}-colorPalette`}
           name="colorPalette"
           defaultValue={scene.continuity?.colorPalette ?? ''}
           maxLength={2000}
-          placeholder="Use sequence style"
+          placeholder={t('Use sequence style')}
         />
       </label>
       <p className="text-xs text-muted-foreground sm:col-span-2">
-        Art style, grading and the default palette are set in the sequence
-        style. Use a palette override for a flashback or dream.
+        {t(
+          'Art style, grading and the default palette are set in the sequence style. Use a palette override for a flashback or dream.'
+        )}
       </p>
       <Button type="submit" size="sm" disabled={update.isPending}>
-        {update.isPending ? 'Saving…' : 'Save setting'}
+        {update.isPending ? t('Saving…') : t('Save setting')}
       </Button>
     </form>
   );

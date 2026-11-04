@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import {
   addModelToSequenceFn,
   archiveSequenceFn,
@@ -234,6 +235,8 @@ export function useSequence(
 
 // Hook for creating sequence (supports multi-model selection)
 export function useCreateSequence() {
+  const translateEvent = useLiveTranslation('sequences');
+
   const queryClient = useQueryClient();
 
   return useMutation<
@@ -277,7 +280,9 @@ export function useCreateSequence() {
     // credits is the global mutation handler's job (low-balance toast).
     onError: (error) => {
       if (isInsufficientCreditsError(error)) return;
-      toast.error(error.message || 'Generation failed to start.');
+      toast.error(
+        error.message || translateEvent('Generation failed to start.')
+      );
     },
   });
 }
@@ -388,6 +393,8 @@ export type SequenceModels = Partial<
  * and the continue quote are re-asked once the pick has saved.
  */
 export function useSetSequenceModels(sequenceId: string) {
+  const translateEvent = useLiveTranslation('sequences');
+
   const queryClient = useQueryClient();
   const posthog = usePostHog();
 
@@ -408,7 +415,7 @@ export function useSetSequenceModels(sequenceId: string) {
       if (ctx?.previous) {
         queryClient.setQueryData(sequenceKeys.detail(sequenceId), ctx.previous);
       }
-      toast.error('Could not save the model.');
+      toast.error(translateEvent('Could not save the model.'));
       posthog.captureException(error, { sequence_id: sequenceId });
     },
     onSuccess: (updated) => {
@@ -434,6 +441,8 @@ export function useSetSequenceModels(sequenceId: string) {
  * gain and the next export react instantly; rolls back if the write fails.
  */
 export function useSetSequenceMusic(sequenceId: string) {
+  const translateEvent = useLiveTranslation('sequences');
+
   const queryClient = useQueryClient();
   const posthog = usePostHog();
 
@@ -460,7 +469,7 @@ export function useSetSequenceMusic(sequenceId: string) {
       if (ctx?.previous) {
         queryClient.setQueryData(sequenceKeys.detail(sequenceId), ctx.previous);
       }
-      toast.error('Could not save the music setting.');
+      toast.error(translateEvent('Could not save the music setting.'));
       posthog.captureException(error, { sequence_id: sequenceId });
     },
     onSuccess: (updated) => {

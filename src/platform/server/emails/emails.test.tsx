@@ -5,7 +5,7 @@ import { SequenceReadyEmail } from '@/sequences/server/sequence-ready-email';
 import { renderEmail } from './render-email';
 
 describe('renderEmail(OtpEmail)', () => {
-  const email = <OtpEmail appName="OpenStory" otp="482913" />;
+  const email = <OtpEmail appName="OpenStory" otp="482913" locale="en" />;
 
   it('renders HTML containing the code and expiry notice', async () => {
     const { html } = await renderEmail(email);

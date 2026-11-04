@@ -1,3 +1,7 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { usePageContext } from '@/assistant/ui/use-page-context';
 /**
@@ -72,7 +76,14 @@ function formatBrand(brand: string): string {
   return brand.charAt(0).toUpperCase() + brand.slice(1);
 }
 
+const AMOUNT_ERROR = 'Enter an amount between ${{value1}} and ${{value2}}';
+
 export function AddCreditsDialog() {
+  const translateEvent = useLiveTranslation('billing');
+  const { formatNumber } = useLocaleFormatting();
+  const translateLabel = useLabelTranslation('billing');
+  const { t } = useTranslation('billing');
+
   const open = useAddCreditsDialogOpen();
   const { data: session } = useAuthSession();
   const queryClient = useQueryClient();
@@ -83,6 +94,15 @@ export function AddCreditsDialog() {
   const [amount, setAmount] = useState(DEFAULT_TOPUP_AMOUNT);
   const [selectedPm, setSelectedPm] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const errorMessage =
+    error === AMOUNT_ERROR
+      ? t(AMOUNT_ERROR, {
+          value1: MIN_TOPUP_AMOUNT_USD,
+          value2: formatNumber(MAX_TOPUP_AMOUNT_USD),
+        })
+      : error
+        ? translateLabel(error)
+        : null;
   /**
    * Idempotency key for the purchase. Stable across retries of the same
    * attempt (React Query resends the same variables), so a timed-out request
@@ -151,7 +171,9 @@ export function AddCreditsDialog() {
       invalidateBilling();
       triggerBalanceFlash();
       toast.success(
-        `Added $${input.amountUsd.toFixed(2)} to your credit balance`
+        translateEvent('Added ${{value1}} to your credit balance', {
+          value1: input.amountUsd.toFixed(2),
+        })
       );
       onOpenChange(false);
       // This dialog often opens on top of the gate; with credits now bought,
@@ -187,9 +209,7 @@ export function AddCreditsDialog() {
 
   const handleContinue = () => {
     if (!isValidAmount) {
-      setError(
-        `Enter an amount between $${MIN_TOPUP_AMOUNT_USD} and $${MAX_TOPUP_AMOUNT_USD.toLocaleString()}`
-      );
+      setError(AMOUNT_ERROR);
       return;
     }
     setError(null);
@@ -221,14 +241,14 @@ export function AddCreditsDialog() {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Add to credit balance</DialogTitle>
+          <DialogTitle>{t('Add to credit balance')}</DialogTitle>
           <DialogDescription className="sr-only">
-            Buy credits with a saved card or at checkout.
+            {t('Buy credits with a saved card or at checkout.')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="add-credits-amount">Amount to add</Label>
+          <Label htmlFor="add-credits-amount">{t('Amount to add')}</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               $
@@ -251,28 +271,36 @@ export function AddCreditsDialog() {
           </div>
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>
-              Enter an amount between ${MIN_TOPUP_AMOUNT_USD} and $
-              {MAX_TOPUP_AMOUNT_USD.toLocaleString()}
+              {t('Enter an amount between ${{value1}} and ${{value2}}', {
+                value1: MIN_TOPUP_AMOUNT_USD,
+                value2: formatNumber(MAX_TOPUP_AMOUNT_USD),
+              })}
             </span>
             <Link
               to="/pricing"
               onClick={() => onOpenChange(false)}
               className="inline-flex shrink-0 items-center gap-1 underline-offset-2 hover:text-foreground hover:underline"
             >
-              Pricing
+              {t('Pricing')}
               <ExternalLink className="size-3" />
             </Link>
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="add-credits-payment-method">Payment method</Label>
+          <Label htmlFor="add-credits-payment-method">
+            {t('Payment method')}
+          </Label>
           {pmError ? (
             // Never render a failed fetch as "you have no saved cards" — that
             // silently pushes a returning customer back through Checkout.
             <p role="alert" className="text-xs text-destructive">
-              Couldn&apos;t load your saved cards
-              {pmError instanceof Error && <span>: {pmError.message}</span>}
+              {
+                <>
+                  {t("Couldn't load your saved cards")}
+                  {pmError instanceof Error && <span>: {pmError.message}</span>}
+                </>
+              }
             </p>
           ) : pmLoading ? (
             <Skeleton className="h-9 w-full" />
@@ -286,7 +314,7 @@ export function AddCreditsDialog() {
                 })),
                 {
                   value: NEW_CARD,
-                  label: 'Pay at checkout',
+                  label: t('Pay at checkout'),
                 },
               ]}
               onValueChange={(value) => {
@@ -307,7 +335,7 @@ export function AddCreditsDialog() {
                 ))}
                 <SelectItem value={NEW_CARD}>
                   <Plus className="size-4 text-muted-foreground" />
-                  Pay at checkout
+                  {t('Pay at checkout')}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -322,21 +350,26 @@ export function AddCreditsDialog() {
               className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <Plus className="size-3" />
-              Add payment method
+              {t('Add payment method')}
             </button>
           </div>
         </div>
 
         {breakdown && (
           <p className="text-xs text-muted-foreground tabular-nums">
-            You&apos;ll be charged ${breakdown.totalUsd.toFixed(2)} — includes
-            the {formatPlatformFeePercent()} platform fee.
+            {t(
+              "You'll be charged ${{value1}} — includes the {{value2}} platform fee.",
+              {
+                value1: breakdown.totalUsd.toFixed(2),
+                value2: formatPlatformFeePercent(),
+              }
+            )}
           </p>
         )}
 
         {error && (
           <p role="alert" className="text-xs text-destructive">
-            {error}
+            {errorMessage}
           </p>
         )}
 
@@ -354,7 +387,7 @@ export function AddCreditsDialog() {
             onClick={() => onOpenChange(false)}
             disabled={isPending}
           >
-            Cancel
+            {t('Cancel')}
           </Button>
           {/* pmLoading gates submit: until the cards land, effectivePm is
               NEW_CARD, so an early click would bounce a saved-card customer
@@ -363,7 +396,7 @@ export function AddCreditsDialog() {
             onClick={handleContinue}
             disabled={!isValidAmount || isPending || pmLoading}
           >
-            {isPending ? 'Processing…' : 'Continue'}
+            {isPending ? t('Processing…') : t('Continue')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { useReplaceFrameImage, useReplaceShotVideo } from './use-media-upload';
 import type { AspectRatio } from '@/models/aspect-ratios';
 import { errorMessage } from '@/platform/errors';
@@ -24,6 +26,9 @@ export const ShotMediaDropZone: React.FC<ShotMediaDropZoneProps> = ({
   aspectRatio,
   children,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const [dragActive, setDragActive] = useState(false);
   const replaceImage = useReplaceFrameImage();
   const replaceVideo = useReplaceShotVideo();
@@ -36,15 +41,18 @@ export const ShotMediaDropZone: React.FC<ShotMediaDropZoneProps> = ({
         {
           onSuccess: (result) =>
             toast.success(
-              'Image replaced',
+              translateEvent('Image replaced'),
               result.cropped
                 ? {
-                    description: `Cropped to ${aspectRatio} so motion generation matches the sequence.`,
+                    description: translateEvent(
+                      'Cropped to {{value1}} so motion generation matches the sequence.',
+                      { value1: aspectRatio }
+                    ),
                   }
                 : undefined
             ),
           onError: (error) =>
-            toast.error('Image upload failed', {
+            toast.error(translateEvent('Image upload failed'), {
               description: errorMessage(error),
             }),
         }
@@ -55,16 +63,16 @@ export const ShotMediaDropZone: React.FC<ShotMediaDropZoneProps> = ({
       replaceVideo.mutate(
         { file, sequenceId, shotId },
         {
-          onSuccess: () => toast.success('Video replaced'),
+          onSuccess: () => toast.success(translateEvent('Video replaced')),
           onError: (error) =>
-            toast.error('Video upload failed', {
+            toast.error(translateEvent('Video upload failed'), {
               description: errorMessage(error),
             }),
         }
       );
       return;
     }
-    toast.error('Drop an image or video file');
+    toast.error(translateEvent('Drop an image or video file'));
   };
 
   return (
@@ -103,7 +111,9 @@ export const ShotMediaDropZone: React.FC<ShotMediaDropZoneProps> = ({
             <Upload className="h-6 w-6 text-muted-foreground" />
           )}
           <p className="text-sm text-muted-foreground">
-            {uploading ? 'Uploading…' : 'Drop to replace this shot’s media'}
+            {uploading
+              ? t('Uploading…')
+              : t('Drop to replace this shot’s media')}
           </p>
         </div>
       )}
@@ -111,7 +121,7 @@ export const ShotMediaDropZone: React.FC<ShotMediaDropZoneProps> = ({
           while it is already in the DOM, so the visual overlay above cannot
           double as one. */}
       <span aria-live="polite" className="sr-only">
-        {uploading ? 'Uploading media…' : 'Ready to upload media'}
+        {uploading ? t('Uploading media…') : t('Ready to upload media')}
       </span>
     </div>
   );

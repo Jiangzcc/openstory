@@ -2,8 +2,18 @@ import { CONTENT_REJECTION_USER_HINT } from '@/models/content-rejection';
 import { CREDITS_SHORT_TITLE } from '@/billing/credits-short';
 import type { FailureSummary } from '@/sequences/failure-analysis';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
+import { I18nextProvider } from 'react-i18next';
+import { createApplicationI18n } from '@/ui/i18n/runtime';
+import { describe, expect, it, vi } from 'vitest';
 import { FailureSummaryBanner } from './failure-summary-banner';
+
+// Mock routing so this regression checks the displayed label without navigation.
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children }: { children: ReactNode }) => (
+    <a href="#shot">{children}</a>
+  ),
+}));
 
 const contentSummary: FailureSummary = {
   requiresFullRetry: true,
@@ -38,6 +48,45 @@ const generationFailed: FailureSummary = {
 };
 
 describe('FailureSummaryBanner', () => {
+  it.each([
+    ['zh-CN', 'Scene 2', '场景 2 · 镜头 3'],
+    ['en', 'Scene 2', 'Scene 2 · Shot 3'],
+    ['zh-CN', 'Night of Summer', '场景 2（Night of Summer） · 镜头 3'],
+    ['zh-CN', '场景 2', '场景 2（场景 2） · 镜头 3'],
+  ] as const)(
+    'renders %s shot labels for %s',
+    (locale, sceneTitle, expected) => {
+      const summary: FailureSummary = {
+        ...generationFailed,
+        groups: [
+          {
+            category: 'image',
+            label: 'Images',
+            shots: [
+              {
+                shotId: 'mock-shot',
+                sceneNumber: 2,
+                sceneTitle,
+                shotNumber: 3,
+                error: 'Mock generation failure',
+              },
+            ],
+          },
+        ],
+      };
+      const html = renderToStaticMarkup(
+        <I18nextProvider i18n={createApplicationI18n(locale)}>
+          <FailureSummaryBanner
+            summary={summary}
+            onRetry={() => undefined}
+            isRetrying={false}
+          />
+        </I18nextProvider>
+      );
+      expect(html).toContain(expected);
+    }
+  );
+
   it('SSRs the content-checker title instead of Generation failed', () => {
     const html = renderToStaticMarkup(
       <FailureSummaryBanner

@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Scene Cast Tab
  * Displays characters appearing in the current shot with a cinematic/editorial design
@@ -75,13 +77,18 @@ const SceneLookPicker: React.FC<{
   character: CharacterWithSheet;
   wornLookId: string;
 }> = ({ sequenceId, scene, character, wornLookId }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const update = useUpdateScene(sequenceId);
   const looks = character.looks.filter(
     (look) => !look.deletedAt || look.id === wornLookId
   );
   if (looks.length < 2) return null;
   const label = (look: (typeof looks)[number]) =>
-    look.isDefault ? `${look.name} (default look)` : look.name;
+    look.isDefault
+      ? t('{{value1}} (default look)', { value1: look.name })
+      : look.name;
   return (
     <Select
       value={wornLookId}
@@ -103,7 +110,7 @@ const SceneLookPicker: React.FC<{
           },
           {
             onError: (error) =>
-              toast.error('Could not change the look', {
+              toast.error(translateEvent('Could not change the look'), {
                 description: errorMessage(error),
               }),
           }
@@ -112,7 +119,9 @@ const SceneLookPicker: React.FC<{
     >
       <SelectTrigger
         size="sm"
-        aria-label={`Look ${character.name} wears in this scene`}
+        aria-label={t('Look {{value1}} wears in this scene', {
+          value1: character.name,
+        })}
       >
         <SelectValue />
       </SelectTrigger>
@@ -133,6 +142,8 @@ const CastCard: React.FC<CastCardProps> = ({
   onDelete,
   scene,
 }) => {
+  const { t } = useTranslation('shots');
+
   // In a scene, the card shows the character as that scene dresses it.
   const [character = owner] = dressForScene(
     [owner],
@@ -183,7 +194,7 @@ const CastCard: React.FC<CastCardProps> = ({
               {character.name}
             </h3>
             {character.voiceOnly && (
-              <Badge variant="secondary">Voice only</Badge>
+              <Badge variant="secondary">{t('Voice only')}</Badge>
             )}
             {(character.age || character.gender) && (
               <p className="mt-1 truncate text-xs text-white/70">
@@ -213,7 +224,9 @@ const CastCard: React.FC<CastCardProps> = ({
         variant="ghost"
         size="icon"
         className="absolute right-1 top-1 z-10 h-7 w-7 bg-black/50 text-white hover:bg-black/70 hover:text-white"
-        aria-label={`Remove ${character.name} from sequence`}
+        aria-label={t('Remove {{value1}} from sequence', {
+          value1: character.name,
+        })}
         onClick={() => onDelete(character)}
       >
         <Trash2 className="h-3.5 w-3.5" />
@@ -247,6 +260,9 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
   shotIds,
   scene,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const { data: characters, isLoading } = useSequenceCharacters(sequenceId);
   const { data: facetMaps } = useSceneFacetMaps(sequenceId);
   const queryClient = useQueryClient();
@@ -261,24 +277,27 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
       {
         onSuccess: () => {
           setPendingDelete(null);
-          toast(`Removed ${character.name}`, {
-            duration: 60_000,
-            action: {
-              label: 'Undo',
-              onClick: () =>
-                void restoreSequenceCharacter(queryClient, {
-                  sequenceId,
-                  characterId: character.id,
-                }).catch((error: Error) =>
-                  toast.error('Failed to restore character', {
-                    description: errorMessage(error),
-                  })
-                ),
-            },
-          });
+          toast(
+            translateEvent('Removed {{value1}}', { value1: character.name }),
+            {
+              duration: 60_000,
+              action: {
+                label: translateEvent('Undo'),
+                onClick: () =>
+                  void restoreSequenceCharacter(queryClient, {
+                    sequenceId,
+                    characterId: character.id,
+                  }).catch((error: Error) =>
+                    toast.error(translateEvent('Failed to restore character'), {
+                      description: errorMessage(error),
+                    })
+                  ),
+              },
+            }
+          );
         },
         onError: (error) =>
-          toast.error('Failed to remove character', {
+          toast.error(translateEvent('Failed to remove character'), {
             description: errorMessage(error),
           }),
       }
@@ -318,8 +337,8 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
         </div>
         <p className="text-sm text-muted-foreground">
           {canAdd
-            ? 'No cast yet'
-            : 'No cast in this selection — clear the selection to add one'}
+            ? t('No cast yet')
+            : t('No cast in this selection — clear the selection to add one')}
         </p>
         {canAdd && (
           <AddCharacterDialog
@@ -335,11 +354,11 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-          <span>{canAdd ? 'All Cast' : 'Cast'}</span>
+          <span>{canAdd ? t('All Cast') : t('Cast')}</span>
           <span className="text-muted-foreground/50">·</span>
           <span>
             {scopedCast.length}{' '}
-            {scopedCast.length === 1 ? 'character' : 'characters'}
+            {scopedCast.length === 1 ? t('character') : t('characters')}
           </span>
         </div>
         {canAdd && (
@@ -371,15 +390,18 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remove {pendingDelete?.name} from this sequence?
+              {t('Remove {{value1}} from this sequence?', {
+                value1: pendingDelete?.name,
+              })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              The character is hidden from the cast and prompt context. You can
-              undo from the toast right after removing.
+              {t(
+                'The character is hidden from the cast and prompt context. You can undo from the toast right after removing.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               disabled={softDelete.isPending}
               // Radix's Action closes the dialog on click; hold it open so the
@@ -390,7 +412,7 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
                 if (pendingDelete) handleConfirmDelete(pendingDelete);
               }}
             >
-              {softDelete.isPending ? 'Removing…' : 'Remove'}
+              {softDelete.isPending ? t('Removing…') : t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

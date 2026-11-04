@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * The Sign in control from the sequences empty state.
  *
@@ -13,13 +14,15 @@ import { useUser } from '@/platform/ui/use-user';
 import { Button } from '@/ui/shadcn/button';
 
 export function SignInButton() {
+  const { t } = useTranslation('platform');
+
   const { data: user, isLoading } = useUser();
   const { openLogin } = useAuthGate();
   if (isLoading || user) return null;
 
   return (
     <Button type="button" className="w-fit" onClick={openLogin}>
-      Sign in
+      {t('Sign in')}
     </Button>
   );
 }

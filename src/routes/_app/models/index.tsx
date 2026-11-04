@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { PageContainer } from '@/ui/layout/page-container';
 import { ModelCatalogView } from '@/models/ui/model-catalog-view';
 import { PageIntro } from '@/ui/typography/page-intro';
@@ -19,17 +20,21 @@ export const Route = createFileRoute('/_app/models/')({
   },
   validateSearch: searchParamsSchema,
   component: ModelsPage,
-  staticData: { breadcrumb: 'Models' },
+  staticData: { breadcrumb: { label: 'Models', translationKey: 'Models' } },
 });
 
 function ModelsPage() {
+  const { t } = useTranslation('pages');
+
   const { activity, q } = Route.useSearch();
   const navigate = useNavigate();
 
   return (
     <div className="h-full overflow-auto">
-      <PageIntro title="Models" maxWidth="wide">
-        The latest generation models — sometimes before they're announced.
+      <PageIntro title={t('Models')} maxWidth="wide">
+        {t(
+          "The latest generation models — sometimes before they're announced."
+        )}
       </PageIntro>
       <PageContainer maxWidth="wide" padding="none" className="pb-8">
         <ModelCatalogView

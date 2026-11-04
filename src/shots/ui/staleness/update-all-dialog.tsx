@@ -1,3 +1,6 @@
+import type { TFunction } from 'i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,25 +50,51 @@ type UpdateAllDialogProps = {
 };
 
 /** "Changed: Script, Character "Woman"" — deduped across shots, or null. */
-export const describeCauses = (staleShots: ShotStaleness[]): string | null => {
+export const describeCauses = (
+  staleShots: ShotStaleness[],
+  translate?: TFunction<'shots'>
+): string | null => {
   const causes = [...new Set(staleShots.flatMap((s) => s.causes))];
-  return causes.length > 0 ? `Changed: ${causes.join(', ')}` : null;
+  if (causes.length === 0) return null;
+  return (
+    translate?.('Changed: {{value1}}', { value1: causes.join(', ') }) ??
+    `Changed: ${causes.join(', ')}`
+  );
 };
 
 /** "shot 2" / "shots 2, 3 & 4" / "this shot" at shot scope. */
 export const shotsLabel = (
   shotIds: string[],
   numberById: ReadonlyMap<string, number> | undefined,
-  singleShotScope: boolean
+  singleShotScope: boolean,
+  translate?: TFunction<'shots'>
 ): string => {
-  if (singleShotScope) return 'this shot';
+  if (singleShotScope)
+    return translate?.('this shot', { ns: 'shots' }) ?? 'this shot';
   const numbers = shotIds
     .map((id) => numberById?.get(id))
     .filter((n): n is number => n != null)
     .sort((a, b) => a - b);
-  if (numbers.length === 0) return `${shotIds.length} shots`;
-  if (numbers.length === 1) return `shot ${numbers[0]}`;
-  return `shots ${numbers.slice(0, -1).join(', ')} & ${numbers[numbers.length - 1]}`;
+  if (numbers.length === 0)
+    return (
+      translate?.('{{value1}} shots', {
+        ns: 'shots',
+        value1: shotIds.length,
+      }) ?? `${shotIds.length} shots`
+    );
+  if (numbers.length === 1)
+    return (
+      translate?.('shot {{value1}}', { ns: 'shots', value1: numbers[0] }) ??
+      `shot ${numbers[0]}`
+    );
+  return (
+    translate?.('shots {{value1}} & {{value2}}', {
+      ns: 'shots',
+      value1: numbers.slice(0, -1).join(', '),
+      value2: numbers[numbers.length - 1],
+    }) ??
+    `shots ${numbers.slice(0, -1).join(', ')} & ${numbers[numbers.length - 1]}`
+  );
 };
 
 /**
@@ -98,36 +127,63 @@ export const levelsFromStaleShots = (
 export const previewLevels = (
   preview: UpdateStalePreview,
   numberById: ReadonlyMap<string, number> | undefined,
-  singleShotScope: boolean
+  singleShotScope: boolean,
+  translate?: TFunction<'shots'>
 ): Array<{ depth: UpdateStaleDepth; label: string }> => {
-  const label = (ids: string[]) => shotsLabel(ids, numberById, singleShotScope);
+  const label = (ids: string[]) =>
+    shotsLabel(ids, numberById, singleShotScope, translate);
   const levels: Array<{ depth: UpdateStaleDepth; label: string }> = [];
   const prompts: string[] = [];
   if (preview.visualPromptShotIds.length > 0)
-    prompts.push(`Image prompts for ${label(preview.visualPromptShotIds)}`);
+    prompts.push(
+      translate?.('Image prompts for {{value1}}', {
+        ns: 'shots',
+        value1: label(preview.visualPromptShotIds),
+      }) ?? `Image prompts for ${label(preview.visualPromptShotIds)}`
+    );
   if (preview.motionPromptShotIds.length > 0)
-    prompts.push(`Motion prompts for ${label(preview.motionPromptShotIds)}`);
+    prompts.push(
+      translate?.('Motion prompts for {{value1}}', {
+        ns: 'shots',
+        value1: label(preview.motionPromptShotIds),
+      }) ?? `Motion prompts for ${label(preview.motionPromptShotIds)}`
+    );
   if (prompts.length > 0)
     levels.push({ depth: 'prompts', label: prompts.join(' · ') });
   if (preview.imageShotIds.length > 0)
     levels.push({
       depth: 'images',
-      label: `Images for ${label(preview.imageShotIds)}`,
+      label:
+        translate?.('Images for {{value1}}', {
+          ns: 'shots',
+          value1: label(preview.imageShotIds),
+        }) ?? `Images for ${label(preview.imageShotIds)}`,
     });
   if (preview.dialogueShotIds.length > 0)
     levels.push({
       depth: 'dialogue',
-      label: `Dialogue for ${label(preview.dialogueShotIds)}`,
+      label:
+        translate?.('Dialogue for {{value1}}', {
+          ns: 'shots',
+          value1: label(preview.dialogueShotIds),
+        }) ?? `Dialogue for ${label(preview.dialogueShotIds)}`,
     });
   if (preview.videoShotIds.length > 0)
     levels.push({
       depth: 'video',
-      label: `Videos for ${label(preview.videoShotIds)}`,
+      label:
+        translate?.('Videos for {{value1}}', {
+          ns: 'shots',
+          value1: label(preview.videoShotIds),
+        }) ?? `Videos for ${label(preview.videoShotIds)}`,
     });
   if (preview.musicTrack || preview.musicPrompt)
     levels.push({
       depth: 'music',
-      label: preview.musicTrack ? 'Music prompt and track' : 'Music prompt',
+      label: preview.musicTrack
+        ? (translate?.('Music prompt and track', { ns: 'shots' }) ??
+          'Music prompt and track')
+        : (translate?.('Music prompt', { ns: 'shots' }) ?? 'Music prompt'),
     });
   return levels;
 };
@@ -154,6 +210,9 @@ export const UpdateAllDialog: React.FC<UpdateAllDialogProps> = ({
   scope,
   shotNumberById,
 }) => {
+  const { t } = useTranslation('shots');
+  const translateLabel = useLabelTranslation('shots');
+
   // 'images' is the middle-ground default — the closest match to what
   // "Update all" did before depths existed.
   const [depth, setDepth] = useState<UpdateStaleDepth | null>('dialogue');
@@ -178,7 +237,7 @@ export const UpdateAllDialog: React.FC<UpdateAllDialogProps> = ({
 
   const clientLevels = levelsFromStaleShots(staleShots);
   const levels = preview
-    ? previewLevels(preview, shotNumberById, singleShotScope)
+    ? previewLevels(preview, shotNumberById, singleShotScope, t)
     : clientLevels;
   // Snap the default to a level that exists: the deepest at or above it.
   const available =
@@ -211,26 +270,27 @@ export const UpdateAllDialog: React.FC<UpdateAllDialogProps> = ({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Update out-of-date items</AlertDialogTitle>
+          <AlertDialogTitle>{t('Update out-of-date items')}</AlertDialogTitle>
           <AlertDialogDescription className="flex flex-col gap-1">
             <span className="text-foreground">
-              {describeCauses(staleShots) ??
-                'Inputs changed since these were generated.'}
+              {describeCauses(staleShots, t) ??
+                t('Inputs changed since these were generated.')}
             </span>
-            <span>Regenerate:</span>
+            <span>{t('Regenerate:')}</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <fieldset className="flex flex-col gap-2">
-          <legend className="sr-only">What to regenerate</legend>
+          <legend className="sr-only">{t('What to regenerate')}</legend>
           {isError && (
             <span className="text-xs text-muted-foreground">
-              Couldn’t compute the exact plan — showing out-of-date prompts and
-              images.
+              {t(
+                'Couldn’t compute the exact plan — showing out-of-date prompts and images.'
+              )}
             </span>
           )}
           {levels.length === 0 ? (
             <span className="text-xs text-muted-foreground">
-              {isPending ? '…' : 'Nothing to regenerate.'}
+              {isPending ? '…' : t('Nothing to regenerate.')}
             </span>
           ) : (
             levels.map((level, index) => {
@@ -263,7 +323,9 @@ export const UpdateAllDialog: React.FC<UpdateAllDialogProps> = ({
                     onChange={(e) =>
                       toggle(level.depth, e.currentTarget.checked)
                     }
-                    aria-label={UPDATE_STALE_DEPTH_LABELS[level.depth]}
+                    aria-label={translateLabel(
+                      UPDATE_STALE_DEPTH_LABELS[level.depth]
+                    )}
                     className="mt-0.5 accent-primary"
                   />
                   <span className="flex min-w-0 grow items-baseline justify-between gap-2">
@@ -271,7 +333,7 @@ export const UpdateAllDialog: React.FC<UpdateAllDialogProps> = ({
                       {index > 0 && (
                         <span className="text-muted-foreground">+ </span>
                       )}
-                      {level.label}
+                      {translateLabel(level.label)}
                     </span>
                     {cost && (
                       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -285,14 +347,14 @@ export const UpdateAllDialog: React.FC<UpdateAllDialogProps> = ({
           )}
         </fieldset>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
           <AlertDialogAction
             disabled={selectedDepth == null}
             onClick={() => selectedDepth && onConfirm(selectedDepth)}
           >
             {showCosts && selectedDepth != null && total != null
-              ? `Update · ~${microsToDisplayUsd(total)}`
-              : 'Update'}
+              ? t('Update · ~{{value1}}', { value1: microsToDisplayUsd(total) })
+              : t('Update')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import type { Style } from '@/platform/server/db/schema';
 import { AppImage } from '@/ui/shadcn/app-image';
@@ -17,6 +18,8 @@ export const StyleSelectorButton: FC<StyleSelectorButtonProps> = ({
   onClick,
   size = 'default',
 }) => {
+  const { t } = useTranslation('look');
+
   const sizeClasses = {
     sm: 'h-12 px-3 text-sm',
     default: 'h-16 px-4 text-base',
@@ -100,7 +103,7 @@ export const StyleSelectorButton: FC<StyleSelectorButtonProps> = ({
               )}
             </>
           ) : (
-            <span>Select Style</span>
+            <span>{t('Select Style')}</span>
           )}
         </div>
 

@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useAuthGate } from '@/platform/ui/auth/auth-gate-provider';
 import { getAllAdminStudioAssetsFn } from '@/platform/admin-support.fn';
 import {
@@ -165,13 +166,15 @@ export function useToggleStudioFavorite() {
 
 /** Render a finished Ark draft at 1080p (#1756); lands as a new tile. */
 export function useRenderStudioAssetAtQuality() {
+  const translateEvent = useLiveTranslation('studio');
+
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => renderStudioAssetAtQualityFn({ data: { id } }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: studioAssetKeys.all });
-      toast.success('Rendering final');
+      toast.success(translateEvent('Rendering final'));
     },
     onError: (error) => {
       if (isInsufficientCreditsError(error)) return;
@@ -182,6 +185,8 @@ export function useRenderStudioAssetAtQuality() {
 
 /** Rewrite a finished clip from a prompt (#1925). */
 export function useEditStudioAsset() {
+  const translateEvent = useLiveTranslation('studio');
+
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -189,7 +194,7 @@ export function useEditStudioAsset() {
       editStudioAssetFn({ data: input }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: studioAssetKeys.all });
-      toast.success('Editing video');
+      toast.success(translateEvent('Editing video'));
     },
     onError: (error) => {
       if (isInsufficientCreditsError(error)) return;
@@ -207,13 +212,15 @@ export function useStudioEditHistory(id: string) {
 }
 
 export function useDeleteStudioAsset() {
+  const translateEvent = useLiveTranslation('studio');
+
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => deleteStudioAssetFn({ data: { id } }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: studioAssetKeys.all });
-      toast.success('Deleted');
+      toast.success(translateEvent('Deleted'));
     },
     onError: (error) => {
       toast.error(error.message);

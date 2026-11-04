@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Renders one `generated_assets` run (#458): a skeleton while the workflow is
  * in flight, an error alert on failure, and the output media — image, video,
@@ -20,11 +21,13 @@ const OutputMedia: FC<{ output: GeneratedAssetOutput; index: number }> = ({
   output,
   index,
 }) => {
+  const { t } = useTranslation('interface');
+
   if (output.contentType.startsWith('image/')) {
     return (
       <AppImage
         src={output.url}
-        alt={`Generated image ${index + 1}`}
+        alt={t('Generated image {{value1}}', { value1: index + 1 })}
         width={768}
         height={768}
         className="max-h-[60vh] w-auto max-w-full rounded-lg border bg-muted object-contain"
@@ -58,7 +61,7 @@ const OutputMedia: FC<{ output: GeneratedAssetOutput; index: number }> = ({
       className="flex w-fit items-center gap-2 text-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <FileIcon aria-hidden="true" className="size-4" />
-      Download output {index + 1} ({output.contentType})
+      {t('Download output')} {index + 1} ({output.contentType})
     </a>
   );
 };
@@ -68,13 +71,15 @@ const OutputMedia: FC<{ output: GeneratedAssetOutput; index: number }> = ({
  * each fresh row in; this component is purely presentational.
  */
 export const AssetResult: FC<{ asset: GeneratedAsset }> = ({ asset }) => {
+  const { t } = useTranslation('interface');
+
   if (asset.status === 'failed') {
     return (
       <Alert variant="destructive">
         <AlertCircle aria-hidden="true" />
-        <AlertTitle>Generation failed</AlertTitle>
+        <AlertTitle>{t('Generation failed')}</AlertTitle>
         <AlertDescription>
-          {asset.error ?? 'The model run failed without an error message.'}
+          {asset.error ?? t('The model run failed without an error message.')}
         </AlertDescription>
       </Alert>
     );
@@ -85,7 +90,7 @@ export const AssetResult: FC<{ asset: GeneratedAsset }> = ({ asset }) => {
       <div className="flex flex-col gap-2">
         <Skeleton className="aspect-video w-full max-w-md rounded-lg" />
         <p aria-live="polite" className="text-sm text-muted-foreground">
-          {asset.status === 'queued' ? 'Queued…' : 'Generating…'}
+          {asset.status === 'queued' ? t('Queued…') : t('Generating…')}
         </p>
       </div>
     );
@@ -95,7 +100,7 @@ export const AssetResult: FC<{ asset: GeneratedAsset }> = ({ asset }) => {
   if (outputs.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        The run completed but produced no output files.
+        {t('The run completed but produced no output files.')}
       </p>
     );
   }

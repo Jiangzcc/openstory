@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import { UpdateAllDialog } from '@/shots/ui/staleness/update-all-dialog';
 import { Button } from '@/ui/shadcn/button';
@@ -60,6 +62,8 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
   onUpdateAll,
   isUpdating = false,
 }) => {
+  const { t } = useTranslation('shots');
+
   // "Update all" opens the depth confirm dialog (#1085).
   const [updateAllOpen, setUpdateAllOpen] = useState(false);
   if (stalenessFailed) {
@@ -73,7 +77,7 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
           aria-hidden="true"
           className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/50"
         />
-        <span>Couldn’t check whether these shots are up to date</span>
+        <span>{t('Couldn’t check whether these shots are up to date')}</span>
       </div>
     );
   }
@@ -95,7 +99,7 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
   const numberByShotId = new Map(shots.map((s, index) => [s.id, index + 1]));
   const sceneChips =
     !sceneId && scenes && onSelectScene
-      ? sceneChipsOf(staleShots, updatingShots, shots, scenes)
+      ? sceneChipsOf(staleShots, updatingShots, shots, scenes, t)
       : null;
 
   return (
@@ -116,8 +120,8 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
       )}
       <span>
         {staleShots.length > 0
-          ? 'Out of date since your edit'
-          : 'Updating out-of-date shots…'}
+          ? t('Out of date since your edit')
+          : t('Updating out-of-date shots…')}
       </span>
       <span aria-hidden="true">·</span>
       {sceneChips?.map((chip) => (
@@ -128,9 +132,12 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
           size="sm"
           className="h-5 max-w-56 rounded-full px-2 text-xs font-normal"
           onClick={() => onSelectScene?.(chip.sceneId)}
-          aria-label={`Open ${chip.title} — ${chip.count} ${
-            chip.count === 1 ? 'shot' : 'shots'
-          } ${chip.updating ? 'updating' : 'out of date'}`}
+          aria-label={t('Open {{value1}} — {{value2}} {{value3}} {{value4}}', {
+            value1: chip.title,
+            value2: chip.count,
+            value3: chip.count === 1 ? t('shot') : t('shots'),
+            value4: chip.updating ? t('updating') : t('out of date'),
+          })}
         >
           {chip.updating && (
             <Loader2
@@ -155,8 +162,8 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
             onClick={() => onSelectShot(shot.id)}
             aria-label={
               updating
-                ? `Open shot ${number} — updating`
-                : `Open shot ${number} — out of date`
+                ? t('Open shot {{value1}} — updating', { value1: number })
+                : t('Open shot {{value1}} — out of date', { value1: number })
             }
           >
             {updating && (
@@ -165,7 +172,7 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
                 className="mr-1 h-2.5 w-2.5 animate-spin motion-reduce:animate-none"
               />
             )}
-            <span>Shot {number}</span>
+            <span>{t('Shot {{value1}}', { value1: number })}</span>
           </Button>
         );
       })}
@@ -182,13 +189,15 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
             context: staleShots.slice(0, 6).map((shot) => ({
               kind: 'shot',
               id: shot.id,
-              label: `Shot ${numberByShotId.get(shot.id) ?? shot.shotNumber ?? 0}`,
+              label: t('Shot {{value1}}', {
+                value1: numberByShotId.get(shot.id) ?? shot.shotNumber ?? 0,
+              }),
             })),
             starters: ['What changed and what needs regenerating?'],
           })
         }
       >
-        Chat about this
+        {t('Chat about this')}
       </Button>
       {onUpdateAll && staleShots.length > 0 && (
         <>
@@ -201,7 +210,7 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
             onClick={() => setUpdateAllOpen(true)}
             disabled={busy}
             aria-busy={busy}
-            aria-label="Update all out-of-date shots"
+            aria-label={t('Update all out-of-date shots')}
           >
             {isUpdating && (
               <Loader2
@@ -209,7 +218,7 @@ export const SceneStaleShots: React.FC<SceneStaleShotsProps> = ({
                 className="mr-1 h-3 w-3 animate-spin motion-reduce:animate-none"
               />
             )}
-            {isUpdating ? 'Updating…' : 'Update all'}
+            {isUpdating ? t('Updating…') : t('Update all')}
           </Button>
           <UpdateAllDialog
             open={updateAllOpen}
@@ -238,7 +247,8 @@ function sceneChipsOf(
   stale: readonly ShotView[],
   updating: readonly ShotView[],
   inOrder: readonly ShotView[],
-  scenes: readonly Pick<SceneWithScript, 'id' | 'title'>[]
+  scenes: readonly Pick<SceneWithScript, 'id' | 'title'>[],
+  translate?: TFunction<'shots'>
 ): { sceneId: string; title: string; count: number; updating: boolean }[] {
   const staleIds = new Set(stale.map((shot) => shot.id));
   const updatingIds = new Set(updating.map((shot) => shot.id));
@@ -252,7 +262,10 @@ function sceneChipsOf(
     const index = scenes.findIndex((scene) => scene.id === shot.sceneId);
     const chip = chips.get(shot.sceneId) ?? {
       sceneId: shot.sceneId,
-      title: scenes[index]?.title || `Scene ${index + 1}`,
+      title:
+        scenes[index]?.title ||
+        (translate?.('Scene {{value1}}', { ns: 'shots', value1: index + 1 }) ??
+          `Scene ${index + 1}`),
       count: 0,
       updating: true,
     };

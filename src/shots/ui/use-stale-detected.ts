@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { shotKeys } from './use-shots';
 import type { StaleDetectedPayload } from '@/platform/realtime';
 import { useRealtime } from '@/platform/ui/realtime/client';
@@ -49,6 +50,7 @@ type DebounceState = {
  * scenes view's lifetime.
  */
 export function useStaleDetected(sequenceId: string | undefined) {
+  const translateEvent = useLiveTranslation('shots');
   const queryClient = useQueryClient();
   const debounceRef = useRef<DebounceState>({ count: 0, timeout: null });
 
@@ -81,10 +83,16 @@ export function useStaleDetected(sequenceId: string | undefined) {
         // count belongs to the previous sequence and the new view will get
         // its own subscription + toast.
         if (scheduledFor !== sequenceIdRef.current) return;
-        toast.info(formatStaleToastMessage(count));
+        toast.info(
+          count === 1
+            ? translateEvent('An alternate version is available.')
+            : translateEvent('{{count}} alternate versions are available.', {
+                count,
+              })
+        );
       }, TOAST_DEBOUNCE_MS);
     },
-    [queryClient, sequenceId]
+    [queryClient, sequenceId, translateEvent]
   );
 
   const sequenceIdRef = useRef(sequenceId);

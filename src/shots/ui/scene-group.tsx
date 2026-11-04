@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import {
   AlertDialog,
@@ -142,10 +144,12 @@ const SegmentBracket: React.FC<SegmentBracketProps> = ({
   leftover,
   children,
 }) => {
+  const { t } = useTranslation('shots');
+
   const planned = kind === 'planned';
   const displayModel = leftover?.useGrok ? GROK_IMAGINE : model;
   const modelName = displayModel ? videoModelDisplayName(displayModel) : null;
-  const label = modelName ?? 'Video';
+  const label = modelName ?? t('Video');
   const snappedSeconds = leftover
     ? snapDuration(leftover.editorialSeconds, leftover.packingModel)
     : null;
@@ -156,8 +160,11 @@ const SegmentBracket: React.FC<SegmentBracketProps> = ({
       data-below-min={leftover ? 'true' : undefined}
       aria-label={
         planned
-          ? `Will generate with ${label}, ${shotCount} shots`
-          : `${label}${shotCount > 1 ? `, ${shotCount} shots` : ''}`
+          ? t('Will generate with {{value1}}, {{value2}} shots', {
+              value1: label,
+              value2: shotCount,
+            })
+          : `${label}${shotCount > 1 ? t(', {{value1}} shots', { value1: shotCount }) : ''}`
       }
       className={cn(
         'flex flex-col gap-2 rounded-md border p-2',
@@ -183,8 +190,12 @@ const SegmentBracket: React.FC<SegmentBracketProps> = ({
               <DropdownMenuItem
                 onSelect={() => leftover.onUseGrokChange(false)}
               >
-                {videoModelDisplayName(leftover.packingModel)} · billed as{' '}
-                {formatSeconds(snappedSeconds ?? leftover.editorialSeconds)}
+                {t('{{value1}} · billed as {{value2}}', {
+                  value1: videoModelDisplayName(leftover.packingModel),
+                  value2: formatSeconds(
+                    snappedSeconds ?? leftover.editorialSeconds
+                  ),
+                })}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => leftover.onUseGrokChange(true)}>
                 {videoModelDisplayName(GROK_IMAGINE)} ·{' '}
@@ -202,21 +213,38 @@ const SegmentBracket: React.FC<SegmentBracketProps> = ({
             {label}
           </span>
         )}
-        {shotCount > 1 && <span className="shrink-0">{shotCount} shots</span>}
+        {shotCount > 1 && (
+          <span className="shrink-0">
+            {t('{{value1}} shots', { value1: shotCount })}
+          </span>
+        )}
         {!planned && stale && (
           <Badge
             variant="outline"
             className="ml-auto shrink-0 px-1 py-0 text-[10px]"
           >
-            Stale
+            {t('Stale')}
           </Badge>
         )}
       </div>
       {leftover && snappedSeconds != null && (
         <p className="text-[11px] text-muted-foreground">
           {leftover.useGrok
-            ? `${formatSeconds(leftover.editorialSeconds)} clip — Grok Imagine can render it at that length.`
-            : `${formatSeconds(leftover.editorialSeconds)} clip — ${videoModelDisplayName(leftover.packingModel)} min is ${formatSeconds(Math.min(...durationGridForModel(leftover.packingModel)))}. Billed as ${formatSeconds(snappedSeconds)}.`}
+            ? t(
+                '{{value1}} clip — Grok Imagine can render it at that length.',
+                { value1: formatSeconds(leftover.editorialSeconds) }
+              )
+            : t(
+                '{{value1}} clip — {{value2}} min is {{value3}}. Billed as {{value4}}.',
+                {
+                  value1: formatSeconds(leftover.editorialSeconds),
+                  value2: videoModelDisplayName(leftover.packingModel),
+                  value3: formatSeconds(
+                    Math.min(...durationGridForModel(leftover.packingModel))
+                  ),
+                  value4: formatSeconds(snappedSeconds),
+                }
+              )}
         </p>
       )}
       {children}
@@ -249,6 +277,10 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
   onLeftoverGrokChange,
   isAnalyzing = false,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+
+  const { t } = useTranslation('shots');
+
   const [expanded, setExpanded] = useState(true);
   const queryClient = useQueryClient();
   const updateScene = useUpdateScene(sequenceId);
@@ -291,13 +323,13 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
         { sceneId: scene.id, shotIds: next },
         {
           onError: (error) =>
-            toast.error('Failed to reorder shots', {
+            toast.error(translateEvent('Failed to reorder shots'), {
               description: errorMessage(error),
             }),
         }
       );
     },
-    [reorderShots, scene.id]
+    [translateEvent, reorderShots, scene.id]
   );
 
   // Group the scene's shots into their render segments; every rendered segment
@@ -312,8 +344,10 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
 
   const sceneLabel = useMemo(() => {
     const index = scene.orderIndex + 1;
-    return plainSceneTitle(scene.title) || `Scene ${index}`;
-  }, [scene.orderIndex, scene.title]);
+    return (
+      plainSceneTitle(scene.title) || t('Scene {{value1}}', { value1: index })
+    );
+  }, [scene.orderIndex, scene.title, t]);
   // A scene's length IS the sum of its shots (#1593).
   const sceneSeconds = sumShotSeconds(shots);
 
@@ -330,7 +364,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
       { sceneId: scene.id, title: next },
       {
         onError: (error) =>
-          toast.error('Failed to rename scene', {
+          toast.error(translateEvent('Failed to rename scene'), {
             description: errorMessage(error),
           }),
       }
@@ -346,7 +380,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
       {
         onSuccess: (shot) => onSelectShot(shot.id),
         onError: (error) =>
-          toast.error('Failed to add shot', {
+          toast.error(translateEvent('Failed to add shot'), {
             description: errorMessage(error),
           }),
       }
@@ -365,16 +399,16 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
           ) {
             onClearSelection();
           }
-          toast(`Removed ${sceneLabel}`, {
+          toast(translateEvent('Removed {{value1}}', { value1: sceneLabel }), {
             duration: 60_000,
             action: {
-              label: 'Undo',
+              label: translateEvent('Undo'),
               onClick: () =>
                 void restoreScene(queryClient, {
                   sequenceId,
                   sceneId: scene.id,
                 }).catch((error: Error) =>
-                  toast.error('Failed to restore scene', {
+                  toast.error(translateEvent('Failed to restore scene'), {
                     description: errorMessage(error),
                   })
                 ),
@@ -382,7 +416,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
           });
         },
         onError: (error) =>
-          toast.error('Failed to remove scene', {
+          toast.error(translateEvent('Failed to remove scene'), {
             description: errorMessage(error),
           }),
       }
@@ -396,24 +430,29 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
         onSuccess: () => {
           setPendingShotDelete(null);
           if (selectedShotId === shot.id) onClearSelection();
-          toast(`Removed shot from ${sceneLabel}`, {
-            duration: 60_000,
-            action: {
-              label: 'Undo',
-              onClick: () =>
-                void restoreShot(queryClient, {
-                  sequenceId,
-                  shotId: shot.id,
-                }).catch((error: Error) =>
-                  toast.error('Failed to restore shot', {
-                    description: errorMessage(error),
-                  })
-                ),
-            },
-          });
+          toast(
+            translateEvent('Removed shot from {{value1}}', {
+              value1: sceneLabel,
+            }),
+            {
+              duration: 60_000,
+              action: {
+                label: translateEvent('Undo'),
+                onClick: () =>
+                  void restoreShot(queryClient, {
+                    sequenceId,
+                    shotId: shot.id,
+                  }).catch((error: Error) =>
+                    toast.error(translateEvent('Failed to restore shot'), {
+                      description: errorMessage(error),
+                    })
+                  ),
+              },
+            }
+          );
         },
         onError: (error) =>
-          toast.error('Failed to remove shot', {
+          toast.error(translateEvent('Failed to remove shot'), {
             description: errorMessage(error),
           }),
       }
@@ -436,7 +475,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
           type="button"
           className="mt-0.5 shrink-0 text-muted-foreground"
           onClick={() => setExpanded((v) => !v)}
-          aria-label={expanded ? 'Collapse scene' : 'Expand scene'}
+          aria-label={expanded ? t('Collapse scene') : t('Expand scene')}
         >
           {expanded ? (
             <ChevronDown className="h-4 w-4" />
@@ -460,7 +499,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
               }
             }}
             maxLength={2000}
-            aria-label="Scene title"
+            aria-label={t('Scene title')}
             className="h-7 flex-1 text-sm"
           />
         ) : (
@@ -474,7 +513,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
               <span className="truncate text-sm font-medium">{sceneLabel}</span>
               <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                 {shots.length === 0 && isAnalyzing
-                  ? 'listing shots…'
+                  ? t('listing shots…')
                   : `${shots.length} ${shots.length === 1 ? 'shot' : 'shots'} · ${formatSeconds(sceneSeconds)}`}
               </span>
             </div>
@@ -487,7 +526,9 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
               variant="ghost"
               size="icon"
               className="h-6 w-6 shrink-0 opacity-0 transition-opacity focus-visible:opacity-100 group-focus-within/scene-header:opacity-100 group-hover/scene-header:opacity-100 data-[state=open]:opacity-100"
-              aria-label={`Scene actions for ${sceneLabel}`}
+              aria-label={t('Scene actions for {{value1}}', {
+                value1: sceneLabel,
+              })}
             >
               <MoreVertical className="h-4 w-4" />
             </Button>
@@ -500,21 +541,21 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
                 })
               }
             >
-              Chat about this
+              {t('Chat about this')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => setTitleDraft(plainSceneTitle(scene.title))}
             >
               <Pencil className="h-4 w-4" />
-              Rename scene
+              {t('Rename scene')}
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={createShot.isPending}
               onClick={handleAddShot}
             >
               <Plus className="h-4 w-4" />
-              {createShot.isPending ? 'Adding shot…' : 'Add shot'}
+              {createShot.isPending ? t('Adding shot…') : t('Add shot')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -522,14 +563,14 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
               onClick={() => onMoveScene(scene.id, 'up')}
             >
               <ArrowUp className="h-4 w-4" />
-              Move up
+              {t('Move up')}
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={isLast}
               onClick={() => onMoveScene(scene.id, 'down')}
             >
               <ArrowDown className="h-4 w-4" />
-              Move down
+              {t('Move down')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -537,7 +578,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
               onClick={() => setConfirmSceneDelete(true)}
             >
               <Trash2 className="h-4 w-4" />
-              Remove scene
+              {t('Remove scene')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -649,16 +690,21 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove {sceneLabel}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('Remove {{value1}}?', { value1: sceneLabel })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              The scene and its {shots.length}{' '}
-              {shots.length === 1 ? 'shot' : 'shots'} are hidden from the
-              sequence, playback and export. You can undo from the toast right
-              after removing.
+              {t(
+                'The scene and its {{value1}} {{value2}} are hidden from the sequence, playback and export. You can undo from the toast right after removing.',
+                {
+                  value1: shots.length,
+                  value2: shots.length === 1 ? t('shot') : t('shots'),
+                }
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               disabled={softDeleteScene.isPending}
               // Radix's Action closes the dialog on click; hold it open so the
@@ -669,7 +715,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
                 handleDeleteScene();
               }}
             >
-              {softDeleteScene.isPending ? 'Removing…' : 'Remove'}
+              {softDeleteScene.isPending ? t('Removing…') : t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -684,16 +730,16 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remove this shot from {sceneLabel}?
+              {t('Remove this shot from {{value1}}?', { value1: sceneLabel })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              The shot and its prompts, stills and video are hidden from the
-              sequence, playback and export. You can undo from the toast right
-              after removing.
+              {t(
+                'The shot and its prompts, stills and video are hidden from the sequence, playback and export. You can undo from the toast right after removing.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               disabled={softDeleteShot.isPending}
               // See the scene twin: hold the dialog open across the mutation.
@@ -704,7 +750,7 @@ const SceneGroupComponent: React.FC<SceneGroupProps> = ({
                 }
               }}
             >
-              {softDeleteShot.isPending ? 'Removing…' : 'Remove'}
+              {softDeleteShot.isPending ? t('Removing…') : t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

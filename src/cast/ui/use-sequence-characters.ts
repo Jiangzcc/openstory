@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 /**
  * Hook for fetching sequence characters
  */
@@ -141,6 +142,8 @@ function invalidateAfterVoiceChange(
 
 /** Cancel a voice still generating; the character keeps the voice it had. */
 export function useCancelCharacterVoice() {
+  const translateEvent = useLiveTranslation('cast');
+
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { sequenceId: string | null; characterId: string }) =>
@@ -158,7 +161,9 @@ export function useCancelCharacterVoice() {
         }),
       ]),
     onError: (error: Error) =>
-      toast.error('Voice not cancelled', { description: error.message }),
+      toast.error(translateEvent('Voice not cancelled'), {
+        description: error.message,
+      }),
   });
 }
 

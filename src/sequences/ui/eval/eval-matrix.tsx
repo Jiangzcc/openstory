@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
@@ -36,6 +37,8 @@ export const EvalMatrix: React.FC<EvalMatrixProps> = ({
   onLoadMore,
   hasMore,
 }) => {
+  const { t } = useTranslation('sequences');
+
   const parentRef = useRef<HTMLDivElement>(null);
   const [openDialog, setOpenDialog] = useState<OpenDialogState>(null);
   const navigate = useNavigate();
@@ -98,13 +101,13 @@ export const EvalMatrix: React.FC<EvalMatrixProps> = ({
             className="sticky left-0 z-30 bg-background border-r p-4 font-medium text-sm shrink-0"
             style={{ width: METADATA_WIDTH }}
           >
-            Sequence
+            {t('Sequence')}
           </div>
           <div
             className="sticky z-20 bg-background border-r p-4 font-medium text-sm shrink-0"
             style={{ left: METADATA_WIDTH, width: VIDEO_WIDTH }}
           >
-            Video
+            {t('Video')}
           </div>
           {Array.from({ length: maxSceneCount }, (_, idx) => idx + 1).map(
             (sceneNum) => (
@@ -113,7 +116,7 @@ export const EvalMatrix: React.FC<EvalMatrixProps> = ({
                 className="p-4 text-center font-medium text-sm shrink-0"
                 style={{ width: CELL_WIDTH }}
               >
-                Scene {sceneNum}
+                {t('Scene {{value1}}', { value1: sceneNum })}
               </div>
             )
           )}

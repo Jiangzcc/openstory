@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { sequenceKeys } from './use-sequences';
 import { sequenceVariantKeys } from '@/audio/ui/use-sequence-variants';
 import type { StaleDetectedPayload } from '@/platform/realtime';
@@ -47,6 +48,7 @@ type DebounceState = {
  *     the inline banner appears without a manual refresh.
  */
 export function useSequenceStaleDetected(sequenceId: string | undefined) {
+  const translateEvent = useLiveTranslation('sequences');
   const queryClient = useQueryClient();
   const debounceRef = useRef<DebounceState>({
     count: 0,
@@ -82,10 +84,17 @@ export function useSequenceStaleDetected(sequenceId: string | undefined) {
         state.count = 0;
         state.timeout = null;
         if (scheduledFor !== sequenceIdRef.current) return;
-        toast.info(formatSequenceStaleToastMessage(count));
+        toast.info(
+          count === 1
+            ? translateEvent('An alternate music track is available.')
+            : translateEvent(
+                '{{count}} alternate music tracks are available.',
+                { count }
+              )
+        );
       }, TOAST_DEBOUNCE_MS);
     },
-    [queryClient, sequenceId]
+    [queryClient, sequenceId, translateEvent]
   );
 
   const { status } = useRealtime({

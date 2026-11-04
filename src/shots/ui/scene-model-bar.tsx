@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AspectRatioIcon } from '@/ui/icons/aspect-ratio-icon';
 import { ModelBadge } from '@/models/ui/pickers/model-badge';
 import { Button } from '@/ui/shadcn/button';
@@ -90,6 +91,8 @@ export const SceneModelBar: React.FC<SceneModelBarProps> = ({
   historyOpen = false,
   onHistoryToggle,
 }) => {
+  const { t } = useTranslation('shots');
+
   const posthog = usePostHog();
   const scope = selectionScope(selection);
   const showSequenceSettings = scope === 'sequence';
@@ -107,13 +110,13 @@ export const SceneModelBar: React.FC<SceneModelBarProps> = ({
               onClick={onHistoryToggle}
               className="inline-flex h-11 items-center rounded-sm px-1 text-sm text-muted-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-6"
             >
-              History
+              {t('History')}
             </button>
           )}
           {/* Esc walks shot → scene → sequence; no keyboard on a phone. */}
           {scope !== 'sequence' && (
             <span className="hidden shrink-0 items-center gap-1 text-[11px] text-muted-foreground md:flex">
-              <Kbd>esc</Kbd> up
+              <Kbd>{t('esc')}</Kbd> {t('up')}
             </span>
           )}
         </div>
@@ -121,18 +124,18 @@ export const SceneModelBar: React.FC<SceneModelBarProps> = ({
       {showSequenceSettings && !historyOpen && (
         <div className="space-y-2">
           {sequenceId && title !== undefined && (
-            <SettingRow label="Title">
+            <SettingRow label={t('Title')}>
               <RenameSequenceButton sequenceId={sequenceId} title={title} />
             </SettingRow>
           )}
-          <SettingRow label="Style">
+          <SettingRow label={t('Style')}>
             <StyleBadge
               styleId={styleId}
               sequenceId={sequenceId}
               stylePending={stylePending}
             />
           </SettingRow>
-          <SettingRow label="Aspect ratio">
+          <SettingRow label={t('Aspect ratio')}>
             <span className="flex items-center gap-1.5">
               {ratio && (
                 <AspectRatioIcon
@@ -148,7 +151,7 @@ export const SceneModelBar: React.FC<SceneModelBarProps> = ({
               composer's generation settings. A pill group here read as a live
               switch for the whole sequence, which it is not. */}
           {resolution && (
-            <SettingRow label="Resolution">
+            <SettingRow label={t('Resolution')}>
               <Badge variant="secondary" className="font-mono text-xs">
                 {RESOLUTION_OPTIONS.find((o) => o.value === resolution)
                   ?.label ?? resolution}
@@ -156,14 +159,14 @@ export const SceneModelBar: React.FC<SceneModelBarProps> = ({
             </SettingRow>
           )}
           {sequenceId && (
-            <SettingRow label="Target length">
+            <SettingRow label={t('Target length')}>
               <TargetDurationChip
                 sequenceId={sequenceId}
                 targetDurationSeconds={targetDurationSeconds}
               />
             </SettingRow>
           )}
-          <SettingRow label="Script">
+          <SettingRow label={t('Script')}>
             <ModelBadge model={analysisModel} />
           </SettingRow>
           {/* Both degrade to a plain badge until something has generated, so
@@ -174,12 +177,12 @@ export const SceneModelBar: React.FC<SceneModelBarProps> = ({
               <SequenceImageModelSelector
                 sequenceId={sequenceId}
                 sequenceImageModel={resolvedSequenceImageModel}
-                label="Image"
+                label={t('Image')}
               />
               <SequenceVideoModelSelector
                 sequenceId={sequenceId}
                 sequenceVideoModel={resolvedSequenceVideoModel}
-                label="Video"
+                label={t('Video')}
               />
             </>
           )}
@@ -203,7 +206,7 @@ export const SceneModelBar: React.FC<SceneModelBarProps> = ({
                 }
               >
                 <CopyPlus className="mr-2 h-3.5 w-3.5" />
-                Generate Copy…
+                {t('Generate Copy…')}
               </Link>
             </Button>
           )}

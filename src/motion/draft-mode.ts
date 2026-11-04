@@ -13,6 +13,8 @@
  * gates the submit.
  */
 
+import type { TFunction } from 'i18next';
+
 /** The only resolution Ark accepts with `draft: true`. */
 export const DRAFT_RESOLUTION = '480p' as const;
 
@@ -42,22 +44,27 @@ export function draftTaskUsable(
  */
 export function draftExpirySuffix(
   createdAt: Date | string | number,
-  now: number = Date.now()
+  now: number = Date.now(),
+  translate?: TFunction<'motion'>
 ): string | null {
   const remaining = new Date(createdAt).getTime() + DRAFT_TASK_TTL_MS - now;
-  if (remaining <= 0) return ' expired';
+  if (remaining <= 0) return translate?.(' expired') ?? ' expired';
   const days = Math.floor(remaining / DAY_MS);
-  if (days === 0) return ' · expires today';
+  if (days === 0) return translate?.(' · expires today') ?? ' · expires today';
   if (days > 3) return null;
-  return ` · ${days} ${days === 1 ? 'day' : 'days'} left`;
+  return translate
+    ? translate(' · {{count}} day left', { count: days })
+    : ` · ${days} ${days === 1 ? 'day' : 'days'} left`;
 }
 
 /** The frame pill for a draft clip: "Draft", "Draft · 2 days left", "Draft expired". */
 export function draftBadgeLabel(
   createdAt: Date | string | number,
-  now: number = Date.now()
+  now: number = Date.now(),
+  translate?: TFunction<'motion'>
 ): string {
-  return `Draft${draftExpirySuffix(createdAt, now) ?? ''}`;
+  const label = translate?.('Draft') ?? 'Draft';
+  return `${label}${draftExpirySuffix(createdAt, now, translate) ?? ''}`;
 }
 
 /** The pill for a shot whose selected clip is an Ark draft, else null. */
@@ -71,10 +78,13 @@ export function shotDraftLabel(
       }
     | null
     | undefined,
-  now: number = Date.now()
+  now: number = Date.now(),
+  translate?: TFunction<'motion'>
 ): string | null {
   const video = shot?.primaryVideo;
-  return video?.draftTaskId ? draftBadgeLabel(video.createdAt, now) : null;
+  return video?.draftTaskId
+    ? draftBadgeLabel(video.createdAt, now, translate)
+    : null;
 }
 
 /**
@@ -89,7 +99,8 @@ export function theatreDraftLabel(
       createdAt: Date | string | number;
     } | null;
   }>,
-  now: number = Date.now()
+  now: number = Date.now(),
+  translate?: TFunction<'motion'>
 ): string | null {
   const drafts = shots.filter((shot) => shot.primaryVideo?.draftTaskId);
   if (drafts.length === 0) return null;
@@ -100,7 +111,10 @@ export function theatreDraftLabel(
   );
   const head =
     drafts.length === shots.length
-      ? 'Draft cut'
-      : `${drafts.length} of ${shots.length} shots are drafts`;
-  return `${head}${draftExpirySuffix(soonest, now) ?? ''}`;
+      ? (translate?.('Draft cut') ?? 'Draft cut')
+      : (translate?.('{{value1}} of {{value2}} shots are drafts', {
+          value1: drafts.length,
+          value2: shots.length,
+        }) ?? `${drafts.length} of ${shots.length} shots are drafts`);
+  return `${head}${draftExpirySuffix(soonest, now, translate) ?? ''}`;
 }

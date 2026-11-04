@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * "Ask the founder for credits" (#1096, reworked in #1099) — expands into an
  * optional message form before emailing the founder. A PostHog product event
@@ -25,6 +26,8 @@ export const founderOptionCardClassName = (variant: 'primary' | 'muted') =>
   );
 
 export const AskFounderCard: React.FC = () => {
+  const { t } = useTranslation('billing');
+
   const [expanded, setExpanded] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -42,9 +45,9 @@ export const AskFounderCard: React.FC = () => {
           <Check className="size-4" />
         </div>
         <div className="flex-1 space-y-0.5">
-          <span className="text-sm font-medium">Request sent</span>
+          <span className="text-sm font-medium">{t('Request sent')}</span>
           <p className="text-xs text-muted-foreground">
-            Tom will reply to your account email soon.
+            {t('Tom will reply to your account email soon.')}
           </p>
         </div>
       </div>
@@ -63,10 +66,10 @@ export const AskFounderCard: React.FC = () => {
         </div>
         <div className="flex-1 space-y-0.5">
           <span className="text-sm font-medium">
-            Ask the founder for credits
+            {t('Ask the founder for credits')}
           </span>
           <p className="text-xs text-muted-foreground">
-            Seriously. Tom replies.
+            {t('Seriously. Tom replies.')}
           </p>
         </div>
         <ArrowRight className="size-3.5 shrink-0 -translate-x-1 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-60" />
@@ -82,10 +85,10 @@ export const AskFounderCard: React.FC = () => {
         </div>
         <div className="flex-1 space-y-0.5">
           <span className="text-sm font-medium">
-            Ask the founder for credits
+            {t('Ask the founder for credits')}
           </span>
           <p className="text-xs text-muted-foreground">
-            Seriously. Tom replies.
+            {t('Seriously. Tom replies.')}
           </p>
         </div>
       </div>
@@ -97,7 +100,7 @@ export const AskFounderCard: React.FC = () => {
             mutation.mutate();
           }
         }}
-        placeholder="Tell Tom what you're making (optional)"
+        placeholder={t("Tell Tom what you're making (optional)")}
         rows={3}
         maxLength={2000}
       />
@@ -108,21 +111,21 @@ export const AskFounderCard: React.FC = () => {
           onClick={() => setExpanded(false)}
           disabled={mutation.isPending}
         >
-          Cancel
+          {t('Cancel')}
         </Button>
         <Button
           size="sm"
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? 'Sending…' : 'Send request'}
+          {mutation.isPending ? t('Sending…') : t('Send request')}
         </Button>
       </div>
       {mutation.isError && (
         <p role="alert" className="text-xs text-destructive">
           {mutation.error instanceof Error
             ? mutation.error.message
-            : 'Failed to send request'}
+            : t('Failed to send request')}
         </p>
       )}
     </div>

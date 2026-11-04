@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import type { TeamLocation } from '@/cast/server/db/locations';
 import { useTeamLocationList } from '@/cast/ui/use-team-locations';
 import {
@@ -15,11 +17,24 @@ import { useState } from 'react';
 import { AppImage } from '@/ui/shadcn/app-image';
 
 /** Which sequences use a location, in a line. */
-export function locationUseLine(sequences: TeamLocation['sequences']): string {
+export function locationUseLine(
+  sequences: TeamLocation['sequences'],
+  translate?: TFunction<'cast'>
+): string {
   const [latest] = sequences;
-  if (!latest) return 'In no sequence';
-  if (sequences.length === 1) return `In ${latest.title}`;
-  return `Used in ${sequences.length} sequences`;
+  if (!latest)
+    return translate?.('In no sequence', { ns: 'cast' }) ?? 'In no sequence';
+  if (sequences.length === 1)
+    return (
+      translate?.('In {{value1}}', { ns: 'cast', value1: latest.title }) ??
+      `In ${latest.title}`
+    );
+  return (
+    translate?.('Used in {{value1}} sequences', {
+      ns: 'cast',
+      value1: sequences.length,
+    }) ?? `Used in ${sequences.length} sequences`
+  );
 }
 
 /**
@@ -34,6 +49,8 @@ export const LocationPickerDialog: React.FC<{
   /** Locations the sequence already uses, this one included: not offered. */
   excludeLocationIds: ReadonlySet<string>;
 }> = ({ open, onOpenChange, onSelect, excludeLocationIds }) => {
+  const { t } = useTranslation('cast');
+
   const { data: locations } = useTeamLocationList(open);
   const [query, setQuery] = useState('');
 
@@ -55,16 +72,18 @@ export const LocationPickerDialog: React.FC<{
     >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Replace location</DialogTitle>
+          <DialogTitle>{t('Replace location')}</DialogTitle>
           <DialogDescription>
-            The sequence uses the one you pick instead. Its shots re-render.
+            {t(
+              'The sequence uses the one you pick instead. Its shots re-render.'
+            )}
           </DialogDescription>
         </DialogHeader>
 
         <Input
           type="search"
-          placeholder="Search locations…"
-          aria-label="Search locations"
+          placeholder={t('Search locations…')}
+          aria-label={t('Search locations')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -82,7 +101,9 @@ export const LocationPickerDialog: React.FC<{
             </div>
           ) : offered.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
-              {q ? 'No location matches' : 'No other locations with a sheet'}
+              {q
+                ? t('No location matches')
+                : t('No other locations with a sheet')}
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-4 p-1 sm:grid-cols-3">
@@ -116,7 +137,7 @@ export const LocationPickerDialog: React.FC<{
                     {location.name}
                   </span>
                   <span className="w-full truncate text-xs text-muted-foreground">
-                    {locationUseLine(location.sequences)}
+                    {locationUseLine(location.sequences, t)}
                   </span>
                 </button>
               ))}

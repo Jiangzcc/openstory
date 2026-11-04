@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Auth Layout
  * Layout for authentication pages (login, verify)
@@ -9,9 +10,12 @@ import { getAuthOptionsFn } from '@/platform/auth-options.fn';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth')({
-  errorComponent: (props) => (
-    <RouteErrorFallback {...props} heading="Authentication error" />
-  ),
+  errorComponent: function RouteComponent(props) {
+    const { t } = useTranslation('pages');
+    return (
+      <RouteErrorFallback {...props} heading={t('Authentication error')} />
+    );
+  },
   beforeLoad: async ({ context: { queryClient } }) => {
     const session = await queryClient.ensureQueryData(sessionQueryOptions);
     if (session?.user) {

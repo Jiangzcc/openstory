@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { StyleSelectorButton } from './style-selector-button';
 import {
   Dialog,
@@ -21,25 +22,28 @@ const StyleBrowserContent: FC<{
   styles?: Style[];
   onUseStyle: (styleId: string) => void;
   selectedStyleId?: string | null;
-}> = ({ styles, onUseStyle, selectedStyleId }) => (
-  <DialogContent className="flex h-[90vh] max-w-[95vw] flex-col sm:max-w-[95vw] lg:max-w-[90vw] xl:max-w-[85vw]">
-    <DialogHeader>
-      <DialogTitle>Visual Style</DialogTitle>
-      <DialogDescription>
-        Choose the visual style of your sequence
-      </DialogDescription>
-    </DialogHeader>
-    {/* overscroll-contain: reaching the list's end must not chain the touch
+}> = ({ styles, onUseStyle, selectedStyleId }) => {
+  const { t } = useTranslation('look');
+  return (
+    <DialogContent className="flex h-[90vh] max-w-[95vw] flex-col sm:max-w-[95vw] lg:max-w-[90vw] xl:max-w-[85vw]">
+      <DialogHeader>
+        <DialogTitle>{t('Visual Style')}</DialogTitle>
+        <DialogDescription>
+          {t('Choose the visual style of your sequence')}
+        </DialogDescription>
+      </DialogHeader>
+      {/* overscroll-contain: reaching the list's end must not chain the touch
         gesture into scrolling the page behind the dialog. */}
-    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-      <StyleLibraryView
-        styles={styles}
-        onUseStyle={onUseStyle}
-        initialStyleId={selectedStyleId}
-      />
-    </div>
-  </DialogContent>
-);
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <StyleLibraryView
+          styles={styles}
+          onUseStyle={onUseStyle}
+          initialStyleId={selectedStyleId}
+        />
+      </div>
+    </DialogContent>
+  );
+};
 
 type StyleSelectionDialogProps = {
   open: boolean;

@@ -1,3 +1,5 @@
+import { Trans, useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 /**
  * /oauth/consent — approve an app's request for access (#1456).
  *
@@ -89,10 +91,14 @@ export const Route = createFileRoute('/_app/oauth/consent')({
     await requireSessionOrRedirect(queryClient, href);
   },
   component: ConsentPage,
-  staticData: { breadcrumb: 'Authorize app' },
+  staticData: {
+    breadcrumb: { label: 'Authorize app', translationKey: 'Authorize app' },
+  },
 });
 
 function ConsentPage() {
+  const { t } = useTranslation('pages');
+
   const { oauthQuery: loaderQuery, consent } = Route.useLoaderData();
   const oauthQuery = pickOAuthQuery([
     resolveOAuthQuery(loaderQuery),
@@ -107,10 +113,11 @@ function ConsentPage() {
     <div className="mx-auto w-full max-w-md p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Authorize app</CardTitle>
+          <CardTitle>{t('Authorize app')}</CardTitle>
           <CardDescription>
-            An app wants to use your OpenStory account. Only approve requests
-            you started yourself.
+            {t(
+              'An app wants to use your OpenStory account. Only approve requests you started yourself.'
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -118,8 +125,9 @@ function ConsentPage() {
             <ConsentDecision consent={consent} oauthQuery={oauthQuery} />
           ) : (
             <p role="alert">
-              This page is missing its authorization request. Start again from
-              the app that sent you here.
+              {t(
+                'This page is missing its authorization request. Start again from the app that sent you here.'
+              )}
             </p>
           )}
         </CardContent>
@@ -135,6 +143,9 @@ function ConsentDecision({
   consent: OAuthConsentContext;
   oauthQuery: string;
 }) {
+  const { t } = useTranslation('pages');
+  const translateScope = useLabelTranslation('interface');
+
   const hydrated = useHydrated();
   const [outcome, setOutcome] = useState<'granted' | 'denied' | null>(null);
 
@@ -163,8 +174,9 @@ function ConsentDecision({
   if (!consent.client) {
     return (
       <p role="alert">
-        This app isn’t registered with OpenStory, or its registration has
-        expired. Start again from the app.
+        {t(
+          'This app isn’t registered with OpenStory, or its registration has expired. Start again from the app.'
+        )}
       </p>
     );
   }
@@ -175,11 +187,11 @@ function ConsentDecision({
         <div className="flex items-center gap-2">
           <Check className="h-5 w-5" aria-hidden />
           <p className="font-semibold">
-            {outcome === 'granted' ? 'Access granted' : 'Request denied'}
+            {outcome === 'granted' ? t('Access granted') : t('Request denied')}
           </p>
         </div>
         <p className="text-sm text-muted-foreground">
-          You can close this tab. Sending you back to the app…
+          {t('You can close this tab. Sending you back to the app…')}
         </p>
       </div>
     );
@@ -203,8 +215,15 @@ function ConsentDecision({
           <span className="font-semibold">{client.name}</span>
           {client.redirectOrigin ? (
             <span className="text-sm text-muted-foreground">
-              Sends you back to{' '}
-              <code className="font-mono">{client.redirectOrigin}</code>
+              <Trans
+                ns="pages"
+                i18nKey="Sends you back to <0/>"
+                components={[
+                  <code key="0" className="font-mono">
+                    {client.redirectOrigin}
+                  </code>,
+                ]}
+              />
             </span>
           ) : null}
         </div>
@@ -212,20 +231,28 @@ function ConsentDecision({
 
       <div className="flex flex-col gap-1">
         <p className="text-sm">
-          This will let it, on behalf of team <strong>{team.name}</strong>:
+          <Trans
+            ns="pages"
+            i18nKey="This will let it, on behalf of team <0>{{value1}}</0>:"
+            components={[<strong key="0" />]}
+            values={{ value1: team.name }}
+          />
         </p>
         <ul className="list-disc pl-5 text-sm">
           {scopes.length > 0 ? (
-            scopes.map((s) => <li key={s.id}>{s.description}</li>)
+            scopes.map((scope) => (
+              <li key={scope.id}>{translateScope(scope.description)}</li>
+            ))
           ) : (
-            <li>Confirm who you are</li>
+            <li>{t('Confirm who you are')}</li>
           )}
         </ul>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Anything it generates spends this team’s credits. You can revoke access
-        any time under Settings → Developer.
+        {t(
+          'Anything it generates spends this team’s credits. You can revoke access any time under Settings → Developer.'
+        )}
       </p>
 
       <div className="flex justify-end gap-2">
@@ -234,13 +261,17 @@ function ConsentDecision({
           disabled={!hydrated || decide.isPending}
           onClick={() => decide.mutate(false)}
         >
-          Deny
+          {t('Deny')}
         </Button>
         <Button
           disabled={!hydrated || decide.isPending}
           onClick={() => decide.mutate(true)}
         >
-          {!hydrated ? 'Loading…' : decide.isPending ? 'Working…' : 'Approve'}
+          {!hydrated
+            ? t('Loading…')
+            : decide.isPending
+              ? t('Working…')
+              : t('Approve')}
         </Button>
       </div>
     </div>

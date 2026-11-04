@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { PageContainer } from '@/ui/layout/page-container';
 import { ModelFamilyView } from '@/models/ui/model-family-view';
 import { MODELS_ENABLED } from '@/platform/flags';
@@ -21,10 +22,14 @@ export const Route = createFileRoute('/_app/models/family/$')({
   },
   validateSearch: searchParamsSchema,
   component: ModelFamilyPage,
-  staticData: { breadcrumb: 'Model family' },
+  staticData: {
+    breadcrumb: { label: 'Model family', translationKey: 'Model family' },
+  },
 });
 
 function ModelFamilyPage() {
+  const { t } = useTranslation('pages');
+
   const { _splat: family } = Route.useParams();
   const { activity } = Route.useSearch();
 
@@ -37,7 +42,7 @@ function ModelFamilyPage() {
           className="flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          Back to models
+          {t('Back to models')}
         </Link>
         {family ? (
           <ModelFamilyView family={family} activity={activity} />

@@ -1,3 +1,7 @@
+import { FirstAppearance } from '@/cast/ui/first-appearance';
+import { localizeSheetRetry } from '@/cast/ui/localize-sheet-status';
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { InButtonCost } from '@/billing/ui/action-cost';
 import { ImageModelSelector } from '@/models/ui/pickers/image-model-selector';
 import { UploadMediaButton } from '@/shots/ui/upload-media-button';
@@ -84,6 +88,10 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
   characterId,
   header,
 }) => {
+  const translateEvent = useLiveTranslation('cast');
+
+  const { i18n, t } = useTranslation('cast');
+
   const queryClient = useQueryClient();
   const {
     data: owner,
@@ -147,16 +155,16 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
               to: '/sequences/$id/cast',
               params: { id: sequenceId },
             });
-            toast(`Removed ${name}`, {
+            toast(translateEvent('Removed {{value1}}', { value1: name }), {
               duration: 60_000,
               action: {
-                label: 'Undo',
+                label: translateEvent('Undo'),
                 onClick: () =>
                   void restoreSequenceCharacter(queryClient, {
                     sequenceId,
                     characterId,
                   }).catch((error: Error) =>
-                    toast.error('Failed to restore character', {
+                    toast.error(translateEvent('Failed to restore character'), {
                       description: errorMessage(error),
                     })
                   ),
@@ -164,13 +172,13 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
             });
           },
           onError: (error) =>
-            toast.error('Failed to remove character', {
+            toast.error(translateEvent('Failed to remove character'), {
               description: errorMessage(error),
             }),
         }
       );
     },
-    [softDelete, sequenceId, characterId, navigate, queryClient]
+    [translateEvent, softDelete, sequenceId, characterId, navigate, queryClient]
   );
 
   // Track regenerating state from realtime events
@@ -181,7 +189,10 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
   const [retry, setRetry] = useState<{ lookId: string; label: string } | null>(
     null
   );
-  const retryLabel = retry?.lookId === activeLookId ? retry.label : null;
+  const retryLabel =
+    retry?.lookId === activeLookId
+      ? localizeSheetRetry(i18n, retry.label)
+      : null;
 
   // Handle realtime events for character sheet progress
   const handleRealtimeEvent = useCallback(
@@ -299,11 +310,14 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
         undiscardVariant.mutate(
           { sequenceId, variantId: variant.id },
           {
-            onSuccess: () => toast.success('Alternate restored'),
+            onSuccess: () =>
+              toast.success(translateEvent('Alternate restored')),
             onError: (error) => {
-              toast.error('Failed to restore alternate', {
+              toast.error(translateEvent('Failed to restore alternate'), {
                 description:
-                  error instanceof Error ? error.message : 'Unknown error',
+                  error instanceof Error
+                    ? error.message
+                    : translateEvent('Unknown error'),
               });
             },
           }
@@ -313,20 +327,22 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
         {
           onSuccess: () => {
             setCompareVariant(null);
-            toast('Alternate discarded', {
-              action: { label: 'Undo', onClick: restore },
+            toast(translateEvent('Alternate discarded'), {
+              action: { label: translateEvent('Undo'), onClick: restore },
             });
           },
           onError: (error) => {
-            toast.error('Failed to discard alternate', {
+            toast.error(translateEvent('Failed to discard alternate'), {
               description:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
             });
           },
         }
       );
     },
-    [sequenceId, discardVariant, undiscardVariant]
+    [translateEvent, sequenceId, discardVariant, undiscardVariant]
   );
 
   const handlePromote = useCallback(
@@ -336,18 +352,20 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
         {
           onSuccess: () => {
             setCompareVariant(null);
-            toast.success('Alternate promoted');
+            toast.success(translateEvent('Alternate promoted'));
           },
           onError: (error) => {
-            toast.error('Failed to promote alternate', {
+            toast.error(translateEvent('Failed to promote alternate'), {
               description:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
             });
           },
         }
       );
     },
-    [sequenceId, promoteVariant]
+    [translateEvent, sequenceId, promoteVariant]
   );
 
   // Determine if currently regenerating (from realtime or mutation pending)
@@ -363,8 +381,8 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
   const sheetBusyLabel =
     retryLabel ??
     (hasPriorSheet
-      ? 'Regenerating character sheet…'
-      : 'Generating character sheet…');
+      ? t('Regenerating character sheet…')
+      : t('Generating character sheet…'));
   const selectedSheetModel = resolveSheetImageModel({
     explicit: sheetModel,
     liveVersionModel: (versionHistory?.versions ?? []).find(
@@ -402,18 +420,27 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
       },
       {
         onError: (error) =>
-          toast.error('Failed to regenerate sheet', {
+          toast.error(translateEvent('Failed to regenerate sheet'), {
             description: errorMessage(error),
           }),
       }
     );
-  }, [regenerateSheet, sequenceId, characterId, activeLookId, sheetModel]);
+  }, [
+    translateEvent,
+    regenerateSheet,
+    sequenceId,
+    characterId,
+    activeLookId,
+    sheetModel,
+  ]);
 
   if (error) {
     return (
       <div className="flex h-full items-center justify-center p-6">
         <div className="text-center">
-          <p className="text-sm text-destructive">Failed to load character</p>
+          <p className="text-sm text-destructive">
+            {t('Failed to load character')}
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">{error.message}</p>
         </div>
       </div>
@@ -443,13 +470,13 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
       <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
         <User className="h-16 w-16 text-muted-foreground/30" />
         <div className="text-center">
-          <p className="text-sm font-medium">Character not found</p>
+          <p className="text-sm font-medium">{t('Character not found')}</p>
           {sequenceId === null ? (
             <Link
               to="/characters"
               className="mt-2 text-sm text-primary hover:underline"
             >
-              Back to Characters
+              {t('Back to Characters')}
             </Link>
           ) : (
             <Link
@@ -457,7 +484,7 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
               params={{ id: sequenceId }}
               className="mt-2 text-sm text-primary hover:underline"
             >
-              Back to cast
+              {t('Back to cast')}
             </Link>
           )}
         </div>
@@ -511,9 +538,9 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                 <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
                   <Mic className="h-5 w-5 text-muted-foreground" />
                   <div className="flex flex-col gap-1">
-                    <Badge variant="secondary">Voice only</Badge>
+                    <Badge variant="secondary">{t('Voice only')}</Badge>
                     <p className="text-sm text-muted-foreground">
-                      Heard but never seen. No sheet is generated.
+                      {t('Heard but never seen. No sheet is generated.')}
                     </p>
                   </div>
                 </div>
@@ -534,8 +561,8 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium">
                       {activeLook?.isDefault
-                        ? 'Default look'
-                        : (activeLook?.name ?? 'Sheet')}
+                        ? t('Default look')
+                        : (activeLook?.name ?? t('Sheet'))}
                     </p>
                     {isSheetStale && !faceBlocked && (
                       <StalenessIndicator
@@ -569,7 +596,7 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                         <div className="flex h-full w-full flex-col items-center justify-center gap-2">
                           <User className="h-16 w-16 text-muted-foreground/20" />
                           <p className="text-sm text-muted-foreground">
-                            No sheet yet
+                            {t('No sheet yet')}
                           </p>
                         </div>
                       )}
@@ -583,7 +610,7 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                       ) : null}
                     </div>
                     <SheetVersionStrip
-                      label="Versions"
+                      label={t('Versions')}
                       selectingId={
                         selectVersion.isPending
                           ? selectVersion.variables.versionId
@@ -594,9 +621,12 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                           { sequenceId, characterId, versionId },
                           {
                             onError: (error) =>
-                              toast.error('Failed to switch sheet', {
-                                description: errorMessage(error),
-                              }),
+                              toast.error(
+                                translateEvent('Failed to switch sheet'),
+                                {
+                                  description: errorMessage(error),
+                                }
+                              ),
                           }
                         )
                       }
@@ -617,8 +647,9 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                     disabled={regenerateSheet.isPending || isSheetGenerating}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Used for this character's sheet. Shot stills still follow
-                    the sequence image model.
+                    {t(
+                      "Used for this character's sheet. Shot stills still follow the sequence image model."
+                    )}
                   </p>
                   <Button
                     onClick={handleRegenerateSheet}
@@ -632,13 +663,13 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                       )}
                       {regenerateSheet.isPending
                         ? hasPriorSheet
-                          ? 'Regenerating…'
-                          : 'Generating…'
+                          ? t('Regenerating…')
+                          : t('Generating…')
                         : hasPriorSheet
                           ? isSheetGenerating
-                            ? 'Generate again'
-                            : 'Regenerate Sheet'
-                          : 'Generate Sheet'}
+                            ? t('Generate again')
+                            : t('Regenerate Sheet')
+                          : t('Generate Sheet')}
                     </InButtonCost>
                   </Button>
                 </>
@@ -647,7 +678,7 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
               <div className="flex flex-wrap gap-2">
                 {!character.voiceOnly && (
                   <UploadMediaButton
-                    label="Upload Sheet"
+                    label={t('Upload Sheet')}
                     pendingLabel="Uploading…"
                     accept="image/*"
                     isPending={uploadSheet.isPending}
@@ -658,9 +689,11 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                         { file, sequenceId, characterId, lookId: activeLookId },
                         {
                           onSuccess: () =>
-                            toast.success('Character sheet uploaded'),
+                            toast.success(
+                              translateEvent('Character sheet uploaded')
+                            ),
                           onError: (error) =>
-                            toast.error('Sheet upload failed', {
+                            toast.error(translateEvent('Sheet upload failed'), {
                               description: errorMessage(error),
                             }),
                         }
@@ -676,7 +709,7 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                     disabled={softDelete.isPending}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    {softDelete.isPending ? 'Removing…' : 'Remove'}
+                    {softDelete.isPending ? t('Removing…') : t('Remove')}
                   </Button>
                 )}
               </div>
@@ -701,25 +734,7 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                 sequenceId={sequenceId}
                 character={character}
               />
-              {character.firstMentionSceneId && (
-                <div className="flex flex-col gap-1 rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    First Appears
-                  </p>
-                  <p className="text-sm">
-                    {`Scene ${character.firstMentionSceneId}${
-                      character.firstMentionLine
-                        ? `, Line ${character.firstMentionLine}`
-                        : ''
-                    }`}
-                  </p>
-                  {character.firstMentionText && (
-                    <p className="border-l-2 border-muted-foreground/30 pl-3 text-xs italic text-muted-foreground">
-                      "{character.firstMentionText}"
-                    </p>
-                  )}
-                </div>
-              )}
+              <FirstAppearance mention={character} />
               {character.consistencyTag && (
                 <span className="w-fit rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
                   {character.consistencyTag}
@@ -737,20 +752,23 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Remove {character.name} from this sequence?
+              {t('Remove {{value1}} from this sequence?', {
+                value1: character.name,
+              })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              The character is hidden from the cast and prompt context. You can
-              undo from the toast right after removing.
+              {t(
+                'The character is hidden from the cast and prompt context. You can undo from the toast right after removing.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               disabled={softDelete.isPending}
               onClick={() => handleRemove(character.name)}
             >
-              {softDelete.isPending ? 'Removing…' : 'Remove'}
+              {softDelete.isPending ? t('Removing…') : t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

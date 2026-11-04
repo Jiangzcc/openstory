@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { Trans, useTranslation } from 'react-i18next';
 import { PromptDiffView } from '@/shots/ui/prompts/prompt-diff-view';
 import { AppImage } from '@/ui/shadcn/app-image';
 import { Button } from '@/ui/shadcn/button';
@@ -63,10 +65,12 @@ const AssetPreview: React.FC<{
   kind: 'image' | 'video' | 'audio';
   alt: string;
 }> = ({ url, kind, alt }) => {
+  const { t } = useTranslation('shots');
+
   if (!url) {
     return (
       <div className="flex aspect-video items-center justify-center rounded-md border border-dashed border-muted-foreground/40 text-xs text-muted-foreground">
-        No asset
+        {t('No asset')}
       </div>
     );
   }
@@ -109,8 +113,11 @@ export const DivergenceCompareDialog: React.FC<
   upstreamChanges,
   promptDiff,
 }) => {
+  const { t } = useTranslation('shots');
+
   const live = liveAssetForVariant(shot, variant.variantType);
-  const label = ARTIFACT_LABEL[variant.variantType];
+  const translateLabel = useLabelTranslation('shots');
+  const label = translateLabel(ARTIFACT_LABEL[variant.variantType]);
   const busy = isPromoting || isDiscarding;
 
   // Two-click confirm: promote replaces the live primary and (for image)
@@ -137,37 +144,43 @@ export const DivergenceCompareDialog: React.FC<
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Compare alternate {label}</DialogTitle>
+          <DialogTitle>
+            {t('Compare alternate {{value1}}', { value1: label })}
+          </DialogTitle>
           <DialogDescription>
-            An alternate {label} was generated from the inputs you had at the
-            time. Compare it against the live version, then promote or discard.
+            {t(
+              'An alternate {{value1}} was generated from the inputs you had at the time. Compare it against the live version, then promote or discard.',
+              { value1: label }
+            )}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Live (current inputs)</span>
+            <span className="text-sm font-medium">
+              {t('Live (current inputs)')}
+            </span>
             <AssetPreview
               url={live.url}
               kind={live.kind}
-              alt={`Live ${label}`}
+              alt={t('Live {{value1}}', { value1: label })}
             />
           </div>
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">
-              Alternate (older inputs)
+              {t('Alternate (older inputs)')}
             </span>
             <AssetPreview
               url={variant.url}
               kind={live.kind}
-              alt={`Alternate ${label}`}
+              alt={t('Alternate {{value1}}', { value1: label })}
             />
           </div>
         </div>
 
         {upstreamChanges && upstreamChanges.length > 0 && (
           <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3">
-            <span className="text-sm font-medium">What changed</span>
+            <span className="text-sm font-medium">{t('What changed')}</span>
             <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
               {upstreamChanges.map((change) => (
                 <li key={change}>• {change}</li>
@@ -178,7 +191,9 @@ export const DivergenceCompareDialog: React.FC<
 
         {promptDiff && (
           <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3">
-            <span className="text-sm font-medium">{promptDiff.label}</span>
+            <span className="text-sm font-medium">
+              {translateLabel(promptDiff.label)}
+            </span>
             <PromptDiffView
               before={promptDiff.before}
               after={promptDiff.after}
@@ -192,13 +207,18 @@ export const DivergenceCompareDialog: React.FC<
             role="alert"
             aria-live="polite"
           >
-            Promote replaces the current {label}
-            <span>
-              {variant.variantType === 'image'
-                ? ' and clears the live video.'
-                : '.'}
-            </span>{' '}
-            Click Promote again to confirm.
+            <Trans
+              ns="shots"
+              i18nKey="Promote replaces the current {{value1}}<0>{{value2}}</0> Click Promote again to confirm."
+              components={[<span key="0" />]}
+              values={{
+                value1: label,
+                value2:
+                  variant.variantType === 'image'
+                    ? t(' and clears the live video.')
+                    : '.',
+              }}
+            />
           </div>
         )}
 
@@ -210,7 +230,7 @@ export const DivergenceCompareDialog: React.FC<
             disabled={busy}
           >
             {isDiscarding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <span>Discard</span>
+            <span>{t('Discard')}</span>
           </Button>
           <Button
             type="button"
@@ -218,7 +238,7 @@ export const DivergenceCompareDialog: React.FC<
             onClick={() => onOpenChange(false)}
             disabled={busy}
           >
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button
             type="button"
@@ -227,7 +247,7 @@ export const DivergenceCompareDialog: React.FC<
             variant={confirmingPromote ? 'destructive' : 'default'}
           >
             {isPromoting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {confirmingPromote ? 'Confirm Promote' : 'Promote'}
+            {confirmingPromote ? t('Confirm Promote') : t('Promote')}
           </Button>
         </DialogFooter>
       </DialogContent>

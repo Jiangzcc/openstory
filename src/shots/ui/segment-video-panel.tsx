@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/ui/shadcn/badge';
 import { Button } from '@/ui/shadcn/button';
 import { videoModelDisplayName } from '@/models/models';
@@ -68,6 +69,8 @@ export const SegmentVideoPanel: React.FC<SegmentVideoPanelProps> = ({
   onSelectVersion,
   selecting,
 }) => {
+  const { t } = useTranslation('shots');
+
   const label = segment.model ? videoModelDisplayName(segment.model) : null;
   // Re-roll history for the segment's active model (a "variant" is per
   // (segment, model)); each is one render you can point the selection at.
@@ -77,25 +80,27 @@ export const SegmentVideoPanel: React.FC<SegmentVideoPanelProps> = ({
     <div className="space-y-2 rounded-md border bg-muted/40 p-3">
       <div className="flex items-center gap-2 text-sm">
         <Film className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="font-medium">{label ?? 'Video'}</span>
+        <span className="font-medium">{label ?? t('Video')}</span>
         <span className="text-muted-foreground">{spanLabel}</span>
         {segment.stale && (
           <Badge variant="outline" className="ml-auto shrink-0">
-            Stale
+            {t('Stale')}
           </Badge>
         )}
       </div>
 
       {segment.shotIds.length > 1 && (
         <p className="text-xs text-muted-foreground">
-          One video renders across these {segment.shotIds.length} shots.
+          {t('One video renders across these {{value1}} shots.', {
+            value1: segment.shotIds.length,
+          })}
         </p>
       )}
 
       {versions.length > 1 && (
         <div className="space-y-1">
           <span className="text-xs font-medium text-muted-foreground">
-            Versions
+            {t('Versions')}
           </span>
           <div className="flex flex-wrap gap-1.5">
             {versions.map((version, i) => {
@@ -109,13 +114,14 @@ export const SegmentVideoPanel: React.FC<SegmentVideoPanelProps> = ({
                   variant={isSelected ? 'default' : 'outline'}
                   disabled={!selectable || selecting}
                   onClick={() => onSelectVersion(version.id)}
-                  aria-label={`Select version ${i + 1}${
-                    version.draftTaskId
-                      ? ' (draft)'
+                  aria-label={t('Select version {{value1}}{{value2}}', {
+                    value1: i + 1,
+                    value2: version.draftTaskId
+                      ? t(' (draft)')
                       : version.resolution
                         ? ` (${version.resolution})`
-                        : ''
-                  }`}
+                        : '',
+                  })}
                   aria-pressed={isSelected}
                   className="h-7 gap-1.5 px-2 text-xs"
                 >
@@ -125,7 +131,7 @@ export const SegmentVideoPanel: React.FC<SegmentVideoPanelProps> = ({
                   {(version.draftTaskId || version.resolution) && (
                     <span className="font-mono text-[10px] opacity-70">
                       {version.draftTaskId
-                        ? 'draft'
+                        ? t('draft')
                         : version.resolution === '4k'
                           ? '4K'
                           : version.resolution}

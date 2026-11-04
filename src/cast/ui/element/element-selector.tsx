@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Element selector for the sequence creation + edit forms.
  *
@@ -19,7 +21,8 @@
 import { useAuthGate } from '@/platform/ui/auth/auth-gate-provider';
 import { Button } from '@/ui/shadcn/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/shadcn/popover';
-import { ElementTokenButton } from './element-token-button';
+import { ElementSelectorTile } from './element-selector-tile';
+import type { ElementSelectorItem as DisplayItem } from './element-selector-tile';
 import {
   restoreSequenceElement,
   useDeleteSequenceElement,
@@ -36,9 +39,7 @@ import {
   ELEMENT_UPLOAD_ACCEPT,
   elementKindFromFile,
   elementKindFromFilename,
-  type SequenceElementKind,
 } from '@/cast/element-kind';
-import { ElementThumbnail } from './element-thumbnail';
 import { MAX_SEQUENCE_ELEMENTS } from './limits';
 import { cn } from '@/ui/utils';
 import { useQueryClient } from '@tanstack/react-query';
@@ -48,7 +49,7 @@ import {
   toastDragImportCorsError,
 } from '@/ui/drag-images';
 import { getFileKey } from '@/ui/upload';
-import { ImagePlus, Loader2, Upload, X } from 'lucide-react';
+import { ImagePlus, Upload } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -146,17 +147,11 @@ export function selectFilesToAccept(
   return accepted;
 }
 
-type DisplayItem = {
-  key: string;
-  /** What the file IS (#1559) — a clip or audio tile shows an icon, not a still. */
-  mediaKind: SequenceElementKind;
-  imageUrl: string | null;
-  token?: string;
-  status: 'uploading' | 'analyzing' | 'done' | 'error';
-  errorMessage?: string;
-};
-
 export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
+  const translateEvent = useLiveTranslation('cast');
+
+  const { i18n, t } = useTranslation('cast');
+
   const {
     ref,
     disabled = false,
@@ -274,8 +269,10 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
         // Say so rather than doing nothing: a dropped .pdf that vanishes with
         // no upload and no message is indistinguishable from a broken app.
         if (newFiles.length > 0) {
-          toast.error("That file can't be a reference", {
-            description: 'Drop an image, an MP3/WAV, or an MP4/MOV.',
+          toast.error(translateEvent("That file can't be a reference"), {
+            description: translateEvent(
+              'Drop an image, an MP3/WAV, or an MP4/MOV.'
+            ),
           });
         }
         return;
@@ -375,9 +372,14 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
               filename: file.name,
               error: err,
             });
-            toast.error(`Couldn't upload ${file.name}`, {
-              description: message,
-            });
+            toast.error(
+              translateEvent("Couldn't upload {{value1}}", {
+                value1: file.name,
+              }),
+              {
+                description: message,
+              }
+            );
             setEntries((prev) => {
               const current = prev.get(key);
               if (!current) return prev;
@@ -394,6 +396,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
       );
     },
     [
+      translateEvent,
       disabled,
       requireAuth,
       isPersisted,
@@ -417,30 +420,33 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
         { elementId: element.id, sequenceId },
         {
           onSuccess: () => {
-            toast(`Removed ${element.token}`, {
-              duration: 60_000,
-              action: {
-                label: 'Undo',
-                onClick: () =>
-                  void restoreSequenceElement(queryClient, {
-                    sequenceId,
-                    elementId: element.id,
-                  }).catch((error: Error) =>
-                    toast.error('Failed to restore element', {
-                      description: errorMessage(error),
-                    })
-                  ),
-              },
-            });
+            toast(
+              translateEvent('Removed {{value1}}', { value1: element.token }),
+              {
+                duration: 60_000,
+                action: {
+                  label: translateEvent('Undo'),
+                  onClick: () =>
+                    void restoreSequenceElement(queryClient, {
+                      sequenceId,
+                      elementId: element.id,
+                    }).catch((error: Error) =>
+                      toast.error(translateEvent('Failed to restore element'), {
+                        description: errorMessage(error),
+                      })
+                    ),
+                },
+              }
+            );
           },
           onError: (error) =>
-            toast.error('Failed to remove element', {
+            toast.error(translateEvent('Failed to remove element'), {
               description: errorMessage(error),
             }),
         }
       );
     },
-    [deleteElement, isPersisted, sequenceId, queryClient]
+    [translateEvent, deleteElement, isPersisted, sequenceId, queryClient]
   );
 
   const removeDraftElement = useCallback(
@@ -470,7 +476,10 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
       );
       if (duplicate) {
         throw new Error(
-          `Another element is already named "${nextToken}". Pick a different name.`
+          translateEvent(
+            'Another element is already named "{{value1}}". Pick a different name.',
+            { value1: nextToken }
+          )
         );
       }
       onDraftElementsChange?.((prev) =>
@@ -480,7 +489,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
       );
       onDraftTokenRename?.(target.token, nextToken);
     },
-    [draftElements, onDraftElementsChange, onDraftTokenRename]
+    [draftElements, onDraftElementsChange, onDraftTokenRename, translateEvent]
   );
 
   // Rename a persisted element — the server fn cascades the new token through
@@ -494,17 +503,29 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
         token: nextToken,
       });
       const updates: string[] = [];
-      if (result.scriptUpdated) updates.push('script');
+      if (result.scriptUpdated) updates.push(translateEvent('script'));
       if (result.shotsUpdated > 0) {
         updates.push(
-          `${result.shotsUpdated} shot${result.shotsUpdated === 1 ? '' : 's'}`
+          translateEvent('{{value1}} shot{{value2}}', {
+            value1: result.shotsUpdated,
+            value2: result.shotsUpdated === 1 ? '' : 's',
+          })
         );
       }
       const suffix =
-        updates.length > 0 ? ` — updated ${updates.join(' + ')}` : '';
-      toast.success(`Renamed to ${nextToken}${suffix}`);
+        updates.length > 0
+          ? translateEvent(' — updated {{value1}}', {
+              value1: updates.join(' + '),
+            })
+          : '';
+      toast.success(
+        translateEvent('Renamed to {{value1}}{{value2}}', {
+          value1: nextToken,
+          value2: suffix,
+        })
+      );
     },
-    [isPersisted, renameToken, sequenceId]
+    [translateEvent, isPersisted, renameToken, sequenceId]
   );
 
   useImperativeHandle(
@@ -534,11 +555,11 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
         if (files.length > 0) {
           void processFiles(files);
         } else if (failedUrls.length > 0) {
-          toastDragImportCorsError();
+          toastDragImportCorsError(i18n);
         }
       });
     },
-    [processFiles]
+    [i18n, processFiles]
   );
 
   const handlePaste = useCallback(
@@ -644,7 +665,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
             className="gap-2 text-muted-foreground"
           >
             <ImagePlus className="h-4 w-4" />
-            <span>Elements</span>
+            <span>{t('Elements')}</span>
             {count > 0 && (
               <span className="ml-1 rounded-full bg-primary/10 px-1.5 text-xs">
                 {count}
@@ -655,10 +676,13 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
         <PopoverContent align="end" className="w-[min(420px,calc(100vw-2rem))]">
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium">Upload reference elements</p>
+              <p className="text-sm font-medium">
+                {t('Upload reference elements')}
+              </p>
               <p className="text-xs text-muted-foreground">
-                Images, MP3/WAV or MP4/MOV — a logo, a product shot, a dialogue
-                line, a music bed. Type @ in a prompt or script to insert one.
+                {t(
+                  'Images, MP3/WAV or MP4/MOV — a logo, a product shot, a dialogue line, a music bed. Type @ in a prompt or script to insert one.'
+                )}
               </p>
             </div>
             {currentCount < MAX_SEQUENCE_ELEMENTS && (
@@ -700,7 +724,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
               >
                 <Upload className="size-7 text-muted-foreground/50" />
                 <span className="text-sm font-medium">
-                  Drag & drop or paste
+                  {t('Drag & drop or paste')}
                 </span>
                 <Button
                   type="button"
@@ -711,10 +735,12 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
                     inputRef.current?.click();
                   }}
                 >
-                  Browse
+                  {t('Browse')}
                 </Button>
                 <span className="text-[11px] text-muted-foreground">
-                  Up to {MAX_SEQUENCE_ELEMENTS} references
+                  {t('Up to {{value1}} references', {
+                    value1: MAX_SEQUENCE_ELEMENTS,
+                  })}
                 </span>
               </div>
             )}
@@ -723,71 +749,35 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
                 {displayItems.map((entry) => {
                   const { item } = entry;
                   return (
-                    <div
+                    <ElementSelectorTile
                       key={item.key}
-                      className="relative aspect-square overflow-hidden rounded-md group"
-                    >
-                      <ElementThumbnail
-                        kind={item.mediaKind}
-                        url={item.imageUrl}
-                        label={item.token ?? 'Element'}
-                        fit="cover"
-                      />
-                      {(item.status === 'uploading' ||
-                        item.status === 'analyzing') && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-background/50">
-                          <Loader2 className="size-5 animate-spin text-white" />
-                          {item.status === 'analyzing' && (
-                            <span className="text-[10px] font-medium text-white">
-                              Analyzing…
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {item.status === 'error' && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-destructive/70 px-1 text-center text-[10px] font-medium text-white">
-                          {item.errorMessage ?? 'Failed'}
-                        </div>
-                      )}
-                      {item.status === 'done' &&
-                        item.token &&
-                        entry.kind !== 'local' && (
-                          <ElementTokenButton
-                            token={item.token}
-                            onRename={(next) =>
+                      item={item}
+                      onRename={
+                        entry.kind === 'local'
+                          ? undefined
+                          : (next) =>
                               entry.kind === 'persisted'
                                 ? renamePersistedElement(entry.source, next)
                                 : renameDraftElement(
                                     entry.source.tempPath,
                                     next
                                   )
-                            }
-                            affectedShotCount={
-                              entry.kind === 'persisted'
-                                ? (shotCounts?.[entry.source.id]?.shotCount ??
-                                  0)
-                                : 0
-                            }
-                          />
-                        )}
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => {
-                          if (entry.kind === 'persisted') {
-                            removePersistedElement(entry.source);
-                          } else if (entry.kind === 'draft') {
-                            removeDraftElement(entry.source.tempPath);
-                          } else {
-                            removeLocalEntry(entry.key);
-                          }
-                        }}
-                        className="absolute top-1 right-1 size-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </div>
+                      }
+                      affectedShotCount={
+                        entry.kind === 'persisted'
+                          ? (shotCounts?.[entry.source.id]?.shotCount ?? 0)
+                          : 0
+                      }
+                      onRemove={() => {
+                        if (entry.kind === 'persisted') {
+                          removePersistedElement(entry.source);
+                        } else if (entry.kind === 'draft') {
+                          removeDraftElement(entry.source.tempPath);
+                        } else {
+                          removeLocalEntry(entry.key);
+                        }
+                      }}
+                    />
                   );
                 })}
               </div>

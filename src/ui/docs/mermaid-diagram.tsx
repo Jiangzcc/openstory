@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useId, useState } from 'react';
 
 type MermaidDiagramProps = {
@@ -38,6 +40,10 @@ async function ensureInitialized(theme: 'default' | 'dark') {
 }
 
 const MermaidDiagramClient: React.FC<MermaidDiagramProps> = ({ source }) => {
+  const translateEvent = useLiveTranslation('interface');
+
+  const { t } = useTranslation('interface');
+
   const reactId = useId();
   const diagramId = `mermaid-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const [svg, setSvg] = useState<string | null>(null);
@@ -56,7 +62,11 @@ const MermaidDiagramClient: React.FC<MermaidDiagramProps> = ({ source }) => {
       } catch (err) {
         // oxlint-disable-next-line typescript/no-unnecessary-condition -- mutated by cleanup
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to render');
+          setError(
+            err instanceof Error
+              ? err.message
+              : translateEvent('Failed to render')
+          );
         }
       }
     })();
@@ -64,13 +74,13 @@ const MermaidDiagramClient: React.FC<MermaidDiagramProps> = ({ source }) => {
     return () => {
       cancelled = true;
     };
-  }, [source, diagramId]);
+  }, [translateEvent, source, diagramId]);
 
   if (error) {
     return (
       <div className="my-4 rounded-md border border-destructive/50 bg-destructive/5 p-4">
         <p className="mb-2 text-sm font-medium text-destructive">
-          Failed to render diagram: {error}
+          {t('Failed to render diagram: {{value1}}', { value1: error })}
         </p>
         <pre className="overflow-x-auto text-xs">
           <code>{source}</code>

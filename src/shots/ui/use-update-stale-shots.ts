@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import {
   getRunningUpdateStaleShotsFn,
   getUpdateStaleShotsRunFn,
@@ -42,6 +43,8 @@ const RUN_DEADLINE_MS = 15 * 60_000;
  * change and then gives up quietly.
  */
 export function useUpdateStaleShots(args: { sequenceId: string }) {
+  const translateEvent = useLiveTranslation('shots');
+
   const { sequenceId } = args;
   const queryClient = useQueryClient();
   // 0 until a run is adopted or the first `unknown` tick, which arms it: a
@@ -102,15 +105,17 @@ export function useUpdateStaleShots(args: { sequenceId: string }) {
         {
           onSuccess: ({ workflowRunId }) => setRunId(workflowRunId),
           onError: (error) => {
-            toast.error('Update failed to start', {
+            toast.error(translateEvent('Update failed to start'), {
               description:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
             });
           },
         }
       );
     },
-    [triggerPending, runId, triggerMutate, setRunId]
+    [translateEvent, triggerPending, runId, triggerMutate, setRunId]
   );
 
   const { data: outcome, dataUpdatedAt } = useQuery({
@@ -150,7 +155,9 @@ export function useUpdateStaleShots(args: { sequenceId: string }) {
 
     if (outcome.state === 'failed') {
       setRunId(null);
-      toast.error('Update failed', { description: outcome.error });
+      toast.error(translateEvent('Update failed'), {
+        description: outcome.error,
+      });
       return;
     }
 
@@ -161,8 +168,10 @@ export function useUpdateStaleShots(args: { sequenceId: string }) {
         deadlineRef.current = Date.now() + RUN_DEADLINE_MS;
       } else if (Date.now() > deadlineRef.current) {
         setRunId(null);
-        toast.warning("Couldn't confirm the update finished", {
-          description: 'Check the indicators to see what is still out of date.',
+        toast.warning(translateEvent("Couldn't confirm the update finished"), {
+          description: translateEvent(
+            'Check the indicators to see what is still out of date.'
+          ),
         });
       }
       return;
@@ -201,11 +210,15 @@ export function useUpdateStaleShots(args: { sequenceId: string }) {
     ) {
       toast.info(
         regenerated > 0
-          ? `Updated ${regenerated} item${regenerated === 1 ? '' : 's'} — the rest are already being updated`
-          : 'These shots are already being updated',
+          ? translateEvent(
+              'Updated {{value1}} item{{value2}} — the rest are already being updated',
+              { value1: regenerated, value2: regenerated === 1 ? '' : 's' }
+            )
+          : translateEvent('These shots are already being updated'),
         {
-          description:
-            'Another update run is regenerating the remaining artifacts.',
+          description: translateEvent(
+            'Another update run is regenerating the remaining artifacts.'
+          ),
         }
       );
       return;
@@ -215,27 +228,48 @@ export function useUpdateStaleShots(args: { sequenceId: string }) {
       const problems = failures.length + skipped.length;
       toast.error(
         regenerated > 0
-          ? `Updated ${regenerated} item${regenerated === 1 ? '' : 's'}, ${problems} could not be updated`
-          : `Could not update ${problems} item${problems === 1 ? '' : 's'}`,
+          ? translateEvent(
+              'Updated {{value1}} item{{value2}}, {{value3}} could not be updated',
+              {
+                value1: regenerated,
+                value2: regenerated === 1 ? '' : 's',
+                value3: problems,
+              }
+            )
+          : translateEvent('Could not update {{value1}} item{{value2}}', {
+              value1: problems,
+              value2: problems === 1 ? '' : 's',
+            }),
         {
           description:
             failures[0]?.error ??
-            'Some shots were skipped because their state could not be determined.',
+            translateEvent(
+              'Some shots were skipped because their state could not be determined.'
+            ),
         }
       );
       return;
     }
 
     if (regenerated === 0) {
-      toast.success('Everything is already up to date');
+      toast.success(translateEvent('Everything is already up to date'));
       return;
     }
     toast.success(
       totalShots > 0
-        ? `Updated ${regenerated} item${regenerated === 1 ? '' : 's'} across ${totalShots} shot${totalShots === 1 ? '' : 's'}${touchedMusic ? ' + music' : ''}`
-        : 'Updated the sequence music'
+        ? translateEvent(
+            'Updated {{value1}} item{{value2}} across {{value3}} shot{{value4}}{{value5}}',
+            {
+              value1: regenerated,
+              value2: regenerated === 1 ? '' : 's',
+              value3: totalShots,
+              value4: totalShots === 1 ? '' : 's',
+              value5: touchedMusic ? translateEvent(' + music') : '',
+            }
+          )
+        : translateEvent('Updated the sequence music')
     );
-  }, [outcome, runId, setRunId]);
+  }, [translateEvent, outcome, runId, setRunId]);
 
   return { run, isRunning: triggerPending || runId !== null };
 }

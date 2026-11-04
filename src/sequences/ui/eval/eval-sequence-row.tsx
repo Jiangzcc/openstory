@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useMemo } from 'react';
 import type React from 'react';
 import { AppImage } from '@/ui/shadcn/app-image';
@@ -48,6 +49,8 @@ export const EvalSequenceRow: React.FC<EvalSequenceRowProps> = ({
   onNavigateToCell,
   onOpenTheatre,
 }) => {
+  const { t } = useTranslation('sequences');
+
   const aspectRatio: AspectRatio = sequence.aspectRatio ?? DEFAULT_ASPECT_RATIO;
 
   const { data: scenes } = useScenesBySequence(sequence.id);
@@ -75,12 +78,16 @@ export const EvalSequenceRow: React.FC<EvalSequenceRowProps> = ({
           <button
             type="button"
             onClick={() => onOpenTheatre(sequenceIndex)}
-            aria-label={`Play ${sequence.title || 'sequence'} in theatre`}
+            aria-label={t('Play {{value1}} in theatre', {
+              value1: sequence.title || 'sequence',
+            })}
             className="w-full h-full flex items-center justify-center cursor-pointer appearance-none bg-transparent border-0 p-0"
           >
             <AppImage
               src={previewUrl}
-              alt={`${sequence.title || 'Sequence'} preview`}
+              alt={t('{{value1}} preview', {
+                value1: sequence.title || 'Sequence',
+              })}
               className="max-w-full max-h-full object-contain rounded-md"
               loading="lazy"
               width={400}
@@ -89,7 +96,7 @@ export const EvalSequenceRow: React.FC<EvalSequenceRowProps> = ({
           </button>
         ) : (
           <div className="text-xs text-muted-foreground text-center">
-            No preview
+            {t('No preview')}
           </div>
         )}
       </div>

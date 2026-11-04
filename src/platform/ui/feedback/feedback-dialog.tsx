@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Super-simple feedback dialog — one message field, send email + product event.
  * Works signed out too (the sidebar shows it to everyone): visitors get an
@@ -26,6 +27,8 @@ type FeedbackDialogProps = {
 };
 
 export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
+  const { t } = useTranslation('platform');
+
   const [message, setMessage] = useState('');
   const { data: user } = useUser();
 
@@ -62,21 +65,23 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         {mutation.isSuccess ? (
           <>
             <DialogHeader>
-              <DialogTitle>Thanks</DialogTitle>
+              <DialogTitle>{t('Thanks')}</DialogTitle>
               <DialogDescription>
-                We got your message and will read it soon.
+                {t('We got your message and will read it soon.')}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button onClick={() => handleOpenChange(false)}>Done</Button>
+              <Button onClick={() => handleOpenChange(false)}>
+                {t('Done')}
+              </Button>
             </DialogFooter>
           </>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <DialogHeader>
-              <DialogTitle>Feedback</DialogTitle>
+              <DialogTitle>{t('Feedback')}</DialogTitle>
               <DialogDescription>
-                Bugs, ideas, or anything else — send a short note.
+                {t('Bugs, ideas, or anything else — send a short note.')}
               </DialogDescription>
             </DialogHeader>
 
@@ -87,8 +92,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 autoComplete="email"
                 inputMode="email"
                 maxLength={254}
-                placeholder="Email (optional — if you'd like a reply)"
-                aria-label="Email (optional)"
+                placeholder={t("Email (optional — if you'd like a reply)")}
+                aria-label={t('Email (optional)')}
               />
             )}
 
@@ -96,7 +101,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               name="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="What's on your mind?"
+              placeholder={t("What's on your mind?")}
               rows={5}
               required
               maxLength={2000}
@@ -107,7 +112,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               <p role="alert" className="text-sm text-destructive">
                 {mutation.error instanceof Error
                   ? mutation.error.message
-                  : 'Failed to send'}
+                  : t('Failed to send')}
               </p>
             )}
 
@@ -117,13 +122,13 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 variant="ghost"
                 onClick={() => handleOpenChange(false)}
               >
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={mutation.isPending || !message.trim()}
               >
-                {mutation.isPending ? 'Sending…' : 'Send'}
+                {mutation.isPending ? t('Sending…') : t('Send')}
               </Button>
             </DialogFooter>
           </form>

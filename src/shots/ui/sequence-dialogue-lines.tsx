@@ -1,3 +1,6 @@
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
+import { localizeDialogueTakeLabel } from './localize-dialogue-take-label';
 /**
  * Every line of the scenes on the canvas, under the sequence player (#1802),
  * with Record and Edit on each. The line of the shot being heard is marked —
@@ -38,7 +41,8 @@ type SceneLines = {
 /** Consecutive shots of one scene that say something, in shot order. */
 function sceneLines(
   shots: readonly ShotView[],
-  scenes: readonly SceneWithScript[] | undefined
+  scenes: readonly SceneWithScript[] | undefined,
+  translate?: TFunction<'shots'>
 ): SceneLines[] {
   const groups: SceneLines[] = [];
   for (const shot of shots) {
@@ -53,7 +57,10 @@ function sceneLines(
     const scene = scenes?.[index];
     groups.push({
       sceneId,
-      title: scene?.title || `Scene ${index + 1}`,
+      title:
+        scene?.title ||
+        (translate?.('Scene {{value1}}', { ns: 'shots', value1: index + 1 }) ??
+          `Scene ${index + 1}`),
       shots: [shot],
     });
   }
@@ -129,11 +136,13 @@ export const SequenceDialogueLines: React.FC<{
   onSelectShot,
   onSelectScene,
 }) => {
+  const { t, i18n } = useTranslation('shots');
+
   const { data: characters } = useSequenceCharacters(sequenceId);
   const player = useDialoguePlayer();
   const take = useLineTake(sequenceId);
   const save = useSaveShotLines(sequenceId);
-  const groups = sceneLines(shots, scenes);
+  const groups = sceneLines(shots, scenes, t);
   const sceneShotsOf = (sceneId: string) =>
     sequenceShots.filter((shot) => shot.sceneId === sceneId && !shot.deletedAt);
   const oneTakeBySceneId = new Map(
@@ -162,7 +171,7 @@ export const SequenceDialogueLines: React.FC<{
   const speakers = (characters ?? []).map((character) => character.name);
 
   return (
-    <section aria-label="Dialogue" className="flex flex-col gap-4 pt-2">
+    <section aria-label={t('Dialogue')} className="flex flex-col gap-4 pt-2">
       {player.audio}
       {groups.map((group) => {
         // A shot with no scene groups under its own id; it has no scene to
@@ -215,7 +224,7 @@ export const SequenceDialogueLines: React.FC<{
                 className="flex flex-col gap-1 border-l-2 pl-2"
               >
                 <span className="text-xs text-muted-foreground">
-                  {run.label}
+                  {localizeDialogueTakeLabel(i18n, run.label)}
                 </span>
                 {run.shots.map((shot) => {
                   const lines = shot.dialogue?.lines ?? [];

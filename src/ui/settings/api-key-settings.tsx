@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * API Key Settings Component
  * Manages BYOK (Bring Your Own Key) for OpenRouter, Fal.ai, xAI, Google and
@@ -95,6 +97,10 @@ function ApiKeySettingsContent({
   success,
   error: urlError,
 }: ApiKeySettingsProps & { teamId: string }) {
+  const translateEvent = useLiveTranslation('interface');
+
+  const { t } = useTranslation('interface');
+
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   const [error, setError] = useState<string | null>(null);
@@ -123,18 +129,18 @@ function ApiKeySettingsContent({
 
     hasShownToastRef.current = true;
     localStorage.removeItem(RETURN_KEY);
-    toast.success('API keys configured', {
+    toast.success(translateEvent('API keys configured'), {
       description:
         keyStatus.openrouter === 'team'
-          ? 'Both fal.ai and OpenRouter are connected.'
-          : 'fal.ai is connected — that covers everything.',
+          ? translateEvent('Both fal.ai and OpenRouter are connected.')
+          : translateEvent('fal.ai is connected — that covers everything.'),
       action: {
-        label: 'Continue creating',
+        label: translateEvent('Continue creating'),
         onClick: () => void navigate({ to: returnTo }),
       },
       duration: 15_000,
     });
-  }, [keyStatus, navigate]);
+  }, [translateEvent, keyStatus, navigate]);
 
   const invalidateKeys = () => {
     void queryClient.invalidateQueries({ queryKey: ['apiKeys', teamId] });
@@ -160,7 +166,7 @@ function ApiKeySettingsContent({
       posthog.capture('api_key_saved', { provider });
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Failed to save key');
+      setError(err instanceof Error ? err.message : t('Failed to save key'));
     },
   });
 
@@ -173,7 +179,7 @@ function ApiKeySettingsContent({
       posthog.capture('api_key_deleted', { provider });
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Failed to delete key');
+      setError(err instanceof Error ? err.message : t('Failed to delete key'));
     },
   });
 
@@ -184,7 +190,7 @@ function ApiKeySettingsContent({
       window.location.href = data.authUrl;
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Failed to start OAuth');
+      setError(err instanceof Error ? err.message : t('Failed to start OAuth'));
     },
   });
 
@@ -198,13 +204,15 @@ function ApiKeySettingsContent({
         apiKeys?.find((k) => k.provider === provider)?.isInvalid ?? false;
       invalidateKeys();
       if (result.valid && wasInvalid) {
-        toast.success('Key re-validated', {
-          description: `Your ${PROVIDER_LABELS[provider]} key is valid again.`,
+        toast.success(translateEvent('Key re-validated'), {
+          description: translateEvent('Your {{value1}} key is valid again.', {
+            value1: PROVIDER_LABELS[provider],
+          }),
         });
       }
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Failed to re-validate');
+      setError(err instanceof Error ? err.message : t('Failed to re-validate'));
     },
   });
 
@@ -230,16 +238,16 @@ function ApiKeySettingsContent({
 
   const successMessage =
     success === 'openrouter_connected'
-      ? 'OpenRouter connected successfully.'
+      ? t('OpenRouter connected successfully.')
       : null;
 
   const errorMessage =
     urlError === 'openrouter_oauth_missing_code'
-      ? 'OAuth failed: missing authorization code.'
+      ? t('OAuth failed: missing authorization code.')
       : urlError === 'openrouter_oauth_no_team'
-        ? 'OAuth failed: no team found.'
+        ? t('OAuth failed: no team found.')
         : urlError === 'openrouter_oauth_failed'
-          ? 'OAuth failed: could not connect to OpenRouter.'
+          ? t('OAuth failed: could not connect to OpenRouter.')
           : null;
 
   return (
@@ -258,10 +266,11 @@ function ApiKeySettingsContent({
 
       <Card>
         <CardHeader>
-          <CardTitle>API Keys</CardTitle>
+          <CardTitle>{t('API Keys')}</CardTitle>
           <CardDescription>
-            Bring your own keys and pay providers directly. A fal.ai key alone
-            covers everything — script analysis included.
+            {t(
+              'Bring your own keys and pay providers directly. A fal.ai key alone covers everything — script analysis included.'
+            )}
           </CardDescription>
           <CardAction>
             <AskAssistantButton context={[]} />
@@ -272,8 +281,8 @@ function ApiKeySettingsContent({
           <ManualKeyRow
             provider="fal"
             icon={<FalLogo className="size-5" />}
-            blurb="Images, video & audio. Covers script analysis too."
-            placeholder="fal_..."
+            blurb={t('Images, video & audio. Covers script analysis too.')}
+            placeholder={t('fal_...')}
             keyUrl="https://fal.ai/dashboard/keys"
             existingKey={falKey}
             status={keyStatus?.fal}
@@ -289,8 +298,8 @@ function ApiKeySettingsContent({
           <ManualKeyRow
             provider="xai"
             icon={<XIcon className="size-4" />}
-            blurb="Grok chat, images & video, billed by xAI directly."
-            placeholder="xai-..."
+            blurb={t('Grok chat, images & video, billed by xAI directly.')}
+            placeholder={t('xai-...')}
             keyUrl="https://console.x.ai"
             existingKey={xaiKey}
             status={keyStatus?.xai}
@@ -306,8 +315,10 @@ function ApiKeySettingsContent({
           <ManualKeyRow
             provider="google"
             icon={<GoogleGIcon className="size-4" />}
-            blurb="Gemini chat & Omni Flash video, billed by Google directly."
-            placeholder="AIza..."
+            blurb={t(
+              'Gemini chat & Omni Flash video, billed by Google directly.'
+            )}
+            placeholder={t('AIza...')}
             keyUrl="https://aistudio.google.com/apikey"
             existingKey={googleKey}
             status={keyStatus?.google}
@@ -338,14 +349,16 @@ function ApiKeySettingsContent({
                       <Skeleton className="h-5 w-20" />
                     ) : openrouterKey?.isInvalid ? (
                       <Badge variant="destructive" className="text-xs">
-                        Invalid
+                        {t('Invalid')}
                       </Badge>
                     ) : (
                       <StatusBadge source={keyStatus?.openrouter} />
                     )}
                   </div>
                   <p className="truncate text-xs text-muted-foreground">
-                    Optional — script analysis falls back to your fal.ai key.
+                    {t(
+                      'Optional — script analysis falls back to your fal.ai key.'
+                    )}
                   </p>
                 </div>
               </div>
@@ -361,7 +374,7 @@ function ApiKeySettingsContent({
                         size="icon"
                         onClick={() => revalidateMutation.mutate('openrouter')}
                         disabled={revalidateMutation.isPending}
-                        aria-label="Re-validate OpenRouter key"
+                        aria-label={t('Re-validate OpenRouter key')}
                       >
                         <RotateCcw
                           className={`h-4 w-4 ${revalidateMutation.isPending ? 'animate-spin' : ''}`}
@@ -373,7 +386,7 @@ function ApiKeySettingsContent({
                       size="icon"
                       onClick={() => deleteMutation.mutate('openrouter')}
                       disabled={deleteMutation.isPending}
-                      aria-label="Delete OpenRouter key"
+                      aria-label={t('Delete OpenRouter key')}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -385,10 +398,10 @@ function ApiKeySettingsContent({
                     className="shrink-0"
                     onClick={() => oauthMutation.mutate()}
                     disabled={oauthMutation.isPending}
-                    aria-label="Connect with OpenRouter"
+                    aria-label={t('Connect with OpenRouter')}
                   >
                     <ExternalLink className="mr-2 size-3.5" />
-                    {oauthMutation.isPending ? 'Connecting…' : 'Connect'}
+                    {oauthMutation.isPending ? t('Connecting…') : t('Connect')}
                   </Button>
                 ))}
             </div>
@@ -398,8 +411,8 @@ function ApiKeySettingsContent({
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   {openrouterKey.invalidReason ||
-                    'OpenRouter rejected this key.'}{' '}
-                  Re-validate, or reconnect via OAuth to replace it.
+                    t('OpenRouter rejected this key.')}{' '}
+                  {t('Re-validate, or reconnect via OAuth to replace it.')}
                   <div className="mt-2 flex gap-2">
                     <Button
                       size="sm"
@@ -408,8 +421,8 @@ function ApiKeySettingsContent({
                       disabled={revalidateMutation.isPending}
                     >
                       {revalidateMutation.isPending
-                        ? 'Checking…'
-                        : 'Re-validate'}
+                        ? t('Checking…')
+                        : t('Re-validate')}
                     </Button>
                     <Button
                       size="sm"
@@ -417,7 +430,7 @@ function ApiKeySettingsContent({
                       disabled={oauthMutation.isPending}
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Reconnect
+                      {t('Reconnect')}
                     </Button>
                   </div>
                 </AlertDescription>
@@ -428,8 +441,10 @@ function ApiKeySettingsContent({
           <ManualKeyRow
             provider="llmtr"
             icon={<LlmtrLogo className="size-5" />}
-            blurb="Turkey-hosted gateway: Claude, GPT, Gemini & Grok on one key."
-            placeholder="llmtr-..."
+            blurb={t(
+              'Turkey-hosted gateway: Claude, GPT, Gemini & Grok on one key.'
+            )}
+            placeholder={t('llmtr-...')}
             keyUrl="https://llmtr.com/dashboard/keys"
             existingKey={llmtrKey}
             status={keyStatus?.llmtr}
@@ -446,10 +461,11 @@ function ApiKeySettingsContent({
 
       <Card>
         <CardHeader>
-          <CardTitle>Publishing</CardTitle>
+          <CardTitle>{t('Publishing')}</CardTitle>
           <CardDescription>
-            Optional. With a key, the Download menu gains “Publish to social…”
-            for sending a finished render to your own accounts.
+            {t(
+              'Optional. With a key, the Download menu gains “Publish to social…” for sending a finished render to your own accounts.'
+            )}
           </CardDescription>
         </CardHeader>
 
@@ -457,8 +473,10 @@ function ApiKeySettingsContent({
           <ManualKeyRow
             provider="upload_post"
             icon={<UploadPostLogo className="size-5" />}
-            blurb="TikTok, Instagram, YouTube, LinkedIn, X & more from one key."
-            placeholder="Upload-Post API key"
+            blurb={t(
+              'TikTok, Instagram, YouTube, LinkedIn, X & more from one key.'
+            )}
+            placeholder={t('Upload-Post API key')}
             keyUrl="https://app.upload-post.com/api-keys"
             existingKey={uploadPostKey}
             status={keyStatus?.upload_post}
@@ -510,6 +528,8 @@ function ManualKeyRow({
   isSaving,
   isDeleting,
 }: ManualKeyRowProps) {
+  const { t } = useTranslation('interface');
+
   const [value, setValue] = useState('');
   const label = PROVIDER_LABELS[provider];
 
@@ -550,7 +570,7 @@ function ManualKeyRow({
               size="icon"
               onClick={onDelete}
               disabled={isDeleting}
-              aria-label={`Delete ${label} key`}
+              aria-label={t('Delete {{value1}} key', { value1: label })}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
@@ -572,11 +592,11 @@ function ManualKeyRow({
                 onChange={(e) => setValue(e.target.value)}
                 autoComplete="off"
                 spellCheck={false}
-                aria-label={`${label} API key`}
+                aria-label={t('{{value1}} API key', { value1: label })}
                 required
               />
               <Button type="submit" disabled={isSaving || !value.trim()}>
-                {isSaving ? 'Saving…' : 'Save'}
+                {isSaving ? t('Saving…') : t('Save')}
               </Button>
             </form>
             <a
@@ -585,7 +605,7 @@ function ManualKeyRow({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
             >
-              Get a key from {label}
+              {t('Get a key from')} {label}
               <ExternalLink className="size-3" />
             </a>
           </div>
@@ -596,17 +616,19 @@ function ManualKeyRow({
 }
 
 function StatusBadge({ source }: { source?: 'team' | 'platform' | 'none' }) {
+  const { t } = useTranslation('interface');
+
   if (source === 'team') {
     return (
       <Badge variant="default" className="text-xs">
-        Your key
+        {t('Your key')}
       </Badge>
     );
   }
   if (source === 'platform') {
     return (
       <Badge variant="secondary" className="text-xs">
-        Platform key
+        {t('Platform key')}
       </Badge>
     );
   }

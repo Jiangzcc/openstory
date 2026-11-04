@@ -1,3 +1,7 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { localizePageContextLabel } from './localize-page-context-label';
 /**
  * The composer (#2155): context chips the user can remove, attachments
  * with their upload state, a textarea that sends on Enter (Shift+Enter for
@@ -40,12 +44,14 @@ const AttachmentPicker: React.FC<{
   onPick: (references: StudioReference[]) => void;
   onUpload: (files: File[]) => void;
 }> = ({ attached, onOpenChange, onPick, onUpload }) => {
+  const { t } = useTranslation('assistant');
+
   const library = useStudioLibrary();
   return (
     <StudioReferencePicker
       open
       onOpenChange={onOpenChange}
-      title="Attach"
+      title={t('Attach')}
       library={library}
       attached={attached}
       multiple
@@ -76,11 +82,14 @@ const ContextChips: React.FC<{
   context: PageContextItem[];
   onDismiss: (item: PageContextItem) => void;
 }> = ({ context, onDismiss }) => {
+  const { t, i18n } = useTranslation('assistant');
+
+  const translateLabel = useLabelTranslation('assistant');
   if (context.length === 0) return null;
   return (
     <ul
       className="flex flex-wrap gap-1"
-      aria-label="What the assistant can see"
+      aria-label={t('What the assistant can see')}
     >
       {context.map((item) => (
         <li
@@ -88,15 +97,23 @@ const ContextChips: React.FC<{
           className="flex h-6 items-center gap-1 rounded-full border bg-background pl-2 pr-0.5 text-xs"
         >
           <span className="text-muted-foreground">
-            {PAGE_CONTEXT_NOUN[item.kind]}
+            {translateLabel(PAGE_CONTEXT_NOUN[item.kind])}
           </span>
-          <span className="max-w-40 truncate font-medium">{item.label}</span>
+          <span className="max-w-40 truncate font-medium">
+            {localizePageContextLabel(i18n, item)}
+          </span>
           <Button
             type="button"
             variant="ghost"
             size="icon-xs"
             className="size-5 rounded-full"
-            aria-label={`Remove ${PAGE_CONTEXT_NOUN[item.kind]} ${item.label} from the conversation`}
+            aria-label={t(
+              'Remove {{value1}} {{value2}} from the conversation',
+              {
+                value1: translateLabel(PAGE_CONTEXT_NOUN[item.kind]),
+                value2: localizePageContextLabel(i18n, item),
+              }
+            )}
             onClick={() => onDismiss(item)}
           >
             <span aria-hidden>×</span>
@@ -117,45 +134,49 @@ function attachmentStatus(attachment: Attachment): string {
 const AttachmentChip: React.FC<{
   attachment: Attachment;
   onRemove: () => void;
-}> = ({ attachment, onRemove }) => (
-  <li
-    className={cn(
-      'flex h-8 items-center gap-2 rounded-md border bg-background pl-1 pr-0.5 text-xs',
-      attachment.status === 'error' && 'border-destructive/40'
-    )}
-  >
-    {attachment.preview ? (
-      <img
-        src={attachment.preview}
-        alt=""
-        width={24}
-        height={24}
-        className="size-6 rounded object-cover"
-      />
-    ) : (
-      <span className="w-6 text-center text-muted-foreground">
-        {attachment.kind === 'video'
-          ? 'clip'
-          : attachment.kind === 'audio'
-            ? 'audio'
-            : 'text'}
-      </span>
-    )}
-    <span className="max-w-32 truncate">{attachment.name}</span>
-    <span className="text-muted-foreground">
-      {attachmentStatus(attachment)}
-    </span>
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-xs"
-      aria-label={`Remove ${attachment.name}`}
-      onClick={onRemove}
+}> = ({ attachment, onRemove }) => {
+  const { t } = useTranslation('assistant');
+  const translateLabel = useLabelTranslation('assistant');
+  return (
+    <li
+      className={cn(
+        'flex h-8 items-center gap-2 rounded-md border bg-background pl-1 pr-0.5 text-xs',
+        attachment.status === 'error' && 'border-destructive/40'
+      )}
     >
-      <span aria-hidden>×</span>
-    </Button>
-  </li>
-);
+      {attachment.preview ? (
+        <img
+          src={attachment.preview}
+          alt=""
+          width={24}
+          height={24}
+          className="size-6 rounded object-cover"
+        />
+      ) : (
+        <span className="w-6 text-center text-muted-foreground">
+          {attachment.kind === 'video'
+            ? t('clip')
+            : attachment.kind === 'audio'
+              ? t('audio')
+              : t('text')}
+        </span>
+      )}
+      <span className="max-w-32 truncate">{attachment.name}</span>
+      <span className="text-muted-foreground">
+        {translateLabel(attachmentStatus(attachment))}
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        aria-label={t('Remove {{value1}}', { value1: attachment.name })}
+        onClick={onRemove}
+      >
+        <span aria-hidden>×</span>
+      </Button>
+    </li>
+  );
+};
 
 export const AssistantComposer: React.FC<AssistantComposerProps> = ({
   context,
@@ -168,6 +189,9 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
   onStop,
   uploadStub,
 }) => {
+  const translateEvent = useLiveTranslation('assistant');
+  const { t } = useTranslation('assistant');
+
   const [text, setText] = useState(initialPrompt ?? '');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -185,7 +209,14 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
     for (const file of files) {
       const kind = attachmentKind(file);
       if (!kind) {
-        toast.error(`${file.name}: not an image, video, audio or text file`);
+        toast.error(
+          translateEvent(
+            '{{value1}}: not an image, video, audio or text file',
+            {
+              value1: file.name,
+            }
+          )
+        );
         continue;
       }
       const id = generateId();
@@ -304,7 +335,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
       >
         <ContextChips context={context} onDismiss={onDismissContext} />
         {attachments.length > 0 && (
-          <ul className="flex flex-wrap gap-1" aria-label="Attachments">
+          <ul className="flex flex-wrap gap-1" aria-label={t('Attachments')}>
             {attachments.map((attachment) => (
               <AttachmentChip
                 key={attachment.id}
@@ -345,10 +376,12 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
             }
           }}
           placeholder={
-            context.length > 0 ? 'Ask about this…' : 'Ask about your work…'
+            context.length > 0
+              ? t('Ask about this…')
+              : t('Ask about your work…')
           }
-          aria-label="Message the assistant"
-          aria-description="Enter sends, Shift+Enter starts a new line"
+          aria-label={t('Message the assistant')}
+          aria-description={t('Enter sends, Shift+Enter starts a new line')}
           rows={1}
           className="max-h-48 min-h-9 resize-none border-0 bg-transparent px-0 py-1 text-base shadow-none focus-visible:ring-0 md:text-base dark:bg-transparent"
           autoComplete="off"
@@ -358,7 +391,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label="Attach from your library or upload"
+            aria-label={t('Attach from your library or upload')}
             onClick={() => setPickerOpen(true)}
           >
             <Plus aria-hidden="true" />
@@ -387,14 +420,14 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
           <span className="flex-1" />
           {busy ? (
             <Button type="button" variant="outline" size="sm" onClick={onStop}>
-              Stop
+              {t('Stop')}
             </Button>
           ) : (
             <Button
               type="submit"
               size="icon-sm"
               className="rounded-full"
-              aria-label="Send"
+              aria-label={t('Send')}
               disabled={!canSend}
             >
               <ArrowUp aria-hidden="true" />

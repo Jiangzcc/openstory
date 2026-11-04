@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * One thread (#2155): the virtualised message list over `useChat`, the
  * approvals bound to their tool cards, and the composer. Owns the chat so
@@ -39,6 +41,9 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
   connection,
   uploadStub,
 }) => {
+  const { t } = useTranslation('assistant');
+  const translateLabel = useLabelTranslation('assistant');
+
   const queryClient = useQueryClient();
   const { model } = useAssistantState();
   const chat = useAssistantChat({ threadId, pageContext, model, connection });
@@ -89,13 +94,19 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
       {messages.length === 0 ? (
         <div className="flex flex-1 flex-col justify-end gap-3 p-4">
           <div className="flex flex-col gap-1">
-            <h3 className="text-base font-medium">What do you want to do?</h3>
+            <h3 className="text-base font-medium">
+              {t('What do you want to do?')}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Ask about your work or tell me what to change. I can read and edit
-              anything the app can, and I ask before I delete.
+              {t(
+                'Ask about your work or tell me what to change. I can read and edit anything the app can, and I ask before I delete.'
+              )}
             </p>
           </div>
-          <ul className="flex flex-col gap-1" aria-label="Suggested prompts">
+          <ul
+            className="flex flex-col gap-1"
+            aria-label={t('Suggested prompts')}
+          >
             {suggestions.map((suggestion) => (
               <li key={suggestion}>
                 <Button
@@ -105,7 +116,7 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
                   className="h-auto w-full justify-start whitespace-normal py-1.5 text-left"
                   onClick={() => void sendMessage(suggestion)}
                 >
-                  {suggestion}
+                  {translateLabel(suggestion)}
                 </Button>
               </li>
             ))}

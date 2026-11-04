@@ -17,6 +17,7 @@ import { Label } from '@/ui/shadcn/label';
 import { useHydrated } from '@/ui/use-hydrated';
 import type { AuthOptions } from '@/platform/auth-options.fn';
 import { authClient } from './client';
+import { Trans, useTranslation } from 'react-i18next';
 import { DEV_OTP_CODE } from '@/platform/auth/dev-otp';
 import { finishSignInRedirect, sanitizeAuthRedirect } from './navigation';
 import { usePostHog } from '@posthog/react';
@@ -24,6 +25,16 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
 import { getLogger } from '@/platform/logger';
+
+type AuthFormErrorKey = 'Failed to send code' | 'Failed to sign in with Google';
+type AuthFormError = { message: string } | { key: AuthFormErrorKey };
+
+function authFormError(
+  message: string | undefined,
+  key: AuthFormErrorKey
+): AuthFormError {
+  return message ? { message } : { key };
+}
 
 const logger = getLogger(['openstory', 'ui', 'auth', 'auth-form']);
 
@@ -43,6 +54,7 @@ export function AuthForm({
   redirectTo = '/',
   authOptions,
 }: AuthFormProps) {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const posthog = usePostHog();
   // Pre-hydration clicks go nowhere (#2007): a tap on Google or Continue
@@ -52,7 +64,7 @@ export function AuthForm({
   const [email, setEmail] = useState(emailEntered || '');
   const [isLoading, setIsLoading] = useState(false);
   const busy = !hydrated || isLoading;
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthFormError | null>(null);
 
   const googleAuthEnabled = authOptions?.googleAuthEnabled ?? false;
   // Dev only: the server stamps the fixed OTP (no EMAIL_FROM set), so the
@@ -109,7 +121,7 @@ export function AuthForm({
       });
 
       if (result.error) {
-        setError(result.error.message || 'Failed to send code');
+        setError(authFormError(result.error.message, 'Failed to send code'));
         setIsLoading(false);
         return;
       }
@@ -141,7 +153,12 @@ export function AuthForm({
       });
     } catch (err) {
       logger.error('Send OTP error:', { err });
-      setError(err instanceof Error ? err.message : 'Failed to send code');
+      setError(
+        authFormError(
+          err instanceof Error ? err.message : undefined,
+          'Failed to send code'
+        )
+      );
       setIsLoading(false);
     }
   };
@@ -162,7 +179,10 @@ export function AuthForm({
     } catch (err) {
       logger.error('Google sign-in error:', { err });
       setError(
-        err instanceof Error ? err.message : 'Failed to sign in with Google'
+        authFormError(
+          err instanceof Error ? err.message : undefined,
+          'Failed to sign in with Google'
+        )
       );
       setIsLoading(false);
     }
@@ -171,13 +191,15 @@ export function AuthForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Welcome</CardTitle>
-        <CardDescription>Sign in or create an account</CardDescription>
+        <CardTitle>{t('Welcome')}</CardTitle>
+        <CardDescription>{t('Sign in or create an account')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
           <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              {'key' in error ? t(error.key) : error.message}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -194,7 +216,7 @@ export function AuthForm({
               <svg
                 className="mr-2 h-4 w-4"
                 viewBox="0 0 24 24"
-                aria-label="Google logo"
+                aria-label={t('Google logo')}
               >
                 <title>Google</title>
                 <path
@@ -214,7 +236,7 @@ export function AuthForm({
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Continue with Google
+              {t('Continue with Google')}
             </Button>
 
             <div className="relative">
@@ -223,7 +245,7 @@ export function AuthForm({
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or
+                  {t('Or')}
                 </span>
               </div>
             </div>
@@ -236,13 +258,13 @@ export function AuthForm({
           onSubmit={(e) => void handleSendOtp(e)}
         >
           <div className="mb-4 space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('Email')}</Label>
             <Input
               id="email"
               name="email"
               type="email"
               autoComplete="email webauthn"
-              placeholder="you@example.com"
+              placeholder={t('you@example.com')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={busy}
@@ -258,45 +280,49 @@ export function AuthForm({
             className="hidden w-full group-has-[input:not(:placeholder-shown)]/email-form:inline-flex"
             disabled={busy}
           >
-            {isLoading ? 'Sending…' : 'Continue with email'}
+            {isLoading ? t('Sending…') : t('Continue with email')}
           </Button>
         </form>
 
         {devFixedOtpActive ? (
           <p className="text-center text-xs text-muted-foreground">
-            Dev mode: no email OTP necessary — submitting an email signs you
-            straight in. Set <code>EMAIL_FROM</code> in <code>.env.local</code>{' '}
-            to use the real email flow.
+            <Trans
+              t={t}
+              i18nKey="Dev mode: no email OTP necessary — submitting an email signs you straight in. Set <emailFrom>EMAIL_FROM</emailFrom> in <environmentFile>.env.local</environmentFile> to use the real email flow."
+              components={{ emailFrom: <code />, environmentFile: <code /> }}
+            />
           </p>
         ) : (
           <p className="text-center text-xs text-muted-foreground">
-            No password needed — we'll send you a code.
+            {t("No password needed — we'll send you a code.")}
           </p>
         )}
 
         <p className="text-center text-xs text-muted-foreground">
-          By signing in, you agree to our{' '}
-          <Link
-            to="/terms"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            Terms of&nbsp;Service
-          </Link>{' '}
-          and{' '}
-          <Link
-            to="/privacy"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            Privacy&nbsp;Policy
-          </Link>
-          . Report generated content at{' '}
-          <Link
-            to="/report"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            /report
-          </Link>
-          .
+          <Trans
+            t={t}
+            i18nKey="By signing in, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>. Report generated content at <report>/report</report>."
+            components={{
+              terms: (
+                <Link
+                  to="/terms"
+                  className="whitespace-nowrap underline underline-offset-4 hover:text-foreground"
+                />
+              ),
+              privacy: (
+                <Link
+                  to="/privacy"
+                  className="whitespace-nowrap underline underline-offset-4 hover:text-foreground"
+                />
+              ),
+              report: (
+                <Link
+                  to="/report"
+                  className="whitespace-nowrap underline underline-offset-4 hover:text-foreground"
+                />
+              ),
+            }}
+          />
         </p>
       </CardContent>
     </Card>

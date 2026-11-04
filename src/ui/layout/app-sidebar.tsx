@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { usePostHog } from '@posthog/react';
 import { GitHubIcon } from '@/ui/icons/github-icon';
 import { XIcon } from '@/ui/icons/x-icon';
@@ -59,6 +61,7 @@ import { useBillingBalance } from '@/billing/ui/use-billing-balance';
 import { useFalPricing } from '@/billing/ui/use-fal-pricing';
 
 function useLowBalanceWarning() {
+  const { i18n } = useTranslation('billing');
   const { balance, isLowBalance, isZeroBalance, lowBalanceThreshold } =
     useBillingBalance();
   const { pricing } = useFalPricing();
@@ -80,21 +83,24 @@ function useLowBalanceWarning() {
       const clicked = (choice: 'add_credits' | 'other_options') =>
         posthog.capture('low_balance_toast_clicked', { ...props, choice });
 
-      showLowBalanceToast({
-        balanceUsd,
-        isZeroBalance: zero,
-        runCostUsd: typicalShortCostUsd(pricing),
-        onAddCredits: () => {
-          clicked('add_credits');
-          openAddCreditsDialog('low_balance_toast');
+      showLowBalanceToast(
+        {
+          balanceUsd,
+          isZeroBalance: zero,
+          runCostUsd: typicalShortCostUsd(pricing),
+          onAddCredits: () => {
+            clicked('add_credits');
+            openAddCreditsDialog('low_balance_toast');
+          },
+          onOtherOptions: () => {
+            clicked('other_options');
+            openBillingGate(zero ? 'zero' : 'insufficient');
+          },
         },
-        onOtherOptions: () => {
-          clicked('other_options');
-          openBillingGate(zero ? 'zero' : 'insufficient');
-        },
-      });
+        i18n
+      );
     },
-    [balance, isZeroBalance, posthog, pricing]
+    [balance, isZeroBalance, posthog, pricing, i18n]
   );
 
   useEffect(() => {
@@ -142,6 +148,10 @@ const navLinks = [
 ] as const;
 
 export function AppSidebar() {
+  const translateLabel = useLabelTranslation('interface');
+
+  const { t } = useTranslation('interface');
+
   useLowBalanceWarning();
 
   const { isMobile, setOpenMobile } = useSidebar();
@@ -194,7 +204,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="New sequence">
+                <SidebarMenuButton asChild tooltip={t('New sequence')}>
                   {/* `/` is the free composer for everyone (#1104); the
                       signed-in alias `/sequences/new` is for copy/breadcrumb
                       entry points that require a session. */}
@@ -207,32 +217,32 @@ export function AppSidebar() {
                     }
                   >
                     <Plus />
-                    <span>New sequence</span>
+                    <span>{t('New sequence')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {canSearch && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    tooltip="Search"
+                    tooltip={t('Search')}
                     aria-keyshortcuts="Meta+K Control+K"
                     onClick={() => setSearchOpen(true)}
                   >
                     <Search />
-                    <span>Search</span>
+                    <span>{t('Search')}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
               {navLinks.map(({ to, label, icon: Icon }) => (
                 <SidebarMenuItem key={label}>
-                  <SidebarMenuButton asChild tooltip={label}>
+                  <SidebarMenuButton asChild tooltip={translateLabel(label)}>
                     <Link
                       to={to}
                       activeProps={{ 'data-active': 'true' }}
                       activeOptions={{ exact: false }}
                     >
                       <Icon />
-                      <span>{label}</span>
+                      <span>{translateLabel(label)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -244,39 +254,39 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Docs">
+            <SidebarMenuButton asChild tooltip={t('Docs')}>
               <Link to="/docs">
                 <LifeBuoy />
-                <span>Docs</span>
+                <span>{t('Docs')}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Skills & MCP">
+            <SidebarMenuButton asChild tooltip={t('Skills & MCP')}>
               <Link to="/connect" activeProps={{ 'data-active': 'true' }}>
                 <Plug />
-                <span>Skills &amp; MCP</span>
+                <span>{t('Skills & MCP')}</span>
               </Link>
             </SidebarMenuButton>
             <SidebarMenuBadge className="bg-primary/15 text-primary">
-              New
+              {t('New')}
             </SidebarMenuBadge>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Pricing">
+            <SidebarMenuButton asChild tooltip={t('Pricing')}>
               <Link to="/pricing">
                 <BadgeDollarSign />
-                <span>Pricing</span>
+                <span>{t('Pricing')}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip="Feedback"
+              tooltip={t('Feedback')}
               onClick={() => setFeedbackOpen(true)}
             >
               <Mail />
-              <span>Feedback</span>
+              <span>{t('Feedback')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -300,10 +310,10 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Follow OpenStory">
+            <SidebarMenuButton asChild tooltip={t('Follow OpenStory')}>
               <a href={SITE_CONFIG.xHref} target="_blank" rel="noreferrer">
                 <XIcon className="size-4" />
-                <span>Follow OpenStory</span>
+                <span>{t('Follow OpenStory')}</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

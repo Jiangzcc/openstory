@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Film-length chip (#1593). On the scene rail it shows the cut's running time
  * — the sum of every shot's `durationMs` — next to the sequence target; in
@@ -40,22 +42,28 @@ export const TargetDurationChip: React.FC<{
   /** `sequences.targetDurationSeconds`; null / undefined = auto. */
   targetDurationSeconds: number | null | undefined;
 }> = ({ sequenceId, totalSeconds, targetDurationSeconds }) => {
+  const translateEvent = useLiveTranslation('sequences');
+  const { t } = useTranslation('sequences');
+
   const setTarget = useSetSequenceTargetDuration(sequenceId);
   const customId = useId();
   const target = targetDurationSeconds ?? null;
-  const targetLabel = target === null ? 'Auto' : formatSeconds(target);
+  const targetLabel = target === null ? t('Auto') : formatSeconds(target);
   let label = targetLabel;
   if (totalSeconds !== undefined) {
     label =
       target === null
         ? formatSeconds(totalSeconds)
-        : `${formatSeconds(totalSeconds)} · target ${targetLabel}`;
+        : t('{{value1}} · target {{value2}}', {
+            value1: formatSeconds(totalSeconds),
+            value2: targetLabel,
+          });
   }
   const commit = (next: number | null) => {
     if (next === target) return;
     setTarget.mutate(next, {
       onError: (error) =>
-        toast.error('Failed to set target length', {
+        toast.error(translateEvent('Failed to set target length'), {
           description: errorMessage(error),
         }),
     });
@@ -69,8 +77,10 @@ export const TargetDurationChip: React.FC<{
           className="rounded-md px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground hover:bg-muted/60 hover:text-foreground"
           aria-label={
             totalSeconds === undefined
-              ? `Target length ${label}. Change`
-              : `Running time ${label}. Change target length`
+              ? t('Target length {{value1}}. Change', { value1: label })
+              : t('Running time {{value1}}. Change target length', {
+                  value1: label,
+                })
           }
           data-testid="film-length-chip"
         >
@@ -79,7 +89,7 @@ export const TargetDurationChip: React.FC<{
       </PopoverTrigger>
       <PopoverContent align="end" className="w-auto">
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Target length</p>
+          <p className="text-sm font-medium">{t('Target length')}</p>
           <ToggleGroup
             type="single"
             value={target === null ? 'auto' : String(target)}
@@ -91,7 +101,7 @@ export const TargetDurationChip: React.FC<{
             size="sm"
             spacing={0}
           >
-            <ToggleGroupItem value="auto">Auto</ToggleGroupItem>
+            <ToggleGroupItem value="auto">{t('Auto')}</ToggleGroupItem>
             {TARGET_DURATION_PRESETS.map((preset) => (
               <ToggleGroupItem key={preset.value} value={preset.value}>
                 {preset.label}
@@ -99,7 +109,7 @@ export const TargetDurationChip: React.FC<{
             ))}
           </ToggleGroup>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <label htmlFor={customId}>Custom</label>
+            <label htmlFor={customId}>{t('Custom')}</label>
             <Input
               id={customId}
               key={target ?? 'auto'}
@@ -108,7 +118,7 @@ export const TargetDurationChip: React.FC<{
               min={5}
               step={1}
               defaultValue={target ?? ''}
-              placeholder="seconds"
+              placeholder={t('seconds')}
               className="h-8 w-24 text-base md:text-sm"
               onBlur={(e) => {
                 const raw = e.currentTarget.value;
@@ -130,7 +140,7 @@ export const TargetDurationChip: React.FC<{
             s
           </div>
           <p className="text-xs text-muted-foreground">
-            Steers Enhance and the estimate. Shots keep their lengths.
+            {t('Steers Enhance and the estimate. Shots keep their lengths.')}
           </p>
         </div>
       </PopoverContent>

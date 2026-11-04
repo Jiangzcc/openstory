@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { SITE_CONFIG } from './constants';
 
 export const OgImageLinkedIn: React.FC = () => {
+  const { t } = useTranslation('interface');
+
   return (
     <div className="relative flex h-[630px] w-[1200px] flex-col items-center justify-center overflow-hidden bg-black">
       <div className="absolute inset-0">
@@ -29,9 +32,9 @@ export const OgImageLinkedIn: React.FC = () => {
         <OpenStoryLogo className="mb-8 h-16 w-auto text-white" />
 
         <h1 className="font-heading text-[7rem] font-bold tracking-tighter leading-[0.95] text-white">
-          Open Video
+          {t('Open Video')}
           <br />
-          <span className="text-editorial">Generation.</span>
+          <span className="text-editorial">{t('Generation.')}</span>
         </h1>
 
         <p className="mt-5 max-w-md text-xl text-white/70">

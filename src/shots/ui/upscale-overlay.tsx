@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { type AspectRatio, getVariantGridConfig } from '@/models/aspect-ratios';
 import { tileBackgroundCss } from '@/stills/tile-crop';
 import { cn } from '@/ui/utils';
@@ -41,6 +42,8 @@ export function UpscaleOverlay({
   className,
   showLabel = false,
 }: UpscaleOverlayProps) {
+  const { t } = useTranslation('shots');
+
   const grid = getVariantGridConfig(aspectRatio);
   const css =
     variantIndex != null
@@ -58,7 +61,7 @@ export function UpscaleOverlay({
     <div
       className={cn('absolute inset-0 overflow-hidden', className)}
       aria-live="polite"
-      aria-label="Upscaling selected variant"
+      aria-label={t('Upscaling selected variant')}
     >
       {showCss ? (
         <div
@@ -79,7 +82,7 @@ export function UpscaleOverlay({
         <span className="pointer-events-none absolute inset-x-0 bottom-1 z-10 flex justify-center">
           <span className="flex items-center gap-1 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground backdrop-blur-sm">
             <Loader2 className="h-3 w-3 animate-spin" />
-            Upscaling…
+            {t('Upscaling…')}
           </span>
         </span>
       )}

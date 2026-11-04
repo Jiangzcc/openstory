@@ -8,5 +8,5 @@ export const Route = createFileRoute('/_app/videos/')({
     throw redirect({ to: '/clips', search });
   },
   component: () => null,
-  staticData: { breadcrumb: 'Clips' },
+  staticData: { breadcrumb: { label: 'Clips', translationKey: 'Clips' } },
 });

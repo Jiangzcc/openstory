@@ -1,3 +1,6 @@
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import type { MentionItem } from '@/shots/ui/prompt-mention/mention-items';
 import {
   MarkdownEditor,
@@ -44,6 +47,10 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
   mentionItems,
   onMentionSelect,
 }) => {
+  const { formatNumber } = useLocaleFormatting();
+  const { t } = useTranslation('sequences');
+  const translateLabel = useLabelTranslation('sequences');
+
   const handleChange = useCallback(
     (markdown: string) => {
       onValueChange(markdown);
@@ -83,7 +90,7 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
           onKeyDown={handleKeyDown}
           mentionItems={mentionItems}
           onMentionSelect={onMentionSelect}
-          placeholder={placeholder}
+          placeholder={translateLabel(placeholder)}
           disabled={disabled}
           aria-invalid={hasError}
           // This is the one height-bounded editor, so it owns the scrolling.
@@ -106,13 +113,13 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
               className={cn(isOverLimit && 'text-destructive font-medium')}
               data-testid="character-count"
             >
-              {value.length.toLocaleString('en-US')}
+              {formatNumber(value.length)}
             </span>
             {maxLength && (
               <>
                 {' / '}
-                <span>{maxLength.toLocaleString('en-US')}</span>
-                <span> characters</span>
+                <span>{formatNumber(maxLength)}</span>
+                <span>{t('characters')}</span>
               </>
             )}
           </div>

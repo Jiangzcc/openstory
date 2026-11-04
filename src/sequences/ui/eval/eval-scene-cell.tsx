@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { playHoverPreview } from '@/ui/play-hover-preview';
 import { ScrollArea } from '@/ui/shadcn/scroll-area';
 import { Skeleton } from '@/ui/shadcn/skeleton';
@@ -70,6 +71,8 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
   onNavigateUp,
   onNavigateDown,
 }) => {
+  const { t } = useTranslation('sequences');
+
   const initialTab: DialogTab = dialogInitialTab ?? viewMode;
   // Empty cell for missing shots — show skeleton while shots are still
   // loading, otherwise show the "No scene N" placeholder.
@@ -84,7 +87,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
     return (
       <div className="border-b p-2 flex items-center justify-center h-full">
         <div className="w-full h-full border-2 border-dashed border-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
-          No scene {sceneNumber}
+          {t('No scene {{value1}}', { value1: sceneNumber })}
         </div>
       </div>
     );
@@ -105,7 +108,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
             <Skeleton className="w-full h-full" />
           ) : (
             <div className="text-xs text-muted-foreground text-center">
-              No image
+              {t('No image')}
             </div>
           )}
         </div>
@@ -122,7 +125,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
           <div className="flex-1 flex items-center justify-center min-h-0">
             <AppImage
               src={shot.imageUrl}
-              alt={`Scene ${sceneNumber}`}
+              alt={t('Scene {{value1}}', { value1: sceneNumber })}
               className="max-w-full max-h-full object-contain rounded-md"
               loading="lazy"
               width={400}
@@ -153,7 +156,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
     if (!script) {
       return (
         <div className="border-b p-2 h-full flex items-center justify-center">
-          <div className="text-xs text-muted-foreground">No script</div>
+          <div className="text-xs text-muted-foreground">{t('No script')}</div>
         </div>
       );
     }
@@ -164,7 +167,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
           type="button"
           className="border-b p-2 cursor-pointer hover:bg-muted/50 transition-colors h-full flex flex-col min-h-0 overflow-hidden w-full text-left appearance-none bg-transparent"
           onClick={handleClick}
-          aria-label={`Scene ${sceneNumber} script`}
+          aria-label={t('Scene {{value1}} script', { value1: sceneNumber })}
         >
           <ScrollArea className="flex-1 w-full min-h-0">
             <p className="text-xs leading-relaxed whitespace-pre-wrap pr-2">
@@ -206,7 +209,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
               <div className="relative flex-1 flex items-center justify-center min-h-0">
                 <AppImage
                   src={shot.imageUrl}
-                  alt={`Scene ${sceneNumber} preview`}
+                  alt={t('Scene {{value1}} preview', { value1: sceneNumber })}
                   className="max-w-full max-h-full object-contain rounded-md opacity-60"
                   loading="lazy"
                   width={400}
@@ -214,7 +217,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
                 />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <span className="text-xs font-medium text-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded-md border">
-                    {isGenerating ? 'Generating video…' : 'No video yet'}
+                    {isGenerating ? t('Generating video…') : t('No video yet')}
                   </span>
                 </div>
               </div>
@@ -243,7 +246,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
             <Skeleton className="w-full h-full" />
           ) : (
             <div className="text-xs text-muted-foreground text-center">
-              No video
+              {t('No video')}
             </div>
           )}
         </div>
@@ -256,7 +259,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
           type="button"
           className="border-b p-2 cursor-pointer hover:bg-muted/50 transition-colors h-full flex flex-col min-h-0 overflow-hidden w-full text-left appearance-none bg-transparent"
           onClick={handleClick}
-          aria-label={`Scene ${sceneNumber} video`}
+          aria-label={t('Scene {{value1}} video', { value1: sceneNumber })}
         >
           <div className="flex-1 flex items-center justify-center min-h-0">
             <video
@@ -296,7 +299,7 @@ export const EvalSceneCell: React.FC<EvalSceneCellProps> = ({
   if (!prompt && !motionPrompt) {
     return (
       <div className="border-b p-2 h-full flex items-center justify-center">
-        <div className="text-xs text-muted-foreground">No prompts</div>
+        <div className="text-xs text-muted-foreground">{t('No prompts')}</div>
       </div>
     );
   }

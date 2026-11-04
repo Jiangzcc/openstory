@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import type React from 'react';
 import { PHOTOREAL_RENDERING } from '@/cast/rendering';
 import { useState } from 'react';
@@ -22,6 +24,9 @@ import { useHydrated } from '@/ui/use-hydrated';
  * bible and looks are edited. A sequence casts it later with @.
  */
 export const NewCharacterDialog: React.FC = () => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+
   const [open, setOpen] = useState(false);
   const createCharacter = useCreateTeamCharacter();
   const navigate = useNavigate();
@@ -30,19 +35,21 @@ export const NewCharacterDialog: React.FC = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button disabled={!hydrated}>New character</Button>
+        <Button disabled={!hydrated}>{t('New character')}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New character</DialogTitle>
+          <DialogTitle>{t('New character')}</DialogTitle>
           <DialogDescription>
-            Looks, sheets, voice and the rest of the bible are on its page.
+            {t(
+              'Looks, sheets, voice and the rest of the bible are on its page.'
+            )}
           </DialogDescription>
         </DialogHeader>
         <NewCharacterForm
           isPending={createCharacter.isPending}
-          submitLabel="Create"
-          pendingLabel="Creating…"
+          submitLabel={t('Create')}
+          pendingLabel={t('Creating…')}
           onSubmit={(fields) =>
             createCharacter.mutate(
               { ...fields, rendering: PHOTOREAL_RENDERING },
@@ -55,7 +62,7 @@ export const NewCharacterDialog: React.FC = () => {
                   });
                 },
                 onError: (error) =>
-                  toast.error('Character not created', {
+                  toast.error(translateEvent('Character not created'), {
                     description: errorMessage(error),
                   }),
               }

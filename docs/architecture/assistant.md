@@ -235,3 +235,7 @@ look at the image and talk about it at once. A click in the panel is not
 over `fakeText` (`scripted-connection.ts`), so every state (streaming, tool
 running, tool error, confirm-before-spend, upload, long thread) streams the
 same events the server sends.
+
+## Secondary-development localization
+
+Secondary-development localization only changes the UI: tool display names, grouped status and starter labels use the request-local i18n instance. Context-chip nouns and known attachment statuses are translated only for display; context labels, attachment names and unknown diagnostics remain verbatim. MCP/chat tool names, tool arguments, approval rules and the original starter text sent to the model stay unchanged.

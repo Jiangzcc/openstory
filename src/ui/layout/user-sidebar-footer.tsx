@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/shadcn/avatar';
 import {
   DropdownMenu,
@@ -27,6 +28,8 @@ import {
 import { useState } from 'react';
 
 export function UserSidebarFooter() {
+  const { t } = useTranslation('interface');
+
   const { data: user, isLoading } = useUser();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const navigate = useNavigate();
@@ -54,7 +57,7 @@ export function UserSidebarFooter() {
   if (!user) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton asChild tooltip="Sign in">
+        <SidebarMenuButton asChild tooltip={t('Sign in')}>
           <Link
             to="/login"
             onClick={() => {
@@ -62,7 +65,7 @@ export function UserSidebarFooter() {
             }}
           >
             <LogIn />
-            <span>Sign in</span>
+            <span>{t('Sign in')}</span>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -146,13 +149,13 @@ export function UserSidebarFooter() {
           <DropdownMenuItem asChild>
             <Link to="/settings">
               <Settings className="mr-2 h-4 w-4" />
-              Settings
+              {t('Settings')}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/credits" search={{ tab: 'balance' }}>
               <Wallet className="mr-2 h-4 w-4" />
-              Credits
+              {t('Credits')}
             </Link>
           </DropdownMenuItem>
           <AdminMenuItem />
@@ -162,7 +165,7 @@ export function UserSidebarFooter() {
             disabled={isSigningOut}
           >
             <LogOut className="mr-2 h-4 w-4" />
-            {isSigningOut ? 'Signing out…' : 'Sign Out'}
+            {isSigningOut ? t('Signing out…') : t('Sign Out')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -171,6 +174,8 @@ export function UserSidebarFooter() {
 }
 
 function AdminMenuItem() {
+  const { t } = useTranslation('interface');
+
   const { data: adminStatus } = useQuery(systemAdminStatusQueryOptions);
 
   if (!adminStatus?.isAdmin) return null;
@@ -179,18 +184,18 @@ function AdminMenuItem() {
     <>
       <DropdownMenuSeparator />
       <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-        Admin
+        {t('Admin')}
       </DropdownMenuLabel>
       <DropdownMenuItem asChild>
         <Link to="/admin/usage">
           <BarChart3 className="mr-2 h-4 w-4" />
-          Usage
+          {t('Usage')}
         </Link>
       </DropdownMenuItem>
       <DropdownMenuItem asChild>
         <Link to="/admin/moderation">
           <ShieldAlert className="mr-2 h-4 w-4" />
-          Moderation
+          {t('Moderation')}
         </Link>
       </DropdownMenuItem>
     </>

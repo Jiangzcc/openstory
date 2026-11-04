@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { getChannelHistoryFn } from '@/platform/realtime-history.fn';
 import { useUser } from '@/platform/ui/use-user';
 import { useQueryClient } from '@tanstack/react-query';
@@ -248,6 +249,8 @@ export function useGenerationStream(
   phaseConfig?: GenerationPhaseConfig,
   options?: { replayHistory?: boolean }
 ) {
+  const translateEvent = useLiveTranslation('sequences');
+
   const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(
     generationStreamReducer,
@@ -273,14 +276,22 @@ export function useGenerationStream(
         eventName === 'generation.image:progress' ||
         eventName === 'generation.video:progress';
       if (isMediaProgress && data.promptSoftened === true) {
-        toast.info('Prompt rewritten to pass a content checker', {
-          description: 'The original is kept in Versions.',
-        });
+        toast.info(
+          translateEvent('Prompt rewritten to pass a content checker'),
+          {
+            description: translateEvent('The original is kept in Versions.'),
+          }
+        );
       }
       if (isMediaProgress && data.modelFallback === true) {
-        toast.info('Retrying on Grok Imagine after the content checker', {
-          description: 'The selected model is kept in Versions.',
-        });
+        toast.info(
+          translateEvent('Retrying on Grok Imagine after the content checker'),
+          {
+            description: translateEvent(
+              'The selected model is kept in Versions.'
+            ),
+          }
+        );
       }
       // A failed upscale leaves the shot on its current still (#1942), so the
       // shot shows no failure; this toast is the only place the user hears.
@@ -288,8 +299,13 @@ export function useGenerationStream(
         eventName === 'generation.image:progress' &&
         typeof data.upscaleError === 'string'
       ) {
-        toast.warning('Upscale failed', {
-          description: `${data.upscaleError}. The current still is kept.`,
+        toast.warning(translateEvent('Upscale failed'), {
+          description: translateEvent(
+            '{{value1}}. The current still is kept.',
+            {
+              value1: data.upscaleError,
+            }
+          ),
         });
       }
       // reservation:short is a top-up prompt, not a failure toast (#1328).
@@ -301,7 +317,7 @@ export function useGenerationStream(
         dispatch(action);
       }
     },
-    [queryClient, sequenceId]
+    [translateEvent, queryClient, sequenceId]
   );
 
   // Replay channel history on mount so progress survives page refresh.

@@ -1,3 +1,7 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { VOICE_DESIGN_COST } from '@/billing/elevenlabs-pricing';
 import { seedVoiceEstimate } from '@/billing/seed-speech-pricing';
@@ -67,6 +71,11 @@ export const CharacterVoiceSection: React.FC<{
   character: CharacterWithSheet;
   generateVoices: boolean;
 }> = ({ sequenceId, character, generateVoices }) => {
+  const translateEvent = useLiveTranslation('cast');
+
+  const { t } = useTranslation('cast');
+  const translateLabel = useLabelTranslation('cast');
+
   const queryClient = useQueryClient();
   const generate = useGenerateCharacterVoice();
   const cancel = useCancelCharacterVoice();
@@ -130,7 +139,7 @@ export const CharacterVoiceSection: React.FC<{
         });
         const cancelled = 'error' in data && data.error === 'Cancelled';
         if (data.status === 'failed' && !cancelled) {
-          toast.error('Voice design failed', {
+          toast.error(translateEvent('Voice design failed'), {
             description:
               'error' in data && typeof data.error === 'string'
                 ? data.error
@@ -146,7 +155,7 @@ export const CharacterVoiceSection: React.FC<{
           });
         }
       },
-      [character.id, queryClient, sequenceId]
+      [translateEvent, character.id, queryClient, sequenceId]
     ),
   });
 
@@ -173,9 +182,9 @@ export const CharacterVoiceSection: React.FC<{
         generatedVoiceId,
       },
       {
-        onSuccess: () => toast.success('Voice take in use'),
+        onSuccess: () => toast.success(translateEvent('Voice take in use')),
         onError: (error) =>
-          toast.error('Failed to save take', {
+          toast.error(translateEvent('Failed to save take'), {
             description: errorMessage(error),
           }),
       }
@@ -196,7 +205,7 @@ export const CharacterVoiceSection: React.FC<{
       {
         onSuccess: () => setLibraryOpen(false),
         onError: (error) =>
-          toast.error('Failed to use voice', {
+          toast.error(translateEvent('Failed to use voice'), {
             description: errorMessage(error),
           }),
       }
@@ -215,7 +224,7 @@ export const CharacterVoiceSection: React.FC<{
               { sequenceId, characterId: character.id, enabled: next },
               {
                 onError: (error) =>
-                  toast.error('Failed to update voice', {
+                  toast.error(translateEvent('Failed to update voice'), {
                     description: errorMessage(error),
                   }),
               }
@@ -223,7 +232,7 @@ export const CharacterVoiceSection: React.FC<{
           }
         />
         <Label htmlFor="character-voice" className="text-sm font-medium">
-          Voice
+          {t('Voice')}
         </Label>
       </div>
       {enabled && (
@@ -233,22 +242,28 @@ export const CharacterVoiceSection: React.FC<{
               {/* From the click, not from when the husk row arrives: the
                   box would otherwise open empty, then grow (#1773). */}
               {designing && (
-                <section className="flex flex-col gap-2" aria-label="Pending">
+                <section
+                  className="flex flex-col gap-2"
+                  aria-label={t('Pending')}
+                >
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Pending
+                    {t('Pending')}
                   </p>
                   <VoiceTakeCard
                     src={null}
-                    label="Designing voice"
+                    label={t('Designing voice')}
                     voiceId={null}
                     pending
                   />
                 </section>
               )}
               {(inUseTake || catalogVoice || character.voiceId) && (
-                <section className="flex flex-col gap-2" aria-label="In use">
+                <section
+                  className="flex flex-col gap-2"
+                  aria-label={t('In use')}
+                >
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    In use
+                    {t('In use')}
                   </p>
                   {catalogVoice ? (
                     <VoiceTakeCard
@@ -268,7 +283,7 @@ export const CharacterVoiceSection: React.FC<{
                   ) : (
                     <VoiceTakeCard
                       src={null}
-                      label="Saved voice"
+                      label={t('Saved voice')}
                       voiceId={character.voiceId}
                       inUse
                     />
@@ -278,10 +293,10 @@ export const CharacterVoiceSection: React.FC<{
               {otherTakes.length > 0 && (
                 <section
                   className="flex flex-col gap-2"
-                  aria-label="Other takes"
+                  aria-label={t('Other takes')}
                 >
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Other takes
+                    {t('Other takes')}
                   </p>
                   <ul className="flex flex-col gap-2">
                     {otherTakes.map((take) => (
@@ -312,7 +327,7 @@ export const CharacterVoiceSection: React.FC<{
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No voice yet. Browse the library or generate one.
+              {t('No voice yet. Browse the library or generate one.')}
             </p>
           )}
           <VoiceHistory sequenceId={sequenceId} character={character} />
@@ -323,7 +338,7 @@ export const CharacterVoiceSection: React.FC<{
               onClick={() => setLibraryOpen(true)}
             >
               <Library className="mr-2 h-4 w-4" />
-              Browse voices
+              {t('Browse voices')}
             </Button>
             <Button
               variant="outline"
@@ -337,7 +352,7 @@ export const CharacterVoiceSection: React.FC<{
                   },
                   {
                     onError: (error) =>
-                      toast.error('Failed to design voice', {
+                      toast.error(translateEvent('Failed to design voice'), {
                         description: errorMessage(error),
                       }),
                   }
@@ -355,9 +370,11 @@ export const CharacterVoiceSection: React.FC<{
                 ) : (
                   <Mic className="mr-2 h-4 w-4" />
                 )}
-                {generateVoiceButtonLabel(
-                  designing,
-                  Boolean(character.voiceId || takes.length > 0)
+                {translateLabel(
+                  generateVoiceButtonLabel(
+                    designing,
+                    Boolean(character.voiceId || takes.length > 0)
+                  )
                 )}
               </InButtonCost>
             </Button>
@@ -369,7 +386,7 @@ export const CharacterVoiceSection: React.FC<{
                   cancel.mutate({ sequenceId, characterId: character.id })
                 }
               >
-                {cancel.isPending ? 'Cancelling…' : 'Cancel'}
+                {cancel.isPending ? t('Cancelling…') : t('Cancel')}
               </Button>
             ) : null}
             <AskAssistantButton size="default" context={[]} />
@@ -385,19 +402,19 @@ export const CharacterVoiceSection: React.FC<{
                   size="sm"
                   spacing={0}
                   disabled={busy}
-                  aria-label="Takes to generate"
+                  aria-label={t('Takes to generate')}
                 >
                   {TAKE_CHOICES.map((count) => (
                     <ToggleGroupItem
                       key={count}
                       value={String(count)}
-                      aria-label={`${count} ${count === 1 ? 'take' : 'takes'}`}
+                      aria-label={t('{{count}} takes', { count })}
                     >
                       {count}
                     </ToggleGroupItem>
                   ))}
                 </ToggleGroup>
-                <p className="text-xs text-muted-foreground">Takes</p>
+                <p className="text-xs text-muted-foreground">{t('Takes')}</p>
               </div>
             )}
           </div>
@@ -444,6 +461,11 @@ const VoiceHistory: React.FC<{
   sequenceId: string | null;
   character: CharacterWithSheet;
 }> = ({ sequenceId, character }) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { formatDate } = useLocaleFormatting();
+  const { t } = useTranslation('cast');
+  const translateLabel = useLabelTranslation('cast');
+
   const { data: versions, isError } = useCharacterVoiceVersions(
     sequenceId,
     character.id
@@ -452,7 +474,7 @@ const VoiceHistory: React.FC<{
   if (isError) {
     return (
       <p className="text-xs text-destructive" role="alert">
-        Voice history failed to load.
+        {t('Voice history failed to load.')}
       </p>
     );
   }
@@ -461,9 +483,9 @@ const VoiceHistory: React.FC<{
   );
   if (!completed || completed.length < 2) return null;
   return (
-    <section className="flex flex-col gap-2" aria-label="Voice history">
+    <section className="flex flex-col gap-2" aria-label={t('Voice history')}>
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        History
+        {t('History')}
       </p>
       <ul className="flex flex-col gap-1">
         {completed.map((version) => {
@@ -478,31 +500,34 @@ const VoiceHistory: React.FC<{
             >
               <div className="flex min-w-0 flex-col">
                 <p className="text-xs font-medium">
-                  {VOICE_SOURCE_LABELS[version.source]}{' '}
+                  {translateLabel(VOICE_SOURCE_LABELS[version.source])}{' '}
                   <time
                     dateTime={created.toISOString()}
                     className="font-normal text-muted-foreground"
                   >
-                    {created.toLocaleDateString()}
+                    {formatDate(created)}
                   </time>
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {released
-                    ? 'Deleted when it stopped being used'
-                    : (version.description ?? 'No description')}
+                    ? t('Deleted when it stopped being used')
+                    : (version.description ?? t('No description'))}
                 </p>
               </div>
               {current ? (
-                <Badge variant="secondary">Current</Badge>
+                <Badge variant="secondary">{t('Current')}</Badge>
               ) : (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   disabled={released || !version.voiceId || select.isPending}
-                  aria-label={`Use the ${VOICE_SOURCE_LABELS[
-                    version.source
-                  ].toLowerCase()} voice from ${created.toLocaleDateString()}`}
+                  aria-label={t('Use the {{value1}} voice from {{value2}}', {
+                    value1: translateLabel(
+                      VOICE_SOURCE_LABELS[version.source]
+                    ).toLowerCase(),
+                    value2: formatDate(created),
+                  })}
                   onClick={() =>
                     select.mutate(
                       {
@@ -512,14 +537,17 @@ const VoiceHistory: React.FC<{
                       },
                       {
                         onError: (error) =>
-                          toast.error('Failed to switch voice', {
-                            description: errorMessage(error),
-                          }),
+                          toast.error(
+                            translateEvent('Failed to switch voice'),
+                            {
+                              description: errorMessage(error),
+                            }
+                          ),
                       }
                     )
                   }
                 >
-                  Use
+                  {t('Use')}
                 </Button>
               )}
             </li>
@@ -605,14 +633,18 @@ const VoiceTakeCardAction: React.FC<{
   label,
   onUse,
 }) => {
-  if (pending) return <Badge variant="secondary">Generating…</Badge>;
+  const { t } = useTranslation('cast');
+
+  if (pending) return <Badge variant="secondary">{t('Generating…')}</Badge>;
   if (inUse) {
-    return <Badge variant="default">{isPremade ? 'Default' : 'In use'}</Badge>;
+    return (
+      <Badge variant="default">{isPremade ? t('Default') : t('In use')}</Badge>
+    );
   }
   if (unusable) {
     return (
       <p className="text-xs text-muted-foreground">
-        {unusable === 'expired' ? 'Expired' : 'Already used'}
+        {unusable === 'expired' ? t('Expired') : t('Already used')}
       </p>
     );
   }
@@ -622,11 +654,15 @@ const VoiceTakeCardAction: React.FC<{
       variant="outline"
       size="sm"
       disabled={disabled}
-      aria-label={choosing ? `Using ${label}` : `Use ${label}`}
+      aria-label={
+        choosing
+          ? t('Using {{value1}}', { value1: label })
+          : t('Use {{value1}}', { value1: label })
+      }
       onClick={onUse}
     >
       {choosing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-      {choosing ? 'Using…' : 'Use this take'}
+      {choosing ? t('Using…') : t('Use this take')}
     </Button>
   );
 };
@@ -635,6 +671,8 @@ const VoiceTakeCardPreview: React.FC<{
   pending: boolean;
   src: string | null;
 }> = ({ pending, src }) => {
+  const { t } = useTranslation('cast');
+
   if (pending) {
     return (
       <div className="flex min-h-8 items-center gap-2 text-xs text-muted-foreground">
@@ -642,7 +680,7 @@ const VoiceTakeCardPreview: React.FC<{
           className="h-4 w-4 animate-spin motion-reduce:animate-none"
           aria-hidden
         />
-        Designing…
+        {t('Designing…')}
       </div>
     );
   }
@@ -652,5 +690,5 @@ const VoiceTakeCardPreview: React.FC<{
       <audio controls preload="none" src={src} className="w-full" />
     );
   }
-  return <p className="text-xs text-muted-foreground">No preview</p>;
+  return <p className="text-xs text-muted-foreground">{t('No preview')}</p>;
 };

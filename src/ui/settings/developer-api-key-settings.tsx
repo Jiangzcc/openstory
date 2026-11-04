@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { Trans, useTranslation } from 'react-i18next';
 /**
  * Developer API Key Settings
  * Mint, view, and revoke keys that authenticate calls to the public OpenStory
@@ -50,6 +53,8 @@ const createFormSchema = z.object({
 });
 
 export function DeveloperApiKeySettings() {
+  const { t } = useTranslation('interface');
+
   return (
     <Card>
       <CardHeader>
@@ -58,13 +63,20 @@ export function DeveloperApiKeySettings() {
             <KeyRound className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle>API access</CardTitle>
+            <CardTitle>{t('API access')}</CardTitle>
             <CardDescription>
-              Create keys to call the OpenStory API. Authenticate with{' '}
-              <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                Authorization: Bearer &lt;key&gt;
-              </code>
-              .
+              <Trans
+                ns="interface"
+                i18nKey="Create keys to call the OpenStory API. Authenticate with <0/>."
+                components={[
+                  <code
+                    key="0"
+                    className="rounded bg-muted px-1 py-0.5 text-xs"
+                  >
+                    Authorization: Bearer &lt;key&gt;
+                  </code>,
+                ]}
+              />
             </CardDescription>
           </div>
         </div>
@@ -81,6 +93,9 @@ export function DeveloperApiKeySettings() {
 }
 
 function CreateKeyForm() {
+  const translateEvent = useLiveTranslation('interface');
+  const { t } = useTranslation('interface');
+
   const queryClient = useQueryClient();
   const [createdKey, setCreatedKey] = useState<{
     name: string;
@@ -97,7 +112,11 @@ function CreateKeyForm() {
       });
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to create key');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : translateEvent('Failed to create key')
+      );
     },
   });
 
@@ -107,7 +126,7 @@ function CreateKeyForm() {
       Object.fromEntries(new FormData(e.currentTarget))
     );
     if (!parsed.success) {
-      toast.error('Enter a name (1–32 characters).');
+      toast.error(translateEvent('Enter a name (1–32 characters).'));
       return;
     }
     createMutation.mutate({ name: parsed.data.name });
@@ -119,13 +138,13 @@ function CreateKeyForm() {
       <form onSubmit={onSubmit} className="flex gap-2">
         <Input
           name="name"
-          placeholder="Key name (e.g. Production server)"
+          placeholder={t('Key name (e.g. Production server)')}
           maxLength={32}
           autoComplete="off"
           required
         />
         <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? 'Creating…' : 'Create key'}
+          {createMutation.isPending ? t('Creating…') : t('Create key')}
         </Button>
       </form>
 
@@ -149,27 +168,33 @@ function NewKeyReveal({
   apiKey: string;
   onDismiss: () => void;
 }) {
+  const translateEvent = useLiveTranslation('interface');
+  const { t } = useTranslation('interface');
+
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
     if (!(await copyTextToClipboard(apiKey))) {
       // The key is shown exactly once, so a silent failure would lose it.
-      toast.error('Could not copy the key', {
-        description:
-          'Your browser blocked clipboard access. Select the key above and copy it manually before dismissing this.',
+      toast.error(translateEvent('Could not copy the key'), {
+        description: translateEvent(
+          'Your browser blocked clipboard access. Select the key above and copy it manually before dismissing this.'
+        ),
       });
       return;
     }
     setCopied(true);
-    toast.success('Copied to clipboard');
+    toast.success(translateEvent('Copied to clipboard'));
   };
 
   return (
     <Alert>
       <KeyRound className="h-4 w-4" />
-      <AlertTitle>Key “{name}” created</AlertTitle>
+      <AlertTitle>{t('Key “{{value1}}” created', { value1: name })}</AlertTitle>
       <AlertDescription className="flex flex-col gap-3">
-        <span>Copy it now — for your security it won’t be shown again.</span>
+        <span>
+          {t('Copy it now — for your security it won’t be shown again.')}
+        </span>
         <div className="flex items-center gap-2">
           <code className="flex-1 overflow-x-auto rounded bg-muted px-2 py-1.5 font-mono text-xs">
             {apiKey}
@@ -179,7 +204,7 @@ function NewKeyReveal({
             variant="outline"
             size="icon"
             onClick={() => void copy()}
-            aria-label="Copy API key"
+            aria-label={t('Copy API key')}
           >
             {copied ? (
               <Check className="h-4 w-4" />
@@ -190,7 +215,7 @@ function NewKeyReveal({
         </div>
         <div className="flex justify-end">
           <Button type="button" variant="ghost" size="sm" onClick={onDismiss}>
-            Done
+            {t('Done')}
           </Button>
         </div>
       </AlertDescription>
@@ -199,6 +224,10 @@ function NewKeyReveal({
 }
 
 function KeyList() {
+  const translateEvent = useLiveTranslation('interface');
+  const { formatDate } = useLocaleFormatting();
+  const { t } = useTranslation('interface');
+
   const queryClient = useQueryClient();
   const { data: keys } = useSuspenseQuery({
     queryKey: PUBLIC_API_KEYS_QUERY_KEY,
@@ -211,17 +240,21 @@ function KeyList() {
       void queryClient.invalidateQueries({
         queryKey: PUBLIC_API_KEYS_QUERY_KEY,
       });
-      toast.success('Key revoked');
+      toast.success(translateEvent('Key revoked'));
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to revoke key');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : translateEvent('Failed to revoke key')
+      );
     },
   });
 
   if (keys.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No API keys yet. Create one above to start using the API.
+        {t('No API keys yet. Create one above to start using the API.')}
       </p>
     );
   }
@@ -237,16 +270,20 @@ function KeyList() {
             <KeyRound className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium">
-                {key.name ?? 'Untitled key'}
+                {key.name ?? t('Untitled key')}
               </p>
               <p className="text-xs text-muted-foreground">
-                {key.start ? `${key.start}…` : 'osk_…'}
+                {key.start ? `${key.start}…` : t('osk_…')}
                 {key.expiresAt
-                  ? ` · expires ${new Date(key.expiresAt).toLocaleDateString()}`
-                  : ' · no expiry'}
+                  ? t(' · expires {{value1}}', {
+                      value1: formatDate(new Date(key.expiresAt)),
+                    })
+                  : t(' · no expiry')}
                 {key.lastRequest
-                  ? ` · last used ${new Date(key.lastRequest).toLocaleDateString()}`
-                  : ' · never used'}
+                  ? t(' · last used {{value1}}', {
+                      value1: formatDate(new Date(key.lastRequest)),
+                    })
+                  : t(' · never used')}
               </p>
             </div>
           </div>
@@ -255,25 +292,29 @@ function KeyList() {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={`Revoke ${key.name ?? 'key'}`}
+                aria-label={t('Revoke {{value1}}', {
+                  value1: key.name ?? 'key',
+                })}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Revoke this API key?</AlertDialogTitle>
+                <AlertDialogTitle>{t('Revoke this API key?')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Any integration using “{key.name ?? 'this key'}” will stop
-                  working immediately. This cannot be undone.
+                  {t(
+                    'Any integration using “{{value1}}” will stop working immediately. This cannot be undone.',
+                    { value1: key.name ?? t('this key') }
+                  )}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => revokeMutation.mutate(key.id)}
                 >
-                  Revoke
+                  {t('Revoke')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

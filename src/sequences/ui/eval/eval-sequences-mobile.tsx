@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -159,6 +160,8 @@ const MobileReelRow: React.FC<MobileReelRowProps> = ({
   onOpenDialogChange,
   onNavigateToCell,
 }) => {
+  const { t } = useTranslation('sequences');
+
   const aspectRatio = sequence.aspectRatio;
   const { data: scenes } = useScenesBySequence(sequence.id);
   const scenesById = useMemo(() => {
@@ -181,9 +184,9 @@ const MobileReelRow: React.FC<MobileReelRowProps> = ({
             to="/sequences/$id/scenes"
             params={{ id: sequence.id }}
             className="font-medium text-sm text-foreground line-clamp-1 hover:underline"
-            title={sequence.title || 'Untitled Sequence'}
+            title={sequence.title || t('Untitled Sequence')}
           >
-            {sequence.title || 'Untitled Sequence'}
+            {sequence.title || t('Untitled Sequence')}
           </Link>
           <CreatorIdentity sequence={sequence} />
           <SequenceListStatus sequence={sequence} />
@@ -191,8 +194,8 @@ const MobileReelRow: React.FC<MobileReelRowProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           {hasVariants && (
             <span
-              aria-label="Variants available — open to compare"
-              title="Variants available — open to compare"
+              aria-label={t('Variants available — open to compare')}
+              title={t('Variants available — open to compare')}
               className="inline-flex h-2 w-2 rounded-full bg-sky-500 ring-2 ring-sky-500/30"
             />
           )}
@@ -201,7 +204,7 @@ const MobileReelRow: React.FC<MobileReelRowProps> = ({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            aria-label="Open sequence"
+            aria-label={t('Open sequence')}
           >
             <Link to="/sequences/$id/scenes" params={{ id: sequence.id }}>
               <ChevronRight className="h-4 w-4" />
@@ -231,7 +234,7 @@ const MobileReelRow: React.FC<MobileReelRowProps> = ({
                 className="shrink-0 border-2 border-dashed border-muted rounded-md flex items-center justify-center text-xs text-muted-foreground"
                 style={{ width: cellWidth, height: STRIP_HEIGHT }}
               >
-                No scenes yet
+                {t('No scenes yet')}
               </div>
             )
           ) : (
@@ -326,6 +329,8 @@ const SequencePosterCell: React.FC<SequencePosterCellProps> = ({
   width,
   height,
 }) => {
+  const { t } = useTranslation('sequences');
+
   const baseClass =
     'shrink-0 border rounded-md overflow-hidden bg-card relative flex items-center justify-center';
   const style = { width, height };
@@ -343,7 +348,9 @@ const SequencePosterCell: React.FC<SequencePosterCellProps> = ({
   const linkProps = {
     to: '/sequences/$id/scenes',
     params: { id: sequence.id },
-    'aria-label': `Open ${sequence.title || 'sequence'}`,
+    'aria-label': t('Open {{value1}}', {
+      value1: sequence.title || 'sequence',
+    }),
   } as const;
 
   const previewUrl = sequence.shots[0]?.imageUrl ?? sequence.posterUrl;
@@ -353,7 +360,7 @@ const SequencePosterCell: React.FC<SequencePosterCellProps> = ({
       <Link {...linkProps} className={baseClass} style={style}>
         <AppImage
           src={previewUrl}
-          alt={`${sequence.title || 'Sequence'} poster`}
+          alt={t('{{value1}} poster', { value1: sequence.title || 'Sequence' })}
           className="w-full h-full object-cover"
           loading="lazy"
           width={400}
@@ -370,8 +377,7 @@ const SequencePosterCell: React.FC<SequencePosterCellProps> = ({
       className={`${baseClass} border-dashed text-xs text-muted-foreground`}
       style={style}
     >
-      No preview yet
-      {modelBadge}
+      {t('No preview yet{{value1}}', { value1: modelBadge })}
     </Link>
   );
 };

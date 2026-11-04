@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useRealtime } from '@/platform/ui/realtime/client';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
@@ -51,6 +52,8 @@ export function useSheetStaleDetected({
   entityTypes,
   invalidateKeys,
 }: SheetStaleDetectedOptions) {
+  const translateEvent = useLiveTranslation('cast');
+
   const queryClient = useQueryClient();
   const debounceRef = useRef<{
     count: number;
@@ -101,10 +104,16 @@ export function useSheetStaleDetected({
         state.count = 0;
         state.timeout = null;
         if (scheduledFor !== channelIdRef.current) return;
-        toast.info(formatSheetStaleToastMessage(count));
+        toast.info(
+          count === 1
+            ? translateEvent('An alternate version is available.')
+            : translateEvent('{{count}} alternate versions are available.', {
+                count,
+              })
+        );
       }, TOAST_DEBOUNCE_MS);
     },
-    [queryClient, channelId]
+    [queryClient, channelId, translateEvent]
   );
 
   const { status } = useRealtime({
@@ -123,13 +132,15 @@ export function useSheetStaleDetected({
       if (errorToastShownForRef.current !== channelId) {
         errorToastShownForRef.current = channelId;
         toast.warning(
-          'Live updates disconnected — refresh to see latest alternates.'
+          translateEvent(
+            'Live updates disconnected — refresh to see latest alternates.'
+          )
         );
       }
     } else if (status === 'connected' && errorToastShownForRef.current) {
       errorToastShownForRef.current = null;
     }
-  }, [status, channelId]);
+  }, [translateEvent, status, channelId]);
 
   // Cancel any pending toast when the channel changes or the view unmounts.
   useEffect(() => {

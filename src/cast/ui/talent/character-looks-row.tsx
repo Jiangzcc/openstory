@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { useQueryClient } from '@tanstack/react-query';
@@ -54,32 +56,35 @@ function lookFormError(error: z.ZodError): string {
 const LookFields: React.FC<{ idPrefix: string; look?: LookRowItem }> = ({
   idPrefix,
   look,
-}) => (
-  <>
-    <BibleField
-      idPrefix={idPrefix}
-      label="Name"
-      name="name"
-      defaultValue={look?.name ?? ''}
-      placeholder="Gala gown"
-      required
-    />
-    <BibleField
-      idPrefix={idPrefix}
-      label="Clothing"
-      name="clothing"
-      defaultValue={look?.clothing ?? ''}
-      textarea
-    />
-    <BibleField
-      idPrefix={idPrefix}
-      label="Hair, makeup, injuries"
-      name="styling"
-      defaultValue={look?.styling ?? ''}
-      textarea
-    />
-  </>
-);
+}) => {
+  const { t } = useTranslation('cast');
+  return (
+    <>
+      <BibleField
+        idPrefix={idPrefix}
+        label={t('Name')}
+        name="name"
+        defaultValue={look?.name ?? ''}
+        placeholder={t('Gala gown')}
+        required
+      />
+      <BibleField
+        idPrefix={idPrefix}
+        label={t('Clothing')}
+        name="clothing"
+        defaultValue={look?.clothing ?? ''}
+        textarea
+      />
+      <BibleField
+        idPrefix={idPrefix}
+        label={t('Hair, makeup, injuries')}
+        name="styling"
+        defaultValue={look?.styling ?? ''}
+        textarea
+      />
+    </>
+  );
+};
 
 /**
  * A character's looks (#2015): one outfit each, with its own sheet. Picking
@@ -97,6 +102,9 @@ export const CharacterLooksRow: React.FC<{
   activeLookId: string;
   onSelect: (lookId: string) => void;
 }> = ({ sequenceId, characterId, looks, activeLookId, onSelect }) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+
   const queryClient = useQueryClient();
   const createLook = useCreateCharacterLook();
   const updateLook = useUpdateCharacterLook();
@@ -109,7 +117,7 @@ export const CharacterLooksRow: React.FC<{
     event.preventDefault();
     const parsed = parseLookForm(event.currentTarget);
     if (!parsed.success) {
-      toast.error('Look not saved', {
+      toast.error(translateEvent('Look not saved'), {
         description: lookFormError(parsed.error),
       });
       return;
@@ -122,7 +130,7 @@ export const CharacterLooksRow: React.FC<{
           onSelect(created.lookId);
         },
         onError: (error) =>
-          toast.error('Failed to add look', {
+          toast.error(translateEvent('Failed to add look'), {
             description: errorMessage(error),
           }),
       }
@@ -134,7 +142,7 @@ export const CharacterLooksRow: React.FC<{
     if (!active) return;
     const parsed = parseLookForm(event.currentTarget);
     if (!parsed.success) {
-      toast.error('Look not saved', {
+      toast.error(translateEvent('Look not saved'), {
         description: lookFormError(parsed.error),
       });
       return;
@@ -144,7 +152,7 @@ export const CharacterLooksRow: React.FC<{
       {
         onSuccess: () => setPanel(null),
         onError: (error) =>
-          toast.error('Failed to save look', {
+          toast.error(translateEvent('Failed to save look'), {
             description: errorMessage(error),
           }),
       }
@@ -157,14 +165,14 @@ export const CharacterLooksRow: React.FC<{
       onSuccess: () => {
         setPanel(null);
         onSelect(defaultLookId);
-        toast(`Removed ${look.name}`, {
+        toast(translateEvent('Removed {{value1}}', { value1: look.name }), {
           duration: 60_000,
           action: {
-            label: 'Undo',
+            label: translateEvent('Undo'),
             onClick: () =>
               void restoreCharacterLook(queryClient, ref).catch(
                 (error: Error) =>
-                  toast.error('Failed to restore look', {
+                  toast.error(translateEvent('Failed to restore look'), {
                     description: errorMessage(error),
                   })
               ),
@@ -173,7 +181,9 @@ export const CharacterLooksRow: React.FC<{
       },
       // A look a scene still wears is refused; the message names the scenes.
       onError: (error) =>
-        toast.error('Look not removed', { description: errorMessage(error) }),
+        toast.error(translateEvent('Look not removed'), {
+          description: errorMessage(error),
+        }),
     });
   };
 
@@ -183,7 +193,7 @@ export const CharacterLooksRow: React.FC<{
         <ToggleGroup
           type="single"
           variant="outline"
-          aria-label="Looks"
+          aria-label={t('Looks')}
           value={activeLookId}
           onValueChange={(value) => {
             // Radix sends '' when the pressed item is pressed again.
@@ -209,9 +219,9 @@ export const CharacterLooksRow: React.FC<{
                 />
               ) : null}
               <span>{look.name}</span>
-              {look.isDefault ? <Badge>Default look</Badge> : null}
+              {look.isDefault ? <Badge>{t('Default look')}</Badge> : null}
               {look.sheetStatus === 'generating' ? (
-                <Badge variant="secondary">Generating…</Badge>
+                <Badge variant="secondary">{t('Generating…')}</Badge>
               ) : null}
             </ToggleGroupItem>
           ))}
@@ -222,7 +232,7 @@ export const CharacterLooksRow: React.FC<{
           aria-expanded={panel === 'add'}
           onClick={() => setPanel(panel === 'add' ? null : 'add')}
         >
-          Add look
+          {t('Add look')}
         </Button>
         {active ? (
           <Button
@@ -231,7 +241,7 @@ export const CharacterLooksRow: React.FC<{
             aria-expanded={panel === 'edit'}
             onClick={() => setPanel(panel === 'edit' ? null : 'edit')}
           >
-            Edit look
+            {t('Edit look')}
           </Button>
         ) : null}
         {active ? (
@@ -250,7 +260,7 @@ export const CharacterLooksRow: React.FC<{
           <LookFields idPrefix="new-look" />
           <div className="flex gap-2">
             <Button type="submit" size="sm" disabled={createLook.isPending}>
-              {createLook.isPending ? 'Adding…' : 'Add look'}
+              {createLook.isPending ? t('Adding…') : t('Add look')}
             </Button>
             <Button
               type="button"
@@ -258,7 +268,7 @@ export const CharacterLooksRow: React.FC<{
               size="sm"
               onClick={() => setPanel(null)}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
           </div>
         </form>
@@ -274,7 +284,7 @@ export const CharacterLooksRow: React.FC<{
           <LookFields idPrefix={`look-${active.id}`} look={active} />
           <div className="flex gap-2">
             <Button type="submit" size="sm" disabled={updateLook.isPending}>
-              {updateLook.isPending ? 'Saving…' : 'Save look'}
+              {updateLook.isPending ? t('Saving…') : t('Save look')}
             </Button>
             {active.isDefault ? null : (
               <Button
@@ -284,7 +294,7 @@ export const CharacterLooksRow: React.FC<{
                 disabled={removeLook.isPending}
                 onClick={() => onRemove(active)}
               >
-                {removeLook.isPending ? 'Removing…' : 'Remove look'}
+                {removeLook.isPending ? t('Removing…') : t('Remove look')}
               </Button>
             )}
           </div>

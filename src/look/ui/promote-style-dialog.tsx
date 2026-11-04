@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   Dialog,
@@ -37,6 +39,9 @@ export function PromoteStyleDialog({
   open,
   onOpenChange,
 }: PromoteStyleDialogProps) {
+  const translateEvent = useLiveTranslation('look');
+  const { t } = useTranslation('look');
+
   const nameId = useId();
   const promote = usePromoteSequenceStyle();
 
@@ -50,13 +55,20 @@ export function PromoteStyleDialog({
       { sequenceId, name: parsed.data.name },
       {
         onSuccess: (promoted) => {
-          toast.success(`“${promoted.name}” added to your style library`);
+          toast.success(
+            translateEvent('“{{value1}}” added to your style library', {
+              value1: promoted.name,
+            })
+          );
           onOpenChange(false);
         },
         onError: (error) => {
-          toast.error('Could not add the style to your library', {
-            description: error.message,
-          });
+          toast.error(
+            translateEvent('Could not add the style to your library'),
+            {
+              description: error.message,
+            }
+          );
         },
       }
     );
@@ -67,15 +79,15 @@ export function PromoteStyleDialog({
       <DialogContent>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Add style to library</DialogTitle>
+            <DialogTitle>{t('Add style to library')}</DialogTitle>
             <DialogDescription>
-              This style was derived from the script and only lives on this
-              sequence. Adding it to your library makes it available to every
-              new sequence.
+              {t(
+                'This style was derived from the script and only lives on this sequence. Adding it to your library makes it available to every new sequence.'
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor={nameId}>Style name</Label>
+            <Label htmlFor={nameId}>{t('Style name')}</Label>
             <Input
               id={nameId}
               name="name"
@@ -91,10 +103,10 @@ export function PromoteStyleDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={promote.isPending}>
-              {promote.isPending ? 'Adding…' : 'Add to library'}
+              {promote.isPending ? t('Adding…') : t('Add to library')}
             </Button>
           </DialogFooter>
         </form>

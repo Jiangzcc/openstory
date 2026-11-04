@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { PageContainer } from '@/ui/layout/page-container';
 import { ModelDetailView } from '@/models/ui/model-detail-view';
 import { MODELS_ENABLED } from '@/platform/flags';
@@ -20,10 +21,12 @@ export const Route = createFileRoute('/_app/models/$')({
   },
   validateSearch: searchParamsSchema,
   component: ModelDetailPage,
-  staticData: { breadcrumb: 'Model' },
+  staticData: { breadcrumb: { label: 'Model', translationKey: 'Model' } },
 });
 
 function ModelDetailPage() {
+  const { t } = useTranslation('pages');
+
   const { _splat: endpointId } = Route.useParams();
   const { activity } = Route.useSearch();
 
@@ -36,7 +39,7 @@ function ModelDetailPage() {
           className="flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          Back to models
+          {t('Back to models')}
         </Link>
         {endpointId ? (
           <ModelDetailView endpointId={endpointId} activity={activity} />

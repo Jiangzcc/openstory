@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Scene Elements Tab
  * Displays user-uploaded reference elements — images (logos, products) and,
@@ -23,6 +25,7 @@ import { ElementSupportBadge } from '@/cast/ui/element/element-support-badge';
 import { ElementThumbnail } from '@/cast/ui/element/element-thumbnail';
 import { MAX_SEQUENCE_ELEMENTS } from '@/cast/ui/element/limits';
 import { unusableReferenceLines } from '@/motion/reference-support';
+import { localizeReferenceProblem } from '@/motion/ui/localize-reference-problem';
 import type { ImageToVideoModel } from '@/models/models';
 import { cn } from '@/ui/utils';
 import {
@@ -55,6 +58,10 @@ const AddElementButton: React.FC<{
   sequenceId: string;
   currentCount: number;
 }> = ({ sequenceId, currentCount }) => {
+  const translateEvent = useLiveTranslation('shots');
+
+  const { i18n, t } = useTranslation('shots');
+
   const inputRef = useRef<HTMLInputElement>(null);
   const upload = useUploadElementToSequence();
   const remaining = MAX_SEQUENCE_ELEMENTS - currentCount;
@@ -66,15 +73,21 @@ const AddElementButton: React.FC<{
       const usable = files.filter((f) => elementKindFromFile(f) !== null);
       if (usable.length === 0) {
         if (files.length > 0) {
-          toast.error("That file can't be a reference", {
-            description: 'Drop an image, an MP3/WAV, or an MP4/MOV.',
+          toast.error(translateEvent("That file can't be a reference"), {
+            description: translateEvent(
+              'Drop an image, an MP3/WAV, or an MP4/MOV.'
+            ),
           });
         }
         return;
       }
       const accepted = usable.slice(0, Math.max(0, remaining));
       if (accepted.length === 0) {
-        toast.error(`You can add up to ${MAX_SEQUENCE_ELEMENTS} elements`);
+        toast.error(
+          translateEvent('You can add up to {{value1}} elements', {
+            value1: MAX_SEQUENCE_ELEMENTS,
+          })
+        );
         return;
       }
       for (const file of accepted) {
@@ -82,17 +95,24 @@ const AddElementButton: React.FC<{
           { file, sequenceId },
           {
             onError: (err) => {
-              toast.error(`Couldn't upload ${file.name}`, {
-                description:
-                  err instanceof Error ? err.message : 'Upload failed',
-              });
+              toast.error(
+                translateEvent("Couldn't upload {{value1}}", {
+                  value1: file.name,
+                }),
+                {
+                  description:
+                    err instanceof Error
+                      ? err.message
+                      : translateEvent('Upload failed'),
+                }
+              );
             },
           }
         );
       }
       setOpen(false);
     },
-    [remaining, sequenceId, upload]
+    [translateEvent, remaining, sequenceId, upload]
   );
 
   if (remaining <= 0) return null;
@@ -119,22 +139,23 @@ const AddElementButton: React.FC<{
           variant="outline"
           size="sm"
           disabled={upload.isPending}
-          aria-label="Add element"
+          aria-label={t('Add element')}
         >
           {upload.isPending ? (
             <Loader2 className="size-3.5 animate-spin" />
           ) : (
             <ImagePlus className="size-3.5" />
           )}
-          {upload.isPending ? 'Uploading…' : 'Add'}
+          {upload.isPending ? t('Uploading…') : t('Add')}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(360px,calc(100vw-2rem))]">
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Upload a reference</p>
+          <p className="text-sm font-medium">{t('Upload a reference')}</p>
           <p className="text-xs text-muted-foreground">
-            Images, MP3/WAV or MP4/MOV — a logo, a product shot, a dialogue
-            line, a music bed, a move to copy. Type @ to insert one.
+            {t(
+              'Images, MP3/WAV or MP4/MOV — a logo, a product shot, a dialogue line, a music bed, a move to copy. Type @ to insert one.'
+            )}
           </p>
           <div
             // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- dropzone cannot be a <button> because it contains a nested <Button>
@@ -174,7 +195,7 @@ const AddElementButton: React.FC<{
                   if (files.length > 0) {
                     handleFiles(files);
                   } else if (failedUrls.length > 0) {
-                    toastDragImportCorsError();
+                    toastDragImportCorsError(i18n);
                   }
                 }
               );
@@ -197,7 +218,9 @@ const AddElementButton: React.FC<{
             )}
           >
             <Upload className="size-6 text-muted-foreground/50" />
-            <span className="text-sm font-medium">Drag & drop or paste</span>
+            <span className="text-sm font-medium">
+              {t('Drag & drop or paste')}
+            </span>
             <Button
               type="button"
               variant="outline"
@@ -207,7 +230,7 @@ const AddElementButton: React.FC<{
                 inputRef.current?.click();
               }}
             >
-              Browse
+              {t('Browse')}
             </Button>
           </div>
         </div>
@@ -221,6 +244,8 @@ export const SceneElementsTab: React.FC<SceneElementsTabProps> = ({
   shotIds,
   motionModel,
 }) => {
+  const { i18n, t } = useTranslation('shots');
+
   const { data: elements = [], isLoading } = useSequenceElements(sequenceId);
   const { data: facetMaps } = useSceneFacetMaps(sequenceId);
 
@@ -241,13 +266,17 @@ export const SceneElementsTab: React.FC<SceneElementsTabProps> = ({
   // What the selected model cannot use (#1559). There is no fallback — the
   // shot refuses to render — so this is a warning, said before Generate.
   const notices = motionModel
-    ? unusableReferenceLines(motionModel, sceneElements)
+    ? unusableReferenceLines(motionModel, sceneElements).map((line) =>
+        localizeReferenceProblem(i18n, line)
+      )
     : [];
 
   const header = (
     <div className="flex flex-col gap-2">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs text-muted-foreground">{ELEMENT_MENTION_HINT}</p>
+        <p className="text-xs text-muted-foreground">
+          {t(ELEMENT_MENTION_HINT)}
+        </p>
         <AddElementButton
           sequenceId={sequenceId}
           currentCount={elements.length}
@@ -276,8 +305,8 @@ export const SceneElementsTab: React.FC<SceneElementsTabProps> = ({
           </div>
           <p className="text-sm text-muted-foreground">
             {shotIds === null
-              ? 'No elements yet'
-              : 'No elements in this selection'}
+              ? t('No elements yet')
+              : t('No elements in this selection')}
           </p>
         </div>
       </div>
@@ -288,11 +317,11 @@ export const SceneElementsTab: React.FC<SceneElementsTabProps> = ({
     <div className="space-y-4">
       {header}
       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-        <span>{shotIds === null ? 'All Elements' : 'Elements'}</span>
+        <span>{shotIds === null ? t('All Elements') : t('Elements')}</span>
         <span className="text-muted-foreground/50">·</span>
         <span>
           {sceneElements.length}{' '}
-          {sceneElements.length === 1 ? 'reference' : 'references'}
+          {sceneElements.length === 1 ? t('reference') : t('references')}
         </span>
       </div>
 
@@ -336,7 +365,7 @@ export const SceneElementsTab: React.FC<SceneElementsTabProps> = ({
             el.visionStatus === 'analyzing' ? (
               <div className="absolute top-2 right-2 flex items-center gap-1 rounded bg-background/80 px-1.5 py-0.5 text-[10px] text-muted-foreground backdrop-blur-sm">
                 <Loader2 className="size-2.5 animate-spin" />
-                Analyzing
+                {t('Analyzing')}
               </div>
             ) : null}
           </Link>

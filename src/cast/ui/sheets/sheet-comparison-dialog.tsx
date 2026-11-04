@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   Dialog,
@@ -70,6 +71,8 @@ const SheetPreview: React.FC<{
   alt: string;
   aspectClass: string;
 }> = ({ url, alt, aspectClass }) => {
+  const { t } = useTranslation('cast');
+
   if (!url) {
     return (
       <div
@@ -78,7 +81,7 @@ const SheetPreview: React.FC<{
           aspectClass
         )}
       >
-        No asset
+        {t('No asset')}
       </div>
     );
   }
@@ -115,6 +118,8 @@ export const SheetComparisonDialog: React.FC<SheetComparisonDialogProps> = ({
   aspectRatio,
   upstreamChanges,
 }) => {
+  const { t } = useTranslation('cast');
+
   const label = ENTITY_LABEL[entityType];
   const aspectClass = ASPECT_CLASS[aspectRatio ?? defaultAspectFor(entityType)];
   const busy = isPromoting || isDiscarding;
@@ -140,29 +145,35 @@ export const SheetComparisonDialog: React.FC<SheetComparisonDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Compare alternate {label}</DialogTitle>
+          <DialogTitle>
+            {t('Compare alternate {{value1}}', { value1: label })}
+          </DialogTitle>
           <DialogDescription>
-            An alternate {label} was generated from the inputs you had at the
-            time. Compare it against the live version, then promote or discard.
+            {t(
+              'An alternate {{value1}} was generated from the inputs you had at the time. Compare it against the live version, then promote or discard.',
+              { value1: label }
+            )}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Live (current inputs)</span>
+            <span className="text-sm font-medium">
+              {t('Live (current inputs)')}
+            </span>
             <SheetPreview
               url={livePrimaryUrl}
-              alt={`Live ${label}`}
+              alt={t('Live {{value1}}', { value1: label })}
               aspectClass={aspectClass}
             />
           </div>
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">
-              Alternate (older inputs)
+              {t('Alternate (older inputs)')}
             </span>
             <SheetPreview
               url={variantUrl}
-              alt={`Alternate ${label}`}
+              alt={t('Alternate {{value1}}', { value1: label })}
               aspectClass={aspectClass}
             />
           </div>
@@ -170,7 +181,7 @@ export const SheetComparisonDialog: React.FC<SheetComparisonDialogProps> = ({
 
         {upstreamChanges && upstreamChanges.length > 0 && (
           <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3">
-            <span className="text-sm font-medium">What changed</span>
+            <span className="text-sm font-medium">{t('What changed')}</span>
             <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
               {upstreamChanges.map((change) => (
                 <li key={change}>• {change}</li>
@@ -185,8 +196,10 @@ export const SheetComparisonDialog: React.FC<SheetComparisonDialogProps> = ({
             role="alert"
             aria-live="polite"
           >
-            Promote replaces the current {label}. Click Promote again to
-            confirm.
+            {t(
+              'Promote replaces the current {{value1}}. Click Promote again to confirm.',
+              { value1: label }
+            )}
           </div>
         )}
 
@@ -198,7 +211,7 @@ export const SheetComparisonDialog: React.FC<SheetComparisonDialogProps> = ({
             disabled={busy}
           >
             {isDiscarding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <span>Discard</span>
+            <span>{t('Discard')}</span>
           </Button>
           <Button
             type="button"
@@ -206,7 +219,7 @@ export const SheetComparisonDialog: React.FC<SheetComparisonDialogProps> = ({
             onClick={() => onOpenChange(false)}
             disabled={busy}
           >
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button
             type="button"
@@ -215,7 +228,7 @@ export const SheetComparisonDialog: React.FC<SheetComparisonDialogProps> = ({
             variant={confirmingPromote ? 'destructive' : 'default'}
           >
             {isPromoting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {confirmingPromote ? 'Confirm Promote' : 'Promote'}
+            {confirmingPromote ? t('Confirm Promote') : t('Promote')}
           </Button>
         </DialogFooter>
       </DialogContent>

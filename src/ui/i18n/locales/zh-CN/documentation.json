@@ -1,0 +1,7 @@
+{
+  "Page not found": "页面未找到",
+  "This documentation page does not exist.": "此文档页面不存在。",
+  "Developer Guide": "开发者指南",
+  "Every generated artifact stores a hash of the inputs it was made from. Staleness is never a flag we set: on every read we recompute the hash from the current inputs and compare. A mismatch is <0>stale</0>. A row with no stored hash is <1>untracked</1> and never stale. Versioned things (green border) keep every generation as a row and a pointer picks one. Renders record which <2>version</2> of a prompt or sheet they used, so selecting a different version is what makes them stale, not editing the text.": "每个生成结果都会保存生成时输入内容的哈希值。“待更新”不是预先写入的状态：每次读取时，都会用当前输入重新计算哈希并进行比较；不一致时，就判为<0>待更新</0>。未保存哈希的记录属于<1>未跟踪</1>，不参与这一判断。有版本记录的内容（绿色边框）会保留每次生成的版本，并指定其中一个为当前版本。生成结果还会记录所用提示词或设定图的<2>具体版本</2>，因此判断依据是选用版本是否变化，而不是文字本身是否被编辑。",
+  "Support": "技术支持"
+}

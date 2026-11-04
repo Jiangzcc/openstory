@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 /**
  * On-demand sequence export. Download/Copy use a ready row whose
  * `sourceShotsHash` matches the current cut; `render` POSTs
@@ -60,6 +61,8 @@ export type SequenceExportState = {
 export function useSequenceExport(
   sequence: Sequence | undefined
 ): SequenceExportState {
+  const translateEvent = useLiveTranslation('sequences');
+
   const posthog = usePostHog();
   const queryClient = useQueryClient();
   const sequenceId = sequence?.id ?? '';
@@ -143,9 +146,9 @@ export function useSequenceExport(
       void queryClient.invalidateQueries({
         queryKey: sequenceExportKeys.list(sequenceId),
       });
-      toast.success('MP4 ready.', {
+      toast.success(translateEvent('MP4 ready.'), {
         action: {
-          label: 'Download',
+          label: translateEvent('Download'),
           onClick: () => triggerDownload(url, sequence?.title),
         },
       });
@@ -202,14 +205,14 @@ export function useSequenceExport(
     void copyTextToClipboard(toShareableExportUrl(freshExportUrl)).then(
       (copied) => {
         if (copied) {
-          toast.success('Video link copied.');
+          toast.success(translateEvent('Video link copied.'));
           posthog.capture('video_url_copied', { sequence_id: sequenceId });
         } else {
-          toast.error('Failed to copy URL');
+          toast.error(translateEvent('Failed to copy URL'));
         }
       }
     );
-  }, [freshExportUrl, sequenceId, posthog]);
+  }, [translateEvent, freshExportUrl, sequenceId, posthog]);
 
   const abort = useCallback(() => {
     abortRef.current?.abort();

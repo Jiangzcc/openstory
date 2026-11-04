@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import { AspectRatioIcon } from '@/ui/icons/aspect-ratio-icon';
 import { ASPECT_RATIOS, type AspectRatio } from '@/models/aspect-ratios';
@@ -12,13 +13,15 @@ export const GenerationSettingsTrigger: FC<GenerationSettingsTriggerProps> = ({
   aspectRatio,
   ...props
 }) => {
+  const { t } = useTranslation('interface');
+
   const aspectRatioData = ASPECT_RATIOS.find((r) => r.value === aspectRatio);
 
   return (
     <Button
       variant="outline"
       className="gap-2"
-      aria-label="Generation settings"
+      aria-label={t('Generation settings')}
       {...props}
     >
       {aspectRatioData && (

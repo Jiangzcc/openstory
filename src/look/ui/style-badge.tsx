@@ -1,3 +1,5 @@
+import { useTemplateTranslation } from '@/look/ui/use-template-translation';
+import { useTranslation } from 'react-i18next';
 import type React from 'react';
 import { useState } from 'react';
 import { Badge } from '@/ui/shadcn/badge';
@@ -64,6 +66,8 @@ export const StyleBadge: React.FC<StyleBadgeProps> = ({
   sequenceId,
   stylePending = false,
 }) => {
+  const { t } = useTranslation('look');
+
   const { data: styles } = useStyles();
   const listed = styleId ? styles?.find((s) => s.id === styleId) : undefined;
   // Off-list style (an automatic one): resolve through the sequence when we
@@ -74,6 +78,7 @@ export const StyleBadge: React.FC<StyleBadgeProps> = ({
   );
   const { data: byId } = useStyle(needsLookup && !sequenceId ? styleId : '');
   const fetched = bySequence ?? byId;
+  const translateTemplate = useTemplateTranslation(listed ?? fetched);
   const [detailOpen, setDetailOpen] = useState(false);
   const [promoteOpen, setPromoteOpen] = useState(false);
 
@@ -90,9 +95,11 @@ export const StyleBadge: React.FC<StyleBadgeProps> = ({
     return (
       <Badge
         className={cn('text-xs', getStyleBadgeColor(style.name))}
-        title={`Style: ${style.name}`}
+        title={t('Style: {{value1}}', {
+          value1: translateTemplate(style.name),
+        })}
       >
-        {style.name}
+        {translateTemplate(style.name)}
       </Badge>
     );
   }
@@ -104,17 +111,21 @@ export const StyleBadge: React.FC<StyleBadgeProps> = ({
           <button
             type="button"
             className="rounded-4xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={`Match script: ${style.name}. Open style menu`}
+            aria-label={t('Match script: {{value1}}. Open style menu', {
+              value1: translateTemplate(style.name),
+            })}
           >
             <Badge
               className={cn(
                 'flex items-center gap-1 text-xs',
                 getStyleBadgeColor(style.name)
               )}
-              title={`Match script: ${style.name}`}
+              title={t('Match script: {{value1}}', {
+                value1: translateTemplate(style.name),
+              })}
             >
               <Wand2 className="size-3" aria-hidden />
-              {stylePending ? 'Deriving style…' : style.name}
+              {stylePending ? t('Deriving style…') : style.name}
               <ChevronDown className="size-3" aria-hidden />
             </Badge>
           </button>
@@ -122,14 +133,14 @@ export const StyleBadge: React.FC<StyleBadgeProps> = ({
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setDetailOpen(true)}>
             <Info />
-            View style
+            {t('View style')}
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={stylePending}
             onSelect={() => setPromoteOpen(true)}
           >
             <Library />
-            Add to library…
+            {t('Add to library…')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

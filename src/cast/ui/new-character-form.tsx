@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import { Input } from '@/ui/shadcn/input';
 import { Label } from '@/ui/shadcn/label';
@@ -18,31 +20,35 @@ export const NewCharacterForm: React.FC<{
   submitLabel: string;
   pendingLabel: string;
   onSubmit: (fields: z.output<typeof newCharacterSchema>) => void;
-}> = ({ isPending, submitLabel, pendingLabel, onSubmit }) => (
-  <form
-    onSubmit={(event) => {
-      event.preventDefault();
-      const result = newCharacterSchema.safeParse(
-        Object.fromEntries(new FormData(event.currentTarget))
-      );
-      if (!result.success) {
-        toast.error('Check the character name', {
-          description: result.error.issues[0]?.message,
-        });
-        return;
-      }
-      onSubmit(result.data);
-    }}
-    className="flex flex-col gap-4"
-  >
-    <div className="flex flex-col gap-1">
-      <Label htmlFor="new-character-name">Name</Label>
-      <Input id="new-character-name" name="name" required />
-    </div>
-    <div className="flex justify-end">
-      <Button type="submit" disabled={isPending}>
-        {isPending ? pendingLabel : submitLabel}
-      </Button>
-    </div>
-  </form>
-);
+}> = ({ isPending, submitLabel, pendingLabel, onSubmit }) => {
+  const translateEvent = useLiveTranslation('cast');
+  const { t } = useTranslation('cast');
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const result = newCharacterSchema.safeParse(
+          Object.fromEntries(new FormData(event.currentTarget))
+        );
+        if (!result.success) {
+          toast.error(translateEvent('Check the character name'), {
+            description: result.error.issues[0]?.message,
+          });
+          return;
+        }
+        onSubmit(result.data);
+      }}
+      className="flex flex-col gap-4"
+    >
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="new-character-name">{t('Name')}</Label>
+        <Input id="new-character-name" name="name" required />
+      </div>
+      <div className="flex justify-end">
+        <Button type="submit" disabled={isPending}>
+          {isPending ? pendingLabel : submitLabel}
+        </Button>
+      </div>
+    </form>
+  );
+};

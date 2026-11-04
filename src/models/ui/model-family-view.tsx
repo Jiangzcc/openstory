@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Family page body (#458): all variants of one model family (e.g.
  * fal-ai/kling-video), grouped under version headers newest-first, each row
@@ -61,6 +63,10 @@ const ModelFamilyContent: FC<{
   family: string;
   activity: CatalogActivity | undefined;
 }> = ({ family, activity }) => {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('models');
+
   const { data } = useSuspenseQuery({
     queryKey: ['model-family-page', family, activity ?? 'auto'],
     queryFn: () => fetchFamily(family, activity),
@@ -71,8 +77,10 @@ const ModelFamilyContent: FC<{
     return (
       <EmptyState
         icon={<SearchX className="h-12 w-12" />}
-        title="Family not found"
-        description={`We couldn't find “${family}” in the model catalog.`}
+        title={t('Family not found')}
+        description={t("We couldn't find “{{value1}}” in the model catalog.", {
+          value1: family,
+        })}
       />
     );
   }
@@ -103,11 +111,15 @@ const ModelFamilyContent: FC<{
           <h1 className="text-2xl font-semibold tracking-tight">
             {data.title}
           </h1>
-          <Badge variant="secondary">{ACTIVITY_LABELS[data.activity]}</Badge>
+          <Badge variant="secondary">
+            {translateLabel(ACTIVITY_LABELS[data.activity])}
+          </Badge>
           {data.latestVersion && (
             <Badge variant="outline">{data.latestVersion}</Badge>
           )}
-          <Badge variant="outline">{data.variants.length} variants</Badge>
+          <Badge variant="outline">
+            {t('{{value1}} variants', { value1: data.variants.length })}
+          </Badge>
           <ReleaseBadge releasedAt={data.releasedAt} />
         </div>
         <code className="font-mono text-xs text-muted-foreground">
@@ -119,7 +131,7 @@ const ModelFamilyContent: FC<{
         {[...versionGroups.entries()].map(([version, variants]) => (
           <section
             key={version}
-            aria-label={showVersionHeaders ? version : 'Variants'}
+            aria-label={showVersionHeaders ? version : t('Variants')}
             className="flex flex-col gap-2"
           >
             {showVersionHeaders && (
@@ -150,7 +162,7 @@ const ModelFamilyContent: FC<{
                     <span className="flex shrink-0 items-center gap-2">
                       {variant.category && (
                         <Badge variant="outline">
-                          {categoryLabel(variant.category)}
+                          {translateLabel(categoryLabel(variant.category))}
                         </Badge>
                       )}
                       <ReleaseBadge releasedAt={variant.firstSeenAt} />

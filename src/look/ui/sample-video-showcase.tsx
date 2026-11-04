@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   Dialog,
@@ -20,6 +21,8 @@ export const SampleVideoCard: React.FC<{
   /** First-viewport cards: eager poster + high fetch priority (#1182). */
   priority?: boolean;
 }> = ({ entry, priority = false }) => {
+  const { t } = useTranslation('look');
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [open, setOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -94,7 +97,9 @@ export const SampleVideoCard: React.FC<{
         <DialogTrigger asChild>
           <button
             type="button"
-            aria-label={`Play the ${entry.styleName} sample video`}
+            aria-label={t('Play the {{value1}} sample video', {
+              value1: entry.styleName,
+            })}
             className="absolute inset-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
           />
         </DialogTrigger>
@@ -112,10 +117,12 @@ export const SampleVideoCard: React.FC<{
               to="/"
               search={{ style: entry.slug }}
               hash="compose"
-              aria-label={`Try the ${entry.styleName} style`}
+              aria-label={t('Try the {{value1}} style', {
+                value1: entry.styleName,
+              })}
             >
               <Wand2 className="size-3.5" />
-              Try
+              {t('Try')}
             </Link>
           </Button>
         )}
@@ -147,7 +154,7 @@ export const SampleVideoCard: React.FC<{
           <Button asChild className="gap-1.5">
             <Link to="/" search={{ style: entry.slug }} hash="compose">
               <Wand2 className="size-4" />
-              Try the {entry.styleName} style
+              {t('Try the')} {entry.styleName} {t('style')}
             </Link>
           </Button>
         )}

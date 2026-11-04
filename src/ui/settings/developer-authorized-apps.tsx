@@ -1,3 +1,7 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 /**
  * Authorized apps — OAuth grants the user has approved (#1456): hosted MCP
  * clients, forks, anything that ran "login with OpenStory". Revoking deletes
@@ -41,6 +45,8 @@ import { toast } from 'sonner';
 const AUTHORIZED_APPS_QUERY_KEY = ['authorizedApps'] as const;
 
 export function DeveloperAuthorizedApps() {
+  const { t } = useTranslation('interface');
+
   return (
     <Card>
       <CardHeader>
@@ -49,10 +55,11 @@ export function DeveloperAuthorizedApps() {
             <ShieldCheck className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle>Authorized apps</CardTitle>
+            <CardTitle>{t('Authorized apps')}</CardTitle>
             <CardDescription>
-              Apps and agents you have signed in to with your OpenStory account.
-              Revoke one and it has to ask again.
+              {t(
+                'Apps and agents you have signed in to with your OpenStory account. Revoke one and it has to ask again.'
+              )}
             </CardDescription>
           </div>
         </div>
@@ -76,6 +83,8 @@ function AppListSkeleton() {
 }
 
 function AppList() {
+  const { t } = useTranslation('interface');
+
   const { data: apps } = useSuspenseQuery({
     queryKey: AUTHORIZED_APPS_QUERY_KEY,
     queryFn: () => listAuthorizedAppsFn(),
@@ -84,8 +93,9 @@ function AppList() {
   if (apps.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No apps have access yet. When an MCP client or another app asks to sign
-        in with OpenStory, it will show up here.
+        {t(
+          'No apps have access yet. When an MCP client or another app asks to sign in with OpenStory, it will show up here.'
+        )}
       </p>
     );
   }
@@ -100,6 +110,11 @@ function AppList() {
 }
 
 function AppRow({ app }: { app: AuthorizedApp }) {
+  const translateScope = useLabelTranslation('interface');
+  const translateEvent = useLiveTranslation('interface');
+  const { formatDate } = useLocaleFormatting();
+  const { t } = useTranslation('interface');
+
   const queryClient = useQueryClient();
   const revoke = useMutation({
     mutationFn: () =>
@@ -107,13 +122,19 @@ function AppRow({ app }: { app: AuthorizedApp }) {
         data: { consentId: app.consentId, clientId: app.client.clientId },
       }),
     onSuccess: () => {
-      toast.success(`Revoked access for ${app.client.name}`);
+      toast.success(
+        translateEvent('Revoked access for {{value1}}', {
+          value1: app.client.name,
+        })
+      );
       void queryClient.invalidateQueries({
         queryKey: AUTHORIZED_APPS_QUERY_KEY,
       });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : 'Failed to revoke'),
+      toast.error(
+        err instanceof Error ? err.message : translateEvent('Failed to revoke')
+      ),
   });
 
   return (
@@ -121,12 +142,15 @@ function AppRow({ app }: { app: AuthorizedApp }) {
       <div className="flex min-w-0 flex-col gap-1">
         <span className="truncate font-medium">{app.client.name}</span>
         <span className="truncate text-xs text-muted-foreground">
-          {app.client.redirectOrigin ?? app.client.clientId}
-          {' · '}
-          approved {app.createdAt.toLocaleDateString()}
+          {t('{{value1}} · approved {{value2}}', {
+            value1: app.client.redirectOrigin ?? app.client.clientId,
+            value2: formatDate(app.createdAt),
+          })}
         </span>
         <span className="text-xs text-muted-foreground">
-          {app.scopes.map((s) => s.description).join(' · ')}
+          {app.scopes
+            .map((scope) => translateScope(scope.description))
+            .join(' · ')}
         </span>
       </div>
       <AlertDialog>
@@ -134,7 +158,9 @@ function AppRow({ app }: { app: AuthorizedApp }) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={`Revoke access for ${app.client.name}`}
+            aria-label={t('Revoke access for {{value1}}', {
+              value1: app.client.name,
+            })}
             disabled={revoke.isPending}
           >
             <Trash2 className="h-4 w-4" />
@@ -142,17 +168,19 @@ function AppRow({ app }: { app: AuthorizedApp }) {
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Revoke {app.client.name}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('Revoke {{value1}}?', { value1: app.client.name })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              It will not be able to get new tokens and has to ask you to sign
-              in again. An access token already issued can keep working for up
-              to an hour.
+              {t(
+                'It will not be able to get new tokens and has to ask you to sign in again. An access token already issued can keep working for up to an hour.'
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => revoke.mutate()}>
-              Revoke
+              {t('Revoke')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

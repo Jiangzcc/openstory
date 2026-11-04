@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
@@ -75,17 +77,23 @@ const FilterSelect: React.FC<FilterSelectProps> = ({
   placeholder,
   triggerClassName,
 }) => {
+  const translateLabel = useLabelTranslation('sequences');
+  const items = options.map((option) => ({
+    ...option,
+    label: option.value === 'all' ? translateLabel(option.label) : option.label,
+  }));
+
   const select = (
     <Select
       value={value}
-      items={options}
+      items={items}
       onValueChange={(next) => next && onValueChange(next)}
     >
       <SelectTrigger id={id} className={triggerClassName}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
-        {options.map((option) => (
+        {items.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             {option.label}
           </SelectItem>
@@ -134,6 +142,10 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
   hideInternalAvailable,
   hideInternalLocked,
 }) => {
+  const translateLabel = useLabelTranslation('sequences');
+
+  const { t } = useTranslation('sequences');
+
   const [searchDraft, setSearchDraft] = useState(filters.search);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -223,18 +235,20 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
       {isAdmin && (
         <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 px-3 py-2">
           <ShieldCheck className="size-4 text-muted-foreground" />
-          <Label htmlFor="support-mode">Support mode</Label>
+          <Label htmlFor="support-mode">{t('Support mode')}</Label>
           <Switch
             id="support-mode"
             checked={Boolean(supportMode)}
             onCheckedChange={(value) => onSupportModeChange?.(value)}
           />
           {supportMode && (
-            <span className="text-xs text-muted-foreground">All teams</span>
+            <span className="text-xs text-muted-foreground">
+              {t('All teams')}
+            </span>
           )}
           {supportMode && hideInternalAvailable && (
             <div className="ml-auto flex items-center gap-2">
-              <Label htmlFor="hide-internal">Hide internal</Label>
+              <Label htmlFor="hide-internal">{t('Hide internal')}</Label>
               <Switch
                 id="hide-internal"
                 checked={Boolean(hideInternal)}
@@ -249,11 +263,11 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
         <div className="relative min-w-48 flex-1">
           <Search className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
-            aria-label="Search sequences"
+            aria-label={t('Search sequences')}
             placeholder={
               supportMode
-                ? 'Search title, name or email…'
-                : 'Search your sequences…'
+                ? t('Search title, name or email…')
+                : t('Search your sequences…')
             }
             value={searchDraft}
             onChange={handleSearchChange}
@@ -267,11 +281,13 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
               className="h-11 sm:h-10 gap-2"
               aria-label={
                 activeFilterCount
-                  ? `Filters, ${activeFilterCount} active`
-                  : 'Filters'
+                  ? t('Filters, {{value1}} active', {
+                      value1: activeFilterCount,
+                    })
+                  : t('Filters')
               }
             >
-              <SlidersHorizontal className="size-4" /> Filters
+              <SlidersHorizontal className="size-4" /> {t('Filters')}
               {activeFilterCount > 0 && (
                 <Badge variant="secondary">{activeFilterCount}</Badge>
               )}
@@ -281,18 +297,18 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
             align="end"
             className="flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-4"
           >
-            <p className="text-sm font-medium">Filter sequences</p>
+            <p className="text-sm font-medium">{t('Filter sequences')}</p>
             <FilterSelect
               id="sequence-style"
-              label="Style"
+              label={t('Style')}
               value={filters.styleId || 'all'}
               onValueChange={handleStyleChange}
               options={styleOptions}
-              placeholder="All styles"
+              placeholder={t('All styles')}
             />
             <FilterSelect
               id="sequence-aspect-ratio"
-              label="Format"
+              label={t('Format')}
               value={filters.aspectRatio || 'all'}
               onValueChange={handleAspectRatioChange}
               options={[
@@ -302,11 +318,11 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
                   label: r.label,
                 })),
               ]}
-              placeholder="All formats"
+              placeholder={t('All formats')}
             />
             <FilterSelect
               id="sequence-analysis-model"
-              label="Analysis model"
+              label={t('Analysis model')}
               value={filters.analysisModel || 'all'}
               onValueChange={handleAnalysisModelChange}
               options={[
@@ -315,11 +331,11 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
                   (m) => ({ value: m.id, label: m.name })
                 ),
               ]}
-              placeholder="All analysis models"
+              placeholder={t('All analysis models')}
             />
             <FilterSelect
               id="sequence-image-model"
-              label="Image model"
+              label={t('Image model')}
               value={filters.imageModel || 'all'}
               onValueChange={handleImageModelChange}
               options={[
@@ -328,20 +344,23 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
                   .filter((m) => !('hidden' in m))
                   .map((m) => ({ value: m.id, label: m.name })),
               ]}
-              placeholder="All image models"
+              placeholder={t('All image models')}
             />
             <Button
               variant="ghost"
               onClick={clearFilters}
               disabled={!hasActiveFilters}
             >
-              Clear filters
+              {t('Clear filters')}
             </Button>
           </PopoverContent>
         </Popover>
         <Select
           value={sortValue}
-          items={SORT_OPTIONS}
+          items={SORT_OPTIONS.map((option) => ({
+            ...option,
+            label: translateLabel(option.label),
+          }))}
           onValueChange={(value) => {
             if (value === 'title')
               onSortChange([{ field: 'title', direction: 'asc' }]);
@@ -354,32 +373,41 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
               ]);
           }}
         >
-          <SelectTrigger aria-label="Sort sequences" className="h-11 sm:h-10">
+          <SelectTrigger
+            aria-label={t('Sort sequences')}
+            className="h-11 sm:h-10"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {SORT_OPTIONS.map((o) => (
               <SelectItem key={o.value} value={o.value}>
-                {o.label}
+                {translateLabel(o.label)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select
           value={viewMode}
-          items={VIEW_OPTIONS}
+          items={VIEW_OPTIONS.map((option) => ({
+            ...option,
+            label: translateLabel(option.label),
+          }))}
           onValueChange={(value) => {
             if (value === 'gallery' || (value && isValidViewMode(value)))
               onViewModeChange(value);
           }}
         >
-          <SelectTrigger aria-label="Sequence view" className="h-11 sm:h-10">
+          <SelectTrigger
+            aria-label={t('Sequence view')}
+            className="h-11 sm:h-10"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {VIEW_OPTIONS.map((o) => (
               <SelectItem key={o.value} value={o.value}>
-                {o.label}
+                {translateLabel(o.label)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -387,13 +415,17 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
         <Button asChild className="h-11 sm:h-10">
           <Link to="/">
             <Plus className="size-4" />
-            New sequence
+            {t('New sequence')}
           </Link>
         </Button>
       </div>
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {filters.search && <span>Matching “{filters.search}”</span>}
+          {filters.search && (
+            <span>
+              {t('Matching “{{value1}}”', { value1: filters.search })}
+            </span>
+          )}
           {filters.styleId && (
             <Badge variant="secondary">
               {styleOptions.find((o) => o.value === filters.styleId)?.label ??
@@ -419,7 +451,7 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
           )}
           <Button size="sm" variant="ghost" onClick={clearFilters}>
             <X className="size-3" />
-            Clear all
+            {t('Clear all')}
           </Button>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * The in-app host for a tool's MCP Apps view (#2155): the same `ui://` page
  * the MCP server serves to Claude or ChatGPT, in a sandboxed iframe under a
@@ -64,6 +65,8 @@ export const McpAppFrame: React.FC<{
   /** A `ui/message` from the view: text sent into the thread as the user. */
   onMessage?: (text: string) => void;
 }> = ({ uri, result, onMessage }) => {
+  const { t } = useTranslation('assistant');
+
   const view = useQuery({
     queryKey: ['mcp-view', uri],
     queryFn: () => getMcpViewFn({ data: { uri } }),
@@ -167,7 +170,9 @@ export const McpAppFrame: React.FC<{
   if (view.error) {
     return (
       <p className="text-xs text-muted-foreground">
-        The view could not load: {view.error.message}
+        {t('The view could not load: {{value1}}', {
+          value1: view.error.message,
+        })}
       </p>
     );
   }
@@ -175,7 +180,7 @@ export const McpAppFrame: React.FC<{
   return (
     <iframe
       ref={attach}
-      title="Tool result"
+      title={t('Tool result')}
       // No same-origin: the page is served to outside hosts too, and gets
       // the same rights here as there. Links open through the host.
       sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"

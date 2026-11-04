@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { Trans, useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { Badge } from '@/ui/shadcn/badge';
@@ -144,6 +146,10 @@ export const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({
   mode,
   onChange,
 }) => {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('interface');
+
   const [hovered, setHovered] = useState<string | null>(null);
   const active = hovered ?? node;
   const activeNode = nodeById(active);
@@ -175,7 +181,7 @@ export const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({
               onChange({ mode: on ? 'start-frame' : 'reference-only' })
             }
           />
-          <Label htmlFor="use-start-frames">Use start frames</Label>
+          <Label htmlFor="use-start-frames">{t('Use start frames')}</Label>
         </div>
         <Legend />
       </div>
@@ -185,7 +191,7 @@ export const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({
           viewBox={`0 0 ${W} ${H}`}
           className="block h-auto w-full min-w-[640px] select-none text-[11px]"
         >
-          <title>Dependency graph</title>
+          <title>{t('Dependency graph')}</title>
           {BANDS.map(([band, label]) => (
             <text
               key={band}
@@ -193,7 +199,7 @@ export const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({
               y={bandTop(band) - 8}
               className="fill-muted-foreground text-[9px] font-medium uppercase tracking-wider"
             >
-              {label}
+              {translateLabel(label)}
             </text>
           ))}
           <g fill="none">
@@ -225,7 +231,7 @@ export const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({
                 <a
                   href={`?node=${n.id}&mode=${mode}`}
                   aria-current={n.id === node ? 'true' : undefined}
-                  aria-label={n.label}
+                  aria-label={translateLabel(n.label)}
                   className={cn(
                     'group cursor-pointer outline-none transition-opacity motion-reduce:transition-none',
                     dim && 'opacity-45'
@@ -247,7 +253,7 @@ export const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({
                   onFocus={() => setHovered(n.id)}
                   onBlur={() => setHovered(null)}
                 >
-                  <title>{n.summary}</title>
+                  <title>{translateLabel(n.summary)}</title>
                   <rect
                     width={NW}
                     height={NH}
@@ -276,15 +282,17 @@ export const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({
                     dominantBaseline="central"
                     className="pointer-events-none fill-foreground font-medium"
                   >
-                    {wrapLabel(n.label).map((line, i, lines) => (
-                      <tspan
-                        key={line}
-                        x={NW / 2}
-                        dy={i === 0 ? (lines.length === 2 ? -6.5 : 0) : 13}
-                      >
-                        {line}
-                      </tspan>
-                    ))}
+                    {wrapLabel(translateLabel(n.label)).map(
+                      (line, i, lines) => (
+                        <tspan
+                          key={line}
+                          x={NW / 2}
+                          dy={i === 0 ? (lines.length === 2 ? -6.5 : 0) : 13}
+                        >
+                          {line}
+                        </tspan>
+                      )
+                    )}
                   </text>
                 </a>
               </g>
@@ -310,44 +318,82 @@ export const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({
 
 const edgeKey = (e: GraphEdge) => `${e.from}>${e.to}`;
 
-const withNote = (copy: string, note: string | undefined) =>
-  note ? `${copy} — ${note}` : copy;
+const withNote = (
+  copy: string,
+  note: string | undefined,
+  translate: (source: string) => string
+) => (note ? `${translate(copy)} — ${translate(note)}` : translate(copy));
 
-const Legend: React.FC = () => (
-  <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-    {LEGEND.map(([copy, stroke]) => (
-      <li key={copy} className="flex items-center gap-1.5">
-        <svg width="28" height="8" aria-hidden="true">
-          <line
-            x1="1"
-            y1="4"
-            x2="27"
-            y2="4"
-            strokeLinecap="round"
-            className={cn('stroke-[2.5]', stroke)}
-          />
-        </svg>
-        {copy}
+const Legend: React.FC = () => {
+  const translateLabel = useLabelTranslation('labels');
+  return (
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      {LEGEND.map(([copy, stroke]) => (
+        <li key={copy} className="flex items-center gap-1.5">
+          <svg width="28" height="8" aria-hidden="true">
+            <line
+              x1="1"
+              y1="4"
+              x2="27"
+              y2="4"
+              strokeLinecap="round"
+              className={cn('stroke-[2.5]', stroke)}
+            />
+          </svg>
+          {translateLabel(copy)}
+        </li>
+      ))}
+      <li className="flex items-center gap-1.5">
+        <Trans
+          ns="interface"
+          i18nKey="<0/>versioned"
+          components={[
+            <span
+              key="0"
+              className="inline-block size-3 rounded-sm border border-chart-2"
+            />,
+          ]}
+        />
       </li>
-    ))}
-    <li className="flex items-center gap-1.5">
-      <span className="inline-block size-3 rounded-sm border border-chart-2" />
-      versioned
-    </li>
-    <li className="flex items-center gap-1.5">
-      <span className="inline-block size-3 rounded-sm border border-dashed border-foreground" />
-      optional
-    </li>
-    <li className="flex items-center gap-1.5">
-      <span className="inline-block size-3 rounded-sm border border-border bg-warning/30" />
-      goes stale
-    </li>
-    <li className="flex items-center gap-1.5">
-      <span className="inline-block size-3 rounded-sm border border-border bg-primary/10" />
-      makes it stale
-    </li>
-  </ul>
-);
+      <li className="flex items-center gap-1.5">
+        <Trans
+          ns="interface"
+          i18nKey="<0/>optional"
+          components={[
+            <span
+              key="0"
+              className="inline-block size-3 rounded-sm border border-dashed border-foreground"
+            />,
+          ]}
+        />
+      </li>
+      <li className="flex items-center gap-1.5">
+        <Trans
+          ns="interface"
+          i18nKey="<0/>goes stale"
+          components={[
+            <span
+              key="0"
+              className="inline-block size-3 rounded-sm border border-border bg-warning/30"
+            />,
+          ]}
+        />
+      </li>
+      <li className="flex items-center gap-1.5">
+        <Trans
+          ns="interface"
+          i18nKey="<0/>makes it stale"
+          components={[
+            <span
+              key="0"
+              className="inline-block size-3 rounded-sm border border-border bg-primary/10"
+            />,
+          ]}
+        />
+      </li>
+    </ul>
+  );
+};
 
 // --- Detail panel ---------------------------------------------------------
 
@@ -365,139 +411,165 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   upstream,
   sideEdges,
   onSelect,
-}) => (
-  <section
-    aria-live="polite"
-    className="flex flex-col gap-5 rounded-lg border bg-card p-5"
-  >
-    <header className="flex flex-col gap-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-semibold">{node.label}</h2>
-        <Badge variant="outline">
-          {node.kind === 'input' ? 'you edit' : 'generated'}
-        </Badge>
-        {node.versionedIn && (
-          <Badge variant="outline" className="border-chart-2">
-            versioned — {node.versionedIn}
+}) => {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('interface');
+  return (
+    <section
+      aria-live="polite"
+      className="flex flex-col gap-5 rounded-lg border bg-card p-5"
+    >
+      <header className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-semibold">
+            {translateLabel(node.label)}
+          </h2>
+          <Badge variant="outline">
+            {node.kind === 'input' ? t('you edit') : t('generated')}
           </Badge>
-        )}
-        {node.optional && (
-          <Badge variant="outline" className="border-dashed">
-            optional — {node.optional}
-          </Badge>
-        )}
-        {node.storedAs && (
-          <code className="text-xs text-muted-foreground">{node.storedAs}</code>
-        )}
+          {node.versionedIn && (
+            <Badge variant="outline" className="border-chart-2">
+              {t('versioned — {{value1}}', { value1: node.versionedIn })}
+            </Badge>
+          )}
+          {node.optional && (
+            <Badge variant="outline" className="border-dashed">
+              {t('optional — {{value1}}', {
+                value1: translateLabel(node.optional),
+              })}
+            </Badge>
+          )}
+          {node.storedAs && (
+            <code className="text-xs text-muted-foreground">
+              {node.storedAs}
+            </code>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {translateLabel(node.summary)}
+        </p>
+      </header>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <FieldList
+          title={t('Counts')}
+          hint={
+            node.kind === 'input'
+              ? translateLabel(
+                  'Change one of these and what depends on it goes stale.'
+                )
+              : translateLabel(
+                  'The check compares these. Change one upstream and this goes stale.'
+                )
+          }
+          items={node.counts}
+        />
+        <FieldList
+          title={t('Does not count')}
+          hint={translateLabel('Change these freely. Nothing goes stale.')}
+          items={node.ignored}
+        />
       </div>
-      <p className="text-sm text-muted-foreground">{node.summary}</p>
-    </header>
 
-    <div className="grid gap-5 sm:grid-cols-2">
-      <FieldList
-        title="Counts"
-        hint={
-          node.kind === 'input'
-            ? 'Change one of these and what depends on it goes stale.'
-            : 'The check compares these. Change one upstream and this goes stale.'
-        }
-        items={node.counts}
-      />
-      <FieldList
-        title="Does not count"
-        hint="Change these freely. Nothing goes stale."
-        items={node.ignored}
-      />
-    </div>
-
-    <div className="grid gap-5 sm:grid-cols-2">
-      <ReachList
-        title={
-          node.kind === 'input'
-            ? 'Edit this and these go stale'
-            : 'Regenerate this and these go stale'
-        }
-        empty="Nothing downstream is tracked."
-        reach={downstream}
-        origin={node}
-        direction="down"
-        tone="warning"
-        onSelect={onSelect}
-      />
-      {node.kind === 'artifact' && (
+      <div className="grid gap-5 sm:grid-cols-2">
         <ReachList
-          title="Goes stale when any of these change"
-          empty="Nothing. It is never flagged stale."
-          reach={upstream}
+          title={
+            node.kind === 'input'
+              ? t('Edit this and these go stale')
+              : t('Regenerate this and these go stale')
+          }
+          empty={translateLabel('Nothing downstream is tracked.')}
+          reach={downstream}
           origin={node}
-          direction="up"
-          tone="primary"
+          direction="down"
+          tone="warning"
           onSelect={onSelect}
         />
-      )}
-    </div>
-
-    {sideEdges.length > 0 && (
-      <div className="flex flex-col gap-2">
-        <h3 className="text-sm font-medium">Connected, but not tracked</h3>
-        <ul className="flex flex-col gap-1 text-sm">
-          {sideEdges.map((e) => {
-            const other = e.from === node.id ? e.to : e.from;
-            const o = nodeById(other);
-            if (!o) return null;
-            return (
-              <li key={edgeKey(e)} className="flex flex-wrap gap-x-2">
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0"
-                  onClick={() => onSelect(other)}
-                >
-                  {e.from === node.id ? `→ ${o.label}` : `${o.label} →`}
-                </Button>
-                <span className="text-muted-foreground">
-                  {withNote(edgeCopy(e), e.note)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        {node.kind === 'artifact' && (
+          <ReachList
+            title={t('Goes stale when any of these change')}
+            empty={translateLabel('Nothing. It is never flagged stale.')}
+            reach={upstream}
+            origin={node}
+            direction="up"
+            tone="primary"
+            onSelect={onSelect}
+          />
+        )}
       </div>
-    )}
-  </section>
-);
+
+      {sideEdges.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-medium">
+            {t('Connected, but not tracked')}
+          </h3>
+          <ul className="flex flex-col gap-1 text-sm">
+            {sideEdges.map((e) => {
+              const other = e.from === node.id ? e.to : e.from;
+              const o = nodeById(other);
+              if (!o) return null;
+              return (
+                <li key={edgeKey(e)} className="flex flex-wrap gap-x-2">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0"
+                    onClick={() => onSelect(other)}
+                  >
+                    {e.from === node.id
+                      ? `→ ${translateLabel(o.label)}`
+                      : `${translateLabel(o.label)} →`}
+                  </Button>
+                  <span className="text-muted-foreground">
+                    {withNote(edgeCopy(e), e.note, translateLabel)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+};
 
 const FieldList: React.FC<{
   title: string;
   hint: string;
   items: IgnoredItem[];
-}> = ({ title, hint, items }) => (
-  <div className="flex flex-col gap-2">
-    <div>
-      <h3 className="text-sm font-medium">{title}</h3>
-      <p className="text-xs text-muted-foreground">{hint}</p>
+}> = ({ title, hint, items }) => {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('interface');
+  return (
+    <div className="flex flex-col gap-2">
+      <div>
+        <h3 className="text-sm font-medium">{title}</h3>
+        <p className="text-xs text-muted-foreground">{translateLabel(hint)}</p>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('Nothing.')}</p>
+      ) : (
+        <ul className="list-disc pl-5 text-sm text-muted-foreground">
+          {items.map((item) =>
+            typeof item === 'string' ? (
+              <li key={item}>{translateLabel(item)}</li>
+            ) : (
+              <li key={item.gap} className="text-chart-5">
+                <TriangleAlert
+                  aria-label={t('A gap: this should count')}
+                  className="mr-1 inline size-3.5 -translate-y-px"
+                />
+                {translateLabel(item.gap)}
+              </li>
+            )
+          )}
+        </ul>
+      )}
     </div>
-    {items.length === 0 ? (
-      <p className="text-sm text-muted-foreground">Nothing.</p>
-    ) : (
-      <ul className="list-disc pl-5 text-sm text-muted-foreground">
-        {items.map((item) =>
-          typeof item === 'string' ? (
-            <li key={item}>{item}</li>
-          ) : (
-            <li key={item.gap} className="text-chart-5">
-              <TriangleAlert
-                aria-label="A gap: this should count"
-                className="mr-1 inline size-3.5 -translate-y-px"
-              />
-              {item.gap}
-            </li>
-          )
-        )}
-      </ul>
-    )}
-  </div>
-);
+  );
+};
 
 type ReachListProps = {
   title: string;
@@ -517,50 +589,56 @@ const ReachList: React.FC<ReachListProps> = ({
   direction,
   tone,
   onSelect,
-}) => (
-  <div className="flex flex-col gap-2">
-    <h3 className="text-sm font-medium">{title}</h3>
-    {reach.length === 0 ? (
-      <p className="text-sm text-muted-foreground">{empty}</p>
-    ) : (
-      <ol className="flex flex-col gap-1.5 text-sm">
-        {reach.map((r) => {
-          const target = nodeById(r.id);
-          const viaId = direction === 'down' ? r.via.from : r.via.to;
-          const via = nodeById(viaId);
-          if (!target) return null;
-          return (
-            <li key={r.id} className="flex flex-wrap items-baseline gap-x-2">
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'inline-block size-2 shrink-0 translate-y-px rounded-full',
-                  tone === 'warning' ? 'bg-warning' : 'bg-primary'
-                )}
-              />
-              <Button
-                variant="link"
-                size="sm"
-                className="h-auto p-0 font-medium"
-                onClick={() => onSelect(r.id)}
-              >
-                {target.label}
-              </Button>
-              <span className="text-muted-foreground">
-                {withNote(
-                  viaId === origin.id
-                    ? edgeCopy(r.via)
-                    : `via ${via?.label ?? viaId}`,
-                  r.via.note
-                )}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    )}
-  </div>
-);
+}) => {
+  const translateLabel = useLabelTranslation('labels');
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-sm font-medium">{title}</h3>
+      {reach.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{translateLabel(empty)}</p>
+      ) : (
+        <ol className="flex flex-col gap-1.5 text-sm">
+          {reach.map((r) => {
+            const target = nodeById(r.id);
+            const viaId = direction === 'down' ? r.via.from : r.via.to;
+            const via = nodeById(viaId);
+            if (!target) return null;
+            return (
+              <li key={r.id} className="flex flex-wrap items-baseline gap-x-2">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'inline-block size-2 shrink-0 translate-y-px rounded-full',
+                    tone === 'warning' ? 'bg-warning' : 'bg-primary'
+                  )}
+                />
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 font-medium"
+                  onClick={() => onSelect(r.id)}
+                >
+                  {translateLabel(target.label)}
+                </Button>
+                <span className="text-muted-foreground">
+                  {withNote(
+                    viaId === origin.id
+                      ? edgeCopy(r.via)
+                      : translateLabel('via') +
+                          ' ' +
+                          translateLabel(via?.label ?? viaId),
+                    r.via.note,
+                    translateLabel
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+};
 
 // --- Update all -----------------------------------------------------------
 
@@ -576,30 +654,38 @@ const DEPTH_DETAIL: Record<(typeof UPDATE_STALE_DEPTHS)[number], string> = {
     'Also rewrites a stale music prompt, then the track if one exists. Never a first track.',
 };
 
-const UpdateAllLadder: React.FC = () => (
-  <section className="flex flex-col gap-3">
-    <h2 className="text-lg font-semibold">What "Update all" regenerates</h2>
-    <p className="text-sm text-muted-foreground">
-      The depth picker is cumulative. Each rung includes the ones above it, and
-      no rung ever creates an artifact that does not exist yet.
-    </p>
-    <ol className="flex flex-col gap-2">
-      {UPDATE_STALE_DEPTHS.map((depth, i) => (
-        <li key={depth} className="flex gap-3 text-sm">
-          <span className="w-5 shrink-0 tabular-nums text-muted-foreground">
-            {i + 1}.
-          </span>
-          <span>
-            <span className="font-medium">
-              {UPDATE_STALE_DEPTH_LABELS[depth]}
+const UpdateAllLadder: React.FC = () => {
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('interface');
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold">
+        {t('What "Update all" regenerates')}
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        {t(
+          'The depth picker is cumulative. Each rung includes the ones above it, and no rung ever creates an artifact that does not exist yet.'
+        )}
+      </p>
+      <ol className="flex flex-col gap-2">
+        {UPDATE_STALE_DEPTHS.map((depth, i) => (
+          <li key={depth} className="flex gap-3 text-sm">
+            <span className="w-5 shrink-0 tabular-nums text-muted-foreground">
+              {i + 1}.
             </span>
-            <span className="text-muted-foreground">
-              {' '}
-              — {DEPTH_DETAIL[depth]}
+            <span>
+              <span className="font-medium">
+                {translateLabel(UPDATE_STALE_DEPTH_LABELS[depth])}
+              </span>
+              <span className="text-muted-foreground">
+                {' '}
+                — {translateLabel(DEPTH_DETAIL[depth])}
+              </span>
             </span>
-          </span>
-        </li>
-      ))}
-    </ol>
-  </section>
-);
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+};

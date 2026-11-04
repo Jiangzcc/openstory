@@ -113,10 +113,19 @@ function createGithubHeadingIds(): (text: string, index: number) => string {
  * Parse docs markdown to a serializable TanStack AST + TOC headings.
  * Frontmatter is already stripped by content-collections.
  */
-export function parseDocsMarkdown(content: string): RenderedMarkdown {
+export function parseDocsMarkdown(
+  content: string,
+  sourceHeadingIds: readonly string[] = []
+): RenderedMarkdown {
+  const fallbackHeadingId = createGithubHeadingIds();
+  let headingOrdinal = 0;
   const document = parseMarkdown(content, {
     frontmatter: false,
-    headingIds: createGithubHeadingIds(),
+    headingIds: (text, index) => {
+      const id = sourceHeadingIds[headingOrdinal];
+      headingOrdinal += 1;
+      return id ?? fallbackHeadingId(text, index);
+    },
     extensions: parseExtensions,
   });
   return {

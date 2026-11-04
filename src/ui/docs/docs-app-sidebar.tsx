@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { DocsSidebar } from './docs-sidebar';
 import {
   Sidebar,
@@ -15,6 +16,8 @@ import { useRouter } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 
 export function DocsAppSidebar() {
+  const { t } = useTranslation('interface');
+
   const router = useRouter();
 
   const handleBack = () => {
@@ -27,9 +30,9 @@ export function DocsAppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleBack} tooltip="Back">
+            <SidebarMenuButton onClick={handleBack} tooltip={t('Back')}>
               <ArrowLeft />
-              <span>Back</span>
+              <span>{t('Back')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

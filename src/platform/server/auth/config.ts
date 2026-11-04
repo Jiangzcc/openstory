@@ -33,6 +33,7 @@ import {
   getUserIdentity,
 } from '@/platform/server/db/scoped';
 import { getEnv } from '#env';
+import { LOCALE_COOKIE, resolveLocale } from '@/platform/i18n/locale';
 import { sendOtpEmail } from '@/platform/server/emails/email-service';
 import {
   currentAuthCookiePrefix,
@@ -226,11 +227,12 @@ export function createAuth(db: ReturnType<typeof getDb> = getDb()) {
           type === 'sign-in' && isReviewLogin(email)
             ? reviewLoginCode()
             : devFixedOtp(ctx?.request),
-        async sendVerificationOTP({ email, otp, type }) {
+        async sendVerificationOTP({ email, otp, type }, ctx) {
+          const locale = resolveLocale(ctx?.getCookie(LOCALE_COOKIE));
           // Reviewers already hold the code; the inbox may not exist.
           if (type === 'sign-in' && !isReviewLogin(email)) {
             logger.info('Sending sign-in OTP', { email });
-            const result = await sendOtpEmail(email, otp);
+            const result = await sendOtpEmail(email, otp, locale);
             if (!result.success) {
               logger.error('Failed to send OTP:', { data: result.error });
               throw new Error('Failed to send verification code');

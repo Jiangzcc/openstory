@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import { Button } from '@/ui/shadcn/button';
 import { GenerationProgressBanner } from '@/sequences/ui/generation/generation-progress-banner';
@@ -326,6 +328,11 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
   search = {},
   detail = null,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+
+  const { t } = useTranslation('shots');
+  const { t: translateDraft } = useTranslation('motion');
+
   const hasDetail = detail !== null;
   const queryClient = useQueryClient();
   const posthog = usePostHog();
@@ -720,7 +727,7 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
           },
           {
             onError: (error) => {
-              toast.error('Failed to restore alternate', {
+              toast.error(translateEvent('Failed to restore alternate'), {
                 description: errorMessage(error),
               });
             },
@@ -734,19 +741,19 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
             // Only close the dialog after the mutation succeeds — on failure
             // the user keeps the dialog open and can retry from there.
             setCompareVariant(null);
-            toast('Alternate discarded', {
-              action: { label: 'Undo', onClick: restore },
+            toast(translateEvent('Alternate discarded'), {
+              action: { label: translateEvent('Undo'), onClick: restore },
             });
           },
           onError: (error) => {
-            toast.error('Failed to discard alternate', {
+            toast.error(translateEvent('Failed to discard alternate'), {
               description: errorMessage(error),
             });
           },
         }
       );
     },
-    [sequenceId, discardVariant, undiscardVariant]
+    [translateEvent, sequenceId, discardVariant, undiscardVariant]
   );
 
   // If the shot backing the open compare dialog disappears (e.g. concurrent
@@ -756,10 +763,10 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
     if (!compareVariant || !shots) return;
     const stillExists = shots.some((f) => f.id === compareVariant.shotId);
     if (!stillExists) {
-      toast.info('Scene was removed.');
+      toast.info(translateEvent('Scene was removed.'));
       setCompareVariant(null);
     }
-  }, [compareVariant, shots]);
+  }, [translateEvent, compareVariant, shots]);
 
   const handlePromote = useCallback(
     (variant: ShotVariant) => {
@@ -768,17 +775,17 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
         {
           onSuccess: () => {
             setCompareVariant(null);
-            toast.success('Alternate promoted');
+            toast.success(translateEvent('Alternate promoted'));
           },
           onError: (error) => {
-            toast.error('Failed to promote alternate', {
+            toast.error(translateEvent('Failed to promote alternate'), {
               description: errorMessage(error),
             });
           },
         }
       );
     },
-    [sequenceId, promoteVariant]
+    [translateEvent, sequenceId, promoteVariant]
   );
 
   const curSelectedShotId = selection.shotId;
@@ -1285,8 +1292,10 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
       const result = await smartRetryFn({ data: { sequenceId } });
       toast.success(
         result.retryType === 'full'
-          ? 'Continuing generation'
-          : `Retrying: ${result.retriedItems.join(', ')}`
+          ? translateEvent('Continuing generation')
+          : translateEvent('Retrying: {{value1}}', {
+              value1: result.retriedItems.join(', '),
+            })
       );
       void queryClient.invalidateQueries({
         queryKey: ['sequence', sequenceId],
@@ -1299,14 +1308,14 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
           queryKey: BILLING_BALANCE_KEY,
         });
       } else {
-        toast.error('Failed to retry', {
+        toast.error(translateEvent('Failed to retry'), {
           description: errorMessage(error),
         });
       }
     } finally {
       setIsRetrying(false);
     }
-  }, [sequenceId, queryClient]);
+  }, [translateEvent, sequenceId, queryClient]);
 
   // Handler for batch motion generation (server determines eligible shots)
   const handleBatchMotionGeneration = useCallback(
@@ -1497,14 +1506,20 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
     });
     toast.success(
       result.started > 0
-        ? `Rendering ${result.started} ${result.started === 1 ? 'final' : 'finals'}`
-        : 'No drafts ready to render'
+        ? translateEvent('Rendering {{value1}} {{value2}}', {
+            value1: result.started,
+            value2:
+              result.started === 1
+                ? translateEvent('final')
+                : translateEvent('finals'),
+          })
+        : translateEvent('No drafts ready to render')
     );
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: shotKeys.list(sequenceId) }),
       queryClient.invalidateQueries({ queryKey: segmentKeys.list(sequenceId) }),
     ]);
-  }, [queryClient, sequenceId]);
+  }, [translateEvent, queryClient, sequenceId]);
 
   const handleGenerateMusic = useCallback(
     async (model: AudioModel) => {
@@ -1802,7 +1817,7 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
               onOpenChange={setSettingsOpen}
             >
               <DrawerContent className="pb-[env(safe-area-inset-bottom)] [--drawer-content-height:85dvh] data-[swipe-axis=y]:[--drawer-content-max-height:85dvh]">
-                <DrawerTitle className="sr-only">Settings</DrawerTitle>
+                <DrawerTitle className="sr-only">{t('Settings')}</DrawerTitle>
                 {inspector}
               </DrawerContent>
             </Drawer>
@@ -1843,13 +1858,17 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
                           })
                         }
                       >
-                        Chat about this
+                        {t('Chat about this')}
                       </Button>
                       <CopyScriptButton sequenceId={sequenceId} />
                       <SequenceDownloadMenu
                         sequenceId={sequenceId}
                         sequenceExport={sequenceExport}
-                        draftLabel={theatreDraftLabel(shots ?? [])}
+                        draftLabel={theatreDraftLabel(
+                          shots ?? [],
+                          undefined,
+                          translateDraft
+                        )}
                         variant="toolbar"
                         publish={
                           sequence

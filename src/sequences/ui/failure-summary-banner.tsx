@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import { Alert, AlertDescription, AlertTitle } from '@/ui/shadcn/alert';
 import { Button } from '@/ui/shadcn/button';
@@ -42,6 +43,8 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
   onFullRetry,
   isRetrying,
 }) => {
+  const { t } = useTranslation('sequences');
+
   const isWarning = summary.tone === 'warning';
   const isCredits = summary.tone === 'credits';
   const calm = isWarning || isCredits;
@@ -74,9 +77,9 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
         {isCredits
           ? CREDITS_SHORT_TITLE
           : isWarning
-            ? 'Content checker'
+            ? t('Content checker')
             : summary.requiresFullRetry
-              ? 'Generation failed'
+              ? t('Generation failed')
               : summary.headline}
       </AlertTitle>
       {/* min-w-0 lets the collapsed headline truncate instead of stretching
@@ -110,7 +113,7 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
             // A content flag names each shot and its remedy, so it starts open (#2166).
             <details className="mt-2" open={isWarning}>
               <summary className="cursor-pointer text-xs underline">
-                {isWarning ? 'Which shots' : 'View error details'}
+                {isWarning ? t('Which shots') : t('View error details')}
               </summary>
               <div className="mt-2 space-y-2 text-xs font-mono">
                 {summary.groups.map((group) => (
@@ -128,9 +131,12 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
                           className="inline-block py-1 underline"
                         >
                           {f.sceneTitle === `Scene ${f.sceneNumber}`
-                            ? f.sceneTitle
-                            : `Scene ${f.sceneNumber} (${f.sceneTitle})`}
-                          {` · Shot ${f.shotNumber}`}
+                            ? t('Scene {{value1}}', { value1: f.sceneNumber })
+                            : t('Scene {{value1}} ({{value2}})', {
+                                value1: f.sceneNumber,
+                                value2: f.sceneTitle,
+                              })}
+                          {t(' · Shot {{value1}}', { value1: f.shotNumber })}
                         </Link>
                         {`: ${isWarning ? contentRejectionHint(f.error) : errorLabel(f.error)}`}
                       </div>
@@ -155,7 +161,7 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
                 onClick={() => openAddCreditsDialog('failure_banner')}
               >
                 <CreditCard />
-                Add credits
+                {t('Add credits')}
               </Button>
               <Button
                 variant="outline"
@@ -164,7 +170,7 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
                 disabled={isRetrying}
               >
                 {isRetrying ? <Loader2 className="animate-spin" /> : <Play />}
-                {isRetrying ? 'Continuing\u2026' : 'Continue generation'}
+                {isRetrying ? t('Continuing…') : t('Continue generation')}
               </Button>
               <Button
                 type="button"
@@ -179,7 +185,7 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
                   })
                 }
               >
-                Chat about this
+                {t('Chat about this')}
               </Button>
             </div>
           ) : (
@@ -194,10 +200,10 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
                   className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`}
                 />
                 {isRetrying
-                  ? 'Retrying\u2026'
+                  ? t('Retrying…')
                   : summary.requiresFullRetry
-                    ? 'Regenerate Sequence'
-                    : 'Retry'}
+                    ? t('Regenerate Sequence')
+                    : t('Retry')}
               </Button>
               <Button
                 type="button"
@@ -212,7 +218,7 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
                   })
                 }
               >
-                Chat about this
+                {t('Chat about this')}
               </Button>
             </div>
           )}
@@ -225,7 +231,7 @@ export const FailureSummaryBanner: React.FC<FailureSummaryBannerProps> = ({
         className="absolute top-0 right-0 z-20 h-11 w-11 md:hidden"
         aria-expanded={mobileExpanded}
         aria-controls="failure-banner-details"
-        aria-label={mobileExpanded ? 'Hide details' : 'Show details'}
+        aria-label={mobileExpanded ? t('Hide details') : t('Show details')}
         onClick={() => setMobileExpanded((expanded) => !expanded)}
       >
         <ChevronDown

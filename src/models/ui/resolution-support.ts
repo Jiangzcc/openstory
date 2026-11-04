@@ -10,6 +10,7 @@
  * Client-safe: no env, no adapters.
  */
 
+import type { TFunction } from 'i18next';
 import { IMAGE_MODELS, IMAGE_TO_VIDEO_MODELS } from '@/models/models';
 import type { ImageToVideoModel, TextToImageModel } from '@/models/models';
 import { DEFAULT_ASPECT_RATIO, type AspectRatio } from '@/models/aspect-ratios';
@@ -20,6 +21,8 @@ import {
 } from '@/models/resolutions';
 import { imageResolutionTiers } from '@/stills/build-image-request';
 import { motionResolutionTiers } from '@/motion/model-capabilities';
+
+const NAMED_MODEL_LIMIT = 2;
 
 type Selection = {
   imageModels?: readonly TextToImageModel[];
@@ -65,7 +68,8 @@ export function availableResolutions(selection: Selection): Resolution[] {
  */
 export function resolutionCeilingNote(
   resolution: Resolution,
-  selection: Selection
+  selection: Selection,
+  translate?: TFunction<'interface'>
 ): string | null {
   const aspectRatio = selection.aspectRatio ?? DEFAULT_ASPECT_RATIO;
   const fixed: string[] = [];
@@ -101,17 +105,45 @@ export function resolutionCeilingNote(
     RESOLUTION_OPTIONS.find((option) => option.value === resolution)?.label ??
     resolution;
   const clauses = [
-    lower.length > 0 && `${subject(lower)} below ${label}`,
-    higher.length > 0 && `${subject(higher)} above ${label}`,
-    fixed.length > 0 && `${subject(fixed)} at a fixed size`,
+    lower.length > 0 && resolutionClause(lower, 'below', label, translate),
+    higher.length > 0 && resolutionClause(higher, 'above', label, translate),
+    fixed.length > 0 && resolutionClause(fixed, 'fixed', label, translate),
   ].filter((clause): clause is string => clause !== false);
   return clauses.length > 0 ? clauses.join(' · ') : null;
 }
 
 /** "X renders" / "X and Y render" / "X and Y and 2 more render". */
 function subject(names: string[]): string {
-  const named = names.slice(0, 2).join(' and ');
-  const rest = names.length - 2;
+  const named = names.slice(0, NAMED_MODEL_LIMIT).join(' and ');
+  const rest = names.length - NAMED_MODEL_LIMIT;
   const who = rest > 0 ? `${named} and ${rest} more` : named;
   return `${who} render${names.length === 1 ? 's' : ''}`;
+}
+
+function resolutionClause(
+  names: string[],
+  relation: 'below' | 'above' | 'fixed',
+  tier: string,
+  translate?: TFunction<'interface'>
+): string {
+  if (!translate) {
+    const reason =
+      relation === 'fixed' ? 'at a fixed size' : `${relation} ${tier}`;
+    return `${subject(names)} ${reason}`;
+  }
+  const named = names.slice(0, NAMED_MODEL_LIMIT).join(translate(' and '));
+  const rest = names.length - NAMED_MODEL_LIMIT;
+  const models =
+    rest > 0
+      ? translate('{{value1}} and {{count}} more', {
+          value1: named,
+          count: rest,
+        })
+      : named;
+  const values = { value1: models, value2: tier, count: names.length };
+  if (relation === 'fixed')
+    return translate('{{value1}} renders at a fixed size', values);
+  return relation === 'below'
+    ? translate('{{value1}} renders below {{value2}}', values)
+    : translate('{{value1}} renders above {{value2}}', values);
 }

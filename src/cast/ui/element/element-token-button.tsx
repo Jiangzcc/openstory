@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from 'react-i18next';
 /**
  * The token bar on an element tile: shows the element's UPPERCASE token and
  * opens a small popover to rename it (#1079). The caller supplies the commit —
@@ -20,6 +21,8 @@ export const ElementTokenButton: React.FC<{
   /** Shots whose prompts name the token; a rename leaves them out of date. */
   affectedShotCount: number;
 }> = ({ token, onRename, affectedShotCount }) => {
+  const { t } = useTranslation('cast');
+
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(token);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +54,7 @@ export const ElementTokenButton: React.FC<{
       await onRename(normalized);
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to rename');
+      setError(err instanceof Error ? err.message : t('Failed to rename'));
     } finally {
       setIsSaving(false);
     }
@@ -62,7 +65,7 @@ export const ElementTokenButton: React.FC<{
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Rename ${token}`}
+          aria-label={t('Rename {{value1}}', { value1: token })}
           className="absolute bottom-0 left-0 right-0 flex min-h-6 cursor-pointer items-center gap-1 bg-background/90 px-1.5 py-0.5 text-left transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="min-w-0 flex-1 truncate font-mono text-[10px]">
@@ -84,7 +87,7 @@ export const ElementTokenButton: React.FC<{
           onSubmit={(e) => void handleSubmit(e)}
           className="flex flex-col gap-2"
         >
-          <p className="text-sm font-medium">Rename element</p>
+          <p className="text-sm font-medium">{t('Rename element')}</p>
           <Input
             ref={inputRef}
             value={value}
@@ -93,7 +96,7 @@ export const ElementTokenButton: React.FC<{
               if (error) setError(null);
             }}
             maxLength={100}
-            placeholder="ELEMENT_NAME"
+            placeholder={t('ELEMENT_NAME')}
             className="font-mono"
             aria-invalid={!!error}
             aria-describedby={
@@ -101,11 +104,22 @@ export const ElementTokenButton: React.FC<{
             }
           />
           <p id="token-rename-hint" className="text-xs text-muted-foreground">
-            Saved as <span className="font-mono">{normalized}</span>
+            <Trans
+              ns="cast"
+              i18nKey="Saved as <0>{{value1}}</0>"
+              components={[<span key="0" className="font-mono" />]}
+              values={{ value1: normalized }}
+            />
           </p>
           {!isUnchanged && affectedShotCount > 0 && (
             <p className="text-xs text-muted-foreground">
-              {`${affectedShotCount} shot${affectedShotCount === 1 ? '' : 's'} that use it will show as out of date.`}
+              {t(
+                '{{value1}} shot{{value2}} that use it will show as out of date.',
+                {
+                  value1: affectedShotCount,
+                  value2: affectedShotCount === 1 ? '' : 's',
+                }
+              )}
             </p>
           )}
           {error && (
@@ -119,7 +133,7 @@ export const ElementTokenButton: React.FC<{
           )}
           <div className="flex justify-end">
             <Button type="submit" size="sm" disabled={isSaving || isUnchanged}>
-              {isSaving ? 'Renaming…' : 'Save'}
+              {isSaving ? t('Renaming…') : t('Save')}
             </Button>
           </div>
         </form>

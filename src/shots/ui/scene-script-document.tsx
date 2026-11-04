@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Scene Script Document — the whole script, as scene blocks (#1037).
  *
@@ -98,6 +100,9 @@ const SceneScriptBlock: React.FC<SceneScriptBlockProps> = ({
   mentionItems,
   onMentionRename,
 }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   // `undefined` = no draft; the editor mirrors the saved text. Each block owns
   // its own draft so editing one scene never blocks or discards another's.
   const [draft, setDraft] = useState<string | undefined>(undefined);
@@ -113,13 +118,24 @@ const SceneScriptBlock: React.FC<SceneScriptBlockProps> = ({
       {
         onSuccess: () => {
           setDraft(undefined);
-          toast.success(`Scene ${block.sceneNumber} saved`);
+          toast.success(
+            translateEvent('Scene {{value1}} saved', {
+              value1: block.sceneNumber,
+            })
+          );
         },
         onError: (error) => {
-          toast.error(`Failed to save scene ${block.sceneNumber}`, {
-            description:
-              error instanceof Error ? error.message : 'Unknown error',
-          });
+          toast.error(
+            translateEvent('Failed to save scene {{value1}}', {
+              value1: block.sceneNumber,
+            }),
+            {
+              description:
+                error instanceof Error
+                  ? error.message
+                  : translateEvent('Unknown error'),
+            }
+          );
         },
       }
     );
@@ -127,7 +143,10 @@ const SceneScriptBlock: React.FC<SceneScriptBlockProps> = ({
 
   return (
     <section
-      aria-label={`Scene ${block.sceneNumber}${block.title ? `: ${block.title}` : ''}`}
+      aria-label={t('Scene {{value1}}{{value2}}', {
+        value1: block.sceneNumber,
+        value2: block.title ? `: ${block.title}` : '',
+      })}
       onFocusCapture={() => onSelect(block.sceneId)}
       className={cn(
         'flex flex-col gap-2 rounded-lg border p-4 transition-colors',
@@ -153,13 +172,13 @@ const SceneScriptBlock: React.FC<SceneScriptBlockProps> = ({
             {block.sceneNumber}
           </span>
           <span className="text-sm font-medium">
-            {block.title || 'Untitled scene'}
+            {block.title || t('Untitled scene')}
           </span>
         </button>
 
         <div className="ml-auto flex items-center gap-2">
           <VoiceInputButton
-            label="scene script"
+            label={t('scene script')}
             disabled={saveScript.isPending}
             {...voice}
           />
@@ -168,7 +187,7 @@ const SceneScriptBlock: React.FC<SceneScriptBlockProps> = ({
         {isDirty && (
           <div className="flex items-center gap-2">
             <span className="hidden text-xs text-muted-foreground lg:inline">
-              Saving marks this scene&apos;s prompts as stale.
+              {t("Saving marks this scene's prompts as stale.")}
             </span>
             <Button
               size="sm"
@@ -176,7 +195,7 @@ const SceneScriptBlock: React.FC<SceneScriptBlockProps> = ({
               onClick={() => setDraft(undefined)}
               disabled={saveScript.isPending}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               size="sm"
@@ -186,7 +205,7 @@ const SceneScriptBlock: React.FC<SceneScriptBlockProps> = ({
               {saveScript.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              {saveScript.isPending ? 'Saving…' : 'Save'}
+              {saveScript.isPending ? t('Saving…') : t('Save')}
             </Button>
           </div>
         )}
@@ -197,7 +216,9 @@ const SceneScriptBlock: React.FC<SceneScriptBlockProps> = ({
         ref={editorRef}
         value={current}
         onValueChange={setDraft}
-        placeholder="Enter the script text for this scene… (type @ to insert elements, cast, locations)"
+        placeholder={t(
+          'Enter the script text for this scene… (type @ to insert elements, cast, locations)'
+        )}
         className="min-h-[120px]"
         disabled={saveScript.isPending}
         mentionItems={mentionItems}
@@ -225,6 +246,8 @@ export const SceneScriptDocument: React.FC<SceneScriptDocumentProps> = ({
   onSelectScene,
   splittingScript,
 }) => {
+  const { t } = useTranslation('shots');
+
   const { items: mentionItems, onMentionRename } =
     useSequenceMentionItems(sequenceId);
   const blocks = scenes ? buildScriptBlocks(scenes) : [];
@@ -248,7 +271,7 @@ export const SceneScriptDocument: React.FC<SceneScriptDocumentProps> = ({
     return (
       <div className="flex h-full items-center justify-center p-6">
         <p className="text-sm text-muted-foreground">
-          This sequence has no scenes yet.
+          {t('This sequence has no scenes yet.')}
         </p>
       </div>
     );
@@ -270,13 +293,13 @@ export const SceneScriptDocument: React.FC<SceneScriptDocumentProps> = ({
         ))}
         {tail && (
           <section
-            aria-label="Script not yet split into scenes"
+            aria-label={t('Script not yet split into scenes')}
             aria-busy="true"
             className="flex flex-col gap-2 rounded-lg border border-dashed p-4"
           >
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              Splitting into scenes…
+              {t('Splitting into scenes…')}
             </div>
             <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">
               {tail}

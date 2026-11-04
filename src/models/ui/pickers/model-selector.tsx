@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BaseModelSelector } from './base-model-selector';
 import { getRequestCountryFn } from '@/models/ai.fn';
 import {
@@ -40,6 +41,8 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   size,
   variant,
 }) => {
+  const { t } = useTranslation('models');
+
   // Region-blocked vendors are hidden from the picker (#1259): a user in an
   // Anthropic-blocked country shouldn't be offered a model the server would
   // swap away anyway. While the country is loading, the unfiltered list shows
@@ -92,7 +95,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 
   return (
     <BaseModelSelector
-      label="Analysis Model"
+      label={t('Analysis Model')}
       models={models}
       groupOrder={SELECTOR_GROUP_ORDER}
       selectedIds={selectedModels}

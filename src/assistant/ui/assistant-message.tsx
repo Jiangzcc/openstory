@@ -1,3 +1,7 @@
+import type { i18n as I18n } from 'i18next';
+import { translateStaticLabel } from '@/platform/i18n/labels';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { Trans, useTranslation } from 'react-i18next';
 /**
  * One message in the thread (#2155). A user turn is a bubble on the right
  * with its attachments; an assistant turn is prose on the left, with each
@@ -87,10 +91,10 @@ function groupToolCalls(parts: MessagePart[]): Block[] {
 }
 
 /** "4 × Get scene, 2 × Update scene" */
-function groupTitle(calls: ToolCallPart[]): string {
+function groupTitle(calls: ToolCallPart[], i18n: I18n): string {
   const counts = new Map<string, number>();
   for (const call of calls) {
-    const title = toolTitle(call.name);
+    const title = translateStaticLabel(i18n, 'assistant', toolTitle(call.name));
     counts.set(title, (counts.get(title) ?? 0) + 1);
   }
   return [...counts]
@@ -108,6 +112,8 @@ const ToolCallGroup: React.FC<{
   results: Map<string, ToolResultPart>;
   children: React.ReactNode;
 }> = ({ calls, results, children }) => {
+  const { i18n, t } = useTranslation('assistant');
+  const translateLabel = useLabelTranslation('assistant');
   const statuses = calls.map((call) =>
     toolCardStatus(call, results.get(call.id))
   );
@@ -120,8 +126,10 @@ const ToolCallGroup: React.FC<{
         : 'done';
   const label =
     status === 'error'
-      ? `${statuses.filter((s) => s === 'error').length} failed`
-      : STATUS_LABEL[status];
+      ? t('{{count}} failed', {
+          count: statuses.filter((s) => s === 'error').length,
+        })
+      : translateLabel(STATUS_LABEL[status]);
   return (
     <details
       open={status !== 'done'}
@@ -134,11 +142,14 @@ const ToolCallGroup: React.FC<{
     >
       <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 marker:content-none [&::-webkit-details-marker]:hidden">
         <span className="min-w-0 flex-1 truncate font-medium">
-          {calls.length} steps
-          <span className="font-normal text-muted-foreground">
-            {' · '}
-            {groupTitle(calls)}
-          </span>
+          <Trans
+            ns="assistant"
+            i18nKey="{{value1}} steps<0> · {{value2}}</0>"
+            components={[
+              <span key="0" className="font-normal text-muted-foreground" />,
+            ]}
+            values={{ value1: calls.length, value2: groupTitle(calls, i18n) }}
+          />
         </span>
         <span className="shrink-0 text-xs text-muted-foreground">{label}</span>
       </summary>
@@ -174,6 +185,8 @@ function planEstimate(parts: MessagePart[]): string | undefined {
 }
 
 const UserPart: React.FC<{ part: MessagePart }> = ({ part }) => {
+  const { t } = useTranslation('assistant');
+
   if (part.type === 'text') {
     return <p className="whitespace-pre-wrap break-words">{part.content}</p>;
   }
@@ -185,7 +198,7 @@ const UserPart: React.FC<{ part: MessagePart }> = ({ part }) => {
     return (
       <img
         src={src}
-        alt="Attachment"
+        alt={t('Attachment')}
         width={160}
         height={120}
         className="h-auto max-h-40 w-auto max-w-full rounded-md object-cover"
@@ -202,6 +215,8 @@ export const AssistantMessage: React.FC<{
   /** Text a tool view posts into the thread. */
   onViewMessage?: (text: string) => void;
 }> = ({ message, streaming, approvals, onViewMessage }) => {
+  const { t } = useTranslation('assistant');
+
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -262,7 +277,7 @@ export const AssistantMessage: React.FC<{
         if (part.type === 'thinking' && streaming && !hasText) {
           return (
             <p key={index} className="text-xs text-muted-foreground">
-              Thinking…
+              {t('Thinking…')}
             </p>
           );
         }

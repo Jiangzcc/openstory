@@ -16,7 +16,7 @@ const docs = defineCollection({
   }),
   transform: (data) => {
     const { content: body } = matter(data.content);
-    const slug = data._meta.path;
+    const slug = data._meta.path.replaceAll('\\', '/');
     return {
       ...data,
       body,

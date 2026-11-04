@@ -1,3 +1,4 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { Button } from '@/ui/shadcn/button';
 import { Loader2, Upload } from 'lucide-react';
 import { useRef } from 'react';
@@ -27,6 +28,7 @@ export const UploadMediaButton: React.FC<UploadMediaButtonProps> = ({
   onFile,
   className,
 }) => {
+  const translateLabel = useLabelTranslation('shots');
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <>
@@ -54,7 +56,7 @@ export const UploadMediaButton: React.FC<UploadMediaButtonProps> = ({
         ) : (
           <Upload className="mr-2 h-4 w-4" />
         )}
-        {isPending ? pendingLabel : label}
+        {translateLabel(isPending ? pendingLabel : label)}
       </Button>
     </>
   );

@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import { localizeReferenceProblem } from '@/motion/ui/localize-reference-problem';
 /**
  * How usable an element is as a model reference, on the element itself (#1559).
  *
@@ -44,48 +47,106 @@ type ElementSupportBadgeProps = {
 export function elementSupportSummary(
   kind: 'image' | 'video' | 'audio',
   durationSeconds: number | null,
-  url?: string | null
+  url?: string | null,
+  translate?: TFunction<'cast'>
 ): string {
   return summarise(
     referenceUsability({ kind, durationSeconds, imageUrl: url }),
-    kind
+    kind,
+    translate
   );
 }
 
-function summarise(usability: ReferenceUsability, kind: string): string {
+function summarise(
+  usability: ReferenceUsability,
+  kind: ElementSupportBadgeProps['kind'],
+  translate?: TFunction<'cast'>
+): string {
+  const localizedKind = translate?.(kind, { defaultValue: kind }) ?? kind;
   if (usability.level === 'unusable') {
     const { problem } = usability;
     switch (problem.reason) {
       case 'format':
-        return `This ${kind} is ${problem.ext.toUpperCase()} — models take ${problem.accepts}. Replace it with an ${problem.accepts} file.`;
+        return (
+          translate?.(
+            'This {{value1}} is {{value2}} — models take {{value3}}. Replace it with an {{value4}} file.',
+            {
+              ns: 'cast',
+              value1: localizedKind,
+              value2: problem.ext.toUpperCase(),
+              value3: problem.accepts,
+              value4: problem.accepts,
+            }
+          ) ??
+          `This ${kind} is ${problem.ext.toUpperCase()} — models take ${problem.accepts}. Replace it with an ${problem.accepts} file.`
+        );
       case 'too-short':
-        return `This ${kind} is too short to use as a reference — every model needs at least ${problem.minSeconds}s.`;
+        return (
+          translate?.(
+            'This {{value1}} is too short to use as a reference — every model needs at least {{value2}}s.',
+            { ns: 'cast', value1: localizedKind, value2: problem.minSeconds }
+          ) ??
+          `This ${kind} is too short to use as a reference — every model needs at least ${problem.minSeconds}s.`
+        );
       case 'too-long':
-        return `This ${kind} is too long to use as a reference — no model accepts more than ${problem.maxSeconds}s. Trim it to attach it to a shot.`;
+        return (
+          translate?.(
+            'This {{value1}} is too long to use as a reference — no model accepts more than {{value2}}s. Trim it to attach it to a shot.',
+            { ns: 'cast', value1: localizedKind, value2: problem.maxSeconds }
+          ) ??
+          `This ${kind} is too long to use as a reference — no model accepts more than ${problem.maxSeconds}s. Trim it to attach it to a shot.`
+        );
     }
   }
   if (usability.level === 'limited') {
-    const parts = [`Works with ${listModelNames(usability.models)}.`];
+    const parts = [
+      translate?.('Works with {{value1}}.', {
+        ns: 'cast',
+        value1: listModelNames(usability.models),
+      }) ?? `Works with ${listModelNames(usability.models)}.`,
+    ];
     if (usability.tooLong.length > 0) {
       parts.push(
-        `Too long for ${byLimit(
-          usability.tooLong.map((t) => ({
-            model: t.model,
-            seconds: t.maxSeconds,
-          })),
-          'max'
-        )}.`
+        translate?.('Too long for {{value1}}.', {
+          ns: 'cast',
+          value1: byLimit(
+            usability.tooLong.map((t) => ({
+              model: t.model,
+              seconds: t.maxSeconds,
+            })),
+            'max',
+            translate
+          ),
+        }) ??
+          `Too long for ${byLimit(
+            usability.tooLong.map((t) => ({
+              model: t.model,
+              seconds: t.maxSeconds,
+            })),
+            'max'
+          )}.`
       );
     }
     if (usability.tooShort.length > 0) {
       parts.push(
-        `Too short for ${byLimit(
-          usability.tooShort.map((t) => ({
-            model: t.model,
-            seconds: t.minSeconds,
-          })),
-          'min'
-        )}.`
+        translate?.('Too short for {{value1}}.', {
+          ns: 'cast',
+          value1: byLimit(
+            usability.tooShort.map((t) => ({
+              model: t.model,
+              seconds: t.minSeconds,
+            })),
+            'min',
+            translate
+          ),
+        }) ??
+          `Too short for ${byLimit(
+            usability.tooShort.map((t) => ({
+              model: t.model,
+              seconds: t.minSeconds,
+            })),
+            'min'
+          )}.`
       );
     }
     return parts.join(' ');
@@ -96,7 +157,8 @@ function summarise(usability: ReferenceUsability, kind: string): string {
 /** "Omni Flash (3s max); H3 Max, Seedance 2.0 and Seedance 2.0 Mini (15s max)" */
 function byLimit(
   entries: { model: ImageToVideoModel; seconds: number }[],
-  bound: 'max' | 'min'
+  bound: 'max' | 'min',
+  translate?: TFunction<'cast'>
 ): string {
   const grouped = new Map<number, ImageToVideoModel[]>();
   for (const { model, seconds } of entries) {
@@ -105,7 +167,13 @@ function byLimit(
   return [...grouped]
     .sort(([a], [b]) => a - b)
     .map(
-      ([seconds, models]) => `${listModelNames(models)} (${seconds}s ${bound})`
+      ([seconds, models]) =>
+        translate?.(
+          bound === 'max'
+            ? '{{models}} ({{seconds}}s max)'
+            : '{{models}} ({{seconds}}s min)',
+          { ns: 'cast', models: listModelNames(models), seconds }
+        ) ?? `${listModelNames(models)} (${seconds}s ${bound})`
     )
     .join('; ');
 }
@@ -119,6 +187,7 @@ export const ElementSupportBadge: React.FC<ElementSupportBadgeProps> = ({
   variant = 'overlay',
   className,
 }) => {
+  const { i18n, t } = useTranslation('cast');
   const usability = referenceUsability({
     kind,
     durationSeconds,
@@ -133,8 +202,10 @@ export const ElementSupportBadge: React.FC<ElementSupportBadgeProps> = ({
   const Icon = { error: CircleAlert, warning: AlertTriangle, info: Info }[tone];
   const label =
     motionModel && problem
-      ? unusableReferenceLines(motionModel, [ref]).join(' ')
-      : summarise(usability, kind);
+      ? unusableReferenceLines(motionModel, [ref])
+          .map((line) => localizeReferenceProblem(i18n, line))
+          .join(' ')
+      : summarise(usability, kind, t);
 
   return (
     <Tooltip>

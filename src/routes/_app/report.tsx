@@ -1,3 +1,6 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { localizeMeta } from '@/ui/i18n/head';
+import { Trans, useTranslation } from 'react-i18next';
 /**
  * Public content report / takedown channel (#1180).
  *
@@ -38,14 +41,20 @@ const title = `Report content — ${SITE_CONFIG.name}`;
 
 export const Route = createFileRoute('/_app/report')({
   component: ReportPage,
-  head: () => ({
-    meta: [
+  head: ({ match }) => ({
+    meta: localizeMeta(match.context.i18n, 'pages', [
       { title },
       { property: 'og:title', content: title },
       { property: 'og:url', content: `${SITE_CONFIG.url}/report` },
-    ],
+    ]),
   }),
-  staticData: { breadcrumb: { label: 'Report content', to: '/report' } },
+  staticData: {
+    breadcrumb: {
+      translationKey: 'Report content',
+      label: 'Report content',
+      to: '/report',
+    },
+  },
 });
 
 /**
@@ -77,6 +86,9 @@ const formSchema = z.object({
 });
 
 function ReportPage() {
+  const translateEvent = useLiveTranslation('pages');
+  const { t } = useTranslation('pages');
+
   const [reason, setReason] = useState<
     (typeof CONTENT_REPORT_REASONS)[number] | ''
   >('');
@@ -99,15 +111,19 @@ function ReportPage() {
       }),
     onSuccess: (result) => {
       setReference(result.reference);
-      toast.success('Report received', {
-        description: `Reference ${result.reference}`,
+      toast.success(translateEvent('Report received'), {
+        description: translateEvent('Reference {{value1}}', {
+          value1: result.reference,
+        }),
       });
     },
     onError: (error) => {
       toast.error(
         error instanceof Error
           ? error.message
-          : 'Could not submit the report. Please email us instead.'
+          : translateEvent(
+              'Could not submit the report. Please email us instead.'
+            )
       );
     },
   });
@@ -136,31 +152,38 @@ function ReportPage() {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-10">
         <h1 className="font-heading text-3xl font-bold tracking-tight">
-          Report received
+          {t('Report received')}
         </h1>
         <Card>
           <CardHeader>
-            <CardTitle>Reference {reference}</CardTitle>
+            <CardTitle>
+              {t('Reference {{value1}}', { value1: reference })}
+            </CardTitle>
             <CardDescription>
-              Keep this reference if you need to follow up.
+              {t('Keep this reference if you need to follow up.')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 leading-relaxed">
             <p>
-              We review reports of child sexual abuse material and
-              non-consensual likeness immediately, and all other reports in the
-              order received. Content found to breach our terms is removed and
-              the account responsible is restricted.
+              {t(
+                'We review reports of child sexual abuse material and non-consensual likeness immediately, and all other reports in the order received. Content found to breach our terms is removed and the account responsible is restricted.'
+              )}
             </p>
             <p className="text-sm text-muted-foreground">
-              If your report is urgent and you have not heard from us, email{' '}
-              <a
-                className="underline"
-                href={`mailto:${SITE_CONFIG.contactEmail}`}
-              >
-                {SITE_CONFIG.contactEmail}
-              </a>{' '}
-              quoting this reference.
+              <Trans
+                ns="pages"
+                i18nKey="If your report is urgent and you have not heard from us, email <0>{{value1}}</0> quoting this reference."
+                components={[
+                  <a
+                    key="0"
+                    className="underline"
+                    href={`mailto:${SITE_CONFIG.contactEmail}`}
+                  >
+                    {t('Open link', { ns: 'labels' })}
+                  </a>,
+                ]}
+                values={{ value1: SITE_CONFIG.contactEmail }}
+              />
             </p>
           </CardContent>
         </Card>
@@ -172,22 +195,25 @@ function ReportPage() {
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-10">
       <div className="flex flex-col gap-2">
         <h1 className="font-heading text-3xl font-bold tracking-tight">
-          Report content
+          {t('Report content')}
         </h1>
         <p className="leading-relaxed text-muted-foreground">
-          Use this form to report content generated on {SITE_CONFIG.name} that
-          uses someone’s likeness without permission, infringes your rights, or
-          breaks our{' '}
-          <a className="underline" href="/terms">
-            terms
-          </a>
-          . You do not need an account.
+          <Trans
+            ns="pages"
+            i18nKey="Use this form to report content generated on {{value1}} that uses someone’s likeness without permission, infringes your rights, or breaks our <0>terms</0>. You do not need an account."
+            components={[
+              <a key="0" className="underline" href="/terms">
+                {t('Open link', { ns: 'labels' })}
+              </a>,
+            ]}
+            values={{ value1: SITE_CONFIG.name }}
+          />
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="reason">What is the problem?</Label>
+          <Label htmlFor="reason">{t('What is the problem?')}</Label>
           <Select
             value={reason}
             items={CONTENT_REPORT_REASONS.map((value) => ({
@@ -205,7 +231,7 @@ function ReportPage() {
             }}
           >
             <SelectTrigger id="reason">
-              <SelectValue placeholder="Choose a reason…" />
+              <SelectValue placeholder={t('Choose a reason…')} />
             </SelectTrigger>
             <SelectContent>
               {CONTENT_REPORT_REASONS.map((value) => (
@@ -216,23 +242,25 @@ function ReportPage() {
             </SelectContent>
           </Select>
           {errors.reason ? (
-            <p className="text-sm text-destructive">Choose a reason</p>
+            <p className="text-sm text-destructive">{t('Choose a reason')}</p>
           ) : null}
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="targetId">Link or reference</Label>
+          <Label htmlFor="targetId">{t('Link or reference')}</Label>
           <Input
             id="targetId"
             name="targetId"
-            placeholder="https://… or OS-01J…"
+            placeholder={t('https://… or OS-01J…')}
             autoComplete="off"
             required
           />
           <p className="text-sm text-muted-foreground">
-            Paste the video or image URL, or the <code>OS-…</code> reference if
-            we gave you one. This is how we trace the content back to the
-            account that generated it.
+            <Trans
+              ns="pages"
+              i18nKey="Paste the video or image URL, or the <0/> reference if we gave you one. This is how we trace the content back to the account that generated it."
+              components={[<code key="0">OS-…</code>]}
+            />
           </p>
           {errors.targetId ? (
             <p className="text-sm text-destructive">{errors.targetId}</p>
@@ -240,42 +268,45 @@ function ReportPage() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="details">Details</Label>
+          <Label htmlFor="details">{t('Details')}</Label>
           <Textarea
             id="details"
             name="details"
             rows={5}
-            placeholder="Tell us what is wrong, and if this is about your likeness or your work, how we can tell it is yours."
+            placeholder={t(
+              'Tell us what is wrong, and if this is about your likeness or your work, how we can tell it is yours.'
+            )}
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="reporterEmail">Your email (optional)</Label>
+          <Label htmlFor="reporterEmail">{t('Your email (optional)')}</Label>
           <Input
             id="reporterEmail"
             name="reporterEmail"
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={t('you@example.com')}
           />
           <p className="text-sm text-muted-foreground">
-            Only used to follow up on this report. Leave blank to report
-            anonymously.
+            {t(
+              'Only used to follow up on this report. Leave blank to report anonymously.'
+            )}
           </p>
           {errors.reporterEmail ? (
             <p className="text-sm text-destructive">
-              Enter a valid email, or leave it blank
+              {t('Enter a valid email, or leave it blank')}
             </p>
           ) : null}
         </div>
 
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Submitting…' : 'Submit report'}
+            {mutation.isPending ? t('Submitting…') : t('Submit report')}
           </Button>
           <p aria-live="polite" className="text-sm text-muted-foreground">
-            {mutation.isPending && <span>Sending your report…</span>}
+            {mutation.isPending && <span>{t('Sending your report…')}</span>}
           </p>
         </div>
       </form>

@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * `<SchemaForm />` — a recursive JSON-Schema→form renderer (#458).
  *
@@ -15,18 +17,10 @@ import { Badge } from '@/ui/shadcn/badge';
 import { Button } from '@/ui/shadcn/button';
 import { Input } from '@/ui/shadcn/input';
 import { Label } from '@/ui/shadcn/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/shadcn/select';
 import { Slider } from '@/ui/shadcn/slider';
 import { Switch } from '@/ui/shadcn/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/ui/shadcn/tabs';
 import { Textarea } from '@/ui/shadcn/textarea';
-import { ToggleGroup, ToggleGroupItem } from '@/ui/shadcn/toggle-group';
 import { VoiceInputButton } from '@/ui/voice/voice-input-button';
 import type { JsonSchema, JsonValue } from '@/models/catalog';
 import { useTextDictation } from '@/ui/use-dictation';
@@ -51,6 +45,7 @@ import {
   CollapsibleTrigger,
 } from '@/ui/shadcn/collapsible';
 import { ChevronDown } from 'lucide-react';
+import { EnumChips, EnumSelect, optionLabel } from './schema-enum-control';
 
 /** Per-field server validation messages, keyed by dot path (`image_size.width`). */
 type SchemaFormErrors = Record<string, string>;
@@ -122,6 +117,8 @@ const ObjectFields: FC<{
   disabled: boolean;
   errors?: SchemaFormErrors;
 }> = ({ schema, root, value, onChange, depth, basePath, disabled, errors }) => {
+  const { t } = useTranslation('interface');
+
   const properties = schema.properties ?? {};
   const required = new Set(schema.required ?? []);
   const { primary, advanced } =
@@ -166,7 +163,7 @@ const ObjectFields: FC<{
               className="w-fit gap-1 px-0 text-muted-foreground hover:text-foreground"
               disabled={disabled}
             >
-              Advanced
+              {t('Advanced')}
               <ChevronDown
                 className="size-4 transition-transform [[data-state=open]_&]:rotate-180"
                 aria-hidden="true"
@@ -209,6 +206,7 @@ const Field: FC<{
   disabled,
   errors,
 }) => {
+  const translateLabel = useLabelTranslation('interface');
   const id = useId();
   const labelId = `${id}-label`;
   const voice = useTextDictation(
@@ -217,6 +215,7 @@ const Field: FC<{
   );
   const resolved = resolveRef(schema, root);
   const plan = planWidget(name, resolved, root, depth);
+  const label = translateLabel(resolved.title ?? name);
   const description = resolved.description?.split('\n', 1)[0];
   const error = errors?.[path];
   const isSwitch = plan.kind === 'boolean';
@@ -225,7 +224,7 @@ const Field: FC<{
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2">
         <Label id={labelId} htmlFor={id}>
-          {resolved.title ?? name}
+          {label}
           {required && (
             <span aria-hidden="true" className="text-muted-foreground">
               *
@@ -243,7 +242,7 @@ const Field: FC<{
         )}
         {plan.kind === 'text' && plan.long ? (
           <VoiceInputButton
-            label={(resolved.title ?? name).toLowerCase()}
+            label={label.toLowerCase()}
             disabled={disabled}
             size="icon-xs"
             {...voice}
@@ -251,7 +250,9 @@ const Field: FC<{
         ) : null}
       </div>
       {description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-xs text-muted-foreground">
+          {translateLabel(description)}
+        </p>
       )}
       {!isSwitch && (
         <WidgetControl
@@ -300,11 +301,13 @@ type WidgetProps = {
 };
 
 const WidgetControl: FC<WidgetProps> = (props) => {
+  const { t } = useTranslation('interface');
+
   const { plan } = props;
   switch (plan.kind) {
     case 'const':
       return (
-        <Badge variant="secondary" title="Fixed by the schema">
+        <Badge variant="secondary" title={t('Fixed by the schema')}>
           {optionLabel(plan.value)}
         </Badge>
       );
@@ -334,93 +337,6 @@ const WidgetControl: FC<WidgetProps> = (props) => {
   }
 };
 
-function optionLabel(option: JsonValue): string {
-  return typeof option === 'string' ? option : JSON.stringify(option);
-}
-
-const EnumChips: FC<WidgetProps & { options: JsonValue[] }> = ({
-  options,
-  value,
-  onChange,
-  disabled,
-  labelId,
-}) => {
-  const selected = options.findIndex((option) => option === value);
-  return (
-    <ToggleGroup
-      type="single"
-      aria-labelledby={labelId}
-      value={selected === -1 ? '' : String(selected)}
-      onValueChange={(next) => {
-        if (next === '') {
-          onChange(undefined);
-          return;
-        }
-        const option = options[Number(next)];
-        if (option !== undefined) onChange(option);
-      }}
-      disabled={disabled}
-      className="flex flex-wrap justify-start"
-    >
-      {options.map((option, index) => (
-        <ToggleGroupItem
-          key={optionLabel(option)}
-          value={String(index)}
-          className="rounded-full"
-        >
-          {optionLabel(option)}
-        </ToggleGroupItem>
-      ))}
-    </ToggleGroup>
-  );
-};
-
-const EnumSelect: FC<WidgetProps & { options: JsonValue[] }> = ({
-  options,
-  value,
-  onChange,
-  required,
-  disabled,
-  id,
-}) => {
-  const selected = options.findIndex((option) => option === value);
-  const enumItems = [
-    ...(!required ? [{ value: 'omit', label: 'Model default' }] : []),
-    ...options.map((option, index) => ({
-      value: String(index),
-      label: optionLabel(option),
-    })),
-  ];
-  return (
-    <Select
-      value={
-        selected === -1 ? (required ? undefined : 'omit') : String(selected)
-      }
-      items={enumItems}
-      onValueChange={(next) => {
-        if (next === 'omit') {
-          onChange(undefined);
-          return;
-        }
-        const option = options[Number(next)];
-        if (option !== undefined) onChange(option);
-      }}
-      disabled={disabled}
-    >
-      <SelectTrigger id={id} className="w-full sm:max-w-xs">
-        <SelectValue placeholder={required ? 'Choose…' : 'Model default'} />
-      </SelectTrigger>
-      <SelectContent>
-        {enumItems.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-};
-
 const BooleanControl: FC<{
   id: string;
   value: JsonValue | undefined;
@@ -439,6 +355,8 @@ const BooleanControl: FC<{
 const NumberControl: FC<
   WidgetProps & { plan: Extract<WidgetPlan, { kind: 'number' }> }
 > = ({ plan, value, onChange, required, disabled, id, labelId }) => {
+  const { t } = useTranslation('interface');
+
   const current = typeof value === 'number' ? value : undefined;
   const parse = (text: string) => {
     if (text.trim() === '') {
@@ -499,8 +417,8 @@ const NumberControl: FC<
           {plan.min !== undefined && plan.max !== undefined
             ? `${plan.min}–${plan.max}`
             : plan.min !== undefined
-              ? `min ${plan.min}`
-              : `max ${plan.max}`}
+              ? t('min {{value1}}', { value1: plan.min })
+              : t('max {{value1}}', { value1: plan.max })}
         </span>
       )}
     </div>
@@ -513,12 +431,14 @@ const NumberControl: FC<
  * simply hides the preview (keyed by URL so a corrected URL retries).
  */
 const UrlImagePreview: FC<{ url: string; name: string }> = ({ url, name }) => {
+  const { t } = useTranslation('interface');
+
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   return (
     <img
       src={url}
-      alt={`${name} preview`}
+      alt={t('{{value1}} preview', { value1: name })}
       width={160}
       height={160}
       loading="lazy"
@@ -619,6 +539,9 @@ const ArrayControl: FC<WidgetProps & { items: JsonSchema }> = ({
   id,
   labelId,
 }) => {
+  const { t } = useTranslation('interface');
+
+  const translateLabel = useLabelTranslation('interface');
   const list = Array.isArray(value) ? value : [];
   const resolvedItems = resolveRef(items, root);
   const itemPlan = planWidget(name, resolvedItems, root, depth + 1);
@@ -656,7 +579,10 @@ const ArrayControl: FC<WidgetProps & { items: JsonSchema }> = ({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={`Remove ${schemaLabel(resolvedItems, 'item')} ${index + 1}`}
+            aria-label={t('Remove {{value1}} {{value2}}', {
+              value1: translateLabel(schemaLabel(resolvedItems, 'item')),
+              value2: index + 1,
+            })}
             disabled={disabled}
             onClick={() => onChange(list.filter((_, at) => at !== index))}
           >
@@ -673,7 +599,7 @@ const ArrayControl: FC<WidgetProps & { items: JsonSchema }> = ({
         onClick={() => onChange([...list, seedValue(resolvedItems, root)])}
       >
         <Plus aria-hidden="true" />
-        Add {schemaLabel(resolvedItems, 'item')}
+        {t('Add')} {translateLabel(schemaLabel(resolvedItems, 'item'))}
       </Button>
     </div>
   );
@@ -706,6 +632,8 @@ const NestedObjectControl: FC<WidgetProps> = ({
 const VariantControl: FC<WidgetProps & { variants: JsonSchema[] }> = (
   props
 ) => {
+  const { t } = useTranslation('interface');
+  const translateLabel = useLabelTranslation('interface');
   const { variants, root, value, onChange } = props;
   const [picked, setPicked] = useState(() => matchVariant(value, variants));
   const active = variants[Math.min(picked, variants.length - 1)];
@@ -725,7 +653,12 @@ const VariantControl: FC<WidgetProps & { variants: JsonSchema[] }> = (
         <TabsList>
           {variants.map((variant, index) => (
             <TabsTrigger key={index} value={String(index)}>
-              {schemaLabel(variant, `Option ${index + 1}`)}
+              {translateLabel(
+                schemaLabel(
+                  variant,
+                  t('Option {{value1}}', { value1: index + 1 })
+                )
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -743,6 +676,8 @@ const VariantControl: FC<WidgetProps & { variants: JsonSchema[] }> = (
 };
 
 const RawJsonControl: FC<WidgetProps> = ({ value, onChange, disabled, id }) => {
+  const { t } = useTranslation('interface');
+
   const [draft, setDraft] = useState(() =>
     JSON.stringify(value ?? null, null, 2)
   );
@@ -776,7 +711,7 @@ const RawJsonControl: FC<WidgetProps> = ({ value, onChange, disabled, id }) => {
       />
       {invalid && (
         <p role="alert" className="text-xs text-destructive">
-          Invalid JSON — fix it before running.
+          {t('Invalid JSON — fix it before running.')}
         </p>
       )}
     </div>

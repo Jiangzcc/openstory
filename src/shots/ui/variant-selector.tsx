@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   Dialog,
@@ -36,6 +37,8 @@ export function VariantSelector({
   disabled = false,
   aspectRatio = '16:9',
 }: VariantSelectorProps) {
+  const { t } = useTranslation('shots');
+
   const gridRef = useRef<HTMLDivElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const [focusableIndex, setFocusableIndex] = useState(0);
@@ -101,7 +104,7 @@ export function VariantSelector({
         ref={gridRef}
         className="grid grid-cols-3 gap-2 px-8"
         role="grid"
-        aria-label="Variant selection"
+        aria-label={t('Variant selection')}
       >
         {Array.from({ length: count }).map((_, index) => {
           return (
@@ -122,7 +125,7 @@ export function VariantSelector({
                   ? 'border-primary shadow-md scale-105'
                   : 'border-transparent hover:border-primary/50'
               )}
-              aria-label={`Select variant ${index + 1}`}
+              aria-label={t('Select variant {{value1}}', { value1: index + 1 })}
               aria-pressed={selectedVariantIndex === index}
             >
               <div
@@ -154,10 +157,11 @@ export function VariantSelector({
       >
         <DialogContent showCloseButton={false} className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Select this variant?</DialogTitle>
+            <DialogTitle>{t('Select this variant?')}</DialogTitle>
             <DialogDescription>
-              This will replace the current start frame image. The video will
-              need to be regenerated.
+              {t(
+                'This will replace the current start frame image. The video will need to be regenerated.'
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -178,11 +182,11 @@ export function VariantSelector({
           <DialogFooter className="mt-2">
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                Cancel
+                {t('Cancel')}
               </Button>
             </DialogClose>
             <Button ref={confirmButtonRef} onClick={handleConfirm}>
-              Confirm
+              {t('Confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

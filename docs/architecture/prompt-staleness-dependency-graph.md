@@ -1017,3 +1017,7 @@ inputs now include nonempty continuity.lightingSetup and continuity.colorPalette
 they are editable inputs, not generated output. Empty palette means the
 sequence style; the custom migration clears prior analysis palettes. See
 [scene direction ownership](reference-only-motion.md#scene-direction-ownership-1889).
+
+## Secondary-development localization
+
+The Chinese interface translates graph labels, summaries, field lists and edge notes in the view using the shared language packs. Graph ids, edges, tracking rules, stored hashes and version pointers retain the upstream definitions in `src/ui/docs/dependency-graph.ts`. Language switching does not edit the graph or trigger generation.

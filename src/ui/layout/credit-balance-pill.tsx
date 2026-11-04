@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Quiet credit-balance control in the sidebar footer (below the social
  * separator, above the user menu) — account chrome, not product nav (#1090).
@@ -32,6 +33,7 @@ import { useUser } from '@/platform/ui/use-user';
 import { Wallet } from 'lucide-react';
 
 export const CreditBalancePill: React.FC = () => {
+  const { t } = useTranslation('interface');
   const { data: user, isLoading: userLoading } = useUser();
   const { balance, reserved, teamId, isLowBalance } = useBillingBalance();
   const { data: gateStatus } = useBillingGateQuery();
@@ -63,7 +65,9 @@ export const CreditBalancePill: React.FC = () => {
 
   const amount = `$${balance?.toFixed(2) ?? '0.00'}`;
   const tooltip =
-    reserved > 0 ? `Credits · ${amount} available` : `Credits · ${amount}`;
+    reserved > 0
+      ? t('Credits · {{amount}} available', { amount })
+      : t('Credits · {{amount}}', { amount });
 
   return (
     <BalancePillButton
@@ -83,39 +87,44 @@ export const BalancePillButton: React.FC<{
   gain: number | null;
   tooltip: string;
   toneClass: string | undefined;
-}> = ({ amount, shown, gain, tooltip, toneClass }) => (
-  <SidebarMenu>
-    <SidebarMenuItem>
-      {/* Opens the add-credits modal, not the credits page (#1099) */}
-      <SidebarMenuButton
-        tooltip={tooltip}
-        onClick={() => openAddCreditsDialog('sidebar_pill')}
-        aria-label={`Credit balance ${amount}. Add credits.`}
-        className={cn(
-          'animate-[balance-flash-in_300ms_ease-out_both]',
-          toneClass
-        )}
-      >
-        <Wallet />
-        {/* The ticking digits are visual only; the live region announces
-            the settled amount once, not every frame. */}
-        <span className="sr-only" aria-live="polite">
-          {amount}
-        </span>
-        {/* Amount hides in icon mode via SidebarMenuButton truncation
-            (span:last-child); tooltip carries the full amount. */}
-        <span className="tabular-nums" aria-hidden>
-          ${shown.toFixed(2)}
-        </span>
-      </SidebarMenuButton>
-      {gain !== null ? (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -top-2.5 left-8 text-xs font-semibold tabular-nums text-emerald-600 animate-[balance-gain_1800ms_ease-out_both] group-data-[collapsible=icon]:hidden dark:text-emerald-400"
+}> = ({ amount, shown, gain, tooltip, toneClass }) => {
+  const { t } = useTranslation('interface');
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        {/* Opens the add-credits modal, not the credits page (#1099) */}
+        <SidebarMenuButton
+          tooltip={tooltip}
+          onClick={() => openAddCreditsDialog('sidebar_pill')}
+          aria-label={t('Credit balance {{value1}}. Add credits.', {
+            value1: amount,
+          })}
+          className={cn(
+            'animate-[balance-flash-in_300ms_ease-out_both]',
+            toneClass
+          )}
         >
-          +${gain.toFixed(2)}
-        </span>
-      ) : null}
-    </SidebarMenuItem>
-  </SidebarMenu>
-);
+          <Wallet />
+          {/* The ticking digits are visual only; the live region announces
+            the settled amount once, not every frame. */}
+          <span className="sr-only" aria-live="polite">
+            {amount}
+          </span>
+          {/* Amount hides in icon mode via SidebarMenuButton truncation
+            (span:last-child); tooltip carries the full amount. */}
+          <span className="tabular-nums" aria-hidden>
+            ${shown.toFixed(2)}
+          </span>
+        </SidebarMenuButton>
+        {gain !== null ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -top-2.5 left-8 text-xs font-semibold tabular-nums text-emerald-600 animate-[balance-gain_1800ms_ease-out_both] group-data-[collapsible=icon]:hidden dark:text-emerald-400"
+          >
+            +${gain.toFixed(2)}
+          </span>
+        ) : null}
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+};

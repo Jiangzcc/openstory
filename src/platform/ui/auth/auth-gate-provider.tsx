@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * Auth Gate Provider
  *
@@ -90,6 +91,8 @@ export function AuthGateStub({ children }: { children: ReactNode }) {
 }
 
 export function AuthGateProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('platform');
+
   const { data: user, error: sessionError } = useUser();
   // A failed session lookup must NOT be conflated with "anonymous" — rethrow
   // to the route errorComponent instead of silently popping the login dialog
@@ -160,9 +163,9 @@ export function AuthGateProvider({ children }: { children: ReactNode }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md border-none bg-transparent p-0 shadow-none [&>button]:hidden">
           <DialogHeader className="sr-only">
-            <DialogTitle>Sign in to continue</DialogTitle>
+            <DialogTitle>{t('Sign in to continue')}</DialogTitle>
             <DialogDescription>
-              Sign in or create an account to continue this action.
+              {t('Sign in or create an account to continue this action.')}
             </DialogDescription>
           </DialogHeader>
           <AuthForm redirectTo={redirectTo} authOptions={authOptions} />

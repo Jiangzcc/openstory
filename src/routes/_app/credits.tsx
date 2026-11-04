@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Credits Page
  * Balance, transactions, and gift codes in a single tabbed view
@@ -29,10 +31,11 @@ export const Route = createFileRoute('/_app/credits')({
   beforeLoad: async ({ context: { queryClient }, location }) => {
     await requireSessionOrRedirect(queryClient, location.href);
   },
-  staticData: { breadcrumb: 'Credits' },
-  errorComponent: (props) => (
-    <RouteErrorFallback {...props} heading="Credits error" />
-  ),
+  staticData: { breadcrumb: { label: 'Credits', translationKey: 'Credits' } },
+  errorComponent: function RouteComponent(props) {
+    const { t } = useTranslation('pages');
+    return <RouteErrorFallback {...props} heading={t('Credits error')} />;
+  },
 });
 
 const tabs = [
@@ -54,6 +57,7 @@ const tabs = [
 ];
 
 function CreditsPage() {
+  const translateLabel = useLabelTranslation('pages');
   const {
     tab,
     success,
@@ -75,14 +79,14 @@ function CreditsPage() {
         }}
       >
         <TabsList className="mb-6 w-full justify-start">
-          {tabs.map((t) => (
+          {tabs.map((tab) => (
             <TabsTrigger
-              key={t.value}
-              value={t.value}
+              key={tab.value}
+              value={tab.value}
               className="flex items-center gap-2"
             >
-              {t.icon}
-              {t.label}
+              {tab.icon}
+              {translateLabel(tab.label)}
             </TabsTrigger>
           ))}
         </TabsList>

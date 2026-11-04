@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * The face of an element in a grid: a still, a clip's opening frame, or an
  * audio glyph (#1559).
@@ -51,6 +52,8 @@ export const ElementThumbnail: React.FC<ElementThumbnailProps> = ({
   playing,
   className,
 }) => {
+  const { t } = useTranslation('cast');
+
   const length = formatElementDuration(durationSeconds);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -119,7 +122,7 @@ export const ElementThumbnail: React.FC<ElementThumbnailProps> = ({
       >
         <AudioLines className="size-8 text-muted-foreground/50" />
         <p className="text-xs text-muted-foreground">
-          {`Audio${length ? ` · ${length}` : ''}`}
+          {t('Audio{{value1}}', { value1: length ? ` · ${length}` : '' })}
         </p>
         {playing !== undefined && url && (
           // eslint-disable-next-line jsx-a11y/media-has-caption -- a user-uploaded voice line; no caption track exists
@@ -138,7 +141,7 @@ export const ElementThumbnail: React.FC<ElementThumbnailProps> = ({
         )}
       >
         <ImagePlus className="size-8 text-muted-foreground/30" />
-        <p className="text-xs text-muted-foreground">No reference yet</p>
+        <p className="text-xs text-muted-foreground">{t('No reference yet')}</p>
       </div>
     );
   }

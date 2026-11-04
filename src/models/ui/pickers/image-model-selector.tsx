@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from 'react-i18next';
 import {
   BaseModelSelector,
   type ModelGenerationStatus,
@@ -47,6 +48,7 @@ function useImageModels({
   recommendedImageModel,
   styleName,
 }: RecommendationProps = {}) {
+  const { t } = useTranslation('models');
   return useMemo(
     () =>
       Object.entries(IMAGE_MODELS)
@@ -69,11 +71,11 @@ function useImageModels({
           recommendedFor:
             recommendedImageModel && key === recommendedImageModel
               ? styleName
-                ? `Recommended for ${styleName}`
-                : 'Recommended for this style'
+                ? t('Recommended for {{value1}}', { value1: styleName })
+                : t('Recommended for this style')
               : undefined,
         })),
-    [recommendedImageModel, styleName]
+    [recommendedImageModel, styleName, t]
   );
 }
 
@@ -84,19 +86,29 @@ function RecommendationHint({
   status: RecommendationStatus;
   styleName: string | undefined;
 }) {
+  const { t } = useTranslation('models');
+
   if (status.kind === 'matched' || status.kind === 'none') return null;
-  const prefix = styleName ? `${styleName} recommends` : 'Recommended';
+  const prefix = styleName
+    ? t('{{value1}} recommends', { value1: styleName })
+    : t('Recommended');
   if (status.kind === 'unknown') {
     return (
       <p className="text-[10px] text-muted-foreground">
-        {prefix} a model that's no longer available.
+        {t("{{value1}} a model that's no longer available.", {
+          value1: prefix,
+        })}
       </p>
     );
   }
   return (
     <p className="text-[10px] text-muted-foreground">
-      {prefix} <span className="font-medium">{status.modelName}</span>, but it's
-      not available in this selector.
+      <Trans
+        ns="models"
+        i18nKey="{{value1}} <0>{{value2}}</0>, but it's not available in this selector."
+        components={[<span key="0" className="font-medium" />]}
+        values={{ value1: prefix, value2: status.modelName }}
+      />
     </p>
   );
 }
@@ -120,6 +132,8 @@ export const ImageModelSelector: React.FC<ImageModelSelectorProps> = ({
   styleName,
   generatedStatuses,
 }) => {
+  const { t } = useTranslation('models');
+
   const allModels = useImageModels({ recommendedImageModel, styleName });
   const models = useMemo(() => {
     const filtered = filterModels
@@ -140,7 +154,7 @@ export const ImageModelSelector: React.FC<ImageModelSelectorProps> = ({
   return (
     <div className="flex flex-col gap-1">
       <BaseModelSelector
-        label="Image Model"
+        label={t('Image Model')}
         models={models}
         groupOrder={SELECTOR_GROUP_ORDER}
         selectedIds={[selectedModel]}
@@ -175,6 +189,8 @@ export const ImageModelMultiSelector: React.FC<
   styleName,
   filterModels,
 }) => {
+  const { t } = useTranslation('models');
+
   const allModels = useImageModels({ recommendedImageModel, styleName });
   const models = useMemo(
     () =>
@@ -193,7 +209,7 @@ export const ImageModelMultiSelector: React.FC<
   return (
     <div className="flex flex-col gap-1">
       <BaseModelSelector
-        label="Image Models"
+        label={t('Image Models')}
         models={models}
         groupOrder={SELECTOR_GROUP_ORDER}
         selectedIds={selectedModels}

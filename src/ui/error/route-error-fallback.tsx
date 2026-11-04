@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/ui/shadcn/alert';
 import { Button } from '@/ui/shadcn/button';
 import { AppUpdatedNotice, isAppUpdatedError } from './app-updated-notice';
@@ -33,8 +34,10 @@ function isNotFoundError(error: unknown): boolean {
 export const RouteErrorFallback: React.FC<RouteErrorFallbackProps> = ({
   error,
   reset,
-  heading = 'Something went wrong',
+  heading,
 }) => {
+  const { t } = useTranslation('interface');
+
   const router = useRouter();
   const is404 = isNotFoundError(error);
 
@@ -49,7 +52,9 @@ export const RouteErrorFallback: React.FC<RouteErrorFallbackProps> = ({
     return <Navigate to="/login" search={{ redirectTo: href }} replace />;
   }
 
-  logger.error(`[RouteError:${heading}]`, { err: error });
+  logger.error(`[RouteError:${heading ?? 'Something went wrong'}]`, {
+    err: error,
+  });
 
   if (is404) {
     return <DefaultNotFound />;
@@ -59,12 +64,12 @@ export const RouteErrorFallback: React.FC<RouteErrorFallbackProps> = ({
     <div className="flex flex-1 items-center justify-center p-6">
       <Alert variant="destructive" className="max-w-lg">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>{heading}</AlertTitle>
+        <AlertTitle>{heading ?? t('Something went wrong')}</AlertTitle>
         <AlertDescription className="flex flex-col gap-3">
           <p>
             {error instanceof Error
               ? error.message
-              : 'An unexpected error occurred'}
+              : t('An unexpected error occurred')}
           </p>
           <Button
             variant="outline"
@@ -75,7 +80,7 @@ export const RouteErrorFallback: React.FC<RouteErrorFallbackProps> = ({
               void router.invalidate();
             }}
           >
-            Try again
+            {t('Try again')}
           </Button>
         </AlertDescription>
       </Alert>

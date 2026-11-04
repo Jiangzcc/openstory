@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { GalleryIcon } from '@/ui/icons/gallery-icon';
 import { StyleDetailDialog } from '@/look/ui/style-detail-dialog';
@@ -16,7 +18,10 @@ import {
   InputGroupInput,
 } from '@/ui/shadcn/input-group';
 import { Skeleton } from '@/ui/shadcn/skeleton';
-import { groupStylesByCategory } from '@/look/ui/style-assets';
+import {
+  groupStylesByCategory,
+  styleCategoryLabel,
+} from '@/look/ui/style-assets';
 import { filterStyles } from './style-filters';
 import type { Style } from '@/platform/server/db/schema';
 import { Search, X } from 'lucide-react';
@@ -71,6 +76,10 @@ export const StyleLibraryView: FC<StyleLibraryViewProps> = ({
   onUseStyle,
   initialStyleId,
 }) => {
+  const { t } = useTranslation('look');
+  const translateLabel = useLabelTranslation('look');
+  const translateTemplate = useLabelTranslation('presets');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<Style | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -79,8 +88,17 @@ export const StyleLibraryView: FC<StyleLibraryViewProps> = ({
   const isLoading = styles === undefined;
 
   const filtered = useMemo(
-    () => filterStyles(styles ?? [], 'all', searchQuery),
-    [styles, searchQuery]
+    () =>
+      filterStyles(styles ?? [], 'all', searchQuery, (style) => [
+        ...(style.isTemplate === true
+          ? [
+              translateTemplate(style.name),
+              translateTemplate(style.description ?? ''),
+            ]
+          : []),
+        translateLabel(styleCategoryLabel(style.category)),
+      ]),
+    [styles, searchQuery, translateTemplate, translateLabel]
   );
 
   const groups = useMemo(() => groupStylesByCategory(filtered), [filtered]);
@@ -125,10 +143,10 @@ export const StyleLibraryView: FC<StyleLibraryViewProps> = ({
               <Search />
             </InputGroupAddon>
             <InputGroupInput
-              placeholder="Search styles"
+              placeholder={t('Search styles')}
               value={searchQuery}
               onChange={handleSearchChange}
-              aria-label="Search styles"
+              aria-label={t('Search styles')}
             />
             {searchQuery && (
               <InputGroupAddon align="inline-end">
@@ -138,7 +156,7 @@ export const StyleLibraryView: FC<StyleLibraryViewProps> = ({
                   onClick={() => setSearchQuery('')}
                 >
                   <X />
-                  <span className="sr-only">Clear search</span>
+                  <span className="sr-only">{t('Clear search')}</span>
                 </Button>
               </InputGroupAddon>
             )}
@@ -157,7 +175,7 @@ export const StyleLibraryView: FC<StyleLibraryViewProps> = ({
                 className="rounded-full"
                 onClick={() => scrollToCategory(group.category)}
               >
-                {group.label}
+                {translateLabel(group.label)}
               </Button>
             ))}
           </div>
@@ -172,11 +190,11 @@ export const StyleLibraryView: FC<StyleLibraryViewProps> = ({
             <EmptyMedia variant="icon">
               <GalleryIcon size="lg" />
             </EmptyMedia>
-            <EmptyTitle>No styles found</EmptyTitle>
+            <EmptyTitle>{t('No styles found')}</EmptyTitle>
             <EmptyDescription>
               {searchQuery
-                ? 'Try adjusting your search.'
-                : 'There are no styles available yet.'}
+                ? t('Try adjusting your search.')
+                : t('There are no styles available yet.')}
             </EmptyDescription>
           </EmptyHeader>
           {!searchQuery && (
@@ -198,7 +216,7 @@ export const StyleLibraryView: FC<StyleLibraryViewProps> = ({
             >
               <div className="flex items-baseline gap-2">
                 <h2 className="text-lg font-semibold tracking-tight">
-                  {group.label}
+                  {translateLabel(group.label)}
                 </h2>
                 <span className="text-sm text-muted-foreground">
                   {group.styles.length}

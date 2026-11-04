@@ -1,3 +1,5 @@
+import { localizeMeta } from '@/ui/i18n/head';
+import { useTranslation } from 'react-i18next';
 /**
  * Skills & MCP (#2138): connect an agent to OpenStory's MCP server and
  * install the agent skills. One tab per chat app, and a CLI tab with one
@@ -91,19 +93,23 @@ const description =
 export const Route = createFileRoute('/_app/connect')({
   validateSearch: searchSchema,
   component: ConnectPage,
-  staticData: { breadcrumb: 'Skills & MCP' },
-  head: () => ({
-    meta: [
+  staticData: {
+    breadcrumb: { label: 'Skills & MCP', translationKey: 'Skills & MCP' },
+  },
+  head: ({ match }) => ({
+    meta: localizeMeta(match.context.i18n, 'pages', [
       { title },
       { name: 'description', content: description },
       { property: 'og:title', content: title },
       { property: 'og:description', content: description },
       { property: 'og:url', content: `${SITE_CONFIG.url}/connect` },
-    ],
+    ]),
   }),
 });
 
 function ConnectPage() {
+  const { t } = useTranslation('pages');
+
   const search = Route.useSearch();
   const navigate = useNavigate();
   const select = (next: Partial<z.output<typeof searchSchema>>) =>
@@ -117,10 +123,12 @@ function ConnectPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">
-          OpenStory in your agent
+          {t('OpenStory in your agent')}
         </h1>
         <p className="text-muted-foreground">
-          Make images, videos and whole sequences from the chat you already use.
+          {t(
+            'Make images, videos and whole sequences from the chat you already use.'
+          )}
         </p>
       </div>
 
@@ -131,17 +139,17 @@ function ConnectPage() {
           if (parsed.success) select({ tab: parsed.data });
         }}
       >
-        <TabLogos label="App" items={apps} />
+        <TabLogos label={t('App')} items={apps} />
 
         <TabsContent value="claude" className="flex flex-col gap-4 pt-4">
           <Steps>
-            <li>Connect in Claude. The name and URL are filled in.</li>
-            <li>Sign in to OpenStory when Claude asks.</li>
+            <li>{t('Connect in Claude. The name and URL are filled in.')}</li>
+            <li>{t('Sign in to OpenStory when Claude asks.')}</li>
           </Steps>
           <div>
             <Button asChild>
               <a href={CLAUDE_CONNECT} target="_blank" rel="noreferrer">
-                Connect in Claude
+                {t('Connect in Claude')}
               </a>
             </Button>
           </div>
@@ -150,22 +158,26 @@ function ConnectPage() {
 
         <TabsContent value="chatgpt" className="flex flex-col gap-4 pt-4">
           <Steps>
-            <li>Add the OpenStory marketplace with the command below.</li>
             <li>
-              Restart the ChatGPT desktop app, then install OpenStory from
-              Plugins → Personal.
+              {t('Add the OpenStory marketplace with the command below.')}
             </li>
-            <li>Sign in to OpenStory when ChatGPT asks.</li>
+            <li>
+              {t(
+                'Restart the ChatGPT desktop app, then install OpenStory from Plugins → Personal.'
+              )}
+            </li>
+            <li>{t('Sign in to OpenStory when ChatGPT asks.')}</li>
           </Steps>
           <Terminal
-            label="OpenStory plugin"
-            comment="Run this in your terminal (needs the Codex CLI)."
+            label={t('OpenStory plugin')}
+            comment={t('Run this in your terminal (needs the Codex CLI).')}
             lines={[`codex plugin marketplace add ${SKILLS_REPO}`]}
           />
           <PluginNote />
           <Note>
-            The plugin runs in the desktop app. On chatgpt.com, open Plugins,
-            select +, then Add custom MCP server, and paste the URL below.
+            {t(
+              'The plugin runs in the desktop app. On chatgpt.com, open Plugins, select +, then Add custom MCP server, and paste the URL below.'
+            )}
           </Note>
           <McpUrl />
         </TabsContent>
@@ -173,9 +185,11 @@ function ConnectPage() {
         <TabsContent value="grok" className="flex flex-col gap-4 pt-4">
           <Steps>
             <li>
-              Open grok.com/connectors, select New Connector, then Custom.
+              {t(
+                'Open grok.com/connectors, select New Connector, then Custom.'
+              )}
             </li>
-            <li>Paste the URL below and sign in to OpenStory.</li>
+            <li>{t('Paste the URL below and sign in to OpenStory.')}</li>
           </Steps>
           <McpUrl />
         </TabsContent>
@@ -183,14 +197,19 @@ function ConnectPage() {
         <TabsContent value="gemini" className="flex flex-col gap-4 pt-4">
           <Steps>
             <li>
-              Open gemini.google.com, then Settings, Connected Apps, Add a
-              custom app.
+              {t(
+                'Open gemini.google.com, then Settings, Connected Apps, Add a custom app.'
+              )}
             </li>
-            <li>Paste the URL below, select Next and sign in to OpenStory.</li>
+            <li>
+              {t('Paste the URL below, select Next and sign in to OpenStory.')}
+            </li>
           </Steps>
           <McpUrl />
           <Note>
-            Custom apps need a personal Google account in the US, for now.
+            {t(
+              'Custom apps need a personal Google account in the US, for now.'
+            )}
           </Note>
         </TabsContent>
 
@@ -202,15 +221,15 @@ function ConnectPage() {
               if (parsed.success) select({ agent: parsed.data });
             }}
           >
-            <TabLogos label="Coding agent" items={agents} />
+            <TabLogos label={t('Coding agent')} items={agents} />
 
             <TabsContent
               value="claude-code"
               className="flex flex-col gap-4 pt-4"
             >
               <Terminal
-                label="Claude Code"
-                comment="Paste these into Claude Code."
+                label={t('Claude Code')}
+                comment={t('Paste these into Claude Code.')}
                 lines={[
                   `/plugin marketplace add ${SKILLS_REPO}`,
                   '/plugin install openstory@openstory',
@@ -218,16 +237,16 @@ function ConnectPage() {
               />
               <PluginNote />
               <Terminal
-                label="MCP server only"
-                comment="Run this, then /mcp in Claude Code to sign in."
+                label={t('MCP server only')}
+                comment={t('Run this, then /mcp in Claude Code to sign in.')}
                 lines={[`claude mcp add --transport http openstory ${MCP_URL}`]}
               />
             </TabsContent>
 
             <TabsContent value="codex" className="flex flex-col gap-4 pt-4">
               <Terminal
-                label="Codex"
-                comment="Run these in your terminal."
+                label={t('Codex')}
+                comment={t('Run these in your terminal.')}
                 lines={[
                   `codex plugin marketplace add ${SKILLS_REPO}`,
                   'codex plugin add openstory@openstory',
@@ -235,8 +254,8 @@ function ConnectPage() {
               />
               <PluginNote />
               <Terminal
-                label="MCP server only"
-                comment="Run these in your terminal."
+                label={t('MCP server only')}
+                comment={t('Run these in your terminal.')}
                 lines={[
                   `codex mcp add openstory --url ${MCP_URL}`,
                   'codex mcp login openstory',
@@ -249,14 +268,14 @@ function ConnectPage() {
               className="flex flex-col gap-4 pt-4"
             >
               <Terminal
-                label="Grok Build"
-                comment="Run this in your terminal."
+                label={t('Grok Build')}
+                comment={t('Run this in your terminal.')}
                 lines={[`grok plugin install ${SKILLS_REPO} --trust`]}
               />
               <PluginNote />
               <Terminal
-                label="MCP server only"
-                comment="Run this in your terminal."
+                label={t('MCP server only')}
+                comment={t('Run this in your terminal.')}
                 lines={[`grok mcp add openstory ${MCP_URL}`]}
               />
             </TabsContent>
@@ -266,8 +285,10 @@ function ConnectPage() {
               className="flex flex-col gap-4 pt-4"
             >
               <Terminal
-                label="Gemini CLI"
-                comment="Run these, then /mcp auth openstory in Gemini CLI to sign in."
+                label={t('Gemini CLI')}
+                comment={t(
+                  'Run these, then /mcp auth openstory in Gemini CLI to sign in.'
+                )}
                 lines={[
                   `gemini mcp add --transport http openstory ${MCP_URL}`,
                   `npx skills add ${SKILLS_REPO} -a gemini-cli`,
@@ -277,30 +298,31 @@ function ConnectPage() {
 
             <TabsContent value="cursor" className="flex flex-col gap-4 pt-4">
               <Steps>
-                <li>Add to Cursor, and confirm in Cursor.</li>
-                <li>Sign in to OpenStory when Cursor asks.</li>
+                <li>{t('Add to Cursor, and confirm in Cursor.')}</li>
+                <li>{t('Sign in to OpenStory when Cursor asks.')}</li>
               </Steps>
               <div>
                 <Button asChild>
-                  <a href={CURSOR_CONNECT}>Add to Cursor</a>
+                  <a href={CURSOR_CONNECT}>{t('Add to Cursor')}</a>
                 </Button>
               </div>
               <Terminal
-                label="Skills"
-                comment="Run this in your project."
+                label={t('Skills')}
+                comment={t('Run this in your project.')}
                 lines={[`npx skills add ${SKILLS_REPO} -a cursor`]}
               />
             </TabsContent>
 
             <TabsContent value="other" className="flex flex-col gap-4 pt-4">
               <Terminal
-                label="Any agent"
-                comment="Installs the skills into the agents it finds."
+                label={t('Any agent')}
+                comment={t('Installs the skills into the agents it finds.')}
                 lines={[`npx skills add ${SKILLS_REPO}`]}
               />
               <Note>
-                create-style, create-sequence and stitch. With no MCP server,
-                the skills call the HTTP API and sign in with a device code.
+                {t(
+                  'create-style, create-sequence and stitch. With no MCP server, the skills call the HTTP API and sign in with a device code.'
+                )}
               </Note>
               <McpUrl />
             </TabsContent>
@@ -310,12 +332,12 @@ function ConnectPage() {
 
       <section className="flex flex-col gap-3" aria-labelledby="ask-heading">
         <h2 id="ask-heading" className="text-lg font-semibold">
-          What you can ask
+          {t('What you can ask')}
         </h2>
         <ul className="flex flex-col gap-2 text-sm">
           {examplePrompts.map((prompt) => (
             <li key={prompt} className="rounded-lg border px-3 py-2">
-              {prompt}
+              {t(prompt)}
             </li>
           ))}
         </ul>
@@ -327,7 +349,7 @@ function ConnectPage() {
         rel="noreferrer"
         className="text-sm text-muted-foreground underline underline-offset-4"
       >
-        {SKILLS_REPO} on GitHub
+        {t('{{value1}} on GitHub', { value1: SKILLS_REPO })}
       </a>
     </div>
   );
@@ -369,14 +391,21 @@ function Note({ children }: { children: ReactNode }) {
 }
 
 function PluginNote() {
+  const { t } = useTranslation('pages');
+
   return (
     <Note>
-      Installs create-style, create-sequence and stitch, and connects the MCP
-      server. Sign in when asked.
+      {t(
+        'Installs create-style, create-sequence and stitch, and connects the MCP server. Sign in when asked.'
+      )}
     </Note>
   );
 }
 
 function McpUrl() {
-  return <Terminal label="MCP server URL" lines={[MCP_URL]} prompt={false} />;
+  const { t } = useTranslation('pages');
+
+  return (
+    <Terminal label={t('MCP server URL')} lines={[MCP_URL]} prompt={false} />
+  );
 }

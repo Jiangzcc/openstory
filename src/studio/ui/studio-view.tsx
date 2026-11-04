@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { StudioComposer, type StudioComposerHandle } from './studio-composer';
 import { StudioGallery, type StudioGalleryAsset } from './studio-gallery';
 import { systemAdminStatusQueryOptions } from '@/billing/ui/system-admin-status';
@@ -56,6 +57,8 @@ type StudioViewProps = {
 };
 
 export function StudioView({ activity, search, navigate }: StudioViewProps) {
+  const { t } = useTranslation('studio');
+
   const { isAuthenticated } = useAuthGate();
   const { prefs, setPrefs } = useStudioListPrefs(search, navigate);
   const composerRef = useRef<StudioComposerHandle>(null);
@@ -122,7 +125,7 @@ export function StudioView({ activity, search, navigate }: StudioViewProps) {
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-auto">
         <PageIntro
-          title={activity === 'video' ? 'Clips' : 'Images'}
+          title={activity === 'video' ? t('Clips') : t('Images')}
           maxWidth="wide"
           actions={
             supportMode ? undefined : (
@@ -132,11 +135,11 @@ export function StudioView({ activity, search, navigate }: StudioViewProps) {
         >
           {supportMode
             ? activity === 'video'
-              ? 'Every clip users have generated.'
-              : 'Every still users have generated.'
+              ? t('Every clip users have generated.')
+              : t('Every still users have generated.')
             : activity === 'video'
-              ? 'Make or edit short clips with any video model.'
-              : 'Make or edit images with any image model.'}
+              ? t('Make or edit short clips with any video model.')
+              : t('Make or edit images with any image model.')}
         </PageIntro>
         <PageContainer maxWidth="wide" padding="none" className="pb-8">
           <StudioToolbar
@@ -200,6 +203,8 @@ function StudioToolbar({
   hideInternalAvailable: boolean;
   hideInternalLocked: boolean;
 }) {
+  const { t } = useTranslation('studio');
+
   const [searchDraft, setSearchDraft] = useState(prefs.search);
   const prefsRef = useRef(prefs);
   const setPrefsRef = useRef(setPrefs);
@@ -226,11 +231,11 @@ function StudioToolbar({
       <div className="flex flex-wrap items-center gap-2">
         {isAdmin && prefs.supportMode && (
           <Input
-            placeholder="Search name, email, prompt…"
+            placeholder={t('Search name, email, prompt…')}
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
             className="h-8 w-56"
-            aria-label="Search studio assets"
+            aria-label={t('Search studio assets')}
           />
         )}
         <Button
@@ -240,7 +245,7 @@ function StudioToolbar({
         >
           <Link to={to} search={linkSearch({ favorites: !prefs.favorites })}>
             <Star className="size-4" aria-hidden="true" />
-            Favorites
+            {t('Favorites')}
           </Link>
         </Button>
         <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -250,7 +255,7 @@ function StudioToolbar({
             variant={prefs.sort === 'newest' ? 'default' : 'outline'}
           >
             <Link to={to} search={linkSearch({ sort: 'newest' })}>
-              Newest
+              {t('Newest')}
             </Link>
           </Button>
           <Button
@@ -259,7 +264,7 @@ function StudioToolbar({
             variant={prefs.sort === 'oldest' ? 'default' : 'outline'}
           >
             <Link to={to} search={linkSearch({ sort: 'oldest' })}>
-              Oldest
+              {t('Oldest')}
             </Link>
           </Button>
           {isAdmin && (
@@ -267,7 +272,7 @@ function StudioToolbar({
               {prefs.supportMode && hideInternalAvailable && (
                 <div className="flex items-center gap-2">
                   <Label htmlFor="studio-hide-internal" className="text-sm">
-                    Hide internal
+                    {t('Hide internal')}
                   </Label>
                   <Switch
                     id="studio-hide-internal"
@@ -285,7 +290,7 @@ function StudioToolbar({
                   aria-hidden="true"
                 />
                 <Label htmlFor="studio-support-mode" className="text-sm">
-                  Support
+                  {t('Support')}
                 </Label>
                 <Switch
                   id="studio-support-mode"

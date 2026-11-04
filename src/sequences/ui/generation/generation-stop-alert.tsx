@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { InButtonCost } from '@/billing/ui/action-cost';
 import { GenerationStopSlider } from './generation-stop-slider';
 import {
@@ -61,6 +63,9 @@ export const GenerationStopAlert: FC<GenerationStopAlertProps> = ({
   confirmLabel = 'Generate',
   estimateBase,
 }) => {
+  const { t } = useTranslation('sequences');
+  const translateLabel = useLabelTranslation('sequences');
+
   const [draftStopAt, setDraftStopAt] = useState(stopAt);
   const [draftStartFrames, setDraftStartFrames] = useState(generateStartFrames);
   const [draftDraftFirst, setDraftDraftFirst] = useState(draftMotion);
@@ -100,7 +105,9 @@ export const GenerationStopAlert: FC<GenerationStopAlertProps> = ({
         }}
       >
         <AlertDialogHeader>
-          <AlertDialogTitle>Generate the whole sequence?</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t('Generate the whole sequence?')}
+          </AlertDialogTitle>
           {description && (
             <AlertDialogDescription>{description}</AlertDialogDescription>
           )}
@@ -126,9 +133,9 @@ export const GenerationStopAlert: FC<GenerationStopAlertProps> = ({
               checked={draftRemember}
               onCheckedChange={(checked) => setDraftRemember(checked === true)}
             />
-            Don't ask again
+            {t("Don't ask again")}
           </label>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
           <AlertDialogAction
             ref={actionRef}
             onClick={() =>
@@ -146,7 +153,7 @@ export const GenerationStopAlert: FC<GenerationStopAlertProps> = ({
                 includesStage(draftStopAt, 'motion') ? 'double' : 'single'
               }
             >
-              {confirmLabel}
+              {translateLabel(confirmLabel)}
             </InButtonCost>
           </AlertDialogAction>
         </AlertDialogFooter>

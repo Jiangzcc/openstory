@@ -1,3 +1,4 @@
+import { LanguageSwitcher } from '@/ui/i18n/language-switcher';
 import { DocsAppSidebar } from '@/ui/docs/docs-app-sidebar';
 import {
   SidebarInset,
@@ -17,8 +18,10 @@ function DocsLayout() {
       <SidebarProvider className="h-svh">
         <DocsAppSidebar />
         <SidebarInset className="min-w-0 min-h-0">
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 md:hidden">
-            <SidebarTrigger />
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="md:hidden" />
+            <div className="flex-1" />
+            <LanguageSwitcher />
           </header>
           <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]">
             <main className="mx-auto w-full max-w-3xl px-6 py-10">

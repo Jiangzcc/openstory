@@ -15,6 +15,7 @@
  */
 
 import { useMediaInstance } from '@videojs/react';
+import { I18nProvider } from '@videojs/react/i18n';
 import { NeutralVideoSkin, VideoPlayer } from '@videojs/react/video';
 import {
   useCallback,
@@ -57,6 +58,11 @@ export type StitchedPlayerSurfaceProps = {
   download?: Pick<ExportSequenceSettings, 'subtitles' | 'frameRate'> & {
     /** Defaults to `sequence.mp4`. */
     filename?: string;
+  };
+  labels?: {
+    playback: string;
+    download: string;
+    exporting: (percent: number) => string;
   };
   onLoadProgress?: (loadedClips: number, totalClips: number) => void;
   onMeta?: (meta: SequencePlayerMeta) => void;
@@ -141,7 +147,8 @@ const Download: React.FC<{
     'musicUrl' | 'musicGainDb' | 'musicEnabled' | 'logger'
   >;
   options: DownloadProps;
-}> = ({ media, music, options }) => {
+  labels?: StitchedPlayerSurfaceProps['labels'];
+}> = ({ media, music, options, labels }) => {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Enabled once the engine has opened the clips, so the export reads from
@@ -192,8 +199,9 @@ const Download: React.FC<{
         disabled={!ready || progress !== null}
         aria-label={
           progress === null
-            ? 'Download'
-            : `Exporting… ${Math.round(progress * 100)}%`
+            ? (labels?.download ?? 'Download')
+            : (labels?.exporting(Math.round(progress * 100)) ??
+              `Exporting… ${Math.round(progress * 100)}%`)
         }
         onClick={() => void run()}
       >
@@ -280,6 +288,7 @@ const StitchedPlayerInner: React.FC<StitchedPlayerSurfaceProps> = ({
   className,
   logger,
   download,
+  labels,
   onLoadProgress,
   onMeta,
   onLoadedMetadata,
@@ -425,7 +434,7 @@ const StitchedPlayerInner: React.FC<StitchedPlayerSurfaceProps> = ({
         <canvas
           ref={canvasRef}
           style={{ ...fill, display: 'block', objectFit: 'contain' }}
-          aria-label="Sequence playback"
+          aria-label={labels?.playback ?? 'Sequence playback'}
         />
         <Captions media={media} />
         {download ? (
@@ -433,6 +442,7 @@ const StitchedPlayerInner: React.FC<StitchedPlayerSurfaceProps> = ({
             media={media}
             music={{ musicUrl, musicGainDb, musicEnabled, logger }}
             options={download}
+            labels={labels}
           />
         ) : null}
       </div>
@@ -443,7 +453,9 @@ const StitchedPlayerInner: React.FC<StitchedPlayerSurfaceProps> = ({
 export const StitchedPlayerSurface: React.FC<StitchedPlayerSurfaceProps> = (
   props
 ) => (
-  <VideoPlayer>
-    <StitchedPlayerInner {...props} />
-  </VideoPlayer>
+  <I18nProvider>
+    <VideoPlayer>
+      <StitchedPlayerInner {...props} />
+    </VideoPlayer>
+  </I18nProvider>
 );

@@ -1,3 +1,4 @@
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
 import { Badge } from '@/ui/shadcn/badge';
 import { cn } from '@/ui/utils';
 import type { FC } from 'react';
@@ -18,9 +19,10 @@ export const ReleaseBadge: FC<{
   releasedAt: number | null | undefined;
   className?: string;
 }> = ({ releasedAt, className }) => {
+  const { formatDate } = useLocaleFormatting();
   if (!releasedAt) return null;
   const isRecent = Date.now() / 1000 - releasedAt < THIRTY_DAYS_S;
-  const label = new Date(releasedAt * 1000).toLocaleDateString('en-US', {
+  const label = formatDate(new Date(releasedAt * 1000), {
     month: 'short',
     year: 'numeric',
   });

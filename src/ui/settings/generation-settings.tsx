@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ImageModelMultiSelector,
   ImageModelSelector,
@@ -92,6 +93,8 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
   singleSelectMusic = false,
   styleCategory,
 }) => {
+  const { t } = useTranslation('interface');
+
   const [open, setOpen] = useState(false);
   // How far the run goes is picked at Generate (#1408), so the video models
   // always count toward the tier choice here.
@@ -115,7 +118,7 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
           {/* Aspect Ratio Section */}
           <section className="flex flex-col gap-2">
             <h3 className="text-sm font-medium text-foreground">
-              Aspect Ratio
+              {t('Aspect Ratio')}
             </h3>
             <AspectRatioPills
               value={aspectRatio}
@@ -128,7 +131,7 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
           {/* Analysis Model Section */}
           <section className="flex flex-col gap-2">
             <h3 className="text-sm font-medium text-foreground">
-              Analysis Model
+              {t('Analysis Model')}
             </h3>
             <ModelSelector
               selectedModels={analysisModels}
@@ -143,7 +146,7 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
           {/* Image Model Section */}
           <section className="flex flex-col gap-2">
             <h3 className="text-sm font-medium text-foreground">
-              {singleSelectImage ? 'Image Model' : 'Image Models'}
+              {singleSelectImage ? t('Image Model') : t('Image Models')}
             </h3>
             {singleSelectImage ? (
               <ImageModelSelector
@@ -165,7 +168,7 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
           {/* Motion Model Section */}
           <section className="flex flex-col gap-2">
             <h3 className="text-sm font-medium text-foreground">
-              {singleSelectMotion ? 'Motion Model' : 'Motion Models'}
+              {singleSelectMotion ? t('Motion Model') : t('Motion Models')}
             </h3>
             {singleSelectMotion ? (
               <MotionModelSelector
@@ -188,7 +191,9 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
                 referenceOnly={!generateStartFrames}
               />
             )}
-            <h3 className="text-sm font-medium text-foreground">Resolution</h3>
+            <h3 className="text-sm font-medium text-foreground">
+              {t('Resolution')}
+            </h3>
             <ResolutionPills
               value={resolution}
               onChange={onResolutionChange}
@@ -196,7 +201,7 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
               disabled={disabled || Boolean(resolutionLockNote)}
               note={
                 resolutionLockNote ??
-                resolutionCeilingNote(resolution, modelSelection)
+                resolutionCeilingNote(resolution, modelSelection, t)
               }
             />
           </section>
@@ -208,7 +213,7 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
               {/* Music Model Section */}
               <section className="flex flex-col gap-2">
                 <h3 className="text-sm font-medium text-foreground">
-                  {singleSelectMusic ? 'Music Model' : 'Music Models'}
+                  {singleSelectMusic ? t('Music Model') : t('Music Models')}
                 </h3>
                 {singleSelectMusic ? (
                   <MusicModelSelector

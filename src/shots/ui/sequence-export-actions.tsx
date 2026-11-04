@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 /**
  * Download menu for the whole cut. `toolbar` is the labelled button in the
  * Canvas/Script toggle's trailing slot (desktop); `overlay` is the icon on the
@@ -73,6 +75,9 @@ export const SequenceDownloadMenu: React.FC<{
   /** Enables "Share stitch link", and "Publish to social…" when the team has an Upload-Post key. */
   publish?: PublishTarget;
 }> = ({ sequenceId, sequenceExport, draftLabel = null, variant, publish }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const {
     isRunning,
     freshExportUrl,
@@ -83,11 +88,16 @@ export const SequenceDownloadMenu: React.FC<{
   } = sequenceExport;
   const elapsed = useElapsed(isRunning ? sequenceExport.renderStartedAt : null);
   const status = isRunning
-    ? `Rendering on server${elapsed ? ` · ${elapsed}` : ''}`
+    ? t('Rendering on server{{value1}}', {
+        value1: elapsed ? ` · ${elapsed}` : '',
+      })
     : freshExportUrl
       ? null
       : !canExport
-        ? `${clipsReady} of ${clipsTotal} clips ready`
+        ? t('{{value1}} of {{value2}} clips ready', {
+            value1: clipsReady,
+            value2: clipsTotal,
+          })
         : hasStaleExport
           ? 'Cut changed since last render'
           : 'Not rendered yet';
@@ -110,24 +120,31 @@ export const SequenceDownloadMenu: React.FC<{
       // The copy runs after the round trip, which some browsers refuse; the
       // link is in the toast either way.
       const copied = await copyTextToClipboard(url);
-      toast.success(copied ? 'Stitch link copied' : 'Stitch shared', {
-        description: url,
-      });
+      toast.success(
+        copied
+          ? translateEvent('Stitch link copied')
+          : translateEvent('Stitch shared'),
+        {
+          description: url,
+        }
+      );
     },
     onError: (error) =>
-      toast.error('Could not share the stitch', {
+      toast.error(translateEvent('Could not share the stitch'), {
         description: error.message,
       }),
   });
   // The render the dialog publishes is the one on screen when it was opened.
   const [publishExportId, setPublishExportId] = useState<string | null>(null);
 
-  const shortLabel = isRunning ? `Rendering… ${elapsed}`.trim() : 'Download';
+  const shortLabel = isRunning
+    ? t('Rendering… {{elapsed}}', { elapsed }).trim()
+    : t('Download');
   const triggerLabel = isRunning
     ? shortLabel
     : status
-      ? `Download — ${status}`
-      : 'Download';
+      ? t('Download — {{value1}}', { value1: status })
+      : t('Download');
 
   const icon = isRunning ? <Loader2 className="animate-spin" /> : <Download />;
 
@@ -169,7 +186,7 @@ export const SequenceDownloadMenu: React.FC<{
         <DropdownMenuContent align="end" className="min-w-56">
           {draftLabel && (
             <DropdownMenuLabel className="font-normal text-muted-foreground">
-              {draftLabel} — finals not rendered
+              {t('{{value1}} — finals not rendered', { value1: draftLabel })}
             </DropdownMenuLabel>
           )}
           {status && (
@@ -183,14 +200,14 @@ export const SequenceDownloadMenu: React.FC<{
           {freshExportUrl ? (
             <DropdownMenuItem onClick={sequenceExport.download}>
               <Download />
-              Download MP4
+              {t('Download MP4')}
             </DropdownMenuItem>
           ) : isRunning ? (
             <DropdownMenuItem onClick={sequenceExport.abort}>
               <CircleStop />
-              Stop waiting
+              {t('Stop waiting')}
               <span className="ml-auto text-xs text-muted-foreground">
-                render continues
+                {t('render continues')}
               </span>
             </DropdownMenuItem>
           ) : (
@@ -199,14 +216,14 @@ export const SequenceDownloadMenu: React.FC<{
               onClick={sequenceExport.render}
             >
               <Server />
-              Render MP4 on server
+              {t('Render MP4 on server')}
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link to="/sequences/$id/assets" params={{ id: sequenceId }}>
               <FolderOpen />
-              All files
+              {t('All files')}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -215,10 +232,10 @@ export const SequenceDownloadMenu: React.FC<{
             onClick={sequenceExport.copyLink}
           >
             <LinkIcon />
-            Copy link
+            {t('Copy link')}
             {!freshExportUrl && (
               <span className="ml-auto text-xs text-muted-foreground">
-                after render
+                {t('after render')}
               </span>
             )}
           </DropdownMenuItem>
@@ -228,7 +245,7 @@ export const SequenceDownloadMenu: React.FC<{
               onSelect={() => shareStitch.mutate(publish.sequenceId)}
             >
               <Share2 />
-              {shareStitch.isPending ? 'Sharing…' : 'Share stitch link'}
+              {shareStitch.isPending ? t('Sharing…') : t('Share stitch link')}
             </DropdownMenuItem>
           )}
           {canPublish && (
@@ -237,10 +254,10 @@ export const SequenceDownloadMenu: React.FC<{
               onSelect={() => setPublishExportId(sequenceExport.freshExportId)}
             >
               <Send />
-              Publish to social…
+              {t('Publish to social…')}
               {!sequenceExport.freshExportId && (
                 <span className="ml-auto text-xs text-muted-foreground">
-                  after render
+                  {t('after render')}
                 </span>
               )}
             </DropdownMenuItem>

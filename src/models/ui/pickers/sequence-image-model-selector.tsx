@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from 'react-i18next';
 import { AddModelMenuSection } from './add-model-menu';
 import { Badge } from '@/ui/shadcn/badge';
 import {
@@ -49,6 +50,8 @@ export const SequenceImageModelSelector = ({
   sequenceImageModel?: string | null;
   label?: string;
 }) => {
+  const { t } = useTranslation('models');
+
   const { data: models } = useSequenceImageModels(sequenceId);
   const { data: variants } = useSequenceImageVariants(sequenceId);
   const { data: shots } = useShotsBySequence(sequenceId);
@@ -95,12 +98,12 @@ export const SequenceImageModelSelector = ({
 
   const firstModel = models[0];
   const activeLabel =
-    models.length === 1 && firstModel ? imageModelName(firstModel) : 'Mixed';
+    models.length === 1 && firstModel ? imageModelName(firstModel) : t('Mixed');
 
   const dropdown = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label="Select image model">
+        <button type="button" aria-label={t('Select image model')}>
           <Badge variant="secondary" className="text-xs cursor-pointer gap-1">
             {activeLabel}
             <ChevronDown className="size-3" />
@@ -113,10 +116,16 @@ export const SequenceImageModelSelector = ({
         className="w-[min(280px,calc(100vw-2rem))]"
       >
         <DropdownMenuLabel className="text-xs">
-          Image model
-          <span className="block font-normal text-muted-foreground">
-            Set applies a model to every scene.
-          </span>
+          <Trans
+            ns="models"
+            i18nKey="Image model<0>Set applies a model to every scene.</0>"
+            components={[
+              <span
+                key="0"
+                className="block font-normal text-muted-foreground"
+              />,
+            ]}
+          />
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {models.filter(isValidTextToImageModel).map((model) => (

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BlobLoader } from '@/ui/shadcn/blob-loader';
 import {
   contentRejectionHint,
@@ -55,6 +56,8 @@ export const VideoStateOverlay: React.FC<VideoStateOverlayProps> = ({
   progressMessage,
   retry,
 }) => {
+  const { t } = useTranslation('motion');
+
   // Only show the loader when the tile would otherwise be blank. A playable
   // clip counts as content: it renders its own first frame.
   const hasNoThumbnail = !thumbnailUrl && !hasPlayableVideo;
@@ -69,8 +72,11 @@ export const VideoStateOverlay: React.FC<VideoStateOverlayProps> = ({
   );
   const retryMessage = retry
     ? retry.maxAttempts
-      ? `Retrying (${retry.attempt}/${retry.maxAttempts})…`
-      : 'Retrying…'
+      ? t('Retrying ({{value1}}/{{value2}})…', {
+          value1: retry.attempt,
+          value2: retry.maxAttempts,
+        })
+      : t('Retrying…')
     : undefined;
 
   // With a thumbnail and no failure the still image carries the UI — surface
@@ -114,7 +120,7 @@ export const VideoStateOverlay: React.FC<VideoStateOverlayProps> = ({
             <div className="flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               <p className="text-sm font-medium">
-                {retryMessage ?? progressMessage ?? 'Generating shot…'}
+                {retryMessage ?? progressMessage ?? t('Generating shot…')}
               </p>
             </div>
           </>
@@ -135,7 +141,7 @@ export const VideoStateOverlay: React.FC<VideoStateOverlayProps> = ({
             <>
               <AlertCircle className="h-8 w-8 text-destructive" />
               <p className="max-w-xs text-center text-sm font-medium text-destructive">
-                {seedanceMessage ?? 'Generation failed'}
+                {seedanceMessage ?? t('Generation failed')}
               </p>
             </>
           ))}

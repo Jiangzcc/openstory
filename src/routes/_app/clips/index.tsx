@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_app/clips/')({
     }
   },
   component: ClipsPage,
-  staticData: { breadcrumb: 'Clips' },
+  staticData: { breadcrumb: { label: 'Clips', translationKey: 'Clips' } },
 });
 
 function ClipsPage() {

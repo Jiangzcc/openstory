@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   DropdownMenu,
@@ -41,11 +43,14 @@ export function StyleCategorySelect({
   recommendLabel = 'Recommend',
   isRecommending = false,
 }: StyleCategorySelectProps) {
+  const { t } = useTranslation('look');
+  const translateLabel = useLabelTranslation('look');
+
   const families = composerStyleCategoryOptions(styles);
   const isAll = value === ALL_COMPOSER_STYLE_CATEGORIES;
   const selected = families.find((option) => option.value === value);
   const label = isAll
-    ? 'All styles'
+    ? t('All styles')
     : (selected?.label ?? styleCategoryLabel(value));
 
   return (
@@ -56,10 +61,12 @@ export function StyleCategorySelect({
           variant="outline"
           size={size}
           disabled={disabled}
-          aria-label={`Style category: ${label}`}
+          aria-label={t('Style category: {{value1}}', {
+            value1: translateLabel(label),
+          })}
           className="gap-1.5 whitespace-nowrap"
         >
-          <span>{label}</span>
+          <span>{translateLabel(label)}</span>
           <ChevronDown className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
@@ -75,7 +82,7 @@ export function StyleCategorySelect({
               ) : (
                 <Sparkles className="size-3.5 text-primary" />
               )}
-              {recommendLabel}
+              {translateLabel(recommendLabel)}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
@@ -87,7 +94,7 @@ export function StyleCategorySelect({
               value={option.value}
               className="whitespace-nowrap"
             >
-              {option.label}
+              {translateLabel(option.label)}
             </DropdownMenuRadioItem>
           ))}
           {families.length > 0 ? <DropdownMenuSeparator /> : null}
@@ -95,7 +102,7 @@ export function StyleCategorySelect({
             value={ALL_COMPOSER_STYLE_CATEGORIES}
             className="whitespace-nowrap"
           >
-            All styles
+            {t('All styles')}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>

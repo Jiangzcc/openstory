@@ -1,4 +1,6 @@
-'use client';
+import { localizeUploadError } from '@/ui/localize-upload-error';
+import { useTranslation } from 'react-i18next';
+('use client');
 
 import {
   FileArchiveIcon,
@@ -212,6 +214,8 @@ interface FileUploadProps extends Omit<
 }
 
 function FileUpload(props: FileUploadProps) {
+  const { t } = useTranslation('interface');
+
   const {
     value,
     defaultValue,
@@ -668,7 +672,7 @@ function FileUpload(props: FileUploadProps) {
             onChange={onInputChange}
           />
           <div id={labelId} className="sr-only">
-            {label ?? 'File upload'}
+            {label ?? t('File upload')}
           </div>
         </RootPrimitive>
       </FileUploadContext.Provider>
@@ -989,6 +993,7 @@ interface FileUploadItemProps extends React.ComponentProps<'div'> {
 }
 
 function FileUploadItem(props: FileUploadItemProps) {
+  const { i18n, t } = useTranslation('interface');
   const { value, asChild, className, ...itemProps } = props;
 
   const id = React.useId();
@@ -1020,12 +1025,14 @@ function FileUploadItem(props: FileUploadItemProps) {
   if (!fileState) return null;
 
   const statusText = fileState.error
-    ? `Error: ${fileState.error}`
+    ? t('Error: {{error}}', {
+        error: localizeUploadError(i18n, fileState.error),
+      })
     : fileState.status === 'uploading'
-      ? `Uploading: ${fileState.progress}% complete`
+      ? t('Uploading: {{progress}}% complete', { progress: fileState.progress })
       : fileState.status === 'success'
-        ? 'Upload complete'
-        : 'Ready to upload';
+        ? t('Upload complete')
+        : t('Ready to upload');
 
   const ItemPrimitive = asChild ? SlotPrimitive.Slot : 'div';
 
@@ -1125,6 +1132,7 @@ interface FileUploadItemMetadataProps extends React.ComponentProps<'div'> {
 }
 
 function FileUploadItemMetadata(props: FileUploadItemMetadataProps) {
+  const { i18n } = useTranslation('interface');
   const {
     asChild,
     size = 'default',
@@ -1172,7 +1180,7 @@ function FileUploadItemMetadata(props: FileUploadItemMetadataProps) {
               id={itemContext.messageId}
               className="text-destructive text-xs"
             >
-              {itemContext.fileState.error}
+              {localizeUploadError(i18n, itemContext.fileState.error)}
             </span>
           )}
         </>

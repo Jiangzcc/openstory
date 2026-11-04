@@ -3,6 +3,9 @@
  */
 
 import { Heading, Section, Text } from '@react-email/components';
+import { DEFAULT_LOCALE } from '@/platform/i18n/locale';
+import type { Locale } from '@/platform/i18n/locale';
+import { createI18n } from '@/platform/i18n/runtime';
 import {
   EmailLayout,
   headingStyle,
@@ -14,6 +17,7 @@ import {
 interface OtpEmailProps {
   appName: string;
   otp: string;
+  locale?: Locale;
 }
 
 const otpStyle: React.CSSProperties = {
@@ -28,23 +32,36 @@ const otpStyle: React.CSSProperties = {
   color: '#fafafa',
 };
 
-export const OtpEmail: React.FC<OtpEmailProps> = ({ appName, otp }) => (
-  <EmailLayout appName={appName} preview={`Your sign-in code is ${otp}`}>
-    <Section>
-      <Heading as="h2" style={headingStyle}>
-        Your Sign-In Code
-      </Heading>
-      <Text style={paragraphStyle}>
-        Enter this code to sign in to your account:
-      </Text>
+export const OtpEmail: React.FC<OtpEmailProps> = ({
+  appName,
+  otp,
+  locale = DEFAULT_LOCALE,
+}) => {
+  const t = createI18n(locale).getFixedT(locale, 'mail');
+  return (
+    <EmailLayout
+      appName={appName}
+      locale={locale}
+      preview={t('Your sign-in code is {{code}}', { code: otp })}
+    >
+      <Section>
+        <Heading as="h2" style={headingStyle}>
+          {t('Your Sign-In Code')}
+        </Heading>
+        <Text style={paragraphStyle}>
+          {t('Enter this code to sign in to your account:')}
+        </Text>
 
-      <Section style={mutedBoxStyle}>
-        <Text style={otpStyle}>{otp}</Text>
+        <Section style={mutedBoxStyle}>
+          <Text style={otpStyle}>{otp}</Text>
+        </Section>
+
+        <WarningBox title={t('This code expires in 5 minutes')}>
+          {t(
+            "If you didn't request this code, you can safely ignore this email."
+          )}
+        </WarningBox>
       </Section>
-
-      <WarningBox title="This code expires in 5 minutes">
-        If you didn't request this code, you can safely ignore this email.
-      </WarningBox>
-    </Section>
-  </EmailLayout>
-);
+    </EmailLayout>
+  );
+};

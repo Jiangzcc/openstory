@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 // oxlint-disable jsx-a11y/prefer-tag-over-role -- WAI-ARIA APG listbox-with-options pattern needs role="listbox"/"option" on non-native elements; native <select>/<datalist>/<option> can't host a typed query against rich sectioned items with thumbnails.
 /**
  * The dropdown rendered by the Tiptap mention suggestion plugin. Mirrors the
@@ -39,6 +41,8 @@ export type MentionListProps = {
 
 export const MentionList = forwardRef<MentionListRef, MentionListProps>(
   ({ items, command, className }, ref) => {
+    const { t } = useTranslation('interface');
+    const translateLabel = useLabelTranslation('interface');
     const [selectedIdx, setSelectedIdx] = useState(0);
 
     useEffect(() => {
@@ -83,13 +87,13 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
       return (
         <div
           role="listbox"
-          aria-label="Mention suggestions"
+          aria-label={t('Mention suggestions')}
           className={cn(
             'w-72 rounded-md border bg-popover p-2 text-sm text-muted-foreground shadow-md',
             className
           )}
         >
-          No matches
+          {t('No matches')}
         </div>
       );
     }
@@ -98,7 +102,7 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
     return (
       <div
         role="listbox"
-        aria-label="Mention suggestions"
+        aria-label={t('Mention suggestions')}
         className={cn(
           'flex max-h-72 w-80 flex-col overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
           className
@@ -107,7 +111,7 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
         {sections.map(({ section, entries }) => (
           <div key={section} className="py-1 first:pt-0 last:pb-0">
             <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {SECTION_LABELS[section]}
+              {translateLabel(SECTION_LABELS[section])}
             </div>
             {entries.map((item) => {
               const idx = runningIdx++;
@@ -153,7 +157,9 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
                     <span className="truncate text-sm">{item.label}</span>
                     {item.sublabel && (
                       <span className="truncate font-mono text-xs text-muted-foreground">
-                        {item.sublabel}
+                        {item.pickOnly
+                          ? t('Add to this sequence')
+                          : item.sublabel}
                       </span>
                     )}
                   </span>

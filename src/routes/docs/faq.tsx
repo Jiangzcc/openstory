@@ -1,3 +1,7 @@
+import { translateStaticLabel } from '@/platform/i18n/labels';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { localizeMeta } from '@/ui/i18n/head';
+import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
 import { FAQ_ITEMS, SITE_CONFIG } from '@/ui/marketing/constants';
 
@@ -10,11 +14,11 @@ const description =
 // (#814). FAQ_ITEMS stays the single source of truth — llms.txt renders the
 // same items, so the two surfaces can't drift.
 export const Route = createFileRoute('/docs/faq')({
-  head: () => ({
-    meta: [
+  head: ({ match }) => ({
+    meta: localizeMeta(match.context.i18n, 'documentation', [
       { title: `${title} - OpenStory Docs` },
       { name: 'description', content: description },
-    ],
+    ]),
     scripts: [
       {
         type: 'application/ld+json',
@@ -23,10 +27,18 @@ export const Route = createFileRoute('/docs/faq')({
           '@type': 'FAQPage',
           mainEntity: FAQ_ITEMS.map((item) => ({
             '@type': 'Question',
-            name: item.question,
+            name: translateStaticLabel(
+              match.context.i18n,
+              'labels',
+              item.question
+            ),
             acceptedAnswer: {
               '@type': 'Answer',
-              text: item.answer,
+              text: translateStaticLabel(
+                match.context.i18n,
+                'labels',
+                item.answer
+              ),
             },
           })),
         }),
@@ -37,7 +49,11 @@ export const Route = createFileRoute('/docs/faq')({
           '@context': 'https://schema.org',
           '@type': 'SoftwareApplication',
           name: SITE_CONFIG.name,
-          description: SITE_CONFIG.description,
+          description: translateStaticLabel(
+            match.context.i18n,
+            'labels',
+            SITE_CONFIG.description
+          ),
           url: SITE_CONFIG.url,
           applicationCategory: 'MultimediaApplication',
           operatingSystem: 'Web',
@@ -56,18 +72,27 @@ export const Route = createFileRoute('/docs/faq')({
 });
 
 function FaqArticle() {
+  const translateLabel = useLabelTranslation('labels');
+  const { t } = useTranslation('documentation');
+
   return (
     <article>
       <header className="mb-8">
-        <p className="text-sm font-medium text-muted-foreground">Support</p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-2 text-lg text-muted-foreground">{description}</p>
+        <p className="text-sm font-medium text-muted-foreground">
+          {t('Support')}
+        </p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight">
+          {translateLabel(title)}
+        </h1>
+        <p className="mt-2 text-lg text-muted-foreground">
+          {translateLabel(description)}
+        </p>
       </header>
       <div className="prose dark:prose-invert max-w-none">
         {FAQ_ITEMS.map((item) => (
           <section key={item.question}>
-            <h2>{item.question}</h2>
-            <p>{item.answer}</p>
+            <h2>{translateLabel(item.question)}</h2>
+            <p>{translateLabel(item.answer)}</p>
           </section>
         ))}
       </div>

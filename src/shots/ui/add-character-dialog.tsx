@@ -1,3 +1,5 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui/shadcn/button';
 import {
   Dialog,
@@ -33,6 +35,9 @@ export const AddCharacterDialog: React.FC<{
   /** Characters the sequence already casts: not offered again. */
   castCharacterIds: ReadonlySet<string>;
 }> = ({ sequenceId, castCharacterIds }) => {
+  const translateEvent = useLiveTranslation('shots');
+  const { t } = useTranslation('shots');
+
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState('');
@@ -58,12 +63,19 @@ export const AddCharacterDialog: React.FC<{
       {
         onSuccess: () => {
           close();
-          toast.success(`Added ${character.name}`);
+          toast.success(
+            translateEvent('Added {{value1}}', { value1: character.name })
+          );
         },
         onError: (error) =>
-          toast.error(`Could not add ${character.name}`, {
-            description: errorMessage(error),
-          }),
+          toast.error(
+            translateEvent('Could not add {{value1}}', {
+              value1: character.name,
+            }),
+            {
+              description: errorMessage(error),
+            }
+          ),
       }
     );
 
@@ -74,21 +86,21 @@ export const AddCharacterDialog: React.FC<{
     >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Add Character
+          {t('Add Character')}
         </Button>
       </DialogTrigger>
       {creating ? (
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New character</DialogTitle>
+            <DialogTitle>{t('New character')}</DialogTitle>
             <DialogDescription>
-              Name it. The rest is filled in on its page.
+              {t('Name it. The rest is filled in on its page.')}
             </DialogDescription>
           </DialogHeader>
           <NewCharacterForm
             isPending={createCharacter.isPending}
-            submitLabel="Create"
-            pendingLabel="Creating…"
+            submitLabel={t('Create')}
+            pendingLabel={t('Creating…')}
             onSubmit={(fields) =>
               createCharacter.mutate(
                 { sequenceId, ...fields },
@@ -102,7 +114,7 @@ export const AddCharacterDialog: React.FC<{
                     });
                   },
                   onError: (error) =>
-                    toast.error('Failed to add character', {
+                    toast.error(translateEvent('Failed to add character'), {
                       description: errorMessage(error),
                     }),
                 }
@@ -116,24 +128,25 @@ export const AddCharacterDialog: React.FC<{
             className="self-start"
             onClick={() => setCreating(false)}
           >
-            Back to characters
+            {t('Back to characters')}
           </Button>
         </DialogContent>
       ) : (
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add character</DialogTitle>
+            <DialogTitle>{t('Add character')}</DialogTitle>
             <DialogDescription>
-              Adds the character with every look. Later edits reach this
-              sequence.
+              {t(
+                'Adds the character with every look. Later edits reach this sequence.'
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <Input
                 type="search"
-                placeholder="Search characters…"
-                aria-label="Search characters"
+                placeholder={t('Search characters…')}
+                aria-label={t('Search characters')}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -142,7 +155,7 @@ export const AddCharacterDialog: React.FC<{
                 variant="outline"
                 onClick={() => setCreating(true)}
               >
-                New character
+                {t('New character')}
               </Button>
             </div>
             <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
@@ -154,7 +167,7 @@ export const AddCharacterDialog: React.FC<{
                 ))}
               {offered?.length === 0 && (
                 <li className="py-6 text-center text-sm text-muted-foreground">
-                  {q ? 'No character matches' : 'No other characters yet'}
+                  {q ? t('No character matches') : t('No other characters yet')}
                 </li>
               )}
               {offered?.map((character) => {
@@ -187,14 +200,18 @@ export const AddCharacterDialog: React.FC<{
                       </span>
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate text-sm">
-                          {pending ? 'Adding…' : character.name}
+                          {pending ? t('Adding…') : character.name}
                         </span>
                         <span className="truncate text-xs text-muted-foreground">
                           {character.sequences.length === 0
-                            ? 'In no sequence'
+                            ? t('In no sequence')
                             : character.sequences.length === 1
-                              ? `In ${character.sequences[0]?.title}`
-                              : `In ${character.sequences.length} sequences`}
+                              ? t('In {{value1}}', {
+                                  value1: character.sequences[0]?.title,
+                                })
+                              : t('In {{value1}} sequences', {
+                                  value1: character.sequences.length,
+                                })}
                         </span>
                       </span>
                     </button>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 /**
  * The Title row in sequence settings (#2102): the title is the trigger, like
  * the target-length chip beside it. Enter saves, Escape closes the popover
@@ -15,6 +16,8 @@ export const RenameSequenceButton: React.FC<{
   sequenceId: string;
   title: string;
 }> = ({ sequenceId, title }) => {
+  const { t } = useTranslation('sequences');
+
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(title);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +54,7 @@ export const RenameSequenceButton: React.FC<{
         <button
           type="button"
           className="min-w-0 truncate rounded-md px-1.5 py-0.5 text-sm hover:bg-muted/60 max-md:min-h-11"
-          aria-label={`Rename sequence ${title}`}
+          aria-label={t('Rename sequence {{value1}}', { value1: title })}
         >
           {title}
         </button>
@@ -66,7 +69,7 @@ export const RenameSequenceButton: React.FC<{
         }}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Rename sequence</p>
+          <p className="text-sm font-medium">{t('Rename sequence')}</p>
           <Input
             ref={inputRef}
             value={value}
@@ -75,7 +78,7 @@ export const RenameSequenceButton: React.FC<{
               if (error) setError(null);
             }}
             maxLength={500}
-            placeholder="Sequence title"
+            placeholder={t('Sequence title')}
             aria-invalid={!!error}
             aria-describedby={error ? 'sequence-rename-error' : undefined}
           />
@@ -96,7 +99,7 @@ export const RenameSequenceButton: React.FC<{
                 renameSequence.isPending || isUnchanged || trimmed.length === 0
               }
             >
-              {renameSequence.isPending ? 'Saving…' : 'Save'}
+              {renameSequence.isPending ? t('Saving…') : t('Save')}
             </Button>
           </div>
         </form>

@@ -1,3 +1,8 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import type { Locale } from '@/platform/i18n/locale';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/ui/shadcn/alert';
 import { Badge } from '@/ui/shadcn/badge';
 import { Button } from '@/ui/shadcn/button';
@@ -129,8 +134,8 @@ type MediaRow = {
   kind?: 'model' | 'framing';
 };
 
-function formatTimestamp(d: Date): string {
-  return d.toLocaleString(undefined, {
+function formatTimestamp(d: Date, locale: Locale): string {
+  return d.toLocaleString(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
@@ -203,11 +208,15 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
   cancelling = false,
   onCancel,
 }) => {
+  const { locale } = useLocaleFormatting();
+
+  const { t } = useTranslation('shots');
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const emptyLabel =
     kind === 'image'
-      ? 'No image history yet — generate an image to start a record.'
-      : 'No video history yet — generate a video to start a record.';
+      ? t('No image history yet — generate an image to start a record.')
+      : t('No video history yet — generate a video to start a record.');
 
   if (isLoading) {
     return (
@@ -222,7 +231,7 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
     return (
       <Alert variant="destructive" className="mt-2">
         <AlertCircle aria-hidden="true" />
-        <AlertTitle>Couldn't load history</AlertTitle>
+        <AlertTitle>{t("Couldn't load history")}</AlertTitle>
         <AlertDescription className="flex flex-col gap-2">
           <span>{error.message}</span>
           <Button
@@ -232,7 +241,7 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
             onClick={onRetry}
             className="self-start"
           >
-            Retry
+            {t('Retry')}
           </Button>
         </AlertDescription>
       </Alert>
@@ -327,23 +336,27 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
                     <span className="truncate text-sm font-medium">
                       {modelLabel}
                     </span>
-                    {row.selected && <Badge variant="outline">Current</Badge>}
+                    {row.selected && (
+                      <Badge variant="outline">{t('Current')}</Badge>
+                    )}
                   </div>
                   <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {formatTimestamp(row.createdAt)}
+                    {formatTimestamp(row.createdAt, locale)}
                   </span>
                 </div>
                 {row.status === 'failed' && (
-                  <span className="text-xs text-destructive">Failed</span>
+                  <span className="text-xs text-destructive">
+                    {t('Failed')}
+                  </span>
                 )}
                 {row.status === 'cancelled' && (
                   <span className="text-xs text-muted-foreground">
-                    Cancelled
+                    {t('Cancelled')}
                   </span>
                 )}
                 {isLiveStatus(row.status) && (
                   <span className="text-xs text-muted-foreground">
-                    Generating…
+                    {t('Generating…')}
                   </span>
                 )}
               </div>
@@ -357,12 +370,14 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
                   variant="ghost"
                   disabled={cancelling}
                   onClick={() => onCancel(row.id)}
-                  aria-label={`Cancel this ${kind} generation`}
+                  aria-label={t('Cancel this {{value1}} generation', {
+                    value1: kind,
+                  })}
                 >
                   {cancelling && (
                     <Loader2 className="mr-2 h-3 w-3 animate-spin motion-reduce:animate-none" />
                   )}
-                  <span>Cancel</span>
+                  <span>{t('Cancel')}</span>
                 </Button>
               </div>
             )}
@@ -381,12 +396,14 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
                       controls
                       playsInline
                       className="max-h-64 w-full rounded-md bg-black object-contain"
-                      aria-label={`${modelLabel} preview`}
+                      aria-label={t('{{value1}} preview', {
+                        value1: modelLabel,
+                      })}
                     />
                   ) : (
                     <AppImage
                       src={row.url}
-                      alt={`${modelLabel} preview`}
+                      alt={t('{{value1}} preview', { value1: modelLabel })}
                       width={640}
                       height={360}
                       className="max-h-64 w-full rounded-md object-contain"
@@ -395,10 +412,12 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     {row.status === 'generating'
-                      ? 'Still generating — preview will appear when it finishes.'
+                      ? t(
+                          'Still generating — preview will appear when it finishes.'
+                        )
                       : row.status === 'failed'
-                        ? 'This generation failed — no preview available.'
-                        : 'No preview available.'}
+                        ? t('This generation failed — no preview available.')
+                        : t('No preview available.')}
                   </p>
                 )}
                 {selectable && (
@@ -412,7 +431,7 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
                       {selecting && (
                         <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                       )}
-                      <span>Use this version</span>
+                      <span>{t('Use this version')}</span>
                     </Button>
                   </div>
                 )}
@@ -449,6 +468,12 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
   cancelling = false,
   onCancel,
 }) => {
+  const { locale } = useLocaleFormatting();
+
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('shots');
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (isLoading) {
@@ -465,7 +490,7 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
     return (
       <Alert variant="destructive" className="mt-2">
         <AlertCircle aria-hidden="true" />
-        <AlertTitle>Couldn't load history</AlertTitle>
+        <AlertTitle>{t("Couldn't load history")}</AlertTitle>
         <AlertDescription className="flex flex-col gap-2">
           <span>{error.message}</span>
           <Button
@@ -475,7 +500,7 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
             onClick={onRetry}
             className="self-start"
           >
-            Retry
+            {t('Retry')}
           </Button>
         </AlertDescription>
       </Alert>
@@ -485,7 +510,7 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
   if (!rows || rows.length === 0) {
     return (
       <p className="pt-4 text-sm text-muted-foreground">
-        No history yet — generate or edit a prompt to start a record.
+        {t('No history yet — generate or edit a prompt to start a record.')}
       </p>
     );
   }
@@ -520,14 +545,14 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
                   )}
                   <span className="text-sm">
                     {live
-                      ? 'Generating…'
+                      ? t('Generating…')
                       : row.status === 'failed'
-                        ? 'Generation failed'
-                        : 'Cancelled'}
+                        ? t('Generation failed')
+                        : t('Cancelled')}
                   </span>
                 </div>
                 <span className="text-xs tabular-nums">
-                  {formatTimestamp(row.createdAt)}
+                  {formatTimestamp(row.createdAt, locale)}
                 </span>
               </div>
               {live && onCancel && (
@@ -538,12 +563,12 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
                     variant="ghost"
                     disabled={cancelling}
                     onClick={() => onCancel(row.id)}
-                    aria-label="Cancel this prompt generation"
+                    aria-label={t('Cancel this prompt generation')}
                   >
                     {cancelling && (
                       <Loader2 className="mr-2 h-3 w-3 animate-spin motion-reduce:animate-none" />
                     )}
-                    <span>Cancel</span>
+                    <span>{t('Cancel')}</span>
                   </Button>
                 </div>
               )}
@@ -577,29 +602,31 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Badge variant={SOURCE_VARIANT[row.source]}>
-                    {SOURCE_LABEL[row.source]}
+                    {translateLabel(SOURCE_LABEL[row.source])}
                   </Badge>
-                  {isCurrent && <Badge variant="outline">Current</Badge>}
+                  {isCurrent && <Badge variant="outline">{t('Current')}</Badge>}
                 </div>
                 <span className="text-xs text-muted-foreground tabular-nums">
-                  {formatTimestamp(row.createdAt)}
+                  {formatTimestamp(row.createdAt, locale)}
                 </span>
               </div>
               {row.source === 'softened' && (
                 <p className="text-xs text-muted-foreground">
-                  Rewritten to pass a content checker. The original is still in
-                  this list.
+                  {t(
+                    'Rewritten to pass a content checker. The original is still in this list.'
+                  )}
                 </p>
               )}
               {row.source === 'shortened' && (
                 <p className="text-xs text-muted-foreground">
-                  Shortened to fit the model's prompt limit. The original is
-                  still in this list.
+                  {t(
+                    "Shortened to fit the model's prompt limit. The original is still in this list."
+                  )}
                 </p>
               )}
               {row.createdByName && (
                 <span className="text-xs text-muted-foreground">
-                  by {row.createdByName}
+                  {t('by {{value1}}', { value1: row.createdByName })}
                 </span>
               )}
               {!expanded && (
@@ -626,7 +653,7 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
                       {restorePending && (
                         <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                       )}
-                      <span>Restore this version</span>
+                      <span>{t('Restore this version')}</span>
                     </Button>
                   </div>
                 )}
@@ -642,6 +669,11 @@ const PromptHistoryList: React.FC<PromptHistoryListProps> = ({
 export const PromptHistorySheet: React.FC<PromptHistorySheetProps> = (
   props
 ) => {
+  const translateEvent = useLiveTranslation('shots');
+  const translateLabel = useLabelTranslation('labels');
+
+  const { t } = useTranslation('shots');
+
   const { open, onOpenChange, mode, currentText, sequenceId } = props;
   const shotId = props.mode === 'music' ? null : props.shotId;
 
@@ -705,12 +737,15 @@ export const PromptHistorySheet: React.FC<PromptHistorySheetProps> = (
           },
           {
             onSuccess: ({ cancelled }) => {
-              if (!cancelled) toast.info('This generation already finished');
+              if (!cancelled)
+                toast.info(translateEvent('This generation already finished'));
             },
             onError: (err) =>
-              toast.error('Cancel failed', {
+              toast.error(translateEvent('Cancel failed'), {
                 description:
-                  err instanceof Error ? err.message : 'Unknown error',
+                  err instanceof Error
+                    ? err.message
+                    : translateEvent('Unknown error'),
               }),
           }
         );
@@ -722,12 +757,17 @@ export const PromptHistorySheet: React.FC<PromptHistorySheetProps> = (
             { versionId, artifact: 'image' },
             {
               onSuccess: ({ cancelled }) => {
-                if (!cancelled) toast.info('This generation already finished');
+                if (!cancelled)
+                  toast.info(
+                    translateEvent('This generation already finished')
+                  );
               },
               onError: (err) =>
-                toast.error('Cancel failed', {
+                toast.error(translateEvent('Cancel failed'), {
                   description:
-                    err instanceof Error ? err.message : 'Unknown error',
+                    err instanceof Error
+                      ? err.message
+                      : translateEvent('Unknown error'),
                 }),
             }
           );
@@ -748,10 +788,13 @@ export const PromptHistorySheet: React.FC<PromptHistorySheetProps> = (
 
   const onRestore = (variantId: string) =>
     restoreMutation.mutate(variantId, {
-      onSuccess: () => toast.success('Prompt restored'),
+      onSuccess: () => toast.success(translateEvent('Prompt restored')),
       onError: (err) =>
-        toast.error('Restore failed', {
-          description: err instanceof Error ? err.message : 'Unknown error',
+        toast.error(translateEvent('Restore failed'), {
+          description:
+            err instanceof Error
+              ? err.message
+              : translateEvent('Unknown error'),
         }),
     });
 
@@ -763,16 +806,21 @@ export const PromptHistorySheet: React.FC<PromptHistorySheetProps> = (
         onSuccess: () =>
           toast.success(
             mediaKind === 'image'
-              ? 'Image selected — linked prompt restored when available'
-              : 'Video version selected'
+              ? translateEvent(
+                  'Image selected — linked prompt restored when available'
+                )
+              : translateEvent('Video version selected')
           ),
         onError: (err) =>
           toast.error(
             mediaKind === 'image'
-              ? 'Failed to switch image version'
-              : 'Failed to switch video version',
+              ? translateEvent('Failed to switch image version')
+              : translateEvent('Failed to switch video version'),
             {
-              description: err instanceof Error ? err.message : 'Unknown error',
+              description:
+                err instanceof Error
+                  ? err.message
+                  : translateEvent('Unknown error'),
             }
           ),
       }
@@ -780,10 +828,16 @@ export const PromptHistorySheet: React.FC<PromptHistorySheetProps> = (
   };
 
   const description = isMusic
-    ? 'Append-only history. Restore writes a new entry without deleting anything.'
+    ? t(
+        'Append-only history. Restore writes a new entry without deleting anything.'
+      )
     : mode === 'visual'
-      ? 'Prompt edits and generated images. Selecting an image restores the still and the prompt that produced it (when linked). A Softened version is an automatic rewrite to pass a content checker — the original stays here.'
-      : 'Prompt edits and rendered videos. Selecting a video repoints playback without deleting anything.';
+      ? t(
+          'Prompt edits and generated images. Selecting an image restores the still and the prompt that produced it (when linked). A Softened version is an automatic rewrite to pass a content checker — the original stays here.'
+        )
+      : t(
+          'Prompt edits and rendered videos. Selecting a video repoints playback without deleting anything.'
+        );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -792,7 +846,7 @@ export const PromptHistorySheet: React.FC<PromptHistorySheetProps> = (
         className="flex w-full flex-col gap-0 sm:max-w-md"
       >
         <SheetHeader>
-          <SheetTitle>{TITLE[mode]}</SheetTitle>
+          <SheetTitle>{translateLabel(TITLE[mode])}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
         </SheetHeader>
 
@@ -815,10 +869,10 @@ export const PromptHistorySheet: React.FC<PromptHistorySheetProps> = (
           >
             <TabsList className="w-full">
               <TabsTrigger value="prompt" className="flex-1">
-                Prompt
+                {t('Prompt')}
               </TabsTrigger>
               <TabsTrigger value="media" className="flex-1">
-                {mode === 'visual' ? 'Images' : 'Videos'}
+                {mode === 'visual' ? t('Images') : t('Videos')}
               </TabsTrigger>
             </TabsList>
             <TabsContent

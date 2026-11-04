@@ -1,3 +1,6 @@
+import type { TFunction } from 'i18next';
+import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
+import { useTranslation } from 'react-i18next';
 /**
  * The dialogue an audio-capable video model will be told to speak (#1559).
  *
@@ -115,13 +118,18 @@ export function shotPlayback(
  * regenerating. Null on Generated.
  */
 export function shotSpokenByNote(
-  lines: readonly DialogueLine[]
+  lines: readonly DialogueLine[],
+  translate?: TFunction<'shots'>
 ): string | null {
   const value = shotPickerValue(lines);
   if (lines.length === 0 || value === GENERATED_VOICE) return null;
   return value === VIDEO_MODEL_VOICE_TOKEN
-    ? 'Video model speaks the lines'
-    : `${value} speaks the lines`;
+    ? (translate?.('Video model speaks the lines', { ns: 'shots' }) ??
+        'Video model speaks the lines')
+    : (translate?.('{{value1}} speaks the lines', {
+        ns: 'shots',
+        value1: value,
+      }) ?? `${value} speaks the lines`);
 }
 
 const ReadingRow: React.FC<{
@@ -130,19 +138,25 @@ const ReadingRow: React.FC<{
   onDiscard: (reading: ShotDialogueReading) => void;
   usingId?: string | null;
 }> = ({ reading, onUse, onDiscard, usingId }) => {
-  const recordedAt = new Date(reading.createdAt).toLocaleString();
+  const { formatDateTime } = useLocaleFormatting();
+  const { t } = useTranslation('shots');
+
+  const recordedAt = formatDateTime(new Date(reading.createdAt));
   const facts = [
     recordedAt,
     formatElementDuration(reading.toSeconds - reading.fromSeconds),
-    reading.source === 'context' ? 'Generated with another shot' : null,
-    reading.source === 'mic' ? 'Your take' : null,
+    reading.source === 'context' ? t('Generated with another shot') : null,
+    reading.source === 'mic' ? t('Your take') : null,
     reading.unclearLineCount > 0
-      ? `${reading.unclearLineCount} ${reading.unclearLineCount === 1 ? 'line' : 'lines'} may not be said clearly`
+      ? t('{{value1}} {{value2}} may not be said clearly', {
+          value1: reading.unclearLineCount,
+          value2: reading.unclearLineCount === 1 ? t('line') : t('lines'),
+        })
       : null,
     reading.mismatch === 'voice'
-      ? 'Voice changed since'
+      ? t('Voice changed since')
       : reading.mismatch === 'lines'
-        ? 'Lines changed since'
+        ? t('Lines changed since')
         : null,
   ].filter(Boolean);
   return (
@@ -156,27 +170,31 @@ const ReadingRow: React.FC<{
           {reading.selected ? (
             <span className="flex items-center gap-1 text-xs font-medium">
               <Check className="h-3 w-3" aria-hidden />
-              Current
+              {t('Current')}
             </span>
           ) : (
             <Button
               size="sm"
               variant="ghost"
               disabled={usingId != null || !reading.matchesCurrentLines}
-              aria-label={`Use reading from ${recordedAt}`}
+              aria-label={t('Use reading from {{value1}}', {
+                value1: recordedAt,
+              })}
               onClick={() => onUse(reading.id)}
             >
-              {usingId === reading.id ? 'Using…' : 'Use'}
+              {usingId === reading.id ? t('Using…') : t('Use')}
             </Button>
           )}
           <Button
             size="sm"
             variant="ghost"
             disabled={usingId != null}
-            aria-label={`Discard reading from ${recordedAt}`}
+            aria-label={t('Discard reading from {{value1}}', {
+              value1: recordedAt,
+            })}
             onClick={() => onDiscard(reading)}
           >
-            Discard
+            {t('Discard')}
           </Button>
         </div>
       </div>
@@ -186,7 +204,7 @@ const ReadingRow: React.FC<{
         preload="none"
         src={`${reading.speechUrl}#t=${reading.fromSeconds},${reading.toSeconds}`}
         className="w-full"
-        aria-label={`Reading from ${recordedAt}`}
+        aria-label={t('Reading from {{value1}}', { value1: recordedAt })}
       />
     </li>
   );
@@ -205,6 +223,8 @@ export const ShotReadingsList: React.FC<{
   usingId?: string | null;
   collapsible?: boolean;
 }> = ({ readings, onUse, onDiscard, usingId, collapsible }) => {
+  const { t } = useTranslation('shots');
+
   const [pendingDiscard, setPendingDiscard] =
     useState<ShotDialogueReading | null>(null);
   const rows = (
@@ -228,22 +248,24 @@ export const ShotReadingsList: React.FC<{
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard this reading?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Discard this reading?')}</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDiscard?.selected
-                ? 'It is the shot’s current audio. The next render records a new one.'
-                : 'It leaves this list. The recording it came from is kept.'}
+                ? t(
+                    'It is the shot’s current audio. The next render records a new one.'
+                  )
+                : t('It leaves this list. The recording it came from is kept.')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (pendingDiscard) onDiscard(pendingDiscard.id);
                 setPendingDiscard(null);
               }}
             >
-              Discard
+              {t('Discard')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -254,7 +276,7 @@ export const ShotReadingsList: React.FC<{
     if (readings.length === 0) {
       return (
         <p className="flex h-8 items-center text-xs text-muted-foreground">
-          No readings yet
+          {t('No readings yet')}
         </p>
       );
     }
@@ -266,7 +288,7 @@ export const ShotReadingsList: React.FC<{
             variant="ghost"
             className="group h-8 justify-between"
           >
-            Readings · {readings.length}
+            {t('Readings ·')} {readings.length}
             <ChevronDown
               className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180 motion-reduce:transition-none"
               aria-hidden
@@ -282,7 +304,7 @@ export const ShotReadingsList: React.FC<{
   if (readings.every((r) => r.selected && r.matchesCurrentLines)) return null;
   return (
     <div className="flex flex-col gap-2 rounded-md border p-3">
-      <span className="text-xs font-medium">Readings</span>
+      <span className="text-xs font-medium">{t('Readings')}</span>
       {rows}
     </div>
   );
@@ -306,35 +328,40 @@ export const ShotMissingVoices: React.FC<{
   onGenerate: ((characterId: string) => void) | null;
   /** Shown beside the button: what one design costs. */
   cost?: React.ReactNode;
-}> = ({ speakers, onGenerate, cost }) => (
-  <ul className="flex flex-col gap-1" aria-live="polite">
-    {speakers.map((speaker) => (
-      <li
-        key={speaker.characterId}
-        className="flex min-h-8 items-center justify-between gap-2"
-      >
-        <span className="text-xs text-muted-foreground">
-          {speaker.generating
-            ? `Generating ${speaker.name}’s voice…`
-            : `${speaker.name} has no voice`}
-        </span>
-        {onGenerate && !speaker.generating ? (
-          <Button
-            size="sm"
-            variant="outline"
-            aria-label={`Generate a voice for ${speaker.name}`}
-            onClick={() => onGenerate(speaker.characterId)}
-          >
-            <span className="inline-flex items-center gap-2">
-              Generate voice
-              {cost}
-            </span>
-          </Button>
-        ) : null}
-      </li>
-    ))}
-  </ul>
-);
+}> = ({ speakers, onGenerate, cost }) => {
+  const { t } = useTranslation('shots');
+  return (
+    <ul className="flex flex-col gap-1" aria-live="polite">
+      {speakers.map((speaker) => (
+        <li
+          key={speaker.characterId}
+          className="flex min-h-8 items-center justify-between gap-2"
+        >
+          <span className="text-xs text-muted-foreground">
+            {speaker.generating
+              ? t('Generating {{value1}}’s voice…', { value1: speaker.name })
+              : t('{{value1}} has no voice', { value1: speaker.name })}
+          </span>
+          {onGenerate && !speaker.generating ? (
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label={t('Generate a voice for {{value1}}', {
+                value1: speaker.name,
+              })}
+              onClick={() => onGenerate(speaker.characterId)}
+            >
+              <span className="inline-flex items-center gap-2">
+                {t('Generate voice')}
+                {cost}
+              </span>
+            </Button>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+};
 
 /** A dialogue speech in flight for this shot (#1657). */
 export type ShotDialogueClaimRow = {
@@ -353,6 +380,8 @@ export const ShotSpeechesInFlight: React.FC<{
   onCancel: (claimId: string) => void;
   cancellingId?: string | null;
 }> = ({ claims, onCancel, cancellingId }) => {
+  const { t } = useTranslation('shots');
+
   if (claims.length === 0) return null;
   return (
     <ul className="flex flex-col gap-1" aria-live="polite">
@@ -367,8 +396,8 @@ export const ShotSpeechesInFlight: React.FC<{
               aria-hidden
             />
             {claim.willBecomeCurrent
-              ? 'Generating…'
-              : 'Generating… will not replace the current audio'}
+              ? t('Generating…')
+              : t('Generating… will not replace the current audio')}
           </span>
           {claim.willBecomeCurrent ? (
             <Button
@@ -377,7 +406,7 @@ export const ShotSpeechesInFlight: React.FC<{
               disabled={cancellingId != null}
               onClick={() => onCancel(claim.id)}
             >
-              {cancellingId === claim.id ? 'Cancelling…' : 'Cancel'}
+              {cancellingId === claim.id ? t('Cancelling…') : t('Cancel')}
             </Button>
           ) : null}
         </li>
@@ -411,13 +440,16 @@ export const ShotDialogueHistory: React.FC<{
   onUse: (versionId: string) => void;
   usingId?: string | null;
 }> = ({ versions, onUse, usingId }) => {
+  const { formatDateTime } = useLocaleFormatting();
+  const { t } = useTranslation('shots');
+
   if (versions.length < 2) return null;
   return (
     <section
       className="flex flex-col gap-2 rounded-md border p-3"
-      aria-label="Dialogue history"
+      aria-label={t('Dialogue history')}
     >
-      <span className="text-xs font-medium">History</span>
+      <span className="text-xs font-medium">{t('History')}</span>
       <ul className="flex flex-col gap-1">
         {versions.map((version) => {
           const created = new Date(version.createdAt);
@@ -434,13 +466,13 @@ export const ShotDialogueHistory: React.FC<{
               <div className="flex min-w-0 flex-col">
                 <p className="text-xs font-medium">
                   {version.voiceOnly
-                    ? 'Audio source changed'
+                    ? t('Audio source changed')
                     : DIALOGUE_VERSION_SOURCE_LABELS[version.source]}{' '}
                   <time
                     dateTime={created.toISOString()}
                     className="font-normal text-muted-foreground"
                   >
-                    {created.toLocaleString()}
+                    {formatDateTime(created)}
                   </time>
                 </p>
                 <p className="truncate text-xs text-muted-foreground">{said}</p>
@@ -448,17 +480,19 @@ export const ShotDialogueHistory: React.FC<{
               {version.selected ? (
                 <span className="flex items-center gap-1 text-xs font-medium">
                   <Check className="h-3 w-3" aria-hidden />
-                  Current
+                  {t('Current')}
                 </span>
               ) : (
                 <Button
                   size="sm"
                   variant="ghost"
                   disabled={usingId != null}
-                  aria-label={`Use lines from ${created.toLocaleString()}`}
+                  aria-label={t('Use lines from {{value1}}', {
+                    value1: formatDateTime(created),
+                  })}
                   onClick={() => onUse(version.id)}
                 >
-                  {usingId === version.id ? 'Using…' : 'Use'}
+                  {usingId === version.id ? t('Using…') : t('Use')}
                 </Button>
               )}
             </li>
@@ -496,10 +530,12 @@ export const MotionDialoguePanel: React.FC<{
   lineList,
   play,
 }) => {
+  const { t } = useTranslation('shots');
+
   const lines = dialogue?.presence ? dialogue.lines : [];
   const heading = (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-sm font-medium">Dialogue</span>
+      <span className="text-sm font-medium">{t('Dialogue')}</span>
       {play}
     </div>
   );
@@ -517,7 +553,9 @@ export const MotionDialoguePanel: React.FC<{
   const voices = (elements ?? []).filter((el) => el.kind === 'audio');
   const generatedLabel = (() => {
     const length = formatElementDuration(clip?.durationSeconds ?? null);
-    return length ? `Generated · ${length}` : 'Generated';
+    return length
+      ? t('Generated · {{value1}}', { value1: length })
+      : 'Generated';
   })();
   const { value, seconds: audioSeconds } = shotPlayback(lines, voices, clip);
   const orphans =
@@ -526,10 +564,13 @@ export const MotionDialoguePanel: React.FC<{
       : orphanedVoiceTokens(lines, new Set(voices.map((el) => el.token)));
   const voiceItems: Record<string, string> = {
     [GENERATED_VOICE]: generatedLabel,
-    [VIDEO_MODEL_VOICE_TOKEN]: 'Video model',
+    [VIDEO_MODEL_VOICE_TOKEN]: t('Video model'),
     ...Object.fromEntries(voices.map((el) => [el.token, voiceLabel(el)])),
     ...Object.fromEntries(
-      orphans.map((token) => [token, `${token} (deleted)`])
+      orphans.map((token) => [
+        token,
+        t('{{value1}} (deleted)', { value1: token }),
+      ])
     ),
   };
   const dialogueLonger = dialogueExceedsShotDuration(audioSeconds, shotSeconds);
@@ -547,7 +588,7 @@ export const MotionDialoguePanel: React.FC<{
     <div className="flex flex-col gap-2">
       {heading}
       <p className="text-xs text-muted-foreground">
-        Appended to the prompt at render
+        {t('Appended to the prompt at render')}
       </p>
       {onChange && (
         <Select
@@ -558,12 +599,18 @@ export const MotionDialoguePanel: React.FC<{
           }}
           disabled={disabled}
         >
-          <SelectTrigger size="sm" className="w-full" aria-label="Shot audio">
-            <SelectValue placeholder="Generated" />
+          <SelectTrigger
+            size="sm"
+            className="w-full"
+            aria-label={t('Shot audio')}
+          >
+            <SelectValue placeholder={t('Generated')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={GENERATED_VOICE}>{generatedLabel}</SelectItem>
-            <SelectItem value={VIDEO_MODEL_VOICE_TOKEN}>Video model</SelectItem>
+            <SelectItem value={VIDEO_MODEL_VOICE_TOKEN}>
+              {t('Video model')}
+            </SelectItem>
             {voices.map((el) => (
               <SelectItem key={el.id} value={el.token}>
                 <span>{voiceLabel(el)}</span>
@@ -571,7 +618,7 @@ export const MotionDialoguePanel: React.FC<{
             ))}
             {orphans.map((token) => (
               <SelectItem key={token} value={token}>
-                <span>{token} (deleted)</span>
+                <span>{t('{{value1}} (deleted)', { value1: token })}</span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -579,22 +626,30 @@ export const MotionDialoguePanel: React.FC<{
       )}
       {orphans.length > 0 && (
         <p className="text-xs text-warning">
-          {orphans.join(', ')} was deleted — pick another source, or this shot
-          won't render.
+          {t(
+            "{{value1}} was deleted — pick another source, or this shot won't render.",
+            { value1: orphans.join(', ') }
+          )}
         </p>
       )}
       {dialogueLonger && audioSeconds != null && shotSeconds != null && (
         <p className="text-xs text-muted-foreground">
-          Dialogue is {formatElementDuration(audioSeconds)} — this shot is{' '}
-          {formatElementDuration(shotSeconds)}. Generate will stretch the shot
-          to cover it.
+          {t(
+            'Dialogue is {{value1}} — this shot is {{value2}}. Generate will stretch the shot to cover it.',
+            {
+              value1: formatElementDuration(audioSeconds),
+              value2: formatElementDuration(shotSeconds),
+            }
+          )}
         </p>
       )}
       {lineList}
       {readings}
       {!onChange && (
         <p className="text-xs text-muted-foreground">
-          This model generates its own voices — it takes no audio reference.
+          {t(
+            'This model generates its own voices — it takes no audio reference.'
+          )}
         </p>
       )}
     </div>

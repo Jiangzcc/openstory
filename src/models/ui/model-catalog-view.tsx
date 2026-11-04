@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useTranslation } from 'react-i18next';
 import { ModelFamilyCard } from './model-family-card';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { Button } from '@/ui/shadcn/button';
@@ -63,6 +65,8 @@ const ModelResults: FC<{
   activity: CatalogActivity | undefined;
   q: string | undefined;
 }> = ({ activity, q }) => {
+  const { t } = useTranslation('models');
+
   const {
     data,
     fetchNextPage,
@@ -111,9 +115,9 @@ const ModelResults: FC<{
           <EmptyMedia variant="icon">
             <Boxes />
           </EmptyMedia>
-          <EmptyTitle>No models found</EmptyTitle>
+          <EmptyTitle>{t('No models found')}</EmptyTitle>
           <EmptyDescription>
-            Try a different search or activity filter.
+            {t('Try a different search or activity filter.')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -140,7 +144,7 @@ const ModelResults: FC<{
           <div ref={sentinelRef} aria-hidden="true" />
           {isFetchNextPageError && (
             <p role="alert" className="text-sm text-destructive">
-              Couldn't load more models.
+              {t("Couldn't load more models.")}
             </p>
           )}
           <Button
@@ -149,10 +153,10 @@ const ModelResults: FC<{
             disabled={isFetchingNextPage}
           >
             {isFetchingNextPage
-              ? 'Loading…'
+              ? t('Loading…')
               : isFetchNextPageError
-                ? 'Try again'
-                : 'Load more'}
+                ? t('Try again')
+                : t('Load more')}
           </Button>
         </>
       )}
@@ -171,6 +175,10 @@ export const ModelCatalogView: FC<ModelCatalogViewProps> = ({
   onActivityChange,
   onSearchChange,
 }) => {
+  const translateLabel = useLabelTranslation('models');
+
+  const { t } = useTranslation('models');
+
   // Local echo of the URL's q so typing is instant; commits are debounced.
   // Deliberately not synced back from the URL (matches StyleLibraryView):
   // syncing would clobber keystrokes typed between commit and navigation.
@@ -216,16 +224,16 @@ export const ModelCatalogView: FC<ModelCatalogViewProps> = ({
               </InputGroupAddon>
               <InputGroupInput
                 type="search"
-                placeholder="Search models"
+                placeholder={t('Search models')}
                 value={search}
                 onChange={handleSearchInput}
-                aria-label="Search models"
+                aria-label={t('Search models')}
               />
               {search && (
                 <InputGroupAddon align="inline-end">
                   <Button variant="ghost" size="icon" onClick={handleClear}>
                     <X />
-                    <span className="sr-only">Clear search</span>
+                    <span className="sr-only">{t('Clear search')}</span>
                   </Button>
                 </InputGroupAddon>
               )}
@@ -248,7 +256,7 @@ export const ModelCatalogView: FC<ModelCatalogViewProps> = ({
               value={filter.value}
               className="rounded-full"
             >
-              {filter.label}
+              {translateLabel(filter.label)}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>

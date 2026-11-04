@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +20,9 @@ export const ModelCoverageMarker = ({
 }: {
   coverage?: ModelCoverage;
 }) => {
+  const { t } = useTranslation('models');
+  const translateLabel = useLabelTranslation('models');
+
   if (!coverage || coverage.status === 'pending') return null;
   const { status, completed, total } = coverage;
   const partial =
@@ -48,7 +53,10 @@ export const ModelCoverageMarker = ({
           Icon: Check,
           className: 'text-muted-foreground',
           label: partial
-            ? `Generated for ${completed} of ${total} scenes — select, then Set to use`
+            ? t(
+                'Generated for {{value1}} of {{value2}} scenes — select, then Set to use',
+                { value1: completed, value2: total }
+              )
             : 'Generated for every scene — select, then Set to use',
         };
     }
@@ -60,7 +68,7 @@ export const ModelCoverageMarker = ({
         <TooltipTrigger asChild>
           <span
             className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground"
-            aria-label={label}
+            aria-label={translateLabel(label)}
           >
             {partial && (
               <span className="tabular-nums">
@@ -70,7 +78,7 @@ export const ModelCoverageMarker = ({
             <Icon className={`size-3.5 ${className}`} />
           </span>
         </TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
+        <TooltipContent>{translateLabel(label)}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

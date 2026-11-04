@@ -24,6 +24,23 @@ function sample(
 }
 
 describe('buildSampleEntries', () => {
+  it('localizes display names without changing source slugs or records', () => {
+    const style = makeStyle({
+      id: 'localized-sample',
+      name: 'Action',
+      isTemplate: true,
+      category: 'commercial',
+      sampleVideos: [sample('canonical', 0)],
+    });
+    const [entry] = buildSampleEntries([style], () => '动作片');
+
+    expect(entry?.styleName).toBe('动作片');
+    expect(entry?.slug).toBe('action');
+    expect(entry?.styleId).toBe(style.id);
+    expect(style.name).toBe('Action');
+    expect(buildSampleEntries([style])[0]?.styleName).toBe('Action');
+  });
+
   it('shows one entry per style, preferring the bespoke clip when present', () => {
     const styles = [
       makeStyle({

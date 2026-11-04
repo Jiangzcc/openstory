@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { NewLocationDialog } from '@/cast/ui/location-library/new-location-dialog';
 import { TeamLocationList } from '@/cast/ui/location-library/team-location-list';
 import { LibraryGridSkeleton } from '@/cast/ui/library-virtual-grid';
@@ -15,10 +16,14 @@ import { z } from 'zod';
 export const Route = createFileRoute('/_app/locations/')({
   validateSearch: z.object({ search: z.string().optional() }),
   component: LocationsPage,
-  staticData: { breadcrumb: 'Locations' },
+  staticData: {
+    breadcrumb: { label: 'Locations', translationKey: 'Locations' },
+  },
 });
 
 function LocationsPage() {
+  const { t } = useTranslation('pages');
+
   const { data: session, isPending } = useAuthSession();
   const navigate = useNavigate();
   const { search } = Route.useSearch();
@@ -27,7 +32,7 @@ function LocationsPage() {
   return (
     <div ref={scrollRef} className="h-full overflow-auto">
       <PageIntro
-        title="Locations"
+        title={t('Locations')}
         actions={
           session ? (
             <NewLocationDialog
@@ -41,15 +46,15 @@ function LocationsPage() {
           ) : undefined
         }
       >
-        Every location your team has. Use one in a script with @.
+        {t('Every location your team has. Use one in a script with @.')}
       </PageIntro>
       <PageContainer padding="none" className="pb-8">
         {session ? (
           <div className="flex flex-col gap-6">
             <Input
               type="search"
-              aria-label="Search locations"
-              placeholder="Search locations…"
+              aria-label={t('Search locations')}
+              placeholder={t('Search locations…')}
               defaultValue={search ?? ''}
               className="max-w-md"
               // The URL holds the filter; the list is filtered as it is typed.
@@ -70,8 +75,8 @@ function LocationsPage() {
         ) : (
           <EmptyState
             icon={<MapPin className="h-12 w-12" />}
-            title="Sign in to see your locations"
-            description="Locations belong to your team."
+            title={t('Sign in to see your locations')}
+            description={t('Locations belong to your team.')}
             action={<SignInButton />}
           />
         )}

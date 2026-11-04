@@ -206,6 +206,27 @@ describe('filterStyles', () => {
     });
   });
 
+  describe('localized display search', () => {
+    const displayTexts = (style: Style) =>
+      style.id === 'cinematic-1' ? ['获奖电影感', '情感丰富的电影画面'] : [];
+
+    test('matches displayed Chinese without changing stored names or identity', () => {
+      const result = filterStyles(mockStyles, 'all', '获奖', displayTexts);
+      expect(result).toEqual([mockStyles[0]]);
+      expect(result[0]).toBe(mockStyles[0]);
+      expect(result[0]?.name).toBe('Award Season');
+    });
+
+    test('keeps English search and category filtering with display text', () => {
+      expect(filterStyles(mockStyles, 'all', 'award', displayTexts)).toEqual([
+        mockStyles[0],
+      ]);
+      expect(
+        filterStyles(mockStyles, 'animation', '获奖', displayTexts)
+      ).toEqual([]);
+    });
+  });
+
   describe('edge cases', () => {
     test('handles empty styles array', () => {
       const result = filterStyles([], 'all', '');
