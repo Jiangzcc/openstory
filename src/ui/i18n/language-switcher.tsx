@@ -1,12 +1,13 @@
 import { useLocale } from './use-locale';
 import type { Locale } from '@/platform/i18n/locale';
+import { Button } from '@/ui/shadcn/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/shadcn/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/ui/shadcn/dropdown-menu';
 import { useHydrated } from '@/ui/use-hydrated';
 import { LanguagesIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -22,28 +23,37 @@ export function LanguageSwitcher() {
   const hydrated = useHydrated();
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <Select<Locale>
-        value={locale}
-        items={LANGUAGES}
-        onValueChange={(value) => void changeLocale(value)}
-      >
-        <SelectTrigger aria-label="语言 / Language" disabled={!hydrated}>
-          <LanguagesIcon aria-hidden="true" className="size-4" />
-          <SelectValue>
-            <span lang="zh-CN">中文</span>
-            <span aria-hidden="true">/</span>
-            <span lang="en">English</span>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent align="end">
-          {LANGUAGES.map(({ value, label }) => (
-            <SelectItem key={value} value={value} lang={value}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex shrink-0 flex-col items-end gap-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-11 sm:size-8"
+            aria-label="语言 / Language"
+            title={t('Language')}
+            disabled={!hydrated}
+          >
+            <LanguagesIcon aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" aria-label={t('Language')}>
+          <DropdownMenuRadioGroup value={locale}>
+            {LANGUAGES.map(({ value, label }) => (
+              <DropdownMenuRadioItem
+                key={value}
+                value={value}
+                lang={value}
+                className="min-h-11 sm:min-h-8"
+                onSelect={() => void changeLocale(value)}
+              >
+                {label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {saveFailed && (
         <output className="text-xs text-muted-foreground">
           {t(

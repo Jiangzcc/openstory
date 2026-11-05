@@ -35,6 +35,13 @@ Generate asks how far to run. **One ordered list**, `GENERATION_STAGES` in
 motion → music), drives the Generate-dialog slider, the progress banner and
 the continue slider. Casting is part of `script`.
 
+`GenerationStopSlider` translates the complete tick labels and stop sentences
+at display time through `useLabelTranslation('sequences')`, with the shared
+`labels` namespace as fallback. `pipeline.ts` retains the English source copy
+and stage values. Two-line tick labels and the slider's draft-only Finals tick
+are translated as complete source strings; intrinsic tick widths keep translated
+end labels inside the track without truncating them to a single character.
+
 - **`stopAt` is the only word on how far a run goes.** It is chosen per click,
   snapshotted onto `sequences.generationStopAt`, and REQUIRED on the
   storyboard / analyze-script payloads (the launcher resolves it via
