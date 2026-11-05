@@ -9,8 +9,10 @@ import { ImageModelSelector } from '@/models/ui/pickers/image-model-selector';
 import { ModelSelector } from '@/models/ui/pickers/model-selector';
 import {
   DEFAULT_ANALYSIS_MODEL,
+  isCustomAnalysisModelId,
   isValidAnalysisModelId,
 } from '@/models/models.config';
+import { textModelSelectionError } from '@/models/ui/use-text-model-catalog';
 import { Button } from '@/ui/shadcn/button';
 import { Checkbox } from '@/ui/shadcn/checkbox';
 import { ScrollArea } from '@/ui/shadcn/scroll-area';
@@ -356,8 +358,16 @@ const SceneListComponent: React.FC<SceneListProps> = ({
     setDraftStartFrames(generateStartFrames);
   }, [generateStartFrames]);
   const voiceDesignAvailable = useVoiceDesignAvailable();
-  const { settings: generationSettings, isLoaded: generationSettingsLoaded } =
-    useGenerationSettings();
+  const {
+    settings: generationSettings,
+    isLoaded: generationSettingsLoaded,
+    textModelCatalog,
+  } = useGenerationSettings();
+  const selectedAnalysisModel =
+    isValidAnalysisModelId(analysisModel) ||
+    isCustomAnalysisModelId(analysisModel)
+      ? analysisModel
+      : DEFAULT_ANALYSIS_MODEL;
   // Voices are on wherever this deployment can design one (#2067). Nobody
   // passes a boolean. The recorded pipeline pins generation settings off;
   // until that pin loads, keep the row so a replay does not ask for voices.
@@ -545,6 +555,13 @@ const SceneListComponent: React.FC<SceneListProps> = ({
   const continueLabel = planWorkLabel(continueWork);
   const continueUses = (...kinds: PlanUnitRef['kind'][]) =>
     continueWork.some((unit) => kinds.includes(unit.kind));
+  const analysisModelError = continueUses('voice', 'spec', 'prompt:music')
+    ? textModelSelectionError(
+        [selectedAnalysisModel],
+        textModelCatalog,
+        'structuredOutput'
+      )
+    : null;
   // The continue button offers work before Motion; clips and music keep
   // their own footers' buttons (#1780).
   const continueStage = firstStageWithWork(continueWork);
@@ -570,7 +587,12 @@ const SceneListComponent: React.FC<SceneListProps> = ({
   );
 
   const handleContinue = async () => {
-    if (!onContinueGeneration || continueWork.length === 0) return;
+    if (
+      !onContinueGeneration ||
+      continueWork.length === 0 ||
+      analysisModelError
+    )
+      return;
     await runFooterAction(`Failed to ${continueLabel.toLowerCase()}`, () =>
       onContinueGeneration({
         stopAt: continueStopAtClamped,
@@ -800,11 +822,7 @@ const SceneListComponent: React.FC<SceneListProps> = ({
           {/* Voice design writes its description and range script with it. */}
           {continueUses('voice', 'spec', 'prompt:music') && (
             <ModelSelector
-              selectedModels={[
-                isValidAnalysisModelId(analysisModel)
-                  ? analysisModel
-                  : DEFAULT_ANALYSIS_MODEL,
-              ]}
+              selectedModels={[selectedAnalysisModel]}
               onModelsChange={([model]) => {
                 if (model) onModelsChange({ analysisModel: model });
               }}
@@ -855,6 +873,7 @@ const SceneListComponent: React.FC<SceneListProps> = ({
               isGenerating ||
               planLoading ||
               modelsSaving ||
+              Boolean(analysisModelError) ||
               continueWork.length === 0
             }
           >
@@ -874,6 +893,11 @@ const SceneListComponent: React.FC<SceneListProps> = ({
           {continueWork.length > 0 && (
             <p className="text-xs text-muted-foreground">
               {planWorkLine(continueWork, translatePlan)}
+            </p>
+          )}
+          {analysisModelError && (
+            <p role="alert" className="text-xs text-destructive">
+              {analysisModelError.message}
             </p>
           )}
           {continueBlocked.map((line) => (

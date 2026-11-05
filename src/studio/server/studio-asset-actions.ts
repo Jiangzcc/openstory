@@ -5,7 +5,11 @@
 
 import { reportMissingBillingCost } from '@/billing/billing-observability';
 import { estimateLLMCost } from '@/billing/cost-estimation';
-import { InsufficientCreditsError, NotFoundError } from '@/platform/errors';
+import {
+  InsufficientCreditsError,
+  NotFoundError,
+  ValidationError,
+} from '@/platform/errors';
 import { getLogger } from '@/platform/logger';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import {
@@ -14,10 +18,12 @@ import {
 } from '@/platform/server/storage/buckets';
 import { deleteFile } from '@/platform/server/storage/storage-cloudflare';
 import type { StudioPromptDraftInput } from '@/studio/schema';
-import {
-  draftStudioPrompt,
-  STUDIO_DRAFT_MODEL,
-} from '@/studio/server/studio-prompt-draft';
+import { draftStudioPrompt } from '@/studio/server/studio-prompt-draft';
+
+import { getAnalysisModelById } from '@/models/models.config';
+import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import type { TextModel } from '@/models/models';
+import type { TextModelRoutingSnapshot } from '@/models/text-channels';
 
 const logger = getLogger(['openstory', 'studio', 'assets']);
 
@@ -98,6 +104,24 @@ export async function getStudioEditHistory(
   return history;
 }
 
+async function resolveStudioDraftKey(
+  scopedDb: ScopedDb,
+  selected: TextModel,
+  snapshot: TextModelRoutingSnapshot,
+  hasImages: boolean
+) {
+  const definition = getAnalysisModelById(
+    selected,
+    textModelCatalogFromRouting(snapshot)
+  );
+  if (!definition || (hasImages && !definition.vision)) {
+    throw new ValidationError(
+      'The Studio draft model is unavailable or lacks vision support.'
+    );
+  }
+  return scopedDb.apiKeys.resolveLlmKey(selected, snapshot);
+}
+
 /**
  * Draft a prompt from the attached references. Billed like element vision:
  * credit-gated on the platform key, charged from reported usage.
@@ -106,7 +130,16 @@ export async function draftStudioPromptForTeam(
   scopedDb: ScopedDb,
   data: StudioPromptDraftInput
 ): Promise<{ prompt: string }> {
-  const llmKey = await scopedDb.apiKeys.resolveLlmKey(STUDIO_DRAFT_MODEL);
+  const snapshot = await scopedDb.textChannels.getSnapshot();
+  const extraModels = textModelCatalogFromRouting(snapshot);
+  const { studioDraft: model } =
+    await scopedDb.modelConfiguration.get(extraModels);
+  const hasImages =
+    Boolean(data.startImageUrl || data.endImageUrl) ||
+    data.references.some((reference) => reference.kind === 'image');
+  const resolveLlmKey = (selected: TextModel) =>
+    resolveStudioDraftKey(scopedDb, selected, snapshot, hasImages);
+  const llmKey = await resolveLlmKey(model);
   if (llmKey.source !== 'team') {
     const canAfford = await scopedDb.billing.hasEnoughCredits(
       estimateLLMCost(1)
@@ -120,8 +153,9 @@ export async function draftStudioPromptForTeam(
 
   const result = await draftStudioPrompt({
     ...data,
+    model,
     llmKey,
-    resolveLlmKey: (model) => scopedDb.apiKeys.resolveLlmKey(model),
+    resolveLlmKey,
     observability: { userId: scopedDb.userId, tags: ['studio', 'draft'] },
   });
 

@@ -4,6 +4,12 @@
  */
 
 import type { TextModel } from '@/models/models';
+import {
+  assertConfiguredTextCapabilities,
+  configuredTextCostUsd,
+  configuredTextModelOptions,
+  configuredTextUsage,
+} from './configured-text';
 import { getMaxOutputTokens } from '@/models/models.config';
 import { reportMissingBillingCost } from '@/billing/billing-observability';
 import { usdToMicros, ZERO_MICROS, type Microdollars } from '@/billing/money';
@@ -160,8 +166,20 @@ export function createUsageCapture(): {
 export function llmCostFromUsage(
   usage: TokenUsage | undefined,
   modelId: string,
-  via?: LlmKeyInfo['via']
+  keyInfo?: LlmKeyInfo['via'] | LlmKeyInfo
 ): Microdollars {
+  const via = typeof keyInfo === 'string' ? keyInfo : keyInfo?.via;
+  if (via === 'compatible') {
+    const cost =
+      typeof keyInfo === 'object' && keyInfo.via === 'compatible'
+        ? configuredTextCostUsd(usage, keyInfo.route)
+        : usageHasCost(usage)
+          ? usage.cost
+          : undefined;
+    return cost === undefined
+      ? missingLlmCost(usage, modelId, via)
+      : usdToMicros(cost);
+  }
   if (usageHasCost(usage)) {
     return usdToMicros(usage.cost);
   }
@@ -186,6 +204,14 @@ export function llmCostFromUsage(
     if (cost !== undefined) return cost;
   }
 
+  return missingLlmCost(usage, modelId, via);
+}
+
+function missingLlmCost(
+  usage: TokenUsage | undefined,
+  modelId: string,
+  via: LlmKeyInfo['via'] | undefined
+): Microdollars {
   reportMissingBillingCost({
     source: 'llm-cost-from-usage',
     modelId,
@@ -674,9 +700,10 @@ function buildModelOptions(params: LLMRequestParams) {
 
 /** Which API a chat call routes to — decided once in {@link baseChatOptions}
  *  so the adapter, options object, and tools always agree. */
-type ChatRoute = 'xai' | 'google' | 'openrouter' | 'llmtr';
+type ChatRoute = 'xai' | 'google' | 'openrouter' | 'llmtr' | 'compatible';
 
 function resolveChatRoute(params: LLMRequestParams): ChatRoute {
+  if (params.apiKey?.via === 'compatible') return 'compatible';
   if (resolveNativeGrokModel(params.model, params.apiKey)) return 'xai';
   if (resolveNativeGeminiModel(params.model, params.apiKey)) return 'google';
   if (params.apiKey?.via === 'llmtr') return 'llmtr';
@@ -695,7 +722,7 @@ function resolveChatRoute(params: LLMRequestParams): ChatRoute {
  */
 function buildTools(params: LLMRequestParams, route: ChatRoute) {
   if (!params.webSearch) return undefined;
-  if (route === 'llmtr') return undefined;
+  if (route === 'llmtr' || route === 'compatible') return undefined;
   if (route === 'xai') return [grokWebSearchTool()];
   if (route === 'google') return [googleSearchTool()];
   const opts = params.webSearch === true ? {} : params.webSearch;
@@ -708,7 +735,14 @@ function buildTools(params: LLMRequestParams, route: ChatRoute) {
   ];
 }
 
-function validateStructuredOutputSupport(model: string): void {
+function validateStructuredOutputSupport(
+  model: string,
+  key?: LlmKeyInfo
+): void {
+  if (key?.via === 'compatible') {
+    assertConfiguredTextCapabilities(key, { structuredOutput: true });
+    return;
+  }
   if (!modelSupportsStructuredOutputs(model)) {
     throw new Error(
       `Model ${model} does not support structured outputs. ` +
@@ -741,13 +775,15 @@ function baseChatOptions(params: LLMRequestParams) {
   const route = resolveChatRoute(params);
   const tools = buildTools(params, route);
   const modelOptions =
-    route === 'xai'
-      ? buildGrokModelOptions(params)
-      : route === 'google'
-        ? buildGeminiModelOptions(params)
-        : route === 'llmtr'
-          ? buildLlmtrModelOptions(params)
-          : buildModelOptions(params);
+    params.apiKey?.via === 'compatible'
+      ? configuredTextModelOptions(params.apiKey.route, params)
+      : route === 'xai'
+        ? buildGrokModelOptions(params)
+        : route === 'google'
+          ? buildGeminiModelOptions(params)
+          : route === 'llmtr'
+            ? buildLlmtrModelOptions(params)
+            : buildModelOptions(params);
   return {
     route,
     adapter: createAdapter(params.model, params.apiKey),
@@ -1005,7 +1041,11 @@ export type RegionRetries = { model: boolean; via: boolean };
 const NO_REGION_RETRY: RegionRetries = { model: false, via: false };
 
 /** What a call on `model` wrapped in `withRegionFallback` can still retry. */
-export function regionRetriesFor(model: TextModel): RegionRetries {
+export function regionRetriesFor(
+  model: TextModel,
+  key?: LlmKeyInfo
+): RegionRetries {
+  if (key?.via === 'compatible') return NO_REGION_RETRY;
   return {
     model: regionFallbackModel(model) !== null,
     via: !isGoogleRegionBlockedHere(),
@@ -1068,6 +1108,7 @@ export async function* callLLMStream<T>(
     }
     return;
   } catch (error) {
+    if (params.apiKey?.via === 'compatible') throw error;
     // Google location refusal: same model, key re-resolved off Google, never onto a different payer.
     if (
       !yielded &&
@@ -1162,7 +1203,7 @@ async function* callLLMStreamOnce<T>(
   let runError: RunErrorDetail | null = null;
   let contentFiltered = false;
   if (responseSchema) {
-    validateStructuredOutputSupport(params.model);
+    validateStructuredOutputSupport(params.model, params.apiKey);
     for await (const event of chat({
       ...baseOptions,
       outputSchema: responseSchema,
@@ -1236,7 +1277,7 @@ async function* callLLMStreamOnce<T>(
   throwNotedRunError(
     runError,
     canRetryRegionBlock && !yielded
-      ? regionRetriesFor(params.model)
+      ? regionRetriesFor(params.model, params.apiKey)
       : NO_REGION_RETRY
   );
 
@@ -1245,7 +1286,7 @@ async function* callLLMStreamOnce<T>(
     accumulated,
     done: true,
     parsed,
-    usage: usageCapture.get(),
+    usage: configuredTextUsage(usageCapture.get(), params.apiKey),
     model: params.model,
     via: params.apiKey?.via,
   };

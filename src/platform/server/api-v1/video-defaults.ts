@@ -7,7 +7,9 @@
  * the same model with the same "Draft first".
  */
 
-import { defaultVideoModelFor, type ImageToVideoModel } from '@/models/models';
+import { defaultVideoModelFor, isOfferedVideoModel } from '@/models/models';
+import type { ImageToVideoModel } from '@/models/models';
+import type { ModelConfiguration } from '@/models/model-configuration';
 import { claimBytePlusVia } from '@/models/server/byteplus-config';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 
@@ -18,13 +20,23 @@ export type ApiVideoDefaults = {
 };
 
 export async function resolveApiVideoDefaults(
-  scopedDb: ScopedDb
+  scopedDb: ScopedDb,
+  configuration?: ModelConfiguration
 ): Promise<ApiVideoDefaults> {
+  const settings = configuration ?? (await scopedDb.modelConfiguration.get());
   const falKey = await scopedDb.apiKeys.resolveOptionalKey('fal');
   const byteplus =
     claimBytePlusVia({
       native: true,
       usingOwnFalKey: falKey?.source === 'team',
     }) === 'byteplus';
-  return { videoModel: defaultVideoModelFor({ byteplus }), byteplus };
+  const fallback = isOfferedVideoModel(settings.defaultVideo, { byteplus })
+    ? settings.defaultVideo
+    : defaultVideoModelFor({ byteplus });
+  const videoModel = isOfferedVideoModel(settings.newSequenceVideo, {
+    byteplus,
+  })
+    ? settings.newSequenceVideo
+    : fallback;
+  return { videoModel, byteplus };
 }

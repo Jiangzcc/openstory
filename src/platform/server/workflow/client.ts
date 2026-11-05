@@ -9,7 +9,12 @@ import {
   resolveEnforcementState,
   type EnforcementRow,
 } from '@/platform/server/compliance/enforcement';
-import { loadComplianceRecords } from '@/platform/server/db/scoped';
+import {
+  loadComplianceRecords,
+  loadModelRuntimeConfiguration,
+} from '@/platform/server/db/scoped';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import { packModelRuntimeConfiguration } from '@/platform/server/db/scoped-workflow';
 
 import { getLogger } from '@/platform/logger';
 import { toCdnUrl } from '@/platform/server/storage/buckets';
@@ -89,6 +94,14 @@ async function assertTriggerAllowed(
   assertCanGenerate(state);
 }
 
+type TriggerWorkflowOptions = {
+  deduplicationId?: string;
+  /** Trusted server snapshot; never forward this option from client input. */
+  modelConfiguration?: ModelRuntimeConfiguration;
+  /** Mid-run callers provide live enforcement rows; requests load them. */
+  enforcement?: readonly EnforcementRow[];
+};
+
 /**
  * Trigger a durable workflow.
  *
@@ -119,14 +132,7 @@ export async function triggerWorkflowRun<
 >(
   urlPath: string,
   body: T,
-  options?: {
-    deduplicationId?: string;
-    /**
-     * Mid-run: rows from `scopedDb.liveRead.compliance.listEnforcementFor`.
-     * Request-path callers omit this and the gate loads the rows itself.
-     */
-    enforcement?: readonly EnforcementRow[];
-  }
+  options?: TriggerWorkflowOptions
 ): Promise<{ workflowRunId: string; reused: boolean }> {
   logger.info('[TriggerWorkflow]', {
     url: urlPath,
@@ -154,7 +160,12 @@ export async function triggerWorkflowRun<
   const result = await triggerCfWorkflow({
     binding,
     triggerPath: urlPath,
-    body,
+    body: {
+      ...body,
+      modelConfiguration: packModelRuntimeConfiguration(
+        options?.modelConfiguration ?? (await loadModelRuntimeConfiguration())
+      ),
+    },
     env: env,
     deduplicationId: options?.deduplicationId,
   });

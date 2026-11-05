@@ -26,6 +26,8 @@
  * and event type so the leaf workflow doesn't need to know who its caller is.
  */
 
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import { packModelRuntimeConfiguration } from '@/platform/server/db/scoped-workflow';
 import { simpleHash } from '@/platform/hash';
 import { getLogger } from '@/platform/logger';
 import type { WorkflowSleepDuration, WorkflowStep } from 'cloudflare:workers';
@@ -134,6 +136,7 @@ type SpawnAndAwaitArgs<TInput> = {
   parentInstanceId: string;
   childId: string;
   childPayload: TInput;
+  modelConfiguration: ModelRuntimeConfiguration;
   /** Step name for the spawn `step.do`. */
   spawnStepName: string;
   /** Step name for the `step.waitForEvent`. */
@@ -185,6 +188,9 @@ export async function spawnAndAwaitChild<TInput, TOutput>(
         id: childInstanceId,
         params: {
           ...args.childPayload,
+          modelConfiguration: packModelRuntimeConfiguration(
+            args.modelConfiguration
+          ),
           _parent: {
             bindingName: args.parentBindingName,
             parentInstanceId: args.parentInstanceId,

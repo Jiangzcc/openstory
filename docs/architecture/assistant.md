@@ -56,11 +56,36 @@ llmKey.via)`, under a server-minted key per iteration. A team key bills
    the stores in `src/assistant/server/db/assistant.ts`. Each store is built
    for one thread the user owns, so it cannot read across threads.
 
+Image capability is checked both on the incoming request and after `withPersistence` merges the stored transcript. `assistantVisionMiddleware` validates the effective messages on the config chain before any model call, including incremental requests that omit a historical image. A rejection after history is loaded follows the normal SSE run-error path and does not call the supplier.
+
 `GET /api/assistant/chat?threadId=` hydrates: the transcript and a paused
 approval, through `reconstructChat`. The client uses `persistence: true`, so
 a reload or a second tab paints the same thread. A thread id the browser
 kept from another sign-in answers 404 (`THREAD_NOT_FOUND`), and the client
 starts a new thread on it; an id nothing was sent to yet hydrates empty.
+
+## HTTP errors
+
+Before streaming starts, the chat route returns the API JSON error envelope
+with its HTTP status. `assistant-connection.ts` lets the SDK receive that
+response unchanged for its status-based reconnect rules, then restores
+`OpenStoryError` with the server message, code and HTTP status at the
+connection boundary. Each send, join and hydrate owns its error state.
+A rejected HTTP request must not be thrown from the fetch client: the SDK
+classifies a fetch rejection as a network read failure and may retry it.
+
+`INSUFFICIENT_CREDITS` renders the localized assistant credit message and
+uses the existing low-balance notification. Actual transport failures keep
+the SDK error and reconnection behavior. `THREAD_NOT_FOUND` on HTTP 404
+still starts a new thread.
+
+The assistant's platform credit preflight remains `estimateLLMCost(2)`:
+40,000 microdollars (US$0.04) of team balance after active reservations.
+This is the upstream fixed estimate, not the chosen model's actual charge.
+Built-in models prefer an applicable team key before the administrator's text
+channel binding; `custom:` models use their administrator binding. The assistant
+checks the resolved credential source: a platform credential requires credits,
+while a team credential skips the preflight and platform usage deduction.
 
 ## Resume
 
@@ -239,3 +264,7 @@ same events the server sends.
 ## Secondary-development localization
 
 Secondary-development localization only changes the UI: tool display names, grouped status and starter labels use the request-local i18n instance. Context-chip nouns and known attachment statuses are translated only for display; context labels, attachment names and unknown diagnostics remain verbatim. MCP/chat tool names, tool arguments, approval rules and the original starter text sent to the model stay unchanged.
+
+## Platform model recommendations
+
+With no saved user model, a new assistant uses the configured default analysis model. A saved user choice remains authoritative. watch_clip uses the separate configured internal video-understanding model and still requires its native Google route. See [Model configuration](model-configuration.md).

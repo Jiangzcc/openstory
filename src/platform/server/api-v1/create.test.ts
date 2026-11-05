@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { Style } from '@/platform/server/db/schema';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { ValidationError } from '@/platform/errors';
@@ -130,6 +131,9 @@ describe('runOneShotCreate', () => {
       },
       locations: { listTeam: teamLocations, softDeleteForTeam: locationDelete },
       apiKeys: { resolveOptionalKey: mocks.resolveOptionalKey },
+      modelConfiguration: {
+        get: async () => ({ ...DEFAULT_MODEL_CONFIGURATION }),
+      },
     }),
   };
 

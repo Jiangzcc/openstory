@@ -4,13 +4,17 @@
 
 登录页样例获认可后，用户已授权继续改造其他页面。本轮已实施现有界面、帮助内容与账号验证码邮件的中英国际化，默认中文；覆盖、验证证据及剩余验收边界见 [全站国际化实施记录](localization-implementation.md)。商业改造仍按规划推进。
 
-当前首期规划基准与确认记录见 [首期规则确认单](confirmation.md)。用户已总体接受推荐规则，D13 按最新说明调整为公网部署并允许使用 Cloudflare 部分能力；商业功能仍为规划；国际化代码覆盖与完整业务验收分别记录，商业规则尚未实施。
+当前首期规划基准与确认记录见 [首期规则确认单](confirmation.md)。用户已总体接受推荐规则，D13 按最新说明调整为公网部署并允许使用 Cloudflare 部分能力；人民币销售价、充值结算和全面禁止 BYOK 等商业规则仍为规划；国际化代码覆盖与完整业务验收分别记录。
+
+本轮在管理员默认模型配置之上，已新增管理员文本渠道、内置/自定义文本模型绑定和只读模型候选发现的源码实现，保留原有渠道。新增协议支持 OpenAI Chat Completions 与 Responses，凭证在 D1 加密保存、管理接口只写不回显；路由与凭证引用进入工作流快照。本地自动化、Mock 调用、浏览器及构建验证通过，真实网关仅做只读探测，未付费生成、未验证 Cloudflare 网络。详见 [文本渠道实施记录](text-channels.md)。
 
 ## 文档导航
 
 - [需求清单](requirements.md)：产品目标、首期范围及当前规则摘要。
 - [规则确认单](confirmation.md)：已接受的 14 项规划基准及确认记录。
 - [首期功能规格](mvp-specification.md)：角色、功能、页面、流程及上游复用范围。
+- [管理员默认模型配置](model-configuration-assessment.md)：默认推荐、内部辅助模型、后台配置和工作流快照；原有默认配置实施与验证记录。
+- [文本渠道实施记录](text-channels.md)：新增管理员渠道、文本模型绑定、增量候选、凭证轮换及路由快照；本地验证通过，真实供应商调用及部署网络待验证。
 - [验收清单](acceptance.md)：并发、失败、账务、权限、语言及公网运行场景，全部待执行。
 - [第一阶段：中文界面](localization-plan.md)：最高实施优先级，覆盖现有页面、语言切换和账号相关邮件，独立验收。
 - [i18n 开发计划](i18n-development-plan.md)：开源方案比较、模块接入、开发批次和技术验收；已验证登录页样例，其余按批次推进。
@@ -39,15 +43,15 @@
 
 ## 2. 上游基线与来源标记
 
-| 项目               | 已核对状态                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| 上游               | `https://github.com/openstory-so/openstory.git`，remote 为 `upstream`                       |
-| 本项目             | `https://github.com/Jiangzcc/openstory.git`，remote 为 `origin`                             |
-| 二开分支           | `develop`                                                                                   |
-| 当前记录的上游基线 | `1999cb15816bd9f3317b5d7ae2121685ef338663`                                                  |
-| 初次基线核对       | 初次 fetch 时 develop/main/origin/main/upstream/main 均指向该提交；后续二开以 Git 日志为准  |
-| 初次二开差异       | 基线核查时为 0；当时 `git rev-list --left-right --count upstream/main...develop` 返回 `0 0` |
-| 本次二开交付       | 工作约定、分析文档及全站中英界面；提交前审查单独记录，商业功能未实施                        |
+| 项目               | 已核对状态                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| 上游               | `https://github.com/openstory-so/openstory.git`，remote 为 `upstream`                          |
+| 本项目             | `https://github.com/Jiangzcc/openstory.git`，remote 为 `origin`                                |
+| 二开分支           | `develop`                                                                                      |
+| 当前记录的上游基线 | `1999cb15816bd9f3317b5d7ae2121685ef338663`                                                     |
+| 初次基线核对       | 初次 fetch 时 develop/main/origin/main/upstream/main 均指向该提交；后续二开以 Git 日志为准     |
+| 初次二开差异       | 基线核查时为 0；当时 `git rev-list --left-right --count upstream/main...develop` 返回 `0 0`    |
+| 本次二开交付       | 工作约定、分析文档、全站中英界面及管理员模型配置；新增文本渠道待最终验证，人民币商业闭环未实施 |
 
 来源与状态分开记录：
 
@@ -60,22 +64,22 @@
 
 ## 3. 上游能力与二开差异
 
-| 领域        | 上游已有实现及证据                                                                                                                                                             | 二开方向与边界                                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 租户与成员  | teams/team_members、owner/admin/member/viewer；`src/platform/server/db/schema/teams.ts`                                                                                        | 首期按每用户独立空间和余额规划，优先复用默认 Team，暂不开放共享钱包                                                                 |
-| 默认空间    | 注册/初始化会创建默认团队，见 `src/platform/server/db/scoped.ts:createDefaultTeam`                                                                                             | 优先复用默认团队，首期不开放多团队切换与成员协作                                                                                    |
-| 数据访问    | 中间件建立 teamId 与 ScopedDb，见 `src/platform/middleware.fn.ts`                                                                                                              | 后续针对跨租户越权做验收，不能只凭字段存在就证明全链路隔离                                                                          |
-| 钱包账本    | credits、transactions、credit_reservations、credit_batches；见 `src/platform/server/db/schema/credits.ts`                                                                      | 复用余额、账本与预占基础；平台售价、上游成本与支付实收需要明确区分                                                                  |
-| 卡密/礼品码 | 管理员单张/批量发码、备注、有效期、兑换与查询；见 `src/billing/gift-tokens.fn.ts`、`src/platform/server/db/schema/gift-tokens.ts`、`src/ui/settings/gift-code-settings.tsx`    | 已确定作为首期充值基础，二开使用人民币；单次兑换及默认不过期已作为规划基准，批量/导出/查询/未兑换作废纳入首期，原子兑换与入账需补强 |
-| 在线支付    | Stripe Checkout、Webhook 验签、充值唯一会话、自动充值；见 `src/billing/server/checkout.ts`、`src/billing/stripe-webhook-middleware.fn.ts`、`src/routes/api/billing/webhook.ts` | 首期不新增在线支付接入；保留上游代码，未来按实际渠道需求扩展                                                                        |
-| 收费方式    | `src/billing/constants.ts` 充值加收 7%；`src/billing/server/db/billing.ts:568` 按 rawCostMicros 消费                                                                           | 首期按模型/规格人民币销售单价及用量收费，锁定价格版本，不额外收充值服务费；尚未实施                                                 |
-| BYOK        | 团队密钥优先、平台密钥回退；`src/models/server/db/api-keys.ts`；`workflow-deduction.ts:98` 跳过自带密钥扣费                                                                    | 已确认不允许用户自带供应商密钥；后续同时改造用户配置入口、服务端凭证解析及自带密钥免扣费路径，目前尚未实施                          |
-| 模型接入    | fal/OpenRouter 及原生 Google、xAI、BytePlus、ElevenLabs 等适配；`src/models/via.ts`、`src/models/server/create-adapter.ts`、相关领域服务                                       | 新渠道需要适配鉴权、提交/轮询、输入输出和计费；不能承诺所有模型只填写 URL 即可接入                                                  |
-| 模型目录    | `src/models/catalog.ts` 已有 fal 动态目录；LLM 有 `src/models/models.config.ts` 注册表                                                                                         | 复用已有目录，首期规划运营后台管理平台渠道、模型及价格，具体页面与数据方案待细化                                                    |
-| 成本与核对  | model_pricing 存供应商单位价格；fal 成本观测/对账见 `reconcile-fal-billing.ts`；部分原生渠道使用静态价格                                                                       | 独立零售价、可审计成本状态和差价报表是二开设计范围；供应商预估价不等于已确认账单                                                    |
-| 外部 API    | 已有 /api/v1 创作资源 API、osk_ 平台调用密钥及 MCP                                                                                                                             | 已确认：首期不新增对外模型调用 API，未来可能扩展；保留现有上游接口                                                                  |
-| 媒体访问    | `src/routes/r2.$.ts` 未挂认证中间件，直接转给 `serveStoredMedia`                                                                                                               | 首期已接受默认私有、主动分享及撤销访问的基准，尚未改造媒体路由                                                                      |
-| 自有部署    | 当前构建预览依赖本地 Workerd/Miniflare；正式部署脚本面向 Cloudflare                                                                                                            | 面向公网、允许使用 Cloudflare 部分能力，具体托管/自建边界待评估；尚未生产部署                                                       |
+| 领域        | 上游已有实现及证据                                                                                                                                                             | 二开方向与边界                                                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 租户与成员  | teams/team_members、owner/admin/member/viewer；`src/platform/server/db/schema/teams.ts`                                                                                        | 首期按每用户独立空间和余额规划，优先复用默认 Team，暂不开放共享钱包                                                                                       |
+| 默认空间    | 注册/初始化会创建默认团队，见 `src/platform/server/db/scoped.ts:createDefaultTeam`                                                                                             | 优先复用默认团队，首期不开放多团队切换与成员协作                                                                                                          |
+| 数据访问    | 中间件建立 teamId 与 ScopedDb，见 `src/platform/middleware.fn.ts`                                                                                                              | 后续针对跨租户越权做验收，不能只凭字段存在就证明全链路隔离                                                                                                |
+| 钱包账本    | credits、transactions、credit_reservations、credit_batches；见 `src/platform/server/db/schema/credits.ts`                                                                      | 复用余额、账本与预占基础；平台售价、上游成本与支付实收需要明确区分                                                                                        |
+| 卡密/礼品码 | 管理员单张/批量发码、备注、有效期、兑换与查询；见 `src/billing/gift-tokens.fn.ts`、`src/platform/server/db/schema/gift-tokens.ts`、`src/ui/settings/gift-code-settings.tsx`    | 已确定作为首期充值基础，二开使用人民币；单次兑换及默认不过期已作为规划基准，批量/导出/查询/未兑换作废纳入首期，原子兑换与入账需补强                       |
+| 在线支付    | Stripe Checkout、Webhook 验签、充值唯一会话、自动充值；见 `src/billing/server/checkout.ts`、`src/billing/stripe-webhook-middleware.fn.ts`、`src/routes/api/billing/webhook.ts` | 首期不新增在线支付接入；保留上游代码，未来按实际渠道需求扩展                                                                                              |
+| 收费方式    | `src/billing/constants.ts` 充值加收 7%；`src/billing/server/db/billing.ts:568` 按 rawCostMicros 消费                                                                           | 首期按模型/规格人民币销售单价及用量收费，锁定价格版本，不额外收充值服务费；尚未实施                                                                       |
+| BYOK        | 团队密钥优先、平台密钥回退；`src/models/server/db/api-keys.ts`；`workflow-deduction.ts:98` 跳过自带密钥扣费                                                                    | 已确认不允许用户自带供应商密钥；后续同时改造用户配置入口、服务端凭证解析及自带密钥免扣费路径，目前尚未实施                                                |
+| 模型接入    | fal/OpenRouter 及原生 Google、xAI、BytePlus、ElevenLabs 等适配；`src/models/via.ts`、`src/models/server/create-adapter.ts`、相关领域服务                                       | 二开已增加管理员 OpenAI Chat Completions / Responses 文本渠道及模型绑定，原渠道保留；原生厂商协议与媒体模型仍需独立适配，本地验证通过，真实渠道调用待验证 |
+| 模型目录    | `src/models/catalog.ts` 已有 fal 动态目录；LLM 有 `src/models/models.config.ts` 注册表                                                                                         | 二开已增加文本候选发现及显式绑定，增量合并原文本目录；全模型上下架治理和人民币售价仍为规划                                                                |
+| 成本与核对  | model_pricing 存供应商单位价格；fal 成本观测/对账见 `reconcile-fal-billing.ts`；部分原生渠道使用静态价格                                                                       | 独立零售价、可审计成本状态和差价报表是二开设计范围；供应商预估价不等于已确认账单                                                                          |
+| 外部 API    | 已有 /api/v1 创作资源 API、osk_ 平台调用密钥及 MCP                                                                                                                             | 已确认：首期不新增对外模型调用 API，未来可能扩展；保留现有上游接口                                                                                        |
+| 媒体访问    | `src/routes/r2.$.ts` 未挂认证中间件，直接转给 `serveStoredMedia`                                                                                                               | 首期已接受默认私有、主动分享及撤销访问的基准，尚未改造媒体路由                                                                                            |
+| 自有部署    | 当前构建预览依赖本地 Workerd/Miniflare；正式部署脚本面向 Cloudflare                                                                                                            | 面向公网、允许使用 Cloudflare 部分能力，具体托管/自建边界待评估；尚未生产部署                                                                             |
 
 fal、OpenRouter 首先是供应商/接入渠道，具体模型和调用规格才决定消耗单位。同一个模型经过不同渠道调用时，成本、任务标识和输出语义都可能不同。
 
@@ -148,11 +152,13 @@ fal、OpenRouter 首先是供应商/接入渠道，具体模型和调用规格�
 - 不向前端暴露平台上游密钥；租户额度、并发和速率限制与供应商账户额度分别治理。
 - 租户隔离验收覆盖网页、RPC、REST、MCP、后台任务、文件与管理端。
 
-## 5. 后续方案与开发顺序（当前仍为规划阶段）
+## 5. 后续方案与开发顺序（商业闭环仍为规划阶段）
+
+管理员默认模型配置和本轮文本渠道已有源码实现，验证状态分别见对应实施记录。以下为剩余商业闭环与部署工作，不把新增文本渠道等同于其他商业规则已经完成。
 
 1. **中文界面优先**：默认中文、中英文切换、浏览器记忆及现有页面文案覆盖；按 [中文阶段计划](localization-plan.md) 独立验收，不等待售价和部署方案配置。
 2. **商业方案与最小闭环**：细化人民币记账、卡密、禁止 BYOK 和用户售价；在复用 fal/OpenRouter 的链路上完成充值、报价、预占、消费与成本核对。
-3. **运营与其他首期规则**：渠道凭证、模型上下架、用户价格、租户限额、异常账单、成本/收入/差价、默认私有媒体与审计；新页面沿用已建立的翻译机制。
+3. **运营与其他首期规则**：验收新增文本渠道凭证管理，并继续规划全模型上下架、用户价格、租户限额、异常账单、成本/收入/差价、默认私有媒体与审计；新页面沿用已建立的翻译机制。
 4. **扩展模型与部署验收**：按业务需要逐个扩展渠道；验证选定公网环境下的持久化、任务恢复和文件访问；未来接入在线支付时再验收回调网络。
 
 不因为用户提出“多租户”就重做已有 Team/ScopedDb；也不因需要差价就把供应商成本表改成用户零售价。新的二开职责应按项目质量约束拆分；继承的超长上游文件不在本轮顺手重构。
@@ -174,7 +180,7 @@ fal、OpenRouter 首先是供应商/接入渠道，具体模型和调用规格�
 - 发信与供应商账号是否可用；实际模型清单、人民币单价、汇率、管理员及域名尚未配置。
 - 具体 Cloudflare/自建边界、金额精度与迁移、页面与接口设计及验收方案。
 
-商业规划接受不等于对应功能的开工指令；本次仅按已授权范围实施和提交国际化，不执行商业功能改造、付费调用或生产部署。
+商业规划接受不等于其他功能的开工指令。当前已授权实施国际化、管理员默认模型配置和新增文本渠道；不据此扩展到人民币售价/充值结算、全面禁止 BYOK、付费生成或生产部署。文本渠道实现与最终验收分别记录。
 
 ## 7. 此前架构分析时的验证边界（历史记录）
 

@@ -88,17 +88,15 @@ import { isInsufficientCreditsError } from '@/platform/errors';
 import { studioGatedMedia } from '@/studio/reference-rights';
 import {
   capReferenceImages,
-  DEFAULT_IMAGE_MODEL,
-  defaultVideoModelFor,
   getCompatibleModel,
   IMAGE_TO_VIDEO_MODELS,
-  isOfferedVideoModel,
   supportsDraftMode,
   supportsReferenceImages,
   type ImageToVideoModel,
   type TextToImageModel,
 } from '@/models/models';
 import { DRAFT_RESOLUTION } from '@/motion/draft-mode';
+import { useModelDefaults } from '@/models/ui/use-model-defaults';
 import { useViaAvailability } from '@/models/ui/use-via-availability';
 import {
   estimateImageCost,
@@ -119,6 +117,7 @@ import { parseStudioPaste } from './paste-import';
 import type { StudioReuse } from './prompt-display';
 import {
   loadStudioComposerPrefs,
+  resolveStudioComposerModels,
   saveStudioComposerPrefs,
 } from './composer-prefs';
 import type { StudioCreateInput, StudioReferenceKind } from '@/studio/schema';
@@ -385,16 +384,11 @@ export function StudioComposer({
   const queryClient = useQueryClient();
   const library = useStudioLibrary();
   const vias = useViaAvailability();
+  const { configuration, isReady: modelDefaultsReady } = useModelDefaults();
 
   const [prompt, setPrompt] = useState('');
-  const [imageModel, setImageModel] =
-    useState<TextToImageModel>(DEFAULT_IMAGE_MODEL);
-  // Seedance 2.5 where the BytePlus via is live (it has no fal endpoint);
-  // the platform default otherwise. The via query is warmed by the `_app`
-  // loader, so a signed-in user gets the right answer on first paint.
-  const [videoModel, setVideoModel] = useState<ImageToVideoModel>(() =>
-    defaultVideoModelFor(vias)
-  );
+  const [imageModelOverride, setImageModel] = useState<TextToImageModel>();
+  const [videoModelOverride, setVideoModel] = useState<ImageToVideoModel>();
   const [aspectRatio, setAspectRatio] =
     useState<AspectRatio>(DEFAULT_ASPECT_RATIO);
   const [pickedResolution, setResolution] =
@@ -407,7 +401,16 @@ export function StudioComposer({
   const [draftMode, setDraftMode] = useState(true);
   // Saved settings load after mount (the server has no localStorage), and
   // nothing is saved until they have, so the defaults never overwrite them.
-  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [loadedActivity, setLoadedActivity] = useState<typeof activity | null>(
+    null
+  );
+  const prefsLoaded = loadedActivity === activity;
+  const { imageModel, videoModel } = resolveStudioComposerModels(
+    { imageModel: imageModelOverride, videoModel: videoModelOverride },
+    configuration,
+    aspectRatio,
+    vias
+  );
   const [lastShuffled, setLastShuffled] = useState<string | null>(null);
   // The mic sits in the toolbar next to Shuffle; dictation streams into the
   // prompt editor through this handle.
@@ -500,17 +503,14 @@ export function StudioComposer({
     if (saved.aspectRatio) setAspectRatio(saved.aspectRatio);
     if (saved.resolution) setResolution(saved.resolution);
     if (saved.count) setCount(saved.count);
-    if (activity === 'image' && saved.imageModel)
-      setImageModel(saved.imageModel);
+    setImageModel(activity === 'image' ? saved.imageModel : undefined);
+    setVideoModel(activity === 'video' ? saved.videoModel : undefined);
     if (activity === 'video') {
-      // A model whose via is off for this deployment stays on the default.
-      if (saved.videoModel && isOfferedVideoModel(saved.videoModel, vias))
-        setVideoModel(saved.videoModel);
       if (saved.duration != null) setDuration(saved.duration);
       if (saved.generateAudio != null) setGenerateAudio(saved.generateAudio);
       if (saved.draft != null) setDraftMode(saved.draft);
     }
-    setPrefsLoaded(true);
+    setLoadedActivity(activity);
     // Once per composer: later via changes must not undo the user's pick.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [activity]);
@@ -520,9 +520,14 @@ export function StudioComposer({
     saveStudioComposerPrefs(
       activity,
       activity === 'image'
-        ? { imageModel, aspectRatio, resolution: pickedResolution, count }
+        ? {
+            imageModel: imageModelOverride,
+            aspectRatio,
+            resolution: pickedResolution,
+            count,
+          }
         : {
-            videoModel,
+            videoModel: videoModelOverride,
             aspectRatio,
             resolution: pickedResolution,
             count,
@@ -534,8 +539,8 @@ export function StudioComposer({
   }, [
     prefsLoaded,
     activity,
-    imageModel,
-    videoModel,
+    imageModelOverride,
+    videoModelOverride,
     aspectRatio,
     pickedResolution,
     count,
@@ -568,6 +573,24 @@ export function StudioComposer({
 
   const isVideo = activity === 'video';
   const compatibleVideoModel = getCompatibleModel(videoModel, aspectRatio);
+  useEffect(() => {
+    if (!modelDefaultsReady || !prefsLoaded) return;
+    if (activity === 'image') {
+      if (!supportsReferenceImages(imageModel)) setReferences([]);
+      return;
+    }
+    if (!studioSupportsMode(compatibleVideoModel, mode)) setMode('text');
+    if (!studioSupportsEndFrame(compatibleVideoModel)) setEndFrame(null);
+    if (studioAudioLimit(compatibleVideoModel) === 0) setAudioRefs([]);
+    if (studioVideoRefLimit(compatibleVideoModel) === 0) setVideoRefs([]);
+  }, [
+    activity,
+    imageModel,
+    compatibleVideoModel,
+    mode,
+    modelDefaultsReady,
+    prefsLoaded,
+  ]);
   // Only the tiers this model serves get a pill, so the stored pick is clamped
   // to them rather than left pointing at a pill that is no longer there.
   const activeModelName = isVideo
@@ -826,7 +849,12 @@ export function StudioComposer({
   // Generate stays live on an empty prompt (#1393) — an empty click is the
   // cheapest place to open the login dialog or offer a random prompt. Only
   // an unready mode, an in-flight upload, or a missing sign-off disables it.
-  const canSubmit = modeReady && uploading === 0 && rightsReady;
+  const canSubmit =
+    modelDefaultsReady &&
+    prefsLoaded &&
+    modeReady &&
+    uploading === 0 &&
+    rightsReady;
   // The prompt, not the button, is what pulses while its generation runs
   // (#1455) — and typing anything else stops it, even mid-generation.
   const generating =
@@ -1165,6 +1193,7 @@ export function StudioComposer({
     seed?: string;
     onDrafted?: (next: string) => void;
   }) => {
+    if (!modelDefaultsReady || !prefsLoaded) return;
     draft.mutate(
       {
         activity,
@@ -1728,6 +1757,7 @@ export function StudioComposer({
                 {activity === 'image' ? (
                   <ImageModelSelector
                     selectedModel={imageModel}
+                    disabled={!modelDefaultsReady || !prefsLoaded}
                     onModelChange={(next) => {
                       setImageModel(next);
                       if (!supportsReferenceImages(next)) setReferences([]);
@@ -1736,6 +1766,7 @@ export function StudioComposer({
                 ) : (
                   <MotionModelSelector
                     selectedModel={compatibleVideoModel}
+                    disabled={!modelDefaultsReady || !prefsLoaded}
                     onModelChange={changeVideoModel}
                     aspectRatio={aspectRatio}
                   />

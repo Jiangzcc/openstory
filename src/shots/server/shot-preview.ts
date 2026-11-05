@@ -16,7 +16,8 @@ import {
   aspectRatioToImageSize,
   type AspectRatio,
 } from '@/models/aspect-ratios';
-import { SHOT_PREVIEW_IMAGE_MODEL } from '@/models/models';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
 import { simpleHash } from '@/platform/hash';
 import { getLogger } from '@/platform/logger';
 import type { EnforcementRow } from '@/platform/server/compliance/enforcement';
@@ -44,13 +45,16 @@ type PreviewTarget = {
 };
 
 /** Start one preview render. It lands as the frame's newest `kind: 'preview'` row. */
-export function triggerShotPreview(
+export async function triggerShotPreview(
   target: PreviewTarget,
   options?: {
     deduplicationId?: string;
+    modelConfiguration?: ModelRuntimeConfiguration;
     enforcement?: readonly EnforcementRow[];
   }
 ): Promise<string> {
+  const modelConfiguration =
+    options?.modelConfiguration ?? (await loadModelRuntimeConfiguration());
   return triggerWorkflow(
     '/image',
     {
@@ -58,7 +62,7 @@ export function triggerShotPreview(
       teamId: target.teamId,
       sequenceId: target.sequenceId,
       prompt: target.prompt,
-      model: SHOT_PREVIEW_IMAGE_MODEL,
+      model: modelConfiguration.shotPreview,
       imageSize: aspectRatioToImageSize(target.aspectRatio),
       numImages: 1,
       shotId: target.shotId,
@@ -67,16 +71,19 @@ export function triggerShotPreview(
       variantOnly: false,
       reservationId: target.reservationId,
     } satisfies ImageWorkflowInput,
-    options
+    { ...options, modelConfiguration }
   );
 }
 
-async function previewCostMicros(aspectRatio: AspectRatio) {
+async function previewCostMicros(
+  aspectRatio: AspectRatio,
+  model: ModelRuntimeConfiguration['shotPreview']
+) {
   return gateEstimate(
-    estimateImageCost(SHOT_PREVIEW_IMAGE_MODEL, aspectRatio, 1, {
+    estimateImageCost(model, aspectRatio, 1, {
       pricing: await getEffectiveFalPricing(),
     }),
-    { model: SHOT_PREVIEW_IMAGE_MODEL, operation: 'shot-preview' }
+    { model, operation: 'shot-preview' }
   );
 }
 
@@ -105,19 +112,26 @@ export async function redrawShotPreview(
     );
     const latest = await scopedDb.frameVariants.getLatestPreview(frame.id);
     if (latest?.promptHash === simpleHash(prompt)) return;
+    const modelConfiguration = await loadModelRuntimeConfiguration();
     await requireCredits(
       scopedDb,
-      await previewCostMicros(sequence.aspectRatio)
+      await previewCostMicros(
+        sequence.aspectRatio,
+        modelConfiguration.shotPreview
+      )
     );
-    await triggerShotPreview({
-      userId: user.id,
-      teamId,
-      sequenceId: sequence.id,
-      shotId: shot.id,
-      frameId: frame.id,
-      aspectRatio: sequence.aspectRatio,
-      prompt,
-    });
+    await triggerShotPreview(
+      {
+        userId: user.id,
+        teamId,
+        sequenceId: sequence.id,
+        shotId: shot.id,
+        frameId: frame.id,
+        aspectRatio: sequence.aspectRatio,
+        prompt,
+      },
+      { modelConfiguration }
+    );
   } catch (error) {
     logger.warn(
       `Preview redraw for shot ${shot.id} did not start; its old sketch stays up`,
@@ -142,7 +156,7 @@ export async function redrawShotPreviewInRun(
   try {
     await requireCredits(
       scopedDb.liveRead,
-      await previewCostMicros(target.aspectRatio),
+      await previewCostMicros(target.aspectRatio, scopedDb.models.shotPreview),
       { reservationId: target.reservationId }
     );
     await triggerShotPreview(
@@ -152,6 +166,7 @@ export async function redrawShotPreviewInRun(
       },
       {
         deduplicationId: target.deduplicationId,
+        modelConfiguration: scopedDb.models,
         enforcement: await scopedDb.liveRead.compliance.listEnforcementFor(
           target.userId,
           target.teamId

@@ -16,6 +16,12 @@ import {
   type LlmKeyInfo,
 } from './create-adapter';
 import { llmtrCompatibleApi } from '@/models/llmtr';
+import { resolveTextModelRoute } from '@/models/text-channels';
+import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import {
+  assertConfiguredTextCapabilities,
+  configuredTextModelOptions,
+} from './configured-text';
 import {
   createUsageCapture,
   extractRunError,
@@ -221,6 +227,10 @@ export function chatModelOptionsForCall(
   llmKeyInfo: LlmKeyInfo,
   reasoning: boolean | undefined
 ) {
+  if (llmKeyInfo.via === 'compatible') {
+    assertConfiguredTextCapabilities(llmKeyInfo, { structuredOutput: true });
+    return configuredTextModelOptions(llmKeyInfo.route);
+  }
   const maxTokens = getMaxOutputTokens(modelId);
   if (resolveNativeGrokModel(modelId, llmKeyInfo)) {
     return {
@@ -336,18 +346,35 @@ async function resolveCallKey(
  *   2. `${name}` — LLM call (JSON-stringified result for step boundary)
  *   3. `deduct-llm-credits-${name}` — credit deduction (only if scopedDb passed)
  */
+async function withCallRoute<T>(
+  model: TextModel,
+  context: DurableLLMCallContext,
+  run: (model: TextModel) => Promise<T>
+): Promise<T> {
+  const models = context.scopedDb?.models;
+  const routing = models?.textModelRouting ?? [];
+  return resolveTextModelRoute(routing, model)
+    ? run(model)
+    : withRegionFallback(model, run);
+}
+
 export async function durableLLMCallCf<TSchema extends z.ZodType>(
   step: WorkflowStep,
   config: DurableLLMCallConfig<TSchema>,
   callContext: DurableLLMCallContext
 ): Promise<z.infer<TSchema>> {
   const { name, phase } = config;
-  // Image-bearing calls on a text-only model transparently route to
-  // DEFAULT_VISION_MODEL (e.g. DeepSeek V3.2 → Claude Sonnet, #944); everything else
-  // runs as chosen. The effective model drives the adapter, context window, and
+  // Image-bearing text-only calls use the snapshotted vision model; others
+  // run as chosen. The effective model drives the adapter, context window, and
   // cost; callers keep storing/hashing the requested model.
   const hasImageInput = (config.visionImageUrls?.length ?? 0) > 0;
-  const modelId = resolveVisionModel(config.modelId, hasImageInput);
+  const models = callContext.scopedDb?.models;
+  const modelId = resolveVisionModel(
+    config.modelId,
+    hasImageInput,
+    models?.vision,
+    textModelCatalogFromRouting(models?.textModelRouting)
+  );
   const logName = `phase-${phase.number}-${name}`;
   const logTags = [name, `phase-${phase.number}`, 'analysis'];
   const logMetadata = {
@@ -381,7 +408,7 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
       // Retry once on a region-available model instead of burning step retries.
       // Resolve the key INSIDE the fallback so a model swap cannot reuse a
       // via that does not carry the retry model (LLMTR key → OpenRouter 401).
-      return withRegionFallback(modelId, async (model) => {
+      return withCallRoute(modelId, callContext, async (model) => {
         const llmKeyInfo = await resolveCallKey(callContext, model);
         const adapter = createAdapter(model, llmKeyInfo);
 
@@ -394,14 +421,17 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
         });
 
         // Only attach the still when the effective model accepts image input.
-        // resolveVisionModel routes text-only models to DEFAULT_VISION_MODEL, so
+        // resolveVisionModel routes text-only models to the vision default, so
         // reaching here with an image but no vision support means that default is
         // misconfigured to a text-only model. Warn and drop the image (don't fail
         // — text-only is a supported mode) rather than send it to a text model.
-        const effectiveSupportsVision = analysisModelSupportsVision(model);
+        const effectiveSupportsVision =
+          llmKeyInfo.via === 'compatible'
+            ? llmKeyInfo.route.vision
+            : analysisModelSupportsVision(model);
         if (hasImageInput && !effectiveSupportsVision) {
           logger.warn(
-            `[LLM:${logName}:cf] Dropping vision image(s): effective model ${model} (requested ${config.modelId}) is text-only; DEFAULT_VISION_MODEL may be misconfigured — running text-only`
+            `[LLM:${logName}:cf] Dropping vision image(s): effective model ${model} (requested ${config.modelId}) is text-only; vision model may be misconfigured — running text-only`
           );
         }
         const visionImageSources = effectiveSupportsVision
@@ -479,7 +509,7 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
                 continue;
               }
             }
-            throwNotedRunError(runError, regionRetriesFor(model));
+            throwNotedRunError(runError, regionRetriesFor(model, llmKeyInfo));
             assertStructuredOutput(
               structuredObject,
               logName,
@@ -494,7 +524,7 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
               costMicros: llmCostFromUsage(
                 usageCapture.get(),
                 model,
-                llmKeyInfo.via
+                llmKeyInfo
               ),
               keySource: llmKeyInfo.source,
             };
@@ -548,9 +578,15 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
 
   const { name, phase } = config;
   // See durableLLMCallCf: image-bearing calls on a text-only model route to
-  // DEFAULT_VISION_MODEL; the effective model drives adapter/window/cost.
+  // the snapshotted vision model; the effective model drives adapter/window/cost.
   const hasImageInput = (config.visionImageUrls?.length ?? 0) > 0;
-  const modelId = resolveVisionModel(config.modelId, hasImageInput);
+  const models = callContext.scopedDb?.models;
+  const modelId = resolveVisionModel(
+    config.modelId,
+    hasImageInput,
+    models?.vision,
+    textModelCatalogFromRouting(models?.textModelRouting)
+  );
   const {
     shotId,
     promptType,
@@ -583,7 +619,7 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
       // model errors before its first token, so the realtime channel has seen
       // nothing when the retry restarts the stream. Resolve the key for the
       // model actually called so via tracks the retry.
-      return withRegionFallback(modelId, async (model) => {
+      return withCallRoute(modelId, callContext, async (model) => {
         const llmKeyInfo = await resolveCallKey(callContext, model);
         const adapter = createAdapter(model, llmKeyInfo);
 
@@ -599,7 +635,10 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
 
         // Only attach the still when the effective model accepts image input;
         // warn (don't fail) when an image is dropped — see durableLLMCallCf.
-        const effectiveSupportsVision = analysisModelSupportsVision(model);
+        const effectiveSupportsVision =
+          llmKeyInfo.via === 'compatible'
+            ? llmKeyInfo.route.vision
+            : analysisModelSupportsVision(model);
         if (hasImageInput && !effectiveSupportsVision) {
           logger.warn(
             `[LLM:${logName}:cf] Dropping vision image(s): effective model ${model} (requested ${config.modelId}) is text-only with no vision companion; running text-only`
@@ -711,7 +750,7 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
                 continue;
               }
             }
-            throwNotedRunError(runError, regionRetriesFor(model));
+            throwNotedRunError(runError, regionRetriesFor(model, llmKeyInfo));
             await flushDelta();
             assertStructuredOutput(
               structuredJson,
@@ -725,7 +764,7 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
               costMicros: llmCostFromUsage(
                 usageCapture.get(),
                 model,
-                llmKeyInfo.via
+                llmKeyInfo
               ),
               keySource: llmKeyInfo.source,
             };

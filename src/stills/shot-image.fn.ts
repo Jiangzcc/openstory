@@ -15,7 +15,11 @@ import {
   regenerateShotSchema,
 } from '@/shots/server/shot.schemas';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
-import { triggerStoryboard } from '@/sequences/server/launchers';
+import {
+  loadStoryboardModelConfiguration,
+  resolveStoryboardLlmSources,
+  triggerStoryboard,
+} from '@/sequences/server/launchers';
 import type { StoryboardTriggerInput } from '@/platform/server/workflow/types';
 import {
   generateShotImage,
@@ -37,6 +41,9 @@ export const generateShotsFn = createServerFn({ method: 'POST' })
   .handler(async ({ context }) => {
     const { sequence, user } = context;
 
+    const configuration = await loadStoryboardModelConfiguration(
+      context.scopedDb
+    );
     const reservationId = await reserveRunCredits(
       context.scopedDb,
       estimateStoryboardCost({
@@ -57,6 +64,11 @@ export const generateShotsFn = createServerFn({ method: 'POST' })
       }),
       {
         providers: ['fal', 'openrouter'],
+        llmSources: await resolveStoryboardLlmSources(
+          context.scopedDb,
+          sequence.analysisModel,
+          configuration
+        ),
         errorMessage: 'Insufficient credits to generate storyboard',
         sequenceId: sequence.id,
       }
@@ -81,7 +93,7 @@ export const generateShotsFn = createServerFn({ method: 'POST' })
     const { workflowRunId } = await releaseReservationOnThrow(
       context.scopedDb,
       reservationId,
-      () => triggerStoryboard(context.scopedDb, workflowInput)
+      () => triggerStoryboard(context.scopedDb, workflowInput, configuration)
     );
 
     return { workflowRunId, shots: [] };

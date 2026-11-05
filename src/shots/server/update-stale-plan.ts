@@ -19,7 +19,7 @@ import {
 import { musicRequestDurationSeconds } from '@/audio/server/music-staleness';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
   type AnalysisModelId,
 } from '@/models/models.config';
 import {
@@ -879,8 +879,10 @@ export async function computePlan(args: {
       locationBible: [...ctx.locationBible],
       elementBible: [...ctx.elementBible],
       styleConfig: ctx.styleConfig,
-      analysisModelId:
-        getAnalysisModelById(ctx.analysisModel)?.id ?? DEFAULT_ANALYSIS_MODEL,
+      analysisModelId: storedAnalysisModelId(
+        ctx.analysisModel,
+        DEFAULT_ANALYSIS_MODEL
+      ),
     },
     targets,
     skipped,
@@ -1211,9 +1213,10 @@ async function computeMusicPlanForUnits(
     sceneSummaries: regenPrompt
       ? musicSceneSummariesFromRows(sceneRows, allShots).sceneSummaries
       : [],
-    analysisModelId:
-      getAnalysisModelById(sequence.analysisModel)?.id ??
-      DEFAULT_ANALYSIS_MODEL,
+    analysisModelId: storedAnalysisModelId(
+      sequence.analysisModel,
+      DEFAULT_ANALYSIS_MODEL
+    ),
     promptSource: selectedPrompt ? 'regenerated' : 'ai-generated',
     durationSeconds: musicRequestDurationSeconds(allShots),
     prompt: sequence.musicPrompt,

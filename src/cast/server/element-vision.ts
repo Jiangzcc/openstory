@@ -16,9 +16,7 @@ import type {
 import { toVisionImageSource } from '@/platform/server/storage/external-url';
 import { z } from 'zod';
 import { callLLMStream, llmCostFromUsage } from '@/models/server/llm-client';
-import { DEFAULT_VISION_MODEL } from '@/models/models.config';
-
-export const ELEMENT_VISION_MODEL = DEFAULT_VISION_MODEL;
+import type { AnalysisModelId } from '@/models/models.config';
 
 /**
  * LLM wire shape. Plain `z.string()` — Anthropic rejects `minLength` /
@@ -34,13 +32,14 @@ export const elementVisionResponseSchema = z.object({
 type ElementDescription = z.infer<typeof elementVisionResponseSchema>;
 
 export type DescribeElementInput = {
+  model: AnalysisModelId;
   imageUrl: string;
   filename: string;
   /** Resolved LLM key (team OpenRouter, team fal, or platform) */
   llmKey?: ResolvedLlmKey;
   /**
    * Re-resolve the key when a region block swaps the model (#1259). `llmKey`
-   * was resolved for {@link ELEMENT_VISION_MODEL}; the fallback may not be
+   * was resolved for the configured model; the fallback may not be
    * carried by the same via.
    */
   resolveLlmKey?: (model: TextModel) => Promise<ResolvedLlmKey>;
@@ -50,7 +49,7 @@ export type DescribeElementInput = {
 
 export type ElementVisionResult = ElementDescription & {
   /** The model that actually answered — the region fallback may have run
-   *  instead of {@link ELEMENT_VISION_MODEL}. Bill and log this one. */
+   *  instead of the configured model. Bill and log this one. */
   model: TextModel;
   costMicros: Microdollars;
   usedOwnKey: boolean;
@@ -117,10 +116,10 @@ export async function describeElementImage(
   // `max` (#1494).
   let parsed: ElementDescription | undefined;
   let usage;
-  let model = ELEMENT_VISION_MODEL;
+  let model = input.model;
   let via = input.llmKey?.via;
   for await (const chunk of callLLMStream({
-    model: ELEMENT_VISION_MODEL,
+    model: input.model,
     messages,
     temperature: 0.3,
     responseSchema: elementVisionResponseSchema,

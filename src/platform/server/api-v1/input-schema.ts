@@ -12,12 +12,6 @@
 
 import { PORTRAIT_RIGHTS_V1 } from '@/platform/compliance/attestations';
 import { aspectRatioSchema } from '@/models/aspect-ratios';
-import {
-  DEFAULT_IMAGE_MODEL,
-  DEFAULT_MUSIC_MODEL,
-  DEFAULT_VIDEO_MODEL,
-} from '@/models/models';
-import { DEFAULT_ANALYSIS_MODEL } from '@/models/models.config';
 import { DEFAULT_RESOLUTION, resolutionSchema } from '@/models/resolutions';
 import {
   GENERATION_STAGES,
@@ -170,27 +164,18 @@ export const apiCreateSequenceSchema = z
       description: `Output resolution tier, resolved per model to the nearest thing it serves. Defaults to ${DEFAULT_RESOLUTION}.`,
     }),
 
-    analysisModels: z
-      .array(z.string())
-      .min(1)
-      .optional()
-      .meta({
-        description: `Analysis model id(s); one sequence is created per model. Validated against the model registry. Defaults to ${DEFAULT_ANALYSIS_MODEL}.`,
-      }),
-    imageModels: z
-      .array(z.string())
-      .min(1)
-      .optional()
-      .meta({
-        description: `Image model key(s); first is primary. Defaults to ${DEFAULT_IMAGE_MODEL}.`,
-      }),
-    videoModels: z
-      .array(z.string())
-      .min(1)
-      .optional()
-      .meta({
-        description: `Video (image-to-video) model key(s); first is primary. Defaults to seedance_v2_5 where the team can reach it, otherwise ${DEFAULT_VIDEO_MODEL}.`,
-      }),
+    analysisModels: z.array(z.string()).min(1).optional().meta({
+      description:
+        'Analysis model id(s); one sequence is created per model. Validated against the model registry. Omitted values use the configured platform analysis default.',
+    }),
+    imageModels: z.array(z.string()).min(1).optional().meta({
+      description:
+        'Image model key(s); first is primary. Omitted values use the configured platform image default.',
+    }),
+    videoModels: z.array(z.string()).min(1).optional().meta({
+      description:
+        'Video (image-to-video) model key(s); first is primary. Omitted values use the configured new-sequence recommendation, subject to provider availability.',
+    }),
 
     motion: z
       .boolean()
@@ -214,13 +199,10 @@ export const apiCreateSequenceSchema = z
       description:
         'Render motion as low-resolution drafts first, to be rendered at quality once approved. Only Seedance 2.5 honours it; other video models render finished clips. Default true.',
     }),
-    audioModels: z
-      .array(z.string())
-      .min(1)
-      .optional()
-      .meta({
-        description: `Audio model key(s) for music; first is primary. Defaults to ${DEFAULT_MUSIC_MODEL}.`,
-      }),
+    audioModels: z.array(z.string()).min(1).optional().meta({
+      description:
+        'Audio model key(s) for music; first is primary. Omitted values use the configured platform music default.',
+    }),
 
     characters: z.array(characterRefSchema).optional().meta({
       description:

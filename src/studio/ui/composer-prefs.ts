@@ -15,6 +15,8 @@ import {
   type ImageToVideoModel,
   type TextToImageModel,
 } from '@/models/models';
+import type { ModelConfiguration } from '@/models/model-configuration';
+import { availableDefaultVideoModel } from '@/models/generation-mode';
 import { isResolution, type Resolution } from '@/models/resolutions';
 import type { StudioDuration } from '@/studio/text-to-video';
 
@@ -82,4 +84,21 @@ export function saveStudioComposerPrefs(
   } catch {
     // Private window or blocked storage: the composer still works.
   }
+}
+
+export function resolveStudioComposerModels(
+  prefs: StudioComposerPrefs,
+  configuration: Readonly<ModelConfiguration>,
+  aspectRatio: AspectRatio,
+  vias: { byteplus?: boolean }
+) {
+  return {
+    imageModel: prefs.imageModel ?? configuration.defaultImage,
+    videoModel: availableDefaultVideoModel(
+      prefs.videoModel ?? configuration.defaultVideo,
+      configuration.defaultVideo,
+      aspectRatio,
+      vias
+    ),
+  };
 }

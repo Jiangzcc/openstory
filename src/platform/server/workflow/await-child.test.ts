@@ -10,6 +10,9 @@
  */
 
 import { describe, expect, test, vi } from 'vitest';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import { packModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import {
   buildChildInstanceId,
   notifyParent,
@@ -183,10 +186,55 @@ describe('spawnAndAwaitChild', () => {
     parentBindingName: 'MOTION_BATCH_WORKFLOW' as keyof CloudflareEnv,
     parentInstanceId: 'parent_run_A',
     childId: 'motion:01SEQ:01FRAME',
+    modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
     childPayload: { userId: 'u1', teamId: 't1' },
     spawnStepName: 'spawn-motion-0',
     awaitStepName: 'await-motion-0',
   };
+
+  test('overrides child payload settings with the inherited parent snapshot', async () => {
+    const { step, binding, create } = harness(() => Promise.resolve(undefined));
+    const snapshot: ModelRuntimeConfiguration = {
+      ...DEFAULT_MODEL_CONFIGURATION,
+      textModelRouting: [
+        {
+          modelId: 'custom:child',
+          name: 'Mock child model',
+          channelId: 'mock-channel',
+          upstreamModel: 'mock-upstream',
+          credentialId: 'mock-frozen-key',
+          protocol: 'openai-responses',
+          baseUrl: 'https://mock.invalid/v1',
+          vision: true,
+          structuredOutput: true,
+          tools: true,
+          contextWindow: 8000,
+          maxOutputTokens: 2000,
+          inputPricePerMillion: 1,
+          outputPricePerMillion: 2,
+          description: 'Mock request catalog description',
+          vendor: 'Mock vendor',
+        },
+      ],
+      sceneSplit: 'z-ai/glm-5.3-flash' as const,
+    };
+    await spawnAndAwaitChild(step, {
+      ...baseArgs,
+      binding,
+      modelConfiguration: snapshot,
+      childPayload: {
+        ...baseArgs.childPayload,
+        modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
+      },
+    });
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({
+          modelConfiguration: packModelRuntimeConfiguration(snapshot),
+        }),
+      })
+    );
+  });
 
   test('creates the child under a run-scoped instance id', async () => {
     const { step, binding, create } = harness(() => Promise.resolve(undefined));

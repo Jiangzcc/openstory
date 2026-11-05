@@ -11,6 +11,7 @@ import {
   queuedBeforeLooks,
 } from '@/cast/server/workflows/sheet-snapshots';
 import { handleLlmAuthFailure } from '@/platform/server/workflow/llm-auth-failure';
+import { llmAuthFailureMessage } from '@/platform/server/workflow/llm-auth-failure-source';
 import { sanitizeFailResponse } from '@/platform/server/workflow/sanitize-fail-response';
 import type {
   AnalyzeScriptWorkflowInput,
@@ -207,6 +208,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       SceneSplitWorkflowResult
     >(step, {
       binding: this.env.SCENE_SPLIT_WORKFLOW,
+      modelConfiguration: scopedDb.models,
       parentBindingName: 'ANALYZE_SCRIPT_WORKFLOW',
       parentInstanceId: event.instanceId,
       childId: `scene-split:${sequenceId ?? 'no-seq'}`,
@@ -257,6 +259,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       LocationMatchingWorkflowOutput
     >(step, {
       binding: this.env.LOCATION_MATCHING_WORKFLOW,
+      modelConfiguration: scopedDb.models,
       parentBindingName: PARENT_BINDING_NAME,
       parentInstanceId,
       childId: `location-matching:${sequenceId ?? 'no-seq'}`,
@@ -366,7 +369,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     error: string;
     scopedDb: WorkflowScopedDb;
   }): Promise<void> {
-    const { sequenceId, reservationId, analysisModelId } = event.payload;
+    const { sequenceId, reservationId } = event.payload;
     if (reservationId) {
       try {
         await scopedDb.billing.zeroReservation(reservationId);
@@ -385,8 +388,8 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     });
 
     const userMessage =
-      (await handleLlmAuthFailure(scopedDb, sanitized, analysisModelId)) ??
-      sanitized;
+      (await handleLlmAuthFailure(scopedDb, sanitized)) ??
+      llmAuthFailureMessage(sanitized);
 
     await scopedDb.sequence(sequenceId).updateStatus('failed', userMessage);
     await getGenerationChannel(sequenceId).emit('generation.failed', {

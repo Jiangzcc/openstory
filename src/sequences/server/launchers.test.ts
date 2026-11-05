@@ -15,6 +15,29 @@ import { migrateStyleConfigV1ToV2 } from '@/look/style-config';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '@/models/models';
 import { DEFAULT_ANALYSIS_MODEL } from '@/models/models.config';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import type {
+  TextModelRoute,
+  TextModelRoutingSnapshot,
+} from '@/models/text-channels';
+
+const CUSTOM_ROUTE: TextModelRoute = {
+  modelId: 'custom:request-model',
+  name: 'Request model',
+  channelId: 'test-channel',
+  upstreamModel: 'upstream-model',
+  credentialId: 'test-credential',
+  protocol: 'openai-chat-completions',
+  baseUrl: 'https://models.example/v1',
+  vision: true,
+  structuredOutput: true,
+  tools: true,
+  contextWindow: 16_000,
+  maxOutputTokens: 4_000,
+  inputPricePerMillion: 2,
+  outputPricePerMillion: 6,
+};
+
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { StyleConfig } from '@/platform/server/db/schema';
 import type { GenerationStage } from '@/sequences/pipeline';
@@ -69,6 +92,8 @@ const STYLE_CONFIG: StyleConfig = migrateStyleConfigV1ToV2({
 
 function makeScopedDb(opts: {
   workflowRunId: string | null;
+  analysisModel?: string;
+  routing?: TextModelRoutingSnapshot;
   claimSucceeds?: boolean;
   script?: string | null;
   styleId?: string | null;
@@ -104,7 +129,7 @@ function makeScopedDb(opts: {
     aspectRatio: '16:9',
     styleId: opts.styleId === undefined ? 'style_1' : opts.styleId,
     styleConfig: opts.styleConfig === undefined ? null : opts.styleConfig,
-    analysisModel: 'invalid-model-id',
+    analysisModel: opts.analysisModel ?? 'invalid-model-id',
     imageModel: 'not-a-real-image-model',
     videoModel: 'not-a-real-video-model',
     workflowRunId: opts.workflowRunId,
@@ -126,6 +151,8 @@ function makeScopedDb(opts: {
   const getHeldElsewhere = vi.fn(async () => false);
   const getMemberEmail = vi.fn(async () => 'owner@example.com');
   const stub = {
+    modelConfiguration: { get: async () => DEFAULT_MODEL_CONFIGURATION },
+    textChannels: { getSnapshot: vi.fn(async () => opts.routing ?? []) },
     sequences: { getForUser, claimWorkflowSlot, update },
     styles: { getById: getStyleById },
     sequenceElements: { list: listElements },
@@ -227,7 +254,7 @@ describe('triggerStoryboard', () => {
     expect(triggerWorkflowMock).toHaveBeenCalledWith(
       '/storyboard',
       expect.objectContaining(INPUT),
-      { deduplicationId: claimId }
+      expect.objectContaining({ deduplicationId: claimId })
     );
     expect(update).toHaveBeenCalledWith({
       id: 'seq_1',
@@ -630,4 +657,63 @@ describe('assertNoActiveStoryboard', () => {
       assertNoActiveStoryboard(scopedDb, 'seq_1')
     ).resolves.toBeUndefined();
   });
+});
+
+test('keeps the stored custom id and routing snapshot through dispatch', async () => {
+  triggerWorkflowMock.mockReset().mockResolvedValue('run-custom');
+  const routing = [CUSTOM_ROUTE];
+  const { scopedDb } = makeScopedDb({
+    workflowRunId: null,
+    analysisModel: CUSTOM_ROUTE.modelId,
+    routing,
+  });
+  await triggerStoryboard(scopedDb, INPUT);
+  expect(scopedDb.textChannels.getSnapshot).toHaveBeenCalledOnce();
+  expect(triggerWorkflowMock).toHaveBeenCalledWith(
+    '/storyboard',
+    expect.objectContaining({ analysisModelId: CUSTOM_ROUTE.modelId }),
+    expect.objectContaining({
+      modelConfiguration: {
+        ...DEFAULT_MODEL_CONFIGURATION,
+        textModelRouting: routing,
+      },
+    })
+  );
+});
+
+test.each([
+  { routing: [] },
+  { routing: [{ ...CUSTOM_ROUTE, structuredOutput: false }] },
+])(
+  'refuses missing or incapable custom routes before claiming work',
+  async ({ routing }) => {
+    triggerWorkflowMock.mockReset();
+    const { scopedDb, claimWorkflowSlot } = makeScopedDb({
+      workflowRunId: null,
+      analysisModel: CUSTOM_ROUTE.modelId,
+      routing,
+    });
+    await expect(triggerStoryboard(scopedDb, INPUT)).rejects.toThrow(
+      'available analysis model'
+    );
+    expect(claimWorkflowSlot).not.toHaveBeenCalled();
+    expect(triggerWorkflowMock).not.toHaveBeenCalled();
+  }
+);
+
+test('reuses a caller snapshot instead of reading a later route', async () => {
+  triggerWorkflowMock.mockReset().mockResolvedValue('run-custom');
+  const { scopedDb } = makeScopedDb({
+    workflowRunId: null,
+    analysisModel: CUSTOM_ROUTE.modelId,
+  });
+  const configuration = {
+    ...DEFAULT_MODEL_CONFIGURATION,
+    textModelRouting: [CUSTOM_ROUTE],
+  };
+  await triggerStoryboard(scopedDb, INPUT, configuration);
+  expect(scopedDb.textChannels.getSnapshot).not.toHaveBeenCalled();
+  expect(triggerWorkflowMock.mock.calls[0]?.[2]?.modelConfiguration).toBe(
+    configuration
+  );
 });

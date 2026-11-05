@@ -33,3 +33,29 @@ describe('vision-model routing', () => {
     expect(analysisModelSupportsVision(DEFAULT_VISION_MODEL)).toBe(true);
   });
 });
+
+describe('configured vision fallback', () => {
+  const visionModel = 'google/gemini-3.8-flash';
+
+  it('uses the supplied model only for a text-only model carrying images', () => {
+    expect(
+      resolveVisionModel('deepseek/deepseek-v3.2', true, visionModel)
+    ).toBe(visionModel);
+    expect(
+      resolveVisionModel('deepseek/deepseek-v3.2', false, visionModel)
+    ).toBe('deepseek/deepseek-v3.2');
+  });
+
+  it('keeps the vision-capable model chosen by the user', () => {
+    expect(resolveVisionModel('x-ai/grok-4.7', true, visionModel)).toBe(
+      'x-ai/grok-4.7'
+    );
+  });
+
+  it('does not change the default of later calls', () => {
+    resolveVisionModel('deepseek/deepseek-v3.2', true, visionModel);
+    expect(resolveVisionModel('deepseek/deepseek-v3.2', true)).toBe(
+      DEFAULT_VISION_MODEL
+    );
+  });
+});

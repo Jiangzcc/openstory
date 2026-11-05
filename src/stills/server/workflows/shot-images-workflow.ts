@@ -340,6 +340,7 @@ export class ShotImagesWorkflow extends OpenStoryWorkflowEntrypoint<ShotImagesWo
         ImageChildResult
       >(step, {
         binding: imageBinding,
+        modelConfiguration: scopedDb.models,
         parentBindingName: 'SHOT_IMAGES_WORKFLOW',
         parentInstanceId,
         childId: childIdSuffix,
@@ -406,6 +407,7 @@ export class ShotImagesWorkflow extends OpenStoryWorkflowEntrypoint<ShotImagesWo
                 model
               ),
               enforcement,
+              modelConfiguration: scopedDb.models,
             }
           );
         }

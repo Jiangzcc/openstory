@@ -16,9 +16,7 @@ import type { ChatMessage } from '@/platform/server/ai/prompts-index';
 import type { StudioActivity, StudioReferenceKind } from '@/studio/schema';
 import { toVisionImageSource } from '@/platform/server/storage/external-url';
 import { callLLMStream, llmCostFromUsage } from '@/models/server/llm-client';
-import { DEFAULT_VISION_MODEL } from '@/models/models.config';
-
-export const STUDIO_DRAFT_MODEL = DEFAULT_VISION_MODEL;
+import type { AnalysisModelId } from '@/models/models.config';
 
 type DraftReference = {
   url: string;
@@ -27,6 +25,7 @@ type DraftReference = {
 };
 
 export type DraftStudioPromptInput = {
+  model: AnalysisModelId;
   activity: StudioActivity;
   /** Attached references in `@Image1`… order, per kind. */
   references: DraftReference[];
@@ -38,7 +37,7 @@ export type DraftStudioPromptInput = {
   llmKey?: ResolvedLlmKey;
   /**
    * Re-resolve the key when a region block swaps the model (#1259). `llmKey`
-   * was resolved for {@link STUDIO_DRAFT_MODEL}; the fallback may not be
+   * was resolved for the configured model; the fallback may not be
    * carried by the same via.
    */
   resolveLlmKey?: (model: TextModel) => Promise<ResolvedLlmKey>;
@@ -48,7 +47,7 @@ export type DraftStudioPromptInput = {
 type DraftStudioPromptResult = {
   prompt: string;
   /** The model that actually answered — the region fallback may have run
-   *  instead of {@link STUDIO_DRAFT_MODEL}. Bill and log this one. */
+   *  instead of the configured model. Bill and log this one. */
   model: TextModel;
   costMicros: Microdollars;
   usedOwnKey: boolean;
@@ -65,7 +64,7 @@ function tokensFor(references: DraftReference[]): string[] {
 }
 
 export async function buildDraftMessages(
-  input: DraftStudioPromptInput
+  input: Omit<DraftStudioPromptInput, 'model'>
 ): Promise<{ systemPrompts: string[]; messages: ChatMessage[] }> {
   const tokens = tokensFor(input.references);
   const frames = input.startImageUrl
@@ -143,10 +142,10 @@ export async function draftStudioPrompt(
   // defaults to `max` (#1494) — a composer draft must not stall for minutes.
   let text = '';
   let usage;
-  let model = STUDIO_DRAFT_MODEL;
+  let model = input.model;
   let via = input.llmKey?.via;
   for await (const chunk of callLLMStream({
-    model: STUDIO_DRAFT_MODEL,
+    model: input.model,
     messages: [
       ...systemPrompts.map((content) => ({
         role: 'system' as const,
@@ -182,7 +181,11 @@ export async function draftStudioPrompt(
   return {
     prompt,
     model,
-    costMicros: llmCostFromUsage(usage, model, via),
+    costMicros: llmCostFromUsage(
+      usage,
+      model,
+      model === input.model && via === input.llmKey?.via ? input.llmKey : via
+    ),
     usedOwnKey: input.llmKey?.source === 'team',
   };
 }

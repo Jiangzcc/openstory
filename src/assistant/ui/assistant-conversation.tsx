@@ -1,3 +1,4 @@
+import { isInsufficientCreditsError } from '@/platform/errors';
 import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { useTranslation } from 'react-i18next';
 /**
@@ -15,6 +16,11 @@ import { Button } from '@/ui/shadcn/button';
 import type { PageContextItem } from '../page-context';
 import { AssistantComposer } from './assistant-composer';
 import { AssistantMessage } from './assistant-message';
+import { useModelDefaults } from '@/models/ui/use-model-defaults';
+import {
+  textModelSelectionError,
+  useTextModelCatalog,
+} from '@/models/ui/use-text-model-catalog';
 import { setAssistantModel, useAssistantState } from './assistant-store';
 import { useAssistantChat } from './use-assistant-chat';
 
@@ -45,7 +51,12 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
   const translateLabel = useLabelTranslation('assistant');
 
   const queryClient = useQueryClient();
-  const { model } = useAssistantState();
+  const { model: preferredModel } = useAssistantState();
+  const { configuration, isReady: defaultsReady } = useModelDefaults();
+  const model = preferredModel ?? configuration.defaultAnalysis;
+  const catalog = useTextModelCatalog();
+  const modelError = textModelSelectionError([model], catalog, 'tools');
+  const modelReady = defaultsReady && !modelError;
   const chat = useAssistantChat({ threadId, pageContext, model, connection });
   const { messages, sendMessage, isLoading, error, stop, interrupts } = chat;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -114,7 +125,10 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
                   variant="outline"
                   size="sm"
                   className="h-auto w-full justify-start whitespace-normal py-1.5 text-left"
-                  onClick={() => void sendMessage(suggestion)}
+                  disabled={!modelReady}
+                  onClick={() => {
+                    if (modelReady) void sendMessage(suggestion);
+                  }}
                 >
                   {translateLabel(suggestion)}
                 </Button>
@@ -152,7 +166,9 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
                     message={message}
                     streaming={isLoading && message.id === lastId}
                     approvals={approvals}
-                    onViewMessage={(text) => void sendMessage(text)}
+                    onViewMessage={(text) => {
+                      if (modelReady) void sendMessage(text);
+                    }}
                   />
                 </div>
               );
@@ -160,9 +176,16 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
           </div>
         </div>
       )}
+      {modelError && (
+        <p role="alert" className="border-t px-4 py-2 text-xs text-destructive">
+          {modelError.message}
+        </p>
+      )}
       {error && (
         <p role="alert" className="border-t px-4 py-2 text-xs text-destructive">
-          {error.message}
+          {isInsufficientCreditsError(error)
+            ? t('Add credits to chat with the assistant.')
+            : error.message}
         </p>
       )}
       <AssistantComposer
@@ -170,10 +193,11 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
         context={pageContext}
         onDismissContext={onDismissContext}
         initialPrompt={initialPrompt}
-        busy={isLoading}
+        busy={isLoading || !modelReady}
         model={model}
         onModelChange={setAssistantModel}
         onSend={(content) => {
+          if (!modelReady) return;
           void sendMessage(content);
           // The first send creates the thread row; History should list it.
           if (messages.length === 0) {

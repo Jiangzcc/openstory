@@ -23,6 +23,7 @@ import {
   LogOut,
   Settings,
   ShieldAlert,
+  SlidersHorizontal,
   Wallet,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -175,6 +176,7 @@ export function UserSidebarFooter() {
 
 function AdminMenuItem() {
   const { t } = useTranslation('interface');
+  const { t: tAdmin } = useTranslation('admin');
 
   const { data: adminStatus } = useQuery(systemAdminStatusQueryOptions);
 
@@ -196,6 +198,12 @@ function AdminMenuItem() {
         <Link to="/admin/moderation">
           <ShieldAlert className="mr-2 h-4 w-4" />
           {t('Moderation')}
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <Link to="/admin/models">
+          <SlidersHorizontal className="mr-2 h-4 w-4" />
+          {tAdmin('Model configuration')}
         </Link>
       </DropdownMenuItem>
     </>

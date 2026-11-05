@@ -8,7 +8,6 @@ import { gateStoryboardRenders } from '@/billing/server/storyboard-render-gate';
  * Runs surface in the Cloudflare Workflows dashboard by `event.instanceId`.
  */
 
-import { PREVIEW_IMAGE_MODEL } from '@/models/models';
 import {
   deductWorkflowCredits,
   extractImageCost,
@@ -122,7 +121,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
             const prompt = buildPosterPrompt(title, script, styleConfig);
             const result = await generateImageWithProvider(
               {
-                model: PREVIEW_IMAGE_MODEL,
+                model: scopedDb.models.poster,
                 prompt,
                 imageSize: aspectRatioToImageSize(aspectRatio),
               },
@@ -174,12 +173,12 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
           scopedDb,
           costMicros: extractImageCost(posterResult.metadata),
           usedOwnKey: posterResult.metadata.usedOwnKey,
-          description: `Sequence poster (${PREVIEW_IMAGE_MODEL})`,
+          description: `Sequence poster (${scopedDb.models.poster})`,
           idempotencyKey: `${event.instanceId}:poster`,
           reservationId: input.reservationId,
           metadata: {
             ...posterUsage,
-            model: PREVIEW_IMAGE_MODEL,
+            model: scopedDb.models.poster,
             sequenceId,
           },
           workflowName: 'StoryboardWorkflow',
@@ -192,6 +191,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       // Analysis only writes the script/cast and first derived prompt versions.
       await spawnAndAwaitChild<AnalyzeScriptWorkflowInput, unknown>(step, {
         binding: this.env.ANALYZE_SCRIPT_WORKFLOW,
+        modelConfiguration: scopedDb.models,
         parentBindingName: 'STORYBOARD_WORKFLOW',
         parentInstanceId: event.instanceId,
         childId: `analyze-script:${sequenceId}`,
@@ -292,6 +292,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         UpdateStaleShotsResult
       >(step, {
         binding: this.env.UPDATE_STALE_SHOTS_WORKFLOW,
+        modelConfiguration: scopedDb.models,
         parentBindingName: 'STORYBOARD_WORKFLOW',
         parentInstanceId: event.instanceId,
         childId: `continue:${sequenceId}:${event.instanceId}`,

@@ -15,10 +15,7 @@ import { buildMotionRender } from '@/motion/server/build-motion-render';
  *     timed-out child cannot tank the rest of the batch.
  */
 
-import {
-  describeElementImage,
-  ELEMENT_VISION_MODEL,
-} from '@/cast/server/element-vision';
+import { describeElementImage } from '@/cast/server/element-vision';
 import { deductWorkflowCredits } from '@/billing/server/workflow-deduction';
 import {
   DEFAULT_IMAGE_MODEL,
@@ -252,9 +249,11 @@ export class ReplaceElementWorkflow extends OpenStoryWorkflowEntrypoint<ReplaceE
         elementId,
         'analyzing'
       );
-      const llmKeyInfo =
-        await scopedDb.credentials.resolveLlmKey(ELEMENT_VISION_MODEL);
+      const llmKeyInfo = await scopedDb.credentials.resolveLlmKey(
+        scopedDb.models.vision
+      );
       const result = await describeElementImage({
+        model: scopedDb.models.vision,
         imageUrl: newImageUrl,
         filename: input.newFilename,
         llmKey: llmKeyInfo,
@@ -488,6 +487,7 @@ export class ReplaceElementWorkflow extends OpenStoryWorkflowEntrypoint<ReplaceE
             ImageChildResult
           >(step, {
             binding: imageBinding,
+            modelConfiguration: scopedDb.models,
             parentBindingName: PARENT_BINDING_NAME,
             parentInstanceId: event.instanceId,
             childId: `image:${sequenceId}:${shotId}`,
@@ -636,6 +636,7 @@ export class ReplaceElementWorkflow extends OpenStoryWorkflowEntrypoint<ReplaceE
               step,
               {
                 binding: motionBinding,
+                modelConfiguration: scopedDb.models,
                 parentBindingName: PARENT_BINDING_NAME,
                 parentInstanceId: event.instanceId,
                 childId: `motion:${sequenceId}:${shotId}`,

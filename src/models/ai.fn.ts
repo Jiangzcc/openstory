@@ -11,15 +11,15 @@
  * bodies, which the compiler strips.
  */
 
-import {
-  callLLMStream,
-  llmCostFromUsage,
-  RECOMMENDED_MODELS,
-} from '@/models/server/llm-client';
+import { callLLMStream, llmCostFromUsage } from '@/models/server/llm-client';
 import { isValidImageToVideoModel } from './models';
 import type { TextModel } from './models';
 import type { LlmKeyInfo } from '@/models/server/create-adapter';
-import { isValidAnalysisModelId } from './models.config';
+import {
+  isCustomAnalysisModelId,
+  isValidAnalysisModelId,
+} from './models.config';
+import { textModelCatalogFromRouting } from './text-model-catalog';
 import { sanitizeScriptContent } from '@/sequences/prompt-validation';
 import {
   sceneDurationResponseSchema,
@@ -107,13 +107,17 @@ export const shortenPromptFn = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     enforceRateLimit(promptShorteningRateLimiter, getClientIP());
 
-    const { llmKey, deduct } = await prepareBilling(
+    const textModelRouting = await context.scopedDb.textChannels.getSnapshot();
+    const { promptShortening: model } =
+      await context.scopedDb.modelConfiguration.get(
+        textModelCatalogFromRouting(textModelRouting)
+      );
+    const { llmKey, deduct, resolveLlmKey } = await prepareBilling(
       context.scopedDb,
-      `Prompt shortening (${RECOMMENDED_MODELS.fast})`,
-      { model: RECOMMENDED_MODELS.fast }
+      `Prompt shortening (${model})`,
+      { model },
+      { textModelRouting }
     );
-
-    const model = RECOMMENDED_MODELS.fast;
     let shortenedPrompt = '';
     let usage;
     // A region block retries on another model (#1259); bill what answered.
@@ -130,6 +134,7 @@ export const shortenPromptFn = createServerFn({ method: 'POST' })
       observationName: 'shortenPrompt',
       userId: context.user.id,
       apiKey: llmKey,
+      resolveApiKey: resolveLlmKey,
     })) {
       shortenedPrompt = chunk.accumulated;
       if (chunk.done) {
@@ -197,15 +202,21 @@ export const estimateSceneDurationFn = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     enforceRateLimit(sceneDurationEstimationRateLimiter, getClientIP());
 
+    const textModelRouting = await context.scopedDb.textChannels.getSnapshot();
+    const extraModels = textModelCatalogFromRouting(textModelRouting);
+    const stored = context.sequence.analysisModel;
     const analysisModel =
-      (isValidAnalysisModelId(context.sequence.analysisModel)
-        ? context.sequence.analysisModel
-        : null) ?? RECOMMENDED_MODELS.fast;
+      isValidAnalysisModelId(stored, extraModels) ||
+      isCustomAnalysisModelId(stored)
+        ? stored
+        : (await context.scopedDb.modelConfiguration.get(extraModels))
+            .defaultAnalysis;
 
-    const { llmKey, deduct } = await prepareBilling(
+    const { llmKey, deduct, resolveLlmKey } = await prepareBilling(
       context.scopedDb,
       `Scene duration estimate (${analysisModel})`,
-      { model: analysisModel, shotId: context.shot.id }
+      { model: analysisModel, shotId: context.shot.id },
+      { textModelRouting, structuredOutput: true }
     );
 
     const sceneMetadata = context.scene?.metadata;
@@ -242,6 +253,7 @@ export const estimateSceneDurationFn = createServerFn({ method: 'POST' })
       userId: context.user.id,
       responseSchema: sceneDurationResponseSchema,
       apiKey: llmKey,
+      resolveApiKey: resolveLlmKey,
     })) {
       if (chunk.done) {
         response = chunk.parsed;
@@ -272,7 +284,7 @@ const enhanceScriptInputSchema = z
     invent: z.boolean().optional(),
     targetDuration: z.number().min(5).max(300).optional(),
     // Catalog key of the selected video model — clip-grid constraint for labels
-    // (#1374). Optional; the enhancer defaults to DEFAULT_VIDEO_MODEL.
+    // (#1374). Optional; the enhancer uses the configured video default.
     videoModel: z
       .string()
       .refine((val) => isValidImageToVideoModel(val), {
@@ -293,7 +305,16 @@ const enhanceScriptInputSchema = z
         tags: z.array(z.string()).default([]),
       })
       .optional(),
-    analysisModel: z.string().optional(),
+    analysisModel: z
+      .string()
+      .refine(
+        (value) =>
+          isValidAnalysisModelId(value) || isCustomAnalysisModelId(value),
+        {
+          message: 'Invalid analysis model',
+        }
+      )
+      .optional(),
     aspectRatio: aspectRatioSchema.optional(),
     elements: z.array(enhanceElementSchema).optional(),
   })
@@ -459,10 +480,16 @@ export const recommendStylesForScriptFn = createServerFn({ method: 'POST' })
       return { recommendations: [] as StyleRecommendation[] };
     }
 
-    const { llmKey, deduct } = await prepareBilling(
+    const textModelRouting = await context.scopedDb.textChannels.getSnapshot();
+    const { styleRecommendation: model } =
+      await context.scopedDb.modelConfiguration.get(
+        textModelCatalogFromRouting(textModelRouting)
+      );
+    const { llmKey, deduct, resolveLlmKey } = await prepareBilling(
       context.scopedDb,
-      `Style recommendation (${RECOMMENDED_MODELS.structured})`,
-      { model: RECOMMENDED_MODELS.structured }
+      `Style recommendation (${model})`,
+      { model },
+      { textModelRouting, structuredOutput: true }
     );
 
     const { catalog, orderedStyleIds } = buildStyleCatalog(styles);
@@ -475,7 +502,6 @@ ${truncateField(sanitizedScript, RECOMMEND_SCRIPT_BUDGET)}
 
 Return up to ${limit} best-fit styles, strongest first.`;
 
-    const model = RECOMMENDED_MODELS.structured;
     let result;
     let usage;
     let servedModel: TextModel = model;
@@ -491,6 +517,7 @@ Return up to ${limit} best-fit styles, strongest first.`;
       userId: context.user.id,
       responseSchema: styleRecommendationResponseSchema,
       apiKey: llmKey,
+      resolveApiKey: resolveLlmKey,
     })) {
       if (chunk.done) {
         result = chunk.parsed;

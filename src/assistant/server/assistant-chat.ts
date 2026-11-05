@@ -28,6 +28,7 @@ import { reportMissingBillingCost } from '@/billing/billing-observability';
 import { getRequestCountry } from '@/platform/server/request-country';
 import { createAdapter, type LlmKeyInfo } from '@/models/server/create-adapter';
 import { llmCostFromUsage } from '@/models/server/llm-client';
+import { configuredTextModelOptions } from '@/models/server/configured-text';
 import { generateId } from '@/platform/id';
 import { getLogger, toErrorPayload } from '@/platform/logger';
 import { aiObservabilityMiddleware } from '@/platform/server/observability/ai-otel';
@@ -36,6 +37,8 @@ import type { User } from '@/platform/server/auth/config';
 import type { OpenStoryMcpContext } from '@/platform/server/mcp/tool-context';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
 import { ValidationError } from '@/platform/errors';
+import { analysisModelSupportsVision } from '@/models/models.config';
+import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
 import {
   describePageContext,
   hasDraft,
@@ -95,6 +98,10 @@ async function withContextImages(
 }
 import { chatModelFor } from '../chat-model';
 import { assistantTools } from './assistant-tools';
+import {
+  assistantVisionMiddleware,
+  requireAssistantVision,
+} from './assistant-model-input';
 import { threadTitleFrom } from './db/assistant';
 import { assistantStreamLog, heldStreamLog, sealStreamLog } from './durability';
 
@@ -134,8 +141,9 @@ const WEB_PROMPT =
  * Its per-result charge lands on the OpenRouter bill, outside
  * `llmCostFromUsage`, like every native spend.
  */
-function webSearchFor(via: LlmKeyInfo['via']) {
-  return via === 'openrouter'
+function modelOptionsFor(key: LlmKeyInfo) {
+  if (key.via === 'compatible') return configuredTextModelOptions(key.route);
+  return key.via === 'openrouter'
     ? { plugins: [{ id: 'web' as const, maxResults: 3, maxUses: 3 }] }
     : {};
 }
@@ -216,10 +224,11 @@ function lastUserText(
 function billingMiddleware(
   caller: AssistantCaller,
   model: string,
-  via: 'openrouter' | 'fal' | 'xai' | 'google' | 'llmtr',
+  llmKey: LlmKeyInfo,
   usedOwnKey: boolean,
   runId: string
 ): ChatMiddleware[] {
+  const via = llmKey.via;
   const chargeKey = `assistant:${caller.teamId}:${generateId()}`;
   let iteration = 0;
   const charge = async (usage: TokenUsage) => {
@@ -227,7 +236,7 @@ function billingMiddleware(
     iteration += 1;
     // Nothing reported means nothing was used (the model never answered).
     if (usage.totalTokens === 0) return;
-    const cost = llmCostFromUsage(usage, model, via);
+    const cost = llmCostFromUsage(usage, model, llmKey);
     if (cost <= 0) {
       reportMissingBillingCost({
         source: 'assistant-chat',
@@ -265,6 +274,27 @@ function billingMiddleware(
   ];
 }
 
+async function assistantRequestModel(
+  scopedDb: ScopedDb,
+  requested: unknown,
+  items: PageContextItem[],
+  messages: ChatMessage[]
+) {
+  const snapshot = await scopedDb.textChannels.getSnapshot();
+  const extraModels = textModelCatalogFromRouting(snapshot);
+  const configuration = await scopedDb.modelConfiguration.get(extraModels);
+  const model = chatModelFor(
+    requested,
+    getRequestCountry(),
+    extraModels,
+    configuration.defaultAnalysis
+  );
+  const supportsVision = analysisModelSupportsVision(model, extraModels);
+  requireAssistantVision(messages, items, supportsVision);
+  const llmKey = await scopedDb.apiKeys.resolveLlmKey(model, snapshot);
+  return { model, llmKey, supportsVision };
+}
+
 /**
  * POST: one turn, streamed through the run's log. A reconnect after a drop
  * re-sends the same POST with `Last-Event-ID`; that is a read of the log,
@@ -291,9 +321,12 @@ export async function handleAssistantChat(
   }
 
   const { scopedDb } = caller;
-  // The composer's pick; the default when it is missing or not selectable.
-  const model = chatModelFor(params.forwardedProps.model, getRequestCountry());
-  const llmKey = await scopedDb.apiKeys.resolveLlmKey(model);
+  const { model, llmKey, supportsVision } = await assistantRequestModel(
+    scopedDb,
+    params.forwardedProps.model,
+    pageContext.data,
+    params.messages
+  );
   const usedOwnKey = llmKey.source === 'team';
   // A restricted account may read but not spend (#1180); the request
   // middleware checked access, this checks generation before any credit.
@@ -301,11 +334,13 @@ export async function handleAssistantChat(
     userId: caller.user.id,
     teamId: caller.teamId,
   });
-  await requireCredits(scopedDb, estimateLLMCost(2), {
-    providers: ['openrouter'],
-    llmModel: model,
-    errorMessage: 'Add credits to chat with the assistant.',
-  });
+  if (!usedOwnKey) {
+    await requireCredits(scopedDb, estimateLLMCost(2), {
+      providers: [],
+      llmModel: model,
+      errorMessage: 'Add credits to chat with the assistant.',
+    });
+  }
 
   const thread = await scopedDb.assistant.ensureThread(
     threadId.data,
@@ -331,8 +366,11 @@ export async function handleAssistantChat(
           runId: params.runId,
           model,
           via: llmKey.via,
-          error: error.message,
-          rawEvent: error.rawEvent,
+          error:
+            llmKey.via === 'compatible'
+              ? 'Configured text model request failed.'
+              : error.message,
+          ...(llmKey.via !== 'compatible' && { rawEvent: error.rawEvent }),
         }),
     },
     ...aiObservabilityMiddleware({
@@ -341,8 +379,9 @@ export async function handleAssistantChat(
       userId: caller.user.id,
       sessionId: thread.id,
     }),
-    ...billingMiddleware(caller, model, llmKey.via, usedOwnKey, params.runId),
+    ...billingMiddleware(caller, model, llmKey, usedOwnKey, params.runId),
     withPersistence(scopedDb.assistant.persistence(thread.id)),
+    assistantVisionMiddleware(supportsVision),
   ];
   const stream = chat({
     adapter: createAdapter(model, llmKey),
@@ -352,7 +391,7 @@ export async function handleAssistantChat(
       pageContext.data,
       llmKey.via === 'openrouter'
     ),
-    modelOptions: webSearchFor(llmKey.via),
+    modelOptions: modelOptionsFor(llmKey),
     // A draft on the page adds the one browser-executed tool: the server
     // advertises the definition, the client's `useChat` runs it.
     tools: hasDraft(pageContext.data)

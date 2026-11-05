@@ -15,6 +15,7 @@
  *   3. Payload without a sequenceId → no DB access at all.
  */
 
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import { migrateStyleConfigV1ToV2 } from '@/look/style-config';
 import { describe, expect, test, vi } from 'vitest';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '@/models/models';
@@ -158,6 +159,7 @@ function makeScopedDb(status: 'processing' | 'failed' | 'completed') {
   const updateStatus = vi.fn();
   const getForUser = vi.fn(async () => ({ id: 'seq_1', status }));
   const stub = {
+    models: DEFAULT_MODEL_CONFIGURATION,
     // The existence guard is a sanctioned live read (#1067).
     liveRead: { sequences: { getForUser } },
     sequence: vi.fn(() => ({ updateStatus })),
@@ -251,6 +253,7 @@ function makeRunImplDb() {
   const getForUser = vi.fn(async () => ({ id: 'seq_1', status: 'processing' }));
   const update = vi.fn();
   const stub = {
+    models: DEFAULT_MODEL_CONFIGURATION,
     liveRead: { sequences: { getForUser } },
     sequence: vi.fn(() => ({ updateStatus })),
     shots: { deleteBySequence },
@@ -263,6 +266,32 @@ function makeRunImplDb() {
 }
 
 describe('StoryboardWorkflow email-ready', () => {
+  test('uses the snapshotted poster model and inherits configuration in analysis', async () => {
+    const { generateImageWithProvider } =
+      await import('@/stills/server/image-generation');
+    vi.mocked(generateImageWithProvider).mockClear();
+    spawnAndAwaitChild.mockReset();
+    spawnAndAwaitChild.mockResolvedValue(undefined);
+    const { scopedDb } = makeRunImplDb();
+    scopedDb.models = {
+      ...DEFAULT_MODEL_CONFIGURATION,
+      poster: 'nano_banana_2_lite',
+    };
+    await makeWorkflow().invokeRunImpl(
+      makeEvent('seq_1'),
+      makeStep().step,
+      scopedDb
+    );
+    expect(generateImageWithProvider).toHaveBeenCalledWith(
+      expect.objectContaining({ model: scopedDb.models.poster }),
+      expect.any(Object)
+    );
+    expect(spawnAndAwaitChild).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ modelConfiguration: scopedDb.models })
+    );
+  });
+
   test('runs the email-ready step after emit-complete', async () => {
     notifySequenceReady.mockReset();
     notifySequenceReady.mockResolvedValue('sent');

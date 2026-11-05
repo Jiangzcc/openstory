@@ -27,7 +27,7 @@ import {
 } from '@/models/models';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
 } from '@/models/models.config';
 import {
   resolveImageModel,
@@ -66,7 +66,11 @@ import type {
   Shot,
 } from '@/platform/server/db/schema';
 import { analyzeFailures } from '@/sequences/failure-analysis';
-import { flagsFromStopAt, resolveStopAt } from '@/sequences/pipeline';
+import {
+  allowsUnfundedGeneration,
+  flagsFromStopAt,
+  resolveStopAt,
+} from '@/sequences/pipeline';
 import {
   motionPromptFromVersion,
   resolveMotionPromptFromVersion,
@@ -85,7 +89,12 @@ import {
   sequenceScenesUrl,
 } from './notify-sequence-ready';
 import { recordTriggerFailure } from '@/sequences/server/db/sequence-events';
-import { assertNoActiveStoryboard, triggerStoryboard } from './launchers';
+import {
+  assertNoActiveStoryboard,
+  loadStoryboardModelConfiguration,
+  resolveStoryboardLlmSources,
+  triggerStoryboard,
+} from './launchers';
 import type {
   BatchMotionMusicWorkflowInput,
   ImageWorkflowInput,
@@ -325,7 +334,21 @@ export async function executeSmartRetry(
       targetDurationSeconds: sequence.targetDurationSeconds ?? undefined,
       pricing: await getEffectiveFalPricing(),
     });
-    creditProviders = ['fal', 'openrouter'];
+    const configuration = await loadStoryboardModelConfiguration(
+      context.scopedDb
+    );
+    const llmSources = allowsUnfundedGeneration(stopAt)
+      ? undefined
+      : await resolveStoryboardLlmSources(
+          context.scopedDb,
+          sequence.analysisModel,
+          configuration
+        );
+    creditProviders = llmSources?.includes('platform')
+      ? []
+      : llmSources
+        ? ['fal']
+        : ['fal', 'openrouter'];
     const fullResult = {
       retryType: 'full' as const,
       retriedItems: ['full storyboard'],
@@ -339,6 +362,7 @@ export async function executeSmartRetry(
     if (dryRun) return fullResult;
     const reservationId = await reserveRunCredits(context.scopedDb, fullCost, {
       providers: creditProviders,
+      llmSources,
       errorMessage: 'Insufficient credits to retry storyboard',
       sequenceId: sequence.id,
     });
@@ -349,21 +373,25 @@ export async function executeSmartRetry(
       context.scopedDb,
       reservationId,
       () =>
-        triggerStoryboard(context.scopedDb, {
-          userId: user.id,
-          teamId,
-          sequenceId: sequence.id,
-          reservationId,
-          options: {
-            shotsPerScene: 3,
-            generateThumbnails: true,
-            generateDescriptions: true,
-            aiProvider: 'openrouter',
-            regenerateAll: true,
+        triggerStoryboard(
+          context.scopedDb,
+          {
+            userId: user.id,
+            teamId,
+            sequenceId: sequence.id,
+            reservationId,
+            options: {
+              shotsPerScene: 3,
+              generateThumbnails: true,
+              generateDescriptions: true,
+              aiProvider: 'openrouter',
+              regenerateAll: true,
+            },
+            ...flagsFromStopAt(stopAt),
+            stopAt,
           },
-          ...flagsFromStopAt(stopAt),
-          stopAt,
-        })
+          configuration
+        )
     );
     await launched(storyboardRunId);
     return fullResult;
@@ -769,9 +797,10 @@ export async function executeSmartRetry(
         teamId,
         sequenceId: sequence.id,
         sceneSummaries: scenes,
-        analysisModelId:
-          getAnalysisModelById(sequence.analysisModel)?.id ??
-          DEFAULT_ANALYSIS_MODEL,
+        analysisModelId: storedAnalysisModelId(
+          sequence.analysisModel,
+          DEFAULT_ANALYSIS_MODEL
+        ),
         duration: totalDuration,
         // This branch only runs when the sequence has no music prompt at all.
         promptSource: 'ai-generated',

@@ -214,6 +214,7 @@ export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationB
             LocationSheetWorkflowResult
           >(step, {
             binding: childBinding,
+            modelConfiguration: scopedDb.models,
             parentBindingName: 'LOCATION_BIBLE_WORKFLOW',
             parentInstanceId,
             childId: `location-sheet:${locationDbId}`,

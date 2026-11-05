@@ -290,6 +290,11 @@ const ALLOWED_LIVE_READS: Record<string, SanctionedRead[]> = {
   ],
   'upload-check-workflow.ts': [
     {
+      read: 'resolveOptionalKey',
+      bucket: 'CREDENTIAL',
+      why: 'Native Google Files credentials resolve inside the classify step that spends them.',
+    },
+    {
       read: 'resolveLlmKey',
       bucket: 'CREDENTIAL',
       why: 'Resolved inside the classify step that spends it (#2192).',

@@ -274,3 +274,25 @@ describe('createSequenceSchema over-long reference gate', () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe('custom analysis model request shape', () => {
+  it('accepts syntactic custom ids before the request loads the active catalog', () => {
+    const result = createSequenceSchema.parse({
+      script: 'A cyclist races home.',
+      analysisModels: ['custom:request-model'],
+    });
+    expect(result.analysisModels).toEqual(['custom:request-model']);
+  });
+
+  it.each(['custom:', 'custom:bad id', 'unregistered/model'])(
+    'rejects malformed or unknown noncustom model %s',
+    (model) => {
+      expect(
+        createSequenceSchema.safeParse({
+          script: 'A cyclist races home.',
+          analysisModels: [model],
+        }).success
+      ).toBe(false);
+    }
+  );
+});

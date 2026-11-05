@@ -237,6 +237,7 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
         CharacterSheetWorkflowResult
       >(step, {
         binding: characterSheetBinding,
+        modelConfiguration: scopedDb.models,
         parentBindingName: PARENT_BINDING_NAME,
         parentInstanceId: event.instanceId,
         childId: `character-sheet:${characterDbId}`,
@@ -315,6 +316,7 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
             CharacterVoiceWorkflowResult
           >(step, {
             binding: this.env.CHARACTER_VOICE_WORKFLOW,
+            modelConfiguration: scopedDb.models,
             parentBindingName: PARENT_BINDING_NAME,
             parentInstanceId: event.instanceId,
             childId: `character-voice:${row.id}`,

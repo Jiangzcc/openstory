@@ -19,6 +19,7 @@
  */
 
 import { describe, expect, test, vi } from 'vitest';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { NonRetryableError } from 'cloudflare:workflows';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -36,8 +37,10 @@ const recordSequenceEvent = vi.fn(async (_input: { id: string }) => undefined);
 // The failure line goes through `recordOnce` only: `record` mints its own
 // id, so a retried step would append a second line.
 const recordWithFreshId = vi.fn(async () => undefined);
+const getModelConfiguration = vi.fn();
 const SCOPED_DB = {
   scoped: true,
+  modelConfiguration: { get: getModelConfiguration },
   billing: { zeroReservation },
   sequenceEvents: {
     record: recordWithFreshId,
@@ -135,13 +138,17 @@ function makeStep(): WorkflowStep {
   });
 }
 
-function makeWorkflow(impl: () => Promise<unknown>) {
+function makeWorkflow(impl: (scopedDb: WorkflowScopedDb) => Promise<unknown>) {
   const onFailure = vi.fn();
   class TestWorkflow extends OpenStoryWorkflowEntrypoint<TestPayload> {
     protected override readonly failureLabel = 'Test run';
 
-    protected override runImpl(): Promise<unknown> {
-      return impl();
+    protected override runImpl(
+      _event: Readonly<WorkflowEvent<TestPayload>>,
+      _step: WorkflowStep,
+      scopedDb: WorkflowScopedDb
+    ): Promise<unknown> {
+      return impl(scopedDb);
     }
     protected override onFailure(failure: {
       event: Readonly<WorkflowEvent<TestPayload>>;
@@ -161,6 +168,54 @@ function makeWorkflow(impl: () => Promise<unknown>) {
 }
 
 describe('OpenStoryWorkflowEntrypoint.run', () => {
+  test('replays the queued model snapshot without reading current configuration', async () => {
+    getModelConfiguration.mockClear();
+    getModelConfiguration.mockResolvedValue(DEFAULT_MODEL_CONFIGURATION);
+    const snapshot = {
+      ...DEFAULT_MODEL_CONFIGURATION,
+      sceneSplit: 'z-ai/glm-5.3-flash' as const,
+    };
+    const { workflow } = makeWorkflow(async (db) => db.models.sceneSplit);
+    const queued = makeEvent(false, { modelConfiguration: snapshot });
+    await expect(workflow.run(queued, makeStep())).resolves.toBe(
+      snapshot.sceneSplit
+    );
+    await expect(workflow.run(queued, makeStep())).resolves.toBe(
+      snapshot.sceneSplit
+    );
+    expect(getModelConfiguration).not.toHaveBeenCalled();
+  });
+
+  test('uses code defaults for queued legacy jobs that have no model snapshot', async () => {
+    getModelConfiguration.mockClear();
+    const { workflow } = makeWorkflow(async (db) => db.models);
+    await expect(workflow.run(makeEvent(false), makeStep())).resolves.toEqual(
+      DEFAULT_MODEL_CONFIGURATION
+    );
+    expect(getModelConfiguration).not.toHaveBeenCalled();
+  });
+
+  test('exposes the same model snapshot to failure handling', async () => {
+    const snapshot = {
+      ...DEFAULT_MODEL_CONFIGURATION,
+      sceneSplit: 'z-ai/glm-5.3-flash' as const,
+    };
+    const { workflow, onFailure } = makeWorkflow(async () => {
+      throw new Error('render failed');
+    });
+    await expect(
+      workflow.run(
+        makeEvent(false, { modelConfiguration: snapshot }),
+        makeStep()
+      )
+    ).rejects.toThrow('render failed');
+    expect(onFailure).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scopedDb: expect.objectContaining({ models: snapshot }),
+      })
+    );
+  });
+
   test('the payload seam (#2065): a run queued with the old features field sees it folded into the default look', async () => {
     type Queued = TestPayload & { characterBible: unknown[] };
     let seen: unknown;

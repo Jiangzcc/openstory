@@ -6,7 +6,7 @@ import {
 } from '@/cast/server/bibles-from-scoped';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
 } from '@/models/models.config';
 import { wearBibleLooks } from '@/cast/bible-looks';
 import { dressForScene } from '@/cast/character-looks';
@@ -121,8 +121,7 @@ export async function loadShotPromptContext(args: {
 
   const analysisModel =
     analysisModelOverride ??
-    getAnalysisModelById(sequence.analysisModel)?.id ??
-    DEFAULT_ANALYSIS_MODEL;
+    storedAnalysisModelId(sequence.analysisModel, DEFAULT_ANALYSIS_MODEL);
 
   // Each character in the outfit this scene picks for it (#2015): the
   // prompt, and its hash, read that look's clothing.

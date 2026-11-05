@@ -161,6 +161,7 @@ export class RegenerateShotsWorkflow extends OpenStoryWorkflowEntrypoint<Regener
             ImageChildOutput
           >(step, {
             binding: childBinding,
+            modelConfiguration: scopedDb.models,
             parentBindingName: 'REGENERATE_SHOTS_WORKFLOW',
             parentInstanceId,
             childId: `image:${sequenceId}:${snapshot.shotId}`,
@@ -269,6 +270,7 @@ export class RegenerateShotsWorkflow extends OpenStoryWorkflowEntrypoint<Regener
                 // Dedupe: a retry of this step.do mustn't re-fire variants.
                 deduplicationId: `variant-image-${result.shotId}-${imageModel}-${snapshot.snapshotInputHash.slice(0, 16)}`,
                 enforcement,
+                modelConfiguration: scopedDb.models,
               }
             );
           })

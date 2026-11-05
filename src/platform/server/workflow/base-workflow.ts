@@ -199,7 +199,8 @@ export abstract class OpenStoryWorkflowEntrypoint<
     }
 
     const scopedDb = toWorkflowScopedDb(
-      createScopedDb(event.payload.teamId, event.payload.userId)
+      createScopedDb(event.payload.teamId, event.payload.userId),
+      event.payload.modelConfiguration
     );
 
     // Install the fal→proxy middleware on the global `fal` singleton before any

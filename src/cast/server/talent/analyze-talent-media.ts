@@ -7,20 +7,29 @@
 import {
   analyzeTalentClip,
   analyzeTalentMedia,
-  TALENT_CLIP_MODEL,
-  TALENT_VISION_MODEL,
   type TalentVisionResult,
 } from '@/cast/server/talent-vision';
 import { reportMissingBillingCost } from '@/billing/billing-observability';
 import { estimateLLMCost } from '@/billing/cost-estimation';
 import type { ScopedDb } from '@/platform/server/db/scoped';
+import type { ModelConfiguration } from '@/models/model-configuration';
+import type { AnalysisModelId } from '@/models/models.config';
+
+type VisionModels = Pick<ModelConfiguration, 'vision' | 'talentVideo'>;
 
 /**
  * What a billed vision call reads and writes. Narrow so a request and a
  * workflow (`UploadCheckWorkflow`, through its named hatches) both satisfy it.
  */
-export type VisionBillingDb = {
-  apiKeys: Pick<ScopedDb['apiKeys'], 'resolveLlmKey'>;
+export type VisionBillingDb = (
+  | Pick<ScopedDb, 'modelConfiguration'>
+  | { models: VisionModels }
+) & {
+  apiKeys: Pick<ScopedDb['apiKeys'], 'resolveLlmKey'> & {
+    resolveOptionalKey: (
+      provider: 'google'
+    ) => ReturnType<ScopedDb['apiKeys']['resolveOptionalKey']>;
+  };
   billing: Pick<ScopedDb['billing'], 'hasEnoughCredits' | 'deductCredits'>;
 };
 import { InsufficientCreditsError } from '@/platform/errors';
@@ -48,10 +57,11 @@ export type AnalyzeTalentMediaForTeamInput = {
 export async function analyzeTalentMediaForTeam(
   input: AnalyzeTalentMediaForTeamInput
 ): Promise<TalentVisionResult> {
-  const llmKeyInfo =
-    await input.scopedDb.apiKeys.resolveLlmKey(TALENT_VISION_MODEL);
+  const model = await configuredVisionModel(input.scopedDb, 'vision');
+  const llmKeyInfo = await input.scopedDb.apiKeys.resolveLlmKey(model);
   await requireVisionCredits(input.scopedDb, llmKeyInfo);
   const result = await analyzeTalentMedia({
+    model,
     imageUrls: input.imageUrls,
     filenames: input.filenames,
     llmKey: llmKeyInfo,
@@ -80,15 +90,17 @@ export async function analyzeTalentClipForTeam(input: {
   mimeType: string;
   idempotencyKey: string;
 }): Promise<TalentVisionResult> {
-  const llmKey = await input.scopedDb.apiKeys.resolveLlmKey(TALENT_CLIP_MODEL);
-  if (llmKey.via !== 'google') {
+  const model = await configuredVisionModel(input.scopedDb, 'talentVideo');
+  const credential = await input.scopedDb.apiKeys.resolveOptionalKey('google');
+  if (!credential) {
     throw geminiUnavailableError(
       'Checking a clip for a real person needs a Gemini API key. Add one in Settings → API Keys.'
     );
   }
+  const llmKey = { ...credential, via: 'google' as const };
   await requireVisionCredits(input.scopedDb, llmKey);
   return refuseGeminiOffRegion('talent clip check', () =>
-    checkUploadedClip(input, llmKey)
+    checkUploadedClip(input, llmKey, model)
   );
 }
 
@@ -100,11 +112,13 @@ async function checkUploadedClip(
     mimeType: string;
     idempotencyKey: string;
   },
-  llmKey: ResolvedLlmKey
+  llmKey: ResolvedLlmKey,
+  model: AnalysisModelId
 ): Promise<TalentVisionResult> {
   const file = await uploadClipToGemini(input.key, input.mimeType, llmKey.key);
   try {
     const result = await analyzeTalentClip({
+      model,
       clip: file,
       llmKey,
       observability: { userId: input.userId, tags: ['vision', 'likeness'] },
@@ -119,6 +133,17 @@ async function checkUploadedClip(
       });
     });
   }
+}
+
+async function configuredVisionModel(
+  scopedDb: VisionBillingDb,
+  field: keyof VisionModels
+): Promise<AnalysisModelId> {
+  const models =
+    'models' in scopedDb
+      ? scopedDb.models
+      : await scopedDb.modelConfiguration.get();
+  return models[field];
 }
 
 async function requireVisionCredits(

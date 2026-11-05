@@ -13,6 +13,8 @@ import {
   compareSelectorModels,
   DEFAULT_GENERATION_MODE,
   defaultAnalysisModel,
+  defaultAudioModel,
+  availableDefaultVideoModel,
   defaultImageModel,
   defaultVideoModel,
   isTurboImageModel,
@@ -33,6 +35,8 @@ import {
   TURBO_IMAGE_MODELS,
   TURBO_VIDEO_MODELS,
 } from './generation-mode';
+
+import { DEFAULT_MODEL_CONFIGURATION } from './model-configuration';
 
 const baseSettings = {
   generationMode: 'quality' as const,
@@ -221,5 +225,74 @@ describe('turbo catalogs', () => {
       expect(isValidAudioModel(id)).toBe(true);
       expect(AUDIO_MODELS[id].type).toBe('music');
     }
+  });
+});
+
+describe('administrator mode recommendations', () => {
+  const configured = {
+    ...DEFAULT_MODEL_CONFIGURATION,
+    turboAnalysis: 'z-ai/glm-5.3-flash' as const,
+    turboImage: 'flux_2_flash' as const,
+    turboVideo: 'seedance_v2' as const,
+    turboMusic: 'ace_step' as const,
+    qualityAnalysis: 'anthropic/claude-sonnet-5.5' as const,
+    qualityImage: 'nano_banana_2_lite' as const,
+    qualityVideo: 'minimax_h3_max' as const,
+    qualityMusic: 'ace_step_1_5' as const,
+  };
+
+  it('uses all configured recommendations on a mode switch', () => {
+    expect(
+      applyGenerationMode(baseSettings, 'turbo', configured)
+    ).toMatchObject({
+      analysisModels: [configured.turboAnalysis],
+      imageModels: [configured.turboImage],
+      videoModels: [configured.turboVideo],
+      audioModels: [configured.turboMusic],
+    });
+    expect(
+      applyGenerationMode(
+        { ...baseSettings, generationMode: 'turbo' },
+        'quality',
+        configured
+      )
+    ).toMatchObject({
+      analysisModels: [configured.qualityAnalysis],
+      imageModels: [configured.qualityImage],
+      videoModels: [configured.qualityVideo],
+      audioModels: [configured.qualityMusic],
+    });
+  });
+
+  it('keeps an explicit same-mode choice', () => {
+    expect(applyGenerationMode(baseSettings, 'quality', configured)).toEqual(
+      baseSettings
+    );
+    expect(defaultAnalysisModel('quality', configured)).toBe(
+      configured.qualityAnalysis
+    );
+    expect(defaultImageModel('turbo', configured)).toBe(configured.turboImage);
+    expect(defaultAudioModel('quality', configured)).toBe(
+      configured.qualityMusic
+    );
+  });
+
+  it('honors a configured video even when BytePlus is available', () => {
+    expect(
+      availableDefaultVideoModel('minimax_h3_max', 'seedance_v2', '16:9', {
+        byteplus: true,
+      })
+    ).toBe('minimax_h3_max');
+  });
+
+  it('keeps provider and aspect compatibility fallbacks', () => {
+    expect(
+      availableDefaultVideoModel('seedance_v2_5', 'minimax_h3_max', '16:9', {})
+    ).toBe('minimax_h3_max');
+    expect(
+      availableDefaultVideoModel('seedance_v2_5', 'minimax_h3_max', '16:9', {
+        byteplus: true,
+      })
+    ).toBe('seedance_v2_5');
   });
 });

@@ -1,4 +1,10 @@
-import { isValidAnalysisModelId } from '@/models/models.config';
+import {
+  getAnalysisModelById,
+  isCustomAnalysisModelId,
+  isValidAnalysisModelId,
+} from '@/models/models.config';
+import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import { ValidationError } from '@/platform/errors';
 import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_MUSIC_MODEL,
@@ -20,10 +26,13 @@ import {
 import { estimateStoryboardPreflightCost } from '@/billing/storyboard-preflight-cost';
 import { VARIANT_TYPES } from '@/platform/server/db/schema/shot-variants';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
-import { createSequenceSchema } from '@/sequences/server/sequence.schemas';
+import { parseConfiguredSequenceInput } from '@/sequences/server/configured-sequence-input';
+import { loadModelConfiguration } from '@/platform/server/db/scoped';
 import {
   triggerContinue,
   triggerStoryboard,
+  loadStoryboardModelConfiguration,
+  resolveStoryboardLlmSources,
 } from '@/sequences/server/launchers';
 import { computePlan } from '@/shots/server/update-stale-plan';
 import {
@@ -141,7 +150,9 @@ export const estimateGenerationSliceFn = createServerFn({ method: 'GET' })
  */
 export const createSequenceFn = createServerFn({ method: 'POST' })
   .middleware([authWithTeamMiddleware])
-  .validator(zodValidator(createSequenceSchema))
+  .validator(async (input: unknown) =>
+    parseConfiguredSequenceInput(input, await loadModelConfiguration())
+  )
   .handler(async ({ data, context }) => {
     const { sequences } = await createSequences(data, {
       scopedDb: context.scopedDb,
@@ -273,7 +284,11 @@ export const setSequenceTargetDurationFn = createServerFn({ method: 'POST' })
 const sequenceModelsSchema = z.object({
   analysisModel: z
     .string()
-    .refine(isValidAnalysisModelId, { message: 'Invalid analysis model' })
+    .refine(
+      (value) =>
+        isValidAnalysisModelId(value) || isCustomAnalysisModelId(value),
+      { message: 'Invalid analysis model' }
+    )
     .optional(),
   imageModel: z
     .string()
@@ -307,6 +322,18 @@ export const setSequenceModelsFn = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const { sequenceId, ...models } = data;
     const { sequence } = context;
+    if (models.analysisModel !== undefined) {
+      const snapshot = await context.scopedDb.textChannels.getSnapshot();
+      const model = getAnalysisModelById(
+        models.analysisModel,
+        textModelCatalogFromRouting(snapshot)
+      );
+      if (!model || model.structuredOutput === false) {
+        throw new ValidationError(
+          'Select an available analysis model that supports structured output.'
+        );
+      }
+    }
     const moved =
       (models.analysisModel ?? sequence.analysisModel) !==
         sequence.analysisModel ||
@@ -367,6 +394,9 @@ export const retryStoryboardFn = createServerFn({ method: 'POST' })
     const stopAt = resolveStopAt({
       generationStopAt: sequence.generationStopAt,
     });
+    const configuration = await loadStoryboardModelConfiguration(
+      context.scopedDb
+    );
     const reservationId = allowsUnfundedGeneration(stopAt)
       ? undefined
       : await reserveRunCredits(
@@ -394,6 +424,11 @@ export const retryStoryboardFn = createServerFn({ method: 'POST' })
           }),
           {
             providers: ['fal', 'openrouter'],
+            llmSources: await resolveStoryboardLlmSources(
+              context.scopedDb,
+              sequence.analysisModel,
+              configuration
+            ),
             errorMessage: 'Insufficient credits to retry storyboard',
             sequenceId: sequence.id,
           }
@@ -418,7 +453,7 @@ export const retryStoryboardFn = createServerFn({ method: 'POST' })
     // Owns the generation mutex, the 'processing' status write, and the
     // run-id persistence (#839).
     await releaseReservationOnThrow(context.scopedDb, reservationId, () =>
-      triggerStoryboard(context.scopedDb, workflowInput)
+      triggerStoryboard(context.scopedDb, workflowInput, configuration)
     );
 
     return { success: true };

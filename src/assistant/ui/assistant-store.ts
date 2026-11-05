@@ -10,7 +10,7 @@
 import { useSyncExternalStore } from 'react';
 import { generateId } from '@/platform/id';
 import {
-  DEFAULT_ANALYSIS_MODEL,
+  isCustomAnalysisModelId,
   isSelectableAnalysisModelId,
   type AnalysisModelId,
 } from '@/models/models.config';
@@ -33,7 +33,7 @@ export type AssistantState = {
   width: number;
   threadId: string;
   /** The model that answers; the user's pick, kept across threads. */
-  model: AnalysisModelId;
+  model: AnalysisModelId | null;
   draft: AssistantDraft | null;
   /** Context chips the user removed for this thread, by `kind:id`. */
   dismissedContext: ReadonlySet<string>;
@@ -75,9 +75,11 @@ function readStored(): Pick<
         open: parsed.open,
         threadId: parsed.threadId,
         model:
-          'model' in parsed && isSelectableAnalysisModelId(parsed.model)
+          'model' in parsed &&
+          (isSelectableAnalysisModelId(parsed.model) ||
+            isCustomAnalysisModelId(parsed.model))
             ? parsed.model
-            : DEFAULT_ANALYSIS_MODEL,
+            : null,
         width:
           'width' in parsed && typeof parsed.width === 'number'
             ? clampAssistantWidth(parsed.width)
@@ -94,7 +96,7 @@ const SERVER_STATE: AssistantState = {
   open: false,
   width: DEFAULT_WIDTH,
   threadId: '',
-  model: DEFAULT_ANALYSIS_MODEL,
+  model: null,
   draft: null,
   dismissedContext: new Set(),
   extraContext: new Map(),
@@ -122,7 +124,7 @@ function set(patch: Partial<AssistantState>): void {
       JSON.stringify({
         open: state.open,
         threadId: state.threadId,
-        model: state.model,
+        model: state.model ?? undefined,
         width: state.width,
       })
     );

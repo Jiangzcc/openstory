@@ -16,10 +16,12 @@ import {
   callLLMStream,
   ENHANCE_REASONING,
   llmCostFromUsage,
-  RECOMMENDED_MODELS,
 } from '@/models/server/llm-client';
-import { isValidAnalysisModelId } from '@/models/models.config';
-import { DEFAULT_VIDEO_MODEL, isValidImageToVideoModel } from '@/models/models';
+import { getAnalysisModelById } from '@/models/models.config';
+import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import type { TextModelRoutingSnapshot } from '@/models/text-channels';
+import type { TextModel } from '@/models/models';
+import { isValidImageToVideoModel } from '@/models/models';
 import {
   checkForInjectionAttempts,
   sanitizeScriptContent,
@@ -34,7 +36,7 @@ import { estimateLLMCost } from '@/billing/cost-estimation';
 import { addMicros, ZERO_MICROS, type Microdollars } from '@/billing/money';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { ResolvedLlmKey } from '@/models/server/db/api-keys';
-import { InsufficientCreditsError } from '@/platform/errors';
+import { InsufficientCreditsError, ValidationError } from '@/platform/errors';
 import { getLogger } from '@/platform/logger';
 import {
   getPrompt,
@@ -50,6 +52,56 @@ export type { EnhanceChunk } from '@/sequences/enhance-script-turns';
 
 const logger = getLogger(['openstory', 'serverFn', 'ai']);
 
+type BillingOptions = {
+  allowUnfunded?: boolean;
+  textModelRouting?: TextModelRoutingSnapshot;
+  structuredOutput?: boolean;
+  vision?: boolean;
+};
+
+function requestLlmKeyResolver(
+  scopedDb: ScopedDb,
+  snapshot: TextModelRoutingSnapshot,
+  capabilities?: BillingOptions
+) {
+  const extraModels = textModelCatalogFromRouting(snapshot);
+  return async (selected: string) => {
+    const definition = getAnalysisModelById(selected, extraModels);
+    if (
+      !definition ||
+      (capabilities?.structuredOutput &&
+        definition.structuredOutput === false) ||
+      (capabilities?.vision && !definition.vision)
+    ) {
+      throw new ValidationError(
+        'The selected text model is unavailable or lacks the required capabilities.'
+      );
+    }
+    return scopedDb.apiKeys.resolveLlmKey(selected, snapshot);
+  };
+}
+
+function billRequestUsage(
+  scopedDb: ScopedDb,
+  description: string,
+  metadata?: Record<string, unknown>
+) {
+  return async (actualCost: Microdollars) => {
+    if (actualCost > 0) {
+      await scopedDb.billing.deductCredits(actualCost, {
+        description,
+        metadata,
+      });
+      return;
+    }
+    reportMissingBillingCost({
+      source: 'server-fn-deduct',
+      description,
+      metadata,
+    });
+  };
+}
+
 /**
  * Check pre-flight billing and resolve the key for the LLM call.
  * `deduct` is undefined when billing is skipped — the team's own key pays,
@@ -60,20 +112,26 @@ export async function prepareBilling(
   scopedDb: ScopedDb,
   description: string,
   metadata?: Record<string, unknown>,
-  opts?: { allowUnfunded?: boolean }
+  opts?: BillingOptions
 ): Promise<{
   llmKey: ResolvedLlmKey;
+  resolveLlmKey: (model: TextModel) => Promise<ResolvedLlmKey>;
   deduct?: (actualCost: Microdollars) => Promise<void>;
 }> {
   const model =
     typeof metadata?.model === 'string' ? metadata.model : undefined;
-  const llmKey = await scopedDb.apiKeys.resolveLlmKey(model);
-  if (llmKey.source === 'team') return { llmKey };
+  const snapshot =
+    opts?.textModelRouting ?? (await scopedDb.textChannels.getSnapshot());
+  const resolveLlmKey = requestLlmKeyResolver(scopedDb, snapshot, opts);
+  const llmKey = model
+    ? await resolveLlmKey(model)
+    : await scopedDb.apiKeys.resolveLlmKey(undefined, snapshot);
+  if (llmKey.source === 'team') return { llmKey, resolveLlmKey };
 
   const estimatedCost = estimateLLMCost(1);
   const canAfford = await scopedDb.billing.hasEnoughCredits(estimatedCost);
   if (!canAfford) {
-    if (opts?.allowUnfunded) return { llmKey };
+    if (opts?.allowUnfunded) return { llmKey, resolveLlmKey };
     throw new InsufficientCreditsError(
       `Insufficient credits for ${description.toLowerCase()}`
     );
@@ -81,20 +139,8 @@ export async function prepareBilling(
 
   return {
     llmKey,
-    deduct: async (actualCost) => {
-      if (actualCost > 0) {
-        await scopedDb.billing.deductCredits(actualCost, {
-          description,
-          metadata,
-        });
-        return;
-      }
-      reportMissingBillingCost({
-        source: 'server-fn-deduct',
-        description,
-        metadata,
-      });
-    },
+    resolveLlmKey,
+    deduct: billRequestUsage(scopedDb, description, metadata),
   };
 }
 
@@ -118,21 +164,28 @@ export async function* streamScriptEnhancement(
   data: EnhanceScriptInput,
   ctx: { scopedDb: ScopedDb; userId: string; teamId: string }
 ): AsyncGenerator<EnhanceChunk> {
-  const model =
-    data.analysisModel && isValidAnalysisModelId(data.analysisModel)
-      ? data.analysisModel
-      : RECOMMENDED_MODELS.creative;
+  const textModelRouting = await ctx.scopedDb.textChannels.getSnapshot();
+  const models = await ctx.scopedDb.modelConfiguration.get(
+    textModelCatalogFromRouting(textModelRouting)
+  );
+  const model = data.analysisModel ?? models.defaultAnalysis;
   const videoModel =
     data.videoModel && isValidImageToVideoModel(data.videoModel)
       ? data.videoModel
-      : DEFAULT_VIDEO_MODEL;
+      : models.defaultVideo;
   const targetSeconds = data.targetDuration ?? 30;
 
-  const { llmKey, deduct } = await prepareBilling(
+  const { llmKey, deduct, resolveLlmKey } = await prepareBilling(
     ctx.scopedDb,
     'Script enhancement',
     { model },
-    { allowUnfunded: true }
+    {
+      allowUnfunded: true,
+      textModelRouting,
+      vision: data.elements?.some(
+        (element) => (element.kind ?? 'image') === 'image'
+      ),
+    }
   );
 
   if (checkForInjectionAttempts(data.script)) {
@@ -217,7 +270,8 @@ export async function* streamScriptEnhancement(
   // search and OpenRouter executes it server-side within the agent loop.
   // Gate it out of E2E entirely (record + replay): live search results would
   // make the recorded OpenRouter request/response non-deterministic.
-  const useWebSearch = getEnv().E2E_TEST !== 'true';
+  const useWebSearch =
+    llmKey.via === 'openrouter' && getEnv().E2E_TEST !== 'true';
   let totalCost: Microdollars = ZERO_MICROS;
 
   async function* generate(turnMessages: ChatMessage[]) {
@@ -239,6 +293,7 @@ export async function* streamScriptEnhancement(
       tags: ['script-enhance', model],
       userId: ctx.userId,
       apiKey: llmKey,
+      resolveApiKey: resolveLlmKey,
       metadata: {
         teamId: ctx.teamId,
         elementCount: elements.length,

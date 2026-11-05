@@ -16,7 +16,9 @@
  * always parsed.
  */
 
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import { SCENE_SPLIT_MODEL } from '@/models/models.config';
+import type { TextModelRoute } from '@/models/text-channels';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type {
   WorkflowEvent,
@@ -27,6 +29,8 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { SceneSplittingScene } from '@/sequences/server/streaming-scene-parser';
 import type { SceneSplitWorkflowInput } from '@/platform/server/workflow/types';
 import { asStub } from '@/test/as-stub';
+import { sanitizeFailResponse } from '@/platform/server/workflow/sanitize-fail-response';
+import { readLlmAuthFailureSource } from '@/platform/server/workflow/llm-auth-failure-source';
 
 const triggerWorkflow =
   vi.fn<(path: string, body: unknown, options?: unknown) => Promise<string>>();
@@ -72,6 +76,7 @@ const fullCover = () => ({
 // Set in the top-level beforeEach: `SCENES` is declared further down.
 let shotListParsed: { scenes: unknown[] } | undefined;
 let shotListError: Error | undefined;
+let authFailureStage: 'scenes' | 'bibles' | 'shot-list' | undefined;
 /** Partial chunks yielded before the shot-list call's done chunk. */
 let shotListPartials: string[] = [];
 /** Runs just before the shot-list call's done chunk is yielded. */
@@ -88,6 +93,7 @@ vi.doMock('@/models/server/llm-client', () => ({
   callLLMStream: vi.fn((params: { observationName?: string }) => ({
     async *[Symbol.asyncIterator]() {
       if (params.observationName === 'phase-1-scene-bibles') {
+        if (authFailureStage === 'bibles') throw new Error('401 Unauthorized');
         yield {
           done: true,
           accumulated: '{}',
@@ -97,6 +103,8 @@ vi.doMock('@/models/server/llm-client', () => ({
         return;
       }
       if (params.observationName === 'phase-1-scene-shot-list') {
+        if (authFailureStage === 'shot-list')
+          throw new Error('401 Unauthorized');
         if (shotListError) throw shotListError;
         for (const accumulated of shotListPartials) {
           yield { done: false, accumulated, delta: accumulated };
@@ -110,6 +118,7 @@ vi.doMock('@/models/server/llm-client', () => ({
         };
         return;
       }
+      if (authFailureStage === 'scenes') throw new Error('401 Unauthorized');
       for (const chunk of streamChunks) yield chunk;
     },
   })),
@@ -250,6 +259,7 @@ function makeScopedDb(
     return created;
   };
   const scopedDb = {
+    models: DEFAULT_MODEL_CONFIGURATION,
     credentials: {
       resolveLlmKey,
     },
@@ -346,6 +356,10 @@ class Probe extends SceneSplitWorkflow {
   ) {
     return this.runImpl(event, step, scopedDb);
   }
+
+  failed(error: string, scopedDb: WorkflowScopedDb) {
+    return this.onFailure({ event: makeEvent(), error, scopedDb });
+  }
 }
 
 function makeWorkflow(): Probe {
@@ -363,6 +377,7 @@ const previewCalls = () =>
 beforeEach(() => {
   shotListParsed = fullCover();
   shotListError = undefined;
+  authFailureStage = undefined;
   shotListPartials = [];
   beforeShotListDone = () => {};
 });
@@ -371,6 +386,34 @@ describe('SceneSplitWorkflow preview fan-out', () => {
   beforeEach(() => {
     streamChunks = singleDoneChunk();
     feed.mockReset();
+  });
+
+  test('uses the queued scene-split model and passes its snapshot to previews', async () => {
+    triggerWorkflow.mockReset();
+    triggerWorkflow.mockResolvedValue('run-1');
+    const resolveLlmKey = vi.fn(async () => ({
+      source: 'platform',
+      via: 'openrouter',
+      key: 'k',
+    }));
+    const scopedDb = makeScopedDb(resolveLlmKey);
+    scopedDb.models = {
+      ...DEFAULT_MODEL_CONFIGURATION,
+      sceneSplit: 'z-ai/glm-5.3-flash',
+      shotPreview: 'krea_2_turbo',
+    };
+    await makeWorkflow().split(makeEvent(), makeStep(), scopedDb);
+
+    const { callLLMStream } = await import('@/models/server/llm-client');
+    expect(resolveLlmKey).toHaveBeenCalledWith(scopedDb.models.sceneSplit);
+    expect(callLLMStream).toHaveBeenCalledWith(
+      expect.objectContaining({ model: scopedDb.models.sceneSplit })
+    );
+    expect(triggerWorkflow).toHaveBeenCalledWith(
+      '/image',
+      expect.objectContaining({ model: scopedDb.models.shotPreview }),
+      expect.objectContaining({ modelConfiguration: scopedDb.models })
+    );
   });
 
   test('triggers one preview per shot on the happy path', async () => {
@@ -1102,4 +1145,111 @@ describe('SceneSplitWorkflow shot-list pass (#1486)', () => {
     expect(shotListCall?.model).toBe(INPUT.modelId);
     expect(shotListCall?.responseSchema).toBeDefined();
   });
+});
+
+const AUTH_SPLIT_MODEL = 'z-ai/glm-5.3-flash';
+const AUTH_MOCK_ROUTE = {
+  name: 'Mock auth model',
+  channelId: 'mock-auth-channel',
+  upstreamModel: 'mock-auth-upstream',
+  credentialId: 'mock-auth-credential',
+  protocol: 'openai-chat-completions',
+  baseUrl: 'https://mock.invalid/v1',
+  vision: true,
+  structuredOutput: true,
+  tools: true,
+  contextWindow: 8_000,
+  maxOutputTokens: 2_000,
+  inputPricePerMillion: 0,
+  outputPricePerMillion: 0,
+} satisfies Omit<TextModelRoute, 'modelId'>;
+
+function authFailureFixture(
+  splitSource: 'team' | 'platform',
+  analysisSource: 'team' | 'platform'
+) {
+  const resolveLlmKey = vi.fn(async (model?: string) => {
+    const source = model === AUTH_SPLIT_MODEL ? splitSource : analysisSource;
+    const via =
+      source === 'platform'
+        ? 'compatible'
+        : model === AUTH_SPLIT_MODEL
+          ? 'fal'
+          : 'openrouter';
+    return {
+      source,
+      via,
+      key: 'mock-secret-never-checkpointed',
+      ...(via === 'compatible' && {
+        route: { ...AUTH_MOCK_ROUTE, modelId: model ?? INPUT.modelId },
+      }),
+    };
+  });
+  const scopedDb = makeScopedDb(resolveLlmKey);
+  scopedDb.models = {
+    ...DEFAULT_MODEL_CONFIGURATION,
+    sceneSplit: AUTH_SPLIT_MODEL,
+  };
+  const markKeyInvalid = vi.fn(async () => undefined);
+  scopedDb.apiKeys = asStub<WorkflowScopedDb['apiKeys']>({ markKeyInvalid });
+  return { scopedDb, resolveLlmKey, markKeyInvalid };
+}
+
+function durableAuthFailureMessage(error: unknown): string {
+  if (!(error instanceof Error)) throw new Error('Expected mocked LLM failure');
+  const wire: { name: string; message: string } = JSON.parse(
+    JSON.stringify({ name: error.name, message: error.message })
+  );
+  return sanitizeFailResponse(new Error(wire.message));
+}
+
+describe('SceneSplitWorkflow credential attribution (local mock streams)', () => {
+  beforeEach(() => {
+    streamChunks = singleDoneChunk();
+    feed.mockReset();
+    emit.mockClear();
+    triggerWorkflow.mockReset();
+    triggerWorkflow.mockResolvedValue('mock-preview-run');
+  });
+
+  test.each([
+    ['scenes', 'team', 'platform', 'fal'],
+    ['scenes', 'platform', 'team', undefined],
+    ['bibles', 'team', 'platform', undefined],
+    ['bibles', 'platform', 'team', 'openrouter'],
+    ['shot-list', 'team', 'platform', undefined],
+    ['shot-list', 'platform', 'team', 'openrouter'],
+  ] as const)(
+    '%s 401 belongs to its resolved credential (split=%s, analysis=%s)',
+    async (stage, splitSource, analysisSource, expectedVia) => {
+      authFailureStage = stage;
+      const { scopedDb, resolveLlmKey, markKeyInvalid } = authFailureFixture(
+        splitSource,
+        analysisSource
+      );
+      const workflow = makeWorkflow();
+      const failure: unknown = await workflow
+        .split(makeEvent(), makeStep(), scopedDb)
+        .catch((error: unknown) => error);
+      const message = durableAuthFailureMessage(failure);
+      const resolutionCount = resolveLlmKey.mock.calls.length;
+      await workflow.failed(message, scopedDb);
+      expect(resolveLlmKey).toHaveBeenCalledTimes(resolutionCount);
+      expect(message).not.toContain('mock-secret-never-checkpointed');
+      if (expectedVia) {
+        expect(markKeyInvalid).toHaveBeenCalledExactlyOnceWith(
+          expectedVia,
+          '401 Unauthorized'
+        );
+        expect(readLlmAuthFailureSource(message)?.model).toBe(
+          stage === 'scenes' ? AUTH_SPLIT_MODEL : INPUT.modelId
+        );
+      } else {
+        expect(markKeyInvalid).not.toHaveBeenCalled();
+        expect(emit).toHaveBeenCalledWith('generation.error', {
+          message: 'Scene splitting failed',
+        });
+      }
+    }
+  );
 });

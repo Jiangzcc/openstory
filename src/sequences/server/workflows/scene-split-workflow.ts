@@ -73,7 +73,8 @@ import {
   llmCostFromUsage,
   PROMPT_REASONING,
 } from '@/models/server/llm-client';
-import { getMaxOutputTokens, SCENE_SPLIT_MODEL } from '@/models/models.config';
+import { getLlmMaxOutputTokens } from '@/models/server/llm-output-budget';
+import { withLlmAuthFailureStream } from '@/models/server/llm-auth-failure-stream';
 import {
   type SceneSplitBiblesResult,
   type SceneSplitScenesResult,
@@ -155,6 +156,10 @@ import type { z } from 'zod';
 import { getLogger } from '@/platform/logger';
 
 const logger = getLogger(['openstory', 'workflow', 'scene-split']);
+
+const ANALYSIS_OUTPUT_CONTEXT_FRACTION = 0.65;
+// Shot lists repeat dialogue verbatim and need the model's full output ceiling.
+const SHOT_LIST_OUTPUT_CONTEXT_FRACTION = 1;
 
 /**
  * Re-parse the accumulated stream at most once per this many new characters.
@@ -285,6 +290,7 @@ async function triggerPreviewImage({
       {
         deduplicationId: previewImageDedupId(parentInstanceId, shot.id),
         enforcement,
+        modelConfiguration: scopedDb.models,
       }
     );
   } catch (error) {
@@ -353,7 +359,7 @@ async function runStructuredCall<T extends object>({
   promptName,
   promptVars,
   responseSchema,
-  maxTokens,
+  outputContextFraction,
   onAccumulated,
 }: {
   input: SceneSplitWorkflowInput;
@@ -363,12 +369,17 @@ async function runStructuredCall<T extends object>({
   promptName: string;
   promptVars: Record<string, string>;
   responseSchema: z.ZodType<T>;
-  maxTokens: number;
+  outputContextFraction: number;
   onAccumulated?: (accumulated: string, done: boolean) => Promise<void>;
 }): Promise<T & LlmStepBilling> {
   const { modelId } = input;
   const { messages } = await getChatPrompt(promptName, promptVars);
   const llmKeyInfo = await scopedDb.credentials.resolveLlmKey(modelId);
+  const maxTokens = getLlmMaxOutputTokens(
+    modelId,
+    llmKeyInfo,
+    outputContextFraction
+  );
 
   logger.info(`[SceneSplitWorkflow:cf] [LLM:${logName}] Starting call`, {
     model: modelId,
@@ -381,19 +392,23 @@ async function runStructuredCall<T extends object>({
   let usage: TokenUsage | undefined;
   let accumulatedLength = 0;
   let parsedChars = 0;
-  for await (const chunk of callLLMStream<T>({
-    model: modelId,
-    messages,
-    max_tokens: maxTokens,
-    responseSchema,
-    apiKey: llmKeyInfo,
-    reasoning: PROMPT_REASONING,
-    observationName: logName,
-    tags: [stepName, `phase-${PHASE.number}`, 'analysis'],
-    metadata: LOG_METADATA,
-    userId: input.userId,
-    sessionId: input.sequenceId,
-  })) {
+  for await (const chunk of withLlmAuthFailureStream(
+    modelId,
+    llmKeyInfo,
+    callLLMStream<T>({
+      model: modelId,
+      messages,
+      max_tokens: maxTokens,
+      responseSchema,
+      apiKey: llmKeyInfo,
+      reasoning: PROMPT_REASONING,
+      observationName: logName,
+      tags: [stepName, `phase-${PHASE.number}`, 'analysis'],
+      metadata: LOG_METADATA,
+      userId: input.userId,
+      sessionId: input.sequenceId,
+    })
+  )) {
     accumulatedLength = chunk.accumulated.length;
     if (chunk.done) {
       parsed = chunk.parsed;
@@ -423,7 +438,7 @@ async function runStructuredCall<T extends object>({
   }
   return {
     ...parsed,
-    llmCostMicros: llmCostFromUsage(usage, modelId, llmKeyInfo.via),
+    llmCostMicros: llmCostFromUsage(usage, modelId, llmKeyInfo),
     llmKeySource: llmKeyInfo.source,
   };
 }
@@ -569,12 +584,6 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
     // Both script calls see the same numbered-gutter copy: scenes report
     // hintLine, bibles firstMention.lineNumber against it.
     const gutteredScript = addLineGutter(script);
-    const splitMaxTokens = getMaxOutputTokens(SCENE_SPLIT_MODEL, 0.65);
-    const biblesMaxTokens = getMaxOutputTokens(modelId, 0.65);
-    // The shot list re-emits every spoken line verbatim (#1585), so on a
-    // talky script it is the longest output of the phase; give it the
-    // model's full ceiling.
-    const shotListMaxTokens = getMaxOutputTokens(modelId, 1);
 
     // The two LLM calls are independent given the script, so their steps run
     // concurrently — output length drives latency and the scenes stream is
@@ -588,13 +597,19 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
           script: gutteredScript,
         });
 
-        const llmKeyInfo =
-          await scopedDb.credentials.resolveLlmKey(SCENE_SPLIT_MODEL);
+        const llmKeyInfo = await scopedDb.credentials.resolveLlmKey(
+          scopedDb.models.sceneSplit
+        );
+        const splitMaxTokens = getLlmMaxOutputTokens(
+          scopedDb.models.sceneSplit,
+          llmKeyInfo,
+          ANALYSIS_OUTPUT_CONTEXT_FRACTION
+        );
 
         logger.info(
           `[SceneSplitWorkflow:cf] [LLM:${LOG_NAME}] Starting streaming call`,
           {
-            model: SCENE_SPLIT_MODEL,
+            model: scopedDb.models.sceneSplit,
             keySource: llmKeyInfo.source,
             keyVia: llmKeyInfo.via,
             messageCount: messages.length,
@@ -621,19 +636,23 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
         }> => {
           let parsed: SceneSplitScenesResult | undefined;
           let usage: TokenUsage | undefined;
-          for await (const chunk of callLLMStream<SceneSplitScenesResult>({
-            model: SCENE_SPLIT_MODEL,
-            messages: passMessages,
-            max_tokens: splitMaxTokens,
-            responseSchema: sceneSplitScenesResultSchema,
-            apiKey: llmKeyInfo,
-            reasoning: PROMPT_REASONING,
-            observationName: LOG_NAME,
-            tags: LOG_TAGS,
-            metadata: LOG_METADATA,
-            userId: input.userId,
-            sessionId: input.sequenceId,
-          })) {
+          for await (const chunk of withLlmAuthFailureStream(
+            scopedDb.models.sceneSplit,
+            llmKeyInfo,
+            callLLMStream<SceneSplitScenesResult>({
+              model: scopedDb.models.sceneSplit,
+              messages: passMessages,
+              max_tokens: splitMaxTokens,
+              responseSchema: sceneSplitScenesResultSchema,
+              apiKey: llmKeyInfo,
+              reasoning: PROMPT_REASONING,
+              observationName: LOG_NAME,
+              tags: LOG_TAGS,
+              metadata: LOG_METADATA,
+              userId: input.userId,
+              sessionId: input.sequenceId,
+            })
+          )) {
             if (chunk.done) {
               if (chunk.parsed !== undefined) parsed = chunk.parsed;
               usage = chunk.usage;
@@ -713,7 +732,7 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
           throw new NonRetryableError(
             `[SceneSplitWorkflow:cf] [Stream:${LOG_NAME}] Stream ended without a validated structured-output payload. ` +
               `chunks=${chunkCount} chars=${finalText.length} ` +
-              `streamedScenes=${streamedScenes} model=${SCENE_SPLIT_MODEL}. ` +
+              `streamedScenes=${streamedScenes} model=${scopedDb.models.sceneSplit}. ` +
               `Likely cause: provider did not honor responseFormat:json_schema.`
           );
         }
@@ -728,8 +747,8 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
         let finalBoundaries = parsedResult.boundaries;
         let llmCostMicros = llmCostFromUsage(
           firstPass.usage,
-          SCENE_SPLIT_MODEL,
-          llmKeyInfo.via
+          scopedDb.models.sceneSplit,
+          llmKeyInfo
         );
 
         const degraded = isExcessivelyRepaired(
@@ -769,8 +788,8 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
               llmCostMicros,
               llmCostFromUsage(
                 retryPass.usage,
-                SCENE_SPLIT_MODEL,
-                llmKeyInfo.via
+                scopedDb.models.sceneSplit,
+                llmKeyInfo
               )
             );
             const retryAssembled = assembleScenes(
@@ -852,7 +871,7 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
           userCountry: input.userCountry ?? '',
         },
         responseSchema: sceneSplitBiblesResultSchema,
-        maxTokens: biblesMaxTokens,
+        outputContextFraction: ANALYSIS_OUTPUT_CONTEXT_FRACTION,
       });
       logger.info(
         `[SceneSplitWorkflow:cf] [LLM:${BIBLES_LOG_NAME}] Complete | ${result.characterBible.length} characters | ${result.locationBible.length} locations | ${result.elementBible.length} elements`
@@ -1031,7 +1050,7 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
                 dialogueWordsPerSecond: String(DIALOGUE_WORDS_PER_SECOND),
               },
               responseSchema: shotListPassResultSchema,
-              maxTokens: shotListMaxTokens,
+              outputContextFraction: SHOT_LIST_OUTPUT_CONTEXT_FRACTION,
               onAccumulated: async (accumulated, done) => {
                 // The done chunk is the validated payload's job: a complete
                 // last object would otherwise persist twice, and a truncated
@@ -1300,11 +1319,11 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
         scopedDb,
         costMicros: streamResult.llmCostMicros,
         usedOwnKey: streamResult.llmKeySource === 'team',
-        description: `LLM analysis (${SCENE_SPLIT_MODEL})`,
+        description: `LLM analysis (${scopedDb.models.sceneSplit})`,
         idempotencyKey: `${event.instanceId}:llm-${STEP_NAME}`,
         reservationId: input.reservationId,
         metadata: {
-          model: SCENE_SPLIT_MODEL,
+          model: scopedDb.models.sceneSplit,
           phase: PHASE.number,
           phaseName: PHASE.name,
           stepName: STEP_NAME,

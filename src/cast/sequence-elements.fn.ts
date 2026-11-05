@@ -1,9 +1,6 @@
 import { mediaUrlSchema } from '@/platform/schemas/media-url.schemas';
 import { getSignedUploadUrl } from '#storage';
-import {
-  describeElementImage,
-  ELEMENT_VISION_MODEL,
-} from '@/cast/server/element-vision';
+import { describeElementImage } from '@/cast/server/element-vision';
 import { reportMissingBillingCost } from '@/billing/billing-observability';
 import { estimateLLMCost } from '@/billing/cost-estimation';
 import { InsufficientCreditsError } from '@/platform/errors';
@@ -106,8 +103,8 @@ export const analyzeDraftElementFn = createServerFn({ method: 'POST' })
   )
   .handler(async ({ context, data }) => {
     const { scopedDb } = context;
-    const llmKeyInfo =
-      await scopedDb.apiKeys.resolveLlmKey(ELEMENT_VISION_MODEL);
+    const { vision: model } = await scopedDb.modelConfiguration.get();
+    const llmKeyInfo = await scopedDb.apiKeys.resolveLlmKey(model);
     if (llmKeyInfo.source !== 'team') {
       const estimatedCost = estimateLLMCost(1);
       const canAfford = await scopedDb.billing.hasEnoughCredits(estimatedCost);
@@ -119,6 +116,7 @@ export const analyzeDraftElementFn = createServerFn({ method: 'POST' })
     }
 
     const result = await describeElementImage({
+      model,
       imageUrl: data.publicUrl,
       filename: data.filename,
       llmKey: llmKeyInfo,

@@ -20,7 +20,7 @@ import { extractFalErrorMessage } from '@/models/fal-error';
 import type { TextToImageModel } from '@/models/models';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
   type AnalysisModelId,
 } from '@/models/models.config';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -101,7 +101,7 @@ type GenerateOutcome =
   | { ok: false; rejection: string };
 
 function analysisModelFor(stored: string | null | undefined): AnalysisModelId {
-  return getAnalysisModelById(stored ?? '')?.id ?? DEFAULT_ANALYSIS_MODEL;
+  return storedAnalysisModelId(stored ?? '', DEFAULT_ANALYSIS_MODEL);
 }
 
 function rebuildParams(

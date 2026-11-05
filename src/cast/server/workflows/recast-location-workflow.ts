@@ -87,7 +87,7 @@ export class RecastLocationWorkflow extends OpenStoryWorkflowEntrypoint<RecastLo
   protected override async runImpl(
     event: Readonly<WorkflowEvent<RecastLocationWorkflowInput>>,
     step: WorkflowStep,
-    _scopedDb: WorkflowScopedDb
+    scopedDb: WorkflowScopedDb
   ): Promise<RecastLocationWorkflowResult> {
     const input = event.payload;
 
@@ -104,6 +104,7 @@ export class RecastLocationWorkflow extends OpenStoryWorkflowEntrypoint<RecastLo
       RegenerateShotsChildResult
     >(step, {
       binding: this.env.REGENERATE_SHOTS_WORKFLOW,
+      modelConfiguration: scopedDb.models,
       parentBindingName: 'RECAST_LOCATION_WORKFLOW',
       parentInstanceId: event.instanceId,
       childId: `regenerate-shots:location:${input.locationDbId}`,

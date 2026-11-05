@@ -27,7 +27,7 @@ drift from its published contract: change the schema and both move together.
 `apiCreateSequenceSchema`; a create from either is the sequence the composer
 would make from the same choices.
 
-- **Same default model as the app (#2088).** A request that names no `videoModels` starts on
+- **Default video routing (#2088).** With the unmodified code defaults, a request that names no `videoModels` starts on
   Seedance 2.5 where the team reaches BytePlus and on `DEFAULT_VIDEO_MODEL` elsewhere
   (`resolveApiVideoDefaults`, asked the way `getViaAvailabilityFn` asks). `draftMotion` is kept
   only on that route, as the composer does; `POST /scripts/enhance` shapes the script for the
@@ -83,3 +83,7 @@ The whole-sequence theatre never waits on an export and nothing is rendered for 
 - **A stall suspends the `AudioContext`.** Its clock is the playback clock, so suspending it holds the playhead, the music and every queued dialogue node together. The media adapter drops to `HAVE_CURRENT_DATA` and fires `waiting`, which is what the skin's buffering spinner reads; `playing` clears it (the surface counts only the first `playing` after a pause as a play).
 - **The HLS playlist (#1623) is gone.** It only ever played a finished, untouched cut, which is rare, and its ingest remux had to hold a whole clip in Worker memory (the muxer cannot write the `moof` before it has every sample, and a generated clip is one fragment). Existing `<clip>.frag.mp4` / `.frag.json` sidecars in R2 are orphaned and harmless.
 - **Download is the export.** The canvas button and the player overlay open one menu (`sequence-export-actions.tsx`): Download / Copy link when the current cut has a ready render, otherwise why not ("Not rendered yet", "Cut changed since last render") and "Render MP4 on server". The row carries no progress, so the button shows elapsed time. "Stop waiting" only stops polling; POSTing again rejoins the in-flight row.
+
+## Configured model defaults
+
+Create fills omitted analysis, image and music models from the administrator configuration before applying the existing creation schema. resolveApiVideoDefaults also reads the configured new-sequence video recommendation and fallback, retaining provider-availability checks and caller-selected models. Existing explicit selections remain authoritative. See [Model configuration](model-configuration.md).

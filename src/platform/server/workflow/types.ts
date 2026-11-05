@@ -2,6 +2,7 @@
  * Payload and result types for the Cloudflare Workflows entrypoints.
  */
 
+import type { WorkflowModelConfiguration } from '@/models/model-runtime-configuration';
 import type { VoiceProvider } from '@/cast/seed-voice';
 import type { AspectRatio, ImageSize } from '@/models/aspect-ratios';
 import type {
@@ -86,6 +87,8 @@ type PreClickEditPayload = {
  * All workflows must include userId and teamId for authorization
  */
 export interface UserWorkflowContext {
+  /** Frozen server settings; absent only on legacy queued runs. */
+  modelConfiguration?: WorkflowModelConfiguration;
   userId: string;
   teamId: string;
   /**

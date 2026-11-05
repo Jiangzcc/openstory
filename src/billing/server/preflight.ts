@@ -5,6 +5,7 @@
  */
 
 import { llmtrTextModel } from '@/models/llmtr';
+import type { TextModelRoutingSnapshot } from '@/models/text-channels';
 import type { Microdollars } from '@/billing/money';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { InsufficientCreditsError } from '@/platform/errors';
@@ -30,6 +31,46 @@ type ReservationPreflightScopedDb = {
 };
 
 export type Provider = 'fal' | 'openrouter';
+export type LlmKeySource = Awaited<
+  ReturnType<ScopedDb['apiKeys']['resolveLlmKey']>
+>['source'];
+
+type CreditCoverageOptions = {
+  providers?: Provider[];
+  llmModel?: string;
+  /** Sources resolved for every text model this operation will call. */
+  llmSources?: readonly LlmKeySource[];
+};
+
+export async function resolveLlmSources(
+  scopedDb: { apiKeys: Pick<ScopedDb['apiKeys'], 'resolveLlmKey'> },
+  models: readonly string[],
+  routing: TextModelRoutingSnapshot
+): Promise<LlmKeySource[]> {
+  return Promise.all(
+    [...new Set(models)].map(
+      async (model) =>
+        (await scopedDb.apiKeys.resolveLlmKey(model, routing)).source
+    )
+  );
+}
+
+async function hasOwnCoverage(
+  scopedDb: PreflightScopedDb,
+  opts: CreditCoverageOptions
+): Promise<boolean> {
+  if (opts.llmSources?.includes('platform')) return false;
+  const providers = opts.providers ?? ['fal'];
+  const keyChecks = await Promise.all(
+    providers.map(async (provider) =>
+      provider === 'openrouter' && opts.llmSources !== undefined
+        ? opts.llmSources.length > 0 &&
+          opts.llmSources.every((source) => source === 'team')
+        : coversProvider(scopedDb, provider, opts.llmModel)
+    )
+  );
+  return providers.length > 0 && keyChecks.every(Boolean);
+}
 
 async function coversProvider(
   scopedDb: PreflightScopedDb,
@@ -60,27 +101,13 @@ async function coversProvider(
 export async function requireCredits(
   scopedDb: PreflightScopedDb,
   estimatedCostMicros: Microdollars,
-  opts: {
-    providers?: Provider[];
+  opts: CreditCoverageOptions & {
     /** Existing parent envelope this child spends. */
     reservationId?: string;
     errorMessage?: string;
-    llmModel?: string;
   } = {}
 ): Promise<void> {
-  const providers = opts.providers ?? ['fal'];
-
-  // `hasUsableKey` (not `hasKey`): a key flagged invalid is skipped by
-  // resolveKey/resolveLlmKey at call time — the platform key pays — so it
-  // must not bypass the credit check here.
-  const keyChecks = await Promise.all(
-    providers.map((provider) =>
-      coversProvider(scopedDb, provider, opts.llmModel)
-    )
-  );
-  const hasAllKeys = providers.length > 0 && keyChecks.every(Boolean);
-
-  if (hasAllKeys) return;
+  if (await hasOwnCoverage(scopedDb, opts)) return;
 
   const canAfford = await scopedDb.billing.hasEnoughCredits(
     estimatedCostMicros,
@@ -102,21 +129,13 @@ export async function requireCredits(
 export async function reserveRunCredits(
   scopedDb: ReservationPreflightScopedDb,
   estimatedCostMicros: Microdollars,
-  opts: {
-    providers?: Provider[];
+  opts: CreditCoverageOptions & {
     errorMessage?: string;
     sequenceId?: string;
     idempotencyKey?: string;
-    llmModel?: string;
   } = {}
 ): Promise<string | undefined> {
-  const providers = opts.providers ?? ['fal'];
-  const keyChecks = await Promise.all(
-    providers.map((provider) =>
-      coversProvider(scopedDb, provider, opts.llmModel)
-    )
-  );
-  if (providers.length > 0 && keyChecks.every(Boolean)) return undefined;
+  if (await hasOwnCoverage(scopedDb, opts)) return undefined;
 
   const result = await scopedDb.billing.createReservation(estimatedCostMicros, {
     idempotencyKey: opts.idempotencyKey ?? generateId(),

@@ -318,14 +318,46 @@ export const SCRIPT_ANALYSIS_MODELS = [
   },
 ] as const;
 
-type AnalysisModel = (typeof SCRIPT_ANALYSIS_MODELS)[number];
-export type AnalysisModelId = AnalysisModel['id'];
+type BuiltinAnalysisModel = (typeof SCRIPT_ANALYSIS_MODELS)[number];
+type BuiltinAnalysisModelId = BuiltinAnalysisModel['id'];
+export type CustomAnalysisModelId = `custom:${string}`;
+export type AnalysisModelId = BuiltinAnalysisModelId | CustomAnalysisModelId;
+
+export type AnalysisModelDefinition = {
+  id: AnalysisModelId;
+  name: string;
+  vendor: string;
+  license: 'proprietary' | 'open-weight';
+  qualityRank: number;
+  contextWindow: number;
+  maxOutputTokens: number;
+  vision: boolean;
+  description: string;
+  hidden?: boolean;
+  structuredOutput?: boolean;
+  tools?: boolean;
+};
+
+export function isCustomAnalysisModelId(
+  value: unknown
+): value is CustomAnalysisModelId {
+  return (
+    typeof value === 'string' &&
+    /^custom:[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(value)
+  );
+}
 
 /**
  * Get model by ID
  */
-export function getAnalysisModelById(id: string): AnalysisModel | undefined {
-  return SCRIPT_ANALYSIS_MODELS.find((model) => model.id === id);
+export function getAnalysisModelById(
+  id: string,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): AnalysisModelDefinition | undefined {
+  return (
+    extraModels.find((model) => model.id === id) ??
+    SCRIPT_ANALYSIS_MODELS.find((model) => model.id === id)
+  );
 }
 
 /**
@@ -334,20 +366,22 @@ export function getAnalysisModelById(id: string): AnalysisModel | undefined {
  * @returns true if value is a valid model ID, false otherwise
  */
 export function isValidAnalysisModelId(
-  value: unknown
+  value: unknown,
+  extraModels: readonly AnalysisModelDefinition[] = []
 ): value is AnalysisModelId {
   return (
     typeof value === 'string' &&
-    SCRIPT_ANALYSIS_MODELS.some((model) => model.id === value)
+    getAnalysisModelById(value, extraModels) !== undefined
   );
 }
 
 /** Retired ids stay in the registry for old sequences; they are not pickable. */
 export function isSelectableAnalysisModelId(
-  value: unknown
+  value: unknown,
+  extraModels: readonly AnalysisModelDefinition[] = []
 ): value is AnalysisModelId {
-  if (!isValidAnalysisModelId(value)) return false;
-  const model = getAnalysisModelById(value);
+  if (!isValidAnalysisModelId(value, extraModels)) return false;
+  const model = getAnalysisModelById(value, extraModels);
   if (!model) return false;
   return !('hidden' in model && model.hidden);
 }
@@ -364,8 +398,11 @@ export const ANALYSIS_MODEL_IDS = getAllModelIds();
 /**
  * Get context window size (in tokens) for a model
  */
-export function getContextWindow(modelId: string): number {
-  const model = SCRIPT_ANALYSIS_MODELS.find((m) => m.id === modelId);
+export function getContextWindow(
+  modelId: string,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): number {
+  const model = getAnalysisModelById(modelId, extraModels);
   return model?.contextWindow ?? 128_000;
 }
 
@@ -388,8 +425,12 @@ const DEFAULT_MAX_OUTPUT_TOKENS = 32_000;
  * Ceilings are `top_provider.max_completion_tokens` from OpenRouter's
  * `/api/v1/models`, the same catalogue that serves the calls.
  */
-export function getMaxOutputTokens(modelId: string, fraction = 0.5): number {
-  const model = SCRIPT_ANALYSIS_MODELS.find((m) => m.id === modelId);
+export function getMaxOutputTokens(
+  modelId: string,
+  fraction = 0.5,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): number {
+  const model = getAnalysisModelById(modelId, extraModels);
   const ceiling = model?.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   const budget = Math.floor(
     (model?.contextWindow ?? 128_000) * Math.min(Math.max(fraction, 0), 1)
@@ -404,8 +445,11 @@ export function getMaxOutputTokens(modelId: string, fraction = 0.5): number {
  * to a model that can't accept one — the motion prompt simply falls back to
  * the text-only path.
  */
-export function analysisModelSupportsVision(modelId: string): boolean {
-  return getAnalysisModelById(modelId)?.vision ?? false;
+export function analysisModelSupportsVision(
+  modelId: string,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): boolean {
+  return getAnalysisModelById(modelId, extraModels)?.vision ?? false;
 }
 
 /**
@@ -422,17 +466,20 @@ export const DEFAULT_VISION_MODEL: AnalysisModelId =
 
 /**
  * Resolve which model should actually run a call given whether it carries image
- * input. A text-only model with image input is swapped to `DEFAULT_VISION_MODEL`
- * so the image can be used; everything else runs as chosen. The effective model
+ * input. A text-only model with image input uses the supplied vision model
+ * (or `DEFAULT_VISION_MODEL`) so the image can be used; everything else runs as chosen. The effective model
  * drives the adapter, context window, and cost; callers keep storing/hashing the
  * requested model.
  */
 export function resolveVisionModel(
   modelId: AnalysisModelId,
-  hasImageInput: boolean
+  hasImageInput: boolean,
+  visionModel: AnalysisModelId = DEFAULT_VISION_MODEL,
+  extraModels: readonly AnalysisModelDefinition[] = []
 ): AnalysisModelId {
-  if (!hasImageInput || analysisModelSupportsVision(modelId)) return modelId;
-  return DEFAULT_VISION_MODEL;
+  if (!hasImageInput || analysisModelSupportsVision(modelId, extraModels))
+    return modelId;
+  return visionModel;
 }
 /**
  * Default model when none is specified (API callers, unknown stored ids,
@@ -460,3 +507,12 @@ export const SCENE_SPLIT_MODEL: AnalysisModelId = 'anthropic/claude-opus-5.5';
  * Use IMAGE_MODELS, TextToImageModelId, and related helpers from there instead.
  * @deprecated Import from @/shared/ai/models instead
  */
+
+export function storedAnalysisModelId(
+  value: unknown,
+  fallback: AnalysisModelId = DEFAULT_ANALYSIS_MODEL
+): AnalysisModelId {
+  return isValidAnalysisModelId(value) || isCustomAnalysisModelId(value)
+    ? value
+    : fallback;
+}

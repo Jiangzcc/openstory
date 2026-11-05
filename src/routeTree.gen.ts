@@ -44,6 +44,7 @@ import { Route as OauthConsentStartRouteImport } from './routes/oauth/consent-st
 import { Route as OauthLoginRouteImport } from './routes/oauth/login'
 import { Route as R2SplatRouteImport } from './routes/r2.$'
 import { Route as StitchIdRouteImport } from './routes/stitch/$id'
+import { Route as AppAdminModelsRouteImport } from './routes/_app/admin/models'
 import { Route as AppAdminModerationRouteImport } from './routes/_app/admin/moderation'
 import { Route as AppAdminUsageRouteImport } from './routes/_app/admin/usage'
 import { Route as AppCharactersIndexRouteImport } from './routes/_app/characters/index'
@@ -282,6 +283,11 @@ const StitchIdRoute = StitchIdRouteImport.update({
   id: '/stitch/$id',
   path: '/stitch/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppAdminModelsRoute = AppAdminModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
+  getParentRoute: () => AppAdminRouteRoute,
 } as any)
 const AppAdminModerationRoute = AppAdminModerationRouteImport.update({
   id: '/moderation',
@@ -651,6 +657,7 @@ export interface FileRoutesByFullPath {
   '/stitch/$id': typeof StitchIdRoute
   '/docs/': typeof DocsIndexRoute
   '/sequences/$id': typeof AppSequencesIdRouteRouteWithChildren
+  '/admin/models': typeof AppAdminModelsRoute
   '/admin/moderation': typeof AppAdminModerationRoute
   '/admin/usage': typeof AppAdminUsageRoute
   '/characters/$id': typeof AppCharactersIdRoute
@@ -748,6 +755,7 @@ export interface FileRoutesByTo {
   '/stitch/$id': typeof StitchIdRoute
   '/docs': typeof DocsIndexRoute
   '/sequences/$id': typeof AppSequencesIdRouteRouteWithChildren
+  '/admin/models': typeof AppAdminModelsRoute
   '/admin/moderation': typeof AppAdminModerationRoute
   '/admin/usage': typeof AppAdminUsageRoute
   '/characters/$id': typeof AppCharactersIdRoute
@@ -850,6 +858,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/_app/sequences/$id': typeof AppSequencesIdRouteRouteWithChildren
+  '/_app/admin/models': typeof AppAdminModelsRoute
   '/_app/admin/moderation': typeof AppAdminModerationRoute
   '/_app/admin/usage': typeof AppAdminUsageRoute
   '/_app/characters/$id': typeof AppCharactersIdRoute
@@ -952,6 +961,7 @@ export interface FileRouteTypes {
     | '/stitch/$id'
     | '/docs/'
     | '/sequences/$id'
+    | '/admin/models'
     | '/admin/moderation'
     | '/admin/usage'
     | '/characters/$id'
@@ -1049,6 +1059,7 @@ export interface FileRouteTypes {
     | '/stitch/$id'
     | '/docs'
     | '/sequences/$id'
+    | '/admin/models'
     | '/admin/moderation'
     | '/admin/usage'
     | '/characters/$id'
@@ -1150,6 +1161,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/docs/'
     | '/_app/sequences/$id'
+    | '/_app/admin/models'
     | '/_app/admin/moderation'
     | '/_app/admin/usage'
     | '/_app/characters/$id'
@@ -1498,6 +1510,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/stitch/$id'
       preLoaderRoute: typeof StitchIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/admin/models': {
+      id: '/_app/admin/models'
+      path: '/models'
+      fullPath: '/admin/models'
+      preLoaderRoute: typeof AppAdminModelsRouteImport
+      parentRoute: typeof AppAdminRouteRoute
     }
     '/_app/admin/moderation': {
       id: '/_app/admin/moderation'
@@ -1958,11 +1977,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAdminRouteRouteChildren {
+  AppAdminModelsRoute: typeof AppAdminModelsRoute
   AppAdminModerationRoute: typeof AppAdminModerationRoute
   AppAdminUsageRoute: typeof AppAdminUsageRoute
 }
 
 const AppAdminRouteRouteChildren: AppAdminRouteRouteChildren = {
+  AppAdminModelsRoute: AppAdminModelsRoute,
   AppAdminModerationRoute: AppAdminModerationRoute,
   AppAdminUsageRoute: AppAdminUsageRoute,
 }

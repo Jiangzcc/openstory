@@ -102,7 +102,10 @@ describe('analyzeTalentMedia region fallback', () => {
   it('retries a region-blocked call on the fallback model', async () => {
     chatBehaviours.push('region-block', 'ok');
 
-    const result = await analyzeTalentMedia({ imageUrls: IMAGES });
+    const result = await analyzeTalentMedia({
+      model: TALENT_VISION_MODEL,
+      imageUrls: IMAGES,
+    });
 
     expect(adapterModels).toEqual([TALENT_VISION_MODEL, REGION_FALLBACK_MODEL]);
     // Billing must follow the model that actually answered, not the default.
@@ -122,6 +125,7 @@ describe('analyzeTalentMedia region fallback', () => {
     }));
 
     const result = await analyzeTalentMedia({
+      model: TALENT_VISION_MODEL,
       imageUrls: IMAGES,
       llmKey: { key: 'k', via: 'llmtr', source: 'team' },
       resolveLlmKey,
@@ -137,7 +141,10 @@ describe('analyzeTalentMedia region fallback', () => {
   it('stays on the default model when nothing is blocked', async () => {
     chatBehaviours.push('ok');
 
-    const result = await analyzeTalentMedia({ imageUrls: IMAGES });
+    const result = await analyzeTalentMedia({
+      model: TALENT_VISION_MODEL,
+      imageUrls: IMAGES,
+    });
 
     expect(adapterModels).toEqual([TALENT_VISION_MODEL]);
     expect(result.model).toBe(TALENT_VISION_MODEL);
@@ -146,9 +153,9 @@ describe('analyzeTalentMedia region fallback', () => {
   it('rethrows a non-region failure without a second call', async () => {
     chatBehaviours.push('other-error', 'ok');
 
-    await expect(analyzeTalentMedia({ imageUrls: IMAGES })).rejects.toThrow(
-      '402 Insufficient credits'
-    );
+    await expect(
+      analyzeTalentMedia({ model: TALENT_VISION_MODEL, imageUrls: IMAGES })
+    ).rejects.toThrow('402 Insufficient credits');
     expect(adapterModels).toEqual([TALENT_VISION_MODEL]);
   });
 });
@@ -159,6 +166,7 @@ describe('analyzeTalentClip region fallback', () => {
 
     await expect(
       analyzeTalentClip({
+        model: 'google/gemini-3.8-flash',
         clip: { uri: 'https://files.example/abc', mimeType: 'video/mp4' },
         llmKey: { key: 'k', via: 'google', source: 'platform' },
       })

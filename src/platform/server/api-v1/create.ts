@@ -31,7 +31,7 @@ import {
 import { renderingOfStyle } from '@/cast/rendering';
 import { parseStyleConfig } from '@/look/style-config';
 import { getLogger } from '@/platform/logger';
-import { createSequenceSchema } from '@/sequences/server/sequence.schemas';
+import { parseConfiguredSequenceInput } from '@/sequences/server/configured-sequence-input';
 import { createSequences } from '@/sequences/server/create-sequences';
 import {
   STORAGE_BUCKETS,
@@ -245,6 +245,7 @@ export async function runOneShotCreate(
   //    character/location refs) with no DB writes. A black-holing image host
   //    fails the request before any library row or billed sheet exists
   //    (#1372). Style + elements must be ready before enhancement (#855).
+  const configuration = await ctx.scopedDb.modelConfiguration.get();
   const willEnhance =
     input.enhance === 'always' ||
     (input.enhance === 'auto' && isShortScript(input.script));
@@ -257,7 +258,7 @@ export async function runOneShotCreate(
         : null,
       ingestElements(ctx.teamId, input.elements),
       ingestInlineLocationImages(input.locations, ctx.teamId),
-      resolveApiVideoDefaults(ctx.scopedDb),
+      resolveApiVideoDefaults(ctx.scopedDb, configuration),
     ]);
   await requireIngestedImageRights(ctx, [
     ...inlineCreates<LocationCreate>(input.locations).map((item) => ({
@@ -354,36 +355,43 @@ export async function runOneShotCreate(
     // 3. Assemble + validate the strict create input. createSequenceSchema applies
     //    model defaults and validates every model key, so an invalid model id
     //    surfaces as a 400 rather than a downstream throw.
-    const parsed = createSequenceSchema.parse({
-      title: input.title,
-      script,
-      styleId: style?.id ?? AUTO_STYLE_ID,
-      // Mirror the new-sequence page: fall back to the style's recommended aspect
-      // ratio when the caller doesn't pin one.
-      aspectRatio:
-        input.aspectRatio ?? style?.defaultAspectRatio ?? DEFAULT_ASPECT_RATIO,
-      resolution: input.resolution ?? DEFAULT_RESOLUTION,
-      analysisModels: input.analysisModels,
-      imageModels: input.imageModels,
-      videoModels: input.videoModels ?? [videoDefaults.videoModel],
-      // Always a stop, never the legacy flags: the app's default when the
-      // caller names none (#2084).
-      stopAt: apiStopAt(input),
-      // Voices are not a caller choice (#2067). Omitted here, createSequences
-      // turns them on wherever voice design is configured.
-      generateStartFrames: input.startFrames,
-      // Like the composer: Draft first only where this team reaches BytePlus.
-      // A draft that lands on fal is refused, not rendered.
-      draftMotion: input.draftMotion && videoDefaults.byteplus,
-      audioModels: input.audioModels,
-      // Only Enhance sets the target (#1593); a verbatim script is auto.
-      targetDurationSeconds: enhancedScript ? input.targetSeconds : undefined,
-      suggestedLocationIds: suggestedLocationIds.length
-        ? suggestedLocationIds
-        : undefined,
-      castCharacterIds: castCharacterIds.length ? castCharacterIds : undefined,
-      elementUploads: elementUploads.length ? elementUploads : undefined,
-    });
+    const parsed = parseConfiguredSequenceInput(
+      {
+        title: input.title,
+        script,
+        styleId: style?.id ?? AUTO_STYLE_ID,
+        // Mirror the new-sequence page: fall back to the style's recommended aspect
+        // ratio when the caller doesn't pin one.
+        aspectRatio:
+          input.aspectRatio ??
+          style?.defaultAspectRatio ??
+          DEFAULT_ASPECT_RATIO,
+        resolution: input.resolution ?? DEFAULT_RESOLUTION,
+        analysisModels: input.analysisModels,
+        imageModels: input.imageModels,
+        videoModels: input.videoModels ?? [videoDefaults.videoModel],
+        // Always a stop, never the legacy flags: the app's default when the
+        // caller names none (#2084).
+        stopAt: apiStopAt(input),
+        // Voices are not a caller choice (#2067). Omitted here, createSequences
+        // turns them on wherever voice design is configured.
+        generateStartFrames: input.startFrames,
+        // Like the composer: Draft first only where this team reaches BytePlus.
+        // A draft that lands on fal is refused, not rendered.
+        draftMotion: input.draftMotion && videoDefaults.byteplus,
+        audioModels: input.audioModels,
+        // Only Enhance sets the target (#1593); a verbatim script is auto.
+        targetDurationSeconds: enhancedScript ? input.targetSeconds : undefined,
+        suggestedLocationIds: suggestedLocationIds.length
+          ? suggestedLocationIds
+          : undefined,
+        castCharacterIds: castCharacterIds.length
+          ? castCharacterIds
+          : undefined,
+        elementUploads: elementUploads.length ? elementUploads : undefined,
+      },
+      configuration
+    );
 
     // 4. Run the shared create core (credits → fan-out → trigger storyboard).
     const { entries } = await createSequences(parsed, {

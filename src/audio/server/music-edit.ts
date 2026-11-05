@@ -15,7 +15,7 @@ import {
 } from '@/models/models';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
 } from '@/models/models.config';
 import {
   computeMusicPromptInputHash,
@@ -295,8 +295,10 @@ export async function rewriteMusicPrompt(
     );
   }
 
-  const analysisModelId =
-    getAnalysisModelById(sequence.analysisModel)?.id ?? DEFAULT_ANALYSIS_MODEL;
+  const analysisModelId = storedAnalysisModelId(
+    sequence.analysisModel,
+    DEFAULT_ANALYSIS_MODEL
+  );
 
   const liveHash = await computeMusicPromptInputHash({
     sceneSummaries,

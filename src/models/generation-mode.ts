@@ -9,10 +9,12 @@
  * that call is pinned in the workflow, not the composer picker.
  */
 import type { AnalysisModelId } from './models.config';
+import type { ModelConfiguration } from './model-configuration';
 import {
   DEFAULT_VIDEO_MODEL,
   getCompatibleModel,
   isValidImageToVideoModel,
+  isOfferedVideoModel,
   type AudioModel,
   type ImageToVideoModel,
   type TextToImageModel,
@@ -132,30 +134,49 @@ export function compareSelectorModels(
   return qualityRank(a) - qualityRank(b);
 }
 
-export function defaultAnalysisModel(mode: GenerationMode): AnalysisModelId {
-  return mode === 'turbo' ? TURBO_DEFAULT_ANALYSIS : QUALITY_DEFAULT_ANALYSIS;
+export function defaultAnalysisModel(
+  mode: GenerationMode,
+  configuration?: Readonly<ModelConfiguration>
+): AnalysisModelId {
+  return mode === 'turbo'
+    ? (configuration?.turboAnalysis ?? TURBO_DEFAULT_ANALYSIS)
+    : (configuration?.qualityAnalysis ?? QUALITY_DEFAULT_ANALYSIS);
 }
 
-export function defaultImageModel(mode: GenerationMode): TextToImageModel {
-  return mode === 'turbo' ? TURBO_DEFAULT_IMAGE : QUALITY_DEFAULT_IMAGE;
+export function defaultImageModel(
+  mode: GenerationMode,
+  configuration?: Readonly<ModelConfiguration>
+): TextToImageModel {
+  return mode === 'turbo'
+    ? (configuration?.turboImage ?? TURBO_DEFAULT_IMAGE)
+    : (configuration?.qualityImage ?? QUALITY_DEFAULT_IMAGE);
 }
 
 export function defaultVideoModel(
   mode: GenerationMode,
-  aspectRatio: AspectRatio
+  aspectRatio: AspectRatio,
+  configuration?: Readonly<ModelConfiguration>
 ): ImageToVideoModel {
   const preferred =
-    mode === 'turbo' ? TURBO_DEFAULT_VIDEO : QUALITY_DEFAULT_VIDEO;
+    mode === 'turbo'
+      ? (configuration?.turboVideo ?? TURBO_DEFAULT_VIDEO)
+      : (configuration?.qualityVideo ?? QUALITY_DEFAULT_VIDEO);
   return getCompatibleModel(preferred, aspectRatio);
 }
 
-function defaultAudioModel(mode: GenerationMode): AudioModel {
-  return mode === 'turbo' ? TURBO_DEFAULT_AUDIO : QUALITY_DEFAULT_AUDIO;
+export function defaultAudioModel(
+  mode: GenerationMode,
+  configuration?: Readonly<ModelConfiguration>
+): AudioModel {
+  return mode === 'turbo'
+    ? (configuration?.turboMusic ?? TURBO_DEFAULT_AUDIO)
+    : (configuration?.qualityMusic ?? QUALITY_DEFAULT_AUDIO);
 }
 
 function coerceVideoModels(
   selected: readonly ImageToVideoModel[],
-  aspectRatio: AspectRatio
+  aspectRatio: AspectRatio,
+  configuration?: Readonly<ModelConfiguration>
 ): ImageToVideoModel[] {
   const kept = [
     ...new Set(
@@ -166,7 +187,12 @@ function coerceVideoModels(
   ];
   return kept.length > 0
     ? kept
-    : [getCompatibleModel(DEFAULT_VIDEO_MODEL, aspectRatio)];
+    : [
+        getCompatibleModel(
+          configuration?.defaultVideo ?? DEFAULT_VIDEO_MODEL,
+          aspectRatio
+        ),
+      ];
 }
 
 export type GenerationModeFields = {
@@ -185,23 +211,39 @@ export type GenerationModeFields = {
  */
 export function applyGenerationMode<T extends GenerationModeFields>(
   settings: T,
-  mode: GenerationMode
+  mode: GenerationMode,
+  configuration?: Readonly<ModelConfiguration>
 ): T {
   if (settings.generationMode === mode) {
     return {
       ...settings,
       videoModels: coerceVideoModels(
         settings.videoModels,
-        settings.aspectRatio
+        settings.aspectRatio,
+        configuration
       ),
     };
   }
   return {
     ...settings,
     generationMode: mode,
-    analysisModels: [defaultAnalysisModel(mode)],
-    imageModels: [defaultImageModel(mode)],
-    videoModels: [defaultVideoModel(mode, settings.aspectRatio)],
-    audioModels: [defaultAudioModel(mode)],
+    analysisModels: [defaultAnalysisModel(mode, configuration)],
+    imageModels: [defaultImageModel(mode, configuration)],
+    videoModels: [defaultVideoModel(mode, settings.aspectRatio, configuration)],
+    audioModels: [defaultAudioModel(mode, configuration)],
   };
+}
+
+export function availableDefaultVideoModel(
+  preferred: ImageToVideoModel,
+  fallback: ImageToVideoModel,
+  aspectRatio: AspectRatio,
+  vias: { byteplus?: boolean }
+): ImageToVideoModel {
+  const candidates = [preferred, fallback, DEFAULT_VIDEO_MODEL];
+  return (
+    candidates
+      .map((model) => getCompatibleModel(model, aspectRatio))
+      .find((model) => isOfferedVideoModel(model, vias)) ?? DEFAULT_VIDEO_MODEL
+  );
 }

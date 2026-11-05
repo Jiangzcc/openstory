@@ -36,6 +36,7 @@
  * separately.
  */
 
+import { resolveLlmSources } from '@/billing/server/preflight';
 import { characterToBible } from '@/cast/server/bibles-from-scoped';
 import { withMeasuredDurations } from '@/cast/server/sequence-elements/media-duration';
 import { getRequestCountry } from '@/platform/server/request-country';
@@ -48,7 +49,7 @@ import {
   safeTextToImageModel,
 } from '@/models/models';
 import {
-  DEFAULT_ANALYSIS_MODEL,
+  type AnalysisModelId,
   getAnalysisModelById,
 } from '@/models/models.config';
 import { generateId } from '@/platform/id';
@@ -72,6 +73,54 @@ import type {
   StoryboardTriggerInput,
   StoryboardWorkflowInput,
 } from '@/platform/server/workflow/types';
+
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+
+export async function loadStoryboardModelConfiguration(
+  scopedDb: ScopedDb
+): Promise<ModelRuntimeConfiguration> {
+  const textModelRouting = await scopedDb.textChannels.getSnapshot();
+  const models = await scopedDb.modelConfiguration.get(
+    textModelCatalogFromRouting(textModelRouting)
+  );
+  return { ...models, textModelRouting };
+}
+
+export function resolveStoryboardLlmSources(
+  scopedDb: ScopedDb,
+  analysisModel: string | null,
+  configuration: ModelRuntimeConfiguration
+) {
+  return resolveLlmSources(
+    scopedDb,
+    [
+      storyboardAnalysisModel(analysisModel, configuration),
+      configuration.sceneSplit,
+    ],
+    configuration.textModelRouting ?? []
+  );
+}
+
+function storyboardAnalysisModel(
+  stored: string | null,
+  configuration: ModelRuntimeConfiguration
+): AnalysisModelId {
+  const extraModels = textModelCatalogFromRouting(
+    configuration.textModelRouting
+  );
+  const modelId = stored?.startsWith('custom:')
+    ? stored
+    : (getAnalysisModelById(stored ?? '', extraModels)?.id ??
+      configuration.defaultAnalysis);
+  const model = getAnalysisModelById(modelId, extraModels);
+  if (!model || model.structuredOutput === false) {
+    throw new ValidationError(
+      'Select an available analysis model that supports structured output.'
+    );
+  }
+  return model.id;
+}
 
 const logger = getLogger(['openstory', 'launchers']);
 
@@ -148,7 +197,8 @@ async function resolveStoryboardPayload(
   scopedDb: ScopedDb,
   sequence: Sequence,
   input: StoryboardTriggerInput,
-  sequenceId: string
+  sequenceId: string,
+  analysisModelId: AnalysisModelId
 ): Promise<StoryboardWorkflowInput> {
   if (!sequence.script || sequence.script.trim().length === 0) {
     throw new ValidationError('Sequence has no script');
@@ -242,9 +292,7 @@ async function resolveStoryboardPayload(
       live: style?.config,
     }),
     pendingAutoStyleId,
-    analysisModelId:
-      getAnalysisModelById(sequence.analysisModel)?.id ??
-      DEFAULT_ANALYSIS_MODEL,
+    analysisModelId,
     imageModel: safeTextToImageModel(sequence.imageModel, DEFAULT_IMAGE_MODEL),
     videoModel: safeImageToVideoModel(sequence.videoModel, DEFAULT_VIDEO_MODEL),
     elementIds: elements.map((el) => el.id),
@@ -277,7 +325,8 @@ async function resolveStoryboardPayload(
  */
 export async function triggerStoryboard(
   scopedDb: ScopedDb,
-  input: StoryboardTriggerInput
+  input: StoryboardTriggerInput,
+  modelConfiguration?: ModelRuntimeConfiguration
 ): Promise<{ workflowRunId: string }> {
   const { sequenceId } = input;
   if (!sequenceId) {
@@ -288,11 +337,18 @@ export async function triggerStoryboard(
   // state can't be verified).
   const sequence = await getSequenceRejectingActiveRun(scopedDb, sequenceId);
 
+  const configuration =
+    modelConfiguration ?? (await loadStoryboardModelConfiguration(scopedDb));
+  const analysisModelId = storyboardAnalysisModel(
+    sequence.analysisModel,
+    configuration
+  );
   const payload = await resolveStoryboardPayload(
     scopedDb,
     sequence,
     input,
-    sequenceId
+    sequenceId,
+    analysisModelId
   );
 
   // Mutex step 2: CAS-claim the slot so two racing requests can't both pass.
@@ -319,6 +375,7 @@ export async function triggerStoryboard(
   try {
     workflowRunId = await triggerWorkflow('/storyboard', payload, {
       deduplicationId: claimId,
+      modelConfiguration: configuration,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

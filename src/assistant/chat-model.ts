@@ -8,6 +8,9 @@
 import {
   DEFAULT_ANALYSIS_MODEL,
   isSelectableAnalysisModelId,
+  isCustomAnalysisModelId,
+  getAnalysisModelById,
+  type AnalysisModelDefinition,
   type AnalysisModelId,
 } from '@/models/models.config';
 import { resolveModelForCountry } from '@/models/region-policy';
@@ -15,13 +18,23 @@ import { ValidationError } from '@/platform/errors';
 
 export function chatModelFor(
   requested: unknown,
-  country: string | null | undefined
+  country: string | null | undefined,
+  extraModels: readonly AnalysisModelDefinition[] = [],
+  defaultModel: AnalysisModelId = DEFAULT_ANALYSIS_MODEL
 ): AnalysisModelId {
-  if (requested !== undefined && !isSelectableAnalysisModelId(requested)) {
+  const candidate = requested === undefined ? defaultModel : requested;
+  if (!isSelectableAnalysisModelId(candidate, extraModels)) {
     throw new ValidationError('model is not one the assistant can run on.');
   }
-  return resolveModelForCountry(
-    requested === undefined ? DEFAULT_ANALYSIS_MODEL : requested,
-    country
-  );
+  const model = extraModels.some((entry) => entry.id === candidate)
+    ? candidate
+    : resolveModelForCountry(candidate, country);
+  const definition = getAnalysisModelById(model, extraModels);
+  if (
+    definition?.tools === false ||
+    (isCustomAnalysisModelId(model) && !definition?.tools)
+  ) {
+    throw new ValidationError('The assistant model must support tools.');
+  }
+  return model;
 }

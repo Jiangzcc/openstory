@@ -36,6 +36,7 @@ import {
 } from '@/mocks/frame-fixtures';
 import { toShotView, type ImageStatus, type ShotView } from '@/shots/shot-view';
 import { estimateImageCost, gateEstimate } from '@/billing/cost-estimation';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import { ZERO_MICROS } from '@/billing/money';
 import { asStub } from '@/test/as-stub';
 
@@ -72,6 +73,7 @@ vi.doMock('@/platform/server/workflow/client', () => ({
 const reserveRunCreditsMock = vi.fn();
 const realPreflight = await import('@/billing/server/preflight');
 vi.doMock('@/billing/server/preflight', () => ({
+  ...realPreflight,
   reserveRunCredits: reserveRunCreditsMock,
   releaseReservationOnThrow: async (
     _db: unknown,
@@ -393,7 +395,16 @@ function makeContext(
       )
   );
   const stub = {
-    apiKeys: { hasUsableKey: vi.fn(async () => true) },
+    modelConfiguration: { get: async () => DEFAULT_MODEL_CONFIGURATION },
+    textChannels: { getSnapshot: async () => [] },
+    apiKeys: {
+      hasUsableKey: vi.fn(async () => true),
+      resolveLlmKey: vi.fn(async () => ({
+        source: 'team',
+        via: 'fal',
+        key: 'mock-team-key',
+      })),
+    },
     billing: {
       hasEnoughCredits: vi.fn(async () => false),
       createReservation: vi.fn(async () => ({ ok: false })),
@@ -579,31 +590,52 @@ describe('executeSmartRetry — generation mutex (#839)', () => {
 });
 
 describe('executeSmartRetry — full retry fallback', () => {
-  test('delegates to triggerStoryboard, which owns the mutex and status writes', async () => {
-    resetMocks();
-    // No shots + failed sequence → analyzeFailures says full retry.
-    const { context, scopedDb, updateStatus } = makeContext(makeSequence(), []);
-
-    const result = await executeSmartRetry(context);
-
-    expect(triggerStoryboardMock).toHaveBeenCalledTimes(1);
-    expect(reserveRunCreditsMock).toHaveBeenCalledTimes(1);
-    expect(triggerStoryboardMock).toHaveBeenCalledWith(
-      scopedDb,
-      expect.objectContaining({
-        sequenceId: 'seq_1',
-        teamId: 't1',
-        reservationId: undefined,
-      })
-    );
-    expect(triggerWorkflowMock).not.toHaveBeenCalled();
-    // The launcher owns the 'processing' write — no direct status write here.
-    expect(updateStatus).not.toHaveBeenCalled();
-    expect(result).toMatchObject({
-      retryType: 'full',
-      retriedItems: ['full storyboard'],
-    });
-  });
+  test.each(['team', 'platform'] as const)(
+    'uses the actual %s helper source before delegating to the storyboard launcher',
+    async (helperSource) => {
+      resetMocks();
+      const { context, scopedDb, updateStatus } = makeContext(
+        makeSequence(),
+        []
+      );
+      reserveRunCreditsMock.mockImplementation(realPreflight.reserveRunCredits);
+      vi.spyOn(scopedDb.apiKeys, 'resolveLlmKey').mockImplementation(
+        async (model) => ({
+          source:
+            model === DEFAULT_MODEL_CONFIGURATION.sceneSplit
+              ? helperSource
+              : 'team',
+          via: 'fal',
+          key: 'mock-resolved-key',
+        })
+      );
+      if (helperSource === 'platform') {
+        await expect(executeSmartRetry(context)).rejects.toThrow(
+          'Insufficient credits'
+        );
+        expect(triggerStoryboardMock).not.toHaveBeenCalled();
+        expect(updateStatus).not.toHaveBeenCalled();
+        return;
+      }
+      const result = await executeSmartRetry(context);
+      expect(triggerStoryboardMock).toHaveBeenCalledExactlyOnceWith(
+        scopedDb,
+        expect.objectContaining({
+          sequenceId: 'seq_1',
+          teamId: 't1',
+          reservationId: undefined,
+        }),
+        { ...DEFAULT_MODEL_CONFIGURATION, textModelRouting: [] }
+      );
+      expect(reserveRunCreditsMock).toHaveBeenCalledOnce();
+      expect(triggerWorkflowMock).not.toHaveBeenCalled();
+      expect(updateStatus).not.toHaveBeenCalled();
+      expect(result).toMatchObject({
+        retryType: 'full',
+        retriedItems: ['full storyboard'],
+      });
+    }
+  );
 });
 
 describe('executeSmartRetry — partial retry status reset', () => {

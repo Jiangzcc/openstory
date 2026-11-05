@@ -98,6 +98,7 @@ dist/
 
 .tmp/
 .idea
+testing/
 
 # doppler
 doppler.json

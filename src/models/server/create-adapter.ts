@@ -25,8 +25,15 @@ import {
   llmtrTextModel,
 } from '@/models/llmtr';
 import type { TextModel } from '@/models/models';
+import type { TextModelRoute } from '@/models/text-channels';
+import { isCustomAnalysisModelId } from '@/models/models.config';
 import { isGoogleRegionBlockedHere } from '@/models/google-region';
 import { workersSafeFetch } from '@/platform/server/ai/workers-safe-fetch';
+import {
+  assertConfiguredTextTestHost,
+  CONFIGURED_TEXT_SDK_RETRIES,
+  configuredTextApi,
+} from './configured-text';
 import { HTTPClient } from '@openrouter/sdk/lib/http';
 import { createModel, extendAdapter } from '@tanstack/ai';
 import { createGeminiChat } from '@tanstack/ai-gemini';
@@ -44,19 +51,9 @@ const logger = getLogger(['openstory', 'ai', 'create-adapter']);
  */
 const FAL_OPENROUTER_BASE_URL = 'https://fal.run/openrouter/router/openai/v1';
 
-export type LlmKeyInfo = {
-  key: string;
-  /**
-   * Which API the key belongs to: 'openrouter' calls OpenRouter directly
-   * (Bearer auth), 'fal' routes through fal's OpenRouter endpoint (`Key`
-   * auth — fal rejects Bearer there), 'xai' calls xAI's own Responses API
-   * (Bearer auth, Grok models only — issue #1167), 'google' calls Google's
-   * own Gemini API (`x-goog-api-key` auth, Gemini models only), 'llmtr' calls
-   * the LLMTR gateway (Bearer auth, OpenAI Chat Completions, and only the
-   * models `LLMTR_TEXT_MODELS` maps).
-   */
-  via: 'openrouter' | 'fal' | 'xai' | 'google' | 'llmtr';
-};
+export type LlmKeyInfo =
+  | { key: string; via: 'openrouter' | 'fal' | 'xai' | 'google' | 'llmtr' }
+  | { key: string; via: 'compatible'; route: TextModelRoute };
 
 // fal's endpoint authenticates with `Authorization: Key <FAL_KEY>` while the
 // OpenRouter SDK hardcodes `Bearer`; rewrite the header on the way out.
@@ -81,7 +78,9 @@ function falAuthHttpClient(falKey: string): HTTPClient {
  */
 export function getPlatformLlmKey(
   model?: string
-): (LlmKeyInfo & { source: 'platform' }) | undefined {
+):
+  | (Exclude<LlmKeyInfo, { via: 'compatible' }> & { source: 'platform' })
+  | undefined {
   const env = getEnv();
   if (model && nativeGrokTextModel(model) && env.XAI_API_KEY) {
     return { key: env.XAI_API_KEY, via: 'xai', source: 'platform' };
@@ -203,6 +202,26 @@ export function createAdapter(model: TextModel, keyInfo?: LlmKeyInfo) {
   const resolved = keyInfo ?? getPlatformLlmKey(model);
   const key = resolved?.key;
   const via = resolved?.via ?? 'openrouter';
+
+  if (resolved?.via === 'compatible') {
+    assertConfiguredTextTestHost(resolved.route.baseUrl, env.E2E_TEST);
+    if (resolved.route.modelId !== model) {
+      throw new Error(
+        'Configured text channel does not match the requested model.'
+      );
+    }
+    return openaiCompatibleText(resolved.route.upstreamModel, {
+      name: 'configured-text-channel',
+      baseURL: resolved.route.baseUrl,
+      apiKey: resolved.key,
+      api: configuredTextApi(resolved.route.protocol),
+      maxRetries: CONFIGURED_TEXT_SDK_RETRIES,
+      fetch: workersSafeFetch,
+    });
+  }
+  if (isCustomAnalysisModelId(model)) {
+    throw new Error('Custom text model requires its configured channel.');
+  }
 
   const nativeModel = resolveNativeGrokModel(model, resolved);
   if (nativeModel && key) {

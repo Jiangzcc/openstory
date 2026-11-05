@@ -540,15 +540,15 @@ describe('resolveLlmKey — LLMTR gateway', () => {
     });
   });
 
-  it('keeps Google ahead of LLMTR for Gemini models', async () => {
+  it('prefers team LLMTR over platform Google for Gemini models', async () => {
     testEnv.GEMINI_API_KEY = 'platform-google';
     const scope = createApiKeysMethods(db, teamId, userId);
     await scope.saveKey({ provider: 'llmtr', apiKey: 'llmtr-team' });
 
     expect(await scope.resolveLlmKey('google/gemini-3.1-pro-preview')).toEqual({
-      key: 'platform-google',
-      source: 'platform',
-      via: 'google',
+      key: 'llmtr-team',
+      source: 'team',
+      via: 'llmtr',
     });
   });
 

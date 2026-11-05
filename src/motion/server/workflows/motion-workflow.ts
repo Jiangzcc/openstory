@@ -33,7 +33,7 @@ import {
 } from '@/models/models';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
 } from '@/models/models.config';
 import { isPromptTooLongError } from '@/models/prompt-length';
 import { assetLeaseOwner } from '@/models/server/byteplus-asset-pool';
@@ -934,9 +934,10 @@ export class MotionWorkflow extends OpenStoryWorkflowEntrypoint<MotionWorkflowIn
                 ? (input.userEditText ?? structured.fullPrompt)
                 : prompt,
               rejection: lastRejection ?? 'unknown rejection',
-              analysisModelId:
-                getAnalysisModelById(provenance.analysisModel ?? '')?.id ??
-                DEFAULT_ANALYSIS_MODEL,
+              analysisModelId: storedAnalysisModelId(
+                provenance.analysisModel ?? '',
+                DEFAULT_ANALYSIS_MODEL
+              ),
               shotId: input.shotId,
               model,
               reservationId: input.reservationId,
@@ -1158,9 +1159,10 @@ export class MotionWorkflow extends OpenStoryWorkflowEntrypoint<MotionWorkflowIn
             userId: input.userId,
             prompt,
             rejection: submitOutcome.rejection,
-            analysisModelId:
-              getAnalysisModelById(provenance.analysisModel ?? '')?.id ??
-              DEFAULT_ANALYSIS_MODEL,
+            analysisModelId: storedAnalysisModelId(
+              provenance.analysisModel ?? '',
+              DEFAULT_ANALYSIS_MODEL
+            ),
             shotId: input.shotId,
             model: IMAGE_TO_VIDEO_MODELS[activeModel].name,
             reservationId: input.reservationId,

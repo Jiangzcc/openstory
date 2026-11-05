@@ -7,7 +7,10 @@
 import { z } from 'zod';
 import { aspectRatioSchema } from '@/models/aspect-ratios';
 import { isValidImageToVideoModel } from '@/models/models';
-import { isValidAnalysisModelId } from '@/models/models.config';
+import {
+  isValidAnalysisModelId,
+  isCustomAnalysisModelId,
+} from '@/models/models.config';
 import { runOneShotCreate } from '@/platform/server/api-v1/create';
 import { apiCreateSequenceSchema } from '@/platform/server/api-v1/input-schema';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
@@ -182,7 +185,11 @@ const regenerateStoryboardTool = openstoryTool({
       aspectRatio: aspectRatioSchema.optional(),
       analysisModel: z
         .string()
-        .refine(isValidAnalysisModelId, { message: 'Invalid analysis model' })
+        .refine(
+          (value) =>
+            isValidAnalysisModelId(value) || isCustomAnalysisModelId(value),
+          { message: 'Invalid analysis model' }
+        )
         .optional(),
     })
     .refine((input) => STORYBOARD_FIELDS.some((k) => input[k] !== undefined), {

@@ -17,10 +17,11 @@ import type {
 import { toVisionImageSource } from '@/platform/server/storage/external-url';
 import { z } from 'zod';
 import { callLLMStream, llmCostFromUsage } from '@/models/server/llm-client';
-import { DEFAULT_VISION_MODEL } from '@/models/models.config';
+import type { AnalysisModelId } from '@/models/models.config';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import { talentSubjectKindSchema } from '@/cast/subject-kind';
 
-export const TALENT_VISION_MODEL = DEFAULT_VISION_MODEL;
+export const TALENT_VISION_MODEL = DEFAULT_MODEL_CONFIGURATION.vision;
 
 export const talentMediaAnalysisSchema = z.object({
   isCharacterSheet: z.boolean(),
@@ -38,6 +39,7 @@ export const talentMediaAnalysisSchema = z.object({
 type TalentMediaAnalysis = z.infer<typeof talentMediaAnalysisSchema>;
 
 export type AnalyzeTalentMediaInput = {
+  model: AnalysisModelId;
   imageUrls: string[];
   /**
    * Original upload filenames, same order as `imageUrls`. Appended to the
@@ -48,7 +50,7 @@ export type AnalyzeTalentMediaInput = {
   llmKey?: ResolvedLlmKey;
   /**
    * Re-resolve the key when a region block swaps the model (#1259). `llmKey`
-   * was resolved for {@link TALENT_VISION_MODEL}; the fallback may not be
+   * was resolved for the configured model; the fallback may not be
    * carried by the same via.
    */
   resolveLlmKey?: (model: TextModel) => Promise<ResolvedLlmKey>;
@@ -57,7 +59,7 @@ export type AnalyzeTalentMediaInput = {
 
 export type TalentVisionResult = TalentMediaAnalysis & {
   /** The model that actually answered — the region fallback may have run
-   *  instead of {@link TALENT_VISION_MODEL}. Bill and log this one. */
+   *  instead of the configured model. Bill and log this one. */
   model: TextModel;
   costMicros: Microdollars;
   usedOwnKey: boolean;
@@ -141,7 +143,7 @@ export async function analyzeTalentMedia(
     input.imageUrls.map((url) => toVisionImageSource(url))
   );
   return runTalentVision({
-    model: TALENT_VISION_MODEL,
+    model: input.model,
     messages: buildTalentVisionMessages(imageSources, input.filenames),
     llmKey: input.llmKey,
     resolveLlmKey: input.resolveLlmKey,
@@ -149,11 +151,9 @@ export async function analyzeTalentMedia(
   });
 }
 
-/** Watches the whole clip, so a face late in it counts (#1930). */
-export const TALENT_CLIP_MODEL: TextModel = 'google/gemini-3.8-flash';
-
 /** A clip already in the Gemini Files API. `llmKey` must be a native Google key. */
 export async function analyzeTalentClip(input: {
+  model: AnalysisModelId;
   clip: { uri: string; mimeType: string };
   llmKey: ResolvedLlmKey;
   observability?: AIObservabilityMeta;
@@ -180,16 +180,16 @@ export async function analyzeTalentClip(input: {
     },
   ];
   const result = await runTalentVision({
-    model: TALENT_CLIP_MODEL,
+    model: input.model,
     messages,
     llmKey: input.llmKey,
     observability: input.observability,
   });
   // A region fallback answers on another model, which may never have seen
   // the video part. Only Gemini's verdict counts.
-  if (result.model !== TALENT_CLIP_MODEL) {
+  if (result.model !== input.model) {
     throw new Error(
-      `The clip check answered on ${result.model}, not ${TALENT_CLIP_MODEL}`
+      `The clip check answered on ${result.model}, not ${input.model}`
     );
   }
   return result;

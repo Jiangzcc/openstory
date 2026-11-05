@@ -2,7 +2,7 @@ import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { Sequence, Shot } from '@/platform/server/db/schema';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
 } from '@/models/models.config';
 import { musicPromptInputHashMatches } from '@/shots/input-hash';
 import { musicSceneSummariesFromRows } from './workflows/music-scene-summaries';
@@ -96,8 +96,7 @@ export async function readMusicPromptStaleness(
     );
     const analysisModel =
       selected?.analysisModel ??
-      getAnalysisModelById(sequence.analysisModel)?.id ??
-      DEFAULT_ANALYSIS_MODEL;
+      storedAnalysisModelId(sequence.analysisModel, DEFAULT_ANALYSIS_MODEL);
 
     const musicUpToDate = await musicPromptInputHashMatches(
       sequence.musicPromptInputHash,

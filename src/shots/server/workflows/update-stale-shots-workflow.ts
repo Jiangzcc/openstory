@@ -481,6 +481,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             CharacterSheetWorkflowResult
           >(step, {
             binding: this.env.CHARACTER_SHEET_WORKFLOW,
+            modelConfiguration: scopedDb.models,
             parentBindingName: PARENT_BINDING_NAME,
             parentInstanceId,
             childId: `character-sheet:${id}`,
@@ -558,6 +559,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
               LocationSheetWorkflowResult
             >(step, {
               binding: this.env.LOCATION_SHEET_WORKFLOW,
+              modelConfiguration: scopedDb.models,
               parentBindingName: PARENT_BINDING_NAME,
               parentInstanceId,
               childId: `location-sheet:${id}`,
@@ -594,6 +596,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                     ElementSheetWorkflowResult
                   >(step, {
                     binding: this.env.ELEMENT_SHEET_WORKFLOW,
+                    modelConfiguration: scopedDb.models,
                     parentBindingName: PARENT_BINDING_NAME,
                     parentInstanceId,
                     childId: `element-sheets:${sequenceId}:${parentInstanceId}`,
@@ -636,6 +639,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
               CharacterVoiceWorkflowResult
             >(step, {
               binding: this.env.CHARACTER_VOICE_WORKFLOW,
+              modelConfiguration: scopedDb.models,
               parentBindingName: PARENT_BINDING_NAME,
               parentInstanceId,
               childId: `character-voice:${id}`,
@@ -895,6 +899,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
         ImageChildOutput
       >(step, {
         binding: this.env.IMAGE_WORKFLOW,
+        modelConfiguration: scopedDb.models,
         parentBindingName: PARENT_BINDING_NAME,
         parentInstanceId,
         childId: `image:${sequenceId}:${target.shotId}${alternate ? `:${model}` : ''}`,
@@ -950,6 +955,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                 model
               ),
               enforcement,
+              modelConfiguration: scopedDb.models,
             }
           );
         });
@@ -1349,6 +1355,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             DialogueAudioWorkflowResult
           >(step, {
             binding: this.env.DIALOGUE_AUDIO_WORKFLOW,
+            modelConfiguration: scopedDb.models,
             parentBindingName: PARENT_BINDING_NAME,
             parentInstanceId,
             childId: `dialogue-audio:${sequenceId}:${parentInstanceId}`,
@@ -1585,6 +1592,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                     ShotSpecRewriteWorkflowResult
                   >(step, {
                     binding: this.env.SHOT_SPEC_REWRITE_WORKFLOW,
+                    modelConfiguration: scopedDb.models,
                     parentBindingName: PARENT_BINDING_NAME,
                     parentInstanceId,
                     childId: `shot-spec-rewrite:${sequenceId}:${target.shotId}`,
@@ -1888,6 +1896,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                 MusicPromptWorkflowResult
               >(step, {
                 binding: this.env.MUSIC_PROMPT_WORKFLOW,
+                modelConfiguration: scopedDb.models,
                 parentBindingName: PARENT_BINDING_NAME,
                 parentInstanceId,
                 childId: `music-prompt:${sequenceId}`,
@@ -1945,6 +1954,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                 const suffix = index > 0 ? `-${model}` : '';
                 await spawnAndAwaitChild<MusicWorkflowInput, unknown>(step, {
                   binding: this.env.MUSIC_WORKFLOW,
+                  modelConfiguration: scopedDb.models,
                   parentBindingName: PARENT_BINDING_NAME,
                   parentInstanceId,
                   childId: `music:${sequenceId}${suffix}`,
@@ -2109,6 +2119,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             step,
             {
               binding: this.env.MOTION_WORKFLOW,
+              modelConfiguration: scopedDb.models,
               parentBindingName: PARENT_BINDING_NAME,
               parentInstanceId,
               childId: `motion:${sequenceId}:${shotId}${suffix}`,

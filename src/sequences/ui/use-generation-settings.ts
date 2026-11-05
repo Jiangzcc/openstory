@@ -1,5 +1,4 @@
 import {
-  getCompatibleModel,
   isValidAudioModel,
   isValidImageToVideoModel,
   isValidTextToImageModel,
@@ -9,21 +8,29 @@ import {
   type TextToImageModel,
 } from '@/models/models';
 import {
-  applyGenerationMode,
   DEFAULT_GENERATION_MODE,
+  availableDefaultVideoModel,
+  defaultAnalysisModel,
+  defaultAudioModel,
+  defaultImageModel,
+  defaultVideoModel,
   isGenerationMode,
-  TURBO_DEFAULT_ANALYSIS,
-  TURBO_DEFAULT_AUDIO,
-  TURBO_DEFAULT_IMAGE,
-  TURBO_DEFAULT_VIDEO,
   type GenerationMode,
 } from '@/models/generation-mode';
 import {
+  isCustomAnalysisModelId,
   isSelectableAnalysisModelId,
-  isValidAnalysisModelId,
   type AnalysisModelId,
 } from '@/models/models.config';
-import { DEFAULT_ASPECT_RATIO, type AspectRatio } from '@/models/aspect-ratios';
+import type { ModelConfiguration } from '@/models/model-configuration';
+import { useModelDefaults } from '@/models/ui/use-model-defaults';
+import { useTextModelCatalog } from '@/models/ui/use-text-model-catalog';
+import { useViaAvailability } from '@/models/ui/use-via-availability';
+import {
+  aspectRatioSchema,
+  DEFAULT_ASPECT_RATIO,
+  type AspectRatio,
+} from '@/models/aspect-ratios';
 import {
   DEFAULT_RESOLUTION,
   isResolution,
@@ -35,21 +42,11 @@ import {
   stopAtFromFlags,
   type GenerationStage,
 } from '@/sequences/pipeline';
-import { useCallback, useEffect, useState } from 'react';
-
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getLogger } from '@/platform/logger';
 
 const logger = getLogger(['openstory', 'ui', 'use-generation-settings']);
-
-// Bump when product defaults change so prior localStorage snapshots are ignored
-// (v5 → v6: stop at dialogue, Seedance 2.5 — #2004. v4 → v5:
-// Turbo is the product default. Stop-at is migrated from
-// auto-generate flags when loading a v5 snapshot — #1408). Adding a FIELD is
-// not a reason to bump — `loadSettings` falls back per-field, so an older
-// snapshot still loads. Bumping strands e2e's pinned settings
-// (`GENERATION_SETTINGS_KEY` in e2e/fixtures/test-utils.ts mirrors this
-// literal), which silently reverts the recorded pipeline to Turbo defaults and
-// fails as an aimock fixture miss.
+// Keep the key: legacy snapshots are explicit preferences; new writes contain only overrides.
 const STORAGE_KEY = 'openstory:generation-settings:v6';
 
 export type GenerationSettings = {
@@ -62,341 +59,255 @@ export type GenerationSettings = {
   motionModel: ImageToVideoModel;
   videoModels: ImageToVideoModel[];
   stopAt: GenerationStage;
-  /** Skip the Generate stop-at alert and reuse `stopAt`. */
   rememberStopAt: boolean;
-  /** Render a still per shot first (the frame-based workflow); off = reference-only. */
   generateStartFrames: boolean;
-  /**
-   * ponytail: no UI sets this (#2004 removed the Voices switch); it exists so
-   * e2e can pin voices off. Drop it once the recorded pipeline has voice
-   * fixtures.
-   */
   generateVoices: boolean;
-  /** Render motion as Ark drafts (#1756); only Seedance 2.5 honours it. */
   draftMotion: boolean;
   musicModel: AudioModel;
   audioModels: AudioModel[];
 };
 
-function withMode(settings: GenerationSettings): GenerationSettings {
-  const lists = applyGenerationMode(
-    {
-      generationMode: settings.generationMode,
-      analysisModels: settings.analysisModels,
-      imageModels: settings.imageModels,
-      videoModels: settings.videoModels,
-      audioModels: settings.audioModels,
-      aspectRatio: settings.aspectRatio,
-    },
-    settings.generationMode
-  );
+type GenerationPreferences = Partial<GenerationSettings>;
+type GenerationVias = {
+  byteplus?: boolean;
+  referenceOnlyModels?: readonly ImageToVideoModel[];
+};
+
+function validList<T>(
+  value: unknown,
+  valid: (entry: unknown) => entry is T
+): T[] | undefined {
+  return Array.isArray(value) && value.length > 0 && value.every(valid)
+    ? value
+    : undefined;
+}
+
+function modelPreferences(raw: Record<string, unknown>): GenerationPreferences {
+  const prefs: GenerationPreferences = {};
+  const analysis = Array.isArray(raw.analysisModels)
+    ? raw.analysisModels.filter(
+        (model): model is AnalysisModelId =>
+          isSelectableAnalysisModelId(model) || isCustomAnalysisModelId(model)
+      )
+    : [];
+  if (analysis.length > 0) prefs.analysisModels = analysis;
+  const images = validList(raw.imageModels, isValidTextToImageModel);
+  if (images) prefs.imageModels = images;
+  else if (isValidTextToImageModel(raw.imageModel))
+    prefs.imageModels = [raw.imageModel];
+  const videos = validList(raw.videoModels, isValidImageToVideoModel);
+  if (videos) prefs.videoModels = videos;
+  else if (isValidImageToVideoModel(raw.motionModel))
+    prefs.videoModels = [raw.motionModel];
+  const audio = validList(raw.audioModels, isValidAudioModel);
+  if (audio) prefs.audioModels = audio;
+  else if (isValidAudioModel(raw.musicModel))
+    prefs.audioModels = [raw.musicModel];
+  return prefs;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function parseGenerationPreferences(
+  raw: unknown
+): GenerationPreferences {
+  if (!isRecord(raw)) return {};
+  const bag: Record<string, unknown> = raw;
+  const prefs = modelPreferences(bag);
+  if (isGenerationMode(bag.generationMode))
+    prefs.generationMode = bag.generationMode;
+  const aspect = aspectRatioSchema.safeParse(bag.aspectRatio);
+  if (aspect.success) prefs.aspectRatio = aspect.data;
+  if (isResolution(bag.resolution)) prefs.resolution = bag.resolution;
+  if (isGenerationStage(bag.stopAt)) prefs.stopAt = bag.stopAt;
+  else if ('autoGenerateMotion' in bag || 'autoGenerateMusic' in bag) {
+    prefs.stopAt = stopAtFromFlags({
+      autoGenerateMotion: bag.autoGenerateMotion !== false,
+      autoGenerateMusic: bag.autoGenerateMusic !== false,
+    });
+  }
+  const flags = [
+    'rememberStopAt',
+    'generateStartFrames',
+    'generateVoices',
+    'draftMotion',
+  ] as const;
+  for (const key of flags) {
+    if (typeof bag[key] === 'boolean') prefs[key] = bag[key];
+  }
+  return prefs;
+}
+
+function defaultSettings(
+  configuration: Readonly<ModelConfiguration>,
+  prefs: GenerationPreferences
+): GenerationSettings {
+  const mode = prefs.generationMode ?? DEFAULT_GENERATION_MODE;
+  const aspectRatio = prefs.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+  const imageModel = defaultImageModel(mode, configuration);
+  const motionModel = prefs.generationMode
+    ? defaultVideoModel(mode, aspectRatio, configuration)
+    : configuration.newSequenceVideo;
+  const musicModel = defaultAudioModel(mode, configuration);
   return {
-    ...settings,
-    ...lists,
-    imageModel: lists.imageModels[0] ?? settings.imageModel,
-    motionModel: lists.videoModels[0] ?? settings.motionModel,
-    musicModel: lists.audioModels[0] ?? settings.musicModel,
+    generationMode: mode,
+    aspectRatio,
+    resolution: DEFAULT_RESOLUTION,
+    analysisModels: [defaultAnalysisModel(mode, configuration)],
+    imageModel,
+    imageModels: [imageModel],
+    motionModel,
+    videoModels: [motionModel],
+    musicModel,
+    audioModels: [musicModel],
+    stopAt: NEW_SEQUENCE_STOP_AT,
+    rememberStopAt: false,
+    generateStartFrames: false,
+    generateVoices: true,
+    draftMotion: true,
   };
 }
 
-/** What a new sequence renders motion with (#2004). */
-export const NEW_SEQUENCE_VIDEO_MODEL: ImageToVideoModel = 'seedance_v2_5';
+function nonEmptyModels<T extends string>(
+  models: T[],
+  fallback: T
+): [T, ...T[]] {
+  const [first, ...rest] = models;
+  return first === undefined ? [fallback] : [first, ...rest];
+}
 
-const DEFAULT_SETTINGS: GenerationSettings = withMode({
-  generationMode: DEFAULT_GENERATION_MODE,
-  aspectRatio: DEFAULT_ASPECT_RATIO,
-  resolution: DEFAULT_RESOLUTION,
-  analysisModels: [TURBO_DEFAULT_ANALYSIS],
-  imageModel: TURBO_DEFAULT_IMAGE,
-  imageModels: [TURBO_DEFAULT_IMAGE],
-  // Seedance 2.5, drafted first (#2004). The composer swaps it for the Turbo
-  // default where the team cannot reach BytePlus.
-  motionModel: NEW_SEQUENCE_VIDEO_MODEL,
-  videoModels: [NEW_SEQUENCE_VIDEO_MODEL],
-  // Stop once the dialogue is recorded (#2004): hear the film before paying
-  // for motion.
-  stopAt: NEW_SEQUENCE_STOP_AT,
-  rememberStopAt: false,
-  // Off by default: a new sequence renders reference-only; start frames are
-  // the opt-in for steerable composition.
-  generateStartFrames: false,
-  generateVoices: true,
-  // On by default: only Seedance 2.5 honours it, and there a 480p look
-  // before the 1080p spend is the cheaper first run (#1756).
-  draftMotion: true,
-  musicModel: TURBO_DEFAULT_AUDIO,
-  audioModels: [TURBO_DEFAULT_AUDIO],
-});
-
-/**
- * Validates aspect ratio value
- */
-function isValidAspectRatio(value: unknown): value is AspectRatio {
-  return (
-    typeof value === 'string' &&
-    (value === '16:9' || value === '9:16' || value === '1:1')
+function resolveVideoModels(
+  settings: GenerationSettings,
+  configuration: Readonly<ModelConfiguration>,
+  vias: GenerationVias
+): [ImageToVideoModel, ...ImageToVideoModel[]] {
+  const modeFallback = availableDefaultVideoModel(
+    defaultVideoModel(
+      settings.generationMode,
+      settings.aspectRatio,
+      configuration
+    ),
+    configuration.defaultVideo,
+    settings.aspectRatio,
+    vias
+  );
+  return nonEmptyModels(
+    [
+      ...new Set(
+        settings.videoModels.map((model) =>
+          availableDefaultVideoModel(
+            model,
+            modeFallback,
+            settings.aspectRatio,
+            vias
+          )
+        )
+      ),
+    ],
+    modeFallback
   );
 }
 
-/**
- * Validates analysis model IDs array
- */
-function isValidAnalysisModels(value: unknown): value is AnalysisModelId[] {
-  if (!Array.isArray(value) || value.length === 0) {
-    return false;
-  }
-  return value.every(
-    (id) => typeof id === 'string' && isValidAnalysisModelId(id)
-  );
+export function resolveGenerationSettings(
+  configuration: Readonly<ModelConfiguration>,
+  prefs: GenerationPreferences,
+  vias: GenerationVias = {}
+): GenerationSettings {
+  const settings = { ...defaultSettings(configuration, prefs), ...prefs };
+  const videoModels = resolveVideoModels(settings, configuration, vias);
+  const imageModels = nonEmptyModels(settings.imageModels, settings.imageModel);
+  const audioModels = nonEmptyModels(settings.audioModels, settings.musicModel);
+  const supportsReferences = (model: ImageToVideoModel) =>
+    vias.referenceOnlyModels
+      ? vias.referenceOnlyModels.includes(model)
+      : referenceOnlyCapableWith(model, { xai: true });
+  return {
+    ...settings,
+    videoModels,
+    imageModels,
+    audioModels,
+    imageModel: imageModels[0],
+    motionModel: videoModels[0],
+    musicModel: audioModels[0],
+    generateStartFrames:
+      settings.generateStartFrames || !videoModels.every(supportsReferences),
+  };
 }
 
-/**
- * Loads settings from localStorage with validation
- */
-function loadSettings(): GenerationSettings {
-  if (typeof window === 'undefined') {
-    return DEFAULT_SETTINGS;
+export function updateGenerationPreferences(
+  prefs: GenerationPreferences,
+  patch: GenerationPreferences
+): GenerationPreferences {
+  const next = { ...prefs };
+  const modeChanged =
+    patch.generationMode !== undefined &&
+    patch.generationMode !== (prefs.generationMode ?? DEFAULT_GENERATION_MODE);
+  if (modeChanged) {
+    delete next.analysisModels;
+    delete next.imageModels;
+    delete next.videoModels;
+    delete next.audioModels;
   }
+  return { ...next, ...parseGenerationPreferences(patch) };
+}
 
+function loadPreferences(): GenerationPreferences {
+  if (typeof window === 'undefined') return {};
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return DEFAULT_SETTINGS;
-    }
-
-    const parsed: unknown = JSON.parse(stored);
-
-    // Validate structure (only check core fields — new fields fall back gracefully)
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      !('aspectRatio' in parsed) ||
-      !('analysisModels' in parsed) ||
-      !('imageModel' in parsed) ||
-      !('motionModel' in parsed)
-    ) {
-      logger.warn('Invalid settings structure, using defaults');
-      return DEFAULT_SETTINGS;
-    }
-
-    // Validate and sanitize each field
-    const aspectRatio = isValidAspectRatio(parsed.aspectRatio)
-      ? parsed.aspectRatio
-      : DEFAULT_ASPECT_RATIO;
-
-    const storedAnalysisModels = isValidAnalysisModels(parsed.analysisModels)
-      ? parsed.analysisModels.filter(isSelectableAnalysisModelId)
-      : [];
-    const analysisModels =
-      storedAnalysisModels.length > 0
-        ? storedAnalysisModels
-        : [TURBO_DEFAULT_ANALYSIS];
-
-    const imageModel = isValidTextToImageModel(parsed.imageModel)
-      ? parsed.imageModel
-      : TURBO_DEFAULT_IMAGE;
-
-    // Load imageModels array, falling back to [imageModel] for backward compat
-    const imageModels =
-      'imageModels' in parsed &&
-      Array.isArray(parsed.imageModels) &&
-      parsed.imageModels.length > 0 &&
-      parsed.imageModels.every(isValidTextToImageModel)
-        ? parsed.imageModels
-        : [imageModel];
-
-    const rawMotionModel = isValidImageToVideoModel(parsed.motionModel)
-      ? parsed.motionModel
-      : TURBO_DEFAULT_VIDEO;
-
-    // Ensure motion model is compatible with aspect ratio
-    const motionModel = getCompatibleModel(rawMotionModel, aspectRatio);
-
-    // Load videoModels array, falling back to [motionModel] for backward
-    // compat. Coerce each element to an aspect-ratio-compatible model and
-    // dedupe so a stored selection from another ratio can't surface an
-    // incompatible model in the picker.
-    const rawVideoModels =
-      'videoModels' in parsed &&
-      Array.isArray(parsed.videoModels) &&
-      parsed.videoModels.length > 0 &&
-      parsed.videoModels.every(isValidImageToVideoModel)
-        ? parsed.videoModels
-        : [motionModel];
-    const videoModels = [
-      ...new Set(rawVideoModels.map((m) => getCompatibleModel(m, aspectRatio))),
-    ];
-
-    const rawStopAt = 'stopAt' in parsed ? parsed.stopAt : undefined;
-    const stopAt = isGenerationStage(rawStopAt)
-      ? rawStopAt
-      : stopAtFromFlags({
-          autoGenerateMotion:
-            'autoGenerateMotion' in parsed &&
-            typeof parsed.autoGenerateMotion === 'boolean'
-              ? parsed.autoGenerateMotion
-              : true,
-          autoGenerateMusic:
-            'autoGenerateMusic' in parsed &&
-            typeof parsed.autoGenerateMusic === 'boolean'
-              ? parsed.autoGenerateMusic
-              : true,
-        });
-
-    const rememberStopAt =
-      'rememberStopAt' in parsed && typeof parsed.rememberStopAt === 'boolean'
-        ? parsed.rememberStopAt
-        : false;
-
-    const musicModel =
-      'musicModel' in parsed && isValidAudioModel(parsed.musicModel)
-        ? parsed.musicModel
-        : TURBO_DEFAULT_AUDIO;
-
-    // Load audioModels array, falling back to [musicModel] for backward compat.
-    const audioModels =
-      'audioModels' in parsed &&
-      Array.isArray(parsed.audioModels) &&
-      parsed.audioModels.length > 0 &&
-      parsed.audioModels.every(isValidAudioModel)
-        ? parsed.audioModels
-        : [musicModel];
-
-    const bag: Record<string, unknown> = parsed;
-    const generationMode = isGenerationMode(bag.generationMode)
-      ? bag.generationMode
-      : DEFAULT_GENERATION_MODE;
-    const resolution = isResolution(bag.resolution)
-      ? bag.resolution
-      : DEFAULT_RESOLUTION;
-
-    const settings = withMode({
-      generationMode,
-      aspectRatio,
-      resolution,
-      analysisModels,
-      imageModel,
-      imageModels,
-      motionModel,
-      videoModels,
-      stopAt,
-      rememberStopAt,
-      generateStartFrames:
-        'generateStartFrames' in parsed &&
-        typeof parsed.generateStartFrames === 'boolean'
-          ? parsed.generateStartFrames
-          : false,
-      generateVoices: !(
-        'generateVoices' in parsed && parsed.generateVoices === false
-      ),
-      draftMotion:
-        'draftMotion' in parsed && typeof parsed.draftMotion === 'boolean'
-          ? parsed.draftMotion
-          : true,
-      musicModel,
-      audioModels,
-    });
-
-    // A stored selection can predate the mode, or predate a model losing its
-    // reference-to-video route — either way, restoring it would hand the
-    // create schema a selection it rejects. Checked against the post-`withMode`
-    // list, since the mode can swap the video models out from under it. Asks
-    // the same via-aware question as `createSequenceSchema` (not the model-only
-    // floor): Grok Imagine is accepted by the server and must not be flipped
-    // back to start frames on reload.
-    return !settings.generateStartFrames &&
-      !settings.videoModels.every((model) =>
-        referenceOnlyCapableWith(model, { xai: true })
-      )
-      ? { ...settings, generateStartFrames: true }
-      : settings;
+    return stored ? parseGenerationPreferences(JSON.parse(stored)) : {};
   } catch (error) {
     logger.warn('Failed to load settings from localStorage:', { err: error });
-    return DEFAULT_SETTINGS;
+    return {};
   }
 }
 
-/**
- * Saves settings to localStorage
- */
-function saveSettings(settings: GenerationSettings): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
+function storePreferences(prefs: GenerationPreferences): void {
+  if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
   } catch (error) {
     logger.warn('Failed to save settings to localStorage:', { err: error });
   }
 }
 
-/**
- * Hook for managing generation settings with localStorage persistence
- *
- * @returns Object with current settings and save function
- */
-export function useGenerationSettings() {
-  // Always initialize with defaults to prevent hydration mismatch
-  // localStorage values are loaded in useEffect after mount
-  const [settings, setSettings] =
-    useState<GenerationSettings>(DEFAULT_SETTINGS);
+function useGenerationPreferences() {
+  const [prefs, setPrefs] = useState<GenerationPreferences>({});
   const [isLoaded, setIsLoaded] = useState(false);
-
-  // Load settings on mount (client-side only)
   useEffect(() => {
-    const loaded = loadSettings();
-    setSettings(loaded);
+    setPrefs(loadPreferences());
     setIsLoaded(true);
   }, []);
-
-  /**
-   * Save settings to localStorage and update state
-   * Auto-switches motion model if incompatible with new aspect ratio
-   */
-  const save = useCallback((newSettings: Partial<GenerationSettings>) => {
-    setSettings((prev) => {
-      let updated = { ...prev, ...newSettings };
-
-      // If aspect ratio is changing, ensure motion model(s) are compatible
-      const nextAspectRatio = newSettings.aspectRatio;
-      if (nextAspectRatio && nextAspectRatio !== prev.aspectRatio) {
-        const compatibleModel = getCompatibleModel(
-          updated.motionModel,
-          nextAspectRatio
-        );
-        const compatibleVideoModels = [
-          ...new Set(
-            updated.videoModels.map((m) =>
-              getCompatibleModel(m, nextAspectRatio)
-            )
-          ),
-        ];
-        updated = {
-          ...updated,
-          motionModel: compatibleModel,
-          videoModels: compatibleVideoModels,
-        };
-      }
-
-      updated = withMode(updated);
-
-      saveSettings(updated);
-      return updated;
+  const save = useCallback((patch: GenerationPreferences) => {
+    setPrefs((previous) => {
+      const next = updateGenerationPreferences(previous, patch);
+      storePreferences(next);
+      return next;
     });
   }, []);
-
-  /**
-   * Reset settings to defaults
-   */
   const reset = useCallback(() => {
-    setSettings(DEFAULT_SETTINGS);
-    saveSettings(DEFAULT_SETTINGS);
+    storePreferences({});
+    setPrefs({});
   }, []);
+  return { prefs, isLoaded, save, reset };
+}
 
+export function useGenerationSettings() {
+  const { configuration, isReady } = useModelDefaults();
+  const textModelCatalog = useTextModelCatalog();
+  const vias = useViaAvailability();
+  const { prefs, isLoaded, save, reset } = useGenerationPreferences();
+  const settings = useMemo(
+    () => resolveGenerationSettings(configuration, prefs, vias),
+    [configuration, prefs, vias]
+  );
   return {
     settings,
-    isLoaded,
+    configuration,
+    textModelCatalog,
+    isLoaded: isLoaded && isReady,
     save,
     reset,
   };

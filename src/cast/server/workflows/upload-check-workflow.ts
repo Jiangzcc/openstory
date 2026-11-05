@@ -21,8 +21,12 @@ function likenessCheckDb(scopedDb: WorkflowScopedDb): LikenessCheckDb {
   return {
     teamId: scopedDb.teamId,
     userId: scopedDb.userId,
+    models: scopedDb.models,
     apiKeys: {
-      resolveLlmKey: (model) => scopedDb.credentials.resolveLlmKey(model),
+      resolveOptionalKey: (provider) =>
+        scopedDb.credentials.resolveOptionalKey(provider),
+      resolveLlmKey: (model, routing) =>
+        scopedDb.credentials.resolveLlmKey(model, routing),
     },
     billing: {
       hasEnoughCredits: (amount) =>

@@ -10,8 +10,6 @@
  */
 
 import {
-  DEFAULT_MUSIC_MODEL,
-  DEFAULT_VIDEO_MODEL,
   IMAGE_TO_VIDEO_MODELS,
   isValidAudioModel,
   safeAudioModel,
@@ -19,10 +17,8 @@ import {
   safeTextToImageModel,
 } from '@/models/models';
 import { canRenderReferenceOnly } from '@/motion/server/motion-generation';
-import {
-  DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
-} from '@/models/models.config';
+import { getAnalysisModelById } from '@/models/models.config';
+import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
 import { resolveModelForCountry } from '@/models/region-policy';
 import { resolveAudioModels } from '@/models/resolve-audio-models';
 import { resolveImageModels } from '@/models/resolve-image-models';
@@ -63,7 +59,7 @@ import {
 } from '@/cast/server/sequence-elements/attach-element-upload';
 import { captureProductEvent } from '@/platform/server/observability/product-events';
 import { bumpStylePopularity } from '@/look/server/bump-style-popularity';
-import { triggerStoryboard } from './launchers';
+import { resolveStoryboardLlmSources, triggerStoryboard } from './launchers';
 import { isElevenLabsConfigured } from '@/models/server/elevenlabs-config';
 import type { StoryboardTriggerInput } from '@/platform/server/workflow/types';
 import { createServerOnlyFn } from '@tanstack/react-start';
@@ -140,6 +136,10 @@ export const createSequences = createServerOnlyFn(
     // every write below is already team-authorized. (The old `data.teamId`
     // override was vestigial — writes always went through the scoped db anyway.)
     const teamId = context.teamId;
+    const textModelRouting = await context.scopedDb.textChannels.getSnapshot();
+    const extraModels = textModelCatalogFromRouting(textModelRouting);
+    const models = await context.scopedDb.modelConfiguration.get(extraModels);
+    const configuration = { ...models, textModelRouting };
 
     const {
       script,
@@ -174,7 +174,26 @@ export const createSequences = createServerOnlyFn(
     const country = getRequest().headers.get('cf-ipcountry');
     const analysisModels = [
       ...new Set(
-        requestedAnalysisModels.map((m) => resolveModelForCountry(m, country))
+        requestedAnalysisModels.map((id) => {
+          const model = getAnalysisModelById(id, extraModels);
+          if (!model || model.structuredOutput === false) {
+            throw new ValidationError(
+              'Select an available analysis model that supports structured output.'
+            );
+          }
+          const resolved = extraModels.some((entry) => entry.id === id)
+            ? model.id
+            : resolveModelForCountry(model.id, country);
+          if (
+            getAnalysisModelById(resolved, extraModels)?.structuredOutput ===
+            false
+          ) {
+            throw new ValidationError(
+              'The analysis model must support structured output.'
+            );
+          }
+          return resolved;
+        })
       ),
     ];
 
@@ -229,12 +248,12 @@ export const createSequences = createServerOnlyFn(
 
     // Validate and resolve video models (mirrors the image-model handling).
     const validatedVideoModels = videoModelsInput.map((m) =>
-      safeImageToVideoModel(m, DEFAULT_VIDEO_MODEL)
+      safeImageToVideoModel(m, configuration.defaultVideo)
     );
     const videoModels = resolveVideoModels(
       validatedVideoModels,
       videoModel
-        ? safeImageToVideoModel(videoModel, DEFAULT_VIDEO_MODEL)
+        ? safeImageToVideoModel(videoModel, configuration.defaultVideo)
         : undefined
     );
     const [primaryVideoModel] = videoModels;
@@ -270,12 +289,12 @@ export const createSequences = createServerOnlyFn(
 
     // Validate and resolve audio models (sequence-level, mirrors the pattern).
     const validatedAudioModels = audioModelsInput?.map((m) =>
-      safeAudioModel(m, DEFAULT_MUSIC_MODEL)
+      safeAudioModel(m, configuration.defaultMusic)
     );
     const audioModels = resolveAudioModels(
       validatedAudioModels,
       musicModel && isValidAudioModel(musicModel)
-        ? safeAudioModel(musicModel, DEFAULT_MUSIC_MODEL)
+        ? safeAudioModel(musicModel, configuration.defaultMusic)
         : undefined
     );
     const [primaryAudioModel] = audioModels;
@@ -352,6 +371,11 @@ export const createSequences = createServerOnlyFn(
           ? undefined
           : await reserveRunCredits(context.scopedDb, envelopeCost, {
               providers: ['fal', 'openrouter'],
+              llmSources: await resolveStoryboardLlmSources(
+                context.scopedDb,
+                modelId,
+                configuration
+              ),
               errorMessage: 'Insufficient credits to generate storyboard',
               sequenceId,
             });
@@ -377,9 +401,7 @@ export const createSequences = createServerOnlyFn(
               aspectRatio,
               resolution,
               draftMotion,
-              analysisModel:
-                getAnalysisModelById(modelId)?.id ||
-                resolveModelForCountry(DEFAULT_ANALYSIS_MODEL, country),
+              analysisModel: modelId,
               imageModel: primaryImageModel,
               // Persisted even when this run stops before motion/music —
               // continue-from-DAG uses them on the next stage.
@@ -454,7 +476,8 @@ export const createSequences = createServerOnlyFn(
 
             const { workflowRunId } = await triggerStoryboard(
               context.scopedDb,
-              workflowInput
+              workflowInput,
+              configuration
             );
 
             return { sequence, workflowRunId };

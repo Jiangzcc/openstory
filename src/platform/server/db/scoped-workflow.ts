@@ -38,7 +38,15 @@
  * keep in sync with `createScopedDb`'s 35 domains.
  */
 
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import type {
+  ModelRuntimeConfiguration,
+  WorkflowModelConfiguration,
+} from '@/models/model-runtime-configuration';
+import { unpackModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import type { ScopedDb } from './scoped';
+
+export { packModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 
 /**
  * Read-shaped method names — the same prefixes the enforcement test scans for.
@@ -231,6 +239,8 @@ type WorkflowLiveReads = Pick<ScopedDb, 'teamId' | 'userId'> & {
 };
 
 export type WorkflowScopedDb = WorkflowDomains & {
+  /** Trigger-time settings, never loaded from mutable state during a run. */
+  models: ModelRuntimeConfiguration;
   credentials: WorkflowCredentials;
   claims: WorkflowClaims;
   liveRead: WorkflowLiveReads;
@@ -259,9 +269,14 @@ export type WorkflowScopedDb = WorkflowDomains & {
   generationPlanning: ScopedDb;
 };
 
-export function toWorkflowScopedDb(scopedDb: ScopedDb): WorkflowScopedDb {
+export function toWorkflowScopedDb(
+  scopedDb: ScopedDb,
+  configuration: WorkflowModelConfiguration = DEFAULT_MODEL_CONFIGURATION
+): WorkflowScopedDb {
+  const models = unpackModelRuntimeConfiguration(configuration);
   return {
     ...scopedDb,
+    models,
     // `credentials` is the one hatch that is re-shaped rather than aliased:
     // flattening the two resolvers is what lets a helper declare "I need a key"
     // without also declaring a read surface. Delegating (rather than detaching
@@ -274,7 +289,11 @@ export function toWorkflowScopedDb(scopedDb: ScopedDb): WorkflowScopedDb {
       resolveKey: (provider) => scopedDb.apiKeys.resolveKey(provider),
       resolveOptionalKey: (provider) =>
         scopedDb.apiKeys.resolveOptionalKey(provider),
-      resolveLlmKey: (model) => scopedDb.apiKeys.resolveLlmKey(model),
+      resolveLlmKey: (model, routing) =>
+        scopedDb.apiKeys.resolveLlmKey(
+          model,
+          routing ?? models.textModelRouting ?? []
+        ),
     },
     claims: scopedDb,
     liveRead: scopedDb,

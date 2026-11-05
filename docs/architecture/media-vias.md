@@ -1,4 +1,4 @@
-# Media vias: fal, Google, xAI, LLMTR
+# Media vias: fal, Google, xAI, LLMTR and configured text
 
 The per-via reference for the vias that are not BytePlus (`byteplus-ark.md`) or ElevenLabs (`elevenlabs.md`). The rules that hold for every via are in `AGENTS.md` → Media vias.
 
@@ -56,7 +56,9 @@ Same shape as native Grok: Gemini chat (`google/gemini-4-argon`,
 when a Google key resolves (team `google` key → platform `GEMINI_API_KEY` →
 neither, which falls back to OpenRouter/fal unchanged). e2e never sets
 `GEMINI_API_KEY`, so fixtures keep exercising the fallback;
-`GEMINI_BASE_URL` is the aimock hook for the native path.
+`GEMINI_BASE_URL` is the aimock hook for the native path. Text resolution tries
+all applicable team keys before a platform Google key or administrator binding;
+the media and Files credential rules stay provider-specific.
 
 `src/models/gemini-native.ts` owns registry id → Gemini model name plus the
 pricing, transcribed from ai.google.dev — Google reports tokens, never cost,
@@ -113,7 +115,9 @@ Grok chat, image, and video go to `api.x.ai` via `@tanstack/ai-grok` instead of
 OpenRouter/fal when an xAI key resolves (team `xai` key → platform
 `XAI_API_KEY` → neither, which falls back to the old path unchanged). e2e sets
 a mock `XAI_API_KEY` and points `XAI_BASE_URL` at a second aimock instance
-(:4011), so Grok replays the native path from `fixtures/recorded/xai`.
+(:4011), so Grok replays the native path from `fixtures/recorded/xai`. For text,
+applicable team gateway keys also take precedence over a platform xAI key
+or administrator binding.
 
 `src/models/grok-native.ts` owns registry id → xAI model name plus the pricing,
 transcribed from docs.x.ai — the adapter reports a cost for video only. Native
@@ -167,9 +171,30 @@ rates as assumed LLMTR prices.
   Chat Completions uses `max_tokens` / `reasoning_effort`; Responses uses
   `max_output_tokens` / `reasoning.effort`.
 
-Resolution order (`resolveLlmKey`): native xAI (Grok) → native Google
-(Gemini) → **team LLMTR when `llmtrTextModel` maps** → team OpenRouter →
-team fal → platform (`OPENROUTER_KEY`, else `FAL_KEY`). A team that adds
+For a built-in text model, `resolveLlmKey` first tries applicable team
+credentials: matching native xAI/Google → **LLMTR when `llmtrTextModel` maps**
+→ OpenRouter → fal. Only after those choices are exhausted does it use an
+administrator text binding or the existing platform native/OpenRouter/fal fallback. A team that adds
 an LLMTR key chose that gateway, so it outranks their OpenRouter key. `validateKey` cannot use `/v1/models` — it
 is public and answers 200 for a bogus key — so validation is a 1-token
 completion on a $0 model and requires `response.ok`.
+
+## Administrator-configured text channels
+
+The secondary-development **Text channels** tab at `/admin/models` adds platform-owned channels and explicit text-model bindings alongside the existing providers. A binding can overlay a built-in model ID or add a `custom:` ID. `resolveLlmKey` uses the request/run's `textModelRouting` snapshot. Built-in models prefer applicable team credentials before a binding; a `custom:` ID uses its binding directly. A selected binding resolves its immutable encrypted credential record and returns `source: 'platform', via: 'compatible'`. Without a binding, built-in models retain the platform native/OpenRouter/fal fallback after applicable team keys. Unknown or inactive custom IDs are refused. Disabling a built-in binding removes that override; it does not globally disable the built-in model.
+
+`createAdapter` routes a configured call through `openaiCompatibleText` with the exact upstream ID, configured base URL, Bearer key, `workersSafeFetch` and zero SDK retries. The saved channel protocol selects `api: 'chat-completions'` or `api: 'responses'`, appending `/chat/completions` or `/responses` to the base URL. This explicit setting does not guess an endpoint from model names or change LLMTR/native Google/xAI routing. `configuredTextModelOptions` caps output by the configured context/output limits, uses `max_tokens` plus `stream_options.include_usage` for Chat Completions and `max_output_tokens` for Responses, omits Chat-only penalties/stream options on Responses, and capability checks reject unsupported structured output, tools or image input before the provider call. Provider compatibility still requires verification.
+
+**A bound call never fails over to another channel.** Secret-resolution errors and provider errors propagate. `regionRetriesFor`, `callLLMStream` and durable `withCallRoute` bypass cross-model/via region recovery for configured routes; existing workflow retry policies remain separate. Unbound providers retain their existing recovery behavior.
+
+Channel keys are write-only in the administrative API, encrypted with the existing AES-256-GCM helper and stored separately from channel metadata in D1 `app_metadata`. Rotation writes a new credential ID; run snapshots keep the old ID, endpoint, upstream ID, capabilities, token limits and USD rates. No plaintext key is serialized into a workflow payload. Discovery uses the stored key for `GET <baseUrl>/models` only, matches New API endpoint metadata to the selected protocol, returns candidate metadata and never calls a completion, saves a binding, enables a model or changes the original catalog.
+
+**Native video Files paths stay native.** Uploaded-video person checks (`analyzeTalentClipForTeam`) and assistant clip understanding (`watchClipForTeam`) read `talentVideo`/`watchClip` and use `resolveOptionalKey('google')`, which prefers a team Google key before the platform Google key. A text binding for the same Gemini ID must not capture either Files upload/generate/delete flow. Image-input support on a text binding does not imply support for these video paths.
+
+`configuredTextCostUsd` estimates supplier USD cost from prompt/completion tokens and the configured per-million-token rates; `configuredTextUsage` and `llmCostFromUsage` preserve that route's cost basis. These are not audited invoices or CNY selling prices, and this extension does not implement exchange rates or retail settlement. Text preflight and reservation checks follow resolved credential sources, including internal helper calls. A confirmed team authentication failure carries only safe source/via/model metadata across durable errors; platform failures and errors without a confirmed team source never invalidate a team key.
+
+Local tests, browser checks and the production build passed, including Workerd Chat Completions and Responses roundtrips against a Mock gateway. Real-gateway exploration was read-only, with no paid generation; deployed Cloudflare outbound network behavior remains unverified. Implementation details and the verification ledger are in [Text channels](../secondary-development/text-channels.md).
+
+## Administrator model defaults
+
+The administrator can choose default recommendations and internal helper models through `/admin/models`; compatible configured text models join the applicable text slots. Native video-understanding slots still require existing native Gemini models. Default selection and text-channel binding are separate settings. Every durable run carries both in its resolved runtime snapshot; see [Model configuration](model-configuration.md).

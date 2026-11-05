@@ -2,10 +2,7 @@
  * The `elementVisionWorkflow` durable workflow.
  */
 
-import {
-  describeElementImage,
-  ELEMENT_VISION_MODEL,
-} from '@/cast/server/element-vision';
+import { describeElementImage } from '@/cast/server/element-vision';
 import { deductWorkflowCredits } from '@/billing/server/workflow-deduction';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
@@ -39,9 +36,11 @@ export class ElementVisionWorkflow extends OpenStoryWorkflowEntrypoint<ElementVi
 
     // Step 2: vision call (also returns a vision-suggested token).
     const vision = await step.do('describe-element', async () => {
-      const llmKeyInfo =
-        await scopedDb.credentials.resolveLlmKey(ELEMENT_VISION_MODEL);
+      const llmKeyInfo = await scopedDb.credentials.resolveLlmKey(
+        scopedDb.models.vision
+      );
       return await describeElementImage({
+        model: scopedDb.models.vision,
         imageUrl,
         filename,
         llmKey: llmKeyInfo,

@@ -13,7 +13,7 @@ import type { ShotSpecRewriteWorkflowInput } from '@/platform/server/workflow/ty
 import { triggerWorkflow } from '@/platform/server/workflow/client';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
 } from '@/models/models.config';
 import {
   hashMotionPromptInput,
@@ -144,8 +144,10 @@ export async function regenerateShotPrompt(
       prompt,
       referenceOnly: shotReferenceOnly,
     });
-  const analysisModel =
-    getAnalysisModelById(ctx.analysisModel)?.id ?? DEFAULT_ANALYSIS_MODEL;
+  const analysisModel = storedAnalysisModelId(
+    ctx.analysisModel,
+    DEFAULT_ANALYSIS_MODEL
+  );
   const visualSelected = await scopedDb.framePromptVersions.getSelected(
     frame.id
   );

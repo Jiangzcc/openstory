@@ -8,7 +8,10 @@
 import { and, eq } from 'drizzle-orm';
 import type { Database } from '@/platform/server/db/client';
 import { getEnv } from '#env';
-import { getPlatformLlmKey } from '@/models/server/create-adapter';
+import { resolveLlmKeyForModel } from '@/models/server/llm-key-routing';
+import type { LlmKeyInfo } from '@/models/server/create-adapter';
+import type { TextModelRoutingSnapshot } from '@/models/text-channels';
+import { createTextChannelsReadMethods } from './text-channels';
 import {
   getElevenLabsApiKey,
   isElevenLabsConfigured,
@@ -17,14 +20,7 @@ import {
   getSeedSpeechApiKey,
   isSeedSpeechConfigured,
 } from '@/models/server/seed-speech-config';
-import { nativeGeminiTextModel } from '@/models/gemini-native';
-import { isGoogleRegionBlockedHere } from '@/models/google-region';
-import { nativeGrokTextModel } from '@/models/grok-native';
-import {
-  LLMTR_BASE_URL,
-  LLMTR_VALIDATION_MODEL,
-  llmtrTextModel,
-} from '@/models/llmtr';
+import { LLMTR_BASE_URL, LLMTR_VALIDATION_MODEL } from '@/models/llmtr';
 import {
   decryptApiKey,
   encryptApiKey,
@@ -70,9 +66,12 @@ export type ResolvedApiKey =
 // API for Grok models (issue #1167), 'google' = Google's own Gemini API for
 // Gemini models, 'llmtr' = the LLMTR gateway (Bearer auth, OpenAI Chat
 // Completions, models per `LLMTR_TEXT_MODELS`).
-export type ResolvedLlmKey = ResolvedApiKey & {
-  via: 'openrouter' | 'fal' | 'xai' | 'google' | 'llmtr';
-};
+export type ResolvedLlmKey =
+  | (ResolvedApiKey & Exclude<LlmKeyInfo, { via: 'compatible' }>)
+  | (Extract<LlmKeyInfo, { via: 'compatible' }> & {
+      source: 'platform';
+      fallbackReason?: never;
+    });
 
 // The cached shape of a `team_api_keys` lookup. Holds the *encrypted* row
 // (ciphertext + invalid flag) only — never the decrypted key. `resolveKey`
@@ -90,6 +89,8 @@ type CachedKeyLookup =
     };
 
 export function createApiKeysReadMethods(db: Database, teamId: string) {
+  const textChannels = createTextChannelsReadMethods(db);
+  let routingSnapshotPromise: Promise<TextModelRoutingSnapshot> | undefined;
   // Per-scope memoization of the `team_api_keys` row lookup. A ScopedDb is
   // built fresh per workflow run / request, so this cache lives exactly one
   // run — there is no cross-run staleness (issue #864). Without it, `resolveKey`
@@ -404,92 +405,27 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
     return decryptOrMarkInvalid(provider, lookup);
   }
 
-  // Resolve the key for an LLM call. Preference order:
-  //   0. xAI key (team, else platform) when `model` is a Grok model — the
-  //      first-party API, no reseller in front of it (issue #1167); a Google
-  //      key the same way when `model` is a Gemini model
-  //   1. team LLMTR key, when LLMTR carries `model` — a team that added an
-  //      LLMTR key chose that gateway deliberately. Models it doesn't carry
-  //      fall through to OpenRouter/fal below rather than being silently
-  //      swapped for a near neighbour.
-  //   2. team OpenRouter key (direct OpenRouter)
-  //   3. team fal key (routed through fal's OpenRouter endpoint) — a fal-only
-  //      team still covers LLM calls on their own key (issue #895)
-  //   4. platform key (OPENROUTER_KEY, else FAL_KEY)
-  // A skipped OpenRouter key that a working fal key supersedes returns
-  // `source: 'team'` with no fallbackReason — the reason only surfaces when
-  // resolution falls all the way through to the platform key.
-  // Omitting `model` means no gateway routing — a caller that can't name the
-  // model can't promise it's a Grok/Gemini one, nor that LLMTR carries it.
-  async function resolveLlmKey(model?: string): Promise<ResolvedLlmKey> {
-    let fallbackReason: string | undefined;
-
-    if (model && nativeGrokTextModel(model)) {
-      const xai = await resolveOptionalKey('xai');
-      if (xai) return { ...xai, via: 'xai' };
-    }
-
-    // Skipped where Google refused this isolate's location (`google-region.ts`).
-    if (model && nativeGeminiTextModel(model) && !isGoogleRegionBlockedHere()) {
-      const google = await resolveOptionalKey('google');
-      if (google) return { ...google, via: 'google' };
-    }
-
-    if (model && llmtrTextModel(model)) {
-      const result = await teamGatewayKey(
-        'llmtr',
-        await readKeyRowLogged('llmtr')
-      );
-      if ('key' in result) {
-        return { key: result.key, source: 'team', via: 'llmtr' };
-      }
-      fallbackReason = result.skippedReason;
-    }
-
-    // `??=` throughout: the reason reported is the one from the
-    // highest-priority key that was skipped, not the last one checked.
-    const orLookup = await readKeyRowLogged('openrouter');
-    if (orLookup.found) {
-      if (orLookup.isInvalid) {
-        fallbackReason ??=
-          orLookup.invalidReason ?? 'Team OpenRouter key marked invalid';
-      } else {
-        const result = await decryptOrMarkInvalid('openrouter', orLookup);
-        if ('key' in result) {
-          return { key: result.key, source: 'team', via: 'openrouter' };
-        }
-        fallbackReason ??= result.skippedReason;
-      }
-    }
-
-    const falLookup = await readKeyRowLogged('fal');
-    if (falLookup.found) {
-      if (falLookup.isInvalid) {
-        fallbackReason ??=
-          falLookup.invalidReason ?? 'Team fal key marked invalid';
-      } else {
-        const result = await decryptOrMarkInvalid('fal', falLookup);
-        if ('key' in result) {
-          return { key: result.key, source: 'team', via: 'fal' };
-        }
-        fallbackReason ??= result.skippedReason;
-      }
-    }
-
-    const platform = getPlatformLlmKey(model);
-    if (!platform) {
-      throw new Error(
-        'No platform LLM key available (set OPENROUTER_KEY or FAL_KEY)'
-      );
-    }
-    if (fallbackReason) {
+  async function resolveLlmKey(
+    model?: string,
+    routingSnapshot?: TextModelRoutingSnapshot
+  ): Promise<ResolvedLlmKey> {
+    const snapshot = model
+      ? (routingSnapshot ??
+        (await (routingSnapshotPromise ??= textChannels.getSnapshot())))
+      : [];
+    const resolved = await resolveLlmKeyForModel(model, snapshot, {
+      teamKey: async (provider) =>
+        teamGatewayKey(provider, await readKeyRowLogged(provider)),
+      channelSecret: textChannels.resolveSecret,
+    });
+    if (resolved.source === 'platform' && resolved.fallbackReason) {
       logger.warn('Falling back to platform key', {
-        provider: platform.via,
+        provider: resolved.via,
         teamId,
-        reason: fallbackReason,
+        reason: resolved.fallbackReason,
       });
     }
-    return { ...platform, fallbackReason };
+    return resolved;
   }
 
   async function validateKey(

@@ -114,7 +114,12 @@ export class MotionBatchWorkflow extends OpenStoryWorkflowEntrypoint<BatchMotion
     // Step 0b: record dialogue ONCE PER SCENE (#1657). The parent must not
     // fan out motion until every voiced shot has a matching take; a failed or
     // partial scene speech blocks the batch below.
-    const shots = await this.recordScenesOnce(input, step, parentInstanceId);
+    const shots = await this.recordScenesOnce(
+      input,
+      step,
+      parentInstanceId,
+      scopedDb.models
+    );
     const missingDialogueShotIds = missingDialogueAudioShotIds(shots);
     if (missingDialogueShotIds.length > 0) {
       throw new WorkflowValidationError(
@@ -137,6 +142,7 @@ export class MotionBatchWorkflow extends OpenStoryWorkflowEntrypoint<BatchMotion
         step,
         {
           binding: this.env.MOTION_WORKFLOW,
+          modelConfiguration: scopedDb.models,
           parentBindingName: 'MOTION_BATCH_WORKFLOW',
           parentInstanceId,
           // The model token keeps sibling-model children from colliding on the
@@ -180,6 +186,7 @@ export class MotionBatchWorkflow extends OpenStoryWorkflowEntrypoint<BatchMotion
       }
       return spawnAndAwaitChild<MusicWorkflowInput, MusicWorkflowResult>(step, {
         binding: this.env.MUSIC_WORKFLOW,
+        modelConfiguration: scopedDb.models,
         parentBindingName: 'MOTION_BATCH_WORKFLOW',
         parentInstanceId,
         childId: `music:${sequenceId}:${model}`,
@@ -274,7 +281,8 @@ export class MotionBatchWorkflow extends OpenStoryWorkflowEntrypoint<BatchMotion
   private async recordScenesOnce(
     input: BatchMotionMusicWorkflowInput,
     step: WorkflowStep,
-    parentInstanceId: string
+    parentInstanceId: string,
+    modelConfiguration: WorkflowScopedDb['models']
   ): Promise<BatchMotionMusicWorkflowInput['shots']> {
     const speech = input.dialogueSpeech ?? input.dialogueRecording;
     const sequenceId = input.sequenceId;
@@ -287,6 +295,7 @@ export class MotionBatchWorkflow extends OpenStoryWorkflowEntrypoint<BatchMotion
       DialogueAudioWorkflowResult
     >(step, {
       binding: this.env.DIALOGUE_AUDIO_WORKFLOW,
+      modelConfiguration,
       parentBindingName: 'MOTION_BATCH_WORKFLOW',
       parentInstanceId,
       childId: `dialogue-audio:${sequenceId}:${parentInstanceId}`,

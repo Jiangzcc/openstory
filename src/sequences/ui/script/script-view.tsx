@@ -7,10 +7,7 @@ import { ThinkingBar } from '@/ui/ai/thinking-bar';
 import { useAuthGate } from '@/platform/ui/auth/auth-gate-provider';
 import { InButtonCost } from '@/billing/ui/action-cost';
 import { useVoiceDesignAvailable } from '@/cast/ui/use-voice-design-available';
-import {
-  useViaAvailability,
-  viaAvailabilityQueryOptions,
-} from '@/models/ui/use-via-availability';
+import { useViaAvailability } from '@/models/ui/use-via-availability';
 import { DRAFT_FINAL_RESOLUTION } from '@/motion/draft-mode';
 import { PremiumCard } from '@/ui/cards/premium-card';
 import {
@@ -65,10 +62,7 @@ import { useAutoScroll } from '@/ui/use-auto-scroll';
 import { BILLING_BALANCE_KEY } from '@/billing/ui/use-billing-balance';
 import { BILLING_TRANSACTIONS_KEY } from '@/billing/ui/use-billing-balance-realtime';
 import { useBillingGate } from '@/billing/ui/use-billing-gate';
-import {
-  NEW_SEQUENCE_VIDEO_MODEL,
-  useGenerationSettings,
-} from '@/sequences/ui/use-generation-settings';
+import { useGenerationSettings } from '@/sequences/ui/use-generation-settings';
 import {
   allowsUnfundedGeneration,
   DEFAULT_GENERATION_STOP_AT,
@@ -104,7 +98,7 @@ import {
   TITLE_CARD_NOTE,
 } from '@/models/enhance-duration';
 import { toEnhanceInputs } from '@/models/enhance-inputs';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
   parkCreatingSequence,
@@ -115,7 +109,6 @@ import {
   DEFAULT_MUSIC_MODEL,
   DEFAULT_VIDEO_MODEL,
   IMAGE_TO_VIDEO_MODELS,
-  isOfferedVideoModel,
   safeAudioModel,
   safeImageToVideoModel,
   safeTextToImageModel,
@@ -127,14 +120,15 @@ import {
 } from '@/models/models';
 import {
   applyGenerationMode,
-  TURBO_DEFAULT_VIDEO,
   type GenerationMode,
 } from '@/models/generation-mode';
 import {
   DEFAULT_ANALYSIS_MODEL,
+  isCustomAnalysisModelId,
   isValidAnalysisModelId,
   type AnalysisModelId,
 } from '@/models/models.config';
+import { textModelSelectionError } from '@/models/ui/use-text-model-catalog';
 import { SCRIPT_SHORT_THRESHOLD } from '@/models/should-enhance';
 import { useDraftGenerationEstimate } from '@/sequences/ui/use-draft-generation-estimate';
 import { clampResolution } from '@/models/resolutions';
@@ -310,9 +304,6 @@ export const ScriptView: FC<{
   const isEditing = !!sequence?.id;
   const voiceDesignAvailable = useVoiceDesignAvailable();
   const viaAvailability = useViaAvailability();
-  // Observes the cache only: unanswered for a visitor and while it loads.
-  const viasKnown =
-    useQuery({ ...viaAvailabilityQueryOptions, enabled: false }).data != null;
   const { data: composedScriptData } = useComposedScript(sequence?.id);
   const composedScript = composedScriptData?.script;
   // Analyzed sequences derive the document from scene versions (#1030), so the
@@ -373,6 +364,8 @@ export const ScriptView: FC<{
     settings: savedSettings,
     isLoaded: settingsLoaded,
     save: saveSettings,
+    configuration: modelConfiguration,
+    textModelCatalog,
   } = useGenerationSettings();
 
   // Load draft from localStorage (script, style, location)
@@ -385,14 +378,15 @@ export const ScriptView: FC<{
   // Initialize with sequence values (if editing) or localStorage defaults (if creating)
   const sequenceAnalysisModels: AnalysisModelId[] = useMemo(() => {
     if (isEditing && sequence.analysisModel) {
-      return isValidAnalysisModelId(sequence.analysisModel)
+      return isValidAnalysisModelId(sequence.analysisModel) ||
+        isCustomAnalysisModelId(sequence.analysisModel)
         ? [sequence.analysisModel]
         : [DEFAULT_ANALYSIS_MODEL];
     }
     return savedSettings.analysisModels;
   }, [isEditing, sequence?.analysisModel, savedSettings.analysisModels]);
 
-  const [genSettings, setGenSettings] = useState<{
+  const [editedGenSettings, setEditedGenSettings] = useState<{
     generationMode: GenerationMode;
     analysisModels: AnalysisModelId[];
     aspectRatio: AspectRatio;
@@ -430,6 +424,7 @@ export const ScriptView: FC<{
         ? [safeAudioModel(sequence.musicModel, DEFAULT_MUSIC_MODEL)]
         : savedSettings.audioModels,
   }));
+  const genSettings = isEditing ? editedGenSettings : savedSettings;
   const {
     analysisModels,
     aspectRatio,
@@ -440,6 +435,12 @@ export const ScriptView: FC<{
     draftMotion,
     audioModels,
   } = genSettings;
+  const analysisModelError = textModelSelectionError(
+    analysisModels,
+    textModelCatalog,
+    'structuredOutput'
+  );
+  const analysisModelsReady = settingsLoaded && !analysisModelError;
   // Not a choice (#2004): every new sequence records dialogue wherever this
   // deployment can design a voice. A character is turned off on the character.
   const generateVoices =
@@ -465,13 +466,25 @@ export const ScriptView: FC<{
           aspectRatio,
         })
       );
-  const updateGen = <K extends keyof typeof genSettings>(
-    key: K,
-    value: (typeof genSettings)[K]
-  ) =>
-    setGenSettings((s) =>
-      applyGenerationMode({ ...s, [key]: value }, s.generationMode)
-    );
+  const updateGen = useCallback(
+    <K extends keyof typeof genSettings>(
+      key: K,
+      value: (typeof genSettings)[K]
+    ) => {
+      if (isEditing) {
+        setEditedGenSettings((s) =>
+          applyGenerationMode(
+            { ...s, [key]: value },
+            s.generationMode,
+            modelConfiguration
+          )
+        );
+      } else {
+        saveSettings({ [key]: value });
+      }
+    },
+    [isEditing, modelConfiguration, saveSettings]
+  );
   /**
    * Turning start frames OFF narrows the motion list, which can strand a
    * selection the server would then reject at submit. Drop the models that
@@ -487,7 +500,8 @@ export const ScriptView: FC<{
       capable.length > 0 ? capable : fallback ? [fallback] : s.videoModels;
     return applyGenerationMode(
       { ...s, generateStartFrames: next, videoModels },
-      s.generationMode
+      s.generationMode,
+      modelConfiguration
     );
   };
   const [selections, setSelections] = useState({
@@ -864,45 +878,6 @@ export const ScriptView: FC<{
     setSampleStyleId(sample ? style.id : null);
   }, [sampleStyleId, styleId, styles]);
 
-  // Sync state with savedSettings when creating new sequences (not when editing)
-  // Use a ref to track if we've already synced to avoid loops
-  const hasSyncedRef = React.useRef(false);
-  useEffect(() => {
-    // Reset sync flag when switching modes
-    if (isEditing) {
-      hasSyncedRef.current = false;
-      return;
-    }
-    // Wait for localStorage to load before syncing
-    if (!settingsLoaded) {
-      return;
-    }
-    // Sync once when creating new sequence
-    if (!hasSyncedRef.current) {
-      setGenSettings({
-        generationMode: savedSettings.generationMode,
-        aspectRatio: savedSettings.aspectRatio,
-        resolution: savedSettings.resolution,
-        analysisModels: savedSettings.analysisModels,
-        imageModels: savedSettings.imageModels,
-        videoModels: savedSettings.videoModels,
-        stopAt: savedSettings.stopAt,
-        generateStartFrames: savedSettings.generateStartFrames,
-        draftMotion: savedSettings.draftMotion,
-        audioModels: savedSettings.audioModels,
-      });
-      hasSyncedRef.current = true;
-    }
-  }, [isEditing, settingsLoaded, savedSettings]);
-
-  // Persist settings to localStorage when creating new sequences (not when editing)
-  // Only save after initial load to prevent overwriting with defaults
-  useEffect(() => {
-    if (!isEditing && settingsLoaded) {
-      saveSettings(genSettings);
-    }
-  }, [isEditing, settingsLoaded, genSettings, saveSettings]);
-
   // Persist draft to localStorage when creating new sequences. Shuffle/Try
   // samples are user intent — store the text and sampleStyleId so login and
   // reload restore the same composer (#1384).
@@ -932,36 +907,23 @@ export const ScriptView: FC<{
     saveDraft,
   ]);
 
-  // Auto-fallback motion models when style changes away from a required
-  // category — any selected model whose requiredStyleCategory no longer matches
-  // is swapped for the default; the result is deduped. A new sequence also
-  // swaps the Seedance 2.5 default for the Turbo one where this team cannot
-  // reach BytePlus (#2004) — only once the server has answered, so the
-  // conservative stand-in is never remembered as their pick.
+  // Availability is resolved with defaults; keep the existing style restriction fallback.
   useEffect(() => {
-    const coerced = videoModels.map((m) => {
-      if (
-        !isEditing &&
-        viasKnown &&
-        m === NEW_SEQUENCE_VIDEO_MODEL &&
-        !isOfferedVideoModel(m, viaAvailability)
-      ) {
-        return TURBO_DEFAULT_VIDEO;
-      }
-      const model = IMAGE_TO_VIDEO_MODELS[m];
-      return 'requiredStyleCategory' in model &&
-        model.requiredStyleCategory !== styleCategory
-        ? DEFAULT_VIDEO_MODEL
-        : m;
+    const coerced = videoModels.map((model) => {
+      const entry = IMAGE_TO_VIDEO_MODELS[model];
+      return 'requiredStyleCategory' in entry &&
+        entry.requiredStyleCategory !== styleCategory
+        ? modelConfiguration.defaultVideo
+        : model;
     });
     const deduped = [...new Set(coerced)];
     if (
       deduped.length !== videoModels.length ||
-      deduped.some((m, i) => m !== videoModels[i])
+      deduped.some((model, i) => model !== videoModels[i])
     ) {
       updateGen('videoModels', deduped);
     }
-  }, [styleCategory, videoModels, isEditing, viasKnown, viaAvailability]);
+  }, [styleCategory, videoModels, modelConfiguration.defaultVideo, updateGen]);
 
   const [targetDuration, setTargetDuration] = useState(30);
   // Only Enhance sets the sequence's target (#1593): a pasted script's length
@@ -1064,6 +1026,7 @@ export const ScriptView: FC<{
       'stopAt' | 'generateStartFrames' | 'videoModels'
     > = genSettings
   ) => {
+    if (!analysisModelsReady) return;
     const { stopAt: runUntil, generateStartFrames, videoModels } = run;
     if (needsBillingSetup && !allowsUnfundedGeneration(runUntil)) {
       showGate();
@@ -1126,6 +1089,7 @@ export const ScriptView: FC<{
   };
 
   const requestGenerate = () => {
+    if (!analysisModelsReady) return;
     // Remembered paid stop + no credits: open the slider instead of firing
     // Generate (the credit gate still runs on confirm).
     if (
@@ -1144,6 +1108,7 @@ export const ScriptView: FC<{
       event.preventDefault();
     }
 
+    if (!analysisModelsReady) return;
     const scriptText = (script ?? baseScript ?? '').trim();
     if (!(styleId || sequence?.styleId) || analysisModels.length === 0) return;
 
@@ -1208,6 +1173,7 @@ export const ScriptView: FC<{
    * selected style or in any genre at all when Match script is selected.
    */
   const handleEnhance = async () => {
+    if (!analysisModelsReady) return;
     // Enhancing runs an AI model on the server — gate it behind login too.
     // Remember the click so post-auth resume continues Enhance, not Generate,
     // and so we don't dump a first-time user on the empty sequences list
@@ -1325,7 +1291,9 @@ export const ScriptView: FC<{
   // Everything Generate needs except the script itself — an empty script is a
   // live click that routes to login or "what should we make?" (#1393).
   const isReady =
-    Boolean(styleId || sequence?.styleId) && analysisModels.length > 0;
+    analysisModelsReady &&
+    Boolean(styleId || sequence?.styleId) &&
+    analysisModels.length > 0;
 
   const isSubmitting = peekCreatingSequence() !== null;
   const isDisabled = !isReady || isSubmitting || isEnhancing || isElementBusy;
@@ -1623,9 +1591,14 @@ export const ScriptView: FC<{
             resolutionLockNote={
               draftFirst ? 'Drafts render at 480p, finals at 1080p' : null
             }
-            disabled={loading}
+            disabled={loading || !settingsLoaded}
             styleCategory={styleCategory}
           />
+          {analysisModelError && (
+            <p role="alert" className="text-xs text-destructive">
+              {analysisModelError.message}
+            </p>
+          )}
           {/* The selectors own their dialogs and the element ref, so they
               mount exactly once: inline on md+, inside the sheet below it.
               Visibility is CSS; only the mount point follows the hook. */}
@@ -2063,8 +2036,18 @@ export const ScriptView: FC<{
             },
             nextStartFrames
           );
-          setGenSettings(next);
+          if (isEditing) setEditedGenSettings(next);
           saveSettings({
+            ...(!isEditing
+              ? { generateStartFrames: next.generateStartFrames }
+              : {}),
+            ...(!isEditing &&
+            (next.videoModels.length !== genSettings.videoModels.length ||
+              next.videoModels.some(
+                (model, i) => model !== genSettings.videoModels[i]
+              ))
+              ? { videoModels: next.videoModels }
+              : {}),
             stopAt: nextStopAt,
             rememberStopAt: remember,
             draftMotion: nextDraft,

@@ -21,8 +21,18 @@ import {
 } from '@/platform/server/db/schema';
 import type { TeamMemberRole } from '@/platform/server/db/schema/teams';
 import { createAdminMethods } from '@/platform/server/db/scoped/admin';
+import {
+  createModelConfigurationReadMethods,
+  createModelConfigurationAdminMethods,
+} from '@/models/server/db/model-configuration';
 import { createSearchMethods } from '@/platform/server/db/scoped/search';
 import { createApiKeysMethods } from '@/models/server/db/api-keys';
+import {
+  createTextChannelsReadMethods,
+  createTextChannelsAdminMethods,
+} from '@/models/server/db/text-channels';
+import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { createBillingMethods } from '@/billing/server/db/billing';
 import { createCharacterLooksMethods } from '@/cast/server/db/character-looks';
 import { createCharacterSheetVariantsMethods } from '@/cast/server/db/character-sheet-variants';
@@ -433,6 +443,8 @@ export function createScopedDb(teamId: string, userId: string) {
 
     // Platform-global pricing telemetry (#1069) — not team-scoped.
     modelUsage: createModelUsageMethods(db),
+    modelConfiguration: createModelConfigurationReadMethods(db),
+    textChannels: createTextChannelsReadMethods(db),
 
     // BytePlus ACR slot ledger (#1361) — also platform-global: the asset
     // slots are per BytePlus ACCOUNT, shared by every team, so there is
@@ -460,6 +472,8 @@ export function createSystemAdminScopedDb() {
 
   return {
     admin: createAdminMethods(db),
+    modelConfiguration: createModelConfigurationAdminMethods(db),
+    textChannels: createTextChannelsAdminMethods(db),
     // Cross-team moderation (#1180): the report queue, enforcement, and
     // trace lookup. Only reachable through the system-admin scope, so a
     // team-scoped caller cannot read another team's reports.
@@ -506,4 +520,22 @@ export async function submitPublicContentReport(
  */
 export async function getPublicStitch(id: string) {
   return createPublicStitchReads(getDb()).getById(id);
+}
+
+export async function loadModelConfiguration() {
+  return createModelConfigurationReadMethods(getDb()).get();
+}
+
+export async function loadTextModelRoutingSnapshot() {
+  return createTextChannelsReadMethods(getDb()).getSnapshot();
+}
+
+export async function loadModelRuntimeConfiguration(): Promise<ModelRuntimeConfiguration> {
+  const db = getDb();
+  const textModelRouting =
+    await createTextChannelsReadMethods(db).getSnapshot();
+  const catalog = textModelCatalogFromRouting(textModelRouting);
+  const configuration =
+    await createModelConfigurationReadMethods(db).get(catalog);
+  return { ...configuration, textModelRouting };
 }

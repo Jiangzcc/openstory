@@ -1,4 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
+import type { TextModel } from '@/models/models';
 import { z } from 'zod';
 import type { WorkflowStep } from 'cloudflare:workers';
 
@@ -10,6 +13,17 @@ import * as realtimeModule from '@/platform/realtime';
 import { asStub } from '@/test/as-stub';
 
 const mockChat = vi.fn();
+const mockCreateAdapter = vi.fn((_model: TextModel) => ({
+  kind: 'text',
+  name: 'mock',
+}));
+const mockDeduct = vi.fn();
+vi.doMock('@/billing/server/workflow-deduction', () => ({
+  deductWorkflowCredits: mockDeduct,
+}));
+vi.doMock('@/platform/server/storage/external-url', () => ({
+  toVisionImageSource: async (value: string) => ({ type: 'url', value }),
+}));
 vi.doMock('@tanstack/ai', () => ({
   ...tanstackAi,
   chat: mockChat,
@@ -17,7 +31,7 @@ vi.doMock('@tanstack/ai', () => ({
 
 vi.doMock('./create-adapter', () => ({
   ...createAdapterModule,
-  createAdapter: () => ({ kind: 'text', name: 'mock' }),
+  createAdapter: mockCreateAdapter,
   getPlatformLlmKey: () => ({
     key: 'test-key',
     source: 'platform' as const,
@@ -351,4 +365,101 @@ describe('shouldInlineVisionForVia', () => {
     expect(shouldInlineVisionForVia('fal')).toBe(false);
     expect(shouldInlineVisionForVia('xai')).toBe(false);
   });
+});
+
+describe('snapshotted durable vision fallback', () => {
+  const visionModel = 'google/gemini-3.8-flash';
+  const validObject = { visual: { fullPrompt: 'A clean shot' } };
+
+  beforeEach(() => {
+    mockCreateAdapter.mockClear();
+    mockDeduct.mockClear();
+    mockChat.mockReturnValue(
+      (async function* () {
+        yield {
+          type: 'CUSTOM',
+          name: 'structured-output.complete',
+          value: { object: validObject },
+        };
+        yield {
+          type: 'RUN_FINISHED',
+          usage: {
+            promptTokens: 10,
+            completionTokens: 5,
+            totalTokens: 15,
+            cost: 0.07,
+          },
+        };
+      })()
+    );
+  });
+
+  it.each([false, true])(
+    'resolves and bills the snapshot vision model (streaming: %s)',
+    async (streaming) => {
+      const resolveLlmKey = vi.fn(async () => ({
+        key: 'test-key',
+        source: 'platform',
+        via: 'openrouter',
+      }));
+      const mutableGet = vi.fn();
+      const scopedDb = asStub<WorkflowScopedDb>({
+        userId: 'u',
+        models: { ...DEFAULT_MODEL_CONFIGURATION, vision: visionModel },
+        credentials: { resolveLlmKey },
+        modelConfiguration: { get: mutableGet },
+      });
+      const run = streaming ? durableStreamingLLMCallCf : durableLLMCallCf;
+      const baseContext = streaming ? callContext : nonStreamContext;
+      const result = await run(
+        step,
+        {
+          ...callConfig,
+          modelId: 'deepseek/deepseek-v3.2',
+          visionImageUrls: ['https://example.test/still.png'],
+        },
+        { ...baseContext, scopedDb }
+      );
+      expect(result).toEqual(validObject);
+      expect(resolveLlmKey).toHaveBeenCalledExactlyOnceWith(visionModel);
+      expect(mockCreateAdapter).toHaveBeenCalledWith(
+        visionModel,
+        expect.anything()
+      );
+      expect(mockDeduct).toHaveBeenCalledWith(
+        expect.objectContaining({
+          costMicros: usdToMicros(0.07),
+          metadata: expect.objectContaining({ model: visionModel }),
+        })
+      );
+      expect(mutableGet).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([false, true])(
+    'preserves the user-selected vision model (streaming: %s)',
+    async (streaming) => {
+      const resolveLlmKey = vi.fn(async () => ({
+        key: 'test-key',
+        source: 'team',
+        via: 'openrouter',
+      }));
+      const scopedDb = asStub<WorkflowScopedDb>({
+        models: { ...DEFAULT_MODEL_CONFIGURATION, vision: visionModel },
+        credentials: { resolveLlmKey },
+      });
+      const run = streaming ? durableStreamingLLMCallCf : durableLLMCallCf;
+      const baseContext = streaming ? callContext : nonStreamContext;
+      await run(
+        step,
+        { ...callConfig, visionImageUrls: ['https://example.test/still.png'] },
+        { ...baseContext, scopedDb }
+      );
+      expect(resolveLlmKey).toHaveBeenCalledExactlyOnceWith(callConfig.modelId);
+      expect(mockCreateAdapter).toHaveBeenCalledWith(
+        callConfig.modelId,
+        expect.anything()
+      );
+    }
+  );
 });

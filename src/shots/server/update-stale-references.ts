@@ -19,7 +19,7 @@ import { SEED_VOICE_DEFAULT_TAKES } from '@/cast/seed-voice';
 import { newVoiceProvider } from '@/models/server/seed-speech-config';
 import {
   DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
+  storedAnalysisModelId,
 } from '@/models/models.config';
 import { DEFAULT_IMAGE_MODEL, safeTextToImageModel } from '@/models/models';
 import type { ScopedDb } from '@/platform/server/db/scoped';
@@ -178,8 +178,10 @@ export async function buildPlanReferences(args: {
     };
   }
 
-  const analysisModelId =
-    getAnalysisModelById(sequence.analysisModel)?.id ?? DEFAULT_ANALYSIS_MODEL;
+  const analysisModelId = storedAnalysisModelId(
+    sequence.analysisModel,
+    DEFAULT_ANALYSIS_MODEL
+  );
   const voices = characters
     .filter((c) => voiceIds.has(c.id))
     .map((character): Omit<CharacterVoiceWorkflowInput, 'targetVersionId'> => ({

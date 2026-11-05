@@ -1,3 +1,4 @@
+import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/ui/shadcn/alert';
 import { Button } from '@/ui/shadcn/button';
@@ -39,6 +40,7 @@ export const RouteErrorFallback: React.FC<RouteErrorFallbackProps> = ({
   const { t } = useTranslation('interface');
 
   const router = useRouter();
+  const { reset: resetQueryErrors } = useQueryErrorResetBoundary();
   const is404 = isNotFoundError(error);
 
   if (isAppUpdatedError(error)) {
@@ -76,6 +78,7 @@ export const RouteErrorFallback: React.FC<RouteErrorFallbackProps> = ({
             size="sm"
             className="w-fit"
             onClick={() => {
+              resetQueryErrors();
               reset();
               void router.invalidate();
             }}

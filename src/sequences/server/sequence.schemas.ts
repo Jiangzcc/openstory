@@ -10,6 +10,7 @@ import {
 import {
   DEFAULT_ANALYSIS_MODEL,
   isValidAnalysisModelId,
+  isCustomAnalysisModelId,
 } from '@/models/models.config';
 import { aspectRatioSchema } from '@/models/aspect-ratios';
 import { resolutionSchema } from '@/models/resolutions';
@@ -92,9 +93,15 @@ export const createSequenceSchema = createInsertSchema(sequences, {
     // Accept array of models for multi-model sequence creation
     analysisModels: z
       .array(
-        z.string().refine(isValidAnalysisModelId, {
-          message: 'Invalid analysis model',
-        })
+        z
+          .string()
+          .refine(
+            (value) =>
+              isValidAnalysisModelId(value) || isCustomAnalysisModelId(value),
+            {
+              message: 'Invalid analysis model',
+            }
+          )
       )
       .min(1, 'At least one model must be selected')
       .default([DEFAULT_ANALYSIS_MODEL]),

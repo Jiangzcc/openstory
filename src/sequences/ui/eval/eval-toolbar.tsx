@@ -16,7 +16,7 @@ import { Badge } from '@/ui/shadcn/badge';
 import { Switch } from '@/ui/shadcn/switch';
 import { Label } from '@/ui/shadcn/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/shadcn/popover';
-import { SCRIPT_ANALYSIS_MODELS } from '@/models/models.config';
+import { useTextModelCatalog } from '@/models/ui/use-text-model-catalog';
 import { IMAGE_MODELS } from '@/models/models';
 import { ASPECT_RATIOS } from '@/models/aspect-ratios';
 import { Plus, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react';
@@ -145,6 +145,7 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
   const translateLabel = useLabelTranslation('sequences');
 
   const { t } = useTranslation('sequences');
+  const { models: analysisModels } = useTextModelCatalog();
 
   const [searchDraft, setSearchDraft] = useState(filters.search);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -327,9 +328,9 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
               onValueChange={handleAnalysisModelChange}
               options={[
                 { value: 'all', label: 'All analysis models' },
-                ...SCRIPT_ANALYSIS_MODELS.filter((m) => !('hidden' in m)).map(
-                  (m) => ({ value: m.id, label: m.name })
-                ),
+                ...analysisModels
+                  .filter((model) => !model.hidden)
+                  .map((m) => ({ value: m.id, label: m.name })),
               ]}
               placeholder={t('All analysis models')}
             />
@@ -437,9 +438,8 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
           )}
           {filters.analysisModel && (
             <Badge variant="secondary">
-              {SCRIPT_ANALYSIS_MODELS.find(
-                (m) => m.id === filters.analysisModel
-              )?.name ?? filters.analysisModel}
+              {analysisModels.find((m) => m.id === filters.analysisModel)
+                ?.name ?? filters.analysisModel}
             </Badge>
           )}
           {filters.imageModel && (

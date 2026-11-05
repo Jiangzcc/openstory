@@ -10,10 +10,7 @@ import type { CharacterWithSheet } from '@/platform/server/db/schema';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { recordTriggerFailure } from '@/sequences/server/db/sequence-events';
 import type { CharacterVoiceWorkflowInput } from '@/platform/server/workflow/types';
-import {
-  DEFAULT_ANALYSIS_MODEL,
-  getAnalysisModelById,
-} from '@/models/models.config';
+import { storedAnalysisModelId } from '@/models/models.config';
 
 const VOICE_DESIGN_NEVER_STARTED = 'Voice design never started';
 
@@ -69,9 +66,7 @@ export async function enqueueCharacterVoiceDesign(args: {
     characterDbId: character.id,
     characterBible: characterToBible(character),
     voiceDescription: character.voiceDescription ?? '',
-    analysisModelId:
-      (analysisModel ? getAnalysisModelById(analysisModel)?.id : undefined) ??
-      DEFAULT_ANALYSIS_MODEL,
+    analysisModelId: storedAnalysisModelId(analysisModel),
     voiceProvider: newVoiceProvider(),
     takes,
     targetVersionId: husk.id,

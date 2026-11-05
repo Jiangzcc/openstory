@@ -12,6 +12,7 @@ import { InsufficientCreditsError } from '@/platform/errors';
 import { describe, expect, it, vi } from 'vitest';
 import {
   releaseReservationOnThrow,
+  resolveLlmSources,
   requireCredits,
   reserveRunCredits,
 } from './preflight';
@@ -246,5 +247,82 @@ describe('releaseReservationOnThrow', () => {
     ).rejects.toThrow('trigger failed');
 
     expect(zeroReservation).not.toHaveBeenCalled();
+  });
+});
+
+describe('actual LLM credential coverage', () => {
+  it.each([['platform'] as const, ['team', 'platform'] as const])(
+    'rejects zero-balance platform text spend despite a usable media key: %j',
+    async (...llmSources) => {
+      const db = fakeScopedDb({ keys: ['fal', 'openrouter'] });
+      await expect(
+        requireCredits(db, COST, {
+          providers: ['fal', 'openrouter'],
+          llmSources,
+        })
+      ).rejects.toThrow(InsufficientCreditsError);
+      await expect(
+        reserveRunCredits(db, COST, {
+          providers: ['fal', 'openrouter'],
+          llmSources,
+        })
+      ).rejects.toThrow(InsufficientCreditsError);
+    }
+  );
+
+  it('reserves the existing estimate when any actual LLM key is platform-owned', async () => {
+    const db = fakeScopedDb({ keys: ['fal'], canAfford: true });
+    const createReservation = vi.spyOn(db.billing, 'createReservation');
+    expect(
+      await reserveRunCredits(db, COST, {
+        providers: ['fal', 'openrouter'],
+        llmSources: ['team', 'platform'],
+        sequenceId: 'mock-sequence',
+        idempotencyKey: 'mock-hold',
+      })
+    ).toBe('res_1');
+    expect(createReservation).toHaveBeenCalledWith(COST, {
+      sequenceId: 'mock-sequence',
+      idempotencyKey: 'mock-hold',
+    });
+  });
+
+  it('uses actual team text credentials instead of assuming an OpenRouter key is needed', async () => {
+    const db = fakeScopedDb({ keys: ['fal'] });
+    const createReservation = vi.spyOn(db.billing, 'createReservation');
+    await expect(
+      reserveRunCredits(db, COST, {
+        providers: ['fal', 'openrouter'],
+        llmSources: ['team', 'team'],
+      })
+    ).resolves.toBeUndefined();
+    await expect(
+      requireCredits(fakeScopedDb({ keys: [] }), COST, {
+        providers: ['openrouter'],
+        llmSources: ['team'],
+      })
+    ).resolves.toBeUndefined();
+    expect(createReservation).not.toHaveBeenCalled();
+  });
+
+  it('resolves every distinct model against the supplied run routing snapshot', async () => {
+    const resolveLlmKey = vi.fn(async (model: string) => ({
+      key: 'mock-key',
+      source: model === 'custom:helper' ? 'platform' : 'team',
+    }));
+    const db = asStub<ScopedDb>({ apiKeys: { resolveLlmKey } });
+    const routing: [] = [];
+    expect(
+      await resolveLlmSources(
+        db,
+        ['builtin', 'custom:helper', 'builtin'],
+        routing
+      )
+    ).toEqual(['team', 'platform']);
+    expect(resolveLlmKey.mock.calls.map(([model]) => model)).toEqual([
+      'builtin',
+      'custom:helper',
+    ]);
+    expect(resolveLlmKey).toHaveBeenCalledWith('custom:helper', routing);
   });
 });

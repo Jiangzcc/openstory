@@ -32,7 +32,7 @@ export class MotionMusicPromptsWorkflow extends OpenStoryWorkflowEntrypoint<Moti
   protected override async runImpl(
     event: Readonly<WorkflowEvent<MotionMusicPromptsWorkflowInput>>,
     step: WorkflowStep,
-    _scopedDb: WorkflowScopedDb
+    scopedDb: WorkflowScopedDb
   ): Promise<MotionMusicPromptsWorkflowResult> {
     const input = event.payload;
     const {
@@ -52,6 +52,7 @@ export class MotionMusicPromptsWorkflow extends OpenStoryWorkflowEntrypoint<Moti
       MusicPromptWorkflowResult
     >(step, {
       binding: this.env.MUSIC_PROMPT_WORKFLOW,
+      modelConfiguration: scopedDb.models,
       parentBindingName: 'MOTION_MUSIC_PROMPTS_WORKFLOW',
       parentInstanceId: event.instanceId,
       childId: `music-prompt:${sequenceId}`,
