@@ -37,7 +37,7 @@ function makeDb() {
   const markKeyInvalid = vi.fn(async () => undefined);
   const zeroReservation = vi.fn(async () => undefined);
   const resolveLlmKey = vi.fn(async () => ({
-    source: 'team',
+    source: 'organization',
     via: 'openrouter',
     key: 'mock-team-key',
   }));
@@ -80,7 +80,7 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
     } = makeDb();
     const error = withLlmAuthFailureSource(new Error('401 Unauthorized'), {
       model: 'google/gemini-3-flash-preview',
-      source: 'team',
+      source: 'organization',
       via: 'google',
     });
     await makeWorkflow().failed(childFailure(error), scopedDb);

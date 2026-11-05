@@ -95,8 +95,8 @@ function caller(snapshot: TextModelRoutingSnapshot) {
   const ensureThread = vi.fn(async () => ({ id: params.threadId }));
   const context = asStub<AssistantCaller>({
     user: { id: 'u', name: 'Writer' },
-    teamId: 't',
-    teamName: 'Test team',
+    organizationId: 't',
+    organizationName: 'Test team',
     origin: 'https://example.test',
     request: new Request('https://example.test/assistant', { method: 'POST' }),
     scopedDb: {
@@ -256,7 +256,7 @@ it.each(['openrouter', 'fal'])(
 
 it('retains no-credit and no-platform-charge behavior for an actual team key', async () => {
   const c = caller([CUSTOM_ROUTE]);
-  c.llmKey.source = 'team';
+  c.llmKey.source = 'organization';
   c.hasEnoughCredits.mockResolvedValue(false);
   await handleAssistantChat(c.context);
   expect(c.hasEnoughCredits).not.toHaveBeenCalled();

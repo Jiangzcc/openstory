@@ -9,12 +9,16 @@ import { RouteErrorFallback } from '@/ui/error/route-error-fallback';
 import { Tabs, TabsList, TabsTrigger } from '@/ui/shadcn/tabs';
 import { requireSessionOrRedirect } from '@/platform/ui/auth/route-guards';
 import {
+  ADMIN_PERMISSION,
+  useOrganizationPermission,
+} from '@/platform/ui/auth/organization-permission';
+import {
   createFileRoute,
   Link,
   Outlet,
   useLocation,
 } from '@tanstack/react-router';
-import { Fingerprint, Key, Terminal } from 'lucide-react';
+import { Fingerprint, Key, Terminal, Users } from 'lucide-react';
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsLayout,
@@ -36,10 +40,17 @@ export const Route = createFileRoute('/_app/settings')({
 
 const tabs = [
   {
+    value: 'organization',
+    label: 'Organization',
+    href: '/settings/organization',
+    icon: <Users className="h-4 w-4" />,
+  },
+  {
     value: 'api-keys',
     label: 'API Keys',
     href: '/settings/api-keys',
     icon: <Key className="h-4 w-4" />,
+    adminOnly: true,
   },
   {
     value: 'passkeys',
@@ -59,6 +70,8 @@ function SettingsLayout() {
   const translateLabel = useLabelTranslation('pages');
 
   const location = useLocation();
+  const isAdmin = useOrganizationPermission(ADMIN_PERMISSION);
+  const visibleTabs = tabs.filter((tab) => isAdmin || !tab.adminOnly);
 
   // Determine active tab from current route
   const activeTab =
@@ -68,7 +81,7 @@ function SettingsLayout() {
     <div className="mx-auto w-full max-w-2xl p-6">
       <Tabs value={activeTab} className="mb-6 shrink-0">
         <TabsList className="w-full justify-start">
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} asChild>
               <Link to={tab.href} className="flex items-center gap-2">
                 {tab.icon}

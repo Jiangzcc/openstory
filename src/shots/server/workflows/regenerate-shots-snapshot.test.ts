@@ -74,7 +74,7 @@ function makeCharacter(
     styling: null,
     // Cast in its sequence (#2017).
     castId: 'cast-1',
-    teamId: 'team-1',
+    organizationId: 'org-1',
     selectedBibleVersionId: 'bible-1',
     pendingPromoteSheetVersionId: null,
     firstMentionLine: null,
@@ -141,6 +141,7 @@ function makeElement(
     consistencyTag: 'silver-bottle',
     imageUrl: 'https://example.com/bottle.png',
     imagePath: 'elements/seq1/bottle.png',
+    personInMedia: false,
     visionStatus: 'completed',
     visionError: null,
     visionGeneratedAt: NOW,

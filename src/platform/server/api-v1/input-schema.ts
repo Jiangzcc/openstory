@@ -60,7 +60,7 @@ const portraitAttestation = portraitAttestationSchema.optional().meta({
 });
 
 /**
- * Inline request to create a team character and cast it into the sequence.
+ * Inline request to create an organization character and cast it into the sequence.
  * Strict: a character has no reference images (#2135), so a client still
  * sending `referenceImageUrls` gets a 400, not a silent drop.
  */
@@ -74,7 +74,7 @@ const createCharacterSchema = z
   })
   .meta({ id: 'CreateCharacter' });
 
-/** Inline request to create a new team location (#1695). */
+/** Inline request to create a new organization location (#1695). */
 const createLocationSchema = z
   .object({
     name: entityName,
@@ -89,8 +89,8 @@ const createLocationSchema = z
   .meta({ id: 'CreateLocation' });
 
 /**
- * One cast member / location: a **reference** to an existing team character
- * or team location (string = id or name), or an inline **create** request
+ * One cast member / location: a **reference** to an existing organization character
+ * or organization location (string = id or name), or an inline **create** request
  * (object). A single list per kind keeps the "some exist, some are new"
  * mental model. An inline character takes no images; the sequence draws its
  * sheet.
@@ -100,14 +100,14 @@ const characterRefSchema = z
   .meta({
     id: 'CharacterRef',
     description:
-      'Existing team character by id or name (string), or an inline create object. The character is cast into the sequence. A name two team characters share is a conflict that asks for the id. An inline create whose name a team character already has is a conflict too. The sequence draws the sheet.',
+      'Existing organization character by id or name (string), or an inline create object. The character is cast into the sequence. A name two organization characters share is a conflict that asks for the id. An inline create whose name an organization character already has is a conflict too. The sequence draws the sheet.',
   });
 const locationRefSchema = z
   .union([z.string().min(1), createLocationSchema])
   .meta({
     id: 'LocationRef',
     description:
-      'One of the team’s locations by id or name (string), or an inline create object, which makes a new team location (or reuses the team location of that name). A name two team locations share is a conflict that asks for the id.',
+      'One of the organization’s locations by id or name (string), or an inline create object, which makes a new organization location (or reuses the organization location of that name). A name two organization locations share is a conflict that asks for the id.',
   });
 
 export const apiCreateSequenceSchema = z
@@ -210,7 +210,7 @@ export const apiCreateSequenceSchema = z
     }),
     locations: z.array(locationRefSchema).optional().meta({
       description:
-        'Locations the script may be set in: each item is one of the team’s locations (id/name) or an inline create object. Script analysis links the sequence to the ones the script uses.',
+        'Locations the script may be set in: each item is one of the organization’s locations (id/name) or an inline create object. Script analysis links the sequence to the ones the script uses.',
     }),
 
     elements: z

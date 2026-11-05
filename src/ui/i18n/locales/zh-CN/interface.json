@@ -369,5 +369,14 @@
   "{{value1}} renders above {{value2}}_other": "{{value1}}的输出分辨率高于 {{value2}}",
   "Attached": "已附加",
   "Add to this sequence": "添加到此作品",
-  "Something went wrong": "出错了"
+  "Something went wrong": "出错了",
+  "No active organization on this session.": "当前会话尚未选择组织。",
+  "Only an organization admin can manage cards.": "仅组织管理员可以管理银行卡。",
+  "Enter a gift code to add credits to your organization": "输入兑换码，为你的组织增加额度",
+  "User": "用户",
+  "No organization": "尚无组织",
+  "Could not switch organization": "无法切换组织",
+  "Organizations": "组织",
+  "Current": "当前组织",
+  "Loading…": "正在加载…"
 }

@@ -218,5 +218,6 @@
   "Unsaved script": "未保存的剧本",
   "Unsaved prompt": "未保存的提示词",
   "Selected passage": "选中文本",
-  "Uploading…": "正在上传…"
+  "Uploading…": "正在上传…",
+  "Sign in to chat about your work. The assistant acts on your organization, so it needs to know who you are.": "登录后即可与助手讨论作品。助手会在你的组织范围内执行操作，因此需要先确认你的身份。"
 }

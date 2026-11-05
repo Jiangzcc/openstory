@@ -9,7 +9,7 @@ export async function handleLlmAuthFailure(
   _model?: string
 ): Promise<string | undefined> {
   const failure = readLlmAuthFailureSource(error);
-  if (failure?.source !== 'team' || failure.via === 'compatible')
+  if (failure?.source !== 'organization' || failure.via === 'compatible')
     return undefined;
 
   await scopedDb.apiKeys.markKeyInvalid(failure.via, failure.message);

@@ -11,8 +11,16 @@ import { sanitizeFailResponse } from './sanitize-fail-response';
 import { withLlmAuthFailureStream } from '@/models/server/llm-auth-failure-stream';
 
 const MODEL = 'anthropic/claude-sonnet-5.5';
-const TEAM_KEY = { source: 'team', via: 'fal', key: 'mock-secret' } as const;
-const TEAM_SOURCE = { model: MODEL, source: 'team', via: 'fal' } as const;
+const TEAM_KEY = {
+  source: 'organization',
+  via: 'fal',
+  key: 'mock-secret',
+} as const;
+const TEAM_SOURCE = {
+  model: MODEL,
+  source: 'organization',
+  via: 'fal',
+} as const;
 
 function makeDb() {
   const markKeyInvalid = vi.fn(async () => undefined);
@@ -137,6 +145,19 @@ describe('LLM auth failure attribution (local mocks)', () => {
     expect(markKeyInvalid).toHaveBeenCalledOnce();
     expect(llmAuthFailureMessage(message)).toMatch(/^401 Unauthorized:/);
     expect(llmAuthFailureMessage(message)).not.toContain('[llm-auth:');
+  });
+
+  test('normalizes a durable legacy team source to its organization credential', async () => {
+    const { scopedDb, markKeyInvalid, resolveLlmKey } = makeDb();
+    const message = '[llm-auth:v1:team:fal:mock-model] 401 Unauthorized';
+    expect(readLlmAuthFailureSource(message)).toMatchObject({
+      model: 'mock-model',
+      source: 'organization',
+      via: 'fal',
+    });
+    await handleLlmAuthFailure(scopedDb, message);
+    expect(markKeyInvalid).toHaveBeenCalledWith('fal', '401 Unauthorized');
+    expect(resolveLlmKey).not.toHaveBeenCalled();
   });
 
   test.each([

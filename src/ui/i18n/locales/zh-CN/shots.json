@@ -612,5 +612,6 @@
   "Failed to regenerate": "重新生成失败",
   "Generate": "生成",
   "Nothing to generate": "没有需要生成的内容",
-  "Generate voice": "生成音色"
+  "Generate voice": "生成音色",
+  "This shot": "当前镜头"
 }

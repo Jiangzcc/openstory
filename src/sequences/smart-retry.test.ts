@@ -104,7 +104,7 @@ const NOW = new Date('2026-06-07T00:00:00.000Z');
 function makeSequence(overrides: Partial<Sequence> = {}): Sequence {
   return {
     id: 'seq_1',
-    teamId: 't1',
+    organizationId: 't1',
     title: 'A sequence',
     script: 'INT. LAB — NIGHT',
     status: 'failed',
@@ -400,7 +400,7 @@ function makeContext(
     apiKeys: {
       hasUsableKey: vi.fn(async () => true),
       resolveLlmKey: vi.fn(async () => ({
-        source: 'team',
+        source: 'organization',
         via: 'fal',
         key: 'mock-team-key',
       })),
@@ -453,14 +453,14 @@ function makeContext(
     shotPromptVersions: { getSelectedMotionByShots },
     sequence: vi.fn(() => ({ updateStatus })),
     sequenceVariants: { claimMusic, failMusicClaim: vi.fn(async () => {}) },
-    teamManagement: {
+    organizationManagement: {
       getMemberEmail: vi.fn(async () => 'owner@example.com'),
     },
   };
   // minimal ScopedDb stub exposing only what executeSmartRetry touches
   const scopedDb = asStub<ScopedDb>(stub);
   return {
-    context: { sequence, user: { id: 'u1' }, teamId: 't1', scopedDb },
+    context: { sequence, user: { id: 'u1' }, organizationId: 't1', scopedDb },
     scopedDb,
     updateStatus,
     listBySequence,
@@ -484,7 +484,7 @@ function resetMocks() {
 }
 
 describe('executeSmartRetry — music credits', () => {
-  test('blocks native music for a fal BYOK team with insufficient credits', async () => {
+  test('blocks native music for a fal BYOK organization with insufficient credits', async () => {
     resetMocks();
     reserveRunCreditsMock.mockImplementation(realPreflight.reserveRunCredits);
     const { context, createReservation, claimMusic } = makeContext(
@@ -590,7 +590,7 @@ describe('executeSmartRetry — generation mutex (#839)', () => {
 });
 
 describe('executeSmartRetry — full retry fallback', () => {
-  test.each(['team', 'platform'] as const)(
+  test.each(['organization', 'platform'] as const)(
     'uses the actual %s helper source before delegating to the storyboard launcher',
     async (helperSource) => {
       resetMocks();
@@ -604,7 +604,7 @@ describe('executeSmartRetry — full retry fallback', () => {
           source:
             model === DEFAULT_MODEL_CONFIGURATION.sceneSplit
               ? helperSource
-              : 'team',
+              : 'organization',
           via: 'fal',
           key: 'mock-resolved-key',
         })
@@ -622,7 +622,7 @@ describe('executeSmartRetry — full retry fallback', () => {
         scopedDb,
         expect.objectContaining({
           sequenceId: 'seq_1',
-          teamId: 't1',
+          organizationId: 't1',
           reservationId: undefined,
         }),
         { ...DEFAULT_MODEL_CONFIGURATION, textModelRouting: [] }
@@ -1215,7 +1215,7 @@ describe('executeSmartRetry — planned retry (#1461)', () => {
     );
     const plan = await executeSmartRetry(context, { dryRun: true });
     expect(plan.planned.music).toBe(true);
-    // ElevenLabs music spends the platform key: no team key waives the plan.
+    // ElevenLabs music spends the platform key: no organization key waives the plan.
     expect(plan.creditProviders).toEqual([]);
     expect(claimMusic).not.toHaveBeenCalled();
     expect(createReservation).not.toHaveBeenCalled();

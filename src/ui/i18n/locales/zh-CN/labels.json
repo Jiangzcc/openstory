@@ -135,7 +135,7 @@
   "Manage your credit balance, API keys, and billing for AI generation": "管理账户余额、供应商密钥和 AI 创作费用",
   "Images and Clips": "图片与视频片段",
   "Generate a single still or clip from a prompt, without a sequence": "直接用提示词生成单张图片或视频片段，无需创建作品",
-  "Your team's locations, and how a sequence uses them": "管理团队地点，并在不同作品中复用",
+  "Your organization's locations, and how a sequence uses them": "管理组织地点，并在不同作品中复用",
   "Music & Audio": "配乐与音频",
   "Generate, customize, and merge music and sound effects for your sequence": "为作品生成和调整配乐与音效",
   "Working with Scenes": "场景编辑",
@@ -619,5 +619,6 @@
   "Prompts + images": "提示词 + 静帧",
   "Prompts, images + dialogue": "提示词、静帧 + 对白",
   "Prompts, images, dialogue + videos": "提示词、静帧、对白 + 视频",
-  "Everything, incl. music": "全部内容（含配乐）"
+  "Everything, incl. music": "全部内容（含配乐）",
+  "Organization": "组织"
 }

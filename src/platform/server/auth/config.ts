@@ -1,3 +1,4 @@
+import { parseCookies } from 'better-auth/cookies';
 /**
  * BetterAuth configuration for OpenStory
  * Anonymous users + email OTP, passkeys, and Google social login (no passwords)
@@ -8,7 +9,9 @@ import {
   account,
   apikey,
   deviceCode,
+  invitation,
   jwks,
+  member,
   oauthAccessToken,
   oauthClient,
   oauthClientAssertion,
@@ -16,6 +19,7 @@ import {
   oauthConsent,
   oauthRefreshToken,
   oauthResource,
+  organization as organizationTable,
   passkey,
   session,
   user,
@@ -24,17 +28,25 @@ import {
 
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { emailOTP, lastLoginMethod } from 'better-auth/plugins';
+import { emailOTP, lastLoginMethod, organization } from 'better-auth/plugins';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
 
 import { getDb } from '#db-client';
 import {
-  createDefaultTeam,
+  createDefaultOrganization,
+  getFirstOrganizationId,
   getUserIdentity,
 } from '@/platform/server/db/scoped';
 import { getEnv } from '#env';
 import { LOCALE_COOKIE, resolveLocale } from '@/platform/i18n/locale';
-import { sendOtpEmail } from '@/platform/server/emails/email-service';
+import {
+  sendOrganizationInvitationEmail,
+  sendOtpEmail,
+} from '@/platform/server/emails/email-service';
+import {
+  organizationAc,
+  organizationRoles,
+} from '@/platform/auth/organization-access';
 import {
   currentAuthCookiePrefix,
   lastUsedLoginMethodCookieName,
@@ -155,12 +167,15 @@ export function createAuth(db: ReturnType<typeof getDb> = getDb()) {
         oauthAccessToken,
         oauthConsent,
         oauthClientAssertion,
+        organization: organizationTable,
+        member,
+        invitation,
       },
     }),
     secret: runtimeEnv.BETTER_AUTH_SECRET,
     // JWT plugin's GET /token mints a session JWT from a cookie. That is not
     // the OAuth token endpoint (`/oauth2/token`) and must stay off when we
-    // are an authorization server — same JWKS, no scopes / team_id.
+    // are an authorization server — same JWKS, no scopes / organization_id.
     // https://better-auth.com/docs/plugins/jwt#oauth-provider-mode
     disabledPaths: ['/token'],
     trustedOrigins: [
@@ -185,8 +200,17 @@ export function createAuth(db: ReturnType<typeof getDb> = getDb()) {
       // `user` from the primary before doing anything. A revoked session or
       // a changed `user.status` is seen within `maxAge`. Compliance
       // enforcement is read fresh on every write and at most
-      // `TEAM_MEMO_TTL_MS` stale on a GET (`team-memo.ts`).
-      cookieCache: { enabled: true, maxAge: 5 * 60 },
+      // `ORGANIZATION_MEMO_TTL_MS` stale on a GET (`organization-memo.ts`).
+      // Bump `version` when a session field changes meaning: old cookies stop being read.
+      cookieCache: { enabled: true, maxAge: 5 * 60, version: '2' },
+      // Owned by the organization plugin. The OAuth spread stops Session from inferring it.
+      additionalFields: {
+        activeOrganizationId: {
+          type: 'string',
+          required: false,
+          input: false,
+        },
+      },
     },
 
     // Account linking configuration
@@ -265,14 +289,15 @@ export function createAuth(db: ReturnType<typeof getDb> = getDb()) {
       // key header — so the existing `getSession`/`requireUser` path works
       // transparently for `/api/v1/*` without any bespoke key-hashing. Keys are
       // prefixed `osk_` (OpenStory Key) and resolve to the creating user via
-      // `referenceId`; the team is derived downstream via `resolveUserTeam`.
+      // `referenceId`; the organization the key acts for is in `metadata`.
       apiKey({
         enableSessionForAPIKeys: true,
+        enableMetadata: true,
         defaultKeyLength: 64,
         // Per-key rate limit: 10 requests/second. Enforced on every `/api/v1`
         // request (via the session-from-key validation), stored per key. This
         // is the abuse throttle, sized to comfortably allow normal create +
-        // status-poll traffic (incl. parallel per-sequence polls); per-team
+        // status-poll traffic (incl. parallel per-sequence polls); per-organization
         // *cost* is separately bounded by the credit pre-flight in
         // `createSequences`.
         rateLimit: {
@@ -292,6 +317,39 @@ export function createAuth(db: ReturnType<typeof getDb> = getDb()) {
       // OpenStory for hosted MCP clients, forks, and agents. Options and the
       // rest of the wiring live in `src/platform/server/auth/oauth-provider.ts`.
       ...createOAuthProviderPlugins(),
+      // Organizations sub-feature stays off: a tenant is an organization (#813).
+      organization({
+        ac: organizationAc,
+        roles: organizationRoles,
+        creatorRole: 'owner',
+        allowUserToCreateOrganization: false,
+        teams: { enabled: false },
+        sendInvitationEmail: async (data, request) => {
+          const locale = resolveLocale(
+            parseCookies(request?.headers.get('cookie') ?? '').get(
+              LOCALE_COOKIE
+            )
+          );
+          if (!runtimeEnv.VITE_APP_URL) {
+            throw new Error('VITE_APP_URL is required to send invitations');
+          }
+          const acceptUrl = new URL(
+            '/organization/accept-invitation',
+            runtimeEnv.VITE_APP_URL
+          );
+          acceptUrl.searchParams.set('id', data.id);
+          const result = await sendOrganizationInvitationEmail({
+            to: data.email,
+            organizationName: data.organization.name,
+            inviterName: data.inviter.user.name,
+            acceptUrl: acceptUrl.toString(),
+            locale,
+          });
+          if (!result.success) {
+            throw new Error(result.error ?? 'Failed to send invitation');
+          }
+        },
+      }),
       // TanStack Start cookie integration - must be after all plugins that set cookies
       // (emailOTP, passkey, lastLoginMethod)
       tanstackStartCookies(),
@@ -308,18 +366,18 @@ export function createAuth(db: ReturnType<typeof getDb> = getDb()) {
       },
     },
 
-    // Create a default team when a new user signs up
+    // Create the new user's first organization on sign-up
     databaseHooks: {
       user: {
         create: {
           after: async (user) => {
-            // Team + owner membership (#1047; preflight fixed in #1062). The SQL lives in db/scoped so this file never
+            // Organization + owner membership (#1047; preflight fixed in #1062). The SQL lives in db/scoped so this file never
             // writes a table directly.
-            const team = await createDefaultTeam({
+            const created = await createDefaultOrganization({
               userId: user.id,
-              teamName: user.name
-                ? `${user.name}'s Team`
-                : `Team ${user.id.slice(0, 8)}`,
+              organizationName: user.name
+                ? `${user.name}'s Organization`
+                : `Organization ${user.id.slice(0, 8)}`,
             });
 
             // First-time account only — drives #product-alerts via PostHog (#1088).
@@ -332,7 +390,8 @@ export function createAuth(db: ReturnType<typeof getDb> = getDb()) {
               properties: {
                 email: user.email,
                 name: user.name,
-                team_id: team.id,
+                team_id: created.id,
+                organization_id: created.id,
               },
               personProperties: {
                 email: user.email,
@@ -346,6 +405,13 @@ export function createAuth(db: ReturnType<typeof getDb> = getDb()) {
       // does not hit this hook). Covers email OTP, Google, and passkeys.
       session: {
         create: {
+          before: async (session) => {
+            if (session.activeOrganizationId) return { data: session };
+            const activeOrganizationId = await getFirstOrganizationId(
+              session.userId
+            );
+            return { data: { ...session, activeOrganizationId } };
+          },
           after: async (session, context) => {
             // Identify by email so checkout attempters are not anonymous
             // in PostHog (#1466). Lookup is best-effort — a miss must not

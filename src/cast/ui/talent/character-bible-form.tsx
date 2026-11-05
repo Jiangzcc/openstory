@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/ui/shadcn/select';
 import { useUpdateSequenceCharacter } from '@/cast/ui/use-sequence-characters';
-import { useUpdateTeamCharacter } from '@/cast/ui/use-team-characters';
+import { useUpdateOrganizationCharacter } from '@/cast/ui/use-organization-characters';
 import type { CharacterWithSheet } from '@/platform/server/db/schema';
 import { errorMessage } from '@/platform/errors';
 import { toast } from 'sonner';
@@ -38,7 +38,7 @@ const characterFormSchema = z.object({
     .optional(),
 });
 
-/** The fields the form seeds from; a cast read and a team read both have them. */
+/** The fields the form seeds from; a cast read and an organization read both have them. */
 type BibleFormCharacter = Pick<
   CharacterWithSheet,
   | 'id'
@@ -77,9 +77,9 @@ export const CharacterBibleForm: React.FC<{
 
   const { character } = props;
   const updateSequenceCharacter = useUpdateSequenceCharacter();
-  const updateTeamCharacter = useUpdateTeamCharacter();
+  const updateOrganizationCharacter = useUpdateOrganizationCharacter();
   const isPending =
-    updateSequenceCharacter.isPending || updateTeamCharacter.isPending;
+    updateSequenceCharacter.isPending || updateOrganizationCharacter.isPending;
   // A voice-only character (#1585) has no appearance: hide the empty
   // appearance fields (the schema defaults them to '') and label
   // personality as the voice.
@@ -107,7 +107,7 @@ export const CharacterBibleForm: React.FC<{
         }),
     };
     if (props.sequenceId === null) {
-      updateTeamCharacter.mutate(
+      updateOrganizationCharacter.mutate(
         { characterId: character.id, ...result.data },
         callbacks
       );

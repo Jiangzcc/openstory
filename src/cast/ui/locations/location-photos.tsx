@@ -4,7 +4,7 @@ import {
   useAddLocationPhotos,
   useLocationPhotos,
   useRemoveLocationPhoto,
-} from '@/cast/ui/use-team-locations';
+} from '@/cast/ui/use-organization-locations';
 import { errorMessage } from '@/platform/errors';
 import {
   AlertDialog,

@@ -82,7 +82,7 @@ export function useStudioAssets(filters: StudioAssetFilters, enabled = true) {
   });
 }
 
-/** Cross-team studio gallery for support mode. Gated by the caller on isAdmin. */
+/** Cross-organization studio gallery for support mode. Gated by the caller on isAdmin. */
 export function useAdminStudioAssets(
   filters: StudioAssetFilters & { search?: string },
   enabled: boolean
@@ -243,7 +243,7 @@ export const studioUploadKeys = {
   all: ['studio-uploads'] as const,
 };
 
-/** Upload a composer reference into the team's upload prefix. */
+/** Upload a composer reference into the organization's upload prefix. */
 export function useUploadStudioMedia() {
   return useMutation({
     mutationFn: async (data: {
@@ -265,7 +265,7 @@ export function useUploadStudioMedia() {
   });
 }
 
-/** The team's past composer uploads (the picker's Uploads tab). */
+/** The organization's past composer uploads (the picker's Uploads tab). */
 export function useStudioUploads() {
   const { isAuthenticated } = useAuthGate();
   return useQuery({

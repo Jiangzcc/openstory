@@ -1,3 +1,4 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { Trans, useTranslation } from 'react-i18next';
 /**
@@ -21,6 +22,7 @@ import {
   lookupDeviceGrantFn,
 } from '@/platform/device-auth.fn';
 import { requireSessionOrRedirect } from '@/platform/ui/auth/route-guards';
+import { OrganizationSelect } from '@/platform/ui/organization-select';
 import {
   useMutation,
   useQueryClient,
@@ -97,6 +99,7 @@ function DevicePage() {
 
 function GrantDecision({ userCode }: { userCode: string }) {
   const translateEvent = useLiveTranslation('pages');
+  const translateError = useLabelTranslation('pages');
   const { t } = useTranslation('pages');
 
   const [decided, setDecided] = useState<'approved' | 'denied' | null>(null);
@@ -104,10 +107,13 @@ function GrantDecision({ userCode }: { userCode: string }) {
     queryKey: ['deviceGrant', userCode],
     queryFn: () => lookupDeviceGrantFn({ data: { userCode } }),
   });
+  const [organizationId, setOrganizationId] = useState(
+    data.activeOrganizationId
+  );
   const queryClient = useQueryClient();
   const decide = useMutation({
     mutationFn: (approve: boolean) =>
-      decideDeviceGrantFn({ data: { userCode, approve } }),
+      decideDeviceGrantFn({ data: { userCode, approve, organizationId } }),
     onSuccess: ({ error }, approve) => {
       if (error) {
         toast.error(
@@ -129,7 +135,7 @@ function GrantDecision({ userCode }: { userCode: string }) {
     onError: (err) =>
       toast.error(
         err instanceof Error
-          ? err.message
+          ? translateError(err.message)
           : translateEvent('Something went wrong')
       ),
   });
@@ -186,16 +192,19 @@ function GrantDecision({ userCode }: { userCode: string }) {
       <p>
         <Trans
           ns="pages"
-          i18nKey="Give the device showing <0/> an API key for team <1>{{value1}}</1>? Only approve codes you requested yourself."
+          i18nKey="Give the device showing <0/> an API key? Only approve codes you requested yourself."
           components={[
             <code key="0" className="font-mono font-semibold">
               {userCode}
             </code>,
-            <strong key="1" />,
           ]}
-          values={{ value1: data.teamName }}
         />
       </p>
+      <OrganizationSelect
+        organizations={data.organizations}
+        value={organizationId}
+        onValueChange={setOrganizationId}
+      />
       <div className="flex justify-end gap-2">
         <Button
           variant="outline"

@@ -26,9 +26,10 @@ describe('copySequenceElements', () => {
     const { scopedDb, create } = fakeDb({
       token: 'SMOKE_INK',
       uploadedFilename: 'smoke-ink.mp4',
-      imagePath: 'elements/team-1/seq-a/el-1.mp4',
+      imagePath: 'elements/organization-1/seq-a/el-1.mp4',
       kind: 'video',
       durationSeconds: 22.5,
+      personInMedia: true,
       visionStatus: 'pending',
       description: null,
       consistencyTag: null,
@@ -37,14 +38,18 @@ describe('copySequenceElements', () => {
 
     await copySequenceElements({
       scopedDb,
-      teamId: 'team-1',
+      organizationId: 'organization-1',
       userId: 'user-1',
       sourceSequenceId: 'seq-a',
       targetSequenceId: 'seq-b',
     });
 
     expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'video', durationSeconds: 22.5 })
+      expect.objectContaining({
+        kind: 'video',
+        durationSeconds: 22.5,
+        personInMedia: true,
+      })
     );
     // Vision reads pixels; a clip has none, so no vision run even though the
     // source never finished one.

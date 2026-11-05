@@ -237,7 +237,7 @@ const PanelBody: React.FC<AssistantPanelProps & { titleId: string }> = ({
         <div className="flex flex-1 flex-col items-start gap-3 p-4">
           <p className="text-sm text-muted-foreground">
             {t(
-              'Sign in to chat about your work. The assistant acts on your team, so it needs to know who you are.'
+              'Sign in to chat about your work. The assistant acts on your organization, so it needs to know who you are.'
             )}
           </p>
           <SignInButton />

@@ -121,7 +121,7 @@ function makeEvent(
   return {
     payload: {
       userId: 'u1',
-      teamId: 't1',
+      organizationId: 't1',
       ...(withParent ? { _parent: PARENT_HINT } : {}),
       ...extra,
     },
@@ -245,7 +245,7 @@ describe('OpenStoryWorkflowEntrypoint.run', () => {
         ...makeEvent(false),
         payload: {
           userId: 'u1',
-          teamId: 't1',
+          organizationId: 't1',
           characterBible: [
             {
               characterId: 'c1',
@@ -259,7 +259,7 @@ describe('OpenStoryWorkflowEntrypoint.run', () => {
     );
     expect(seen).toEqual({
       userId: 'u1',
-      teamId: 't1',
+      organizationId: 't1',
       characterBible: [
         { characterId: 'c1', looks: [{ ...look, styling: 'scar' }] },
       ],

@@ -355,5 +355,7 @@
   "Search voices for {{value1}}…": "为{{value1}}搜索音色…",
   "Search voices…": "搜索音色…",
   "{{models}} ({{seconds}}s max)": "{{models}}（最长 {{seconds}} 秒）",
-  "{{models}} ({{seconds}}s min)": "{{models}}（最短 {{seconds}} 秒）"
+  "{{models}} ({{seconds}}s min)": "{{models}}（最短 {{seconds}} 秒）",
+  "Retry": "重试",
+  "Upload failed": "上传失败"
 }

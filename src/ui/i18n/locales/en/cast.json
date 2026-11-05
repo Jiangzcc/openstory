@@ -355,5 +355,7 @@
   "Search voices for {{value1}}…": "Search voices for {{value1}}…",
   "Search voices…": "Search voices…",
   "{{models}} ({{seconds}}s max)": "{{models}} ({{seconds}}s max)",
-  "{{models}} ({{seconds}}s min)": "{{models}} ({{seconds}}s min)"
+  "{{models}} ({{seconds}}s min)": "{{models}} ({{seconds}}s min)",
+  "Retry": "Retry",
+  "Upload failed": "Upload failed"
 }

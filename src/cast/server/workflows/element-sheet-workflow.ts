@@ -59,6 +59,7 @@ function toMinimalElement(row: SequenceElementMinimal): SequenceElementMinimal {
     consistencyTag: row.consistencyTag,
     kind: row.kind,
     durationSeconds: row.durationSeconds,
+    personInMedia: row.personInMedia,
   };
 }
 
@@ -181,7 +182,7 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
             storeGeneratedPng(
               result.imageUrls[0],
               STORAGE_BUCKETS.ELEMENTS,
-              `${input.teamId}/${sequenceId}/${generateId()}.png`
+              `${input.organizationId}/${sequenceId}/${generateId()}.png`
             ),
         });
         const storageResult = generation.stored;
@@ -216,7 +217,7 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
 
         await step.do(`record-provenance-${index}`, async () => {
           await recordProvenance(scopedDb.provenance, {
-            teamId: input.teamId,
+            organizationId: input.organizationId,
             userId: input.userId,
             assetKind: 'element_sheet',
             assetId: entry.elementId,

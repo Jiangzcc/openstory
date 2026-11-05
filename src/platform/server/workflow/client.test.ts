@@ -29,7 +29,7 @@ vi.mock('@/platform/server/storage/buckets', () => ({
 
 import { triggerWorkflowRun } from './client';
 
-const REQUEST = { userId: 'user-1', teamId: 'team-1' };
+const REQUEST = { userId: 'user-1', organizationId: 'team-1' };
 const SNAPSHOT: ModelRuntimeConfiguration = {
   ...DEFAULT_MODEL_CONFIGURATION,
   sceneSplit: 'z-ai/glm-5.3-flash',

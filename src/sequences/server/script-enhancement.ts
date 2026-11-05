@@ -104,7 +104,7 @@ function billRequestUsage(
 
 /**
  * Check pre-flight billing and resolve the key for the LLM call.
- * `deduct` is undefined when billing is skipped — the team's own key pays,
+ * `deduct` is undefined when billing is skipped — the organization's own key pays,
  * either their OpenRouter key or their fal key routed through fal's
  * OpenRouter endpoint (issue #895).
  */
@@ -126,7 +126,7 @@ export async function prepareBilling(
   const llmKey = model
     ? await resolveLlmKey(model)
     : await scopedDb.apiKeys.resolveLlmKey(undefined, snapshot);
-  if (llmKey.source === 'team') return { llmKey, resolveLlmKey };
+  if (llmKey.source === 'organization') return { llmKey, resolveLlmKey };
 
   const estimatedCost = estimateLLMCost(1);
   const canAfford = await scopedDb.billing.hasEnoughCredits(estimatedCost);
@@ -162,7 +162,7 @@ export async function prepareBilling(
  */
 export async function* streamScriptEnhancement(
   data: EnhanceScriptInput,
-  ctx: { scopedDb: ScopedDb; userId: string; teamId: string }
+  ctx: { scopedDb: ScopedDb; userId: string; organizationId: string }
 ): AsyncGenerator<EnhanceChunk> {
   const textModelRouting = await ctx.scopedDb.textChannels.getSnapshot();
   const models = await ctx.scopedDb.modelConfiguration.get(
@@ -245,7 +245,7 @@ export async function* streamScriptEnhancement(
         logger.error('Script enhancement: failed to load element image', {
           token: el.token,
           imageUrl: el.imageUrl,
-          teamId: ctx.teamId,
+          organizationId: ctx.organizationId,
           userId: ctx.userId,
           error: cause instanceof Error ? cause.message : String(cause),
         });
@@ -295,7 +295,7 @@ export async function* streamScriptEnhancement(
       apiKey: llmKey,
       resolveApiKey: resolveLlmKey,
       metadata: {
-        teamId: ctx.teamId,
+        organizationId: ctx.organizationId,
         elementCount: elements.length,
         targetDuration: targetSeconds,
         aspectRatio: data.aspectRatio,
@@ -331,7 +331,7 @@ export async function* streamScriptEnhancement(
 export const enhanceScriptToString = createServerOnlyFn(
   async (
     data: EnhanceScriptInput,
-    ctx: { scopedDb: ScopedDb; userId: string; teamId: string }
+    ctx: { scopedDb: ScopedDb; userId: string; organizationId: string }
   ): Promise<string> => {
     let enhanced = '';
     for await (const chunk of streamScriptEnhancement(data, ctx)) {

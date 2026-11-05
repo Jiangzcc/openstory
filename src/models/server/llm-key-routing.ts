@@ -10,20 +10,30 @@ import type { TextModelRoutingSnapshot } from '@/models/text-channels';
 import { getPlatformLlmKey } from './create-adapter';
 import type { ResolvedLlmKey } from './db/api-keys';
 
-type TeamLlmProvider = Exclude<ResolvedLlmKey['via'], 'compatible'>;
-export type TeamLlmKeyLookup = { key: string } | { skippedReason?: string };
-type TeamKeyReader = (provider: TeamLlmProvider) => Promise<TeamLlmKeyLookup>;
-type TeamKeyResult = {
-  resolved?: { key: string; source: 'team'; via: TeamLlmProvider };
+type OrganizationLlmProvider = Exclude<ResolvedLlmKey['via'], 'compatible'>;
+export type OrganizationLlmKeyLookup =
+  | { key: string }
+  | { skippedReason?: string };
+type OrganizationKeyReader = (
+  provider: OrganizationLlmProvider
+) => Promise<OrganizationLlmKeyLookup>;
+type OrganizationKeyResult = {
+  resolved?: {
+    key: string;
+    source: 'organization';
+    via: OrganizationLlmProvider;
+  };
   fallbackReason?: string;
 };
 type RoutingCredentials = {
-  teamKey: TeamKeyReader;
+  organizationKey: OrganizationKeyReader;
   channelSecret: (credentialId: string) => Promise<string>;
 };
 
-function teamProviders(model: string | undefined): TeamLlmProvider[] {
-  const providers: TeamLlmProvider[] = [];
+function organizationProviders(
+  model: string | undefined
+): OrganizationLlmProvider[] {
+  const providers: OrganizationLlmProvider[] = [];
   if (model && nativeGrokTextModel(model)) providers.push('xai');
   if (model && nativeGeminiTextModel(model) && !isGoogleRegionBlockedHere()) {
     providers.push('google');
@@ -32,15 +42,15 @@ function teamProviders(model: string | undefined): TeamLlmProvider[] {
   return [...providers, 'openrouter', 'fal'];
 }
 
-async function findTeamKey(
+async function findOrganizationKey(
   model: string | undefined,
-  read: TeamKeyReader
-): Promise<TeamKeyResult> {
+  read: OrganizationKeyReader
+): Promise<OrganizationKeyResult> {
   let fallbackReason: string | undefined;
-  for (const via of teamProviders(model)) {
+  for (const via of organizationProviders(model)) {
     const result = await read(via);
     if ('key' in result) {
-      return { resolved: { key: result.key, source: 'team', via } };
+      return { resolved: { key: result.key, source: 'organization', via } };
     }
     fallbackReason ??= result.skippedReason;
   }
@@ -53,10 +63,10 @@ export async function resolveLlmKeyForModel(
   credentials: RoutingCredentials
 ): Promise<ResolvedLlmKey> {
   const route = model ? resolveTextModelRoute(routing, model) : undefined;
-  const team = isCustomTextModelId(model)
+  const organization = isCustomTextModelId(model)
     ? {}
-    : await findTeamKey(model, credentials.teamKey);
-  if (team.resolved) return team.resolved;
+    : await findOrganizationKey(model, credentials.organizationKey);
+  if (organization.resolved) return organization.resolved;
   if (route) {
     const key = await credentials.channelSecret(route.credentialId);
     return { key, source: 'platform', via: 'compatible', route };
@@ -67,5 +77,5 @@ export async function resolveLlmKeyForModel(
       'No platform LLM key available (set OPENROUTER_KEY or FAL_KEY)'
     );
   }
-  return { ...platform, fallbackReason: team.fallbackReason };
+  return { ...platform, fallbackReason: organization.fallbackReason };
 }

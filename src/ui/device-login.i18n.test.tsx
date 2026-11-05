@@ -1,4 +1,8 @@
 import { Route } from '@/routes/_app/device';
+import type {
+  DeviceGrantStatus,
+  lookupDeviceGrantFn,
+} from '@/platform/device-auth.fn';
 import { createApplicationI18n } from '@/ui/i18n/runtime';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -15,15 +19,18 @@ vi.mock('@/platform/ui/auth/route-guards', () => ({
 
 afterEach(() => vi.restoreAllMocks());
 
-function renderStatus(locale: 'zh-CN' | 'en', status: 'approved' | 'denied') {
+function renderStatus(locale: 'zh-CN' | 'en', status: DeviceGrantStatus) {
   const userCode = 'ABCD-EFGH';
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   });
   queryClient.setQueryData(['deviceGrant', userCode], {
     status,
-    teamName: 'User team',
-  });
+    organizations: [
+      { id: '01K9AT4D9D2FT3N30TRZ95C4F0', name: 'Story organization' },
+    ],
+    activeOrganizationId: '01K9AT4D9D2FT3N30TRZ95C4F0',
+  } satisfies Awaited<ReturnType<typeof lookupDeviceGrantFn>>);
   vi.spyOn(Route, 'useSearch').mockReturnValue({ user_code: userCode });
   vi.spyOn(Route, 'useNavigate').mockReturnValue(vi.fn());
   const Page = Route.options.component;
@@ -59,4 +66,24 @@ describe('device login terminal status localization', () => {
       expect(html).toContain('ABCD-EFGH');
     }
   );
+});
+
+describe('device login organization localization', () => {
+  it('shows the organization from the pending grant in Chinese', () => {
+    const html = renderStatus('zh-CN', 'pending');
+    expect(html).toContain('是否向显示');
+    expect(html).toContain('组织：');
+    expect(html).toContain('Story organization');
+    expect(html).toContain('ABCD-EFGH');
+    expect(html).not.toContain('User team');
+  });
+
+  it('preserves the upstream English prompt and organization', () => {
+    const html = renderStatus('en', 'pending');
+    expect(html).toContain(
+      'an API key? Only approve codes you requested yourself.'
+    );
+    expect(html).toContain('Organization:');
+    expect(html).toContain('Story organization');
+  });
 });

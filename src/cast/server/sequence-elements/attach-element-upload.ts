@@ -4,7 +4,7 @@ import {
   elementKindFromFilename,
   type SequenceElementKind,
 } from '@/cast/element-kind';
-import { requireUploadRights } from '@/cast/server/upload-rights';
+import { requireUploadRightsFor } from '@/cast/server/upload-rights';
 import { measureStoredMediaDuration } from './media-duration';
 import type { DraftElementUploadInput } from '@/cast/draft-element-upload';
 import type { SequenceElement } from '@/platform/server/db/schema';
@@ -30,16 +30,20 @@ async function triggerElementVision(params: {
   imageUrl: string;
   filename: string;
   token: string;
-  teamId: string;
+  organizationId: string;
   userId: string;
 }): Promise<void> {
-  const { teamId, userId, ...element } = params;
-  const input: ElementVisionWorkflowInput = { userId, teamId, ...element };
+  const { organizationId, userId, ...element } = params;
+  const input: ElementVisionWorkflowInput = {
+    userId,
+    organizationId,
+    ...element,
+  };
   await triggerWorkflow('/element-vision', input);
 }
 
 /**
- * Prove a client-supplied element key may back a row: inside the team's
+ * Prove a client-supplied element key may back a row: inside the organization's
  * namespace, actually present in R2, and — for an image or a clip — cleared or signed
  * on the likeness ledger (#1581). The existence check is not paranoia —
  * the move it replaced (#1471) was the only thing proving the object existed,
@@ -48,17 +52,18 @@ async function triggerElementVision(params: {
  *
  * Every path that points a row at an uploaded object goes through here:
  * draft attach at creation, finalize on an existing sequence, and replace.
+ * Returns whether the ledger saw a real person in it (#2238), for the row.
  */
 async function assertElementUploadAttachable(params: {
   scopedDb: ScopedDb;
   path: string;
   filename: string;
-  teamId: string;
-}): Promise<void> {
-  const { scopedDb, path, filename, teamId } = params;
-  if (!isValidElementStoragePath(path, teamId)) {
+  organizationId: string;
+}): Promise<{ personInMedia: boolean }> {
+  const { scopedDb, path, filename, organizationId } = params;
+  if (!isValidElementStoragePath(path, organizationId)) {
     throw new ValidationError(
-      `Element "${filename}" could not be attached: its upload is outside this team's storage.`
+      `Element "${filename}" could not be attached: its upload is outside this organization's storage.`
     );
   }
   if (!(await fileExists(STORAGE_BUCKETS.ELEMENTS, elementBucketPath(path)))) {
@@ -71,9 +76,12 @@ async function assertElementUploadAttachable(params: {
   // still be sent to a motion model (#2153). An unknown extension predates
   // #1559 and was an image.
   const kind = elementKindAgreed(path, filename);
-  if (kind !== 'audio') {
-    await requireUploadRights(scopedDb, [elementImageUrlFromPath(path)]);
-  }
+  if (kind === 'audio') return { personInMedia: false };
+  const rights = await requireUploadRightsFor(
+    scopedDb,
+    elementImageUrlFromPath(path)
+  );
+  return { personInMedia: rights.depictsRealPerson };
 }
 
 /**
@@ -88,7 +96,7 @@ async function assertElementUploadAttachable(params: {
  */
 export async function attachElementUpload(params: {
   scopedDb: ScopedDb;
-  teamId: string;
+  organizationId: string;
   userId: string;
   sequenceId: string;
   path: string;
@@ -99,9 +107,15 @@ export async function attachElementUpload(params: {
   /** Clip length read in the browser (#1559); an image sends none. */
   durationSeconds?: number | null;
 }): Promise<SequenceElement> {
-  const { scopedDb, teamId, userId, sequenceId, path, filename } = params;
+  const { scopedDb, organizationId, userId, sequenceId, path, filename } =
+    params;
 
-  await assertElementUploadAttachable({ scopedDb, path, filename, teamId });
+  const { personInMedia } = await assertElementUploadAttachable({
+    scopedDb,
+    path,
+    filename,
+    organizationId,
+  });
 
   const imageUrl = elementImageUrlFromPath(path);
   const token = await scopedDb.sequenceElements.ensureUniqueToken(
@@ -134,6 +148,7 @@ export async function attachElementUpload(params: {
           null),
     imageUrl,
     imagePath: path,
+    personInMedia,
     description: hasInlineVision ? params.description : null,
     consistencyTag: hasInlineVision ? params.consistencyTag : null,
     visionStatus: visionDone ? 'completed' : 'pending',
@@ -151,7 +166,7 @@ export async function attachElementUpload(params: {
       imageUrl,
       filename: element.uploadedFilename,
       token: element.token,
-      teamId,
+      organizationId,
       userId,
     });
   } catch (err) {
@@ -176,17 +191,17 @@ export async function attachElementUpload(params: {
  */
 export async function assertDraftElementUploadsAttachable(params: {
   scopedDb: ScopedDb;
-  teamId: string;
+  organizationId: string;
   uploads: DraftElementUploadInput[];
 }): Promise<void> {
-  const { scopedDb, teamId, uploads } = params;
+  const { scopedDb, organizationId, uploads } = params;
   await Promise.all(
     uploads.map((upload) =>
       assertElementUploadAttachable({
         scopedDb,
         path: upload.tempPath,
         filename: upload.filename,
-        teamId,
+        organizationId,
       })
     )
   );
@@ -202,7 +217,7 @@ export async function assertDraftElementUploadsAttachable(params: {
  */
 export async function attachDraftElementUploads(params: {
   scopedDb: ScopedDb;
-  teamId: string;
+  organizationId: string;
   userId: string;
   sequenceId: string;
   uploads: DraftElementUploadInput[];
@@ -263,7 +278,7 @@ function elementKindAgreed(
  */
 export async function replaceElementUpload(params: {
   scopedDb: ScopedDb;
-  teamId: string;
+  organizationId: string;
   userId: string;
   sequenceId: string;
   elementId: string;
@@ -271,12 +286,12 @@ export async function replaceElementUpload(params: {
   filename: string;
   durationSeconds?: number | null;
 }): Promise<SequenceElement> {
-  const { scopedDb, teamId, sequenceId } = params;
-  await assertElementUploadAttachable({
+  const { scopedDb, organizationId, sequenceId } = params;
+  const { personInMedia } = await assertElementUploadAttachable({
     scopedDb,
     path: params.path,
     filename: params.filename,
-    teamId,
+    organizationId,
   });
 
   const element = await scopedDb.sequenceElements.getById(params.elementId);
@@ -293,6 +308,7 @@ export async function replaceElementUpload(params: {
   const updated = await scopedDb.sequenceElements.update(params.elementId, {
     imageUrl,
     imagePath: params.path,
+    personInMedia,
     uploadedFilename: params.filename,
     kind,
     durationSeconds:
@@ -317,7 +333,7 @@ export async function replaceElementUpload(params: {
       imageUrl,
       filename: updated.uploadedFilename,
       token: updated.token,
-      teamId,
+      organizationId,
       userId: params.userId,
     });
   } catch (err) {

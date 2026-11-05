@@ -118,7 +118,7 @@ function context(
   const style = testStyle();
   return {
     user: { id: 'u' },
-    teamId: 't',
+    organizationId: 't',
     sequence: { analysisModel: sequenceModel },
     shot: { id: 'shot-1' },
     scene: null,

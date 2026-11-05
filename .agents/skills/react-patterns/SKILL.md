@@ -18,17 +18,17 @@ This repository uses TanStack Query v5. The installed
 `suspense: true` is not an option to pass to `useQuery`. Do not copy `useQuery({ suspense: true })`.
 
 Prefer the existing domain hook. This is the query shape in
-`src/cast/ui/use-team-locations.ts` (cache options omitted):
+`src/cast/ui/use-organization-locations.ts` (cache options omitted):
 
 ```tsx
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getTeamLocationFn } from '@/cast/team-locations.fn';
-import { teamLocationKeys } from '@/cast/ui/location-keys';
+import { getOrganizationLocationFn } from '@/cast/organization-locations.fn';
+import { organizationLocationKeys } from '@/cast/ui/location-keys';
 
-export function useTeamLocation(locationId: string) {
+export function useOrganizationLocation(locationId: string) {
   return useSuspenseQuery({
-    queryKey: teamLocationKeys.detail(locationId),
-    queryFn: () => getTeamLocationFn({ data: { locationId } }),
+    queryKey: organizationLocationKeys.detail(locationId),
+    queryFn: () => getOrganizationLocationFn({ data: { locationId } }),
   });
 }
 ```
@@ -38,11 +38,11 @@ Reuse the list hook and let a parent Suspense boundary own initial loading:
 ```tsx
 import type React from 'react';
 import { Suspense } from 'react';
-import { useTeamLocations } from '@/cast/ui/use-team-locations';
+import { useOrganizationLocations } from '@/cast/ui/use-organization-locations';
 import { Skeleton } from '@/ui/shadcn/skeleton';
 
 const LocationsContent: React.FC = () => {
-  const { data: locations } = useTeamLocations();
+  const { data: locations } = useOrganizationLocations();
   return (
     <ul className="flex flex-col gap-4">
       {locations.map((location) => (
@@ -62,8 +62,8 @@ export const LocationsList: React.FC = () => (
 Do not replace this with effect-driven fetching, local `isLoading` state,
 or a separate skeleton component. Match the inline fallback to the content.
 Existing non-suspending queries are intentional for conditional pickers,
-optional data and headers: `useTeamLocationList(enabled)` and
-`useTeamLocationName` in the same file use `useQuery`. Suspense queries do
+optional data and headers: `useOrganizationLocationList(enabled)` and
+`useOrganizationLocationName` in the same file use `useQuery`. Suspense queries do
 not accept `enabled` or `placeholderData`; preserve that distinction.
 
 ## Styling and spacing
@@ -113,9 +113,9 @@ onSubmit(result.data);
 ```
 
 The caller connects that submit prop to the existing
-`useCreateTeamCharacter` hook in `src/cast/ui/use-team-characters.ts`.
-That hook uses `useMutation`, calls `createTeamCharacterFn({ data })`
-and invalidates `teamCharacterKeys.all` on success. Check its actual input
+`useCreateOrganizationCharacter` hook in `src/cast/ui/use-organization-characters.ts`.
+That hook uses `useMutation`, calls `createOrganizationCharacterFn({ data })`
+and invalidates `organizationCharacterKeys.all` on success. Check its actual input
 contract, including `rendering`; a form's fields alone need not be the
 complete mutation input. Disable submit from `mutation.isPending` and show
 a pending label such as `Creating…`.

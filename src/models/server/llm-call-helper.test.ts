@@ -441,7 +441,7 @@ describe('snapshotted durable vision fallback', () => {
     async (streaming) => {
       const resolveLlmKey = vi.fn(async () => ({
         key: 'test-key',
-        source: 'team',
+        source: 'organization',
         via: 'openrouter',
       }));
       const scopedDb = asStub<WorkflowScopedDb>({

@@ -175,7 +175,7 @@ function RedeemSection() {
           <div>
             <CardTitle>{t('Redeem Gift Code')}</CardTitle>
             <CardDescription>
-              {t('Enter a gift code to add credits to your team')}
+              {t('Enter a gift code to add credits to your organization')}
             </CardDescription>
           </div>
         </div>

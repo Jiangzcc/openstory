@@ -64,7 +64,7 @@ export function buildCharacterInsert(args: {
 
 /**
  * One analysed location. A script location matching bound to one of the
- * team's (`libraryMatch`, #1695) is linked to it (`boundTo`): no location is
+ * organization's (`libraryMatch`, #1695) is linked to it (`boundTo`): no location is
  * made and the bible analysis wrote for it is dropped.
  */
 export function buildLocationInsert(args: {
@@ -252,6 +252,7 @@ export async function createCastRecords(
       consistencyTag: row.consistencyTag,
       kind: row.kind,
       durationSeconds: row.durationSeconds,
+      personInMedia: row.personInMedia,
     });
   }
   return { elements, lookIds };

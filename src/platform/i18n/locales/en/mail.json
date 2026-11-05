@@ -5,5 +5,9 @@
   "Enter this code to sign in to your account:": "Enter this code to sign in to your account:",
   "This code expires in 5 minutes": "This code expires in 5 minutes",
   "If you didn't request this code, you can safely ignore this email.": "If you didn't request this code, you can safely ignore this email.",
-  "All rights reserved.": "All rights reserved."
+  "All rights reserved.": "All rights reserved.",
+  "Join {{organizationName}}": "Join {{organizationName}}",
+  "{{inviterName}} invited you to {{organizationName}}": "{{inviterName}} invited you to {{organizationName}}",
+  "{{inviterName}} invited you to the {{organizationName}} organization on {{appName}}.": "{{inviterName}} invited you to the {{organizationName}} organization on {{appName}}.",
+  "Join organization": "Join organization"
 }

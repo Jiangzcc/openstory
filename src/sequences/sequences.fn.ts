@@ -55,7 +55,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import {
-  authWithTeamMiddleware,
+  authWithOrganizationMiddleware,
   sequenceAccessMiddleware,
 } from '@/platform/middleware.fn';
 import {
@@ -70,7 +70,7 @@ import {
 } from '@/sequences/server/sequence-edit';
 
 export const getSequencesFn = createServerFn({ method: 'GET' })
-  .middleware([authWithTeamMiddleware])
+  .middleware([authWithOrganizationMiddleware])
   .handler(async ({ context }) => {
     return context.scopedDb.sequences.list();
   });
@@ -78,7 +78,7 @@ export const getSequencesFn = createServerFn({ method: 'GET' })
 /** Archived sequences for the unarchive picker (#1108 Phase 4) — the default
  * list excludes them. */
 export const getArchivedSequencesFn = createServerFn({ method: 'GET' })
-  .middleware([authWithTeamMiddleware])
+  .middleware([authWithOrganizationMiddleware])
   .handler(async ({ context }) => {
     return context.scopedDb.sequences.listArchived();
   });
@@ -115,6 +115,8 @@ export const estimateGenerationSliceFn = createServerFn({ method: 'GET' })
         generateVoices: data.generateVoices,
       }),
       scopedDb.shots.listBySequence(sequence.id),
+      // Warms the pricing cache beside the plan, not after it.
+      getEffectiveFalPricing(),
     ]);
     const estimate = await estimateContinueCost({
       sequence,
@@ -149,7 +151,7 @@ export const estimateGenerationSliceFn = createServerFn({ method: 'GET' })
  * fan-out, element promotion, and workflow trigger.
  */
 export const createSequenceFn = createServerFn({ method: 'POST' })
-  .middleware([authWithTeamMiddleware])
+  .middleware([authWithOrganizationMiddleware])
   .validator(async (input: unknown) =>
     parseConfiguredSequenceInput(input, await loadModelConfiguration())
   )
@@ -157,7 +159,7 @@ export const createSequenceFn = createServerFn({ method: 'POST' })
     const { sequences } = await createSequences(data, {
       scopedDb: context.scopedDb,
       user: context.user,
-      teamId: context.teamId,
+      organizationId: context.organizationId,
     });
     return sequences;
   });
@@ -215,7 +217,7 @@ export const continueGenerationFn = createServerFn({ method: 'POST' })
       async () =>
         triggerContinue(context.scopedDb, {
           userId: context.user.id,
-          teamId: context.teamId,
+          organizationId: context.organizationId,
           sequence,
           // The units, frozen now with every input read from D1 — after the
           // switches saved, so a shot's mode is the one this click chose.
@@ -385,7 +387,7 @@ export const retryStoryboardFn = createServerFn({ method: 'POST' })
   .middleware([sequenceAccessMiddleware])
   .validator(zodValidator(retryStoryboardInputSchema))
   .handler(async ({ context }) => {
-    const { sequence, user, teamId } = context;
+    const { sequence, user, organizationId } = context;
 
     if (sequence.status !== 'failed') {
       throw new Error('Only failed sequences can be retried');
@@ -436,7 +438,7 @@ export const retryStoryboardFn = createServerFn({ method: 'POST' })
 
     const workflowInput: StoryboardTriggerInput = {
       userId: user.id,
-      teamId,
+      organizationId,
       sequenceId: sequence.id,
       reservationId,
       options: {

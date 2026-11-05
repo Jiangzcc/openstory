@@ -5,7 +5,7 @@ import {
 } from '@/models/google-region';
 import type { TextModelId, TextModelRoute } from '@/models/text-channels';
 import type { ResolvedLlmKey } from './db/api-keys';
-import type { TeamLlmKeyLookup } from './llm-key-routing';
+import type { OrganizationLlmKeyLookup } from './llm-key-routing';
 
 type TeamProvider = Exclude<ResolvedLlmKey['via'], 'compatible'>;
 const env = {
@@ -38,11 +38,11 @@ function mockRoute(
 }
 
 function credentials(
-  keys: Partial<Record<TeamProvider, TeamLlmKeyLookup>> = {}
+  keys: Partial<Record<TeamProvider, OrganizationLlmKeyLookup>> = {}
 ) {
   return {
-    teamKey: vi.fn(
-      async (provider: TeamProvider): Promise<TeamLlmKeyLookup> =>
+    organizationKey: vi.fn(
+      async (provider: TeamProvider): Promise<OrganizationLlmKeyLookup> =>
         keys[provider] ?? {}
     ),
     channelSecret: vi.fn(async () => 'mock-channel-secret'),
@@ -59,7 +59,7 @@ it.each(['fal', 'openrouter'] as const)(
     const route = mockRoute();
     expect(await resolveLlmKeyForModel(route.modelId, [route], c)).toEqual({
       key: 'mock-team-secret',
-      source: 'team',
+      source: 'organization',
       via,
     });
     expect(c.channelSecret).not.toHaveBeenCalled();
@@ -79,7 +79,7 @@ it.each([
     });
     expect(
       await resolveLlmKeyForModel(model, [mockRoute(model)], c)
-    ).toMatchObject({ key: 'mock-native-team', source: 'team', via });
+    ).toMatchObject({ key: 'mock-native-team', source: 'organization', via });
     expect(c.channelSecret).not.toHaveBeenCalled();
   }
 );
@@ -90,7 +90,7 @@ it.each(['google/gemini-3.8-flash', 'x-ai/grok-4.7'])(
     const c = credentials({ openrouter: { key: 'mock-team-or' } });
     expect(await resolveLlmKeyForModel(model, [], c)).toMatchObject({
       key: 'mock-team-or',
-      source: 'team',
+      source: 'organization',
       via: 'openrouter',
     });
   }
@@ -121,7 +121,7 @@ it('keeps unrelated native and unmapped LLMTR keys from covering a builtin model
     source: 'platform',
     via: 'compatible',
   });
-  expect(c.teamKey.mock.calls.map(([provider]) => provider)).toEqual([
+  expect(c.organizationKey.mock.calls.map(([provider]) => provider)).toEqual([
     'openrouter',
     'fal',
   ]);
@@ -135,7 +135,7 @@ it('keeps custom identifiers on their administrator route without consulting tea
     via: 'compatible',
     route,
   });
-  expect(c.teamKey).not.toHaveBeenCalled();
+  expect(c.organizationKey).not.toHaveBeenCalled();
 });
 
 it('rejects an unavailable custom model without using any other provider', async () => {
@@ -143,7 +143,7 @@ it('rejects an unavailable custom model without using any other provider', async
   await expect(
     resolveLlmKeyForModel('custom:mock-missing', [], c)
   ).rejects.toThrow('unavailable');
-  expect(c.teamKey).not.toHaveBeenCalled();
+  expect(c.organizationKey).not.toHaveBeenCalled();
   expect(c.channelSecret).not.toHaveBeenCalled();
 });
 
@@ -180,8 +180,8 @@ it('skips native Google for a region-blocked isolate while retaining its team ga
   });
   expect(
     await resolveLlmKeyForModel('google/gemini-3.8-flash', [], c)
-  ).toMatchObject({ key: 'mock-team-fal', source: 'team', via: 'fal' });
-  expect(c.teamKey).not.toHaveBeenCalledWith('google');
+  ).toMatchObject({ key: 'mock-team-fal', source: 'organization', via: 'fal' });
+  expect(c.organizationKey).not.toHaveBeenCalledWith('google');
 });
 
 it('preserves invalid-key diagnostics on an unbound platform fallback', async () => {

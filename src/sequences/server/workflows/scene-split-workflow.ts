@@ -275,12 +275,12 @@ async function triggerPreviewImage({
   try {
     const enforcement = await scopedDb.liveRead.compliance.listEnforcementFor(
       input.userId,
-      input.teamId
+      input.organizationId
     );
     await triggerShotPreview(
       {
         userId: input.userId,
-        teamId: input.teamId,
+        organizationId: input.organizationId,
         sequenceId,
         shotId: shot.id,
         frameId: shot.frameId,
@@ -324,12 +324,12 @@ type StreamResult = {
    * of the step so the (much later) deduction bills the same resolution
    * instead of re-reading mutable key state mid-run.
    */
-  llmKeySource: 'team' | 'platform';
+  llmKeySource: 'organization' | 'platform';
 };
 
 type LlmStepBilling = {
   llmCostMicros: Microdollars;
-  llmKeySource: 'team' | 'platform';
+  llmKeySource: 'organization' | 'platform';
 };
 
 /** Shape produced by the bibles step (post JSON round-trip). */
@@ -1318,7 +1318,7 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
       await deductWorkflowCredits({
         scopedDb,
         costMicros: streamResult.llmCostMicros,
-        usedOwnKey: streamResult.llmKeySource === 'team',
+        usedOwnKey: streamResult.llmKeySource === 'organization',
         description: `LLM analysis (${scopedDb.models.sceneSplit})`,
         idempotencyKey: `${event.instanceId}:llm-${STEP_NAME}`,
         reservationId: input.reservationId,
@@ -1336,7 +1336,7 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
       await deductWorkflowCredits({
         scopedDb,
         costMicros: biblesResult.llmCostMicros,
-        usedOwnKey: biblesResult.llmKeySource === 'team',
+        usedOwnKey: biblesResult.llmKeySource === 'organization',
         description: `LLM analysis (${modelId})`,
         idempotencyKey: `${event.instanceId}:llm-${BIBLES_STEP_NAME}`,
         reservationId: input.reservationId,
@@ -1354,7 +1354,7 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
       await deductWorkflowCredits({
         scopedDb,
         costMicros: shotListStep.llmCostMicros,
-        usedOwnKey: shotListStep.llmKeySource === 'team',
+        usedOwnKey: shotListStep.llmKeySource === 'organization',
         description: `LLM analysis (${modelId})`,
         idempotencyKey: `${event.instanceId}:llm-${SHOT_LIST_STEP_NAME}`,
         reservationId: input.reservationId,

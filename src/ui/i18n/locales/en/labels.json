@@ -135,7 +135,7 @@
   "Manage your credit balance, API keys, and billing for AI generation": "Manage your credit balance, API keys, and billing for AI generation",
   "Images and Clips": "Images and Clips",
   "Generate a single still or clip from a prompt, without a sequence": "Generate a single still or clip from a prompt, without a sequence",
-  "Your team's locations, and how a sequence uses them": "Your team's locations, and how a sequence uses them",
+  "Your organization's locations, and how a sequence uses them": "Your organization's locations, and how a sequence uses them",
   "Music & Audio": "Music & Audio",
   "Generate, customize, and merge music and sound effects for your sequence": "Generate, customize, and merge music and sound effects for your sequence",
   "Working with Scenes": "Working with Scenes",
@@ -619,5 +619,6 @@
   "Prompts + images": "Prompts + images",
   "Prompts, images + dialogue": "Prompts, images + dialogue",
   "Prompts, images, dialogue + videos": "Prompts, images, dialogue + videos",
-  "Everything, incl. music": "Everything, incl. music"
+  "Everything, incl. music": "Everything, incl. music",
+  "Organization": "Organization"
 }

@@ -23,6 +23,7 @@ import { Button } from '@/ui/shadcn/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/shadcn/popover';
 import { ElementSelectorTile } from './element-selector-tile';
 import type { ElementSelectorItem as DisplayItem } from './element-selector-tile';
+export { LocalUploadError } from './element-selector-tile';
 import {
   restoreSequenceElement,
   useDeleteSequenceElement,
@@ -261,6 +262,111 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
     });
   }, []);
 
+  const failLocalEntry = useCallback(
+    (key: string, file: File, err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : translateEvent('Upload failed');
+      logger.error('Upload failed', { filename: file.name, error: err });
+      toast.error(
+        translateEvent("Couldn't upload {{value1}}", { value1: file.name }),
+        { description: message }
+      );
+      setEntries((prev) => {
+        const current = prev.get(key);
+        if (!current || current.status === 'error') return prev;
+        const next = new Map(prev);
+        next.set(key, { ...current, status: 'error', errorMessage: message });
+        return next;
+      });
+    },
+    [translateEvent]
+  );
+
+  const uploadLocalEntry = useCallback(
+    async (key: string, file: File) => {
+      try {
+        if (isPersisted) {
+          await sequenceUpload.mutateAsync({ file, sequenceId });
+          // Success — local entry kept until query refetches, then cleared.
+          // Skip when the tile is already an error (the user is retrying or
+          // removing) so a late resolution cannot cover the failure.
+          setEntries((prev) => {
+            const current = prev.get(key);
+            if (!current || current.status === 'error') return prev;
+            const next = new Map(prev);
+            next.set(key, { ...current, status: 'done' });
+            return next;
+          });
+          return;
+        }
+        const result = await draftUpload.mutateAsync({
+          file,
+          onAnalyzingChange: (analyzing) => {
+            setEntries((prev) => {
+              const current = prev.get(key);
+              if (!current) return prev;
+              // Don't downgrade out of error/done if a slow analyze
+              // callback fires after the mutation already settled.
+              if (
+                current.status !== 'uploading' &&
+                current.status !== 'analyzing'
+              ) {
+                return prev;
+              }
+              const next = new Map(prev);
+              next.set(key, {
+                ...current,
+                status: analyzing ? 'analyzing' : current.status,
+              });
+              return next;
+            });
+          },
+        });
+        // Promote into the parent's canonical draft list and drop the
+        // transient local entry — unless the user removed it mid-upload,
+        // in which case the result is discarded.
+        if (!entriesRef.current.has(key)) return;
+        if (entriesRef.current.get(key)?.status === 'error') return;
+        removeLocalEntry(key);
+        onDraftElementsChange?.((prev) => [...prev, result]);
+      } catch (err) {
+        failLocalEntry(key, file, err);
+      }
+    },
+    [
+      isPersisted,
+      sequenceUpload,
+      sequenceId,
+      draftUpload,
+      removeLocalEntry,
+      onDraftElementsChange,
+      failLocalEntry,
+    ]
+  );
+
+  const retryLocalEntry = useCallback(
+    (key: string) => {
+      const entry = entriesRef.current.get(key);
+      if (!entry || entry.status !== 'error') return;
+      const restarted: LocalEntry = {
+        file: entry.file,
+        previewUrl: entry.previewUrl,
+        status: 'uploading',
+      };
+      const seeded = new Map(entriesRef.current);
+      seeded.set(key, restarted);
+      entriesRef.current = seeded;
+      setEntries((prev) => {
+        if (!prev.has(key)) return prev;
+        const next = new Map(prev);
+        next.set(key, restarted);
+        return next;
+      });
+      void uploadLocalEntry(key, entry.file);
+    },
+    [uploadLocalEntry]
+  );
+
   const processFiles = useCallback(
     async (newFiles: File[]) => {
       if (disabled) return;
@@ -321,78 +427,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
       });
 
       await Promise.all(
-        accepted.map(async ({ key, file }) => {
-          try {
-            if (isPersisted) {
-              await sequenceUpload.mutateAsync({ file, sequenceId });
-              // Success — local entry kept until query refetches, then cleared
-              setEntries((prev) => {
-                const current = prev.get(key);
-                if (!current) return prev;
-                const next = new Map(prev);
-                next.set(key, { ...current, status: 'done' });
-                return next;
-              });
-            } else {
-              const result = await draftUpload.mutateAsync({
-                file,
-                onAnalyzingChange: (analyzing) => {
-                  setEntries((prev) => {
-                    const current = prev.get(key);
-                    if (!current) return prev;
-                    // Don't downgrade out of error/done if a slow analyze
-                    // callback fires after the mutation already settled.
-                    if (
-                      current.status !== 'uploading' &&
-                      current.status !== 'analyzing'
-                    ) {
-                      return prev;
-                    }
-                    const next = new Map(prev);
-                    next.set(key, {
-                      ...current,
-                      status: analyzing ? 'analyzing' : current.status,
-                    });
-                    return next;
-                  });
-                },
-              });
-              // Promote into the parent's canonical draft list and drop the
-              // transient local entry — unless the user removed it mid-upload,
-              // in which case the result is discarded.
-              if (entriesRef.current.has(key)) {
-                removeLocalEntry(key);
-                onDraftElementsChange?.((prev) => [...prev, result]);
-              }
-            }
-          } catch (err) {
-            const message =
-              err instanceof Error ? err.message : 'Upload failed';
-            logger.error('Upload failed', {
-              filename: file.name,
-              error: err,
-            });
-            toast.error(
-              translateEvent("Couldn't upload {{value1}}", {
-                value1: file.name,
-              }),
-              {
-                description: message,
-              }
-            );
-            setEntries((prev) => {
-              const current = prev.get(key);
-              if (!current) return prev;
-              const next = new Map(prev);
-              next.set(key, {
-                ...current,
-                status: 'error',
-                errorMessage: message,
-              });
-              return next;
-            });
-          }
-        })
+        accepted.map(({ key, file }) => uploadLocalEntry(key, file))
       );
     },
     [
@@ -402,11 +437,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
       isPersisted,
       persistedElements.length,
       draftElements?.length,
-      sequenceId,
-      draftUpload,
-      sequenceUpload,
-      removeLocalEntry,
-      onDraftElementsChange,
+      uploadLocalEntry,
     ]
   );
 
@@ -752,6 +783,11 @@ export const ElementSelector: React.FC<ElementSelectorProps> = (props) => {
                     <ElementSelectorTile
                       key={item.key}
                       item={item}
+                      onRetry={
+                        entry.kind === 'local'
+                          ? () => retryLocalEntry(entry.key)
+                          : undefined
+                      }
                       onRename={
                         entry.kind === 'local'
                           ? undefined

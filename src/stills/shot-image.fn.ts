@@ -76,7 +76,7 @@ export const generateShotsFn = createServerFn({ method: 'POST' })
 
     const workflowInput: StoryboardTriggerInput = {
       userId: user.id,
-      teamId: sequence.teamId,
+      organizationId: sequence.organizationId,
       sequenceId: sequence.id,
       reservationId,
       options: {

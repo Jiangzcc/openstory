@@ -1,3 +1,4 @@
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { Trans, useTranslation } from 'react-i18next';
 import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 /**
@@ -6,7 +7,7 @@ import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
  * Better Auth sends the signed query to `/oauth/consent-start`, which packs it
  * into `q` and 302s here so TanStack cannot collapse repeated `ba_param`.
  *
- * Who is asking, for what, and which team the grant bills to load in the
+ * Who is asking, for what, and the organizations it can bill to load in the
  * route loader so the first HTML already has Approve — no client fetch, no
  * skeleton.
  */
@@ -32,6 +33,7 @@ import {
   resolveOAuthQuery,
 } from '@/platform/auth/oauth-query-snapshot';
 import { requireSessionOrRedirect } from '@/platform/ui/auth/route-guards';
+import { OrganizationSelect } from '@/platform/ui/organization-select';
 import { errorMessage } from '@/platform/errors';
 import { useHydrated } from '@/ui/use-hydrated';
 import { useMutation } from '@tanstack/react-query';
@@ -145,19 +147,24 @@ function ConsentDecision({
 }) {
   const { t } = useTranslation('pages');
   const translateScope = useLabelTranslation('interface');
+  const translateError = useLabelTranslation('pages');
+  const translateEvent = useLiveTranslation('pages');
 
   const hydrated = useHydrated();
   const [outcome, setOutcome] = useState<'granted' | 'denied' | null>(null);
+  const [organizationId, setOrganizationId] = useState(
+    consent.activeOrganizationId
+  );
 
   const decide = useMutation({
     // Suppress the global MutationCache toast — we render our own below.
     mutationFn: (accept: boolean) =>
       decideOAuthConsentFn({
-        data: { accept, oauthQuery },
+        data: { accept, oauthQuery, organizationId },
       }),
     onSuccess: ({ url }, accept) => {
       if (!url || (!/^https?:\/\//i.test(url) && !url.startsWith('/'))) {
-        toast.error(CONSENT_STALE_MESSAGE);
+        toast.error(translateEvent(CONSENT_STALE_MESSAGE));
         return;
       }
       setOutcome(accept ? 'granted' : 'denied');
@@ -166,8 +173,9 @@ function ConsentDecision({
       }, 800);
     },
     onError: (err) => {
-      const text = errorMessage(err, CONSENT_STALE_MESSAGE).trim();
-      toast.error(text || CONSENT_STALE_MESSAGE);
+      const fallback = translateEvent(CONSENT_STALE_MESSAGE);
+      const text = errorMessage(err, fallback).trim();
+      toast.error(translateError(text || fallback));
     },
   });
 
@@ -197,7 +205,7 @@ function ConsentDecision({
     );
   }
 
-  const { client, scopes, team } = consent;
+  const { client, scopes, organizations } = consent;
 
   return (
     <div className="flex flex-col gap-4">
@@ -231,12 +239,7 @@ function ConsentDecision({
 
       <div className="flex flex-col gap-1">
         <p className="text-sm">
-          <Trans
-            ns="pages"
-            i18nKey="This will let it, on behalf of team <0>{{value1}}</0>:"
-            components={[<strong key="0" />]}
-            values={{ value1: team.name }}
-          />
+          {t('This will let it, on behalf of the organization below:')}
         </p>
         <ul className="list-disc pl-5 text-sm">
           {scopes.length > 0 ? (
@@ -249,9 +252,15 @@ function ConsentDecision({
         </ul>
       </div>
 
+      <OrganizationSelect
+        organizations={organizations}
+        value={organizationId}
+        onValueChange={setOrganizationId}
+      />
+
       <p className="text-sm text-muted-foreground">
         {t(
-          'Anything it generates spends this team’s credits. You can revoke access any time under Settings → Developer.'
+          'Anything it generates spends this organization’s credits. To use another organization, connect again and pick it. You can revoke access any time under Settings → Developer.'
         )}
       </p>
 

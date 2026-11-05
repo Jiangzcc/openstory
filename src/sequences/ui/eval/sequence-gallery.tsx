@@ -57,7 +57,7 @@ export function SequenceGallery({
       <output className="text-sm text-muted-foreground">
         {sequences.length}{' '}
         {sequences.length === 1 ? t('sequence') : t('sequences')}
-        {supportMode && <span>{t('loaded across all teams')}</span>}
+        {supportMode && <span> {t('loaded across all organizations')}</span>}
       </output>
       <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 pb-4">
         {sequences.map((sequence) => {

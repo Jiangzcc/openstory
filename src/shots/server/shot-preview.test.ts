@@ -47,7 +47,7 @@ const contextFor = (useStartFrame: boolean) =>
       aspectRatio: '16:9',
     },
     user: { id: 'user-1' },
-    teamId: 'team-1',
+    organizationId: 'org-1',
     scene: null,
     scopedDb: {
       modelConfiguration: { get: getModelConfiguration },
@@ -116,7 +116,7 @@ describe('configured shot previews', () => {
   };
   const target = {
     userId: 'user-1',
-    teamId: 'team-1',
+    organizationId: 'team-1',
     sequenceId: 'sequence-1',
     shotId: 'shot-1',
     frameId: 'frame-1',
@@ -207,7 +207,7 @@ const runtimeSnapshot: ModelRuntimeConfiguration = {
 };
 const previewTarget = {
   userId: 'user-1',
-  teamId: 'team-1',
+  organizationId: 'team-1',
   sequenceId: 'sequence-1',
   shotId: 'shot-1',
   frameId: 'frame-1',

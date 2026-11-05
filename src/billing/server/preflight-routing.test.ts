@@ -118,7 +118,7 @@ describe('billing follows resolved LLM credentials', () => {
       [ROUTE.modelId],
       [ROUTE]
     );
-    expect(llmSources).toEqual(['team']);
+    expect(llmSources).toEqual(['organization']);
     await expect(
       reserveRunCredits(scopedDb, COST, {
         providers: ['openrouter'],

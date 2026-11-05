@@ -18,8 +18,34 @@ type ElementSelectorTileProps = {
   item: ElementSelectorItem;
   affectedShotCount: number;
   onRename?: (next: string) => Promise<void>;
+  onRetry?: () => void;
   onRemove: () => void;
 };
+
+export function LocalUploadError({
+  message,
+  onRetry,
+  onRemove,
+}: {
+  message: string;
+  onRetry: () => void;
+  onRemove: () => void;
+}) {
+  const { t } = useTranslation('cast');
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-destructive/70 px-1 text-center">
+      <span className="text-[10px] font-medium text-white">{message}</span>
+      <div className="flex gap-1">
+        <Button type="button" size="xs" variant="secondary" onClick={onRetry}>
+          {t('Retry')}
+        </Button>
+        <Button type="button" size="xs" variant="secondary" onClick={onRemove}>
+          {t('Remove')}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function ElementSelectorStatus({ item }: { item: ElementSelectorItem }) {
   const { t } = useTranslation('cast');
@@ -47,6 +73,7 @@ export function ElementSelectorTile({
   item,
   affectedShotCount,
   onRename,
+  onRetry,
   onRemove,
 }: ElementSelectorTileProps) {
   const { t } = useTranslation('cast');
@@ -58,7 +85,15 @@ export function ElementSelectorTile({
         label={item.token ?? t('Element')}
         fit="cover"
       />
-      <ElementSelectorStatus item={item} />
+      {item.status === 'error' && onRetry ? (
+        <LocalUploadError
+          message={item.errorMessage ?? t('Failed')}
+          onRetry={onRetry}
+          onRemove={onRemove}
+        />
+      ) : (
+        <ElementSelectorStatus item={item} />
+      )}
       {item.status === 'done' && item.token && onRename && (
         <ElementTokenButton
           token={item.token}
@@ -66,15 +101,18 @@ export function ElementSelectorTile({
           affectedShotCount={affectedShotCount}
         />
       )}
-      <Button
-        type="button"
-        variant="destructive"
-        size="icon"
-        onClick={onRemove}
-        className="absolute top-1 right-1 size-5 opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <X className="size-3" />
-      </Button>
+      {!(item.status === 'error' && onRetry) && (
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon"
+          aria-label={t('Remove')}
+          onClick={onRemove}
+          className="absolute top-1 right-1 size-5 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <X className="size-3" />
+        </Button>
+      )}
     </div>
   );
 }

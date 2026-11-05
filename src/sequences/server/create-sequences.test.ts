@@ -61,7 +61,7 @@ function context(
   const listPage = vi.fn(async () => []);
   const resolveLlmKey = vi.fn(async (model: string) => ({
     key: 'mock-resolved-key',
-    source: opts.teamModels?.includes(model) ? 'team' : 'platform',
+    source: opts.teamModels?.includes(model) ? 'organization' : 'platform',
   }));
   const createReservation = vi.fn(async () =>
     opts.canAfford ? { ok: true, reservationId: 'mock-hold' } : { ok: false }
@@ -84,7 +84,7 @@ function context(
   return {
     scopedDb,
     user: { id: 'u' },
-    teamId: 't',
+    organizationId: 't',
     create,
     listPage,
     resolveLlmKey,

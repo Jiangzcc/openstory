@@ -1,3 +1,5 @@
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
+import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/shadcn/avatar';
 import {
@@ -5,19 +7,28 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/ui/shadcn/dropdown-menu';
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/shadcn/sidebar';
 import { systemAdminStatusQueryOptions } from '@/billing/ui/system-admin-status';
 import { useUser } from '@/platform/ui/use-user';
-import { authClient } from '@/platform/ui/auth/client';
+import { authClient, authData } from '@/platform/ui/auth/client';
 import { rememberLastPage } from '@/platform/ui/auth/last-page';
-import { sessionQueryOptions } from '@/platform/ui/auth/session-query';
+import {
+  sessionQueryOptions,
+  useAuthSession,
+} from '@/platform/ui/auth/session-query';
+import { avatarStyle, getInitials } from '@/ui/utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   BarChart3,
+  Check,
   ChevronsUpDown,
   LogIn,
   LogOut,
@@ -27,12 +38,14 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function UserSidebarFooter() {
   const { t } = useTranslation('interface');
 
   const { data: user, isLoading } = useUser();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const resumeHref = useRouterState({
@@ -74,7 +87,7 @@ export function UserSidebarFooter() {
   }
 
   const userEmail = user.email;
-  const displayName = user.name || userEmail || 'User';
+  const displayName = user.name || userEmail || t('User');
   const initials = getInitials(displayName);
 
   const handleSignOut = async () => {
@@ -101,15 +114,17 @@ export function UserSidebarFooter() {
 
   return (
     <SidebarMenuItem>
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <SidebarMenuButton
             size="lg"
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
-            <Avatar className="h-8 w-8 rounded-lg">
+            <Avatar>
               <AvatarImage src={user.image || undefined} alt={displayName} />
-              <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+              <AvatarFallback style={avatarStyle(displayName)}>
+                {initials}
+              </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{displayName}</span>
@@ -126,26 +141,9 @@ export function UserSidebarFooter() {
           side="top"
           align="end"
           sideOffset={4}
-          className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+          className="w-(--radix-dropdown-menu-trigger-width) min-w-64 rounded-lg"
         >
-          <DropdownMenuLabel className="p-0 font-normal">
-            <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.image || undefined} alt={displayName} />
-                <AvatarFallback className="rounded-lg">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{displayName}</span>
-                {userEmail && (
-                  <span className="truncate text-xs text-muted-foreground">
-                    {userEmail}
-                  </span>
-                )}
-              </div>
-            </div>
-          </DropdownMenuLabel>
+          <OrganizationSwitcher open={menuOpen} />
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link to="/settings">
@@ -171,6 +169,94 @@ export function UserSidebarFooter() {
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>
+  );
+}
+
+function OrganizationAvatar({
+  name,
+  logo,
+}: {
+  name: string;
+  logo?: string | null;
+}) {
+  return (
+    <Avatar className="rounded-lg after:rounded-lg">
+      <AvatarImage className="rounded-lg" src={logo || undefined} alt="" />
+      <AvatarFallback className="rounded-lg" style={avatarStyle(name)}>
+        {getInitials(name)}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
+
+/** The active organization as a row; its submenu lists the others. */
+function OrganizationSwitcher({ open }: { open: boolean }) {
+  const { t } = useTranslation('interface');
+  const translateEvent = useLiveTranslation('interface');
+  const translateError = useLabelTranslation('pages');
+
+  const { data: session } = useAuthSession();
+  const activeId = session?.session.activeOrganizationId ?? null;
+  const activeName =
+    session?.membership?.organizationName ?? t('No organization');
+  const organizations = useQuery({
+    queryKey: ['organization', 'list'],
+    enabled: open,
+    queryFn: () => authData(authClient.organization.list()),
+  });
+
+  // Every loader and query on the page is per organization: reload, do not
+  // chase them. The auth client's cache clear leaves mounted queries orphaned.
+  const switchTo = (organizationId: string) =>
+    authData(authClient.organization.setActive({ organizationId })).then(
+      () => window.location.reload(),
+      (error: Error) =>
+        toast.error(translateEvent('Could not switch organization'), {
+          description: translateError(error.message),
+        })
+    );
+
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger className="gap-2">
+        <OrganizationAvatar name={activeName} />
+        <span className="flex-1 truncate">{activeName}</span>
+      </DropdownMenuSubTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuSubContent className="min-w-56">
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            {t('Organizations')}
+          </DropdownMenuLabel>
+          {organizations.isPending ? (
+            <DropdownMenuItem disabled>{t('Loading…')}</DropdownMenuItem>
+          ) : organizations.isError ? (
+            <DropdownMenuLabel className="text-xs font-normal text-destructive">
+              {translateError(organizations.error.message)}
+            </DropdownMenuLabel>
+          ) : (
+            organizations.data.map((organization) => (
+              <DropdownMenuItem
+                key={organization.id}
+                className="gap-2"
+                onSelect={() => {
+                  if (organization.id !== activeId)
+                    void switchTo(organization.id);
+                }}
+              >
+                <OrganizationAvatar
+                  name={organization.name}
+                  logo={organization.logo}
+                />
+                <span className="flex-1 truncate">{organization.name}</span>
+                {organization.id === activeId ? (
+                  <Check className="size-4" aria-label={t('Current')} />
+                ) : null}
+              </DropdownMenuItem>
+            ))
+          )}
+        </DropdownMenuSubContent>
+      </DropdownMenuPortal>
+    </DropdownMenuSub>
   );
 }
 
@@ -208,18 +294,4 @@ function AdminMenuItem() {
       </DropdownMenuItem>
     </>
   );
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0];
-  const last = parts[parts.length - 1];
-  if (!first || !last) return '';
-  if (parts.length === 1) {
-    return first.substring(0, 2).toUpperCase();
-  }
-  const firstChar = first[0];
-  const lastChar = last[0];
-  if (!firstChar || !lastChar) return '';
-  return (firstChar + lastChar).toUpperCase();
 }

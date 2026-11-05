@@ -1,7 +1,7 @@
 /**
  * requireCredits BYOK bypass — a fal key must satisfy the openrouter
  * requirement too, since LLM calls route through fal's OpenRouter endpoint
- * (issue #895). Regression: fal-only teams were blocked with "Insufficient
+ * (issue #895). Regression: fal-only organizations were blocked with "Insufficient
  * credits for script enhancement". An LLMTR key covers the same requirement:
  * it fronts most of the registry directly.
  */
@@ -189,7 +189,7 @@ describe('reserveRunCredits', () => {
     await expect(reserveRunCredits(db, COST)).resolves.toBeUndefined();
   });
 
-  it('creates an envelope when the team can pay', async () => {
+  it('creates an envelope when the organization can pay', async () => {
     const db = fakeScopedDb({ keys: [], canAfford: true });
     await expect(reserveRunCredits(db, COST)).resolves.toBe('res_1');
   });
@@ -251,7 +251,7 @@ describe('releaseReservationOnThrow', () => {
 });
 
 describe('actual LLM credential coverage', () => {
-  it.each([['platform'] as const, ['team', 'platform'] as const])(
+  it.each([['platform'] as const, ['organization', 'platform'] as const])(
     'rejects zero-balance platform text spend despite a usable media key: %j',
     async (...llmSources) => {
       const db = fakeScopedDb({ keys: ['fal', 'openrouter'] });
@@ -276,7 +276,7 @@ describe('actual LLM credential coverage', () => {
     expect(
       await reserveRunCredits(db, COST, {
         providers: ['fal', 'openrouter'],
-        llmSources: ['team', 'platform'],
+        llmSources: ['organization', 'platform'],
         sequenceId: 'mock-sequence',
         idempotencyKey: 'mock-hold',
       })
@@ -293,13 +293,13 @@ describe('actual LLM credential coverage', () => {
     await expect(
       reserveRunCredits(db, COST, {
         providers: ['fal', 'openrouter'],
-        llmSources: ['team', 'team'],
+        llmSources: ['organization', 'organization'],
       })
     ).resolves.toBeUndefined();
     await expect(
       requireCredits(fakeScopedDb({ keys: [] }), COST, {
         providers: ['openrouter'],
-        llmSources: ['team'],
+        llmSources: ['organization'],
       })
     ).resolves.toBeUndefined();
     expect(createReservation).not.toHaveBeenCalled();
@@ -308,7 +308,7 @@ describe('actual LLM credential coverage', () => {
   it('resolves every distinct model against the supplied run routing snapshot', async () => {
     const resolveLlmKey = vi.fn(async (model: string) => ({
       key: 'mock-key',
-      source: model === 'custom:helper' ? 'platform' : 'team',
+      source: model === 'custom:helper' ? 'platform' : 'organization',
     }));
     const db = asStub<ScopedDb>({ apiKeys: { resolveLlmKey } });
     const routing: [] = [];
@@ -318,7 +318,7 @@ describe('actual LLM credential coverage', () => {
         ['builtin', 'custom:helper', 'builtin'],
         routing
       )
-    ).toEqual(['team', 'platform']);
+    ).toEqual(['organization', 'platform']);
     expect(resolveLlmKey.mock.calls.map(([model]) => model)).toEqual([
       'builtin',
       'custom:helper',

@@ -12,7 +12,7 @@ import {
   useSequencesWithShots,
   type SequenceWithShots,
 } from '@/sequences/ui/use-sequences-with-shots';
-import { useTeamDivergentSequenceVariants } from '@/audio/ui/use-sequence-variants';
+import { useOrganizationDivergentSequenceVariants } from '@/audio/ui/use-sequence-variants';
 import { useStyles } from '@/look/ui/use-styles';
 import { systemAdminStatusQueryOptions } from '@/billing/ui/system-admin-status';
 import { useQuery, useInfiniteQuery, useQueries } from '@tanstack/react-query';
@@ -243,7 +243,7 @@ export const EvalView: React.FC<EvalViewProps> = ({
   );
 
   // Styles let search match a style's name and resolve ids → names for the
-  // filter dropdown. The list covers the team's styles plus public ones.
+  // filter dropdown. The list covers the organization's styles plus public ones.
   const { data: styles } = useStyles();
   const locale = i18n.resolvedLanguage;
   const styleNameById = useMemo(() => {
@@ -271,9 +271,9 @@ export const EvalView: React.FC<EvalViewProps> = ({
   const error = supportMode ? adminData.error : ownData.error;
 
   // Only offer styles that actually appear in the loaded sequences — listing
-  // every team/public style would clutter the filter with options that match
+  // every organization/public style would clutter the filter with options that match
   // nothing. Fall back to the raw styleId when a name isn't resolvable (e.g. a
-  // cross-team style in support mode) so the option still filters correctly.
+  // cross-organization style in support mode) so the option still filters correctly.
   const styleOptions = useMemo(() => {
     const seen = new Map<string, string>();
     for (const seq of sequences) {
@@ -286,20 +286,21 @@ export const EvalView: React.FC<EvalViewProps> = ({
     return [{ value: 'all', label: t('All styles') }, ...options];
   }, [sequences, styleNameById, t]);
 
-  // Team-scoped divergence flags so own-data rows show a "variants available"
-  // dot. In support mode rows belong to other teams, so the flag is irrelevant.
-  const { data: divergentByTeam } = useTeamDivergentSequenceVariants(
-    !supportMode && loadShots && sequences.length > 0
-  );
+  // Organization-scoped divergence flags so own-data rows show a "variants available"
+  // dot. In support mode rows belong to other organizations, so the flag is irrelevant.
+  const { data: divergentByOrganization } =
+    useOrganizationDivergentSequenceVariants(
+      !supportMode && loadShots && sequences.length > 0
+    );
   const divergenceMap = useMemo(() => {
     const map = new Map<string, { hasMusic: boolean }>();
-    for (const row of divergentByTeam ?? []) {
+    for (const row of divergentByOrganization ?? []) {
       map.set(row.sequenceId, {
         hasMusic: row.hasMusic,
       });
     }
     return map;
-  }, [divergentByTeam]);
+  }, [divergentByOrganization]);
 
   // Deep link wins: when a specific user is requested, never hide them.
   const effectiveHideInternal =
@@ -471,7 +472,7 @@ export const EvalView: React.FC<EvalViewProps> = ({
         </Button>
       )}
       {/* Archived strip (#1108 Phase 4) — own-data only; renders nothing when
-          the team has no archived sequences. */}
+          the organization has no archived sequences. */}
       {!supportMode && <ArchivedSequences />}
     </div>
   );

@@ -499,7 +499,7 @@ describe('character bible round-trip — stamp matches verify (#867)', () => {
     styling: null,
     // Cast in its sequence (#2017).
     castId: 'cast-1',
-    teamId: 'team-1',
+    organizationId: 'org-1',
     selectedBibleVersionId: 'bible-1',
     pendingPromoteSheetVersionId: null,
     deletedAt: null,
@@ -570,7 +570,7 @@ describe('location/element bible round-trip — stamp matches verify (#867)', ()
     l: LocationBibleEntry
   ): SequenceLocationWithReference => ({
     id: `row_${l.locationId}`,
-    teamId: 'team_1',
+    organizationId: 'team_1',
     legacyLibraryReferenceHash: null,
     linkId: `link_${l.locationId}`,
     attached: false,
@@ -594,6 +594,7 @@ describe('location/element bible round-trip — stamp matches verify (#867)', ()
     referenceGeneratedAt: null,
     referenceError: null,
     referenceInputHash: null,
+    referencePersonInMedia: false,
     selectedReferenceVersionId: null,
     selectedBibleVersionId: null,
     pendingPromoteReferenceVersionId: null,
@@ -613,6 +614,7 @@ describe('location/element bible round-trip — stamp matches verify (#867)', ()
     consistencyTag: e.consistencyTag,
     imageUrl: 'https://example.com/logo.png',
     imagePath: 'elements/logo.png',
+    personInMedia: false,
     visionStatus: 'completed',
     visionError: null,
     visionGeneratedAt: null,

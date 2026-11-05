@@ -23,6 +23,7 @@ import type {
   SequenceLocationWithReference,
 } from '@/platform/server/db/schema';
 import { productionAccess } from '@/sequences/server/production-access';
+import { NotFoundError } from '@/platform/errors';
 
 const referenceSchema = z.object({
   id: z.string(),
@@ -148,8 +149,15 @@ export const characterReadSchema = createSelectSchema(characters)
     // look's.
     looks: z.array(characterLookReadSchema),
   });
+/** An organization character read from no sequence (#2252): no cast link, no sequence voice default. */
+export const libraryCharacterReadSchema = characterReadSchema
+  .omit({ sequenceId: true, characterId: true, effectiveUseVoice: true })
+  .extend({
+    lastUsedAt: readDate.nullable(),
+    sequences: z.array(z.object({ id: z.string(), title: z.string() })),
+  });
 /**
- * A location as a sequence uses it (#1695): the team's location at its
+ * A location as a sequence uses it (#1695): the organization's location at its
  * current bible, plus the sequence's link. `locationId` is the script id.
  */
 export const locationReadSchema = createSelectSchema(locations)
@@ -307,6 +315,34 @@ export async function readCharacter(
   ]);
   if (!read) throw new Error('Character disappeared during inspection');
   return inspectCharacter(read, sequence.generateVoices, origin);
+}
+export async function readOrganizationCharacter(
+  scopedDb: ScopedDb,
+  characterId: string,
+  origin: string
+) {
+  const [current, use] = await Promise.all([
+    scopedDb.characters.getCurrent(characterId),
+    scopedDb.characters.getOrganizationCharacter(characterId),
+  ]);
+  if (!current || !use) throw new NotFoundError('Character not found');
+  const [read] = await characterSheets(scopedDb, [current]);
+  if (!read) throw new Error('Character disappeared during inspection');
+  return projectRead(
+    libraryCharacterReadSchema,
+    {
+      ...read.row,
+      distinguishingFeatures: read.row.legacyDistinguishingFeatures,
+      selectedSheet: read.sheet,
+      looks: read.row.looks.map((look) => ({
+        ...look,
+        versionId: look.lookVersionId,
+      })),
+      lastUsedAt: use.lastUsedAt,
+      sequences: use.sequences,
+    },
+    origin
+  );
 }
 export async function listLocations(
   scopedDb: ScopedDb,

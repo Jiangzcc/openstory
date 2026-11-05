@@ -186,6 +186,6 @@ export async function draftStudioPrompt(
       model,
       model === input.model && via === input.llmKey?.via ? input.llmKey : via
     ),
-    usedOwnKey: input.llmKey?.source === 'team',
+    usedOwnKey: input.llmKey?.source === 'organization',
   };
 }

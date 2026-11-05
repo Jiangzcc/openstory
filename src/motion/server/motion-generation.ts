@@ -201,10 +201,10 @@ async function resolveOptionalXaiKey(
 }
 
 /**
- * Can this model render a reference-only shot FOR THIS TEAM?
+ * Can this model render a reference-only shot FOR THIS ORGANIZATION?
  *
  * `supportsReferenceOnlyMotion` is the model-only floor for isomorphic code,
- * keyed on the model alone because a pure schema cannot see a team's keys.
+ * keyed on the model alone because a pure schema cannot see an organization's keys.
  * Here the via IS knowable, so the answer can be the honest one — which
  * matters for Grok Imagine: it accepts references with no start frame on the
  * native xAI route (`resolveMotionEndpoint` already returns `inline` for it),
@@ -212,7 +212,7 @@ async function resolveOptionalXaiKey(
  * requires `image_url`. So Grok can serve a reference-only shot exactly when
  * an xAI key resolves.
  *
- * Use this wherever a team's keys are reachable: creation, the per-shot
+ * Use this wherever an organization's keys are reachable: creation, the per-shot
  * toggle, regenerate, add-model, and the content-flag rescue. A key can still
  * be revoked between creation and submit, so `MotionWorkflow`'s entry guard
  * re-asks.
@@ -261,7 +261,7 @@ async function resolveMotionRoute(
     return {
       via: claimBytePlusVia({
         native: true,
-        usingOwnFalKey: falKey?.source === 'team',
+        usingOwnFalKey: falKey?.source === 'organization',
       }),
     };
   }
@@ -269,8 +269,8 @@ async function resolveMotionRoute(
 }
 
 /**
- * Whether Seedance 2.5 submits to Ark for this team right now: the `onArk`
- * every edit decision takes (#2036). A team on its own fal key lands on fal,
+ * Whether Seedance 2.5 submits to Ark for this organization right now: the `onArk`
+ * every edit decision takes (#2036). An organization on its own fal key lands on fal,
  * which never sends an edit.
  */
 export async function seedanceRunsOnArk(
@@ -402,7 +402,7 @@ async function submitFalMotionJob(
   });
   return {
     jobId: job.jobId,
-    usedOwnKey: key.source === 'team',
+    usedOwnKey: key.source === 'organization',
     endpointId: endpoint.endpointId,
   };
 }
@@ -431,18 +431,23 @@ type MotionRef = NonNullable<GenerateMotionOptions['referenceImages']>[number];
  * when {@link registersWithArk}, else as `plain`. A reference clip is always
  * registered, as a Video asset (#1930): Ark refuses a lifelike face in a clip
  * sent as a URL. The run has already refused a clip the ledger has not
- * cleared or signed (`check-reference-clip-rights`). Location/element
- * sheets and audio are never ingested. Submit uses the same helper so
+ * cleared or signed (`check-reference-clip-rights`). A location/element
+ * still is ingested unless its upload is known to show no person
+ * (`personInMedia`, #2238); audio never is. Submit uses the same helper so
  * `arkUrlFor` is not asked for a URL the map does not hold.
  */
 function arkStillForMotionRef(ref: MotionRef): ArkStill | null {
-  // ponytail: every clip spends a CreateAsset turn; snapshot the ledger
-  // verdict on the ref if clips without a person ever crowd the pool.
+  // ponytail: every clip spends a CreateAsset turn; gate clips on
+  // `personInMedia` too if clips without a person ever crowd the pool.
   if (ref.kind === 'video') {
     return { storedUrl: ref.referenceImageUrl, slot: 'library', kind: 'Video' };
   }
-  if (ref.role === 'location' || ref.role === 'element') return null;
   if (ref.kind === 'audio') return null;
+  if (ref.role === 'location' || ref.role === 'element') {
+    return registersWithArk(ref.personInMedia)
+      ? { storedUrl: ref.referenceImageUrl, slot: 'library' }
+      : null;
+  }
   return {
     storedUrl: ref.referenceImageUrl,
     slot: 'library',
@@ -451,12 +456,12 @@ function arkStillForMotionRef(ref: MotionRef): ArkStill | null {
 }
 
 /**
- * The stills a BytePlus submit needs registered: the start frame and every
- * character sheet that may show a person. CreateAsset is paced by
- * `BYTEPLUS_ASSET_WRITE_QPM`, so location and element sheets — no people —
- * are not spent on, and neither are non-person character sheets (#1682).
- * Those still go through ingest as `plain` so submit looks them up in the
- * same map. The workflow runs these through `ingestArkAssets` before
+ * The stills a BytePlus submit needs registered: the start frame, every
+ * character sheet that may show a person, and every location/element still
+ * whose upload showed one (`personInMedia`, #2238). CreateAsset is paced by
+ * `BYTEPLUS_ASSET_WRITE_QPM`, so other location and element sheets are not
+ * ingested at all, and non-person character sheets (#1682) go through ingest
+ * as `plain` so submit looks them up in the same map. The workflow runs these through `ingestArkAssets` before
  * submit.
  */
 export function arkStillsForMotion(
@@ -509,7 +514,7 @@ async function submitMotionJobOnce(
   // Same order as Grok (#1167): native key first, fal is the fallback.
   // `resolveKey('fal')` throws with no fal key, so an xAI-only (or
   // Google-only) deploy must not reach it. BytePlus is platform-only (no
-  // resolveOptionalKey('byteplus')) and yields to a BYOK fal team.
+  // resolveOptionalKey('byteplus')) and yields to a BYOK fal organization.
   const route = await resolveMotionRoute(modelKey, options.credentials);
   const { via } = route;
   const xaiKey = route.via === 'xai' ? route.xaiKey : undefined;
@@ -615,7 +620,7 @@ async function submitMotionJobOnce(
   }
 
   // Draft mode is an Ark feature (#1756): a draft-capable model that lands
-  // on fal (a BYOK fal team) cannot honour it, and saying so beats a full
+  // on fal (a BYOK fal organization) cannot honour it, and saying so beats a full
   // render the user thought was a cheap preview. A model without draft mode
   // ignores the flag, like `generateAudio` on a silent model. A final is
   // never a draft, whatever its payload says: its task id must not be stamped.
@@ -625,7 +630,7 @@ async function submitMotionJobOnce(
     supportsDraftMode(modelKey);
   if ((draft || options.finalFromDraftTaskId) && via !== 'byteplus') {
     throw new Error(
-      `Draft mode needs the BytePlus route, but ${IMAGE_TO_VIDEO_MODELS[modelKey].name} is routed to ${via} for this team`
+      `Draft mode needs the BytePlus route, but ${IMAGE_TO_VIDEO_MODELS[modelKey].name} is routed to ${via} for this organization`
     );
   }
 
@@ -669,7 +674,7 @@ async function submitMotionJobOnce(
         debug: false,
       });
       jobId = job.jobId;
-      usedOwnKey = xaiKey.source === 'team';
+      usedOwnKey = xaiKey.source === 'organization';
       break;
     }
     case 'google': {
@@ -707,7 +712,7 @@ async function submitMotionJobOnce(
         debug: false,
       });
       jobId = job.jobId;
-      usedOwnKey = googleKey.source === 'team';
+      usedOwnKey = googleKey.source === 'organization';
       break;
     }
     case 'fal': {
@@ -751,8 +756,9 @@ async function submitMotionJobOnce(
       if (referenceImages?.length) {
         referenceImages = [];
         for (const ref of options.referenceImages ?? []) {
-          // Same helper as `arkStillsForMotion`: ingested stills (faces as
-          // asset://, non-person sheets as `plain`) live in the map.
+          // Same helper as `arkStillsForMotion`: ingested stills (faces and
+          // `personInMedia` uploads as asset://, non-person character sheets
+          // as `plain`) live in the map.
           const registered = arkStillForMotionRef(ref) !== null;
           referenceImages.push({
             ...ref,

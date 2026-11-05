@@ -50,7 +50,7 @@ function mockScope() {
   const apiKeys = createApiKeysReadMethods(db, 'mock-team');
   return {
     apiKeys,
-    scopedDb: asStub<ScopedDb>({ apiKeys, teamId: 'mock-team' }),
+    scopedDb: asStub<ScopedDb>({ apiKeys, organizationId: 'mock-team' }),
   };
 }
 

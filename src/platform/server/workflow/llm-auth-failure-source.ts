@@ -9,7 +9,7 @@ export type LlmAuthFailureSource = {
 const UNAUTHORIZED_STATUS = 401;
 const SOURCE_PREFIX = '[llm-auth:v1:';
 const SOURCE_PATTERN =
-  /^(?:\w*Error:\s*)*\[llm-auth:v1:(team|platform):(openrouter|fal|xai|google|llmtr|compatible):([^\]\s]+)\] /;
+  /^(?:\w*Error:\s*)*\[llm-auth:v1:(organization|team|platform):(openrouter|fal|xai|google|llmtr|compatible):([^\]\s]+)\] /;
 const KEY_VIAS = [
   'openrouter',
   'fal',
@@ -63,12 +63,16 @@ export function readLlmAuthFailureSource(
 ): (LlmAuthFailureSource & { message: string }) | undefined {
   const match = SOURCE_PATTERN.exec(message);
   if (!match) return undefined;
-  const source = match[1];
+  const source = match[1] === 'team' ? 'organization' : match[1];
   const via = KEY_VIAS.find((candidate) => candidate === match[2]);
   const encodedModel = match[3];
-  if (!via || !encodedModel || (source !== 'team' && source !== 'platform'))
+  if (
+    !via ||
+    !encodedModel ||
+    (source !== 'organization' && source !== 'platform')
+  )
     return undefined;
-  if (source === 'team' && via === 'compatible') return undefined;
+  if (source === 'organization' && via === 'compatible') return undefined;
   try {
     const model = decodeURIComponent(encodedModel);
     if (!model) return undefined;

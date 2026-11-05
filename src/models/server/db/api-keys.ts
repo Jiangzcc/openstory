@@ -1,7 +1,7 @@
 /**
  * Scoped API Keys Sub-module
- * Team-scoped API key management for external providers. Handles CRUD
- * operations and key resolution (team key -> platform fallback). `via` is
+ * Organization-scoped API key management for external providers. Handles CRUD
+ * operations and key resolution (organization key -> platform fallback). `via` is
  * which API the resolved key belongs to.
  */
 
@@ -26,13 +26,16 @@ import {
   encryptApiKey,
   getKeyHint,
 } from '@/platform/server/crypto/api-key-encryption';
-import { type ApiKeyProvider, teamApiKeys } from '@/platform/server/db/schema';
+import {
+  type ApiKeyProvider,
+  organizationApiKeys,
+} from '@/platform/server/db/schema';
 
 import { getLogger, serializeError } from '@/platform/logger';
 
 /**
  * Platform-only providers that `resolveKey` can spend but that are NOT on
- * `API_KEY_PROVIDERS` — no team row, no Settings UI, no BYOK. Designed
+ * `API_KEY_PROVIDERS` — no organization row, no Settings UI, no BYOK. Designed
  * ElevenLabs voices live in the account that created them (#1552); Seed
  * Speech is the BytePlus account's (#1765).
  */
@@ -53,15 +56,15 @@ type ApiKeyInfo = {
   createdAt: Date;
 };
 
-// `fallbackReason` is set when a team key existed but was skipped (invalid
+// `fallbackReason` is set when an organization key existed but was skipped (invalid
 // or undecryptable); callers use it to surface the BYOK fallback.
 export type ResolvedApiKey =
-  | { key: string; source: 'team' }
+  | { key: string; source: 'organization' }
   | { key: string; source: 'platform'; fallbackReason?: string };
 
 // LLM-call key resolution. `via` says which API the call must be routed
 // through: 'openrouter' = OpenRouter directly (Bearer auth), 'fal' = fal's
-// OpenAI-compatible OpenRouter endpoint (`Key` auth) so a team with only a
+// OpenAI-compatible OpenRouter endpoint (`Key` auth) so an organization with only a
 // fal key still covers LLM calls (issue #895), 'xai' = xAI's own Responses
 // API for Grok models (issue #1167), 'google' = Google's own Gemini API for
 // Gemini models, 'llmtr' = the LLMTR gateway (Bearer auth, OpenAI Chat
@@ -73,7 +76,7 @@ export type ResolvedLlmKey =
       fallbackReason?: never;
     });
 
-// The cached shape of a `team_api_keys` lookup. Holds the *encrypted* row
+// The cached shape of a `organization_api_keys` lookup. Holds the *encrypted* row
 // (ciphertext + invalid flag) only — never the decrypted key. `resolveKey`
 // memoizes this per scope to avoid redundant D1 reads, then decrypts fresh on
 // each call so plaintext is never retained in the cache (issue #864).
@@ -88,7 +91,7 @@ type CachedKeyLookup =
       invalidReason: string | null;
     };
 
-export function createApiKeysReadMethods(db: Database, teamId: string) {
+export function createApiKeysReadMethods(db: Database, organizationId: string) {
   const textChannels = createTextChannelsReadMethods(db);
   let routingSnapshotPromise: Promise<TextModelRoutingSnapshot> | undefined;
   // Per-scope memoization of the `team_api_keys` row lookup. A ScopedDb is
@@ -101,7 +104,7 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
   // We cache only the *encrypted* row (ciphertext + invalid flag), never the
   // decrypted key — `resolveKey` decrypts fresh on each call, so the plaintext
   // key lives only for the duration of one call rather than the whole run. The
-  // cache is in-isolate heap, scoped to one team, and never persisted.
+  // cache is in-isolate heap, scoped to one organization, and never persisted.
   const keyLookupCache = new Map<ApiKeyProvider, Promise<CachedKeyLookup>>();
 
   // Drop a cached lookup so the next resolveKey re-reads from D1. Called by the
@@ -115,32 +118,32 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
   async function listKeys(): Promise<ApiKeyInfo[]> {
     const rows = await db
       .select({
-        id: teamApiKeys.id,
-        provider: teamApiKeys.provider,
-        keyHint: teamApiKeys.keyHint,
-        source: teamApiKeys.source,
-        isActive: teamApiKeys.isActive,
-        isInvalid: teamApiKeys.isInvalid,
-        invalidReason: teamApiKeys.invalidReason,
-        lastValidatedAt: teamApiKeys.lastValidatedAt,
-        addedBy: teamApiKeys.addedBy,
-        createdAt: teamApiKeys.createdAt,
+        id: organizationApiKeys.id,
+        provider: organizationApiKeys.provider,
+        keyHint: organizationApiKeys.keyHint,
+        source: organizationApiKeys.source,
+        isActive: organizationApiKeys.isActive,
+        isInvalid: organizationApiKeys.isInvalid,
+        invalidReason: organizationApiKeys.invalidReason,
+        lastValidatedAt: organizationApiKeys.lastValidatedAt,
+        addedBy: organizationApiKeys.addedBy,
+        createdAt: organizationApiKeys.createdAt,
       })
-      .from(teamApiKeys)
-      .where(eq(teamApiKeys.teamId, teamId));
+      .from(organizationApiKeys)
+      .where(eq(organizationApiKeys.organizationId, organizationId));
 
     return rows;
   }
 
   async function hasKey(provider: ApiKeyProvider): Promise<boolean> {
     const [row] = await db
-      .select({ id: teamApiKeys.id })
-      .from(teamApiKeys)
+      .select({ id: organizationApiKeys.id })
+      .from(organizationApiKeys)
       .where(
         and(
-          eq(teamApiKeys.teamId, teamId),
-          eq(teamApiKeys.provider, provider),
-          eq(teamApiKeys.isActive, true)
+          eq(organizationApiKeys.organizationId, organizationId),
+          eq(organizationApiKeys.provider, provider),
+          eq(organizationApiKeys.isActive, true)
         )
       )
       .limit(1);
@@ -154,14 +157,14 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
   // must not bypass a credit check or render as covering generation.
   async function hasUsableKey(provider: ApiKeyProvider): Promise<boolean> {
     const [row] = await db
-      .select({ id: teamApiKeys.id })
-      .from(teamApiKeys)
+      .select({ id: organizationApiKeys.id })
+      .from(organizationApiKeys)
       .where(
         and(
-          eq(teamApiKeys.teamId, teamId),
-          eq(teamApiKeys.provider, provider),
-          eq(teamApiKeys.isActive, true),
-          eq(teamApiKeys.isInvalid, false)
+          eq(organizationApiKeys.organizationId, organizationId),
+          eq(organizationApiKeys.provider, provider),
+          eq(organizationApiKeys.isActive, true),
+          eq(organizationApiKeys.isInvalid, false)
         )
       )
       .limit(1);
@@ -171,14 +174,14 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
 
   async function hasInvalidKey(provider: ApiKeyProvider): Promise<boolean> {
     const [row] = await db
-      .select({ id: teamApiKeys.id })
-      .from(teamApiKeys)
+      .select({ id: organizationApiKeys.id })
+      .from(organizationApiKeys)
       .where(
         and(
-          eq(teamApiKeys.teamId, teamId),
-          eq(teamApiKeys.provider, provider),
-          eq(teamApiKeys.isActive, true),
-          eq(teamApiKeys.isInvalid, true)
+          eq(organizationApiKeys.organizationId, organizationId),
+          eq(organizationApiKeys.provider, provider),
+          eq(organizationApiKeys.isActive, true),
+          eq(organizationApiKeys.isInvalid, true)
         )
       )
       .limit(1);
@@ -186,7 +189,7 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
     return !!row;
   }
 
-  // Read the encrypted `team_api_keys` row for `provider`, memoized per scope:
+  // Read the encrypted `organization_api_keys` row for `provider`, memoized per scope:
   // D1 is hit at most once per provider per run, and concurrent in-flight reads
   // collapse onto the same promise. A rejected read is evicted so a later caller
   // (or a step retry in a surviving isolate) can re-read rather than inheriting
@@ -210,18 +213,18 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
   ): Promise<CachedKeyLookup> {
     const [row] = await db
       .select({
-        encryptedKey: teamApiKeys.encryptedKey,
-        keyIv: teamApiKeys.keyIv,
-        keyTag: teamApiKeys.keyTag,
-        isInvalid: teamApiKeys.isInvalid,
-        invalidReason: teamApiKeys.invalidReason,
+        encryptedKey: organizationApiKeys.encryptedKey,
+        keyIv: organizationApiKeys.keyIv,
+        keyTag: organizationApiKeys.keyTag,
+        isInvalid: organizationApiKeys.isInvalid,
+        invalidReason: organizationApiKeys.invalidReason,
       })
-      .from(teamApiKeys)
+      .from(organizationApiKeys)
       .where(
         and(
-          eq(teamApiKeys.teamId, teamId),
-          eq(teamApiKeys.provider, provider),
-          eq(teamApiKeys.isActive, true)
+          eq(organizationApiKeys.organizationId, organizationId),
+          eq(organizationApiKeys.provider, provider),
+          eq(organizationApiKeys.isActive, true)
         )
       )
       .limit(1);
@@ -243,9 +246,9 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
       // step boundary, so this is the only place the real D1 reason (overload
       // vs connection-reset vs rate-limit) is observable. This read sits on
       // every generation path and is the first to fail under burst (#864).
-      logger.error('team_api_keys read failed', {
+      logger.error('organization_api_keys read failed', {
         provider,
-        teamId,
+        organizationId,
         err: serializeError(err),
       });
       throw err;
@@ -276,11 +279,11 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
           : 'Could not decrypt stored key';
       logger.error('Decryption failed, marking key invalid', {
         provider,
-        teamId,
+        organizationId,
         error: err,
       });
       await db
-        .update(teamApiKeys)
+        .update(organizationApiKeys)
         .set({
           isInvalid: true,
           invalidReason: reason,
@@ -289,8 +292,8 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
         })
         .where(
           and(
-            eq(teamApiKeys.teamId, teamId),
-            eq(teamApiKeys.provider, provider)
+            eq(organizationApiKeys.organizationId, organizationId),
+            eq(organizationApiKeys.provider, provider)
           )
         );
       // Flip the cached lookup to invalid so other calls in this scope skip the
@@ -315,10 +318,10 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
       case 'google':
         return env.GEMINI_API_KEY || undefined;
       case 'llmtr':
-        // Team BYOK only — OpenRouter/fal cover platform LLM calls.
+        // Organization BYOK only — OpenRouter/fal cover platform LLM calls.
         return undefined;
       case 'upload_post':
-        // Publishing always posts to the team's OWN social accounts, so
+        // Publishing always posts to the organization's OWN social accounts, so
         // there is deliberately no platform-level fallback (#1267).
         return undefined;
       default: {
@@ -345,34 +348,35 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
       return key ? { key, source: 'platform' } : undefined;
     }
 
-    const teamProvider: ApiKeyProvider = provider;
+    const organizationProvider: ApiKeyProvider = provider;
 
     function platformFallback(
       fallbackReason?: string
     ): ResolvedApiKey | undefined {
-      const platformKey = platformKeyFor(teamProvider);
+      const platformKey = platformKeyFor(organizationProvider);
       if (!platformKey) return undefined;
       return { key: platformKey, source: 'platform', fallbackReason };
     }
 
-    const lookup = await readKeyRowLogged(teamProvider);
+    const lookup = await readKeyRowLogged(organizationProvider);
 
     if (!lookup.found) return platformFallback();
 
     if (lookup.isInvalid) {
-      const reason = lookup.invalidReason ?? 'Team API key marked invalid';
+      const reason =
+        lookup.invalidReason ?? 'Organization API key marked invalid';
       const fallback = platformFallback(reason);
       logger.warn(
         fallback
           ? 'Falling back to platform key'
-          : 'Team API key marked invalid; no platform key',
-        { provider, teamId, reason }
+          : 'Organization API key marked invalid; no platform key',
+        { provider, organizationId, reason }
       );
       return fallback;
     }
 
     const result = await decryptOrMarkInvalid(provider, lookup);
-    if ('key' in result) return { key: result.key, source: 'team' };
+    if ('key' in result) return { key: result.key, source: 'organization' };
     return platformFallback(result.skippedReason);
   }
 
@@ -389,9 +393,9 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
     return resolved;
   }
 
-  // Resolve the team key for a gateway that only fronts *some* models, given
+  // Resolve the organization key for a gateway that only fronts *some* models, given
   // the row already read. Returns the key, or the reason it was skipped.
-  async function teamGatewayKey(
+  async function organizationGatewayKey(
     provider: ApiKeyProvider,
     lookup: CachedKeyLookup
   ): Promise<{ key: string } | { skippedReason?: string }> {
@@ -399,7 +403,7 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
     if (lookup.isInvalid) {
       return {
         skippedReason:
-          lookup.invalidReason ?? `Team ${provider} key marked invalid`,
+          lookup.invalidReason ?? `Organization ${provider} key marked invalid`,
       };
     }
     return decryptOrMarkInvalid(provider, lookup);
@@ -414,14 +418,14 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
         (await (routingSnapshotPromise ??= textChannels.getSnapshot())))
       : [];
     const resolved = await resolveLlmKeyForModel(model, snapshot, {
-      teamKey: async (provider) =>
-        teamGatewayKey(provider, await readKeyRowLogged(provider)),
+      organizationKey: async (provider) =>
+        organizationGatewayKey(provider, await readKeyRowLogged(provider)),
       channelSecret: textChannels.resolveSecret,
     });
     if (resolved.source === 'platform' && resolved.fallbackReason) {
       logger.warn('Falling back to platform key', {
         provider: resolved.via,
-        teamId,
+        organizationId,
         reason: resolved.fallbackReason,
       });
     }
@@ -559,17 +563,17 @@ export function createApiKeysReadMethods(db: Database, teamId: string) {
 
 export function createApiKeysMethods(
   db: Database,
-  teamId: string,
+  organizationId: string,
   userId: string
 ) {
-  const readMethods = createApiKeysReadMethods(db, teamId);
+  const readMethods = createApiKeysReadMethods(db, organizationId);
 
   const markKeyInvalid = async (
     provider: ApiKeyProvider,
     reason: string
   ): Promise<void> => {
     await db
-      .update(teamApiKeys)
+      .update(organizationApiKeys)
       .set({
         isInvalid: true,
         invalidReason: reason,
@@ -577,14 +581,17 @@ export function createApiKeysMethods(
         updatedAt: new Date(),
       })
       .where(
-        and(eq(teamApiKeys.teamId, teamId), eq(teamApiKeys.provider, provider))
+        and(
+          eq(organizationApiKeys.organizationId, organizationId),
+          eq(organizationApiKeys.provider, provider)
+        )
       );
     readMethods.invalidateResolveKeyCache(provider);
   };
 
   const markKeyValid = async (provider: ApiKeyProvider): Promise<void> => {
     await db
-      .update(teamApiKeys)
+      .update(organizationApiKeys)
       .set({
         isInvalid: false,
         invalidReason: null,
@@ -592,7 +599,10 @@ export function createApiKeysMethods(
         updatedAt: new Date(),
       })
       .where(
-        and(eq(teamApiKeys.teamId, teamId), eq(teamApiKeys.provider, provider))
+        and(
+          eq(organizationApiKeys.organizationId, organizationId),
+          eq(organizationApiKeys.provider, provider)
+        )
       );
     readMethods.invalidateResolveKeyCache(provider);
   };
@@ -602,16 +612,16 @@ export function createApiKeysMethods(
   ): Promise<{ valid: boolean; error?: string; hasKey: boolean }> => {
     const [row] = await db
       .select({
-        encryptedKey: teamApiKeys.encryptedKey,
-        keyIv: teamApiKeys.keyIv,
-        keyTag: teamApiKeys.keyTag,
+        encryptedKey: organizationApiKeys.encryptedKey,
+        keyIv: organizationApiKeys.keyIv,
+        keyTag: organizationApiKeys.keyTag,
       })
-      .from(teamApiKeys)
+      .from(organizationApiKeys)
       .where(
         and(
-          eq(teamApiKeys.teamId, teamId),
-          eq(teamApiKeys.provider, provider),
-          eq(teamApiKeys.isActive, true)
+          eq(organizationApiKeys.organizationId, organizationId),
+          eq(organizationApiKeys.provider, provider),
+          eq(organizationApiKeys.isActive, true)
         )
       )
       .limit(1);
@@ -662,18 +672,18 @@ export function createApiKeysMethods(
       const now = new Date();
 
       await db
-        .delete(teamApiKeys)
+        .delete(organizationApiKeys)
         .where(
           and(
-            eq(teamApiKeys.teamId, teamId),
-            eq(teamApiKeys.provider, params.provider)
+            eq(organizationApiKeys.organizationId, organizationId),
+            eq(organizationApiKeys.provider, params.provider)
           )
         );
 
       const [row] = await db
-        .insert(teamApiKeys)
+        .insert(organizationApiKeys)
         .values({
-          teamId,
+          organizationId,
           provider: params.provider,
           encryptedKey: encrypted.encryptedKey,
           keyIv: encrypted.keyIv,
@@ -692,7 +702,7 @@ export function createApiKeysMethods(
 
       if (!row) {
         throw new Error(
-          `saveKey: insert returned no row for team ${teamId}, provider ${params.provider}`
+          `saveKey: insert returned no row for organization ${organizationId}, provider ${params.provider}`
         );
       }
 
@@ -714,11 +724,11 @@ export function createApiKeysMethods(
 
     deleteKey: async (provider: ApiKeyProvider): Promise<void> => {
       await db
-        .delete(teamApiKeys)
+        .delete(organizationApiKeys)
         .where(
           and(
-            eq(teamApiKeys.teamId, teamId),
-            eq(teamApiKeys.provider, provider)
+            eq(organizationApiKeys.organizationId, organizationId),
+            eq(organizationApiKeys.provider, provider)
           )
         );
       readMethods.invalidateResolveKeyCache(provider);

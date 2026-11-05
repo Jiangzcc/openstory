@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 /**
- * Global search (#2100): one box over everything the team has made. Results
+ * Global search (#2100): one box over everything the organization has made. Results
  * are grouped by kind and each one is a link.
  */
 

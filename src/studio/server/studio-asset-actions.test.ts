@@ -36,7 +36,8 @@ vi.doMock('@/studio/server/studio-prompt-draft', () => ({
 vi.doMock('@/platform/server/storage/storage-cloudflare', () => ({
   deleteFile: vi.fn(),
 }));
-const { draftStudioPromptForTeam } = await import('./studio-asset-actions');
+const { draftStudioPromptForOrganization } =
+  await import('./studio-asset-actions');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -74,7 +75,7 @@ describe('configured Studio prompt draft', () => {
       model: 'anthropic/claude-opus-5.5',
       modelConfiguration: { studioDraft: 'anthropic/claude-opus-5.5' },
     });
-    expect(await draftStudioPromptForTeam(scopedDb, data)).toEqual({
+    expect(await draftStudioPromptForOrganization(scopedDb, data)).toEqual({
       prompt: 'A camera move.',
     });
     expect(resolveLlmKey).toHaveBeenCalledExactlyOnceWith(MODEL, []);
@@ -113,7 +114,7 @@ describe('custom Studio draft routes', () => {
   it('uses the configured custom model and one snapshot for every key lookup', async () => {
     const snapshot = [CUSTOM_ROUTE];
     const { scopedDb, resolveLlmKey } = customDraftContext(snapshot);
-    await draftStudioPromptForTeam(scopedDb, {
+    await draftStudioPromptForOrganization(scopedDb, {
       activity: 'image',
       references: [],
     });
@@ -136,7 +137,7 @@ describe('custom Studio draft routes', () => {
     async ({ snapshot }) => {
       const { scopedDb, resolveLlmKey } = customDraftContext(snapshot);
       await expect(
-        draftStudioPromptForTeam(scopedDb, {
+        draftStudioPromptForOrganization(scopedDb, {
           activity: 'image',
           references: [
             {

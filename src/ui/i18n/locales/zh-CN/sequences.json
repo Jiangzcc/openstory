@@ -332,5 +332,8 @@
   "{{count}} video_other": "{{count}} 段视频",
   "music track": "配乐",
   "{{count}} music track": "{{count}} 首配乐",
-  "{{count}} music track_other": "{{count}} 首配乐"
+  "{{count}} music track_other": "{{count}} 首配乐",
+  "All organizations": "全部组织",
+  "loaded across all organizations": "已从全部组织加载",
+  "Open link": "打开链接"
 }

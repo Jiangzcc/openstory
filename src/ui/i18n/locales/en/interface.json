@@ -369,5 +369,14 @@
   "{{value1}} renders above {{value2}}_other": "{{value1}} render above {{value2}}",
   "Attached": "Attached",
   "Add to this sequence": "Add to this sequence",
-  "Something went wrong": "Something went wrong"
+  "Something went wrong": "Something went wrong",
+  "No active organization on this session.": "No active organization on this session.",
+  "Only an organization admin can manage cards.": "Only an organization admin can manage cards.",
+  "Enter a gift code to add credits to your organization": "Enter a gift code to add credits to your organization",
+  "User": "User",
+  "No organization": "No organization",
+  "Could not switch organization": "Could not switch organization",
+  "Organizations": "Organizations",
+  "Current": "Current",
+  "Loading…": "Loading…"
 }

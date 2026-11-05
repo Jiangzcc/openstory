@@ -17,14 +17,14 @@ import {
 } from '@/ui/shadcn/alert-dialog';
 import { Button } from '@/ui/shadcn/button';
 import {
-  useDeleteTeamCharacter,
-  useRestoreTeamCharacter,
-} from '@/cast/ui/use-team-characters';
+  useDeleteOrganizationCharacter,
+  useRestoreOrganizationCharacter,
+} from '@/cast/ui/use-organization-characters';
 import { errorMessage } from '@/platform/errors';
 import { useHydrated } from '@/ui/use-hydrated';
 
 /**
- * Delete one of the team's characters (#2065), with Undo on the toast.
+ * Delete one of the organization's characters (#2065), with Undo on the toast.
  * Offered only while no sequence casts it; the server refuses otherwise.
  */
 export const DeleteCharacterButton: React.FC<{
@@ -34,8 +34,8 @@ export const DeleteCharacterButton: React.FC<{
   const translateEvent = useLiveTranslation('cast');
   const { t } = useTranslation('cast');
 
-  const remove = useDeleteTeamCharacter();
-  const restore = useRestoreTeamCharacter();
+  const remove = useDeleteOrganizationCharacter();
+  const restore = useRestoreOrganizationCharacter();
   const navigate = useNavigate();
   const hydrated = useHydrated();
 

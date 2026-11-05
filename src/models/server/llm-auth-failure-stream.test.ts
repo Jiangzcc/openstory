@@ -32,7 +32,7 @@ async function* providerFailure(message: string, code: string) {
 function makeDb() {
   const markKeyInvalid = vi.fn(async () => undefined);
   const resolveLlmKey = vi.fn(async () => ({
-    source: 'team',
+    source: 'organization',
     via: 'fal',
     key: 'mock-unrelated-team-key',
   }));
@@ -107,7 +107,7 @@ describe('auth ownership across real LLM region retry control flow (mock provide
   test('team Google region refusal does not cross to a platform payer', async () => {
     const db = makeDb();
     const key = {
-      source: 'team',
+      source: 'organization',
       via: 'google',
       key: 'mock-team-google',
     } as const;
@@ -128,7 +128,7 @@ describe('auth ownership across real LLM region retry control flow (mock provide
   test('a model region retry keeps its actual team via when the retry returns 401', async () => {
     const db = makeDb();
     const key = {
-      source: 'team',
+      source: 'organization',
       via: 'openrouter',
       key: 'mock-team-openrouter',
     } as const;

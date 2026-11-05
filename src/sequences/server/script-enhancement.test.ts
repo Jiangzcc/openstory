@@ -63,7 +63,7 @@ const { streamScriptEnhancement, enhanceScriptToString } =
   await import('./script-enhancement');
 
 function context(
-  source: 'team' | 'platform' = 'team',
+  source: 'organization' | 'platform' = 'organization',
   models: ModelConfiguration = DEFAULT_MODEL_CONFIGURATION,
   snapshot: TextModelRoutingSnapshot = []
 ) {
@@ -80,7 +80,7 @@ function context(
   return {
     scopedDb,
     userId: 'u1',
-    teamId: 't1',
+    organizationId: 't1',
     resolveLlmKey,
     getModelConfiguration,
   };
@@ -205,7 +205,7 @@ describe('configured script enhancement defaults', () => {
 
 it('keeps the user custom model and reuses its snapshot on region retries', async () => {
   const snapshot = [CUSTOM_ROUTE];
-  const c = context('team', DEFAULT_MODEL_CONFIGURATION, snapshot);
+  const c = context('organization', DEFAULT_MODEL_CONFIGURATION, snapshot);
   await enhanceScriptToString(
     { script: 'A cyclist races home.', analysisModel: CUSTOM_ROUTE.modelId },
     c
@@ -223,7 +223,7 @@ it('keeps the user custom model and reuses its snapshot on region retries', asyn
 
 it('uses a custom default from the server configuration', async () => {
   const c = context(
-    'team',
+    'organization',
     { ...DEFAULT_MODEL_CONFIGURATION, defaultAnalysis: CUSTOM_ROUTE.modelId },
     [CUSTOM_ROUTE]
   );
@@ -249,7 +249,7 @@ it('rejects a disabled or unregistered custom id before resolving keys', async (
 });
 
 it('rejects image inputs when the custom model has no vision capability', async () => {
-  const c = context('team', DEFAULT_MODEL_CONFIGURATION, [
+  const c = context('organization', DEFAULT_MODEL_CONFIGURATION, [
     { ...CUSTOM_ROUTE, vision: false },
   ]);
   await expect(

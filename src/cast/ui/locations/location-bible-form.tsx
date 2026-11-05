@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/ui/shadcn/select';
 import { useUpdateSequenceLocation } from '@/cast/ui/use-sequence-locations';
-import { useUpdateTeamLocation } from '@/cast/ui/use-team-locations';
+import { useUpdateOrganizationLocation } from '@/cast/ui/use-organization-locations';
 import type { LocationWithReference } from '@/platform/server/db/schema';
 import { errorMessage } from '@/platform/errors';
 import { toast } from 'sonner';
@@ -43,8 +43,9 @@ export const LocationBibleForm: React.FC<{
   const { t } = useTranslation('cast');
 
   const updateInSequence = useUpdateSequenceLocation();
-  const updateForTeam = useUpdateTeamLocation();
-  const isPending = updateInSequence.isPending || updateForTeam.isPending;
+  const updateForOrganization = useUpdateOrganizationLocation();
+  const isPending =
+    updateInSequence.isPending || updateForOrganization.isPending;
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -67,7 +68,7 @@ export const LocationBibleForm: React.FC<{
         }),
     };
     if (sequenceId === null) {
-      updateForTeam.mutate(
+      updateForOrganization.mutate(
         { locationId: location.id, ...result.data },
         handlers
       );

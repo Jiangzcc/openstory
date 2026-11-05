@@ -244,7 +244,7 @@ export const EvalToolbar: React.FC<EvalToolbarProps> = ({
           />
           {supportMode && (
             <span className="text-xs text-muted-foreground">
-              {t('All teams')}
+              {t('All organizations')}
             </span>
           )}
           {supportMode && hideInternalAvailable && (

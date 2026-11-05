@@ -3,7 +3,7 @@ import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
 import { useTranslation } from 'react-i18next';
 /**
  * Collapsed "Archived" strip under the sequences list (#1108 Phase 4):
- * renders only when the team has archived sequences, expands to a compact
+ * renders only when the organization has archived sequences, expands to a compact
  * row list with per-row Unarchive (restores the recorded prior status).
  */
 

@@ -15,13 +15,17 @@ vi.doMock('@/platform/server/workflow/client', () => ({
 }));
 vi.doMock('#storage', () => ({ fileExists: mockFileExists }));
 vi.doMock('@/cast/server/upload-rights', () => ({
-  requireUploadRights: mockRequireRights,
+  requireUploadRightsFor: mockRequireRights,
 }));
+
+const mockUpdate = vi.fn();
+const mockGetById = vi.fn();
 
 const {
   assertDraftElementUploadsAttachable,
   attachDraftElementUploads,
   attachElementUpload,
+  replaceElementUpload,
 } = await import('./attach-element-upload');
 
 function makeScopedDb(): ScopedDb {
@@ -29,6 +33,8 @@ function makeScopedDb(): ScopedDb {
   return asStub<ScopedDb>({
     sequenceElements: {
       create: mockCreate,
+      update: mockUpdate,
+      getById: mockGetById,
       ensureUniqueToken: mockEnsureUniqueToken,
       updateVisionStatus: mockUpdateVisionStatus,
     },
@@ -39,8 +45,8 @@ function makeUpload(
   overrides: Partial<DraftElementUploadInput> = {}
 ): DraftElementUploadInput {
   return {
-    tempPath: 'elements/team-1/uploads/up-1.png',
-    tempPublicUrl: '/r2/elements/team-1/uploads/up-1.png',
+    tempPath: 'elements/organization-1/uploads/up-1.png',
+    tempPublicUrl: '/r2/elements/organization-1/uploads/up-1.png',
     filename: 'jersey.png',
     token: 'JERSEY',
     description: 'A red jersey',
@@ -55,7 +61,7 @@ function attachDrafts(
 ) {
   return attachDraftElementUploads({
     scopedDb: makeScopedDb(),
-    teamId: 'team-1',
+    organizationId: 'organization-1',
     userId: 'user-1',
     sequenceId,
     uploads,
@@ -72,6 +78,7 @@ beforeEach(() => {
   mockCreate.mockImplementation(async (values: Record<string, unknown>) => ({
     ...values,
   }));
+  mockRequireRights.mockResolvedValue({ depictsRealPerson: false });
 });
 
 describe('attachElementUpload', () => {
@@ -82,8 +89,8 @@ describe('attachElementUpload', () => {
     expect(mockCreate.mock.calls[0]?.[0]).toMatchObject({
       sequenceId: 'seq-1',
       token: 'JERSEY',
-      imagePath: 'elements/team-1/uploads/up-1.png',
-      imageUrl: '/r2/elements/team-1/uploads/up-1.png',
+      imagePath: 'elements/organization-1/uploads/up-1.png',
+      imageUrl: '/r2/elements/organization-1/uploads/up-1.png',
       visionStatus: 'completed',
     });
   });
@@ -94,7 +101,7 @@ describe('attachElementUpload', () => {
     ]);
 
     expect(mockCreate.mock.calls[0]?.[0]).toMatchObject({
-      imageUrl: '/r2/elements/team-1/uploads/up-1.png',
+      imageUrl: '/r2/elements/organization-1/uploads/up-1.png',
     });
   });
 
@@ -117,15 +124,19 @@ describe('attachElementUpload', () => {
     expect(new Set(rows.map((row) => row.id)).size).toBe(2);
   });
 
-  it('rejects a path outside the team namespace instead of skipping it', async () => {
-    await expect(
-      attachDrafts([makeUpload({ tempPath: 'elements/team-2/uploads/x.png' })])
-    ).rejects.toThrow(/outside this team's storage/);
+  it('rejects a path outside the organization namespace instead of skipping it', async () => {
     await expect(
       attachDrafts([
-        makeUpload({ tempPath: 'elements/team-1/../team-2/x.png' }),
+        makeUpload({ tempPath: 'elements/organization-2/uploads/x.png' }),
       ])
-    ).rejects.toThrow(/outside this team's storage/);
+    ).rejects.toThrow(/outside this organization's storage/);
+    await expect(
+      attachDrafts([
+        makeUpload({
+          tempPath: 'elements/organization-1/../organization-2/x.png',
+        }),
+      ])
+    ).rejects.toThrow(/outside this organization's storage/);
 
     expect(mockCreate).not.toHaveBeenCalled();
   });
@@ -140,7 +151,7 @@ describe('attachElementUpload', () => {
     );
     expect(mockFileExists).toHaveBeenCalledWith(
       'elements',
-      'team-1/uploads/up-1.png'
+      'organization-1/uploads/up-1.png'
     );
     expect(mockCreate).not.toHaveBeenCalled();
   });
@@ -156,8 +167,8 @@ describe('attachElementUpload', () => {
     expect(mockTriggerWorkflow).toHaveBeenCalledWith(
       '/element-vision',
       expect.objectContaining({
-        imageUrl: '/r2/elements/team-1/uploads/up-1.png',
-        teamId: 'team-1',
+        imageUrl: '/r2/elements/organization-1/uploads/up-1.png',
+        organizationId: 'organization-1',
         userId: 'user-1',
       })
     );
@@ -169,10 +180,10 @@ describe('attachElementUpload', () => {
     await expect(
       attachElementUpload({
         scopedDb: makeScopedDb(),
-        teamId: 'team-1',
+        organizationId: 'organization-1',
         userId: 'user-1',
         sequenceId: 'seq-1',
-        path: 'elements/team-1/seq-1/el-1.png',
+        path: 'elements/organization-1/seq-1/el-1.png',
         filename: 'jersey.png',
       })
     ).rejects.toThrow('binding down');
@@ -201,10 +212,10 @@ describe('assertDraftElementUploadsAttachable', () => {
     await expect(
       assertDraftElementUploadsAttachable({
         scopedDb: makeScopedDb(),
-        teamId: 'team-1',
+        organizationId: 'organization-1',
         uploads: [
           makeUpload(),
-          makeUpload({ tempPath: 'elements/team-1/uploads/gone.png' }),
+          makeUpload({ tempPath: 'elements/organization-1/uploads/gone.png' }),
         ],
       })
     ).rejects.toThrow(/no longer available in storage/);
@@ -218,41 +229,86 @@ describe('assertDraftElementUploadsAttachable', () => {
     await expect(
       assertDraftElementUploadsAttachable({
         scopedDb: makeScopedDb(),
-        teamId: 'team-1',
+        organizationId: 'organization-1',
         uploads: [makeUpload()],
       })
     ).rejects.toThrow('not checked');
-    expect(mockRequireRights).toHaveBeenCalledWith(expect.anything(), [
-      '/r2/elements/team-1/uploads/up-1.png',
-    ]);
+    expect(mockRequireRights).toHaveBeenCalledWith(
+      expect.anything(),
+      '/r2/elements/organization-1/uploads/up-1.png'
+    );
 
     mockRequireRights.mockClear();
     await assertDraftElementUploadsAttachable({
       scopedDb: makeScopedDb(),
-      teamId: 'team-1',
+      organizationId: 'organization-1',
       uploads: [
         makeUpload({
-          tempPath: 'elements/team-1/uploads/walk.mp4',
+          tempPath: 'elements/organization-1/uploads/walk.mp4',
           filename: 'walk.mp4',
         }),
       ],
     });
-    expect(mockRequireRights).toHaveBeenCalledWith(expect.anything(), [
-      '/r2/elements/team-1/uploads/walk.mp4',
-    ]);
+    expect(mockRequireRights).toHaveBeenCalledWith(
+      expect.anything(),
+      '/r2/elements/organization-1/uploads/walk.mp4'
+    );
 
     mockRequireRights.mockClear();
     await assertDraftElementUploadsAttachable({
       scopedDb: makeScopedDb(),
-      teamId: 'team-1',
+      organizationId: 'organization-1',
       uploads: [
         makeUpload({
-          tempPath: 'elements/team-1/uploads/line.mp3',
+          tempPath: 'elements/organization-1/uploads/line.mp3',
           filename: 'line.mp3',
         }),
       ],
     });
     expect(mockRequireRights).not.toHaveBeenCalled();
+  });
+
+  it('writes the ledger verdict onto the row as personInMedia (#2238)', async () => {
+    mockRequireRights.mockResolvedValue({ depictsRealPerson: true });
+    await attachDrafts([makeUpload()]);
+    expect(mockCreate.mock.calls[0]?.[0]).toMatchObject({
+      personInMedia: true,
+    });
+
+    mockCreate.mockClear();
+    await attachDrafts([
+      makeUpload({
+        tempPath: 'elements/organization-1/uploads/line.mp3',
+        filename: 'line.mp3',
+      }),
+    ]);
+    expect(mockCreate.mock.calls[0]?.[0]).toMatchObject({
+      personInMedia: false,
+    });
+  });
+
+  it('rewrites personInMedia on replace from the new upload (#2238)', async () => {
+    mockGetById.mockResolvedValue({ id: 'el-1', sequenceId: 'seq-1' });
+    mockUpdate.mockImplementation(async (id: string, values: object) => ({
+      id,
+      uploadedFilename: 'portrait.png',
+      token: 'JERSEY',
+      ...values,
+    }));
+    mockRequireRights.mockResolvedValue({ depictsRealPerson: true });
+
+    await replaceElementUpload({
+      scopedDb: makeScopedDb(),
+      organizationId: 'organization-1',
+      userId: 'user-1',
+      sequenceId: 'seq-1',
+      elementId: 'el-1',
+      path: 'elements/organization-1/uploads/portrait.png',
+      filename: 'portrait.png',
+    });
+    expect(mockUpdate.mock.calls[0]?.[1]).toMatchObject({
+      personInMedia: true,
+    });
   });
 
   it('refuses a video filename on a non-video stored path (#2153)', async () => {
@@ -261,10 +317,10 @@ describe('assertDraftElementUploadsAttachable', () => {
     await expect(
       assertDraftElementUploadsAttachable({
         scopedDb: makeScopedDb(),
-        teamId: 'team-1',
+        organizationId: 'organization-1',
         uploads: [
           makeUpload({
-            tempPath: 'elements/team-1/uploads/still.png',
+            tempPath: 'elements/organization-1/uploads/still.png',
             filename: 'walk.mp4',
           }),
         ],

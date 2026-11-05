@@ -1,10 +1,10 @@
 # 管理员文本渠道实施记录
 
-状态日期：2026-11-05。**二开已实现，本地源码、Mock 调用、浏览器及生产构建验证通过。** 本记录是管理员默认模型配置之后新增文本渠道的实施说明；此前默认配置的范围与验证记录仍见 [管理员默认模型配置](model-configuration-assessment.md)，不把其历史测试结果作为本扩展的验收结论。
+状态日期：2026-11-05。**二开功能已有实现；下文自动化、Mock、浏览器和构建成绩保留为上游合入前的历史记录。** 本次 organization 接口适配及统一验证见 [上游合入实施记录](upstream-merge-implementation-20261105.md)，不把历史成绩记作本轮通过结果。此前默认配置的范围与验证仍见 [管理员默认模型配置](model-configuration-assessment.md)。
 
 ## 原有行为、动机与来源
 
-上游已有内置文本模型目录、原生 Google/xAI、OpenRouter、fal 和团队 LLMTR 等路由，以及用户选择器、余额扣费和工作流框架。此前更换模型接入地址、鉴权或目录主要依赖代码与既有密钥入口。
+上游已有内置文本模型目录、原生 Google/xAI、OpenRouter、fal 和组织 LLMTR 等路由，以及用户选择器、余额扣费和工作流框架。此前更换模型接入地址、鉴权或目录主要依赖代码与既有密钥入口。
 
 本次二开新增管理员维护的平台文本渠道、模型到渠道的显式绑定，以及从渠道读取候选后逐项接入的能力。现有渠道和模型目录继续保留；未匹配新绑定的内置模型仍使用原路由。本扩展不代表人民币销售价、充值结算、全模型上下架或全面禁止 BYOK 已经完成。
 
@@ -38,9 +38,9 @@ Base URL 使用 HTTPS；仅本地 loopback 地址允许 HTTP，不接受 URL 内
 
 只有“绑定启用、渠道启用、渠道存在凭证引用”同时成立，绑定才进入 `textModelRouting` 快照。
 
-- 内置文本模型先尝试适用的团队凭证：匹配模型的原生 xAI/Google、已映射的 LLMTR、OpenRouter、fal。凭证需通过现有有效性与解密检查。
-- 无可用团队凭证时，若存在有效绑定，则使用绑定的 `source: 'platform', via: 'compatible'`；没有绑定时使用原平台原生/OpenRouter/fal 兜底。停用绑定或渠道只取消该覆盖，不是全局下架内置模型。
-- 自定义模型必须在本次目录/路由中存在，并直接使用管理员绑定；不存在、被停用或未匹配的 `custom:` ID 不会交给团队或平台 OpenRouter/fal 猜测调用。
+- 内置文本模型先尝试适用的组织凭证（`source: 'organization'`）：匹配模型的原生 xAI/Google、已映射的 LLMTR、OpenRouter、fal。凭证需通过现有有效性与解密检查。
+- 无可用组织凭证时，若存在有效绑定，则使用绑定的 `source: 'platform', via: 'compatible'`；没有绑定时使用原平台原生/OpenRouter/fal 兜底。停用绑定或渠道只取消该覆盖，不是全局下架内置模型。
+- 自定义模型必须在本次目录/路由中存在，并直接使用管理员绑定；不存在、被停用或未匹配的 `custom:` ID 不会交给组织或平台 OpenRouter/fal 猜测调用。
 - 已保存默认配置引用的自定义模型后来不可用时，读取配置会舍弃该自定义覆盖并采用该配置项的代码默认；这与已匹配绑定在调用失败后换渠道是两种行为。
 
 `createAdapter` 使用 `openaiCompatibleText`，将绑定的准确上游 ID、Base URL 和 Bearer Key 传入，按渠道协议选择 `api: 'chat-completions'` 或 `api: 'responses'`，实际请求 `<baseUrl>/chat/completions` 或 `<baseUrl>/responses`。Base URL 填写到 `/v1` 等公共前缀，由适配器补齐所选接口路径。Chat 使用 `max_tokens` 与 `stream_options.include_usage`，Responses 使用 `max_output_tokens`，不发送 Chat 专用的流选项及惩罚参数。结构化输出、工具、图片输入和 usage 由同一维护中的 SDK 按对应协议转换，并受声明能力与 token 上限约束；不推断网关实际能力，也不改变 LLMTR 或原生 Google/xAI 的接入方式。
@@ -77,7 +77,7 @@ Base URL 使用 HTTPS；仅本地 loopback 地址允许 HTTP，不接受 URL 内
 
 ## 原生视频 Files 路径不被绑定捕获
 
-视频人物检查 `analyzeTalentClipForTeam` 和助手视频理解 `watchClipForTeam` 保留原生 Google Files 上传/生成/清理路径。它们分别使用 `talentVideo` / `watchClip` 配置项，候选仍限于已有原生 Gemini 模型，并通过现有 `resolveOptionalKey('google')` 取得原生 Google 凭证，团队 Google Key 优先于平台 Google Key；配置文本绑定及团队 OpenRouter/fal Key 不参与 Files 路径。
+视频人物检查 `analyzeTalentClipForOrganization` 和助手视频理解 `watchClipForOrganization` 保留原生 Google Files 上传/生成/清理路径。它们分别使用 `talentVideo` / `watchClip` 配置项，候选仍限于已有原生 Gemini 模型，并通过现有 `resolveOptionalKey('google')` 取得原生 Google 凭证，组织 Google Key 优先于平台 Google Key；配置文本绑定及组织 OpenRouter/fal Key 不参与 Files 路径。
 
 即便同一个 Gemini ID 配置了文本渠道绑定，该绑定也不捕获上述 Files 路径。文本绑定声明支持图像输入不表示已经支持任意视频 API、Files 或原生视频理解协议。
 
@@ -95,6 +95,21 @@ Base URL 使用 HTTPS；仅本地 loopback 地址允许 HTTP，不接受 URL 内
 | [talent/analyze-talent-media.ts](../../src/cast/server/talent/analyze-talent-media.ts)、[server/watch-clip.ts](../../src/models/server/watch-clip.ts)                                                           | 原生视频 Files 路径显式排除文本绑定。                           |
 
 新增渠道/目录职责主要在模型域独立模块，必要桥接涉及既有管理员页面、模型默认/选择、凭证解析和工作流快照。上游升级应核对文本注册表的能力、兼容适配器与流式 usage 字段、原地区回退策略、ScopedDb 的请求/工作流边界、父子 payload 传播和原生 Files 路径；不要把本扩展应用成所有供应商的统一协议。
+
+## 本次上游组织适配（2026-11-05）
+
+本次集成采用上游 `6c0e82b2f72ad3ad7369c59dd3698dd454696da7` 的组织接口，同时保留管理员文本渠道、公开目录投影、原生 Files 路径和模型运行快照。具体整合范围、检查与剩余验收见 [上游合入实施记录](upstream-merge-implementation-20261105.md)。
+
+| 合入前接口/标记                                          | 当前接口/标记                                                                      | 源码依据                                                                         |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 请求/工作流 `teamId`                                     | `organizationId`；工作流仍要求 `userId`                                            | `src/platform/middleware.fn.ts`、`src/platform/server/workflow/base-workflow.ts` |
+| 组织自带凭证的 `source: 'team'`                          | `source: 'organization'`；平台兼容绑定仍为 `source: 'platform', via: 'compatible'` | `src/models/server/llm-key-routing.ts`、`src/billing/server/preflight.ts`        |
+| `analyzeTalentMediaForTeam` / `analyzeTalentClipForTeam` | `analyzeTalentMediaForOrganization` / `analyzeTalentClipForOrganization`           | `src/cast/server/talent/analyze-talent-media.ts`                                 |
+| `watchClipForTeam`                                       | `watchClipForOrganization`                                                         | `src/models/server/watch-clip.ts`                                                |
+
+401 归因继续使用实际失败来源；`src/platform/server/workflow/llm-auth-failure-source.ts` 只在解析历史 durable 错误时将旧 `team` 标记规范化为 `organization`。模型配置缺省及旧快照解码不等于接受缺失 `organizationId` 的旧任务身份。平台渠道管理继续经过 `systemAdminMiddleware`，组织 owner/admin 身份本身不授予平台配置权限。
+
+本轮保留上游组织邀请、切换、共享及现有组织凭证优先规则；个人独立空间与余额、人民币结算和全面禁止 BYOK 仍未实施。以下助手修正、凭证优先级、Responses 和预览预算章节保留合入前的术语、测试数字、日志与运行限制，仅作历史证据；本节不新增本轮测试通过声明。
 
 ## 助手余额预检与错误提示修正
 

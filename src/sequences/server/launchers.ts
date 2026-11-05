@@ -240,7 +240,7 @@ async function resolveStoryboardPayload(
   // never for the name and description it matches on.
   //
   // The locations matching may bind a script location to (#1695) are the
-  // team's: the ones the writer picked for this run, then the ones already
+  // organization's: the ones the writer picked for this run, then the ones already
   // attached to the sequence.
   const attachedLocations = (await scopedDb.locations.list(sequenceId)).filter(
     (l) => l.attached
@@ -305,7 +305,9 @@ async function resolveStoryboardPayload(
     referenceOnly: !sequence.generateStartFrames,
     generateVoices: sequence.generateVoices,
     includeMusic: sequence.includeMusic,
-    ownerEmail: await scopedDb.teamManagement.getMemberEmail(input.userId),
+    ownerEmail: await scopedDb.organizationManagement.getMemberEmail(
+      input.userId
+    ),
     sequenceUrl: sequenceScenesUrl(sequenceId),
     // Pin stop-at from this click, else the sequence snapshot (#1408).
     stopAt: resolveStopAt({
@@ -412,7 +414,7 @@ export function triggerContinue(
   scopedDb: ScopedDb,
   input: {
     userId: string;
-    teamId: string;
+    organizationId: string;
     sequence: Pick<Sequence, 'id' | 'imageModel' | 'videoModel' | 'musicModel'>;
     plan: UpdateStalePlan;
     stopAt: GenerationStage;
@@ -423,7 +425,7 @@ export function triggerContinue(
   const { autoGenerateMotion, autoGenerateMusic } = flagsFromStopAt(stopAt);
   return triggerStoryboard(scopedDb, {
     userId: input.userId,
-    teamId: input.teamId,
+    organizationId: input.organizationId,
     sequenceId: sequence.id,
     resume: true,
     plan: input.plan,

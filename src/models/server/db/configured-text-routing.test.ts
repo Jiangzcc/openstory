@@ -3,8 +3,8 @@ import { eq } from 'drizzle-orm';
 import type { Database } from '@/platform/server/db/client';
 import {
   appMetadata,
-  teamApiKeys,
-  teams,
+  organizationApiKeys,
+  organization,
   user,
 } from '@/platform/server/db/schema';
 import { generateId } from '@/platform/id';
@@ -31,8 +31,8 @@ beforeAll(async () => {
 afterAll(() => close());
 beforeEach(async () => {
   await db.delete(appMetadata);
-  await db.delete(teamApiKeys);
-  await db.delete(teams);
+  await db.delete(organizationApiKeys);
+  await db.delete(organization);
   await db.delete(user);
 });
 
@@ -119,15 +119,19 @@ it('does not put plaintext credentials in the configuration row', async () => {
 });
 
 async function teamKeys() {
-  const teamId = generateId();
+  const organizationId = generateId();
   const userId = generateId();
   await db
-    .insert(teams)
-    .values({ id: teamId, name: 'Mock team', slug: 'mock-' + teamId });
+    .insert(organization)
+    .values({
+      id: organizationId,
+      name: 'Mock team',
+      slug: 'mock-' + organizationId,
+    });
   await db
     .insert(user)
     .values({ id: userId, name: 'Mock user', email: userId + '@example.test' });
-  return createApiKeysMethods(db, teamId, userId);
+  return createApiKeysMethods(db, organizationId, userId);
 }
 
 it.each(['fal', 'openrouter'] as const)(
@@ -141,7 +145,7 @@ it.each(['fal', 'openrouter'] as const)(
     await keys.saveKey({ provider, apiKey: 'mock-team-key' });
     expect(await keys.resolveLlmKey(builtin.id)).toMatchObject({
       key: 'mock-team-key',
-      source: 'team',
+      source: 'organization',
       via: provider,
     });
   }

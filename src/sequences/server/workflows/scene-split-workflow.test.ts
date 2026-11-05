@@ -212,7 +212,7 @@ const BIBLES_RESULT = {
 
 const INPUT: SceneSplitWorkflowInput = {
   userId: 'u1',
-  teamId: 't1',
+  organizationId: 't1',
   sequenceId: 'seq_1',
   script: SCRIPT,
   modelId: 'anthropic/claude-sonnet-5.5',
@@ -1165,8 +1165,8 @@ const AUTH_MOCK_ROUTE = {
 } satisfies Omit<TextModelRoute, 'modelId'>;
 
 function authFailureFixture(
-  splitSource: 'team' | 'platform',
-  analysisSource: 'team' | 'platform'
+  splitSource: 'organization' | 'platform',
+  analysisSource: 'organization' | 'platform'
 ) {
   const resolveLlmKey = vi.fn(async (model?: string) => {
     const source = model === AUTH_SPLIT_MODEL ? splitSource : analysisSource;
@@ -1213,12 +1213,12 @@ describe('SceneSplitWorkflow credential attribution (local mock streams)', () =>
   });
 
   test.each([
-    ['scenes', 'team', 'platform', 'fal'],
-    ['scenes', 'platform', 'team', undefined],
-    ['bibles', 'team', 'platform', undefined],
-    ['bibles', 'platform', 'team', 'openrouter'],
-    ['shot-list', 'team', 'platform', undefined],
-    ['shot-list', 'platform', 'team', 'openrouter'],
+    ['scenes', 'organization', 'platform', 'fal'],
+    ['scenes', 'platform', 'organization', undefined],
+    ['bibles', 'organization', 'platform', undefined],
+    ['bibles', 'platform', 'organization', 'openrouter'],
+    ['shot-list', 'organization', 'platform', undefined],
+    ['shot-list', 'platform', 'organization', 'openrouter'],
   ] as const)(
     '%s 401 belongs to its resolved credential (split=%s, analysis=%s)',
     async (stage, splitSource, analysisSource, expectedVia) => {

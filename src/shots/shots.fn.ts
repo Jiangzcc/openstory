@@ -2,18 +2,7 @@ import { usesStartFrame } from './use-start-frame';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { requireCredits } from '@/billing/server/preflight';
 import type { NewShot } from '@/platform/server/db/schema';
-import {
-  computeShotStaleness,
-  GENERATING_STALENESS,
-  loadShotStalenessBatch,
-  loadShotStalenessReads,
-  UNTRACKED_STALENESS,
-  type ShotStalenessResult,
-} from '@/shots/server/shot-staleness';
-import {
-  loadShotMediaStaleness,
-  overlayMediaStaleness,
-} from '@/shots/server/shot-media-staleness';
+import { loadStalenessForShots } from '@/shots/server/shot-staleness-batch';
 import {
   DEFAULT_UPDATE_STALE_DEPTH,
   UPDATE_STALE_DEPTHS,
@@ -33,10 +22,7 @@ import {
 import { toShotView, pendingUpscaleUrlFromVersion } from './shot-view';
 import { getVideoDownloadUrl } from '@/motion/server/video-storage';
 import { motionPromptFromVersion } from '@/motion/server/resolve-motion-prompt';
-import {
-  loadShotDialogueResolver,
-  loadShotPromptDialogue,
-} from '@/shots/server/shot-dialogue';
+import { loadShotDialogueResolver } from '@/shots/server/shot-dialogue';
 import { sectionLineTiming } from '@/shots/shot-dialogue';
 import { projectVideoVariants } from '@/motion/server/video-variant-projection';
 import {
@@ -47,13 +33,12 @@ import {
 import { dbSceneId } from './scene-id';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
 import { typedFromEntries } from '@/platform/typed-object';
-import { resolveSceneForShot } from '@/shots/server/scene-script';
 import { rescanContinuityFromPrompt } from '@/shots/server/rescan-continuity-from-prompt';
 import { createServerFn } from '@tanstack/react-start';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import {
-  authWithTeamMiddleware,
+  authWithOrganizationMiddleware,
   sequenceAccessMiddleware,
 } from '@/platform/middleware.fn';
 import { shotAccessMiddleware } from '@/shots/shot-access.fn';
@@ -65,9 +50,6 @@ import {
 } from '@/shots/server/structure-edit';
 
 import { loadShotViews } from '@/shots/server/load-shot-views';
-import { getLogger } from '@/platform/logger';
-
-const logger = getLogger(['openstory', 'serverFn', 'shots']);
 
 const shotIdInputSchema = z.object({
   sequenceId: ulidSchema,
@@ -85,18 +67,18 @@ export const getShotsFn = createServerFn({ method: 'GET' })
  * connection pool, queued every subsequent navigation request, and killed
  * the WebProcess (root cause of the "Can't open this page" report).
  *
- * Team scoping is enforced by the join inside `sequences.listShotsByIds`,
- * so caller-supplied ids from another team return nothing rather than leak.
+ * Organization scoping is enforced by the join inside `sequences.listShotsByIds`,
+ * so caller-supplied ids from another organization return nothing rather than leak.
  * The row is a {@link SequenceListShot}: still and clip urls, their statuses,
  * and the two prompt strings. A full shot view (metadata, variant rows,
  * dialogue) is what crashed this call on the 128 MB isolate (#1897).
  * `listShotsByIds` chunks the ids to respect D1's bound-parameter limit, so
- * the cap here is only an abuse guard on request size — a team's full sequence
+ * the cap here is only an abuse guard on request size — an organization's full sequence
  * list (which the sequences/eval pages send) used to overflow the old 500 cap
  * once it grew past 500 sequences (#957).
  */
 export const getShotsForSequencesFn = createServerFn({ method: 'GET' })
-  .middleware([authWithTeamMiddleware])
+  .middleware([authWithOrganizationMiddleware])
   .validator(
     zodValidator(
       z.object({
@@ -610,44 +592,17 @@ export const getShotStalenessFn = createServerFn({ method: 'GET' })
   .middleware([shotAccessMiddleware])
   .validator(zodValidator(shotIdInputSchema))
   .handler(async ({ context }) => {
-    const { shot, frame, sequence, scopedDb, scene } = context;
-    const allShots = await scopedDb.shots.listBySequence(sequence.id);
-    const media = await loadShotMediaStaleness(scopedDb, sequence, allShots);
-    return toWireStaleness(
-      await computeShotStaleness({
-        scopedDb,
-        sequence,
-        shot,
-        frame,
-        selectedImage: await scopedDb.frameVariants.getSelected(frame.id),
-        scene,
-        dialogue: await loadShotPromptDialogue(scopedDb, sequence.id, shot),
-      }),
-      media.get(shot.id)
+    const { shot, sequence, scopedDb } = context;
+    const staleness = await loadStalenessForShots(
+      scopedDb,
+      sequence,
+      await scopedDb.shots.listBySequence(sequence.id),
+      [shot]
     );
+    const entry = staleness[shot.id];
+    if (!entry) throw new Error(`No staleness computed for shot ${shot.id}`);
+    return entry;
   });
-
-/**
- * The client-facing slice of a staleness result. `liveHashes` is a server-side
- * convenience for the enqueue paths (#1085) and stays off the wire.
- */
-const toWireStaleness = (
-  result: ShotStalenessResult,
-  media?: {
-    dialogue: ShotStalenessResult['thumbnail'];
-    video: ShotStalenessResult['thumbnail'];
-  }
-) => {
-  const overlaid = overlayMediaStaleness(result, media);
-  return {
-    thumbnail: overlaid.thumbnail,
-    visualPrompt: overlaid.visualPrompt,
-    motionPrompt: overlaid.motionPrompt,
-    dialogue: overlaid.dialogue,
-    video: overlaid.video,
-    causes: overlaid.causes,
-  };
-};
 
 /**
  * Batched `getShotStalenessFn` (#1077): staleness for every shot in one scene
@@ -672,101 +627,7 @@ export const getShotStalenessBatchFn = createServerFn({ method: 'GET' })
     if (targetShots.length === 0) {
       return {};
     }
-    // Mid-run the per-shot compare returns 'generating' before any read, and
-    // the media overlay then forces dialogue and video to the same. Skip the
-    // bible, prompt, and segment loads entirely (#1121, #1795).
-    if (sequence.status === 'processing') {
-      return typedFromEntries(
-        targetShots.map((shot) => [
-          shot.id,
-          toWireStaleness(GENERATING_STALENESS),
-        ])
-      );
-    }
-
-    // Loaded once here and threaded into every shot's comparison; without
-    // that each shot would re-read the bibles for both prompt branches.
-    let loaded = await loadShotStalenessBatch(scopedDb, sequence);
-    const missingAnchors = targetShots.filter(
-      (shot) => !loaded.anchorsByShot.has(shot.id)
-    );
-    if (missingAnchors.length > 0) {
-      await scopedDb.shots.ensureAnchorFrames(missingAnchors);
-      loaded = await loadShotStalenessBatch(scopedDb, sequence);
-    }
-    const {
-      anchorsByShot,
-      sceneContext: scriptBySceneId,
-      selectedByFrame,
-      refs,
-    } = loaded;
-    const frameIds = targetShots.flatMap((shot) => {
-      const frame = anchorsByShot.get(shot.id);
-      return frame ? [frame.id] : [];
-    });
-    const [reads, media] = await Promise.all([
-      loadShotStalenessReads(
-        scopedDb,
-        sequence.id,
-        allShots,
-        targetShots.map((shot) => shot.id),
-        frameIds,
-        scriptBySceneId
-      ),
-      loadShotMediaStaleness(scopedDb, sequence, allShots),
-    ]);
-
-    const entries = await Promise.all(
-      targetShots.map(
-        async (shot): Promise<[string, ReturnType<typeof toWireStaleness>]> => {
-          const frame = anchorsByShot.get(shot.id);
-          if (!frame) {
-            // ensureAnchorFrames guarantees an anchor; if it's somehow absent
-            // we have no image surface to compare, so report the shot
-            // untracked rather than dropping it from the result.
-            logger.error(
-              `getShotStalenessBatchFn: shot ${shot.id} has no anchor frame`
-            );
-            return [
-              shot.id,
-              toWireStaleness(UNTRACKED_STALENESS, media.get(shot.id)),
-            ];
-          }
-          const { scene } = resolveSceneForShot(shot, scriptBySceneId);
-          try {
-            return [
-              shot.id,
-              toWireStaleness(
-                await computeShotStaleness({
-                  scopedDb,
-                  sequence,
-                  shot,
-                  frame,
-                  selectedImage: selectedByFrame.get(frame.id) ?? null,
-                  scene,
-                  refs,
-                  reads,
-                  dialogue: reads.dialogueOf(shot),
-                }),
-                media.get(shot.id)
-              ),
-            ];
-          } catch (error) {
-            // Per-shot boundary: anything escaping computeShotStaleness must
-            // not reject the whole batch and blank the scene.
-            logger.error(
-              `getShotStalenessBatchFn: shot ${shot.id} staleness failed`,
-              { err: error }
-            );
-            return [
-              shot.id,
-              toWireStaleness(UNTRACKED_STALENESS, media.get(shot.id)),
-            ];
-          }
-        }
-      )
-    );
-    return typedFromEntries(entries);
+    return loadStalenessForShots(scopedDb, sequence, allShots, targetShots);
   });
 
 /**
@@ -804,7 +665,7 @@ export const updateStaleShotsFn = createServerFn({ method: 'POST' })
     )
   )
   .handler(async ({ data, context }) => {
-    const { sequence, teamId, user, scopedDb } = context;
+    const { sequence, organizationId, user, scopedDb } = context;
     const { plan, creditFloorMicros } = await prepareUpdateStale({
       scopedDb,
       userId: user.id,
@@ -822,7 +683,7 @@ export const updateStaleShotsFn = createServerFn({ method: 'POST' })
     // launchUpdateStale → triggerWorkflow, which runs the generation gate.
     const workflowRunId = await launchUpdateStale({
       userId: user.id,
-      teamId,
+      organizationId,
       sequenceId: sequence.id,
       plan,
       // Embed the sequence id in the instance id (the timestamp+uuid tail

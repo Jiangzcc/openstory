@@ -19,7 +19,7 @@ vi.doMock('@/cast/server/talent-vision', async (importOriginal) => ({
   analyzeTalentMedia: mockAnalyzeMedia,
 }));
 
-const { analyzeTalentClipForTeam, analyzeTalentMediaForTeam } =
+const { analyzeTalentClipForOrganization, analyzeTalentMediaForOrganization } =
   await import('./analyze-talent-media');
 
 beforeEach(() => {
@@ -27,7 +27,7 @@ beforeEach(() => {
   mockDelete.mockResolvedValue(undefined);
 });
 
-describe('analyzeTalentClipForTeam', () => {
+describe('analyzeTalentClipForOrganization', () => {
   it('refuses missing native Google credentials before the clip leaves storage (#1930)', async () => {
     const scopedDb = asStub<ScopedDb>({
       modelConfiguration: { get: async () => DEFAULT_MODEL_CONFIGURATION },
@@ -37,7 +37,7 @@ describe('analyzeTalentClipForTeam', () => {
     });
 
     await expect(
-      analyzeTalentClipForTeam({
+      analyzeTalentClipForOrganization({
         scopedDb,
         userId: 'u',
         key: 'talent/t/uploads/clip.mp4',
@@ -88,7 +88,7 @@ describe('configured likeness models and billing', () => {
     mockAnalyzeMedia.mockResolvedValue(
       analysisResult('anthropic/claude-sonnet-5.5')
     );
-    await analyzeTalentMediaForTeam({
+    await analyzeTalentMediaForOrganization({
       scopedDb: c.scopedDb,
       userId: 'u',
       imageUrls: ['/r2/talent/t/a.png'],
@@ -116,7 +116,7 @@ describe('configured likeness models and billing', () => {
       models: { ...configuredModels, vision: snapshotModel },
     };
     mockAnalyzeMedia.mockResolvedValue(analysisResult(snapshotModel));
-    await analyzeTalentMediaForTeam({
+    await analyzeTalentMediaForOrganization({
       scopedDb,
       userId: 'u',
       imageUrls: ['/r2/talent/t/a.png'],
@@ -137,7 +137,7 @@ describe('configured likeness models and billing', () => {
       mimeType: 'video/mp4',
     });
     mockAnalyzeClip.mockResolvedValue(analysisResult(VIDEO_MODEL));
-    await analyzeTalentClipForTeam({
+    await analyzeTalentClipForOrganization({
       scopedDb: c.scopedDb,
       userId: 'u',
       key: 'talent/t/clip.mp4',

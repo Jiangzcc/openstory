@@ -34,12 +34,16 @@ vi.doMock('@/models/server/gemini-files', () => ({
 vi.doMock('#storage', () => ({
   storageObjectContentType: async () => 'video/mp4',
 }));
-const { watchClipForTeam } = await import('./watch-clip');
+const { watchClipForOrganization } = await import('./watch-clip');
 
 function context() {
   const resolveLlmKey = vi.fn(
     async () =>
-      ({ key: 'mock-team-or', via: 'openrouter', source: 'team' }) as const
+      ({
+        key: 'mock-team-or',
+        via: 'openrouter',
+        source: 'organization',
+      }) as const
   );
   const resolveOptionalKey = vi
     .fn<ScopedDb['apiKeys']['resolveOptionalKey']>()
@@ -72,7 +76,7 @@ beforeEach(() => {
 describe('configured assistant clip model', () => {
   it('resolves, watches and bills the server-selected model', async () => {
     const c = context();
-    const result = await watchClipForTeam(c.scopedDb, {
+    const result = await watchClipForOrganization(c.scopedDb, {
       url: '/r2/talent/t/clip.mp4',
       question: 'What moves?',
     });
@@ -95,7 +99,7 @@ describe('configured assistant clip model', () => {
     const c = context();
     servedModel = 'z-ai/glm-5.3-flash';
     await expect(
-      watchClipForTeam(c.scopedDb, {
+      watchClipForOrganization(c.scopedDb, {
         url: '/r2/talent/t/clip.mp4',
         question: 'What moves?',
       })
@@ -108,7 +112,7 @@ describe('configured assistant clip model', () => {
     const c = context();
     c.resolveOptionalKey.mockResolvedValue(undefined);
     await expect(
-      watchClipForTeam(c.scopedDb, {
+      watchClipForOrganization(c.scopedDb, {
         url: '/r2/talent/t/clip.mp4',
         question: 'What moves?',
       })

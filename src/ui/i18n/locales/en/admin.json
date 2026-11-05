@@ -271,5 +271,7 @@
   "OpenAI Responses": "OpenAI Responses",
   "Choose Chat Completions or Responses.": "Choose Chat Completions or Responses.",
   "Letters, numbers, . _ / -; e.g. vendor/model": "Letters, numbers, . _ / -; e.g. vendor/model",
-  "Exact upstream model ID, e.g. vendor/model-name": "Exact upstream model ID, e.g. vendor/model-name"
+  "Exact upstream model ID, e.g. vendor/model-name": "Exact upstream model ID, e.g. vendor/model-name",
+  "Organization": "Organization",
+  "Search by name, email, or organization...": "Search by name, email, or organization..."
 }

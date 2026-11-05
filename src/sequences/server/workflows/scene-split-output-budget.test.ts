@@ -154,7 +154,7 @@ async function runSplit({
   // No sequenceId: the supported analysis-only path needs no persistence.
   const payload: SceneSplitWorkflowInput = {
     userId: 'mock-user',
-    teamId: 'mock-team',
+    organizationId: 'mock-team',
     script: MOCK_SCRIPT,
     modelId: analysisModel,
     promptName: 'scene-splitting',
@@ -275,7 +275,11 @@ test.each(['openrouter', 'fal'] as const)(
   'unused binding cannot lower budgets for an actual team %s key',
   async (via) => {
     const unusedRoute = mockRoute(BUILTIN_MODEL, 16_384, 8_192);
-    const key: ResolvedLlmKey = { source: 'team', via, key: 'mock-team-key' };
+    const key: ResolvedLlmKey = {
+      source: 'organization',
+      via,
+      key: 'mock-team-key',
+    };
     await runSplit({
       sceneModel: BUILTIN_MODEL,
       keys: new Map([[BUILTIN_MODEL, key]]),

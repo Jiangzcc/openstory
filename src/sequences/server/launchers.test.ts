@@ -69,7 +69,7 @@ const {
 
 const INPUT: StoryboardTriggerInput = {
   userId: 'u1',
-  teamId: 't1',
+  organizationId: 't1',
   sequenceId: 'seq_1',
   options: {
     shotsPerScene: 3,
@@ -158,7 +158,7 @@ function makeScopedDb(opts: {
     sequenceElements: { list: listElements },
     characters: { list: listCharacters, getHeldElsewhere },
     locations: { list: listLocations, getCurrentByIds: getLocationsByIds },
-    teamManagement: { getMemberEmail },
+    organizationManagement: { getMemberEmail },
     sequence: () => ({ updateStatus }),
     sequenceEvents: { record: recordSequenceEvent },
   };
