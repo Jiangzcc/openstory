@@ -1,0 +1,31 @@
+{
+  "description": "OpenStory 项目迁移的 Claude 规则与自动格式化；仅当前仓库。",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(Bash|apply_patch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('node:url').pathToFileURL(require('node:child_process').execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim()+'/.codex/hooks/pre-tool-use.mjs').href)\"",
+            "timeout": 10,
+            "statusMessage": "检查 OpenStory 项目规则"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(Bash|apply_patch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('node:url').pathToFileURL(require('node:child_process').execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim()+'/.codex/hooks/post-tool-use.mjs').href)\"",
+            "timeout": 60,
+            "statusMessage": "检查迁移提示并格式化本次编辑的源码"
+          }
+        ]
+      }
+    ]
+  }
+}

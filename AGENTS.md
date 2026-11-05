@@ -21,6 +21,14 @@
 - 所有提交均不得添加 AI/工具署名。
 - 对适合独立并行的工作，允许你自行使用子智能体，无需逐次确认。各智能体必须有明确分工，避免同时修改同一文件，最后由主智能体统一审查、整合和验证。
 
+## Codex 项目配置
+
+- 当前仓库的 Codex 入口、角色、技能和兼容差异见 [.codex/README.md](.codex/README.md)；执行任务时遵守 [.codex/project-rules.md](.codex/project-rules.md)。
+- 迁移内容仅保存在本项目 .codex/ 与 .agents/skills/；原 .claude/ 保持不变，不将项目配置安装到全局目录。
+- 项目智能体位于 .codex/agents/*.toml，继承父会话模型和权限；按明确分工并行，主智能体负责整合与验证。
+- react-patterns、update-model-versions 与既有 sd25-pe 位于 .agents/skills/；按任务加载，不因技能存在自动执行付费或远程操作。
+- .codex/hooks.json 保留原规则的提醒/拒绝语义，并适配 Codex 的 Bash/apply_patch 事件；须由 Codex 正常发现并信任后生效，文件存在不等于本会话已加载。
+
 AI-powered video sequence platform built with TanStack Start, deployed to Cloudflare Workers.
 
 ## Commands
@@ -476,7 +484,7 @@ Refs: [drizzle-orm#3065](https://github.com/drizzle-team/drizzle-orm/issues/3065
 
 **Quick reference** (rules; do/don't examples for the contrarian ones live in the `react-patterns` skill):
 
-- **Server data:** TanStack Query with `suspense: true`. No `isLoading` checks; use `<Suspense fallback={<Skeleton />} />`.
+- **Server data:** TanStack Query with `useSuspenseQuery`. No `isLoading` checks; use `<Suspense fallback={<Skeleton />} />`.
 - **Styling:** shadcn/ui base components handle theming; Tailwind ONLY for layout (`flex`, `grid`, `gap`). No hard-coded colors. No `margin` on components — use flex+gap on the parent.
 - **Loading:** inline `<Skeleton />` fallbacks that mirror final content (no separate skeleton components).
 - **Visibility:** CSS `hidden`/`block` (pre-render) rather than conditional mounting, to avoid layout shift.

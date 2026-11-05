@@ -1,0 +1,15 @@
+prefix_rule(
+    pattern = ["bun", "tsc"],
+    decision = "forbidden",
+    justification = "本项目使用 bun typecheck（tsgo），不要运行 bun tsc。",
+    match = ["bun tsc --noEmit"],
+    not_match = ["bun typecheck", "bun tsgo --noEmit"],
+)
+
+prefix_rule(
+    pattern = ["bun", "run", "tsc"],
+    decision = "forbidden",
+    justification = "本项目使用 bun run typecheck（tsgo）。",
+    match = ["bun run tsc --noEmit"],
+    not_match = ["bun run typecheck"],
+)
