@@ -15,6 +15,8 @@ import {
   resolveNativeGrokModel,
   type LlmKeyInfo,
 } from './create-adapter';
+import type { ResolvedLlmKey } from './db/api-keys';
+import { llmCallStream } from './llm-call-stream';
 import { llmtrCompatibleApi } from '@/models/llmtr';
 import { resolveTextModelRoute } from '@/models/text-channels';
 import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
@@ -24,14 +26,11 @@ import {
 } from './configured-text';
 import {
   createUsageCapture,
-  extractRunError,
   glmReasoningEffortForCall,
   isForcedGlmReasoningModel,
   llmCostFromUsage,
   openRouterProviderForModel,
   PROMPT_REASONING,
-  regionRetriesFor,
-  throwNotedRunError,
   toGeminiThinkingLevel,
 } from './llm-client';
 import { generateId } from '@/platform/id';
@@ -312,15 +311,7 @@ export type DurableStreamingLLMCallContext = DurableLLMCallContext & {
 
 type LlmKeySource = 'organization' | 'platform';
 
-/**
- * Resolve the key for the LLM call — the organization's key via ScopedDb, or the
- * platform key for anonymous workflows. MUST be awaited INSIDE the LLM
- * `step.do`: it reads (and, via `decryptOrMarkInvalid`, writes) mutable D1
- * state, so resolving between steps would re-execute on replay while the LLM
- * step is cache-served, and the billing attribution could flip. The step
- * returns the non-secret `source`/`via` so the deduction bills exactly the key
- * the call was made with; the decrypted key never crosses a step boundary.
- */
+// Resolve inside the durable step; persist only source/via for billing.
 async function resolveCallKey(
   callContext: DurableLLMCallContext,
   model?: string
@@ -338,24 +329,19 @@ async function resolveCallKey(
   return platform;
 }
 
-/**
- * Execute a durable LLM call. Returns the validated parsed object.
- *
- * Step layout (deterministic names):
- *   1. `prepare-${name}` — resolve the chat prompt
- *   2. `${name}` — LLM call (JSON-stringified result for step boundary)
- *   3. `deduct-llm-credits-${name}` — credit deduction (only if scopedDb passed)
- */
+// Each retry resolves the key for its actual model inside the durable step.
 async function withCallRoute<T>(
   model: TextModel,
   context: DurableLLMCallContext,
-  run: (model: TextModel) => Promise<T>
+  run: (model: TextModel, key: ResolvedLlmKey) => Promise<T>
 ): Promise<T> {
   const models = context.scopedDb?.models;
   const routing = models?.textModelRouting ?? [];
+  const attempt = async (attemptModel: TextModel) =>
+    run(attemptModel, await resolveCallKey(context, attemptModel));
   return resolveTextModelRoute(routing, model)
-    ? run(model)
-    : withRegionFallback(model, run);
+    ? attempt(model)
+    : withRegionFallback(model, attempt);
 }
 
 export async function durableLLMCallCf<TSchema extends z.ZodType>(
@@ -403,13 +389,8 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
       costMicros: Microdollars;
       keySource: LlmKeySource;
     }> => {
-      // Region-block fallback (#1259): workflows egress from the colo nearest
-      // the user, so an Anthropic model can be geo-blocked even "server-side".
-      // Retry once on a region-available model instead of burning step retries.
-      // Resolve the key INSIDE the fallback so a model swap cannot reuse a
-      // via that does not carry the retry model (LLMTR key → OpenRouter 401).
-      return withCallRoute(modelId, callContext, async (model) => {
-        const llmKeyInfo = await resolveCallKey(callContext, model);
+      // Resolve each region retry inside the durable call step.
+      return withCallRoute(modelId, callContext, async (model, llmKeyInfo) => {
         const adapter = createAdapter(model, llmKeyInfo);
 
         logger.info(`[LLM:${logName}:cf] Starting call`, {
@@ -486,21 +467,17 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
               threadId: generateId(),
               promptCache: 'none' as const,
             };
-            const eventStream = chat({
-              ...commonOptions,
-              systemPrompts,
-              outputSchema: config.responseSchema,
-            });
+            const eventStream = llmCallStream(model, llmKeyInfo, () =>
+              chat({
+                ...commonOptions,
+                systemPrompts,
+                outputSchema: config.responseSchema,
+              })
+            );
 
             let structuredObject: unknown;
-            let runError = null;
             for await (const event of eventStream) {
               usageCapture.noteFromStreamEvent(event);
-              const noted = extractRunError(event);
-              if (noted) {
-                runError ??= noted;
-                continue;
-              }
               if (
                 event.type === 'CUSTOM' &&
                 event.name === 'structured-output.complete'
@@ -509,7 +486,6 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
                 continue;
               }
             }
-            throwNotedRunError(runError, regionRetriesFor(model, llmKeyInfo));
             assertStructuredOutput(
               structuredObject,
               logName,
@@ -619,8 +595,7 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
       // model errors before its first token, so the realtime channel has seen
       // nothing when the retry restarts the stream. Resolve the key for the
       // model actually called so via tracks the retry.
-      return withCallRoute(modelId, callContext, async (model) => {
-        const llmKeyInfo = await resolveCallKey(callContext, model);
+      return withCallRoute(modelId, callContext, async (model, llmKeyInfo) => {
         const adapter = createAdapter(model, llmKeyInfo);
 
         logger.info(`[LLM:${logName}:cf] Starting streaming call`, {
@@ -702,25 +677,21 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
             threadId: generateId(),
             promptCache: 'none' as const,
           };
-          const eventStream = chat({
-            ...commonOptions,
-            systemPrompts,
-            outputSchema: config.responseSchema,
-          });
+          const eventStream = llmCallStream(model, llmKeyInfo, () =>
+            chat({
+              ...commonOptions,
+              systemPrompts,
+              outputSchema: config.responseSchema,
+            })
+          );
           // The orchestrator-validated result from the terminal
           // `structured-output.complete` event. Preferred over the
           // hand-accumulated text: it's what the library validated, and it
           // survives any delta-assembly drift.
           let structuredJson: string | null = null;
-          let runError = null;
           try {
             for await (const event of eventStream) {
               usageCapture.noteFromStreamEvent(event);
-              const noted = extractRunError(event);
-              if (noted) {
-                runError ??= noted;
-                continue;
-              }
               if (
                 event.type === 'TEXT_MESSAGE_CONTENT' &&
                 typeof event.delta === 'string'
@@ -750,7 +721,6 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
                 continue;
               }
             }
-            throwNotedRunError(runError, regionRetriesFor(model, llmKeyInfo));
             await flushDelta();
             assertStructuredOutput(
               structuredJson,

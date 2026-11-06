@@ -38,6 +38,10 @@ consistent with their own writes.
 Pin a new read with `onPrimary(() => …)` only when a few seconds of lag would
 let two sessions both pass a guard. Everything else reads from the replica.
 
+## Secondary-development model settings
+
+Default-model configuration, text-channel metadata, catalog validation and encrypted channel credentials also use `onPrimary`. They determine the route for a new operation: an old read must not revive a channel after it was disabled. Concurrent responses can overwrite the browser bookmark out of order, and a fresh browser session has no bookmark from the administrator's earlier save. The narrow primary boundary is in the model DB modules; workflow execution continues to use its recorded routing and immutable credential IDs. The adversarial review and mock-versus-remote evidence boundary are recorded in `docs/secondary-development/adversarial-review-20261105.md`.
+
 ## Turning it on
 
 Replication is a per-database setting, not code: enable it on `openstory-prd`

@@ -2,6 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Database } from '@/platform/server/db/client';
 import { appMetadata } from '@/platform/server/db/schema';
+import { onPrimary } from '@/platform/server/db/d1-session';
 import { decryptApiKey } from '@/platform/server/crypto/api-key-encryption';
 import { ConflictError, ValidationError } from '@/platform/errors';
 import type { TextChannelsConfiguration } from '@/models/text-channels';
@@ -148,9 +149,9 @@ async function commitConfiguration(
 
 function createReadStore(db: Database) {
   return {
-    read: () => readStoredConfiguration(db),
+    read: () => onPrimary(() => readStoredConfiguration(db)),
     resolveSecret: (credentialId: string) =>
-      resolveStoredSecret(db, credentialId),
+      onPrimary(() => resolveStoredSecret(db, credentialId)),
   };
 }
 

@@ -22,6 +22,7 @@ import {
   lastUsedLoginMethodCookieName,
 } from '@/platform/auth/cookie-prefix';
 import type { Auth } from '@/platform/server/auth/config';
+import { AUTH_SESSION_QUERY_KEY } from './auth-cache-generation';
 
 const cookiePrefix = currentAuthCookiePrefix();
 
@@ -32,9 +33,6 @@ const SESSION_MUTATION_PATHS = [
   '/sign-out',
   '/organization/set-active',
 ];
-
-/** Matches `sessionQueryOptions.queryKey` — inlined to avoid client↔session-query cycles. */
-const SESSION_QUERY_KEY = ['session'] as const;
 
 // Create the auth client
 export const authClient = createAuthClient({
@@ -53,7 +51,7 @@ export const authClient = createAuthClient({
       // "Sign in" immediately instead of `isLoading` skeleton while a fresh
       // getSession refetch is in flight after clear().
       if (isSignOut) {
-        queryClient.setQueryData(SESSION_QUERY_KEY, null);
+        queryClient.setQueryData(AUTH_SESSION_QUERY_KEY, null);
       }
     },
   },

@@ -357,5 +357,7 @@
   "{{models}} ({{seconds}}s max)": "{{models}}（最长 {{seconds}} 秒）",
   "{{models}} ({{seconds}}s min)": "{{models}}（最短 {{seconds}} 秒）",
   "Retry": "重试",
-  "Upload failed": "上传失败"
+  "Upload failed": "上传失败",
+  "{{name}} is already a name in the cast of {{sequenceTitle}}. Rename one first.": "作品“{{sequenceTitle}}”中已有名为“{{name}}”的角色，请先修改其中一个的名称。",
+  "{{name}} is already a location in {{sequenceTitle}}. Rename one first.": "作品“{{sequenceTitle}}”中已有名为“{{name}}”的地点，请先修改其中一个的名称。"
 }

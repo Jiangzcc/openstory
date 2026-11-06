@@ -10,6 +10,7 @@ import { mergeTextModelCatalog } from '@/models/text-model-catalog';
 import { textModelCatalogQueryOptions } from '@/models/text-channels.queries';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { AuthCacheGeneration } from '@/platform/ui/auth/auth-cache-generation';
 import {
   DEFAULT_MODEL_CONFIGURATION,
   MODEL_CONFIGURATION_FIELDS,
@@ -86,7 +87,9 @@ function useConfigurationSave(onSaved: () => void) {
     mutationKey: MODEL_CONFIGURATION_QUERY_KEY,
     mutationFn: (configuration: ModelConfiguration) =>
       saveModelConfigurationFn({ data: configuration }),
-    onSuccess: (configuration) => {
+    onMutate: () => new AuthCacheGeneration(queryClient),
+    onSuccess: (configuration, _input, generation) => {
+      if (!generation.isCurrent()) return;
       queryClient.setQueryData(ADMIN_CONFIGURATION_QUERY_KEY, configuration);
       queryClient.setQueryData(MODEL_CONFIGURATION_QUERY_KEY, configuration);
       void queryClient.invalidateQueries({

@@ -1,3 +1,8 @@
+import { REGION_FALLBACK_MODEL } from '@/models/region-policy';
+import { readLlmAuthFailureSource } from '@/platform/server/workflow/llm-auth-failure-source';
+import { handleLlmAuthFailure } from '@/platform/server/workflow/llm-auth-failure';
+import { childFailureMessage } from '@/platform/server/workflow/errors';
+import { sanitizeFailResponse } from '@/platform/server/workflow/sanitize-fail-response';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -18,11 +23,15 @@ const mockCreateAdapter = vi.fn((_model: TextModel) => ({
   name: 'mock',
 }));
 const mockDeduct = vi.fn();
+const mockVisionImageSource = vi.fn(async (value: string) => ({
+  type: 'url',
+  value,
+}));
 vi.doMock('@/billing/server/workflow-deduction', () => ({
   deductWorkflowCredits: mockDeduct,
 }));
 vi.doMock('@/platform/server/storage/external-url', () => ({
-  toVisionImageSource: async (value: string) => ({ type: 'url', value }),
+  toVisionImageSource: mockVisionImageSource,
 }));
 vi.doMock('@tanstack/ai', () => ({
   ...tanstackAi,
@@ -52,13 +61,14 @@ vi.doMock('@/platform/server/ai/prompts-index', () => ({
 }));
 
 const emitted: unknown[] = [];
+const mockEmit = vi.fn((event: string, payload: unknown) => {
+  emitted.push({ event, payload });
+  return Promise.resolve();
+});
 vi.doMock('@/platform/realtime', () => ({
   ...realtimeModule,
   getShotPromptChannel: () => ({
-    emit: (event: string, payload: unknown) => {
-      emitted.push({ event, payload });
-      return Promise.resolve();
-    },
+    emit: mockEmit,
   }),
 }));
 
@@ -462,4 +472,238 @@ describe('snapshotted durable vision fallback', () => {
       );
     }
   );
+});
+
+const unauthorizedStatus = 401;
+const modelId = 'openai/gpt-5.4-mini';
+
+function resetCredentialFailureMocks() {
+  mockChat.mockReset();
+  mockDeduct.mockClear();
+  mockVisionImageSource.mockClear();
+}
+
+function credentialFailureScope(source: 'organization' | 'platform') {
+  const markKeyInvalid = vi.fn();
+  const scopedDb = asStub<WorkflowScopedDb>({
+    models: DEFAULT_MODEL_CONFIGURATION,
+    credentials: {
+      resolveLlmKey: async () => ({
+        key: 'mock-rejected-key',
+        source,
+        via: 'openrouter',
+      }),
+    },
+    apiKeys: { markKeyInvalid },
+  });
+  return { scopedDb, markKeyInvalid };
+}
+
+it.each(
+  [false, true].flatMap((streaming) =>
+    (['event', 'throw'] as const).map((failureKind) => ({
+      streaming,
+      failureKind,
+    }))
+  )
+)(
+  'keeps the actual organization credential (streaming: $streaming, failure: $failureKind)',
+  async ({ streaming, failureKind }) => {
+    resetCredentialFailureMocks();
+    let providerDrained = false;
+    mockChat.mockImplementation(() =>
+      (async function* () {
+        if (failureKind === 'throw') {
+          throw Object.assign(new Error('Mock credential rejected'), {
+            status: unauthorizedStatus,
+          });
+        }
+        yield {
+          type: 'RUN_ERROR',
+          message: 'Mock credential rejected',
+          code: String(unauthorizedStatus),
+          model: modelId,
+        };
+        providerDrained = true;
+      })()
+    );
+    const { scopedDb, markKeyInvalid } = credentialFailureScope('organization');
+    const run = streaming ? durableStreamingLLMCallCf : durableLLMCallCf;
+    const context = streaming ? callContext : nonStreamContext;
+    const error = await run(
+      step,
+      { ...callConfig, modelId },
+      { ...context, scopedDb }
+    ).catch((failure: unknown) => failure);
+    if (!(error instanceof Error))
+      throw new Error('Expected the mock credential failure');
+    const parentError = sanitizeFailResponse(
+      new Error(childFailureMessage('mock-auxiliary-call', error.message))
+    );
+    expect(readLlmAuthFailureSource(parentError)).toMatchObject({
+      model: modelId,
+      source: 'organization',
+      via: 'openrouter',
+    });
+    await handleLlmAuthFailure(scopedDb, parentError);
+    expect(markKeyInvalid).toHaveBeenCalledExactlyOnceWith(
+      'openrouter',
+      expect.stringContaining('Mock credential rejected')
+    );
+    expect(mockDeduct).not.toHaveBeenCalled();
+    expect(providerDrained).toBe(failureKind === 'event');
+  }
+);
+
+it.each([false, true])(
+  'does not blame the LLM credential for a vision-image download 401 (streaming: %s)',
+  async (streaming) => {
+    resetCredentialFailureMocks();
+    const downloadFailure = new Error(
+      'Failed to fetch vision image (401 Unauthorized): mock image'
+    );
+    mockVisionImageSource.mockRejectedValueOnce(downloadFailure);
+    const { scopedDb, markKeyInvalid } = credentialFailureScope('organization');
+    const run = streaming ? durableStreamingLLMCallCf : durableLLMCallCf;
+    const context = streaming ? callContext : nonStreamContext;
+    const error = await run(
+      step,
+      {
+        ...callConfig,
+        modelId: 'google/gemini-3.8-flash',
+        visionImageUrls: ['https://mock.test/still.png'],
+      },
+      { ...context, scopedDb }
+    ).catch((failure: unknown) => failure);
+    expect(error).toBe(downloadFailure);
+    expect(readLlmAuthFailureSource(downloadFailure.message)).toBeUndefined();
+    await handleLlmAuthFailure(scopedDb, downloadFailure.message);
+    expect(markKeyInvalid).not.toHaveBeenCalled();
+    expect(mockChat).not.toHaveBeenCalled();
+    expect(mockDeduct).not.toHaveBeenCalled();
+  }
+);
+
+it.each([false, true])(
+  'uses the platform source after a region retry changes the credential (streaming: %s)',
+  async (streaming) => {
+    resetCredentialFailureMocks();
+    mockChat.mockImplementationOnce(() =>
+      (async function* () {
+        yield {
+          type: 'RUN_ERROR',
+          message: 'Mock model not available in your region',
+        };
+      })()
+    );
+    mockChat.mockImplementationOnce(() =>
+      (async function* () {
+        yield {
+          type: 'RUN_ERROR',
+          message: 'Mock platform credential rejected',
+          code: String(unauthorizedStatus),
+        };
+      })()
+    );
+    const markKeyInvalid = vi.fn();
+    const resolveLlmKey = vi.fn(async (model: string) => ({
+      key: 'mock-region-key',
+      source: model === modelId ? 'organization' : 'platform',
+      via: 'openrouter',
+    }));
+    const scopedDb = asStub<WorkflowScopedDb>({
+      models: DEFAULT_MODEL_CONFIGURATION,
+      credentials: { resolveLlmKey },
+      apiKeys: { markKeyInvalid },
+    });
+    const run = streaming ? durableStreamingLLMCallCf : durableLLMCallCf;
+    const context = streaming ? callContext : nonStreamContext;
+    const error = await run(
+      step,
+      { ...callConfig, modelId },
+      { ...context, scopedDb }
+    ).catch((failure: unknown) => failure);
+    if (!(error instanceof Error))
+      throw new Error('Expected the mock platform failure');
+    expect(resolveLlmKey.mock.calls.map(([model]) => model)).toEqual([
+      modelId,
+      REGION_FALLBACK_MODEL,
+    ]);
+    expect(readLlmAuthFailureSource(error.message)).toBeUndefined();
+    await handleLlmAuthFailure(scopedDb, error.message);
+    expect(markKeyInvalid).not.toHaveBeenCalled();
+    expect(mockDeduct).not.toHaveBeenCalled();
+  }
+);
+
+it.each([false, true])(
+  'does not invalidate an organization credential on a platform failure (streaming: %s)',
+  async (streaming) => {
+    resetCredentialFailureMocks();
+    mockChat.mockImplementation(() =>
+      (async function* () {
+        yield {
+          type: 'RUN_ERROR',
+          message: 'Mock platform credential rejected',
+          code: String(unauthorizedStatus),
+          model: modelId,
+        };
+      })()
+    );
+    const { scopedDb, markKeyInvalid } = credentialFailureScope('platform');
+    const run = streaming ? durableStreamingLLMCallCf : durableLLMCallCf;
+    const context = streaming ? callContext : nonStreamContext;
+    const error = await run(
+      step,
+      { ...callConfig, modelId },
+      { ...context, scopedDb }
+    ).catch((failure: unknown) => failure);
+    if (!(error instanceof Error))
+      throw new Error('Expected the mock platform failure');
+    expect(readLlmAuthFailureSource(error.message)).toBeUndefined();
+    await handleLlmAuthFailure(scopedDb, error.message);
+    expect(markKeyInvalid).not.toHaveBeenCalled();
+    expect(mockDeduct).not.toHaveBeenCalled();
+  }
+);
+
+it('does not blame the LLM credential for a realtime publish 401', async () => {
+  resetCredentialFailureMocks();
+  const streamClosed = vi.fn();
+  const markKeyInvalid = vi.fn();
+  const broadcastFailure = new Error('Mock realtime HTTP 401 Unauthorized');
+  const scopedDb = asStub<WorkflowScopedDb>({
+    models: DEFAULT_MODEL_CONFIGURATION,
+    credentials: {
+      resolveLlmKey: async () => ({
+        key: 'mock-working-key',
+        source: 'organization',
+        via: 'openrouter',
+      }),
+    },
+    apiKeys: { markKeyInvalid },
+  });
+  mockChat.mockImplementation(() =>
+    (async function* () {
+      try {
+        yield {
+          type: 'TEXT_MESSAGE_CONTENT',
+          delta: '{"fullPrompt":"Mock prompt',
+        };
+      } finally {
+        streamClosed();
+      }
+    })()
+  );
+  mockEmit.mockRejectedValueOnce(broadcastFailure);
+  mockDeduct.mockClear();
+  const error = await durableStreamingLLMCallCf(step, callConfig, {
+    ...callContext,
+    scopedDb,
+  }).catch((failure: unknown) => failure);
+  expect(error).toBe(broadcastFailure);
+  expect(streamClosed).toHaveBeenCalledOnce();
+  await handleLlmAuthFailure(scopedDb, broadcastFailure.message);
+  expect(markKeyInvalid).not.toHaveBeenCalled();
+  expect(mockDeduct).not.toHaveBeenCalled();
 });

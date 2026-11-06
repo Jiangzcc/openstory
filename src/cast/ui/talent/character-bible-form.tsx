@@ -16,7 +16,7 @@ import {
 import { useUpdateSequenceCharacter } from '@/cast/ui/use-sequence-characters';
 import { useUpdateOrganizationCharacter } from '@/cast/ui/use-organization-characters';
 import type { CharacterWithSheet } from '@/platform/server/db/schema';
-import { errorMessage } from '@/platform/errors';
+import { localizeCastNameConflict } from '@/cast/ui/localize-cast-name-conflict';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -103,7 +103,7 @@ export const CharacterBibleForm: React.FC<{
       onSuccess: () => toast.success(translateEvent('Character saved')),
       onError: (error: Error) =>
         toast.error(translateEvent('Failed to save character'), {
-          description: errorMessage(error),
+          description: localizeCastNameConflict(error, translateEvent),
         }),
     };
     if (props.sequenceId === null) {

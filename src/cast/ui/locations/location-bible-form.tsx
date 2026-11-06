@@ -13,7 +13,7 @@ import {
 import { useUpdateSequenceLocation } from '@/cast/ui/use-sequence-locations';
 import { useUpdateOrganizationLocation } from '@/cast/ui/use-organization-locations';
 import type { LocationWithReference } from '@/platform/server/db/schema';
-import { errorMessage } from '@/platform/errors';
+import { localizeCastNameConflict } from '@/cast/ui/localize-cast-name-conflict';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -64,7 +64,7 @@ export const LocationBibleForm: React.FC<{
       onSuccess: () => toast.success(translateEvent('Location saved')),
       onError: (error: Error) =>
         toast.error(translateEvent('Failed to save location'), {
-          description: errorMessage(error),
+          description: localizeCastNameConflict(error, translateEvent),
         }),
     };
     if (sequenceId === null) {

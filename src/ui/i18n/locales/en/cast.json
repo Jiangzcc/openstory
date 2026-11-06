@@ -357,5 +357,7 @@
   "{{models}} ({{seconds}}s max)": "{{models}} ({{seconds}}s max)",
   "{{models}} ({{seconds}}s min)": "{{models}} ({{seconds}}s min)",
   "Retry": "Retry",
-  "Upload failed": "Upload failed"
+  "Upload failed": "Upload failed",
+  "{{name}} is already a name in the cast of {{sequenceTitle}}. Rename one first.": "{{name}} is already a name in the cast of {{sequenceTitle}}. Rename one first.",
+  "{{name}} is already a location in {{sequenceTitle}}. Rename one first.": "{{name}} is already a location in {{sequenceTitle}}. Rename one first."
 }

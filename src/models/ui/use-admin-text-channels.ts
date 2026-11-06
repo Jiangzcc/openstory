@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { AuthCacheGeneration } from '@/platform/ui/auth/auth-cache-generation';
 import { MODEL_CONFIGURATION_QUERY_KEY } from '@/models/model-configuration.queries';
 import {
   saveChannelTextModelFn,
@@ -101,9 +102,12 @@ function useTextChannelSave<T>(
   close: () => void,
   message: string
 ) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: save,
-    onSuccess: (configuration) => {
+    onMutate: () => new AuthCacheGeneration(queryClient),
+    onSuccess: (configuration, _input, generation) => {
+      if (!generation.isCurrent()) return;
       onSaved(configuration);
       close();
       toast.success(message);

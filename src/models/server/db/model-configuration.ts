@@ -5,6 +5,7 @@ import { createTextChannelsReadMethods } from './text-channels';
 import { eq } from 'drizzle-orm';
 import type { Database } from '@/platform/server/db/client';
 import { appMetadata } from '@/platform/server/db/schema';
+import { onPrimary } from '@/platform/server/db/d1-session';
 import {
   createModelConfigurationSchema,
   resolveModelConfiguration,
@@ -18,19 +19,21 @@ export function createModelConfigurationReadMethods(db: Database) {
     async get(
       catalog?: readonly AnalysisModelDefinition[]
     ): Promise<ModelConfiguration> {
-      const models =
-        catalog ??
-        textModelCatalogFromRouting(
-          await createTextChannelsReadMethods(db).getSnapshot()
-        );
-      const [row] = await db
-        .select()
-        .from(appMetadata)
-        .where(eq(appMetadata.key, MODEL_CONFIGURATION_KEY))
-        .limit(1);
-      if (!row) return resolveModelConfiguration(null);
-      const saved: unknown = JSON.parse(row.value);
-      return resolveModelConfiguration(saved, models);
+      return onPrimary(async () => {
+        const models =
+          catalog ??
+          textModelCatalogFromRouting(
+            await createTextChannelsReadMethods(db).getSnapshot()
+          );
+        const [row] = await db
+          .select()
+          .from(appMetadata)
+          .where(eq(appMetadata.key, MODEL_CONFIGURATION_KEY))
+          .limit(1);
+        if (!row) return resolveModelConfiguration(null);
+        const saved: unknown = JSON.parse(row.value);
+        return resolveModelConfiguration(saved, models);
+      });
     },
   };
 }

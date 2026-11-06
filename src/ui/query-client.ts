@@ -8,6 +8,10 @@ import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { getLogger } from '@/platform/logger';
+import {
+  AuthCacheGeneration,
+  AUTH_SESSION_QUERY_KEY,
+} from '@/platform/ui/auth/auth-cache-generation';
 
 const logger = getLogger(['openstory', 'query-client', 'query-client']);
 
@@ -27,29 +31,37 @@ declare module '@tanstack/react-query' {
 
 const MAX_QUERY_RETRIES = typeof window === 'undefined' ? 0 : 3;
 
+function clearRejectedSession(qc: QueryClient, error: unknown) {
+  // A 403 is a permission failure, not a rejected session. Check structurally
+  // because server-fn errors are reconstructed across the RPC boundary.
+  if (!isUnauthenticatedError(error)) return;
+
+  // Cancelling first prevents an older session read from putting the rejected
+  // session back. Publish null immediately so session-gated reads stop; merely
+  // invalidating would leave truthy data available while the refetch runs.
+  void qc.cancelQueries({ queryKey: AUTH_SESSION_QUERY_KEY, exact: true });
+  qc.setQueryData(AUTH_SESSION_QUERY_KEY, null);
+}
+
 export function makeQueryClient() {
   let qc!: QueryClient;
-  const clearRejectedSession = (error: unknown) => {
-    // A 403 is a permission failure, not a rejected session. Check structurally
-    // because server-fn errors are reconstructed across the RPC boundary.
-    if (!isUnauthenticatedError(error)) return;
 
-    // Cancelling first prevents an older session read from putting the rejected
-    // session back. Publish null immediately so session-gated reads stop; merely
-    // invalidating would leave truthy data available while the refetch runs.
-    void qc.cancelQueries({ queryKey: ['session'], exact: true });
-    qc.setQueryData(['session'], null);
-  };
   qc = new QueryClient({
-    queryCache: new QueryCache({ onError: clearRejectedSession }),
+    queryCache: new QueryCache({
+      onError: (error) => clearRejectedSession(qc, error),
+    }),
     mutationCache: new MutationCache({
-      onSuccess: (_data, _variables, _context, mutation) => {
+      onSuccess: (_data, _variables, context, mutation) => {
+        if (context instanceof AuthCacheGeneration && !context.isCurrent())
+          return;
         void qc.invalidateQueries({
           queryKey: mutation.options.mutationKey,
         });
       },
-      onError: (error, _variables, _context, mutation) => {
-        clearRejectedSession(error);
+      onError: (error, _variables, context, mutation) => {
+        if (context instanceof AuthCacheGeneration && !context.isCurrent())
+          return;
+        clearRejectedSession(qc, error);
         logger.error('[MUTATION ERROR]', {
           data: error instanceof Error ? error.message : error,
         });
