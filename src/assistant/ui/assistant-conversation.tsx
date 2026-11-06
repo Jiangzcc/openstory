@@ -49,6 +49,7 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
 }) => {
   const { t } = useTranslation('assistant');
   const translateLabel = useLabelTranslation('assistant');
+  const localizedSuggestions = suggestions.map(translateLabel);
 
   const queryClient = useQueryClient();
   const { model: preferredModel } = useAssistantState();
@@ -118,7 +119,7 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
             className="flex flex-col gap-1"
             aria-label={t('Suggested prompts')}
           >
-            {suggestions.map((suggestion) => (
+            {localizedSuggestions.map((suggestion) => (
               <li key={suggestion}>
                 <Button
                   type="button"
@@ -130,7 +131,7 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
                     if (modelReady) void sendMessage(suggestion);
                   }}
                 >
-                  {translateLabel(suggestion)}
+                  {suggestion}
                 </Button>
               </li>
             ))}

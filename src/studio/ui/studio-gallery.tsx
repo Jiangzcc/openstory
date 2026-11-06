@@ -369,12 +369,13 @@ const ASSISTANT_STARTERS = {
 
 function AssistantStarters({ activity }: { activity: StudioActivity }) {
   const { t } = useTranslation('studio');
+  const starters = ASSISTANT_STARTERS[activity].map((starter) => t(starter));
 
   return (
     <div className="flex flex-col items-center gap-3">
       <p className="text-muted-foreground">{t('What do you want to make?')}</p>
       <div className="flex flex-wrap justify-center gap-2">
-        {ASSISTANT_STARTERS[activity].map((starter) => (
+        {starters.map((starter) => (
           <Button
             key={starter}
             type="button"
@@ -382,7 +383,7 @@ function AssistantStarters({ activity }: { activity: StudioActivity }) {
             size="sm"
             onClick={() => openAssistant({ context: [], prompt: starter })}
           >
-            {t(starter)}
+            {starter}
           </Button>
         ))}
       </div>

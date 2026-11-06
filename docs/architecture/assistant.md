@@ -263,7 +263,7 @@ same events the server sends.
 
 ## Secondary-development localization
 
-Secondary-development localization only changes the UI: tool display names, grouped status and starter labels use the request-local i18n instance. Context-chip nouns and known attachment statuses are translated only for display; context labels, attachment names and unknown diagnostics remain verbatim. MCP/chat tool names, tool arguments, approval rules and the original starter text sent to the model stay unchanged.
+Secondary-development localization uses the request-local i18n instance for tool display names, grouped status and built-in starters. A built-in starter fills or sends the same localized text its button displays, using the language selected when clicked. Existing drafts, user-authored messages and unknown custom starters remain verbatim. Context-chip nouns and known attachment statuses are translated only for display; context labels, attachment names and unknown diagnostics remain verbatim. MCP/chat tool names, tool arguments and approval rules stay unchanged.
 
 ## Platform model recommendations
 

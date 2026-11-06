@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import {
   includesStage,
   sliderStages,
@@ -83,6 +84,7 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
   disabled = false,
 }) => {
   const { t } = useTranslation('sequences');
+  const translateLabel = useLabelTranslation('sequences');
 
   const stages = sliderStages(!generateStartFrames, generateVoices);
   const lastStop = stages.length - 1;
@@ -142,7 +144,7 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
                 onChange(stopAtFromSliderIndex(index, stages));
               }}
               className={cn(
-                'absolute max-w-[6.5rem] text-[11px] leading-tight tracking-wide whitespace-pre-line line-clamp-2',
+                'absolute w-max max-w-[6.5rem] text-[11px] leading-tight tracking-wide whitespace-pre-line line-clamp-2',
                 side === 'above' ? 'bottom-0' : 'top-0',
                 // The end labels hang off the track's ends so they stay inside
                 // it; their lines still centre on each other, like the rest.
@@ -162,7 +164,7 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
               {/* Ticks name the stop; the heading above says what happens
                   there. The last tick used stopAfterSentence, so it repeated
                   the heading ("Don't stop") instead of naming the stage. */}
-              {tickLabel(tick, index)}
+              {translateLabel(tickLabel(tick, index))}
             </button>
           );
         })}
@@ -179,10 +181,12 @@ export const GenerationStopSlider: FC<GenerationStopSliderProps> = ({
         id="generation-stop-label"
         className="text-sm font-medium text-foreground"
       >
-        {stopAfterSentence(selected, {
-          generateStartFrames: combinedStillsAndDialogue,
-          draftFirst,
-        })}
+        {translateLabel(
+          stopAfterSentence(selected, {
+            generateStartFrames: combinedStillsAndDialogue,
+            draftFirst,
+          })
+        )}
       </h3>
       {alternate && tickRow('above')}
       <Slider
