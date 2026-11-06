@@ -1,3 +1,4 @@
+import type { ImageChannelModelId } from '@/models/image-channels';
 /**
  * `prepareShotImageWorkflowInput` must not read what it cannot use.
  *
@@ -14,7 +15,12 @@
  * undefined` case would null `promptVersionId` for `generateShotImageFn`.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
+import { createImageModelRoutingSnapshot } from '@/models/image-channels';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import { unpackModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { DEFAULT_IMAGE_MODEL } from '@/models/models';
 import type { Frame, Shot } from '@/platform/server/db/schema';
 import { asStub } from '@/test/as-stub';
@@ -25,6 +31,13 @@ vi.doMock('@/billing/server/fal-pricing-live', () => ({
 const requireCredits = vi.fn(async () => undefined);
 vi.doMock('@/billing/server/preflight', () => ({
   requireCredits,
+}));
+
+const loadConfiguration = vi
+  .fn<() => Promise<ModelRuntimeConfiguration>>()
+  .mockResolvedValue(DEFAULT_MODEL_CONFIGURATION);
+vi.doMock('@/platform/server/db/scoped', () => ({
+  loadModelRuntimeConfiguration: loadConfiguration,
 }));
 
 // Dynamic import so the mocks above apply (vi.doMock is not hoisted).
@@ -216,6 +229,163 @@ describe('prepareShotImageWorkflowInput refuses a blank prompt before credits', 
       })
     ).rejects.toThrow('Shot has no prompt or description to regenerate from');
 
+    expect(requireCredits).not.toHaveBeenCalled();
+  });
+});
+
+function configuredModels(
+  modelId: ImageChannelModelId = 'custom-image:qwen'
+): ModelRuntimeConfiguration {
+  const configuration = imageConfigurationFixture();
+  const model = configuration.models[0];
+  if (!model) throw new Error('Missing mock image binding.');
+  model.id = modelId;
+  return {
+    ...DEFAULT_MODEL_CONFIGURATION,
+    imageModelRouting: createImageModelRoutingSnapshot(configuration),
+  };
+}
+
+describe('configured shot image billing snapshots', () => {
+  beforeEach(() => {
+    loadConfiguration.mockReset();
+    requireCredits.mockClear();
+  });
+
+  it.each([
+    { change: 'disabled', modelId: 'custom-image:qwen' },
+    { change: 'repriced', modelId: 'custom-image:qwen' },
+    { change: 'disabled', modelId: 'gpt_image_2' },
+    { change: 'repriced', modelId: 'gpt_image_2' },
+  ] as const)(
+    'keeps the $modelId workflow snapshot after the live channel is $change',
+    async ({ change, modelId }) => {
+      const frozen = configuredModels(modelId);
+      loadConfiguration.mockResolvedValue({
+        ...frozen,
+        imageModelRouting:
+          change === 'disabled'
+            ? []
+            : frozen.imageModelRouting?.map((route) => ({
+                ...route,
+                priceCards: route.priceCards.map((card) => ({
+                  ...card,
+                  unitPriceUsd: 1,
+                })),
+              })),
+      });
+      const { scopedDb } = makeScopedDb();
+      const input = await prepareShotImageWorkflowInput({
+        ...baseArgs(scopedDb),
+        modelOverride: modelId,
+        modelConfiguration: frozen,
+        promptOverride: 'Mock frozen prompt',
+        promptVersionOverride: 'mock-prompt-version',
+        reservationId: 'mock-frozen-hold',
+      });
+      expect(loadConfiguration).not.toHaveBeenCalled();
+      expect(requireCredits).toHaveBeenCalledWith(
+        scopedDb,
+        100000,
+        expect.objectContaining({
+          imageSource: 'platform',
+          reservationId: 'mock-frozen-hold',
+        })
+      );
+      expect(
+        unpackModelRuntimeConfiguration(
+          input.modelConfiguration ?? DEFAULT_MODEL_CONFIGURATION
+        )
+      ).toEqual(frozen);
+    }
+  );
+
+  it('gates the exact sequence resolution frozen onto the image workflow', async () => {
+    const frozen = configuredModels();
+    const route = frozen.imageModelRouting?.[0];
+    if (!route) throw new Error('Missing mock resolution route.');
+    route.parameters = route.parameters.map((parameter) => ({
+      ...parameter,
+      defaultValue: '1280x720',
+      values: ['1280x720', '1920x1080'],
+    }));
+    route.priceCards = route.priceCards.flatMap((card) => [
+      {
+        ...card,
+        id: card.id + '-720',
+        match: { size: '1280x720' },
+        unitPriceUsd: 0.1,
+      },
+      {
+        ...card,
+        id: card.id + '-1080',
+        match: { size: '1920x1080' },
+        unitPriceUsd: 0.2,
+      },
+    ]);
+    const { scopedDb } = makeScopedDb();
+    const args = baseArgs(scopedDb);
+    const input = await prepareShotImageWorkflowInput({
+      ...args,
+      sequence: { ...args.sequence, resolution: '1080p' },
+      modelOverride: 'custom-image:qwen',
+      modelConfiguration: frozen,
+    });
+    expect(requireCredits).toHaveBeenCalledWith(
+      scopedDb,
+      200000,
+      expect.objectContaining({ imageSource: 'platform' })
+    );
+    expect(input.resolution).toBe('1080p');
+    expect(
+      unpackModelRuntimeConfiguration(
+        input.modelConfiguration ?? DEFAULT_MODEL_CONFIGURATION
+      )
+    ).toEqual(frozen);
+    expect(loadConfiguration).not.toHaveBeenCalled();
+  });
+
+  it('loads current prices for a request without a trusted workflow snapshot', async () => {
+    const current = configuredModels();
+    current.imageModelRouting = current.imageModelRouting?.map((route) => ({
+      ...route,
+      priceCards: route.priceCards.map((card) => ({
+        ...card,
+        unitPriceUsd: 1,
+      })),
+    }));
+    loadConfiguration.mockResolvedValue(current);
+    const { scopedDb } = makeScopedDb();
+    const input = await prepareShotImageWorkflowInput({
+      ...baseArgs(scopedDb),
+      modelOverride: 'custom-image:qwen',
+    });
+    expect(loadConfiguration).toHaveBeenCalledTimes(1);
+    expect(requireCredits).toHaveBeenCalledWith(
+      scopedDb,
+      1000000,
+      expect.objectContaining({ imageSource: 'platform' })
+    );
+    expect(
+      unpackModelRuntimeConfiguration(
+        input.modelConfiguration ?? DEFAULT_MODEL_CONFIGURATION
+      )
+    ).toEqual(current);
+  });
+
+  it('refuses a request whose configured model is currently disabled', async () => {
+    loadConfiguration.mockResolvedValue({
+      ...configuredModels(),
+      imageModelRouting: [],
+    });
+    const { scopedDb } = makeScopedDb();
+    await expect(
+      prepareShotImageWorkflowInput({
+        ...baseArgs(scopedDb),
+        modelOverride: 'custom-image:qwen',
+      })
+    ).rejects.toThrow('Configured image model is unavailable.');
+    expect(loadConfiguration).toHaveBeenCalledTimes(1);
     expect(requireCredits).not.toHaveBeenCalled();
   });
 });

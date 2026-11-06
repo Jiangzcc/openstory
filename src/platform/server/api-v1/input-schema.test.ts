@@ -92,7 +92,7 @@ describe('apiCreateSequenceSchema', () => {
       style: 'Cinematic Noir',
       aspectRatio: '9:16',
       analysisModels: ['anthropic/claude-haiku-4.5'],
-      imageModels: ['flux-pro'],
+      imageModels: ['flux_2_dev'],
       videoModels: ['kling/kling-v1'],
       motion: true,
       music: true,
@@ -150,4 +150,26 @@ describe('apiEnhanceScriptSchema', () => {
       apiEnhanceScriptSchema.safeParse({ ...base, targetSeconds: 301 }).success
     ).toBe(false);
   });
+});
+
+it('accepts configured image identities and rejects arbitrary image model names', () => {
+  const base = { script: 'A valid script for configured image generation.' };
+  expect(
+    apiCreateSequenceSchema.parse({
+      ...base,
+      imageModels: ['custom-image:qwen'],
+    }).imageModels
+  ).toEqual(['custom-image:qwen']);
+  expect(
+    apiCreateSequenceSchema.safeParse({
+      ...base,
+      imageModels: ['no-such-model'],
+    }).success
+  ).toBe(false);
+  expect(
+    apiCreateSequenceSchema.safeParse({
+      ...base,
+      imageModels: ['custom-image:'],
+    }).success
+  ).toBe(false);
 });

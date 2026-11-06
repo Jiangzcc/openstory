@@ -18,3 +18,14 @@ describe('resolution note localization', () => {
     );
   });
 });
+
+it('translates the separate channel size settings note', () => {
+  const chinese = createApplicationI18n('zh-CN').getFixedT(null, 'interface');
+  expect(
+    resolutionCeilingNote(
+      '720p',
+      { imageModels: ['custom-image:historical'] },
+      chinese
+    )
+  ).toBe('custom-image:historical使用图片渠道的尺寸设置。');
+});

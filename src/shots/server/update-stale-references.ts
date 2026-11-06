@@ -1,3 +1,9 @@
+import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
+import { configuredImageRoutingForModels } from '@/billing/server/configured-image-billing';
+import {
+  referenceSheetImageRequests,
+  estimateReferenceSheetPlanCost,
+} from '@/billing/configured-image-plan-billing';
 /**
  * The references wave of a plan run (#1818): the sheets, element references
  * and voices a continue owes, each as the payload its per-entity workflow
@@ -31,7 +37,6 @@ import type {
   LocationSheetWorkflowInput,
 } from '@/platform/server/workflow/types';
 import type { PlanUnitRef } from '@/sequences/generation-plan';
-import { estimateReferenceSheetCost } from '@/billing/cost-estimation';
 import { VOICE_ESTIMATE_COST } from '@/billing/elevenlabs-pricing';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { multiplyMicros, type Microdollars } from '@/billing/money';
@@ -62,6 +67,7 @@ export async function buildPlanReferences(args: {
   sequence: Sequence;
   userId: string;
   units: readonly PlanUnitRef[];
+  imageModelRouting?: ImageModelRoutingSnapshot;
 }): Promise<PlanReferences | null> {
   const { scopedDb, sequence, userId, units } = args;
   const idsOf = (kind: PlanUnitRef['kind']) =>
@@ -196,26 +202,25 @@ export async function buildPlanReferences(args: {
       takes: SEED_VOICE_DEFAULT_TAKES,
     }));
 
-  const cost = {
-    sheets: estimateReferenceSheetCost({
-      imageModel: safeTextToImageModel(
-        sequence.imageModel,
-        DEFAULT_IMAGE_MODEL
-      ),
-      characterSheets: characterSheets.length + lookSheetsAfterDefault.length,
-      locationSheets: locationSheets.length,
-      elementSheets: owedElements.length,
-      pricing: await getEffectiveFalPricing(),
-    }),
-    voices: multiplyMicros(VOICE_ESTIMATE_COST, voices.length),
-  };
-
-  return {
+  const references = {
     characterSheets,
     lookSheetsAfterDefault,
     locationSheets,
     elementSheets,
-    voices,
-    cost,
   };
+  const imageModelRouting =
+    args.imageModelRouting ??
+    (await configuredImageRoutingForModels(
+      referenceSheetImageRequests(references).map((request) => request.model)
+    ));
+  const cost = {
+    sheets: estimateReferenceSheetPlanCost(
+      references,
+      safeTextToImageModel(sequence.imageModel, DEFAULT_IMAGE_MODEL),
+      imageModelRouting,
+      await getEffectiveFalPricing()
+    ),
+    voices: multiplyMicros(VOICE_ESTIMATE_COST, voices.length),
+  };
+  return { ...references, voices, cost };
 }

@@ -1,3 +1,4 @@
+import { resolveVariantImageSize } from './aspect-ratios';
 import { describe, expect, it } from 'vitest';
 import {
   aspectRatioValue,
@@ -72,5 +73,21 @@ describe('getCanvasFitClassName', () => {
     expect(getCanvasFitClassName('9:16')).toContain('cqh');
     expect(getCanvasFitClassName('16:9')).toContain('aspect-video');
     expect(getCanvasFitClassName('1:1')).toContain('aspect-square');
+  });
+});
+
+describe('variant sheet sizing shared by quote and execution', () => {
+  it('keeps the landscape grid required by horizontal and portrait sequences', () => {
+    expect(resolveVariantImageSize('16:9', 'square_hd')).toBe('landscape_16_9');
+    expect(resolveVariantImageSize('9:16', 'portrait_16_9')).toBe(
+      'landscape_16_9'
+    );
+  });
+  it('keeps square grids and uses caller sizing only for legacy ratio-less tasks', () => {
+    expect(resolveVariantImageSize('1:1', 'landscape_16_9')).toBe('square_hd');
+    expect(resolveVariantImageSize(undefined, 'portrait_16_9')).toBe(
+      'portrait_16_9'
+    );
+    expect(resolveVariantImageSize()).toBe('landscape_16_9');
   });
 });

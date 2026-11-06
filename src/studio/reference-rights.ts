@@ -7,7 +7,11 @@ import type { StudioCreateInput } from './schema';
  * past the gate ungated.
  */
 function studioReferenceImages(input: StudioCreateInput): string[] {
-  if (input.activity === 'image') return input.referenceImages;
+  if (input.activity === 'image')
+    return [
+      ...input.referenceImages,
+      ...(input.maskImageUrl ? [input.maskImageUrl] : []),
+    ];
   switch (input.mode) {
     case 'reference':
       return input.referenceImages;

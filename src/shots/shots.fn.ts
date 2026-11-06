@@ -1,3 +1,4 @@
+import { loadStoryboardModelConfiguration } from '@/sequences/server/launchers';
 import { usesStartFrame } from './use-start-frame';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { requireCredits } from '@/billing/server/preflight';
@@ -666,17 +667,19 @@ export const updateStaleShotsFn = createServerFn({ method: 'POST' })
   )
   .handler(async ({ data, context }) => {
     const { sequence, organizationId, user, scopedDb } = context;
-    const { plan, creditFloorMicros } = await prepareUpdateStale({
-      scopedDb,
-      userId: user.id,
-      sequence,
-      depth: data.depth ?? DEFAULT_UPDATE_STALE_DEPTH,
-      sceneId: data.sceneId,
-      shotId: data.shotId,
-    });
+    const { plan, creditFloorMicros, imageSource, modelConfiguration } =
+      await prepareUpdateStale({
+        scopedDb,
+        userId: user.id,
+        sequence,
+        depth: data.depth ?? DEFAULT_UPDATE_STALE_DEPTH,
+        sceneId: data.sceneId,
+        shotId: data.shotId,
+      });
     if (creditFloorMicros > 0) {
       await requireCredits(scopedDb, creditFloorMicros, {
         providers: [...UPDATE_STALE_CREDIT_PROVIDERS],
+        imageSource,
         errorMessage: 'Insufficient credits to update out-of-date shots',
       });
     }
@@ -691,6 +694,7 @@ export const updateStaleShotsFn = createServerFn({ method: 'POST' })
       // a polled run id actually belongs to the sequence being authorized —
       // without this, any authenticated user could read any run's output.
       runKey: `${sequence.id}-${Date.now()}-${crypto.randomUUID()}`,
+      modelConfiguration,
     });
     return { workflowRunId };
   });
@@ -773,6 +777,7 @@ export const getUpdateStalePreviewFn = createServerFn({ method: 'GET' })
   )
   .handler(async ({ data, context }): Promise<UpdateStalePreview> => {
     const { sequence, scopedDb } = context;
+    const modelConfiguration = await loadStoryboardModelConfiguration(scopedDb);
     const plan = await planUpdateAll({
       scopedDb,
       sequenceId: sequence.id,
@@ -780,10 +785,12 @@ export const getUpdateStalePreviewFn = createServerFn({ method: 'GET' })
       shotId: data.shotId,
       depth: 'music',
       userId: context.user.id,
+      imageModelRouting: modelConfiguration.imageModelRouting,
     });
     return buildUpdateStalePreview(
       plan,
       await getEffectiveFalPricing(),
-      sequence.musicModel
+      sequence.musicModel,
+      modelConfiguration.imageModelRouting
     );
   });

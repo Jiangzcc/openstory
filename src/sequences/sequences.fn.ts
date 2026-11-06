@@ -1,3 +1,4 @@
+import { configuredImageSource } from '@/billing/configured-image-billing';
 import {
   getAnalysisModelById,
   isCustomAnalysisModelId,
@@ -34,7 +35,6 @@ import {
   loadStoryboardModelConfiguration,
   resolveStoryboardLlmSources,
 } from '@/sequences/server/launchers';
-import { computePlan } from '@/shots/server/update-stale-plan';
 import {
   allowsUnfundedGeneration,
   flagsFromStopAt,
@@ -45,7 +45,7 @@ import { planWork } from './generation-plan';
 import { computeGenerationPlan } from '@/sequences/server/generation-plan';
 import {
   CONTINUE_CREDIT_PROVIDERS,
-  estimateContinueCost,
+  prepareContinueEstimate,
   prepareContinue,
   withContinueSwitches,
 } from '@/sequences/server/continue-plan';
@@ -109,18 +109,18 @@ export const estimateGenerationSliceFn = createServerFn({ method: 'GET' })
   .validator(zodValidator(continueFlagsSchema))
   .handler(async ({ data, context }) => {
     const { sequence, scopedDb } = context;
-    const [plan, shots] = await Promise.all([
+    const [plan] = await Promise.all([
       computeGenerationPlan(scopedDb, sequence.id, {
         generateStartFrames: data.generateStartFrames,
         generateVoices: data.generateVoices,
       }),
-      scopedDb.shots.listBySequence(sequence.id),
       // Warms the pricing cache beside the plan, not after it.
       getEffectiveFalPricing(),
     ]);
-    const estimate = await estimateContinueCost({
+    const { estimate } = await prepareContinueEstimate({
+      scopedDb,
+      userId: context.user.id,
       sequence,
-      shots,
       work: planWork(
         plan,
         switchStopAt({
@@ -136,7 +136,10 @@ export const estimateGenerationSliceFn = createServerFn({ method: 'GET' })
           plan,
         })
       ),
-      generateStartFrames: data.generateStartFrames,
+      requested: {
+        generateStartFrames: data.generateStartFrames,
+        generateVoices: data.generateVoices,
+      },
       draftMotion: data.draftMotion,
     });
     return { estimateMicros: estimate.priced ? Number(estimate.micros) : null };
@@ -189,18 +192,21 @@ export const continueGenerationFn = createServerFn({ method: 'POST' })
     };
     // Refuses a running sequence before anything saves: the switches below
     // are written onto the row the trigger snapshots.
-    const { work, stopAt, estimate } = await prepareContinue({
-      scopedDb,
-      sequence,
-      stopAt: data.stopAt,
-      requested,
-      draftMotion: data.draftMotion,
-    });
+    const { plan, stopAt, estimate, modelConfiguration } =
+      await prepareContinue({
+        scopedDb,
+        userId: context.user.id,
+        sequence,
+        stopAt: data.stopAt,
+        requested,
+        draftMotion: data.draftMotion,
+      });
     // A balance check, not a hold: the run's per-shot children each
     // preflight their own spend against the balance (as Update all's do) and
     // never draw from a reservation, so a hold would refuse them (#1818).
     await requireCredits(scopedDb, estimate.micros, {
       providers: [...CONTINUE_CREDIT_PROVIDERS],
+      imageSource: estimate.imageSource,
       errorMessage: 'Insufficient credits to continue generation',
     });
 
@@ -219,16 +225,10 @@ export const continueGenerationFn = createServerFn({ method: 'POST' })
           userId: context.user.id,
           organizationId: context.organizationId,
           sequence,
-          // The units, frozen now with every input read from D1 — after the
-          // switches saved, so a shot's mode is the one this click chose.
-          plan: await computePlan({
-            scopedDb,
-            sequenceId: sequence.id,
-            units: work.map(({ kind, id }) => ({ kind, id })),
-            userId: context.user.id,
-          }),
+          plan,
           stopAt,
           leftoverGrokShotIds: data.leftoverGrokShotIds,
+          modelConfiguration,
         })
     );
   });
@@ -405,6 +405,7 @@ export const retryStoryboardFn = createServerFn({ method: 'POST' })
           context.scopedDb,
           estimateStoryboardPreflightCost({
             script: sequence.script ?? '',
+            imageModelRouting: configuration.imageModelRouting,
             imageModel: safeTextToImageModel(
               sequence.imageModel,
               DEFAULT_IMAGE_MODEL
@@ -426,6 +427,10 @@ export const retryStoryboardFn = createServerFn({ method: 'POST' })
           }),
           {
             providers: ['fal', 'openrouter'],
+            imageSource: configuredImageSource(
+              sequence.imageModel,
+              configuration.imageModelRouting
+            ),
             llmSources: await resolveStoryboardLlmSources(
               context.scopedDb,
               sequence.analysisModel,

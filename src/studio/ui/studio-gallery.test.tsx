@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { GeneratedAsset } from '@/platform/server/db/schema';
 import { Dialog } from '@/ui/shadcn/dialog';
+import { StudioImageOutputList } from './configured-image-output-status';
 import { TooltipProvider } from '@/ui/shadcn/tooltip';
 import {
   GenerationDetail,
@@ -110,6 +111,67 @@ describe('GenerationDetail', () => {
     expect(html).toContain(stored);
     expect(html).not.toContain('Generation failed');
   });
+
+  it.each(['custom-image:test', 'gpt_image_2', 'nano_banana_2'])(
+    'shows partial native image delivery in generation details for %s',
+    (imageModel) => {
+      const html = renderToStaticMarkup(
+        <TooltipProvider>
+          <Dialog open>
+            <GenerationDetail
+              asset={{
+                ...asset({
+                  prompt: 'a fox',
+                  imageModel,
+                  channelParameters: { n: 2 },
+                }),
+                activity: 'image',
+                outputs: [{ url: '/r2/fox.png', contentType: 'image/png' }],
+              }}
+              supportMode={false}
+              copied={false}
+              onCopy={() => undefined}
+              deletePending={false}
+              onDelete={() => undefined}
+            />
+          </Dialog>
+        </TooltipProvider>
+      );
+      expect(html).toContain(
+        'Partially completed: requested 2 images, generated 1.'
+      );
+      expect(html).toContain(
+        'Billing follows the actual number of output images.'
+      );
+    }
+  );
+
+  it.each(['custom-image:test', 'gpt_image_2', 'nano_banana_2'])(
+    'offers every actual native image for viewing and downloading for %s',
+    (imageModel) => {
+      const html = renderToStaticMarkup(
+        <StudioImageOutputList
+          asset={{
+            ...asset({
+              imageModel,
+              channelParameters: { n: 2 },
+            }),
+            activity: 'image',
+            outputs: [
+              { url: '/r2/one.png', contentType: 'image/png' },
+              { url: '/r2/two.webp', contentType: 'image/webp' },
+            ],
+          }}
+        />
+      );
+      expect(html).toContain('Output images (2)');
+      expect(html).toContain('Open image 1');
+      expect(html).toContain('Open image 2');
+      expect(html).toContain('/r2/one.png?download');
+      expect(html).toContain('/r2/two.webp?download');
+      expect(html).not.toContain('Partially completed');
+    }
+  );
 
   it('steps reference stills and wraps at the ends', () => {
     expect(stepReferenceIndex(0, -1, 4)).toBe(3);

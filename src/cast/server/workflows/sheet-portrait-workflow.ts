@@ -5,10 +5,8 @@
  */
 
 import { castChannelId } from '@/cast/cast-channel';
-import {
-  chargeSheetPortrait,
-  drawSheetPortrait,
-} from '@/cast/server/sheets/sheet-portrait';
+import { chargeSheetPortrait } from '@/cast/server/sheets/sheet-portrait';
+import { runSheetPortraitStep } from '@/cast/server/sheets/sheet-portrait-step';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { getGenerationChannel } from '@/platform/realtime';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
@@ -32,21 +30,18 @@ export class SheetPortraitWorkflow extends OpenStoryWorkflowEntrypoint<SheetPort
 
     // Drawn and stored in one step (#1645). Null when the draw failed: the
     // sheet is already saved, and its tile keeps cropping it.
-    const drawn = await step.do('draw-portrait', () =>
-      drawSheetPortrait({
-        scopedDb,
-        kind: subject.kind,
-        sheetUrl,
-        storageDir: input.storageDir,
-        subjectId:
-          subject.kind === 'character'
-            ? subject.characterId
-            : subject.locationId,
-        chargeKey: event.instanceId,
-        userId: input.userId,
-        sequenceId,
-      })
-    );
+    const drawn = await runSheetPortraitStep({
+      step,
+      scopedDb,
+      kind: subject.kind,
+      sheetUrl,
+      storageDir: input.storageDir,
+      subjectId:
+        subject.kind === 'character' ? subject.characterId : subject.locationId,
+      chargeKey: event.instanceId,
+      userId: input.userId,
+      sequenceId,
+    });
     if (!drawn) return { versionId, portraitUrl: null };
     const { portraitUrl } = drawn;
 

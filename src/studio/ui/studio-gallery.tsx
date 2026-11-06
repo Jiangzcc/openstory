@@ -70,6 +70,10 @@ import {
   isContentRejectionError,
 } from '@/models/content-rejection';
 import { estimateStudioProgress } from './progress';
+import {
+  StudioImageOutputList,
+  StudioImageOutputStatus,
+} from './configured-image-output-status';
 import { copyTextToClipboard } from '@/ui/clipboard';
 import { VideoPlayer } from '@/motion/ui/video-player';
 import type { AspectRatio } from '@/models/aspect-ratios';
@@ -281,6 +285,7 @@ function StudioCard({
           )}
         </button>
       )}
+      <StudioImageOutputStatus asset={asset} />
       {/* A draft tile says so, with the days left to render its final (#1756). */}
       {asset.draftTaskId && asset.status === 'completed' && (
         <span className="pointer-events-none absolute top-2 left-2 z-10 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground backdrop-blur-sm">
@@ -1015,6 +1020,8 @@ export function GenerationDetail({
           <DialogTitle>{asset.modelName || t('Generation')}</DialogTitle>
           <DialogDescription>{facts.join(' · ')}</DialogDescription>
         </DialogHeader>
+        <StudioImageOutputStatus asset={asset} />
+        <StudioImageOutputList asset={asset} />
         {references.length > 0 && <ReferenceList references={references} />}
         <div className="max-h-64 overflow-y-auto md:max-h-none md:min-h-0 md:flex-1">
           {prompt ? (

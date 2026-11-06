@@ -153,6 +153,7 @@ function makeScopedDb(opts: {
   const stub = {
     modelConfiguration: { get: async () => DEFAULT_MODEL_CONFIGURATION },
     textChannels: { getSnapshot: vi.fn(async () => opts.routing ?? []) },
+    imageChannels: { getSnapshot: vi.fn(async () => []) },
     sequences: { getForUser, claimWorkflowSlot, update },
     styles: { getById: getStyleById },
     sequenceElements: { list: listElements },
@@ -669,6 +670,7 @@ test('keeps the stored custom id and routing snapshot through dispatch', async (
   });
   await triggerStoryboard(scopedDb, INPUT);
   expect(scopedDb.textChannels.getSnapshot).toHaveBeenCalledOnce();
+  expect(scopedDb.imageChannels.getSnapshot).toHaveBeenCalledOnce();
   expect(triggerWorkflowMock).toHaveBeenCalledWith(
     '/storyboard',
     expect.objectContaining({ analysisModelId: CUSTOM_ROUTE.modelId }),
@@ -676,6 +678,7 @@ test('keeps the stored custom id and routing snapshot through dispatch', async (
       modelConfiguration: {
         ...DEFAULT_MODEL_CONFIGURATION,
         textModelRouting: routing,
+        imageModelRouting: [],
       },
     })
   );
@@ -713,6 +716,7 @@ test('reuses a caller snapshot instead of reading a later route', async () => {
   };
   await triggerStoryboard(scopedDb, INPUT, configuration);
   expect(scopedDb.textChannels.getSnapshot).not.toHaveBeenCalled();
+  expect(scopedDb.imageChannels.getSnapshot).not.toHaveBeenCalled();
   expect(triggerWorkflowMock.mock.calls[0]?.[2]?.modelConfiguration).toBe(
     configuration
   );

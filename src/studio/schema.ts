@@ -1,3 +1,8 @@
+import { isConfiguredImageModelId } from '@/models/image-channels';
+import {
+  IMAGE_PARAMETER_LIMITS,
+  imageChannelParameterValuesSchema,
+} from '@/models/image-channel-parameters';
 /**
  * Images and Videos (#1274). Client-safe: no env, no adapters.
  *
@@ -13,7 +18,6 @@ import {
   isValidImageToVideoModel,
   isValidTextToImageModel,
   supportsDraftMode,
-  supportsReferenceImages,
   type ImageToVideoModel,
   type TextToImageModel,
 } from '@/models/models';
@@ -42,7 +46,8 @@ const imageModelKeySchema = z
   .string()
   .refine(
     (value): value is TextToImageModel =>
-      isValidTextToImageModel(value) && visibleImageModelKeys.includes(value),
+      isConfiguredImageModelId(value) ||
+      (isValidTextToImageModel(value) && visibleImageModelKeys.includes(value)),
     { message: 'Unknown image model' }
   );
 
@@ -100,17 +105,19 @@ export const studioCreateInputSchema = z.discriminatedUnion('activity', [
       resolution: resolutionSchema.default(DEFAULT_RESOLUTION),
       count: countSchema.default(1),
       /** Routes to the model's edit endpoint; bound as `@Image1`…`@ImageN`. */
-      referenceImages: z.array(mediaUrlSchema).max(9).default([]),
+      referenceImages: z
+        .array(mediaUrlSchema)
+        .max(IMAGE_PARAMETER_LIMITS.maximumImages)
+        .default([]),
+      channelParameters: imageChannelParameterValuesSchema.optional(),
+      maskImageUrl: mediaUrlSchema.optional(),
     })
     .superRefine((input, ctx) => {
-      if (
-        input.referenceImages.length > 0 &&
-        !supportsReferenceImages(input.imageModel)
-      ) {
+      if (input.maskImageUrl && input.referenceImages.length === 0) {
         ctx.addIssue({
           code: 'custom',
-          path: ['referenceImages'],
-          message: `${IMAGE_MODELS[input.imageModel].name} does not take reference images`,
+          path: ['maskImageUrl'],
+          message: 'A mask requires a reference image.',
         });
       }
     }),
@@ -305,6 +312,7 @@ export function studioEndpointId(input: StudioCreateInput): string {
   if (input.activity === 'video') {
     return studioVideoEndpointId(input.videoModel, input.mode);
   }
+  if (isConfiguredImageModelId(input.imageModel)) return input.imageModel;
   return (
     (input.referenceImages.length > 0
       ? getEditEndpoint(input.imageModel)
@@ -316,5 +324,7 @@ export function studioModelName(input: StudioCreateInput): string {
   if (input.activity === 'video') {
     return IMAGE_TO_VIDEO_MODELS[input.videoModel].name;
   }
-  return IMAGE_MODELS[input.imageModel].name;
+  return isConfiguredImageModelId(input.imageModel)
+    ? input.imageModel
+    : IMAGE_MODELS[input.imageModel].name;
 }

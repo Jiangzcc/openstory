@@ -1,3 +1,4 @@
+import { configuredImageSource } from '@/billing/configured-image-billing';
 /**
  * A shot's storyboard preview: the grey animatic sketch on the scene rail
  * (#1101, #1642). Scene split draws one per shot. A reference-only shot has
@@ -77,10 +78,12 @@ export async function triggerShotPreview(
 
 async function previewCostMicros(
   aspectRatio: AspectRatio,
-  model: ModelRuntimeConfiguration['shotPreview']
+  configuration: ModelRuntimeConfiguration
 ) {
+  const model = configuration.shotPreview;
   return gateEstimate(
     estimateImageCost(model, aspectRatio, 1, {
+      imageModelRouting: configuration.imageModelRouting,
       pricing: await getEffectiveFalPricing(),
     }),
     { model, operation: 'shot-preview' }
@@ -122,10 +125,13 @@ export async function redrawShotPreview(
     const modelConfiguration = await loadModelRuntimeConfiguration();
     await requireCredits(
       scopedDb,
-      await previewCostMicros(
-        sequence.aspectRatio,
-        modelConfiguration.shotPreview
-      )
+      await previewCostMicros(sequence.aspectRatio, modelConfiguration),
+      {
+        imageSource: configuredImageSource(
+          modelConfiguration.shotPreview,
+          modelConfiguration.imageModelRouting
+        ),
+      }
     );
     await triggerShotPreview(
       {
@@ -163,8 +169,14 @@ export async function redrawShotPreviewInRun(
   try {
     await requireCredits(
       scopedDb.liveRead,
-      await previewCostMicros(target.aspectRatio, scopedDb.models.shotPreview),
-      { reservationId: target.reservationId }
+      await previewCostMicros(target.aspectRatio, scopedDb.models),
+      {
+        reservationId: target.reservationId,
+        imageSource: configuredImageSource(
+          scopedDb.models.shotPreview,
+          scopedDb.models.imageModelRouting
+        ),
+      }
     );
     await triggerShotPreview(
       {

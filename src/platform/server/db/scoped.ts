@@ -1,3 +1,7 @@
+import {
+  createImageModelRoutingSnapshot,
+  imageModelCatalogFromConfiguration,
+} from '@/models/image-channels';
 /**
  * Scoped Database Context
  * Factory that returns organization-scoped query methods, auto-injecting organizationId.
@@ -33,6 +37,11 @@ import {
   createTextChannelsReadMethods,
   createTextChannelsAdminMethods,
 } from '@/models/server/db/text-channels';
+import { createImageGenerationAttemptsMethods } from '@/stills/server/db/image-generation-attempts';
+import {
+  createImageChannelsReadMethods,
+  createImageChannelsAdminMethods,
+} from '@/models/server/db/image-channels';
 import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { createBillingMethods } from '@/billing/server/db/billing';
@@ -449,6 +458,11 @@ export function createScopedDb(organizationId: string, userId: string) {
     modelUsage: createModelUsageMethods(db),
     modelConfiguration: createModelConfigurationReadMethods(db),
     textChannels: createTextChannelsReadMethods(db),
+    imageChannels: createImageChannelsReadMethods(db),
+    imageGenerationAttempts: createImageGenerationAttemptsMethods(
+      db,
+      organizationId
+    ),
 
     // BytePlus ACR slot ledger (#1361) — also platform-global: the asset
     // slots are per BytePlus ACCOUNT, shared by every organization, so there is
@@ -481,6 +495,7 @@ export function createSystemAdminScopedDb() {
     admin: createAdminMethods(db),
     modelConfiguration: createModelConfigurationAdminMethods(db),
     textChannels: createTextChannelsAdminMethods(db),
+    imageChannels: createImageChannelsAdminMethods(db),
     // Cross-team moderation (#1180): the report queue, enforcement, and
     // trace lookup. Only reachable through the system-admin scope, so a
     // organization-scoped caller cannot read another organization's reports.
@@ -533,6 +548,14 @@ export async function loadModelConfiguration() {
   return createModelConfigurationReadMethods(getDb()).get();
 }
 
+export async function loadImageModelRoutingSnapshot() {
+  return createImageChannelsReadMethods(getDb()).getSnapshot();
+}
+
+export async function loadImageModelCatalog() {
+  return createImageChannelsReadMethods(getDb()).getCatalog();
+}
+
 export async function loadTextModelRoutingSnapshot() {
   return createTextChannelsReadMethods(getDb()).getSnapshot();
 }
@@ -542,7 +565,13 @@ export async function loadModelRuntimeConfiguration(): Promise<ModelRuntimeConfi
   const textModelRouting =
     await createTextChannelsReadMethods(db).getSnapshot();
   const catalog = textModelCatalogFromRouting(textModelRouting);
-  const configuration =
-    await createModelConfigurationReadMethods(db).get(catalog);
-  return { ...configuration, textModelRouting };
+  const images = createImageChannelsReadMethods(db);
+  const imageConfiguration = await images.get();
+  const imageModelRouting = createImageModelRoutingSnapshot(imageConfiguration);
+  const imageCatalog = imageModelCatalogFromConfiguration(imageConfiguration);
+  const configuration = await createModelConfigurationReadMethods(db).get(
+    catalog,
+    imageCatalog
+  );
+  return { ...configuration, textModelRouting, imageModelRouting };
 }

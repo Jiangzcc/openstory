@@ -99,6 +99,7 @@ async function references(
     sequence,
     userId: 'user',
     units,
+    imageModelRouting: [],
   });
 }
 

@@ -28,6 +28,13 @@
  * such default — absent means absent.
  */
 
+import type { ImageModelRoutingSnapshot } from './image-channels';
+import {
+  isConfiguredImageModelId,
+  usesConfiguredImageChannel,
+} from './image-channels';
+import { ValidationError } from '@/platform/errors';
+
 import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_VIDEO_MODEL,
@@ -106,13 +113,35 @@ export function resolveVideoModel(
  * reference images, `buildImageRequest` routes to `EDIT_ENDPOINTS[model]`, and
  * a model without one quietly falls back to its text-to-image endpoint, which
  * ignores the input image and returns a fresh render rather than an upscale.
- * Every model has an edit endpoint except `hidream_i1`.
+ * Configured identities stay intact for hashes; execution requires the frozen
+ * edit capability through `requireUpscaleModel`.
  */
 export const UPSCALE_FALLBACK_MODEL: TextToImageModel = 'nano_banana_2_1';
 
 export function resolveUpscaleModel(
-  sourceModel: string | null | undefined
+  sourceModel: string | null | undefined,
+  imageModelRouting?: ImageModelRoutingSnapshot
 ): TextToImageModel {
+  if (isConfiguredImageModelId(sourceModel)) return sourceModel;
   if (!isValidTextToImageModel(sourceModel)) return UPSCALE_FALLBACK_MODEL;
+  if (usesConfiguredImageChannel(sourceModel, imageModelRouting))
+    return sourceModel;
   return getEditEndpoint(sourceModel) ? sourceModel : UPSCALE_FALLBACK_MODEL;
+}
+
+/** Validate a channel-bound upscale against the request's frozen routing. */
+export function requireUpscaleModel(
+  sourceModel: string | null | undefined,
+  imageModelRouting?: ImageModelRoutingSnapshot
+): TextToImageModel {
+  const model = resolveUpscaleModel(sourceModel, imageModelRouting);
+  if (!usesConfiguredImageChannel(model, imageModelRouting)) return model;
+  const route = imageModelRouting?.find((entry) => entry.modelId === model);
+  if (!route)
+    throw new ValidationError('Configured image model is unavailable.');
+  if (route.operations.edit?.status !== 'verified')
+    throw new ValidationError(
+      'This image model does not support verified image editing.'
+    );
+  return model;
 }

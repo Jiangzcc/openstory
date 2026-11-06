@@ -1,3 +1,5 @@
+import { usesConfiguredImageChannel } from '@/models/image-channels';
+import { generateConfiguredImage } from './configured-image-generation';
 import { getEnv } from '#env';
 import {
   arkAdapterConfig,
@@ -27,15 +29,21 @@ import {
 } from '@/models/server/quota-retry';
 import { resolveGoogleKeyForNewCall } from '@/models/server/google-key';
 import { withGoogleRegionFallback } from '@/models/google-region';
-import { isNativeBytePlusImageModel } from '@/models/models';
-import type { MediaVia } from '@/models/via';
+import {
+  isNativeBytePlusImageModel,
+  isBuiltinTextToImageModel,
+} from '@/models/models';
+import type { MediaVia, ImageVia } from '@/models/via';
 import { generateId } from '@/platform/id';
 import { workersSafeFetch } from '@/platform/server/ai/workers-safe-fetch';
 import type { Microdollars } from '@/billing/money';
 import type { ResolvedApiKey } from '@/models/server/db/api-keys';
 import type { CredentialScopedDb } from '@/platform/server/db/scoped-workflow';
 import { buildBytePlusImageRequest } from '@/stills/build-byteplus-image-request';
-import type { ImageGenerationParams } from '@/stills/build-image-request';
+import type {
+  ImageGenerationParams,
+  BuiltinImageGenerationParams,
+} from '@/stills/build-image-request';
 import {
   buildGeminiImageRequest,
   buildGrokImageRequest,
@@ -62,6 +70,7 @@ export type { ImageGenerationParams } from '@/stills/build-image-request';
 
 /** Non-serializable options passed separately from ImageGenerationParams */
 export type ImageGenerationOptions = {
+  configuredAttemptId?: string;
   credentials?: CredentialScopedDb;
   /** PostHog LLM-analytics metadata for the generation span. */
   observability?: AIObservabilityMeta;
@@ -78,7 +87,7 @@ export type ImageGenerationResult = {
   generatedAt: string;
   processingTimeMs: number;
   /** Pricing Via — which API served this. Vendor is `IMAGE_MODELS[model].vendor`. */
-  via: MediaVia;
+  via: ImageVia;
   metadata: {
     prompt: string;
     model: string;
@@ -100,6 +109,13 @@ export type ImageGenerationResult = {
     has_nsfw_concepts?: boolean[];
     cost?: Microdollars;
     requestId?: string;
+    configuredPricing?: {
+      priceCardId: string;
+      unitPriceUsd: number;
+      imageCount: number;
+      requestedCount: number;
+    };
+    supplierUsage?: object;
     usedOwnKey: boolean;
   };
 };
@@ -110,6 +126,19 @@ export async function generateImageWithProvider(
 ): Promise<ImageGenerationResult> {
   // Observability wraps the OUTER call, not the `generateImage()` inside —
   // see recordMediaGenerationSpan.
+  if (
+    usesConfiguredImageChannel(
+      params.model,
+      options?.credentials?.imageModelRouting
+    )
+  )
+    return generateConfiguredImage(params, options);
+  if (!isBuiltinTextToImageModel(params.model))
+    throw new Error('Unknown image model identifier.');
+  const builtinParams: BuiltinImageGenerationParams = {
+    ...params,
+    model: params.model,
+  };
   const startedAt = Date.now();
   const attribution = {
     ...options?.observability,
@@ -119,7 +148,7 @@ export async function generateImageWithProvider(
   };
 
   // The via of the attempt in flight, for the failure span.
-  let via: MediaVia = 'fal';
+  let via: ImageVia = 'fal';
   try {
     // A Google location refusal re-runs once off Google (`google-region.ts`).
     const result = await withGoogleRegionFallback(
@@ -128,7 +157,7 @@ export async function generateImageWithProvider(
         const route = await resolveImageVia(params.model, options?.credentials);
         via = route.via;
         return generateImageInternal(
-          params,
+          builtinParams,
           options,
           route.xaiKey,
           route.googleKey,
@@ -220,7 +249,7 @@ async function resolveImageVia(
 }
 
 async function generateImageInternal(
-  rawParams: ImageGenerationParams,
+  rawParams: BuiltinImageGenerationParams,
   options: ImageGenerationOptions | undefined,
   xaiKey: ResolvedApiKey | undefined,
   googleKey: ResolvedApiKey | undefined,
@@ -232,7 +261,7 @@ async function generateImageInternal(
   let result: AiImageGenerationResult;
   let endpoint: string;
   let usedOwnKey: boolean;
-  let params: ImageGenerationParams = rawParams;
+  let params: BuiltinImageGenerationParams = rawParams;
   let unitsBilled: number | undefined;
   let billedUnit: string | undefined;
   let cost: Microdollars | undefined;

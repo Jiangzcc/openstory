@@ -1,3 +1,7 @@
+import { quoteConfiguredPlanImages } from '@/billing/configured-image-plan-billing';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import { loadStoryboardModelConfiguration } from '@/sequences/server/launchers';
+import { configuredImageSource } from '@/billing/configured-image-billing';
 /**
  * Launch and read an "Update all" run (#1077, #1819). Shared by the editor
  * (`updateStaleShotsFn`, `getUpdateStaleShotsRunFn`) and agent operations
@@ -14,7 +18,7 @@ import { getChannelHistory, getGenerationChannel } from '@/platform/realtime';
 import { DEFAULT_IMAGE_MODEL, safeTextToImageModel } from '@/models/models';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { estimateImageCost, gateEstimate } from '@/billing/cost-estimation';
-import { ZERO_MICROS, type Microdollars } from '@/billing/money';
+import { ZERO_MICROS, micros, type Microdollars } from '@/billing/money';
 import { ValidationError } from '@/platform/errors';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { Sequence } from '@/platform/server/db/schema';
@@ -77,25 +81,21 @@ export async function prepareUpdateStale(args: {
   shotIds?: readonly string[];
   /** The live plan, when the caller already computed it (agent plans). */
   generationPlan?: readonly PlanUnit[];
-}): Promise<{ plan: UpdateStalePlan; creditFloorMicros: Microdollars }> {
+}): Promise<{
+  plan: UpdateStalePlan;
+  creditFloorMicros: Microdollars;
+  imageSource?: 'platform';
+  modelConfiguration: ModelRuntimeConfiguration;
+}> {
   const { scopedDb, sequence, depth } = args;
   if (sequence.status === 'processing') {
     throw new ValidationError(
       'This sequence is still generating — wait for the run to finish before updating out-of-date shots.'
     );
   }
-  const model = safeTextToImageModel(sequence.imageModel, DEFAULT_IMAGE_MODEL);
-  const creditFloorMicros =
-    depth === 'prompts'
-      ? ZERO_MICROS
-      : gateEstimate(
-          estimateImageCost(model, sequence.aspectRatio, 1, {
-            pricing: await getEffectiveFalPricing(),
-            resolution: sequence.resolution,
-          }),
-          { model, operation: 'update-stale-shots' }
-        );
+  const modelConfiguration = await loadStoryboardModelConfiguration(scopedDb);
   const plan = await planUpdateAll({
+    imageModelRouting: modelConfiguration.imageModelRouting,
     scopedDb,
     sequenceId: sequence.id,
     sceneId: args.sceneId,
@@ -105,7 +105,24 @@ export async function prepareUpdateStale(args: {
     userId: args.userId,
     generationPlan: args.generationPlan,
   });
-  return { plan, creditFloorMicros };
+  const imageModelRouting = modelConfiguration.imageModelRouting;
+  const model = safeTextToImageModel(sequence.imageModel, DEFAULT_IMAGE_MODEL);
+  let creditFloorMicros =
+    depth === 'prompts' || configuredImageSource(model, imageModelRouting)
+      ? ZERO_MICROS
+      : gateEstimate(
+          estimateImageCost(model, sequence.aspectRatio, 1, {
+            pricing: await getEffectiveFalPricing(),
+            imageModelRouting,
+            resolution: sequence.resolution,
+          }),
+          { model, operation: 'update-stale-shots' }
+        );
+
+  const { creditFloorMicros: configuredFloor, imageSource } =
+    quoteConfiguredPlanImages(plan, imageModelRouting);
+  creditFloorMicros = micros(Math.max(creditFloorMicros, configuredFloor));
+  return { plan, creditFloorMicros, imageSource, modelConfiguration };
 }
 
 /**
@@ -120,6 +137,7 @@ export async function launchUpdateStale(input: {
   sequenceId: string;
   plan: UpdateStalePlan;
   runKey: string;
+  modelConfiguration?: ModelRuntimeConfiguration;
 }): Promise<string> {
   const workflowRunId = await triggerWorkflow<UpdateStaleShotsWorkflowInput>(
     '/update-stale-shots',
@@ -129,7 +147,10 @@ export async function launchUpdateStale(input: {
       sequenceId: input.sequenceId,
       plan: input.plan,
     },
-    { deduplicationId: input.runKey }
+    {
+      deduplicationId: input.runKey,
+      modelConfiguration: input.modelConfiguration,
+    }
   );
   // Open editors adopt the run from this event, whoever started it. Logged,
   // not thrown: the run is already enqueued.

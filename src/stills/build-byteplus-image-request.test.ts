@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildBytePlusImageRequest } from './build-byteplus-image-request';
-import type { ImageGenerationParams } from './build-image-request';
+import type { BuiltinImageGenerationParams } from './build-image-request';
 
-const base: ImageGenerationParams = {
+const base: BuiltinImageGenerationParams = {
   model: 'seedream_v5',
   prompt: 'a guitar in a sunlit workshop',
 };

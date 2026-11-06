@@ -50,15 +50,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/ui/shadcn/alert-dialog';
-import { useFalPricing } from '@/billing/ui/use-fal-pricing';
+import { useImageCostHint } from '@/billing/ui/use-image-cost-hint';
 import { useSequence } from '@/sequences/ui/use-sequences';
 import type { TextToImageModel } from '@/models/models';
-import { estimateImageCost } from '@/billing/cost-estimation';
 import { resolveSheetImageModel } from '@/cast/sheet-image-model';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Loader2, MapPin } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { LocationBibleForm } from './location-bible-form';
 import { LocationPhotos } from './location-photos';
@@ -361,15 +360,12 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
     )?.model,
     sequenceImageModel: sequence?.imageModel ?? null,
   });
-  const { pricing: falPricing, isPending: pricingPending } = useFalPricing();
-  const sheetCostEstimate = useMemo(() => {
-    if (!falPricing) return pricingPending ? undefined : null;
-    return estimateImageCost(selectedSheetModel, '16:9', 1, {
-      pricing: falPricing,
-      // Drawn from the photos when it has any.
-      edit: (photos?.length ?? 0) > 0,
+  const { estimate: sheetCostEstimate, issue: sheetCostIssue } =
+    useImageCostHint({
+      model: selectedSheetModel,
+      aspectRatio: '16:9',
+      referenceImageCount: photos?.length,
     });
-  }, [falPricing, pricingPending, selectedSheetModel, photos?.length]);
 
   const handleRegenerateSheet = useCallback(() => {
     regenerateSheet.mutate(
@@ -615,9 +611,14 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
               <p className="text-xs text-muted-foreground">
                 {t("Used for this location's reference only.")}
               </p>
+              {sheetCostIssue && (
+                <output className="block text-sm text-muted-foreground">
+                  {sheetCostIssue}
+                </output>
+              )}
               <Button
                 onClick={handleRegenerateSheet}
-                disabled={regenerateSheet.isPending}
+                disabled={regenerateSheet.isPending || Boolean(sheetCostIssue)}
               >
                 <InButtonCost estimate={sheetCostEstimate}>
                   {regenerateSheet.isPending

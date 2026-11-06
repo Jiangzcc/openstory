@@ -12,6 +12,7 @@ import {
   isOfferedVideoModel,
   isValidImageToVideoModel,
   isValidTextToImageModel,
+  isBuiltinTextToImageModel,
   referenceOnlyMotionModels,
   safeImageToVideoModel,
   safeTextToImageModel,
@@ -224,10 +225,10 @@ describe('Model Validation', () => {
   });
 
   describe('Type Guards', () => {
-    it('isValidTextToImageModel acts as a type guard', () => {
+    it('isBuiltinTextToImageModel narrows static registry indexing', () => {
       const maybeModel: string = 'nano_banana_2';
-      if (isValidTextToImageModel(maybeModel)) {
-        // TypeScript should infer maybeModel as TextToImageModel here
+      if (isBuiltinTextToImageModel(maybeModel)) {
+        // Static registry indexing requires the built-in guard.
         const model = maybeModel;
         expect(IMAGE_MODELS[model]).toBeDefined();
       }

@@ -39,3 +39,12 @@ describe('measured latency catalogs', () => {
     );
   });
 });
+
+test('configured images use a visibly unmeasured proxy rather than claiming built-in sample counts', () => {
+  const estimate = imageWallClock('custom-image:qwen');
+  expect(estimate).toEqual({
+    ...IMAGE_WALL_CLOCK.gpt_image_2,
+    n: 0,
+    proxy: 'gpt_image_2',
+  });
+});

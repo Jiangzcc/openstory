@@ -1,3 +1,4 @@
+import { imageModelDisplayName } from '@/models/image-model-catalog';
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import type { Locale } from '@/platform/i18n/locale';
 import { useLocaleFormatting } from '@/ui/i18n/use-formatting';
@@ -30,11 +31,7 @@ import {
   useShotImageVersions,
   useShotVideoVersions,
 } from '@/shots/ui/use-shots';
-import {
-  IMAGE_MODELS,
-  isValidTextToImageModel,
-  videoModelDisplayName,
-} from '@/models/models';
+import { videoModelDisplayName } from '@/models/models';
 import type {
   PromptVariantSource,
   PromptVersionStatus,
@@ -139,10 +136,6 @@ function formatTimestamp(d: Date, locale: Locale): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
-}
-
-function imageModelDisplayName(model: string): string {
-  return isValidTextToImageModel(model) ? IMAGE_MODELS[model].name : model;
 }
 
 /** True when a media URL is likely a still (not an mp4/webm). */

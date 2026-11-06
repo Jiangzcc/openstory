@@ -1,3 +1,4 @@
+import { toImageModelCatalog } from '@/models/image-channels';
 /**
  * Centralised top-level workflow launchers.
  *
@@ -80,11 +81,15 @@ import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
 export async function loadStoryboardModelConfiguration(
   scopedDb: ScopedDb
 ): Promise<ModelRuntimeConfiguration> {
-  const textModelRouting = await scopedDb.textChannels.getSnapshot();
+  const [textModelRouting, imageModelRouting] = await Promise.all([
+    scopedDb.textChannels.getSnapshot(),
+    scopedDb.imageChannels.getSnapshot(),
+  ]);
   const models = await scopedDb.modelConfiguration.get(
-    textModelCatalogFromRouting(textModelRouting)
+    textModelCatalogFromRouting(textModelRouting),
+    toImageModelCatalog(imageModelRouting)
   );
-  return { ...models, textModelRouting };
+  return { ...models, textModelRouting, imageModelRouting };
 }
 
 export function resolveStoryboardLlmSources(
@@ -419,28 +424,33 @@ export function triggerContinue(
     plan: UpdateStalePlan;
     stopAt: GenerationStage;
     leftoverGrokShotIds?: string[];
+    modelConfiguration?: ModelRuntimeConfiguration;
   }
 ): Promise<{ workflowRunId: string }> {
   const { sequence, stopAt } = input;
   const { autoGenerateMotion, autoGenerateMusic } = flagsFromStopAt(stopAt);
-  return triggerStoryboard(scopedDb, {
-    userId: input.userId,
-    organizationId: input.organizationId,
-    sequenceId: sequence.id,
-    resume: true,
-    plan: input.plan,
-    stopAt,
-    autoGenerateMotion,
-    autoGenerateMusic,
-    imageModels: [
-      safeTextToImageModel(sequence.imageModel, DEFAULT_IMAGE_MODEL),
-    ],
-    videoModels: [
-      safeImageToVideoModel(sequence.videoModel, DEFAULT_VIDEO_MODEL),
-    ],
-    musicModel: sequence.musicModel
-      ? safeAudioModel(sequence.musicModel, DEFAULT_MUSIC_MODEL)
-      : undefined,
-    leftoverGrokShotIds: input.leftoverGrokShotIds,
-  });
+  return triggerStoryboard(
+    scopedDb,
+    {
+      userId: input.userId,
+      organizationId: input.organizationId,
+      sequenceId: sequence.id,
+      resume: true,
+      plan: input.plan,
+      stopAt,
+      autoGenerateMotion,
+      autoGenerateMusic,
+      imageModels: [
+        safeTextToImageModel(sequence.imageModel, DEFAULT_IMAGE_MODEL),
+      ],
+      videoModels: [
+        safeImageToVideoModel(sequence.videoModel, DEFAULT_VIDEO_MODEL),
+      ],
+      musicModel: sequence.musicModel
+        ? safeAudioModel(sequence.musicModel, DEFAULT_MUSIC_MODEL)
+        : undefined,
+      leftoverGrokShotIds: input.leftoverGrokShotIds,
+    },
+    input.modelConfiguration
+  );
 }

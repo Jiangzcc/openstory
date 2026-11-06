@@ -28,6 +28,8 @@ const target = (o: object) =>
     regenVideo: false,
     durationMs: 4000,
     imageModel: 'seedream_v5',
+    referenceIds: [],
+    imageReferenceCount: 0,
     ...o,
   });
 

@@ -6,7 +6,7 @@
  * it fronts most of the registry directly.
  */
 
-import { micros } from '@/billing/money';
+import { micros, ZERO_MICROS } from '@/billing/money';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { InsufficientCreditsError } from '@/platform/errors';
 import { describe, expect, it, vi } from 'vitest';
@@ -189,6 +189,27 @@ describe('reserveRunCredits', () => {
     await expect(reserveRunCredits(db, COST)).resolves.toBeUndefined();
   });
 
+  it.each([false, true])(
+    'does not hold funds or resolve credentials for a free run (funded: %s)',
+    async (canAfford) => {
+      const db = fakeScopedDb({ keys: [], canAfford });
+      const reservation = vi.spyOn(db.billing, 'createReservation');
+      const keyCheck = vi.spyOn(db.apiKeys, 'hasUsableKey');
+      await expect(reserveRunCredits(db, ZERO_MICROS)).resolves.toBeUndefined();
+      expect(reservation).not.toHaveBeenCalled();
+      expect(keyCheck).not.toHaveBeenCalled();
+    }
+  );
+
+  it('does not treat negative reservation amounts as a free run', async () => {
+    const db = fakeScopedDb({ keys: [] });
+    const reservation = vi.spyOn(db.billing, 'createReservation');
+    await expect(
+      reserveRunCredits(db, micros(-1), { providers: [] })
+    ).rejects.toThrow(InsufficientCreditsError);
+    expect(reservation).toHaveBeenCalledWith(micros(-1), expect.any(Object));
+  });
+
   it('creates an envelope when the organization can pay', async () => {
     const db = fakeScopedDb({ keys: [], canAfford: true });
     await expect(reserveRunCredits(db, COST)).resolves.toBe('res_1');
@@ -324,5 +345,52 @@ describe('actual LLM credential coverage', () => {
       'custom:helper',
     ]);
     expect(resolveLlmKey).toHaveBeenCalledWith('custom:helper', routing);
+  });
+});
+
+describe('actual image credential coverage', () => {
+  it('requires platform balance despite unrelated organization keys', async () => {
+    const db = fakeScopedDb({ keys: ['fal', 'openrouter', 'llmtr'] });
+    await expect(
+      requireCredits(db, COST, { imageSource: 'platform' })
+    ).rejects.toThrow(InsufficientCreditsError);
+    await expect(
+      reserveRunCredits(db, COST, { imageSource: 'platform' })
+    ).rejects.toThrow(InsufficientCreditsError);
+  });
+  it('holds platform image credits with a stable logical task key', async () => {
+    const db = fakeScopedDb({ keys: ['fal'], canAfford: true });
+    const createReservation = vi.spyOn(db.billing, 'createReservation');
+    await reserveRunCredits(db, COST, {
+      imageSource: 'platform',
+      idempotencyKey: 'image-task:mock-claim',
+      sequenceId: 'mock-sequence',
+    });
+    expect(createReservation).toHaveBeenCalledWith(COST, {
+      idempotencyKey: 'image-task:mock-claim',
+      sequenceId: 'mock-sequence',
+    });
+  });
+  it('accepts the actual organization image source without a fal-specific key', async () => {
+    const db = fakeScopedDb({ keys: [] });
+    await expect(
+      requireCredits(db, COST, { imageSource: 'organization' })
+    ).resolves.toBeUndefined();
+    await expect(
+      reserveRunCredits(db, COST, { imageSource: 'organization' })
+    ).resolves.toBeUndefined();
+  });
+  it('still checks other platform work when only the image is organization-owned', async () => {
+    const db = fakeScopedDb({ keys: [] });
+    await expect(
+      requireCredits(db, COST, { imageSource: 'organization', providers: [] })
+    ).rejects.toThrow(InsufficientCreditsError);
+    await expect(
+      requireCredits(db, COST, {
+        imageSource: 'organization',
+        providers: ['fal', 'openrouter'],
+        llmSources: ['platform'],
+      })
+    ).rejects.toThrow(InsufficientCreditsError);
   });
 });

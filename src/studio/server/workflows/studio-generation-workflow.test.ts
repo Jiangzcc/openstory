@@ -12,6 +12,9 @@ import type { StudioRunInput } from '@/studio/schema';
 import type { StudioGenerationWorkflowInput } from '@/platform/server/workflow/types';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { asStub } from '@/test/as-stub';
+import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
+import { createImageModelRoutingSnapshot } from '@/models/image-channels';
+import { CompatibleImageError } from '@/stills/server/compatible-image-error';
 
 const mockGenerateImageWithProvider = vi.fn();
 const mockDeductWorkflowCredits = vi.fn();
@@ -71,6 +74,7 @@ vi.doMock('@/platform/server/observability/content-feed', () => ({
 
 const { StudioGenerationWorkflow } =
   await import('./studio-generation-workflow');
+const { uploadStudioImage } = await import('../upload');
 
 class Probe extends StudioGenerationWorkflow {
   runBody(
@@ -97,17 +101,24 @@ function makeWorkflow(): Probe {
   return new Probe(ctx, env);
 }
 
-function makeStep(): WorkflowStep & { names: string[] } {
+function makeStep() {
   const names: string[] = [];
-  // stub: runImpl only uses `do` and `sleep`
-  return asStub<WorkflowStep & { names: string[] }>({
-    names,
-    do: vi.fn((name: string, fn: () => Promise<unknown>) => {
+  const doStep = vi.fn(
+    (
+      name: string,
+      ...args: [() => Promise<unknown>] | [object, () => Promise<unknown>]
+    ) => {
       names.push(name);
+      const fn = args.length === 1 ? args[0] : args[1];
       return fn();
-    }),
+    }
+  );
+  // Mock both step overloads while keeping the spy callable without `this`.
+  const step = asStub<WorkflowStep>({
+    do: doStep,
     sleep: vi.fn(async () => {}),
   });
+  return Object.assign(step, { names, doStep });
 }
 
 function makeScopedDb() {
@@ -123,10 +134,52 @@ function makeScopedDb() {
   const scopedDb = asStub<WorkflowScopedDb>({
     generatedAssets,
     bytePlusAssets,
+    models: { imageModelRouting: [] },
     provenance: {},
     credentials: {},
   });
   return { scopedDb, generatedAssets, bytePlusAssets };
+}
+
+function makeConfiguredImageScope() {
+  const scope = makeScopedDb();
+  const imageModelRouting = createImageModelRoutingSnapshot(
+    imageConfigurationFixture()
+  );
+  // Mock attempt and wallet surfaces; no database or supplier is contacted.
+  const attempts = {
+    getById: vi.fn(async () => undefined),
+    claim: vi.fn(async () => ({ claimed: true })),
+    complete: vi.fn(async () => {}),
+    markUnknown: vi.fn(async () => {}),
+  };
+  return {
+    ...scope,
+    attempts,
+    scopedDb: asStub<WorkflowScopedDb>({
+      ...scope.scopedDb,
+      models: { imageModelRouting },
+      liveRead: { billing: { hasEnoughCredits: vi.fn(async () => true) } },
+      imageGenerationAttempts: attempts,
+      claims: { imageGenerationAttempts: attempts },
+    }),
+  };
+}
+
+function configuredImageResult() {
+  return {
+    imageUrls: ['https://example.com/mock.png'],
+    via: 'compatible',
+    metadata: {
+      prompt: 'Mock image',
+      model: 'custom-image:qwen',
+      endpointId: 'mock-generate',
+      dimensions: [{ width: 1024, height: 576 }],
+      file_sizes: [16],
+      cost: micros(100_000),
+      usedOwnKey: false,
+    },
+  };
 }
 
 const IMAGE: StudioRunInput = {
@@ -261,6 +314,66 @@ describe('StudioGenerationWorkflow image', () => {
       expect.objectContaining({ costMicros: 12_000 })
     );
   });
+});
+
+it('configured images use a 15-minute generate/store step and charge after storage', async () => {
+  const step = makeStep();
+  const { scopedDb, generatedAssets, attempts } = makeConfiguredImageScope();
+  mockGenerateImageWithProvider.mockResolvedValue(configuredImageResult());
+  const input = { ...IMAGE, imageModel: 'custom-image:qwen' as const };
+
+  await makeWorkflow().runBody(makeEvent(input), step, scopedDb);
+
+  expect(step.doStep).toHaveBeenCalledWith(
+    'generate-image',
+    { retries: { limit: 0, delay: '1 second' }, timeout: '15 minutes' },
+    expect.any(Function)
+  );
+  expect(step.names).toEqual([
+    'set-running',
+    'generate-image',
+    'generate-image:record',
+    'deduct-credits',
+    'record-provenance',
+    'persist-result',
+    'notify-content-feed',
+  ]);
+  expect(vi.mocked(uploadStudioImage)).toHaveBeenCalledBefore(
+    attempts.complete
+  );
+  expect(attempts.complete).toHaveBeenCalledBefore(mockDeductWorkflowCredits);
+  expect(mockDeductWorkflowCredits).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({
+      costMicros: 100_000,
+      idempotencyKey: 'run-1:studio-image',
+      reservationId: 'res-studio-1',
+    })
+  );
+  expect(generatedAssets.markCompleted).toHaveBeenCalledWith(
+    'asset-1',
+    expect.objectContaining({ provider: 'compatible', costMicros: 100_000 })
+  );
+  expect(attempts.markUnknown).not.toHaveBeenCalled();
+});
+
+it('configured image deadlines remain unknown without charging or persisting output', async () => {
+  const step = makeStep();
+  const { scopedDb, generatedAssets, attempts } = makeConfiguredImageScope();
+  mockGenerateImageWithProvider.mockRejectedValueOnce(
+    new CompatibleImageError('request_timeout')
+  );
+  const input = { ...IMAGE, imageModel: 'custom-image:qwen' as const };
+
+  await expect(
+    makeWorkflow().runBody(makeEvent(input), step, scopedDb)
+  ).rejects.toThrow('Compatible image provider request timed out.');
+
+  expect(attempts.markUnknown).toHaveBeenCalledOnce();
+  expect(attempts.complete).not.toHaveBeenCalled();
+  expect(mockGenerateImageWithProvider).toHaveBeenCalledOnce();
+  expect(uploadStudioImage).not.toHaveBeenCalled();
+  expect(mockDeductWorkflowCredits).not.toHaveBeenCalled();
+  expect(generatedAssets.markCompleted).not.toHaveBeenCalled();
 });
 
 describe('StudioGenerationWorkflow video', () => {

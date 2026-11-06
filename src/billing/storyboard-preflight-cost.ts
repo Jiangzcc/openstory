@@ -1,3 +1,5 @@
+import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
+import type { ImageChannelParameterValues } from '@/models/image-channel-parameters';
 /**
  * Storyboard credit pre-flight shared by create / regenerate / retry (#1140).
  *
@@ -33,6 +35,9 @@ import { includesStage, type GenerationStage } from '@/sequences/pipeline';
 export type StoryboardPreflightInput = {
   script: string;
   imageModel: TextToImageModel;
+  imageModels?: readonly TextToImageModel[];
+  imageModelRouting?: ImageModelRoutingSnapshot;
+  imageParameters?: ImageChannelParameterValues;
   /** Number of image models selected (multiplies per-shot image cost). */
   imageModelCount?: number;
   aspectRatio: AspectRatio;
@@ -132,6 +137,9 @@ export function estimateStoryboardPreflightCost(
 
   return estimateStoryboardCost({
     imageModel: opts.imageModel,
+    imageModels: opts.imageModels,
+    imageModelRouting: opts.imageModelRouting,
+    imageParameters: opts.imageParameters,
     imageModelCount: opts.imageModelCount,
     aspectRatio: opts.aspectRatio,
     resolution: opts.resolution,

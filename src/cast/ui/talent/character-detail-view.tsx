@@ -54,10 +54,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/ui/shadcn/alert-dialog';
-import { useFalPricing } from '@/billing/ui/use-fal-pricing';
+import { useImageCostHint } from '@/billing/ui/use-image-cost-hint';
 import { useSequence } from '@/sequences/ui/use-sequences';
 import type { TextToImageModel } from '@/models/models';
-import { estimateImageCost } from '@/billing/cost-estimation';
 import { resolveSheetImageModel } from '@/cast/sheet-image-model';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -393,22 +392,14 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
     )?.model,
     sequenceImageModel: sequence?.imageModel ?? null,
   });
-  const { pricing: falPricing, isPending: pricingPending } = useFalPricing();
-  const sheetCostEstimate = useMemo(() => {
-    if (!falPricing) return pricingPending ? undefined : null;
-    return estimateImageCost(selectedSheetModel, '16:9', 1, {
-      pricing: falPricing,
-      // A reference image uses the model's edit endpoint. A look other than
-      // the default sends the default look's sheet.
-      edit: activeLook?.isDefault === false && faceState === 'ready',
+  const { estimate: sheetCostEstimate, issue: sheetCostIssue } =
+    useImageCostHint({
+      model: selectedSheetModel,
+      aspectRatio: '16:9',
+      referenceImageCount: activeLook
+        ? Number(!activeLook.isDefault && faceState === 'ready')
+        : undefined,
     });
-  }, [
-    falPricing,
-    pricingPending,
-    selectedSheetModel,
-    activeLook?.isDefault,
-    faceState,
-  ]);
 
   const handleRegenerateSheet = useCallback(() => {
     regenerateSheet.mutate(
@@ -651,9 +642,18 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                       "Used for this character's sheet. Shot stills still follow the sequence image model."
                     )}
                   </p>
+                  {sheetCostIssue && (
+                    <output className="block text-sm text-muted-foreground">
+                      {sheetCostIssue}
+                    </output>
+                  )}
                   <Button
                     onClick={handleRegenerateSheet}
-                    disabled={regenerateSheet.isPending || faceBlocked}
+                    disabled={
+                      regenerateSheet.isPending ||
+                      faceBlocked ||
+                      Boolean(sheetCostIssue)
+                    }
                   >
                     <InButtonCost estimate={sheetCostEstimate}>
                       {regenerateSheet.isPending ? (

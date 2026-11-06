@@ -378,5 +378,6 @@
   "Could not switch organization": "无法切换组织",
   "Organizations": "组织",
   "Current": "当前组织",
-  "Loading…": "正在加载…"
+  "Loading…": "正在加载…",
+  "{{value1}} uses image channel size settings.": "{{value1}}使用图片渠道的尺寸设置。"
 }

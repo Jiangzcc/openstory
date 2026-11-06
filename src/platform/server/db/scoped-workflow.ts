@@ -38,6 +38,7 @@
  * keep in sync with `createScopedDb`'s 35 domains.
  */
 
+import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type {
   ModelRuntimeConfiguration,
@@ -104,6 +105,8 @@ type GenerationProvider = Exclude<
 
 type WorkflowCredentials = Pick<ScopedDb, 'organizationId' | 'userId'> &
   Pick<ApiKeys, 'resolveLlmKey'> & {
+    imageModelRouting?: ImageModelRoutingSnapshot;
+    resolveImageChannelKey?: (credentialId: string) => Promise<string>;
     resolveKey: (
       provider: GenerationProvider
     ) => ReturnType<ApiKeys['resolveKey']>;
@@ -124,6 +127,8 @@ type WorkflowCredentials = Pick<ScopedDb, 'organizationId' | 'userId'> &
  * bug this split exists to make unspellable.
  */
 type WorkflowClaims = {
+  /** This run's own image submission and stored result. */
+  imageGenerationAttempts: Pick<ScopedDb['imageGenerationAttempts'], 'getById'>;
   /** The visual-prompt version this run's frame-prompt child left live. */
   framePromptVersions: Pick<ScopedDb['framePromptVersions'], 'getByIdForFrame'>;
   /** The motion twin. */
@@ -286,6 +291,9 @@ export function toWorkflowScopedDb(
     credentials: {
       organizationId: scopedDb.organizationId,
       userId: scopedDb.userId,
+      imageModelRouting: models.imageModelRouting,
+      resolveImageChannelKey: (credentialId) =>
+        scopedDb.imageChannels.resolveSecret(credentialId),
       resolveKey: (provider) => scopedDb.apiKeys.resolveKey(provider),
       resolveOptionalKey: (provider) =>
         scopedDb.apiKeys.resolveOptionalKey(provider),
@@ -313,4 +321,11 @@ export function toWorkflowScopedDb(
  * reading env (#1552). Satisfied by `scopedDb.credentials`.
  */
 export type CredentialScopedDb = Pick<ScopedDb, 'userId'> &
-  Pick<WorkflowCredentials, 'resolveKey' | 'resolveOptionalKey'>;
+  Partial<Pick<ScopedDb, 'organizationId'>> &
+  Pick<
+    WorkflowCredentials,
+    | 'resolveKey'
+    | 'resolveOptionalKey'
+    | 'imageModelRouting'
+    | 'resolveImageChannelKey'
+  >;

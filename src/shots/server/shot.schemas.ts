@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { createInsertSchema, createUpdateSchema } from 'drizzle-orm/zod';
 import { shots } from '@/platform/server/db/schema/shots';
-import { IMAGE_MODELS, IMAGE_TO_VIDEO_MODELS } from '@/models/models';
+import { IMAGE_TO_VIDEO_MODELS } from '@/models/models';
+import { imageModelIdSchema } from '@/models/image-model-schema';
 
 /**
  * Shared Zod schemas for shot operations
@@ -48,10 +49,7 @@ export const updateShotSchema = createUpdateSchema(shots, {
 export const regenerateShotSchema = z.object({
   regenerateDescription: z.boolean().optional(),
   regenerateThumbnail: z.boolean().optional(),
-  model: z
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Required for z.enum with dynamic keys
-    .enum(Object.keys(IMAGE_MODELS) as [keyof typeof IMAGE_MODELS])
-    .optional(),
+  model: imageModelIdSchema.optional(),
   prompt: z.string().optional(),
 });
 
@@ -79,10 +77,7 @@ export const generateMotionSchema = z.object({
 });
 
 export const generateVariantSchema = z.object({
-  model: z
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Required for z.enum with dynamic keys
-    .enum(Object.keys(IMAGE_MODELS) as [keyof typeof IMAGE_MODELS])
-    .optional(),
+  model: imageModelIdSchema.optional(),
   imageSize: z
     .enum(['square_hd', 'portrait_16_9', 'landscape_16_9'])
     .optional(),

@@ -4,18 +4,19 @@ import {
   type ModelGenerationStatus,
 } from './base-model-selector';
 import {
-  IMAGE_MODELS,
   isValidTextToImageModel,
   type TextToImageModel,
 } from '@/models/models';
-import {
-  compareSelectorModels,
-  QUALITY_DEFAULT_IMAGE,
-  SELECTOR_GROUP_ORDER,
-  selectorGroup,
-  TURBO_IMAGE_MODELS,
-} from '@/models/generation-mode';
+import { SELECTOR_GROUP_ORDER } from '@/models/generation-mode';
 import { useMemo } from 'react';
+import { useImageModelCatalog } from '../use-image-model-catalog';
+import {
+  imageModelDisplayName,
+  isSelectableImageModelId,
+} from '@/models/image-model-catalog';
+import type { ImageModelDefinition } from '@/models/image-model-catalog';
+import { imageModelSelectorOptions } from '../image-model-options';
+import type { ImageModelCapabilityFilter } from '../image-model-options';
 
 type RecommendationProps = {
   /** Style-recommended model key — renders a "Recommended" badge on the match. */
@@ -32,51 +33,55 @@ type RecommendationStatus =
 
 function resolveRecommendation(
   recommendedImageModel: string | null | undefined,
-  filterModels: TextToImageModel[] | undefined
+  filterModels: TextToImageModel[] | undefined,
+  catalog: readonly ImageModelDefinition[]
 ): RecommendationStatus {
   if (!recommendedImageModel) return { kind: 'none' };
-  if (!isValidTextToImageModel(recommendedImageModel))
+  if (!isSelectableImageModelId(recommendedImageModel, catalog))
     return { kind: 'unknown' };
-  const modelName = IMAGE_MODELS[recommendedImageModel].name;
+  const modelName = imageModelDisplayName(recommendedImageModel, catalog);
   if (filterModels && !filterModels.includes(recommendedImageModel)) {
     return { kind: 'hidden-by-filter', modelName };
   }
   return { kind: 'matched', modelName };
 }
 
+type ImageCapabilityFilter = ImageModelCapabilityFilter;
+
 function useImageModels({
   recommendedImageModel,
   styleName,
-}: RecommendationProps = {}) {
+  selectedIds,
+  operation,
+  referenceCount,
+}: RecommendationProps &
+  ImageCapabilityFilter & { selectedIds: readonly TextToImageModel[] }) {
   const { t } = useTranslation('models');
-  return useMemo(
-    () =>
-      Object.entries(IMAGE_MODELS)
-        .filter(([, m]) => !('hidden' in m))
-        .sort(([a], [b]) =>
-          compareSelectorModels(
-            a,
-            b,
-            TURBO_IMAGE_MODELS,
-            QUALITY_DEFAULT_IMAGE,
-            (id) =>
-              isValidTextToImageModel(id) ? IMAGE_MODELS[id].qualityRank : 99
-          )
-        )
-        .map(([key, m]) => ({
-          id: key,
-          name: m.name,
-          group: selectorGroup(key, TURBO_IMAGE_MODELS),
-          badge: m.license,
-          recommendedFor:
-            recommendedImageModel && key === recommendedImageModel
-              ? styleName
-                ? t('Recommended for {{value1}}', { value1: styleName })
-                : t('Recommended for this style')
-              : undefined,
-        })),
-    [recommendedImageModel, styleName, t]
-  );
+  const { models: catalog } = useImageModelCatalog();
+  const models = useMemo(() => {
+    return imageModelSelectorOptions(catalog, {
+      selectedIds,
+      operation,
+      referenceCount,
+    }).map((model) => ({
+      ...model,
+      recommendedFor:
+        recommendedImageModel === model.id
+          ? styleName
+            ? t('Recommended for {{value1}}', { value1: styleName })
+            : t('Recommended for this style')
+          : undefined,
+    }));
+  }, [
+    catalog,
+    selectedIds,
+    operation,
+    referenceCount,
+    recommendedImageModel,
+    styleName,
+    t,
+  ]);
+  return { models, catalog };
 }
 
 function RecommendationHint({
@@ -121,7 +126,8 @@ type ImageModelSelectorProps = {
   filterModels?: TextToImageModel[];
   /** Per-scene generation status by model (#545); renders ✓/⟳/! in the list. */
   generatedStatuses?: Map<string, ModelGenerationStatus>;
-} & RecommendationProps;
+} & RecommendationProps &
+  ImageCapabilityFilter;
 
 export const ImageModelSelector: React.FC<ImageModelSelectorProps> = ({
   selectedModel,
@@ -131,24 +137,34 @@ export const ImageModelSelector: React.FC<ImageModelSelectorProps> = ({
   recommendedImageModel,
   styleName,
   generatedStatuses,
+  operation,
+  referenceCount,
 }) => {
   const { t } = useTranslation('models');
 
-  const allModels = useImageModels({ recommendedImageModel, styleName });
+  const { models: allModels, catalog } = useImageModels({
+    recommendedImageModel,
+    styleName,
+    selectedIds: [selectedModel],
+    operation,
+    referenceCount,
+  });
   const models = useMemo(() => {
     const filtered = filterModels
       ? allModels.filter(
-          (m) => isValidTextToImageModel(m.id) && filterModels.includes(m.id)
+          (m) =>
+            isValidTextToImageModel(m.id) &&
+            (filterModels.includes(m.id) || m.id === selectedModel)
         )
       : allModels;
     return filtered.map((m) => ({
       ...m,
       generationStatus: generatedStatuses?.get(m.id),
     }));
-  }, [allModels, filterModels, generatedStatuses]);
+  }, [allModels, filterModels, generatedStatuses, selectedModel]);
   const status = useMemo(
-    () => resolveRecommendation(recommendedImageModel, filterModels),
-    [recommendedImageModel, filterModels]
+    () => resolveRecommendation(recommendedImageModel, filterModels, catalog),
+    [recommendedImageModel, filterModels, catalog]
   );
 
   return (
@@ -160,7 +176,15 @@ export const ImageModelSelector: React.FC<ImageModelSelectorProps> = ({
         selectedIds={[selectedModel]}
         onSelectionChange={(ids) => {
           const firstId = ids[0];
-          if (firstId && isValidTextToImageModel(firstId)) {
+          if (
+            firstId &&
+            isSelectableImageModelId(
+              firstId,
+              catalog,
+              operation,
+              referenceCount
+            )
+          ) {
             onModelChange(firstId);
           }
         }}
@@ -177,7 +201,8 @@ type ImageModelMultiSelectorProps = {
   onModelsChange: (models: TextToImageModel[]) => void;
   disabled?: boolean;
   filterModels?: TextToImageModel[];
-} & RecommendationProps;
+} & RecommendationProps &
+  ImageCapabilityFilter;
 
 export const ImageModelMultiSelector: React.FC<
   ImageModelMultiSelectorProps
@@ -188,22 +213,32 @@ export const ImageModelMultiSelector: React.FC<
   recommendedImageModel,
   styleName,
   filterModels,
+  operation,
+  referenceCount,
 }) => {
   const { t } = useTranslation('models');
 
-  const allModels = useImageModels({ recommendedImageModel, styleName });
+  const { models: allModels, catalog } = useImageModels({
+    recommendedImageModel,
+    styleName,
+    selectedIds: selectedModels,
+    operation,
+    referenceCount,
+  });
   const models = useMemo(
     () =>
       filterModels
         ? allModels.filter(
-            (m) => isValidTextToImageModel(m.id) && filterModels.includes(m.id)
+            (m) =>
+              isValidTextToImageModel(m.id) &&
+              (filterModels.includes(m.id) || selectedModels.includes(m.id))
           )
         : allModels,
-    [allModels, filterModels]
+    [allModels, filterModels, selectedModels]
   );
   const status = useMemo(
-    () => resolveRecommendation(recommendedImageModel, filterModels),
-    [recommendedImageModel, filterModels]
+    () => resolveRecommendation(recommendedImageModel, filterModels, catalog),
+    [recommendedImageModel, filterModels, catalog]
   );
 
   return (
@@ -214,7 +249,16 @@ export const ImageModelMultiSelector: React.FC<
         groupOrder={SELECTOR_GROUP_ORDER}
         selectedIds={selectedModels}
         onSelectionChange={(ids) => {
-          const validIds = ids.filter(isValidTextToImageModel);
+          const validIds = ids.filter(
+            (id): id is TextToImageModel =>
+              isSelectableImageModelId(
+                id,
+                catalog,
+                operation,
+                referenceCount
+              ) ||
+              (isValidTextToImageModel(id) && selectedModels.includes(id))
+          );
           if (validIds.length > 0) {
             onModelsChange(validIds);
           }

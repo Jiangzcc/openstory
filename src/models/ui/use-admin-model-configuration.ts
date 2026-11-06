@@ -1,3 +1,5 @@
+import type { ImageModelDefinition } from '@/models/image-model-catalog';
+import { useImageModelCatalog } from './use-image-model-catalog';
 import {
   useMutation,
   useQueryClient,
@@ -40,9 +42,14 @@ function configurationsMatch(
 
 function useConfigurationDraft(
   saved: ModelConfiguration,
-  catalog: readonly AnalysisModelDefinition[]
+  catalog: readonly AnalysisModelDefinition[],
+  imageModels: readonly ImageModelDefinition[]
 ) {
-  const modelConfigurationSchema = createModelConfigurationSchema(catalog);
+  const modelConfigurationSchema = createModelConfigurationSchema(
+    catalog,
+    false,
+    imageModels
+  );
   const [draft, setDraft] = useState<ModelConfiguration | null>(null);
   const [hasValidationError, setHasValidationError] = useState(false);
   const values = draft ?? saved;
@@ -109,7 +116,8 @@ export function useAdminModelConfiguration() {
   });
   const { data: textModels } = useSuspenseQuery(textModelCatalogQueryOptions);
   const catalog = mergeTextModelCatalog(textModels);
-  const editor = useConfigurationDraft(saved, catalog);
+  const { models: imageModels } = useImageModelCatalog();
+  const editor = useConfigurationDraft(saved, catalog, imageModels);
   const mutation = useConfigurationSave(() => editor.replaceDraft(null));
   const replaceDraft = (configuration: ModelConfiguration | null) => {
     mutation.reset();
@@ -124,6 +132,7 @@ export function useAdminModelConfiguration() {
   return {
     values: editor.values,
     catalog,
+    imageModels,
     hasUnsavedChanges: editor.hasUnsavedChanges,
     hasValidationError: editor.hasValidationError,
     canRestoreDefaults: editor.canRestoreDefaults,

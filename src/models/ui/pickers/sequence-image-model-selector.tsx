@@ -16,14 +16,12 @@ import {
   useSequenceImageVariants,
   useShotsBySequence,
 } from '@/shots/ui/use-shots';
-import { IMAGE_MODELS, isValidTextToImageModel } from '@/models/models';
+import { isValidTextToImageModel } from '@/models/models';
+import { imageModelDisplayName } from '@/models/image-model-catalog';
+import { useImageModelCatalog } from '../use-image-model-catalog';
 import { computeSequenceModelCoverage } from './sequence-model-coverage';
 import { ChevronDown } from 'lucide-react';
 import { useMemo } from 'react';
-
-function imageModelName(model: string): string {
-  return isValidTextToImageModel(model) ? IMAGE_MODELS[model].name : model;
-}
 
 /**
  * Sequence-wide image models. Lists the distinct image models that have
@@ -51,6 +49,9 @@ export const SequenceImageModelSelector = ({
   label?: string;
 }) => {
   const { t } = useTranslation('models');
+  const { models: imageCatalog } = useImageModelCatalog();
+  const imageModelName = (model: string) =>
+    imageModelDisplayName(model, imageCatalog);
 
   const { data: models } = useSequenceImageModels(sequenceId);
   const { data: variants } = useSequenceImageVariants(sequenceId);

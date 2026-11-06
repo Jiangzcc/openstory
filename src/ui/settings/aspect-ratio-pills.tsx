@@ -15,20 +15,33 @@ function isValidAspectRatio(value: string): value is AspectRatio {
 type AspectRatioPillsProps = {
   value: AspectRatio;
   onChange: (value: AspectRatio) => void;
+  available?: readonly AspectRatio[];
 };
 
 export const AspectRatioPills: FC<AspectRatioPillsProps> = ({
   value,
   onChange,
+  available,
 }) => {
   const { t } = useTranslation('interface');
+  const options = ASPECT_RATIOS.filter(
+    (ratio) => !available || available.includes(ratio.value)
+  );
+  if (available && options.length === 1)
+    return (
+      <p className="text-[10px] text-muted-foreground">{options[0]?.label}</p>
+    );
 
   return (
     <ToggleGroup
       type="single"
       value={value}
       onValueChange={(val) => {
-        if (val && isValidAspectRatio(val)) {
+        if (
+          val &&
+          isValidAspectRatio(val) &&
+          (!available || available.includes(val))
+        ) {
           onChange(val);
         }
       }}
@@ -36,7 +49,7 @@ export const AspectRatioPills: FC<AspectRatioPillsProps> = ({
       spacing={0}
       className="w-full min-w-0 flex-nowrap justify-start"
     >
-      {ASPECT_RATIOS.map((ratio) => (
+      {options.map((ratio) => (
         <ToggleGroupItem
           key={ratio.value}
           value={ratio.value}

@@ -1,3 +1,4 @@
+import { configuredImageSource } from '@/billing/configured-image-billing';
 /**
  * Core sequence-creation logic, shared by the `createSequenceFn` server
  * function (dashboard) and the public API's one-shot endpoint. Both arrive here
@@ -59,7 +60,11 @@ import {
 } from '@/cast/server/sequence-elements/attach-element-upload';
 import { captureProductEvent } from '@/platform/server/observability/product-events';
 import { bumpStylePopularity } from '@/look/server/bump-style-popularity';
-import { resolveStoryboardLlmSources, triggerStoryboard } from './launchers';
+import {
+  loadStoryboardModelConfiguration,
+  resolveStoryboardLlmSources,
+  triggerStoryboard,
+} from './launchers';
 import { isElevenLabsConfigured } from '@/models/server/elevenlabs-config';
 import type { StoryboardTriggerInput } from '@/platform/server/workflow/types';
 import { createServerOnlyFn } from '@tanstack/react-start';
@@ -136,10 +141,12 @@ export const createSequences = createServerOnlyFn(
     // every write below is already organization-authorized. (The old `data.organizationId`
     // override was vestigial — writes always went through the scoped db anyway.)
     const organizationId = context.organizationId;
-    const textModelRouting = await context.scopedDb.textChannels.getSnapshot();
-    const extraModels = textModelCatalogFromRouting(textModelRouting);
-    const models = await context.scopedDb.modelConfiguration.get(extraModels);
-    const configuration = { ...models, textModelRouting };
+    const configuration = await loadStoryboardModelConfiguration(
+      context.scopedDb
+    );
+    const extraModels = textModelCatalogFromRouting(
+      configuration.textModelRouting
+    );
 
     const {
       script,
@@ -322,6 +329,12 @@ export const createSequences = createServerOnlyFn(
     const envelopeCost = estimateStoryboardPreflightCost({
       script,
       imageModel: primaryImageModel,
+      imageModels: imageModels.some((model) =>
+        configuredImageSource(model, configuration.imageModelRouting)
+      )
+        ? imageModels
+        : undefined,
+      imageModelRouting: configuration.imageModelRouting,
       imageModelCount: imageModels.length,
       aspectRatio,
       resolution,
@@ -371,6 +384,12 @@ export const createSequences = createServerOnlyFn(
           ? undefined
           : await reserveRunCredits(context.scopedDb, envelopeCost, {
               providers: ['fal', 'openrouter'],
+              imageSource: imageModels.some((model) =>
+                configuredImageSource(model, configuration.imageModelRouting)
+              )
+                ? 'platform'
+                : undefined,
+              idempotencyKey: 'storyboard:' + sequenceId,
               llmSources: await resolveStoryboardLlmSources(
                 context.scopedDb,
                 modelId,

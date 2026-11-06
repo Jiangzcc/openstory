@@ -1,3 +1,5 @@
+import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
+import { usesConfiguredImageChannel } from '@/models/image-channels';
 import type { StyleConfig } from '@/look/style-config';
 import { buildPackedMotionPrompt } from '@/motion/server/build-motion-render';
 /**
@@ -24,6 +26,7 @@ import {
   getBytePlusVideoModelId,
   getMotionReferenceEndpoint,
   IMAGE_MODELS,
+  isBuiltinTextToImageModel,
   IMAGE_TO_VIDEO_MODELS,
   videoPromptHardLimit,
   videoModelSupportsAudio,
@@ -102,6 +105,7 @@ export type OptimisedPromptPreview = {
 };
 
 export type ShotPromptPreview = {
+  imageUsesConfiguredChannel: boolean;
   image: OptimisedPromptPreview | null;
   motion: OptimisedPromptPreview | null;
   /**
@@ -286,6 +290,7 @@ export function buildShotPromptPreview(input: {
   elements: SequenceElementMinimal[];
   locations: SequenceLocationMinimal[];
   byteplusEnabled?: boolean;
+  imageModelRouting?: ImageModelRoutingSnapshot;
   /** Dialogue TTS clips already parked for this prompt version (#1554). */
   audioClips?: MotionAudioClip[];
   /**
@@ -400,8 +405,13 @@ export function buildShotPromptPreview(input: {
   ]);
 
   return {
+    imageUsesConfiguredChannel: usesConfiguredImageChannel(
+      input.imageModel,
+      input.imageModelRouting
+    ),
     image: buildImagePreview({
       model: input.imageModel,
+      imageModelRouting: input.imageModelRouting,
       prompt: input.imagePrompt,
       scene: input.scene,
       characters: input.characters,
@@ -457,6 +467,7 @@ export function buildShotPromptPreview(input: {
 
 function buildImagePreview(input: {
   model: TextToImageModel;
+  imageModelRouting?: ImageModelRoutingSnapshot;
   prompt: string;
   scene: SceneReferenceInput;
   characters: CharacterMinimal[];
@@ -467,7 +478,13 @@ function buildImagePreview(input: {
   byteplusEnabled: boolean;
 }): OptimisedPromptPreview | null {
   const basePrompt = input.prompt.trim();
-  if (!basePrompt) return null;
+  // Configured requests need their frozen route and channel parameters to preview.
+  if (
+    !basePrompt ||
+    !isBuiltinTextToImageModel(input.model) ||
+    usesConfiguredImageChannel(input.model, input.imageModelRouting)
+  )
+    return null;
   const config = IMAGE_MODELS[input.model];
   const referenceImages = absolutizeRefs(
     buildShotImageReferenceImages({

@@ -1,3 +1,4 @@
+import { imageModelDisplayName } from '@/models/image-model-catalog';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -114,6 +115,7 @@ function ModelConfigurationForm() {
             key={group.key}
             group={group}
             catalog={state.catalog}
+            imageModels={state.imageModels}
             values={state.values}
             onModelChange={state.onModelChange}
             disabled={state.isSaving}
@@ -143,12 +145,14 @@ function ModelConfigurationForm() {
 function ModelConfigurationSection({
   group,
   catalog,
+  imageModels,
   values,
   onModelChange,
   disabled,
 }: {
   group: ConfigurationGroup;
   catalog: ConfigurationState['catalog'];
+  imageModels: ConfigurationState['imageModels'];
   values: ModelConfiguration;
   onModelChange: ModelChangeHandler;
   disabled: boolean;
@@ -171,6 +175,7 @@ function ModelConfigurationSection({
               key={field.key}
               field={field}
               catalog={catalog}
+              imageModels={imageModels}
               value={values[field.key]}
               onModelChange={onModelChange}
               disabled={disabled}
@@ -185,19 +190,24 @@ function ModelConfigurationSection({
 function ModelConfigurationSelect({
   field,
   catalog,
+  imageModels,
   value,
   onModelChange,
   disabled,
 }: {
   field: ConfigurationField;
   catalog: ConfigurationState['catalog'];
+  imageModels: ConfigurationState['imageModels'];
   value: string;
   onModelChange: ModelChangeHandler;
   disabled: boolean;
 }) {
   const translateLabel = useLabelTranslation('admin');
   const id = 'model-configuration-' + field.key;
-  const options = getModelConfigurationOptions(field.key, catalog);
+  const options = getModelConfigurationOptions(field.key, catalog, imageModels);
+  const historical = !options.some((option) => option.value === value);
+  if (historical)
+    options.push({ value, label: imageModelDisplayName(value, imageModels) });
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <Label htmlFor={id}>{translateLabel(field.label)}</Label>
@@ -218,7 +228,11 @@ function ModelConfigurationSelect({
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              disabled={historical && option.value === value}
+            >
               {option.label}
             </SelectItem>
           ))}

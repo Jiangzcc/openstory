@@ -7,7 +7,6 @@ import type { VoiceProvider } from '@/cast/seed-voice';
 import type { AspectRatio, ImageSize } from '@/models/aspect-ratios';
 import type {
   AUDIO_MODELS,
-  IMAGE_MODELS,
   IMAGE_TO_VIDEO_MODELS,
   ImageToVideoModel,
   TextToImageModel,
@@ -130,7 +129,7 @@ export interface ImageWorkflowInput
   extends SequenceWorkflowContext, PreClickEditPayload {
   prompt: string;
   style?: Record<string, unknown> | unknown[];
-  model?: keyof typeof IMAGE_MODELS;
+  model?: TextToImageModel;
   width?: number;
   height?: number;
   imageSize?: ImageSize;
@@ -209,7 +208,7 @@ export interface ImageWorkflowInput
  */
 export interface ShotVariantWorkflowInput extends SequenceWorkflowContext {
   thumbnailUrl: string;
-  model?: keyof typeof IMAGE_MODELS;
+  model?: TextToImageModel;
   imageSize?: ImageSize;
   numImages?: number;
   seed?: number;

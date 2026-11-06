@@ -1,3 +1,10 @@
+import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
+import { generateId } from '@/platform/id';
+const IMAGE_SIZE_ASPECT_RATIOS = {
+  square_hd: '1:1',
+  portrait_16_9: '9:16',
+  landscape_16_9: '16:9',
+} as const;
 /**
  * One shot's still generation, shared by the editor's server fns
  * (`shot-image.fn.ts`) and the MCP tools: regenerate the still, render a
@@ -6,14 +13,23 @@
  */
 import type { z } from 'zod';
 import { DEFAULT_IMAGE_MODEL } from '@/models/models';
-import { resolveUpscaleModel } from '@/models/resolve-asset-models';
+import { requireUpscaleModel } from '@/models/resolve-asset-models';
 import { requireGenerationPrompt } from '@/shots/generation-prompt';
 import { shotPromptSequence } from '@/shots/use-start-frame';
 import { estimateImageCost, gateEstimate } from '@/billing/cost-estimation';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { getFrameImageUrl } from '@/shots/server/frame-image';
-import { requireCredits } from '@/billing/server/preflight';
-import { getVariantGridConfig } from '@/models/aspect-ratios';
+import {
+  requireCredits,
+  reserveRunCredits,
+  releaseReservationOnThrow,
+} from '@/billing/server/preflight';
+import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
+import { unpackModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import {
+  getVariantGridConfig,
+  resolveVariantImageSize,
+} from '@/models/aspect-ratios';
 import { cropTileFromGrid } from '@/stills/server/image-crop';
 import { buildCharacterReferenceImages } from '@/cast/character-prompt';
 import type {
@@ -144,15 +160,40 @@ export async function generateShotImage(
 
   let workflowRunId: string;
   try {
-    workflowRunId = await triggerWorkflow(
-      '/image',
-      { ...workflowInput, targetVariantId: claim.id },
-      {
-        // Claim-scoped: stable across retries of THIS enqueue (CF collapses
-        // duplicate create()s), fresh per claim so a deliberate re-roll
-        // after completion still gets a new run.
-        deduplicationId: `image-${shot.id}-${claim.id}`,
-      }
+    const modelConfiguration = workflowInput.modelConfiguration
+      ? unpackModelRuntimeConfiguration(workflowInput.modelConfiguration)
+      : await loadModelRuntimeConfiguration();
+    const imageBilling = await prepareConfiguredImageBilling({
+      model: workflowInput.model ?? DEFAULT_IMAGE_MODEL,
+      aspectRatio: sequence.aspectRatio,
+      imageCount: workflowInput.numImages ?? 1,
+      referenceImageCount: workflowInput.referenceImages?.length ?? 0,
+      modelConfiguration,
+    });
+    const reservationId = imageBilling
+      ? await reserveRunCredits(context.scopedDb, imageBilling.costMicros, {
+          imageSource: imageBilling.imageSource,
+          sequenceId: sequence.id,
+          idempotencyKey: 'image:' + claim.id,
+        })
+      : undefined;
+    workflowRunId = await releaseReservationOnThrow(
+      context.scopedDb,
+      reservationId,
+      () =>
+        triggerWorkflow(
+          '/image',
+          {
+            ...workflowInput,
+            targetVariantId: claim.id,
+            reservationId,
+            ownsReservation: Boolean(reservationId),
+          },
+          {
+            deduplicationId: 'image-' + shot.id + '-' + claim.id,
+            modelConfiguration,
+          }
+        )
     );
   } catch (error) {
     // The claim must not outlive a trigger that never happened.
@@ -191,28 +232,11 @@ export async function generateShotImageVariants(
   }
 
   const numImages = data.numImages ?? 1;
-  await requireCredits(
-    context.scopedDb,
-    gateEstimate(
-      estimateImageCost(
-        data.model ?? DEFAULT_IMAGE_MODEL,
-        sequence.aspectRatio,
-        numImages,
-        {
-          pricing: await getEffectiveFalPricing(),
-          resolution: sequence.resolution,
-        }
-      ),
-      {
-        model: data.model ?? DEFAULT_IMAGE_MODEL,
-        operation: 'shot-variants',
-      },
-      numImages
-    ),
-    { errorMessage: 'Insufficient credits for variant generation' }
-  );
 
-  const gridConfig = getVariantGridConfig(sequence.aspectRatio);
+  const imageSize = resolveVariantImageSize(
+    sequence.aspectRatio,
+    data.imageSize
+  );
 
   const [allCharacters, allLocations, allElements, selectedPrompt] =
     await Promise.all([
@@ -243,6 +267,40 @@ export async function generateShotImageVariants(
     elements: allElements,
   });
 
+  const modelConfiguration = await loadModelRuntimeConfiguration();
+  const imageBilling = await prepareConfiguredImageBilling({
+    modelConfiguration,
+    model: data.model ?? DEFAULT_IMAGE_MODEL,
+    aspectRatio: IMAGE_SIZE_ASPECT_RATIOS[imageSize],
+    referenceImageCount:
+      1 + characterReferences.length + locationReferences.length,
+    imageCount: numImages,
+  });
+  await requireCredits(
+    context.scopedDb,
+    imageBilling?.costMicros ??
+      gateEstimate(
+        estimateImageCost(
+          data.model ?? DEFAULT_IMAGE_MODEL,
+          sequence.aspectRatio,
+          numImages,
+          {
+            pricing: await getEffectiveFalPricing(),
+            resolution: sequence.resolution,
+          }
+        ),
+        {
+          model: data.model ?? DEFAULT_IMAGE_MODEL,
+          operation: 'shot-variants',
+        },
+        numImages
+      ),
+    {
+      imageSource: imageBilling?.imageSource,
+      errorMessage: 'Insufficient credits for variant generation',
+    }
+  );
+
   const workflowInput: ShotVariantWorkflowInput = {
     userId: user.id,
     organizationId: sequence.organizationId,
@@ -255,7 +313,7 @@ export async function generateShotImageVariants(
     model: data.model,
     aspectRatio: sequence.aspectRatio,
     resolution: sequence.resolution,
-    imageSize: data.imageSize || gridConfig.imageSize,
+    imageSize,
     numImages,
     seed: data.seed,
     characterReferences,
@@ -271,9 +329,31 @@ export async function generateShotImageVariants(
       : null,
   };
 
-  const workflowRunId = await triggerWorkflow('/variant-image', workflowInput, {
-    deduplicationId: `variant-${shot.id}-${Date.now()}`,
-  });
+  const variantTaskId = imageBilling ? generateId() : String(Date.now());
+  const reservationId = imageBilling
+    ? await reserveRunCredits(context.scopedDb, imageBilling.costMicros, {
+        imageSource: imageBilling.imageSource,
+        sequenceId: sequence.id,
+        idempotencyKey: 'variant:' + variantTaskId,
+      })
+    : undefined;
+  const workflowRunId = await releaseReservationOnThrow(
+    context.scopedDb,
+    reservationId,
+    () =>
+      triggerWorkflow(
+        '/variant-image',
+        {
+          ...workflowInput,
+          reservationId,
+          ownsReservation: Boolean(reservationId),
+        },
+        {
+          deduplicationId: 'variant-' + shot.id + '-' + variantTaskId,
+          modelConfiguration,
+        }
+      )
+  );
 
   return { workflowRunId, shotId: shot.id };
 }
@@ -362,27 +442,37 @@ export async function selectShotImageVariant(
   // Price the model that will actually render the upscale (#1066) — the same
   // resolution the workflow performs, so the estimate can't drift from the
   // charge.
+  const modelConfiguration = await loadModelRuntimeConfiguration();
+  const upscaleModel = requireUpscaleModel(
+    sheet.model,
+    modelConfiguration.imageModelRouting
+  );
+  const imageBilling = await prepareConfiguredImageBilling({
+    model: upscaleModel,
+    modelConfiguration,
+    aspectRatio: sequence.aspectRatio,
+    imageCount: 1,
+    referenceImageCount:
+      1 + characterReferences.length + locationReferences.length,
+  });
   await requireCredits(
     context.scopedDb,
-    gateEstimate(
-      estimateImageCost(
-        resolveUpscaleModel(sheet.model),
-        sequence.aspectRatio,
-        1,
-        {
+    imageBilling?.costMicros ??
+      gateEstimate(
+        estimateImageCost(upscaleModel, sequence.aspectRatio, 1, {
           pricing: await getEffectiveFalPricing(),
           resolution: sequence.resolution,
+        }),
+        {
+          model: upscaleModel,
+          operation: 'variant-upscale',
         }
       ),
-      {
-        model: resolveUpscaleModel(sheet.model),
-        operation: 'variant-upscale',
-      }
-    ),
-    { errorMessage: 'Insufficient credits for variant upscale' }
+    {
+      imageSource: imageBilling?.imageSource,
+      errorMessage: 'Insufficient credits for variant upscale',
+    }
   );
-
-  const upscaleModel = resolveUpscaleModel(sheet.model);
 
   // Persist the in-flight job at click time so a refresh still shows
   // generating + the cropped tile. The workflow reuses this version rather
@@ -437,9 +527,32 @@ export async function selectShotImageVariant(
 
   let workflowRunId: string;
   try {
-    workflowRunId = await triggerWorkflow('/upscale-variant', workflowInput, {
-      deduplicationId: `upscale-variant-${shot.id}-${Date.now()}`,
-    });
+    const reservationId = imageBilling
+      ? await reserveRunCredits(context.scopedDb, imageBilling.costMicros, {
+          imageSource: imageBilling.imageSource,
+          sequenceId: sequence.id,
+          idempotencyKey: 'upscale-variant:' + version.id,
+        })
+      : undefined;
+    workflowRunId = await releaseReservationOnThrow(
+      context.scopedDb,
+      reservationId,
+      () =>
+        triggerWorkflow(
+          '/upscale-variant',
+          {
+            ...workflowInput,
+            reservationId,
+            ownsReservation: Boolean(reservationId),
+          },
+          {
+            deduplicationId: imageBilling
+              ? 'upscale-variant-' + shot.id + '-' + version.id
+              : 'upscale-variant-' + shot.id + '-' + Date.now(),
+            modelConfiguration,
+          }
+        )
+    );
   } catch (error) {
     // The old still is still good: a failed upscale leaves the status race
     // rather than reading as the shot's failure (#1942).

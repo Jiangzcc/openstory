@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveImageModel,
   resolveUpscaleModel,
+  requireUpscaleModel,
   resolveVideoModel,
   UPSCALE_FALLBACK_MODEL,
 } from './resolve-asset-models';
+import { createImageModelRoutingSnapshot } from './image-channels';
+import { imageConfigurationFixture } from './__tests__/image-model-fixture';
 
 describe('resolveImageModel', () => {
   it('prefers the explicit per-request model', () => {
@@ -167,4 +170,107 @@ describe('resolveUpscaleModel', () => {
     expect(resolveUpscaleModel(undefined)).toBe(UPSCALE_FALLBACK_MODEL);
     expect(resolveUpscaleModel('retired_model')).toBe(UPSCALE_FALLBACK_MODEL);
   });
+});
+
+describe('configured upscale model routing', () => {
+  const model = 'custom-image:qwen';
+  it('keeps the configured identity for tile hashes without inventing a built-in endpoint', () => {
+    expect(resolveUpscaleModel(model)).toBe(model);
+  });
+  it('requires the frozen verified edit binding before execution', () => {
+    const routing = createImageModelRoutingSnapshot(
+      imageConfigurationFixture()
+    );
+    expect(requireUpscaleModel(model, routing)).toBe(model);
+  });
+  it('fails explicitly when the configured model is missing or disabled', () => {
+    expect(() => requireUpscaleModel(model)).toThrow(
+      'Configured image model is unavailable.'
+    );
+    const configuration = imageConfigurationFixture();
+    for (const entry of configuration.models) entry.enabled = false;
+    expect(() =>
+      requireUpscaleModel(model, createImageModelRoutingSnapshot(configuration))
+    ).toThrow('Configured image model is unavailable.');
+  });
+  it.each(['unverified', 'unsupported'] as const)(
+    'refuses a %s edit binding',
+    (status) => {
+      const configuration = imageConfigurationFixture();
+      for (const entry of configuration.models) {
+        if (entry.operations.edit) entry.operations.edit.status = status;
+      }
+      const routing = createImageModelRoutingSnapshot(configuration);
+      expect(() => requireUpscaleModel(model, routing)).toThrow(
+        'verified image editing'
+      );
+    }
+  );
+});
+
+it('uses a captured edit binding even when the built-in has no native edit endpoint', () => {
+  const configuration = imageConfigurationFixture();
+  const model = configuration.models[0];
+  if (!model) throw new Error('Missing mock model.');
+  model.id = 'hidream_i1';
+  const routing = createImageModelRoutingSnapshot(configuration);
+  expect(resolveUpscaleModel(model.id, routing)).toBe(model.id);
+  expect(requireUpscaleModel(model.id, routing)).toBe(model.id);
+  expect(requireUpscaleModel(model.id, [])).toBe(UPSCALE_FALLBACK_MODEL);
+});
+
+it.each(['unverified', 'unsupported'] as const)(
+  'rejects a %s captured edit binding despite native editing support',
+  (status) => {
+    const configuration = imageConfigurationFixture();
+    const model = configuration.models[0];
+    if (!model?.operations.edit) throw new Error('Missing mock edit binding.');
+    model.id = 'gpt_image_2';
+    model.operations.edit.status = status;
+    const routing = createImageModelRoutingSnapshot(configuration);
+    expect(resolveUpscaleModel(model.id, routing)).toBe(model.id);
+    expect(() => requireUpscaleModel(model.id, routing)).toThrow(
+      'verified image editing'
+    );
+  }
+);
+
+it('rejects missing captured editing instead of using the built-in edit capability', () => {
+  const configuration = imageConfigurationFixture();
+  const model = configuration.models[0];
+  if (!model) throw new Error('Missing mock model.');
+  model.id = 'gpt_image_2';
+  delete model.operations.edit;
+  const routing = createImageModelRoutingSnapshot(configuration);
+  expect(() => requireUpscaleModel(model.id, routing)).toThrow(
+    'verified image editing'
+  );
+});
+
+it('checks the old task snapshot after live binding capabilities have changed', () => {
+  const configuration = imageConfigurationFixture();
+  const model = configuration.models[0];
+  if (!model?.operations.edit) throw new Error('Missing mock edit binding.');
+  model.id = 'gpt_image_2';
+  const frozen = createImageModelRoutingSnapshot(configuration);
+  model.operations.edit.status = 'unsupported';
+  expect(requireUpscaleModel(model.id, frozen)).toBe(model.id);
+  expect(() =>
+    requireUpscaleModel(
+      model.id,
+      createImageModelRoutingSnapshot(configuration)
+    )
+  ).toThrow('verified image editing');
+});
+
+it('validates a channel-bound fallback with its frozen capability too', () => {
+  const configuration = imageConfigurationFixture();
+  const model = configuration.models[0];
+  if (!model?.operations.edit) throw new Error('Missing mock edit binding.');
+  model.id = UPSCALE_FALLBACK_MODEL;
+  model.operations.edit.status = 'unsupported';
+  const routing = createImageModelRoutingSnapshot(configuration);
+  expect(() => requireUpscaleModel('hidream_i1', routing)).toThrow(
+    'verified image editing'
+  );
 });

@@ -1,3 +1,7 @@
+import type {
+  ImageModelRoute,
+  ImageModelRoutingSnapshot,
+} from '@/models/image-channels';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TEST_FAL_PRICING } from '@/billing/fal-pricing-fixture';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
@@ -26,7 +30,9 @@ const CUSTOM_ROUTE: TextModelRoute = {
   outputPricePerMillion: 6,
 };
 
-const triggerStoryboard = vi.fn(async () => ({ workflowRunId: 'mock-run' }));
+const triggerStoryboard = vi.fn<typeof import('./launchers').triggerStoryboard>(
+  async () => ({ workflowRunId: 'mock-run' })
+);
 vi.doMock('./launchers', async () => ({
   ...(await vi.importActual('./launchers')),
   triggerStoryboard,
@@ -53,6 +59,7 @@ function context(
     teamModels?: readonly string[];
     sceneSplit?: typeof CUSTOM_ROUTE.modelId;
     canAfford?: boolean;
+    imageRouting?: ImageModelRoutingSnapshot;
   } = {}
 ) {
   const create = vi.fn(
@@ -77,6 +84,7 @@ function context(
       hasEnoughCredits: async () => opts.canAfford ?? false,
     },
     textChannels: { getSnapshot: vi.fn(async () => snapshot) },
+    imageChannels: { getSnapshot: vi.fn(async () => opts.imageRouting ?? []) },
     modelConfiguration: { get: async () => configuration },
     sequences: { create, listPage },
     styles: { getById: async () => ({ sequenceId: null }) },
@@ -121,6 +129,7 @@ describe('custom sequence creation request routing', () => {
       {
         ...DEFAULT_MODEL_CONFIGURATION,
         textModelRouting: snapshot,
+        imageModelRouting: [],
       }
     );
   });
@@ -189,7 +198,11 @@ describe('sequence platform text reservations', () => {
     expect(triggerStoryboard).toHaveBeenCalledWith(
       c.scopedDb,
       expect.objectContaining({ reservationId: 'mock-hold' }),
-      { ...c.configuration, textModelRouting: [CUSTOM_ROUTE] }
+      {
+        ...c.configuration,
+        textModelRouting: [CUSTOM_ROUTE],
+        imageModelRouting: [],
+      }
     );
   });
 
@@ -199,5 +212,110 @@ describe('sequence platform text reservations', () => {
     expect(c.resolveLlmKey).not.toHaveBeenCalled();
     expect(c.createReservation).not.toHaveBeenCalled();
     expect(triggerStoryboard).toHaveBeenCalledOnce();
+  });
+});
+
+const MOCK_IMAGE_ROUTE: ImageModelRoute = {
+  modelId: 'custom-image:mock-generation',
+  name: 'Mock generation',
+  channelId: 'mock-channel',
+  protocol: 'openai-images',
+  baseUrl: 'https://mock.invalid/v1',
+  credentialId: 'mock-credential',
+  operations: {
+    generate: {
+      upstreamModel: 'mock-image',
+      status: 'verified',
+      minReferenceImages: 0,
+      maxReferenceImages: 0,
+      mask: 'unsupported',
+    },
+  },
+  parameters: [
+    {
+      key: 'size',
+      label: 'Size',
+      type: 'string',
+      status: 'verified',
+      operations: ['generate'],
+      required: true,
+      defaultValue: '512x512',
+      values: ['512x512', '1024x576'],
+    },
+  ],
+  priceCards: [
+    {
+      id: 'wide',
+      operation: 'generate',
+      match: { size: '1024x576' },
+      unitPriceUsd: 0.02,
+    },
+  ],
+};
+
+describe('configured image sequence reservations', () => {
+  it('requires platform credits despite usable organization keys', async () => {
+    const c = context([], {
+      imageRouting: [MOCK_IMAGE_ROUTE],
+      teamModels: [
+        DEFAULT_MODEL_CONFIGURATION.defaultAnalysis,
+        DEFAULT_MODEL_CONFIGURATION.sceneSplit,
+      ],
+    });
+    await expect(
+      createSequences(
+        {
+          ...input(DEFAULT_MODEL_CONFIGURATION.defaultAnalysis),
+          imageModels: [MOCK_IMAGE_ROUTE.modelId],
+          stopAt: 'images',
+        },
+        c
+      )
+    ).rejects.toThrow('Insufficient credits');
+    expect(c.createReservation).toHaveBeenCalledOnce();
+    expect(c.create).not.toHaveBeenCalled();
+    expect(triggerStoryboard).not.toHaveBeenCalled();
+  });
+  it('forwards the exact quoted snapshot and a stable task reservation key', async () => {
+    const imageRouting = [MOCK_IMAGE_ROUTE];
+    const c = context([], { imageRouting, canAfford: true });
+    const result = await createSequences(
+      {
+        ...input(DEFAULT_MODEL_CONFIGURATION.defaultAnalysis),
+        imageModels: [MOCK_IMAGE_ROUTE.modelId],
+        stopAt: 'images',
+      },
+      c
+    );
+    const [call] = triggerStoryboard.mock.calls;
+    if (!call) throw new Error('Mock storyboard trigger call is required.');
+    expect(call[2]?.imageModelRouting).toBe(imageRouting);
+    expect(c.scopedDb.imageChannels.getSnapshot).toHaveBeenCalledOnce();
+    expect(c.createReservation).toHaveBeenCalledWith(
+      expect.any(Number),
+      expect.objectContaining({
+        idempotencyKey: 'storyboard:' + result.sequences[0]?.id,
+      })
+    );
+  });
+  it('rejects inactive or unpriced configured models before reservations and writes', async () => {
+    for (const imageRouting of [
+      [],
+      [{ ...MOCK_IMAGE_ROUTE, priceCards: [] }],
+    ]) {
+      const c = context([], { imageRouting, canAfford: true });
+      await expect(
+        createSequences(
+          {
+            ...input(DEFAULT_MODEL_CONFIGURATION.defaultAnalysis),
+            imageModels: [MOCK_IMAGE_ROUTE.modelId],
+            stopAt: 'images',
+          },
+          c
+        )
+      ).rejects.toThrow();
+      expect(c.createReservation).not.toHaveBeenCalled();
+      expect(c.create).not.toHaveBeenCalled();
+    }
   });
 });

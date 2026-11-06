@@ -613,5 +613,6 @@
   "Generate": "Generate",
   "Nothing to generate": "Nothing to generate",
   "Generate voice": "Generate voice",
-  "This shot": "This shot"
+  "This shot": "This shot",
+  "Request preview is not configured for this image channel.": "Request preview is not configured for this image channel."
 }

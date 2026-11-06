@@ -1,3 +1,4 @@
+import { imageModelDisplayName } from '@/models/image-model-catalog';
 /**
  * Generate style sample videos (issues #718, #801).
  *
@@ -48,6 +49,7 @@ import {
   IMAGE_TO_VIDEO_MODELS,
   safeImageToVideoModel,
   safeTextToImageModel,
+  isValidTextToImageModel,
   type ImageToVideoModel,
   type TextToImageModel,
 } from '@/models/models';
@@ -101,7 +103,7 @@ type Flags = {
   submitOnly: boolean;
   /** Images-only render: no image-to-video clips, no music. */
   noMotion: boolean;
-  /** Override every job's image model (key in IMAGE_MODELS); null = per-style. */
+  /** Override every job's image model (built-in or configured image key); null = per-style. */
   imageModel: string | null;
 };
 
@@ -161,7 +163,7 @@ function buildJobs(flags: Flags): RenderJob[] {
     const bespoke = BESPOKE_SCRIPTS[slug];
     if (flags.heroOnly && !bespoke) continue;
 
-    if (flags.imageModel && !(flags.imageModel in IMAGE_MODELS)) {
+    if (flags.imageModel && !isValidTextToImageModel(flags.imageModel)) {
       throw new Error(
         `Unknown --image-model "${flags.imageModel}". Keys: ${Object.keys(IMAGE_MODELS).join(', ')}`
       );
@@ -469,7 +471,7 @@ function printDryRun(jobs: RenderJob[]) {
     const first = styleJobs[0];
     if (!first) continue;
     console.log(
-      `• ${first.styleName} (${slug}) — image:${IMAGE_MODELS[first.imageModel].name}, ` +
+      `• ${first.styleName} (${slug}) — image:${imageModelDisplayName(first.imageModel)}, ` +
         `video:${IMAGE_TO_VIDEO_MODELS[first.videoModel].name}, ${first.aspectRatio}`
     );
     for (const job of styleJobs) {

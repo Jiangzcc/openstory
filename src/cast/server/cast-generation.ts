@@ -1,3 +1,4 @@
+import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
 /**
  * Cast generation shared by the editor's server fns and the MCP tools
  * (#1979): regenerate a character or location sheet, replace a sequence's
@@ -5,6 +6,12 @@
  * cancel that design. Each spends credits through the workflow it triggers.
  */
 import { DEFAULT_IMAGE_MODEL, safeTextToImageModel } from '@/models/models';
+import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
+import {
+  requireCredits,
+  reserveRunCredits,
+  releaseReservationOnThrow,
+} from '@/billing/server/preflight';
 import { sheetStartedSummary } from '@/sequences/model-label';
 import { castChannelId, locationChannelId } from '@/cast/cast-channel';
 import { getGenerationChannel } from '@/platform/realtime';
@@ -86,6 +93,17 @@ export async function regenerateCharacterSheet(
     imageModel: data.imageModel,
   });
 
+  const modelConfiguration = await loadModelRuntimeConfiguration();
+  const imageBilling = await prepareConfiguredImageBilling({
+    modelConfiguration,
+    model: payload.imageModel ?? DEFAULT_IMAGE_MODEL,
+    aspectRatio: '16:9',
+    imageCount: 1,
+    referenceImageCount: payload.face ? 1 : 0,
+  });
+  if (imageBilling)
+    await requireCredits(scopedDb, imageBilling.costMicros, imageBilling);
+
   // The claim (#1113): last kickoff wins, and any edit to the look's sheet
   // inputs before this run lands revokes it.
   const { versionId: sheetVersionId } =
@@ -115,16 +133,30 @@ export async function regenerateCharacterSheet(
 
   let workflowRunId: string;
   try {
+    const reservationId = imageBilling
+      ? await reserveRunCredits(scopedDb, imageBilling.costMicros, {
+          imageSource: imageBilling.imageSource,
+          sequenceId: payload.sequenceId ?? undefined,
+          idempotencyKey: 'character-sheet:' + sheetVersionId,
+        })
+      : undefined;
     const claimed: CharacterSheetWorkflowInput = {
       ...payload,
       sheetVersionId,
+      reservationId,
+      ownsReservation: Boolean(reservationId),
     };
-    workflowRunId = await triggerWorkflow('/character-sheet', claimed, {
-      // Explicit regen must not reuse the bible-child id
-      // `character-sheet:${id}` — that instance is already complete, and CF
-      // would no-op a second Generate (sheetStatus stuck at generating).
-      // Omit dedup so each click is a new run.
-    });
+    workflowRunId = await releaseReservationOnThrow(
+      scopedDb,
+      reservationId,
+      () =>
+        triggerWorkflow('/character-sheet', claimed, {
+          deduplicationId: imageBilling
+            ? 'character-sheet:' + sheetVersionId
+            : undefined,
+          modelConfiguration,
+        })
+    );
   } catch (error) {
     await scopedDb.characterLooks.failSheetClaim(
       payload.lookId,
@@ -249,6 +281,17 @@ export async function regenerateLocationSheet(
     imageModel: data.imageModel,
   });
 
+  const modelConfiguration = await loadModelRuntimeConfiguration();
+  const imageBilling = await prepareConfiguredImageBilling({
+    modelConfiguration,
+    model: payload.imageModel ?? DEFAULT_IMAGE_MODEL,
+    aspectRatio: '16:9',
+    imageCount: 1,
+    referenceImageCount: payload.referencePhotoUrls.length,
+  });
+  if (imageBilling)
+    await requireCredits(scopedDb, imageBilling.costMicros, imageBilling);
+
   // The claim (#1113): last kickoff wins, and any edit to the location's
   // inputs before this run lands revokes it.
   const referenceVersionId = await scopedDb.locations.claimReference(
@@ -278,15 +321,30 @@ export async function regenerateLocationSheet(
 
   let workflowRunId: string;
   try {
+    const reservationId = imageBilling
+      ? await reserveRunCredits(scopedDb, imageBilling.costMicros, {
+          imageSource: imageBilling.imageSource,
+          sequenceId: payload.sequenceId ?? undefined,
+          idempotencyKey: 'location-sheet:' + referenceVersionId,
+        })
+      : undefined;
     const claimed: LocationSheetWorkflowInput = {
       ...payload,
       referenceVersionId,
+      reservationId,
+      ownsReservation: Boolean(reservationId),
     };
-    workflowRunId = await triggerWorkflow('/location-sheet', claimed, {
-      // Explicit regen must not reuse the bible-child id
-      // `location-sheet:${id}` — that instance is already complete, and CF
-      // would no-op a second Generate. Omit dedup so each click is a new run.
-    });
+    workflowRunId = await releaseReservationOnThrow(
+      scopedDb,
+      reservationId,
+      () =>
+        triggerWorkflow('/location-sheet', claimed, {
+          deduplicationId: imageBilling
+            ? 'location-sheet:' + referenceVersionId
+            : undefined,
+          modelConfiguration,
+        })
+    );
   } catch (error) {
     await scopedDb.locations.failReferenceClaim(
       location.id,

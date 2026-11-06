@@ -49,7 +49,7 @@ const IMPORT_RE =
 
 function domainOf(from: string, spec: string): string | null {
   const target = spec.startsWith('.')
-    ? relative(ROOT, resolve(from, '..', spec))
+    ? relative(ROOT, resolve(from, '..', spec)).replaceAll('\\', '/')
     : spec.startsWith('@/')
       ? spec.replace(/^@\//, 'src/')
       : null;
@@ -78,7 +78,7 @@ describe('src/platform is domain-blind', () => {
   it('value-imports no domain module outside those roots', () => {
     const offenders: string[] = [];
     for (const file of walk(join(ROOT, 'src', 'platform'))) {
-      const rel = relative(ROOT, file);
+      const rel = relative(ROOT, file).replaceAll('\\', '/');
       if (isExempt(rel)) continue;
       for (const m of readFileSync(file, 'utf8').matchAll(IMPORT_RE)) {
         const domain = domainOf(file, m[1] ?? '');

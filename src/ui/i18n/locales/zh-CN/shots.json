@@ -613,5 +613,6 @@
   "Generate": "生成",
   "Nothing to generate": "没有需要生成的内容",
   "Generate voice": "生成音色",
-  "This shot": "当前镜头"
+  "This shot": "当前镜头",
+  "Request preview is not configured for this image channel.": "该图片渠道尚未配置请求预览。"
 }

@@ -101,3 +101,30 @@ describe('Studio model recommendations', () => {
     expect(prefs.videoModel).toBe('seedance_v2_5');
   });
 });
+
+describe('Studio configured image model preferences', () => {
+  it('retains a stable configured identity without saving channel credentials or parameters', () => {
+    expect(
+      parseStudioComposerPrefs({
+        imageModel: 'custom-image:qwen-image',
+        aspectRatio: '1:1',
+        channelParameters: { n: 4 },
+        apiKey: 'synthetic-not-a-key',
+      })
+    ).toEqual({ imageModel: 'custom-image:qwen-image', aspectRatio: '1:1' });
+  });
+
+  it('keeps an explicit historical configured identity for the dynamic availability guard', () => {
+    const prefs = parseStudioComposerPrefs({
+      imageModel: 'custom-image:disabled-history',
+    });
+    expect(
+      resolveStudioComposerModels(
+        prefs,
+        DEFAULT_MODEL_CONFIGURATION,
+        '16:9',
+        {}
+      ).imageModel
+    ).toBe('custom-image:disabled-history');
+  });
+});

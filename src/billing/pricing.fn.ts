@@ -1,3 +1,5 @@
+import { configuredImageRoutingForModels } from '@/billing/server/configured-image-billing';
+import { configuredImageSource } from '@/billing/configured-image-billing';
 import { getEnv } from '#env';
 import { authWithOrganizationMiddleware } from '@/platform/middleware.fn';
 import { isBytePlusConfigured } from '@/models/server/byteplus-config';
@@ -130,19 +132,34 @@ export const estimateDraftGenerationFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     if (!data.script.trim()) return { estimateMicros: null };
     const pricing = await getEffectiveFalPricing();
+    const imageModelRouting = await configuredImageRoutingForModels(
+      data.imageModels
+    );
     const imageModel = safeTextToImageModel(
       data.imageModels[0],
       DEFAULT_IMAGE_MODEL
     );
     if (
+      data.generateStartFrames &&
       includesStage(data.stopAt, 'images') &&
-      estimateImageCost(imageModel, data.aspectRatio, 1, { pricing }) === null
-    ) {
+      estimateImageCost(imageModel, data.aspectRatio, 1, {
+        pricing,
+        imageModelRouting,
+        resolution: data.resolution,
+      }) === null
+    )
       return { estimateMicros: null };
-    }
     const estimate = estimateStoryboardPreflightCost({
       script: data.script,
       imageModel,
+      imageModels: data.imageModels.some((model) =>
+        configuredImageSource(model, imageModelRouting)
+      )
+        ? data.imageModels.map((model) =>
+            safeTextToImageModel(model, DEFAULT_IMAGE_MODEL)
+          )
+        : undefined,
+      imageModelRouting,
       imageModelCount: data.imageModels.length,
       aspectRatio: data.aspectRatio,
       resolution: data.resolution,

@@ -238,9 +238,9 @@ function generatedTables(): string[] {
 }
 
 const WORKFLOW_SOURCES = [
-  ...globSync('src/**/server/workflows/*.ts').filter(
-    (f) => !f.endsWith('.test.ts')
-  ),
+  ...globSync('src/**/server/workflows/*.ts')
+    .filter((f) => !f.endsWith('.test.ts'))
+    .map((f) => f.replaceAll('\\', '/')),
   // A workflow-step helper, not a workflow (#1651, #1657).
   'src/motion/server/generate-dialogue-speech.ts',
   // Analysis's spec-and-prompts step (#1915).

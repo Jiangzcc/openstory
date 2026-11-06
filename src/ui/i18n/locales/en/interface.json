@@ -378,5 +378,6 @@
   "Could not switch organization": "Could not switch organization",
   "Organizations": "Organizations",
   "Current": "Current",
-  "Loading…": "Loading…"
+  "Loading…": "Loading…",
+  "{{value1}} uses image channel size settings.": "{{value1}} uses image channel size settings."
 }

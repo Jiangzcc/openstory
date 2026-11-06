@@ -1,3 +1,13 @@
+import {
+  estimatePlanImageCost,
+  planUsesConfiguredImages,
+} from '@/billing/configured-image-plan-billing';
+import { computePlan } from '@/shots/server/update-stale-plan';
+import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
+import { addMicros, ZERO_MICROS } from '@/billing/money';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import { loadStoryboardModelConfiguration } from './launchers';
+import { configuredImageSource } from '@/billing/configured-image-billing';
 /**
  * What a continue click may run (#1817): the generation plan, filtered to
  * work up to the stop. The plan is the only opinion — no checkpoint stage, no
@@ -71,7 +81,7 @@ export function continueFromPlan(args: {
  * unit. `priced` is false when a still is owed and its model has no price —
  * the footer shows no estimate, the gate reserves the floored number.
  */
-export async function estimateContinueCost(args: {
+type ContinueEstimateInput = {
   sequence: Pick<
     Sequence,
     'imageModel' | 'videoModel' | 'musicModel' | 'aspectRatio' | 'resolution'
@@ -80,25 +90,73 @@ export async function estimateContinueCost(args: {
   work: readonly PlanUnit[];
   generateStartFrames: boolean;
   draftMotion: boolean;
-}): Promise<{ micros: Microdollars; priced: boolean }> {
-  const { sequence, shots } = args;
-  const pricing = await getEffectiveFalPricing();
-  const imageModel = safeTextToImageModel(
-    sequence.imageModel,
+  modelConfiguration: ModelRuntimeConfiguration;
+  imagePlan: UpdateStalePlan;
+};
+
+function continueImageEstimate(
+  args: ContinueEstimateInput,
+  pricing: Awaited<ReturnType<typeof getEffectiveFalPricing>>
+) {
+  const model = safeTextToImageModel(
+    args.sequence.imageModel,
     DEFAULT_IMAGE_MODEL
   );
+  const routing = args.modelConfiguration.imageModelRouting;
   const counts = planCounts(args.work);
-  const priced =
-    counts.still === 0 ||
-    estimateImageCost(imageModel, sequence.aspectRatio, 1, { pricing }) !==
-      null;
+  const quote = planUsesConfiguredImages(args.imagePlan, routing)
+    ? estimatePlanImageCost(args.imagePlan, routing, pricing)
+    : undefined;
+  const priced = quote
+    ? quote.priced
+    : counts.still === 0 ||
+      estimateImageCost(model, args.sequence.aspectRatio, 1, {
+        pricing,
+        imageModelRouting: routing,
+        resolution: args.sequence.resolution,
+      }) !== null;
+  const hasImages =
+    counts.still +
+      counts['sheet:character'] +
+      counts['sheet:location'] +
+      counts['ref:element'] >
+    0;
+  return {
+    imageModel: model,
+    imageModelRouting: routing,
+    priced,
+    counts: quote
+      ? {
+          ...counts,
+          still: 0,
+          'sheet:character': 0,
+          'sheet:location': 0,
+          'ref:element': 0,
+        }
+      : counts,
+    costMicros: quote?.costMicros ?? ZERO_MICROS,
+    imageSource:
+      quote?.imageSource ??
+      (hasImages ? configuredImageSource(model, routing) : undefined),
+  };
+}
+
+async function estimateContinueCost(args: ContinueEstimateInput): Promise<{
+  micros: Microdollars;
+  priced: boolean;
+  imageSource?: 'platform';
+}> {
+  const { sequence, shots } = args;
+  const pricing = await getEffectiveFalPricing();
+  const image = continueImageEstimate(args, pricing);
   const videoModel = safeImageToVideoModel(
     sequence.videoModel,
     DEFAULT_VIDEO_MODEL
   );
-  const micros = estimatePlanCost({
-    counts,
-    imageModel,
+  const cost = estimatePlanCost({
+    counts: image.counts,
+    imageModel: image.imageModel,
+    imageModelRouting: image.imageModelRouting,
     aspectRatio: sequence.aspectRatio,
     resolution: sequence.resolution,
     videoModels: [videoModel],
@@ -112,7 +170,41 @@ export async function estimateContinueCost(args: {
     audioDurationSeconds: musicRequestDurationSeconds(shots),
     pricing,
   });
-  return { micros, priced };
+  return {
+    micros: addMicros(cost, image.costMicros),
+    priced: image.priced,
+    imageSource: image.imageSource,
+  };
+}
+
+export async function prepareContinueEstimate(args: {
+  scopedDb: ScopedDb;
+  userId: string;
+  sequence: Sequence;
+  work: readonly PlanUnit[];
+  requested: Flags;
+  draftMotion: boolean;
+}) {
+  const { scopedDb, sequence, requested, work } = args;
+  const modelConfiguration = await loadStoryboardModelConfiguration(scopedDb);
+  const plan = await computePlan({
+    scopedDb,
+    userId: args.userId,
+    sequenceId: sequence.id,
+    sequenceOverrides: { ...requested, draftMotion: args.draftMotion },
+    units: work.map(({ kind, id }) => ({ kind, id })),
+    imageModelRouting: modelConfiguration.imageModelRouting,
+  });
+  const estimate = await estimateContinueCost({
+    modelConfiguration,
+    imagePlan: plan,
+    sequence,
+    shots: await scopedDb.shots.listBySequence(sequence.id),
+    work,
+    generateStartFrames: requested.generateStartFrames,
+    draftMotion: args.draftMotion,
+  });
+  return { estimate, modelConfiguration, plan };
 }
 
 /**
@@ -124,6 +216,7 @@ export async function estimateContinueCost(args: {
  */
 export async function prepareContinue(args: {
   scopedDb: ScopedDb;
+  userId: string;
   sequence: Sequence;
   stopAt: GenerationStage;
   requested: { generateStartFrames: boolean; generateVoices: boolean };
@@ -151,14 +244,8 @@ export async function prepareContinue(args: {
     requested,
     stopAt: args.stopAt,
   });
-  const estimate = await estimateContinueCost({
-    sequence,
-    shots: await scopedDb.shots.listBySequence(sequence.id),
-    work,
-    generateStartFrames: requested.generateStartFrames,
-    draftMotion: args.draftMotion,
-  });
-  return { work, stopAt, estimate };
+  const prepared = await prepareContinueEstimate({ ...args, work });
+  return { work, stopAt, ...prepared };
 }
 
 /**

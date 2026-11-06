@@ -25,6 +25,7 @@ import { estimateImageCost, gateEstimate } from '@/billing/cost-estimation';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { recordProvenance } from '@/platform/server/compliance/provenance';
 import { generateImageWithProvider } from '@/stills/server/image-generation';
+import type { ImageGenerationParams } from '@/stills/server/image-generation';
 import { storeGeneratedPng } from '@/stills/server/image-storage';
 
 const logger = getLogger(['openstory', 'cast', 'sheet-portrait']);
@@ -210,4 +211,22 @@ export async function chargeSheetPortrait(args: {
   });
   // What the charge did not take goes back to the balance.
   await scopedDb.billing.zeroReservation(drawn.reservationId);
+}
+
+export type SheetPortraitInput = Parameters<typeof drawSheetPortrait>[0];
+
+export function sheetPortraitGenerationRequest(
+  kind: PortraitKind,
+  sheetUrl: string
+) {
+  return {
+    bucket: PORTRAIT[kind].bucket,
+    params: {
+      model: PORTRAIT_MODEL,
+      prompt: PORTRAIT[kind].prompt,
+      imageSize: 'square_hd',
+      numImages: 1,
+      referenceImageUrls: [sheetUrl],
+    } satisfies ImageGenerationParams,
+  };
 }

@@ -8,8 +8,13 @@
  */
 
 import { estimateFalCost, type EffectiveFalPricing } from './fal-cost';
+import { estimateConfiguredImageCost } from './configured-image-billing';
+import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
+import { usesConfiguredImageChannel } from '@/models/image-channels';
+import type { ImageChannelParameterValues } from '@/models/image-channel-parameters';
 import {
   getEditEndpoint,
+  isBuiltinTextToImageModel,
   AUDIO_MODELS,
   IMAGE_MODELS,
   IMAGE_TO_VIDEO_MODELS,
@@ -43,6 +48,19 @@ import { type Microdollars, addMicros, micros, multiplyMicros } from './money';
 const logger = getLogger(['openstory', 'billing', 'cost-estimation']);
 
 type FalPricingMap = Record<string, EffectiveFalPricing>;
+
+type ConfiguredImageEstimateOptions = {
+  imageModelRouting?: ImageModelRoutingSnapshot;
+  imageParameters?: ImageChannelParameterValues;
+};
+
+type ImageCostOptions = ConfiguredImageEstimateOptions & {
+  pricing: FalPricingMap;
+  resolution?: Resolution;
+  edit?: boolean;
+  referenceImageCount?: number;
+  hasMask?: boolean;
+};
 
 /**
  * Conservative per-call floor the credit gate assumes when a model has no
@@ -138,6 +156,31 @@ export function gateEstimate(
   return floored;
 }
 
+function estimateConfiguredImageRequestCost(
+  model: TextToImageModel,
+  aspectRatio: AspectRatio,
+  numImages: number,
+  opts: ImageCostOptions
+): Microdollars {
+  return estimateConfiguredImageCost(
+    {
+      model,
+      aspectRatio,
+      resolution: opts.resolution,
+      imageModelRouting: opts.imageModelRouting,
+      operation: opts.edit ? 'edit' : 'generate',
+      parameters: opts.imageParameters,
+      imageCount:
+        typeof opts.imageParameters?.n === 'number'
+          ? opts.imageParameters.n
+          : 1,
+      referenceImageCount: opts.referenceImageCount ?? (opts.edit ? 1 : 0),
+      hasMask: opts.hasMask,
+    },
+    numImages
+  );
+}
+
 /**
  * Estimate provider cost of generating images. Rough pre-flight
  * gate only — the exact charge comes from fal's reported units post-generation.
@@ -146,8 +189,19 @@ export function estimateImageCost(
   model: TextToImageModel,
   aspectRatio: AspectRatio,
   numImages: number,
-  opts: { pricing: FalPricingMap; resolution?: Resolution; edit?: boolean }
+  opts: ImageCostOptions
 ): Microdollars | null {
+  if (
+    !isBuiltinTextToImageModel(model) ||
+    usesConfiguredImageChannel(model, opts.imageModelRouting)
+  ) {
+    return estimateConfiguredImageRequestCost(
+      model,
+      aspectRatio,
+      numImages,
+      opts
+    );
+  }
   // Megapixel-priced endpoints bill on the pixels actually requested, so the
   // tier has to size the estimate — a 4K ask against the flat 1600×900 stand-in
   // under-quotes by ~5.8× and under-reserves the credits gating it (#1449).
@@ -304,8 +358,10 @@ export function estimateLocationSheetCount(sceneCount: number): number {
   return 3;
 }
 
-export type StoryboardCostOpts = {
+export type StoryboardCostOpts = ConfiguredImageEstimateOptions & {
   imageModel: TextToImageModel;
+  /** Selected image identities, priced individually when available. */
+  imageModels?: readonly TextToImageModel[];
   /** Number of image models selected (multiplies per-shot image cost) */
   imageModelCount?: number;
   aspectRatio: AspectRatio;
@@ -370,6 +426,30 @@ function estimateRunsStage(
   return true;
 }
 
+function estimateStoryboardStillCost(
+  opts: StoryboardCostOpts,
+  count: number
+): Microdollars {
+  const models = opts.imageModels ?? [opts.imageModel];
+  const estimates = models.map((model) =>
+    gateEstimate(
+      estimateImageCost(model, opts.aspectRatio, count, {
+        pricing: opts.pricing,
+        resolution: opts.resolution,
+        imageModelRouting: opts.imageModelRouting,
+        imageParameters: opts.imageParameters,
+      }),
+      { model, operation: 'storyboard:shot-images' },
+      count
+    )
+  );
+  const total = estimates.reduce(addMicros, micros(0));
+  return multiplyMicros(
+    total,
+    opts.imageModels ? 1 : (opts.imageModelCount ?? 1)
+  );
+}
+
 /**
  * Stills + optional motion + optional music for an already-split board.
  * Excludes LLM analysis and character/location sheets (those already ran).
@@ -379,24 +459,13 @@ export function estimateStoryboardRenderCost(
   opts: StoryboardCostOpts
 ): Microdollars {
   const sceneCount = opts.estimatedSceneCount ?? DEFAULT_ESTIMATED_SCENE_COUNT;
-  const imageModelCount = opts.imageModelCount ?? 1;
   const { pricing } = opts;
 
   // Reference-only renders straight to video: the shot-images phase never
   // spawns (see `analyze-script-workflow` phase 4), so there is nothing to bill.
   let totalCost = micros(0);
   if (!opts.referenceOnly && estimateRunsStage(opts, 'images')) {
-    totalCost = multiplyMicros(
-      gateEstimate(
-        estimateImageCost(opts.imageModel, opts.aspectRatio, sceneCount, {
-          pricing,
-          resolution: opts.resolution,
-        }),
-        { model: opts.imageModel, operation: 'storyboard:shot-images' },
-        sceneCount
-      ),
-      imageModelCount
-    );
+    totalCost = estimateStoryboardStillCost(opts, sceneCount);
   }
 
   if (estimateRunsStage(opts, 'motion') && opts.videoModels?.length) {
@@ -463,20 +532,26 @@ export function estimateStoryboardRenderCost(
  * entry — so it passes those instead. Sheets are always square
  * 16:9 regardless of the sequence's ratio.
  */
-export function estimateReferenceSheetCost(opts: {
-  imageModel: TextToImageModel;
-  characterSheets: number;
-  locationSheets: number;
-  /** Auto-generated element references (#835). Zero at pre-flight: unknowable. */
-  elementSheets?: number;
-  pricing: FalPricingMap;
-}): Microdollars {
+export function estimateReferenceSheetCost(
+  opts: ConfiguredImageEstimateOptions & {
+    imageModel: TextToImageModel;
+    characterSheets: number;
+    locationSheets: number;
+    /** Auto-generated element references (#835). Zero at pre-flight: unknowable. */
+    elementSheets?: number;
+    pricing: FalPricingMap;
+  }
+): Microdollars {
   const { imageModel, pricing } = opts;
   const line = (count: number, operation: GateOperation): Microdollars =>
     count <= 0
       ? micros(0)
       : gateEstimate(
-          estimateImageCost(imageModel, '16:9', count, { pricing }),
+          estimateImageCost(imageModel, '16:9', count, {
+            pricing,
+            imageModelRouting: opts.imageModelRouting,
+            imageParameters: opts.imageParameters,
+          }),
           { model: imageModel, operation },
           count
         );
@@ -505,6 +580,8 @@ export function estimateStoryboardCost(opts: StoryboardCostOpts): Microdollars {
   const sheetCost = runsReferences
     ? estimateReferenceSheetCost({
         imageModel: opts.imageModel,
+        imageModelRouting: opts.imageModelRouting,
+        imageParameters: opts.imageParameters,
         characterSheets: estimateCharacterSheetCount(sceneCount),
         locationSheets: estimateLocationSheetCount(sceneCount),
         pricing,
@@ -538,21 +615,23 @@ export function estimateStoryboardCost(opts: StoryboardCostOpts): Microdollars {
  * a heuristic cast. A shot rewrite is one LLM call. Rebuilding a still or
  * motion prompt from the spec is free. Music prompts stay one call each.
  */
-export function estimatePlanCost(opts: {
-  counts: Record<PlanUnitKind, number>;
-  imageModel: TextToImageModel;
-  imageModelCount?: number;
-  aspectRatio: AspectRatio;
-  resolution?: Resolution;
-  videoModels: readonly ImageToVideoModel[];
-  videoDurationSeconds: number;
-  /** Reference-only clips price on the reference-to-video route. */
-  referenceOnly: boolean;
-  draftMotion: boolean;
-  audioModels: readonly AudioModel[];
-  audioDurationSeconds: number;
-  pricing: FalPricingMap;
-}): Microdollars {
+export function estimatePlanCost(
+  opts: ConfiguredImageEstimateOptions & {
+    counts: Record<PlanUnitKind, number>;
+    imageModel: TextToImageModel;
+    imageModelCount?: number;
+    aspectRatio: AspectRatio;
+    resolution?: Resolution;
+    videoModels: readonly ImageToVideoModel[];
+    videoDurationSeconds: number;
+    /** Reference-only clips price on the reference-to-video route. */
+    referenceOnly: boolean;
+    draftMotion: boolean;
+    audioModels: readonly AudioModel[];
+    audioDurationSeconds: number;
+    pricing: FalPricingMap;
+  }
+): Microdollars {
   const { counts, pricing } = opts;
   const prompts = counts.spec + counts['prompt:music'];
   let total = addMicros(
@@ -560,6 +639,8 @@ export function estimatePlanCost(opts: {
     addMicros(
       estimateReferenceSheetCost({
         imageModel: opts.imageModel,
+        imageModelRouting: opts.imageModelRouting,
+        imageParameters: opts.imageParameters,
         characterSheets: counts['sheet:character'],
         locationSheets: counts['sheet:location'],
         elementSheets: counts['ref:element'],
@@ -579,6 +660,8 @@ export function estimatePlanCost(opts: {
           estimateImageCost(opts.imageModel, opts.aspectRatio, counts.still, {
             pricing,
             resolution: opts.resolution,
+            imageModelRouting: opts.imageModelRouting,
+            imageParameters: opts.imageParameters,
           }),
           { model: opts.imageModel, operation: 'storyboard:shot-images' },
           counts.still

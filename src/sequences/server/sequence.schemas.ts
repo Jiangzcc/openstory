@@ -1,8 +1,8 @@
+import { imageModelIdSchema } from '@/models/image-model-schema';
 import {
   AUDIO_MODELS,
   DEFAULT_IMAGE_MODEL,
   DEFAULT_VIDEO_MODEL,
-  IMAGE_MODELS,
   IMAGE_TO_VIDEO_MODELS,
   referenceOnlyCapableWith,
   type ImageToVideoModel,
@@ -38,9 +38,6 @@ import { z } from 'zod';
  */
 
 // Get valid model IDs for validation
-const validImageModelKeys = Object.keys(
-  IMAGE_MODELS
-) satisfies readonly string[];
 const validVideoModelKeys = Object.keys(
   IMAGE_TO_VIDEO_MODELS
 ) satisfies readonly string[];
@@ -106,20 +103,10 @@ export const createSequenceSchema = createInsertSchema(sequences, {
       .min(1, 'At least one model must be selected')
       .default([DEFAULT_ANALYSIS_MODEL]),
     // Primary image model (model key, not full ID) — first of imageModels
-    imageModel: z
-      .string()
-      .refine((val) => validImageModelKeys.includes(val), {
-        message: 'Invalid image model',
-      })
-      .default(DEFAULT_IMAGE_MODEL)
-      .optional(),
+    imageModel: imageModelIdSchema.default(DEFAULT_IMAGE_MODEL).optional(),
     // Multiple image models for variant generation (first is primary)
     imageModels: z
-      .array(
-        z.string().refine((val) => validImageModelKeys.includes(val), {
-          message: 'Invalid image model',
-        })
-      )
+      .array(imageModelIdSchema)
       .min(1, 'At least one image model must be selected')
       .default([DEFAULT_IMAGE_MODEL]),
     // Video model selection (model key, not full ID) — primary / first of videoModels

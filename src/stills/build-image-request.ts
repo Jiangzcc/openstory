@@ -17,6 +17,8 @@ import {
   getEditEndpoint,
   getTextToImageModelId,
   IMAGE_MODELS,
+  isBuiltinTextToImageModel,
+  type BuiltinTextToImageModel,
   type TextToImageModel,
 } from '@/models/models';
 import {
@@ -35,6 +37,9 @@ import {
   type PixelBounds,
   type Resolution,
 } from '@/models/resolutions';
+import { isConfiguredImageModelId } from '@/models/image-channels';
+import type { ConfiguredImageModelId } from '@/models/image-channels';
+import type { ImageChannelParameterValues } from '@/models/image-channel-parameters';
 import { warnLongPrompt } from '@/models/prompt-length';
 
 export type ImageGenerationParams = {
@@ -60,7 +65,36 @@ export type ImageGenerationParams = {
   acceleration?: 'none' | 'regular' | 'high';
   enablePromptExpansion?: boolean;
   referenceImageUrls?: string[];
+  channelParameters?: ImageChannelParameterValues;
+  maskImageUrl?: string;
 };
+
+export type BuiltinImageGenerationParams = Omit<
+  ImageGenerationParams,
+  'model'
+> & {
+  model: BuiltinTextToImageModel;
+};
+export type ConfiguredImageGenerationParams = Omit<
+  ImageGenerationParams,
+  'model'
+> & {
+  model: ConfiguredImageModelId;
+};
+
+export function dispatchImageRequest<T>(
+  params: ImageGenerationParams,
+  handlers: {
+    builtin: (params: BuiltinImageGenerationParams) => T;
+    configured: (params: ConfiguredImageGenerationParams) => T;
+  }
+): T {
+  if (isBuiltinTextToImageModel(params.model))
+    return handlers.builtin({ ...params, model: params.model });
+  if (isConfiguredImageModelId(params.model))
+    return handlers.configured({ ...params, model: params.model });
+  throw new Error('Unknown image model identifier.');
+}
 
 const ASPECT_RATIO_MAP = {
   square_hd: '1:1',
@@ -88,7 +122,10 @@ function imageSizeToAspectRatio(imageSize: ImageSize): AspectRatioValue {
  * preset — see #1449.
  */
 const IMAGE_RESOLUTION: Partial<
-  Record<TextToImageModel, { tokens: string[] } | { pixels: PixelBounds }>
+  Record<
+    BuiltinTextToImageModel,
+    { tokens: string[] } | { pixels: PixelBounds }
+  >
 > = {
   nano_banana_2_1: { tokens: ['1K', '2K', '4K'] },
   nano_banana_2: { tokens: ['0.5K', '1K', '2K', '4K'] },
@@ -138,6 +175,7 @@ function resolveImageResolutionToken(
 ): string | undefined {
   if (!resolution) return undefined;
   if (tokens) return pickImageResolution(tokens, resolution);
+  if (!isBuiltinTextToImageModel(model)) return undefined;
   const capability = IMAGE_RESOLUTION[model];
   if (!capability || !('tokens' in capability)) return undefined;
   return pickImageResolution(capability.tokens, resolution);
@@ -157,6 +195,7 @@ export function imageResolutionTiers(
   model: TextToImageModel,
   aspectRatio: AspectRatio = DEFAULT_ASPECT_RATIO
 ): Resolution[] {
+  if (!isBuiltinTextToImageModel(model)) return [];
   const capability = IMAGE_RESOLUTION[model];
   if (!capability) return [];
   if ('tokens' in capability) return tiersForTokens(capability.tokens, 'image');
@@ -184,6 +223,7 @@ export function imageRequestDimensions(
   aspectRatio: AspectRatio,
   resolution: Resolution | undefined
 ): { width: number; height: number } | null {
+  if (!isBuiltinTextToImageModel(model)) return null;
   const capability = IMAGE_RESOLUTION[model];
   if (!resolution || !capability || !('pixels' in capability)) return null;
   return clampDimensions(
@@ -197,7 +237,7 @@ export function imageRequestDimensions(
  * otherwise the fal preset unchanged.
  */
 function resolveImageSize(
-  params: ImageGenerationParams
+  params: BuiltinImageGenerationParams
 ): ImageSize | { width: number; height: number } {
   const imageSize = params.imageSize ?? DEFAULT_IMAGE_SIZE;
   return (
@@ -218,13 +258,16 @@ export type GrokImagineImageSize = `${AspectRatioValue}_${'1k' | '2k'}`;
  * `prompt`, so the catalog number is a recommendation. Over it earns a
  * warning and the prompt goes out whole.
  */
-function promptForModel(prompt: string, model: TextToImageModel): string {
+function promptForModel(
+  prompt: string,
+  model: BuiltinTextToImageModel
+): string {
   warnLongPrompt(prompt, IMAGE_MODELS[model], { model });
   return prompt;
 }
 
 function buildFalModelOptions(
-  params: ImageGenerationParams
+  params: BuiltinImageGenerationParams
 ): Record<string, unknown> {
   switch (params.model) {
     case 'flux_2_dev':
@@ -472,7 +515,7 @@ export type GeminiImageRequest = {
  * counterpart and are dropped. Lite snaps every resolution to 1K.
  */
 export function buildGeminiImageRequest(
-  params: ImageGenerationParams
+  params: BuiltinImageGenerationParams
 ): GeminiImageRequest {
   const nativeModel = nativeGeminiImageModel(params.model);
   if (!nativeModel) {
@@ -516,7 +559,7 @@ export function buildGeminiImageRequest(
  * safety tolerance, output format) have no Imagine counterpart and are dropped
  * rather than faked.
  */
-export function buildGrokImageRequest(params: ImageGenerationParams): {
+export function buildGrokImageRequest(params: BuiltinImageGenerationParams): {
   prompt: string;
   size: GrokImagineImageSize;
   numImages: number;
@@ -548,7 +591,7 @@ export function buildGrokImageRequest(params: ImageGenerationParams): {
  * the model options); the submit path splits the prompt back out for the
  * TanStack AI adapter call.
  */
-export function buildImageRequest(params: ImageGenerationParams): {
+export function buildImageRequest(params: BuiltinImageGenerationParams): {
   /** Pricing Via — which API this endpoint is called on. Vendor is `model.vendor`. */
   via: 'fal';
   endpointId: string;
@@ -558,7 +601,7 @@ export function buildImageRequest(params: ImageGenerationParams): {
   // every model spreads `referenceImageUrls` itself, so a per-case cap is a
   // rule each new model has to remember, and fal rejects the whole request
   // when it's exceeded rather than truncating.
-  const capped: ImageGenerationParams = params.referenceImageUrls?.length
+  const capped: BuiltinImageGenerationParams = params.referenceImageUrls?.length
     ? {
         ...params,
         referenceImageUrls: capReferenceImages(

@@ -1,3 +1,9 @@
+import {
+  prepareConfiguredImageBilling,
+  configuredImageRoutingFor,
+} from '@/billing/server/configured-image-billing';
+import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
+import { generateId } from '@/platform/id';
 /**
  * Add a model to a sequence and set a model across it (#547), shared by the
  * editor's server fns (`sequences.fn.ts`) and the MCP tools.
@@ -655,13 +661,33 @@ export async function addModelToSequence(
     throw new ValidationError('No shots have a prompt to generate from');
   }
 
-  const perShotCost = gateEstimate(
-    estimateImageCost(model, sequence.aspectRatio, 1, {
-      pricing: await getEffectiveFalPricing(),
-      resolution: sequence.resolution,
-    }),
-    { model, operation: 'add-image-model' }
+  const imageConfiguration = await loadModelRuntimeConfiguration();
+  const imageBillings = await Promise.all(
+    inputs.map((input) =>
+      prepareConfiguredImageBilling({
+        model,
+        aspectRatio: sequence.aspectRatio,
+        resolution: sequence.resolution,
+        imageCount: input.numImages ?? 1,
+        referenceImageCount: input.referenceImages?.length ?? 0,
+        modelConfiguration: imageConfiguration,
+      })
+    )
   );
+  const imageTaskId = generateId();
+  const perShotCost =
+    imageBillings[0]?.costMicros ??
+    gateEstimate(
+      estimateImageCost(model, sequence.aspectRatio, 1, {
+        imageModelRouting: await configuredImageRoutingFor(
+          model,
+          imageConfiguration
+        ),
+        pricing: await getEffectiveFalPricing(),
+        resolution: sequence.resolution,
+      }),
+      { model, operation: 'add-image-model' }
+    );
 
   // Trigger one image workflow per shot, each with its own hold. A shared
   // envelope would let the first child to finish zero leftover for siblings.
@@ -672,13 +698,21 @@ export async function addModelToSequence(
   // and its onFailure marks it failed — so there's nothing to pre-write here.
   let workflowRunId = '';
   let triggered = 0;
-  for (const input of inputs) {
+  for (const [index, input] of inputs.entries()) {
+    const imageBilling = imageBillings[index];
+    const taskKey = imageTaskId + ':' + input.shotId;
     let reservationId: string | undefined;
     try {
-      reservationId = await reserveRunCredits(scopedDb, perShotCost, {
-        errorMessage: 'Insufficient credits to add this image model',
-        sequenceId: sequence.id,
-      });
+      reservationId = await reserveRunCredits(
+        scopedDb,
+        imageBilling?.costMicros ?? perShotCost,
+        {
+          imageSource: imageBilling?.imageSource,
+          idempotencyKey: taskKey,
+          errorMessage: 'Insufficient credits to add this image model',
+          sequenceId: sequence.id,
+        }
+      );
     } catch (error) {
       logger.error('add-model: insufficient credits for remaining shots', {
         err: error,
@@ -694,7 +728,8 @@ export async function addModelToSequence(
         '/image',
         { ...input, reservationId, ownsReservation: true },
         {
-          deduplicationId: `add-image-${input.shotId}-${model}-${Date.now()}`,
+          deduplicationId: `add-image-${input.shotId}-${imageTaskId}`,
+          modelConfiguration: imageConfiguration,
         }
       );
       triggered++;

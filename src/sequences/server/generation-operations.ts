@@ -39,7 +39,6 @@ import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import type { Microdollars } from '@/billing/money';
 import { sha256Hex } from '@/shots/input-hash';
 import { isElevenLabsConfigured } from '@/models/server/elevenlabs-config';
-import { computePlan } from '@/shots/server/update-stale-plan';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import { buildUpdateStalePreview } from '@/shots/server/update-stale-preview';
 import {
@@ -60,6 +59,7 @@ import {
 import {
   GenerationInProgressError,
   GenerationStatusUnknownError,
+  loadStoryboardModelConfiguration,
   triggerContinue,
 } from './launchers';
 import { readProductionStatus } from './production-status';
@@ -297,18 +297,20 @@ async function prepareGeneration(
 
   if (request.mode === 'stale') {
     // The editor's own gate and plan: processing check and credit floor.
-    const { plan, creditFloorMicros } = await prepareUpdateStale({
-      scopedDb,
-      userId: actor.userId,
-      sequence,
-      depth: request.depth,
-      shotIds,
-      generationPlan,
-    });
+    const { plan, creditFloorMicros, imageSource, modelConfiguration } =
+      await prepareUpdateStale({
+        scopedDb,
+        userId: actor.userId,
+        sequence,
+        depth: request.depth,
+        shotIds,
+        generationPlan,
+      });
     const estimateMicros = buildUpdateStalePreview(
       plan,
       await getEffectiveFalPricing(),
-      sequence.musicModel
+      sequence.musicModel,
+      modelConfiguration.imageModelRouting
     ).costByLevel[request.depth];
     return {
       sequence,
@@ -316,7 +318,7 @@ async function prepareGeneration(
       estimateMicros,
       // The editor's rule: the floor, not the estimate.
       creditCheckMicros: creditFloorMicros,
-      creditProviders: UPDATE_STALE_CREDIT_PROVIDERS,
+      creditProviders: imageSource ? [] : UPDATE_STALE_CREDIT_PROVIDERS,
       hasWork: hasWork(plan),
       work: summarize(plan, inFlight),
       launch: async (runKey, onLaunched) => {
@@ -327,6 +329,7 @@ async function prepareGeneration(
             sequenceId: sequence.id,
             plan,
             runKey,
+            modelConfiguration,
           })
         );
       },
@@ -344,21 +347,14 @@ async function prepareGeneration(
   const generateStartFrames =
     request.generateStartFrames ?? sequence.generateStartFrames;
   const draftMotion = request.draftMotion ?? sequence.draftMotion;
-  const { work, stopAt, estimate } = await prepareContinue({
+  const { plan, stopAt, estimate, modelConfiguration } = await prepareContinue({
     scopedDb,
+    userId: actor.userId,
     sequence,
     stopAt: request.stopAt,
     requested: { generateStartFrames, generateVoices },
     draftMotion,
     generationPlan,
-  });
-  const plan = await computePlan({
-    scopedDb,
-    // Planned under the requested switches: they save only at launch.
-    sequenceOverrides: { generateStartFrames, generateVoices, draftMotion },
-    sequenceId: sequence.id,
-    units: work.map(({ kind, id }) => ({ kind, id })),
-    userId: actor.userId,
   });
   return {
     sequence,
@@ -366,7 +362,7 @@ async function prepareGeneration(
     estimateMicros: estimate.priced ? estimate.micros : null,
     // The editor checks the partial sum when a part has no price; so do we.
     creditCheckMicros: estimate.micros,
-    creditProviders: CONTINUE_CREDIT_PROVIDERS,
+    creditProviders: estimate.imageSource ? [] : CONTINUE_CREDIT_PROVIDERS,
     hasWork: hasWork(plan),
     work: summarize(plan, inFlight),
     // The storyboard mutex is the launch-once guard here: a repeat while the
@@ -388,6 +384,7 @@ async function prepareGeneration(
             sequence,
             plan,
             stopAt,
+            modelConfiguration,
           })
       );
       await onLaunched(workflowRunId);
@@ -409,10 +406,12 @@ async function prepareRetry(
     scopedDb,
   };
   const smartOnly = request.retry === 'smart';
+  const modelConfiguration = await loadStoryboardModelConfiguration(scopedDb);
   // The dry run reads the storyboard mutex: a live run throws here.
   const { planned, creditProviders } = await executeSmartRetry(context, {
     dryRun: true,
     smartOnly,
+    modelConfiguration,
   });
   const { estimateMicros, ...work } = planned;
   return {
@@ -426,7 +425,12 @@ async function prepareRetry(
     hasWork: true,
     work,
     launch: async (runKey, onLaunched) => {
-      await executeSmartRetry(context, { smartOnly, onLaunched, runKey });
+      await executeSmartRetry(context, {
+        smartOnly,
+        onLaunched,
+        runKey,
+        modelConfiguration,
+      });
     },
   };
 }

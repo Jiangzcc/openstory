@@ -1,3 +1,5 @@
+import { usesConfiguredImageChannel } from '@/models/image-channels';
+import { generateConfiguredPoster } from '../configured-poster';
 import { creditsShortStatusError } from '@/billing/credits-short';
 import { microsToUsd } from '@/billing/money';
 import { freezeFreshGenerationPlan } from '@/sequences/server/freeze-fresh-generation-plan';
@@ -116,35 +118,49 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
 
     const posterResult = skipPoster
       ? null
-      : await step.do('generate-poster', async () => {
-          try {
-            const prompt = buildPosterPrompt(title, script, styleConfig);
-            const result = await generateImageWithProvider(
-              {
-                model: scopedDb.models.poster,
-                prompt,
-                imageSize: aspectRatioToImageSize(aspectRatio),
-              },
-              { credentials: scopedDb.credentials }
-            );
-            const generatedPosterUrl = result.imageUrls[0];
-            if (!generatedPosterUrl) return null;
-            // Stored here rather than in a later step: an inline-bytes
-            // result has no URL to pass on (#1645). Still non-critical — an
-            // upload outage drops the poster rather than failing the run.
-            const upload = await uploadPosterToStorage({
-              imageUrl: generatedPosterUrl,
-              organizationId,
-              sequenceId,
-            });
-            return { url: upload.url, metadata: result.metadata };
-          } catch (error) {
-            logger.warn('[StoryboardWorkflow:cf] Poster generation failed:', {
-              err: error,
-            });
-            return null;
-          }
-        });
+      : usesConfiguredImageChannel(
+            scopedDb.models.poster,
+            scopedDb.models.imageModelRouting
+          )
+        ? await generateConfiguredPoster({
+            step,
+            scopedDb,
+            workflowRunId: event.instanceId,
+            organizationId,
+            sequenceId,
+            aspectRatio,
+            reservationId: input.reservationId,
+            prompt: buildPosterPrompt(title, script, styleConfig),
+          })
+        : await step.do('generate-poster', async () => {
+            try {
+              const prompt = buildPosterPrompt(title, script, styleConfig);
+              const result = await generateImageWithProvider(
+                {
+                  model: scopedDb.models.poster,
+                  prompt,
+                  imageSize: aspectRatioToImageSize(aspectRatio),
+                },
+                { credentials: scopedDb.credentials }
+              );
+              const generatedPosterUrl = result.imageUrls[0];
+              if (!generatedPosterUrl) return null;
+              // Stored here rather than in a later step: an inline-bytes
+              // result has no URL to pass on (#1645). Still non-critical — an
+              // upload outage drops the poster rather than failing the run.
+              const upload = await uploadPosterToStorage({
+                imageUrl: generatedPosterUrl,
+                organizationId,
+                sequenceId,
+              });
+              return { url: upload.url, metadata: result.metadata };
+            } catch (error) {
+              logger.warn('[StoryboardWorkflow:cf] Poster generation failed:', {
+                err: error,
+              });
+              return null;
+            }
+          });
 
     if (posterResult) {
       const savedPosterUrl = posterResult.url;
@@ -161,12 +177,17 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       });
 
       // Before the deduction guard — see recordFalUsageStep (#1069).
-      const posterUsage = await recordFalUsageStep(
-        step,
-        scopedDb,
-        posterResult.metadata,
-        'record-fal-usage-poster'
-      );
+      const posterUsage = usesConfiguredImageChannel(
+        scopedDb.models.poster,
+        scopedDb.models.imageModelRouting
+      )
+        ? {}
+        : await recordFalUsageStep(
+            step,
+            scopedDb,
+            posterResult.metadata,
+            'record-fal-usage-poster'
+          );
 
       await step.do('deduct-poster-credits', async () => {
         await deductWorkflowCredits({
@@ -178,6 +199,9 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
           reservationId: input.reservationId,
           metadata: {
             ...posterUsage,
+            ...(posterResult.metadata.configuredPricing
+              ? { configuredPricing: posterResult.metadata.configuredPricing }
+              : {}),
             model: scopedDb.models.poster,
             sequenceId,
           },

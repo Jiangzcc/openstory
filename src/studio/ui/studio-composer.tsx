@@ -27,6 +27,13 @@ import { AspectRatioPills } from '@/ui/settings/aspect-ratio-pills';
 import { ResolutionPills } from '@/ui/settings/resolution-pills';
 import { IMAGE_MODELS, videoPromptHardLimit } from '@/models/models';
 import { measurePrompt } from '@/models/prompt-length';
+import type { PromptRecommendation } from '@/models/prompt-length';
+import { useConfiguredImageControls } from './use-configured-image-controls';
+import { isStudioImageCount } from './configured-image-draft';
+import {
+  ConfiguredImageControls,
+  ConfiguredImageStatus,
+} from './configured-image-controls';
 import { imageResolutionTiers } from '@/stills/build-image-request';
 import { motionResolutionTiers } from '@/motion/model-capabilities';
 import {
@@ -87,11 +94,9 @@ import { openAddCreditsDialog } from '@/billing/ui/use-add-credits-dialog';
 import { isInsufficientCreditsError } from '@/platform/errors';
 import { studioGatedMedia } from '@/studio/reference-rights';
 import {
-  capReferenceImages,
   getCompatibleModel,
   IMAGE_TO_VIDEO_MODELS,
   supportsDraftMode,
-  supportsReferenceImages,
   type ImageToVideoModel,
   type TextToImageModel,
 } from '@/models/models';
@@ -167,6 +172,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -370,6 +376,8 @@ export function StudioComposer({
   const translateEvent = useLiveTranslation('studio');
 
   const { i18n, t } = useTranslation('studio');
+  const { t: tImageChannels } = useTranslation('imageChannels');
+  const composerFormId = useId();
   const translateLabel = useLabelTranslation('studio');
 
   const { requireAuth, isAuthenticated } = useAuthGate();
@@ -393,7 +401,7 @@ export function StudioComposer({
     useState<AspectRatio>(DEFAULT_ASPECT_RATIO);
   const [pickedResolution, setResolution] =
     useState<Resolution>(DEFAULT_RESOLUTION);
-  const [count, setCount] = useState<(typeof COUNTS)[number]>(1);
+  const [count, setCount] = useState(1);
   const [duration, setDuration] = useState<StudioDuration>(5);
   const [generateAudio, setGenerateAudio] = useState(true);
   // On by default (#1756): a 480p look before the 1080p spend. The user's
@@ -438,6 +446,15 @@ export function StudioComposer({
   // a sign-off; the server still decides what counts as cleared.
   const [markedReal, setMarkedReal] = useState<string[]>([]);
   const [pendingSeed, setPendingSeed] = useState<StudioReuse | null>(null);
+  const imageControls = useConfiguredImageControls({
+    modelId: imageModel,
+    aspectRatio,
+    resolution: pickedResolution,
+    referenceCount: references.length,
+    totalImageCount: count,
+  });
+  const resetImageControls = imageControls.reset;
+  const restoreImageControls = imageControls.restore;
 
   const applySeed = useCallback(
     (next: StudioReuse) => {
@@ -452,10 +469,18 @@ export function StudioComposer({
         kind,
         ...(assetId ? { assetId } : {}),
       });
+      if (activity === 'image' && next.imageModel) {
+        restoreImageControls({
+          ...next,
+          modelId: next.imageModel,
+          referenceCount: next.referenceImages.length,
+        });
+      } else resetImageControls();
       setPrompt(next.prompt);
       setLastShuffled(next.prompt);
       setAspectRatio(next.aspectRatio);
       if (next.resolution) setResolution(next.resolution);
+      if (activity === 'image') setCount(next.totalImageCount ?? 1);
       if (activity === 'image' && next.imageModel)
         setImageModel(next.imageModel);
       if (activity === 'video') {
@@ -495,7 +520,7 @@ export function StudioComposer({
       );
       toast.success(translateEvent('Loaded into the prompt bar'));
     },
-    [translateEvent, activity]
+    [translateEvent, activity, resetImageControls, restoreImageControls]
   );
 
   useEffect(() => {
@@ -524,13 +549,13 @@ export function StudioComposer({
             imageModel: imageModelOverride,
             aspectRatio,
             resolution: pickedResolution,
-            count,
+            count: isStudioImageCount(count) ? count : undefined,
           }
         : {
             videoModel: videoModelOverride,
             aspectRatio,
             resolution: pickedResolution,
-            count,
+            count: isStudioImageCount(count) ? count : undefined,
             duration,
             generateAudio,
             draft: draftMode,
@@ -551,6 +576,7 @@ export function StudioComposer({
 
   const composerDirty =
     prompt.trim().length > 0 ||
+    (activity === 'image' && imageControls.maskInput.length > 0) ||
     references.length > 0 ||
     videoRefs.length > 0 ||
     audioRefs.length > 0 ||
@@ -575,33 +601,25 @@ export function StudioComposer({
   const compatibleVideoModel = getCompatibleModel(videoModel, aspectRatio);
   useEffect(() => {
     if (!modelDefaultsReady || !prefsLoaded) return;
-    if (activity === 'image') {
-      if (!supportsReferenceImages(imageModel)) setReferences([]);
-      return;
-    }
+    if (activity === 'image') return;
     if (!studioSupportsMode(compatibleVideoModel, mode)) setMode('text');
     if (!studioSupportsEndFrame(compatibleVideoModel)) setEndFrame(null);
     if (studioAudioLimit(compatibleVideoModel) === 0) setAudioRefs([]);
     if (studioVideoRefLimit(compatibleVideoModel) === 0) setVideoRefs([]);
-  }, [
-    activity,
-    imageModel,
-    compatibleVideoModel,
-    mode,
-    modelDefaultsReady,
-    prefsLoaded,
-  ]);
+  }, [activity, compatibleVideoModel, mode, modelDefaultsReady, prefsLoaded]);
   // Only the tiers this model serves get a pill, so the stored pick is clamped
   // to them rather than left pointing at a pill that is no longer there.
   const activeModelName = isVideo
     ? IMAGE_TO_VIDEO_MODELS[compatibleVideoModel].name
-    : IMAGE_MODELS[imageModel].name;
+    : (imageControls.model?.name ?? imageModel);
   // The prompt is never cut (#1754), so the composer says how long it is and
   // turns the count amber past what the model recommends. Every model,
   // Seedance included, counts characters (#1763).
-  const promptRecommendation = isVideo
+  const promptRecommendation: PromptRecommendation = isVideo
     ? IMAGE_TO_VIDEO_MODELS[compatibleVideoModel]
-    : IMAGE_MODELS[imageModel];
+    : imageControls.model?.source === 'builtin'
+      ? IMAGE_MODELS[imageControls.model.id]
+      : {};
   const promptMeasured = measurePrompt(prompt, promptRecommendation);
   // No number (native Grok images) means nothing to be over.
   const promptOverRecommended =
@@ -619,12 +637,30 @@ export function StudioComposer({
     promptHardLimit !== undefined && prompt.length > promptHardLimit;
   const resolutionTiers = isVideo
     ? motionResolutionTiers(compatibleVideoModel)
-    : imageResolutionTiers(imageModel, aspectRatio);
-  const resolution = clampResolution(pickedResolution, resolutionTiers);
+    : imageControls.model?.source === 'builtin'
+      ? imageResolutionTiers(imageControls.model.id, aspectRatio)
+      : imageControls.outputOptions.resolutions;
+  const resolution =
+    !isVideo && imageControls.isConfigured
+      ? imageControls.resolution
+      : clampResolution(pickedResolution, resolutionTiers);
+  const fixedImageOutput =
+    !isVideo && imageControls.isConfigured && resolutionTiers.length < 2;
   const resolutionNote =
-    resolutionTiers.length === 0
-      ? t('{{value1}} renders at a fixed size', { value1: activeModelName })
-      : null;
+    !isVideo &&
+    imageControls.isConfigured &&
+    imageControls.outputOptions.automatic
+      ? tImageChannels('Automatic size')
+      : resolutionTiers.length === 0 || fixedImageOutput
+        ? [
+            t('{{value1}} renders at a fixed size', {
+              value1: activeModelName,
+            }),
+            fixedImageOutput ? imageControls.outputOptions.fixedSize : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')
+        : null;
   const snappedDuration = snapStudioVideoDuration(
     duration,
     compatibleVideoModel
@@ -635,11 +671,7 @@ export function StudioComposer({
   // gallery once approved. Only Seedance 2.5 on the BytePlus via has it.
   const draftCapable = isVideo && supportsDraftMode(compatibleVideoModel);
   const draftOn = draftCapable && draftMode;
-  // Images: the model's edit endpoint takes stills (no clips/audio). Models
-  // without a per-endpoint cap get the schema's cap of 9.
-  const imageRefLimit = supportsReferenceImages(imageModel)
-    ? capReferenceImages(imageModel, Array.from({ length: 9 })).length
-    : 0;
+  const imageRefLimit = imageControls.referenceLimit;
   const referenceLimit = isVideo
     ? studioReferenceLimit(compatibleVideoModel)
     : imageRefLimit;
@@ -674,6 +706,8 @@ export function StudioComposer({
     : snappedDuration;
 
   const estimate = useMemo(() => {
+    if (activity === 'image' && imageControls.isConfigured)
+      return imageControls.estimate;
     if (!pricing) return pricingPending ? undefined : null;
     if (activity === 'image') {
       const still = estimateImageCost(imageModel, aspectRatio, 1, {
@@ -701,6 +735,8 @@ export function StudioComposer({
     draftOn,
     effectiveMode,
     imageModel,
+    imageControls.isConfigured,
+    imageControls.estimate,
     pricing,
     pricingPending,
     references.length,
@@ -761,10 +797,20 @@ export function StudioComposer({
       activity: 'image',
       prompt: modelPrompt,
       imageModel,
-      aspectRatio,
+      aspectRatio: imageControls.isConfigured
+        ? imageControls.aspectRatio
+        : aspectRatio,
       resolution,
-      count,
+      count: imageControls.isConfigured ? imageControls.requestCount : count,
       referenceImages: references.map((r) => r.url),
+      ...(imageControls.isConfigured
+        ? {
+            channelParameters: imageControls.requestParameters,
+            ...(imageControls.maskImageUrl
+              ? { maskImageUrl: imageControls.maskImageUrl }
+              : {}),
+          }
+        : {}),
     };
   };
 
@@ -828,6 +874,8 @@ export function StudioComposer({
     })
   );
   const badgeFor = (url: string): string => {
+    if (!isVideo && url === imageControls.maskImageUrl)
+      return tImageChannels('Mask image URL');
     if (effectiveMode === 'frames') {
       return url === startFrame?.url ? 'Start frame' : 'End frame';
     }
@@ -854,6 +902,8 @@ export function StudioComposer({
     prefsLoaded &&
     modeReady &&
     uploading === 0 &&
+    (isVideo ||
+      (imageControls.issue === null && !imageControls.uploadingMask)) &&
     rightsReady;
   // The prompt, not the button, is what pulses while its generation runs
   // (#1455) — and typing anything else stops it, even mid-generation.
@@ -1240,6 +1290,11 @@ export function StudioComposer({
    * ProseMirror never sees either.
    */
   const onPasteCapture = (event: React.ClipboardEvent) => {
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest('[data-studio-image-controls]')
+    )
+      return;
     // Pasted files (a screenshot, a clip) attach straight away. The picker is
     // a portal, so its pastes bubble through here too — route them to the
     // tile whose picker is open.
@@ -1325,6 +1380,7 @@ export function StudioComposer({
   };
 
   const clearAll = () => {
+    imageControls.reset();
     setPrompt('');
     setReferences([]);
     setVideoRefs([]);
@@ -1366,13 +1422,16 @@ export function StudioComposer({
     });
   };
 
+  const imageTotalCount = imageControls.isConfigured
+    ? imageControls.totalImageCount
+    : count;
   const submitLabel =
     activity === 'video'
       ? count > 1
         ? t('Generate {{value1}} videos', { value1: count })
         : t('Generate video')
-      : count > 1
-        ? t('Generate {{value1}} images', { value1: count })
+      : imageTotalCount > 1
+        ? t('Generate {{value1}} images', { value1: imageTotalCount })
         : t('Generate image');
 
   const placeholder =
@@ -1386,9 +1445,17 @@ export function StudioComposer({
             ? t('Describe the still. Type @ to reference an attached image…')
             : t('A red fox in fog at dawn, cinematic lighting…');
 
-  const aspect = ASPECT_RATIOS.find((r) => r.value === aspectRatio);
+  const selectedAspectRatio =
+    !isVideo && imageControls.isConfigured
+      ? imageControls.aspectRatio
+      : aspectRatio;
+  const aspect = ASPECT_RATIOS.find((r) => r.value === selectedAspectRatio);
   const summary = [
-    aspectRatio,
+    !isVideo &&
+    imageControls.isConfigured &&
+    imageControls.outputOptions.automatic
+      ? tImageChannels('Automatic size')
+      : selectedAspectRatio,
     resolutionTiers.length > 0
       ? RESOLUTION_OPTIONS.find((r) => r.value === resolution)?.label
       : null,
@@ -1398,12 +1465,15 @@ export function StudioComposer({
         : `${pricedDuration}s`
       : null,
     isVideo && audioCapable ? (generateAudio ? t('Audio') : t('Silent')) : null,
-    `×${count}`,
+    `×${!isVideo ? imageTotalCount : count}`,
   ].filter(Boolean);
 
-  const showTiles = isVideo ? mode !== 'text' : imageRefLimit > 0;
+  const showTiles = isVideo
+    ? mode !== 'text'
+    : imageRefLimit > 0 || references.length > 0;
   const hasContent =
     trimmed.length > 0 ||
+    (!isVideo && imageControls.maskInput.length > 0) ||
     references.length > 0 ||
     videoRefs.length > 0 ||
     audioRefs.length > 0 ||
@@ -1413,6 +1483,7 @@ export function StudioComposer({
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drop zone; the Add tile is the keyboard path
     <form
+      id={composerFormId}
       className={cn(
         'relative flex min-h-0 flex-col gap-3 overflow-hidden rounded-xl border bg-card p-3 shadow-sm',
         dragging && 'border-ring ring-3 ring-ring/30'
@@ -1438,6 +1509,7 @@ export function StudioComposer({
       onDrop={onDrop}
       onPasteCapture={onPasteCapture}
     >
+      {!isVideo && <ConfiguredImageStatus controls={imageControls} />}
       {/* The prompt being typed reaches the assistant, and it writes back (#2155). */}
       <AssistantContextItem
         item={{
@@ -1749,7 +1821,7 @@ export function StudioComposer({
           <PopoverContent
             align="start"
             collisionPadding={12}
-            className="w-[min(22rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-x-hidden p-4"
+            className="max-h-[calc(100dvh-2rem)] w-[min(22rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-x-hidden overflow-y-auto p-4"
           >
             <div className="flex flex-col gap-4">
               <section className="flex flex-col gap-2">
@@ -1758,10 +1830,7 @@ export function StudioComposer({
                   <ImageModelSelector
                     selectedModel={imageModel}
                     disabled={!modelDefaultsReady || !prefsLoaded}
-                    onModelChange={(next) => {
-                      setImageModel(next);
-                      if (!supportsReferenceImages(next)) setReferences([]);
-                    }}
+                    onModelChange={setImageModel}
                   />
                 ) : (
                   <MotionModelSelector
@@ -1795,10 +1864,23 @@ export function StudioComposer({
               <Separator />
               <section className="flex flex-col gap-2">
                 <h3 className="text-sm font-medium">{t('Aspect ratio')}</h3>
-                <AspectRatioPills
-                  value={aspectRatio}
-                  onChange={setAspectRatio}
-                />
+                {!isVideo &&
+                imageControls.isConfigured &&
+                imageControls.outputOptions.automatic ? (
+                  <p className="text-[10px] text-muted-foreground">
+                    {tImageChannels('Use model default')}
+                  </p>
+                ) : (
+                  <AspectRatioPills
+                    value={selectedAspectRatio}
+                    onChange={setAspectRatio}
+                    available={
+                      !isVideo && imageControls.isConfigured
+                        ? imageControls.outputOptions.aspectRatios
+                        : undefined
+                    }
+                  />
+                )}
               </section>
               <Separator />
               <section className="flex flex-col gap-2">
@@ -1814,6 +1896,12 @@ export function StudioComposer({
                   }
                 />
               </section>
+              {!isVideo && imageControls.isConfigured && (
+                <ConfiguredImageControls
+                  controls={imageControls}
+                  formId={composerFormId}
+                />
+              )}
               {isVideo && durationCapable && (
                 <>
                   <Separator />
@@ -1904,6 +1992,10 @@ export function StudioComposer({
                     <ToggleGroupItem
                       key={value}
                       value={String(value)}
+                      disabled={
+                        !isVideo &&
+                        !imageControls.availableCounts.includes(value)
+                      }
                       className="px-3 font-mono text-xs"
                     >
                       {value}
@@ -2005,11 +2097,13 @@ export function StudioComposer({
               {t('Clear all')}
             </Button>
           )}
-          <ActionCost
-            estimate={estimate}
-            align="end"
-            amountWidth={activity === 'video' ? 'double' : 'single'}
-          />
+          {(isVideo || !imageControls.isConfigured) && (
+            <ActionCost
+              estimate={estimate}
+              align="end"
+              amountWidth={activity === 'video' ? 'double' : 'single'}
+            />
+          )}
           <VoiceInputButton label={t('prompt')} {...promptVoice} />
           <Button
             type="submit"

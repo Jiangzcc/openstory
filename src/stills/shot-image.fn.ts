@@ -1,3 +1,4 @@
+import { configuredImageSource } from '@/billing/configured-image-billing';
 import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_VIDEO_MODEL,
@@ -47,6 +48,7 @@ export const generateShotsFn = createServerFn({ method: 'POST' })
     const reservationId = await reserveRunCredits(
       context.scopedDb,
       estimateStoryboardCost({
+        imageModelRouting: configuration.imageModelRouting,
         imageModel: safeTextToImageModel(
           sequence.imageModel,
           DEFAULT_IMAGE_MODEL
@@ -64,6 +66,10 @@ export const generateShotsFn = createServerFn({ method: 'POST' })
       }),
       {
         providers: ['fal', 'openrouter'],
+        imageSource: configuredImageSource(
+          sequence.imageModel,
+          configuration.imageModelRouting
+        ),
         llmSources: await resolveStoryboardLlmSources(
           context.scopedDb,
           sequence.analysisModel,

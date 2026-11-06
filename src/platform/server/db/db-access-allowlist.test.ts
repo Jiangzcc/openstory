@@ -58,7 +58,7 @@ function importsOf(file: string): { names: string; spec: string }[] {
 const isRawDbSpec = (from: string, spec: string) => {
   if (spec === '#db-client') return true;
   const target = spec.startsWith('.')
-    ? relative(SRC, resolve(from, '..', spec))
+    ? relative(SRC, resolve(from, '..', spec)).replaceAll('\\', '/')
     : spec.replace(/^@\//, 'src/');
   return /^src\/platform\/server\/db\/client(-d1|-node|-stub)?$/.test(target);
 };
@@ -66,14 +66,14 @@ const isRawDbSpec = (from: string, spec: string) => {
 const isScopedFactorySpec = (from: string, spec: string) =>
   spec === '@/platform/server/db/scoped' ||
   (spec.startsWith('.') &&
-    relative(SRC, resolve(from, '..', spec)) ===
+    relative(SRC, resolve(from, '..', spec)).replaceAll('\\', '/') ===
       'src/platform/server/db/scoped');
 
 describe('db access allowlists', () => {
   const rawDb: string[] = [];
   const factory: string[] = [];
   for (const file of walk(join(SRC, 'src'))) {
-    const rel = relative(SRC, file);
+    const rel = relative(SRC, file).replaceAll('\\', '/');
     for (const { names, spec } of importsOf(file)) {
       if (isRawDbSpec(file, spec)) rawDb.push(rel);
       if (

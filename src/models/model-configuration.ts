@@ -1,3 +1,8 @@
+import type { ImageModelDefinition } from './image-model-catalog';
+import {
+  mergeImageModelCatalog,
+  isSelectableImageModelId,
+} from './image-model-catalog';
 import type { AnalysisModelId, AnalysisModelDefinition } from './models.config';
 import { mergeTextModelCatalog } from './text-model-catalog';
 import type { AudioModel, TextToImageModel, ImageToVideoModel } from './models';
@@ -14,6 +19,7 @@ import {
   AUDIO_MODELS,
   IMAGE_MODELS,
   IMAGE_TO_VIDEO_MODELS,
+  isValidTextToImageModel,
   DEFAULT_IMAGE_MODEL,
   DEFAULT_VIDEO_MODEL,
   DEFAULT_MUSIC_MODEL,
@@ -312,12 +318,36 @@ function mediaOptions(
     .map(([value, model]) => ({ value, label: model.name }));
 }
 
+function imageOptions(
+  key: keyof ModelConfiguration,
+  imageModels: readonly ImageModelDefinition[]
+): ModelConfigurationOption[] {
+  const catalog = (
+    imageModels.length ? imageModels : mergeImageModelCatalog()
+  ).map((model) =>
+    model.id === DEFAULT_MODEL_CONFIGURATION[key]
+      ? { ...model, hidden: false }
+      : model
+  );
+  return catalog
+    .filter((model) =>
+      isSelectableImageModelId(
+        model.id,
+        catalog,
+        key === 'poster' ? 'generate' : undefined
+      )
+    )
+    .map((model) => ({ value: model.id, label: model.name }));
+}
+
 export function getModelConfigurationOptions(
   key: keyof ModelConfiguration,
-  extraModels: readonly AnalysisModelDefinition[] = []
+  extraModels: readonly AnalysisModelDefinition[] = [],
+  imageModels: readonly ImageModelDefinition[] = []
 ): ModelConfigurationOption[] {
   const field = MODEL_CONFIGURATION_FIELDS.find((item) => item.key === key);
   if (!field) return [];
+  if (field.kind === 'image') return imageOptions(key, imageModels);
   const options = ['analysis', 'vision', 'videoUnderstanding'].includes(
     field.kind
   )
@@ -340,7 +370,8 @@ export function getModelConfigurationOptions(
 function configuredModel<K extends keyof ModelConfiguration>(
   key: K,
   extraModels: readonly AnalysisModelDefinition[],
-  allowUnresolvedCustom: boolean
+  allowUnresolvedCustom: boolean,
+  imageModels: readonly ImageModelDefinition[]
 ) {
   const field = MODEL_CONFIGURATION_FIELDS.find((entry) => entry.key === key);
   const unresolvedText =
@@ -349,20 +380,24 @@ function configuredModel<K extends keyof ModelConfiguration>(
   return z.custom<ModelConfiguration[K]>(
     (value) =>
       typeof value === 'string' &&
-      (getModelConfigurationOptions(key, extraModels).some(
+      (getModelConfigurationOptions(key, extraModels, imageModels).some(
         (option) => option.value === value
       ) ||
-        (unresolvedText && isCustomAnalysisModelId(value))),
+        (unresolvedText && isCustomAnalysisModelId(value)) ||
+        (allowUnresolvedCustom &&
+          field?.kind === 'image' &&
+          isValidTextToImageModel(value))),
     { message: 'Choose a supported model for this operation' }
   );
 }
 
 export function createModelConfigurationSchema(
   extraModels: readonly AnalysisModelDefinition[] = [],
-  allowUnresolvedCustom = false
+  allowUnresolvedCustom = false,
+  imageModels: readonly ImageModelDefinition[] = []
 ) {
   const field = <K extends keyof ModelConfiguration>(key: K) =>
-    configuredModel(key, extraModels, allowUnresolvedCustom);
+    configuredModel(key, extraModels, allowUnresolvedCustom, imageModels);
   return z.strictObject({
     defaultAnalysis: field('defaultAnalysis'),
     defaultImage: field('defaultImage'),
@@ -397,7 +432,8 @@ export const modelConfigurationInputSchema = createModelConfigurationSchema(
 
 export function resolveModelConfiguration(
   value: unknown,
-  extraModels: readonly AnalysisModelDefinition[] = []
+  extraModels: readonly AnalysisModelDefinition[] = [],
+  imageModels: readonly ImageModelDefinition[] = []
 ): ModelConfiguration {
   if (value === null || value === undefined)
     return { ...DEFAULT_MODEL_CONFIGURATION };
@@ -413,7 +449,7 @@ export function resolveModelConfiguration(
       delete overrides[key];
     }
   }
-  return createModelConfigurationSchema(extraModels).parse({
+  return createModelConfigurationSchema(extraModels, true, imageModels).parse({
     ...DEFAULT_MODEL_CONFIGURATION,
     ...overrides,
   });

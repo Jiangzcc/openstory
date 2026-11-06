@@ -1,3 +1,4 @@
+import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
 /**
  * Shot variant (3×3 grid) workflow — generates the composition-picker SHEET.
  *
@@ -18,7 +19,7 @@ import {
   recordFalUsageStep,
 } from '@/billing/server/workflow-deduction';
 import {
-  DEFAULT_IMAGE_SIZE,
+  resolveVariantImageSize,
   getVariantGridConfig,
 } from '@/models/aspect-ratios';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -53,12 +54,13 @@ export function tileInputHash(
   input: Pick<
     ShotVariantWorkflowInput,
     'tileHashInput' | 'model' | 'aspectRatio'
-  >
+  >,
+  imageModelRouting?: ImageModelRoutingSnapshot
 ): Promise<ShotImageInputHash> | null {
   if (!input.tileHashInput || !input.aspectRatio) return null;
   return computeShotImageSceneHash(
     input.tileHashInput,
-    resolveUpscaleModel(input.model || DEFAULT_IMAGE_MODEL),
+    resolveUpscaleModel(input.model || DEFAULT_IMAGE_MODEL, imageModelRouting),
     input.aspectRatio
   );
 }
@@ -99,8 +101,10 @@ export class ShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<ShotVariant
         const gridConfig = input.aspectRatio
           ? getVariantGridConfig(input.aspectRatio)
           : null;
-        const imageSize =
-          gridConfig?.imageSize ?? input.imageSize ?? DEFAULT_IMAGE_SIZE;
+        const imageSize = resolveVariantImageSize(
+          input.aspectRatio,
+          input.imageSize
+        );
 
         const basePrompt = getVariantImagePrompt(
           imageSize,
@@ -168,7 +172,10 @@ export class ShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<ShotVariant
           // inherit which prompt the grid was generated from (#1070).
           promptVersionId: input.promptVersionId ?? null,
           // What a tile picked from this sheet inherits (#712).
-          inputHash: await tileInputHash(input),
+          inputHash: await tileInputHash(
+            input,
+            scopedDb.models.imageModelRouting
+          ),
           status: 'generating',
           workflowRunId,
           // A sheet is never the frame's still, so its render never speaks
@@ -214,6 +221,7 @@ export class ShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<ShotVariant
       logTag: '[ShotVariantWorkflow]',
       subject: `variant grid ${input.shotId}`,
       stepName: 'generate-image',
+      reservationId: input.reservationId,
       params: prep.params,
       prompt: prep.basePrompt,
       rebuild: (nextPrompt, model) => {

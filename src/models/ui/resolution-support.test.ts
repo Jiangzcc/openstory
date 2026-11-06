@@ -1,3 +1,6 @@
+import { imageCatalogFixture } from '@/models/__tests__/image-model-fixture';
+import { mergeImageModelCatalog } from '@/models/image-model-catalog';
+import { IMAGE_MODELS } from '@/models/models';
 import { describe, expect, it } from 'vitest';
 import {
   availableResolutions,
@@ -136,4 +139,36 @@ describe('resolutionCeilingNote', () => {
     });
     expect(note).toMatch(/and 1 more render below 4K/);
   });
+});
+
+describe('configured image resolution settings', () => {
+  it('keeps provider-defined dimensions out of the built-in tier table', () => {
+    const model = imageCatalogFixture();
+    const selection = {
+      imageModels: [model.id],
+      imageCatalog: mergeImageModelCatalog([model]),
+    };
+    expect(availableResolutions(selection)).toEqual([]);
+    expect(resolutionCeilingNote('4k', selection)).toBe(
+      'Configured Qwen uses image channel size settings.'
+    );
+  });
+});
+
+// Synthetic bound built-in dimensions; no model generation or paid request.
+it('uses channel size settings rather than fal tiers for a bound built-in', () => {
+  const model = imageCatalogFixture({ id: 'gpt_image_2' });
+  const selection = {
+    imageModels: [model.id],
+    imageCatalog: mergeImageModelCatalog([model]),
+  };
+  expect(availableResolutions(selection)).toEqual([]);
+  expect(resolutionCeilingNote('4k', selection)).toBe(
+    IMAGE_MODELS.gpt_image_2.name + ' uses image channel size settings.'
+  );
+  const original = {
+    imageModels: [model.id],
+    imageCatalog: mergeImageModelCatalog(),
+  };
+  expect(availableResolutions(original)).not.toEqual([]);
 });

@@ -1,3 +1,4 @@
+import { isConfiguredImageModelId } from '@/models/image-channels';
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +43,8 @@ import { MarkdownEditor } from '@/ui/text-editor/markdown-editor';
 import { VoiceInputButton } from '@/ui/voice/voice-input-button';
 import { useEditorDictation } from '@/ui/use-dictation';
 import { useSequenceMentionItems } from './use-mention-items';
+import { shotImageReferenceCount } from '@/shots/image-reference-count';
+import { useImageCostHint } from '@/billing/ui/use-image-cost-hint';
 import { shortenPromptFn } from '@/models/ai.fn';
 import { generateShotImageFn } from '@/stills/shot-image.fn';
 import {
@@ -102,10 +105,7 @@ import {
   type TextToImageModel,
 } from '@/models/models';
 import { promptLengthFields } from '@/models/prompt-length';
-import {
-  estimateImageCost,
-  estimateVideoCost,
-} from '@/billing/cost-estimation';
+import { estimateVideoCost } from '@/billing/cost-estimation';
 import { DEFAULT_ASPECT_RATIO, type AspectRatio } from '@/models/aspect-ratios';
 import type { Resolution } from '@/models/resolutions';
 import { getStorageDomainFn } from '@/platform/storage-config.fn';
@@ -549,8 +549,13 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
     ]
   );
 
-  const { items: mentionItems, onMentionRename } =
-    useSequenceMentionItems(sequenceId);
+  const {
+    items: mentionItems,
+    onMentionRename,
+    characters,
+    locations,
+    elements,
+  } = useSequenceMentionItems(sequenceId);
   // The realtime hook owns the per-prompt-type stream status — `'pending'`
   // covers the window between a successful enqueue and the first delta, so
   // the button stays in its busy state without a sibling useState to sync.
@@ -1252,15 +1257,20 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
 
   // Transparent pricing under Generate Image / Generate Motion (#1140).
   const { pricing: falPricing, isPending: pricingPending } = useFalPricing();
-  const imageCostEstimate = useMemo(() => {
-    if (!falPricing) return pricingPending ? undefined : null;
-    return estimateImageCost(
-      regenImageModel,
-      aspectRatio ?? DEFAULT_ASPECT_RATIO,
-      1,
-      { pricing: falPricing, resolution }
-    );
-  }, [falPricing, pricingPending, regenImageModel, aspectRatio, resolution]);
+  const imageReferenceCount = shotImageReferenceCount({
+    scene: shot?.sceneId ? scene : null,
+    prompt: editedImagePrompt || imagePrompt || scene?.script?.extract || '',
+    characters,
+    locations,
+    elements,
+  });
+  const { estimate: imageCostEstimate, issue: imageCostIssue } =
+    useImageCostHint({
+      model: regenImageModel,
+      aspectRatio: aspectRatio ?? DEFAULT_ASPECT_RATIO,
+      resolution,
+      referenceImageCount: imageReferenceCount,
+    });
   const motionCostEstimate = useMemo(() => {
     if (!shot) return null;
     if (!falPricing) return pricingPending ? undefined : null;
@@ -1879,6 +1889,16 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
           {/* Always in the inspector layout (#1242) so SSR / first paint
               reserve the collapsed header instead of popping it in after
               the preview query resolves. */}
+          <output
+            className={
+              isConfiguredImageModelId(imageModel) ||
+              promptPreview?.imageUsesConfiguredChannel
+                ? 'text-sm text-muted-foreground'
+                : 'hidden'
+            }
+          >
+            {t('Request preview is not configured for this image channel.')}
+          </output>
           <OptimisedPromptPanel
             idPrefix="image-request"
             preview={imageRequestPreview}
@@ -1958,6 +1978,11 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
           {/* Image action button. Switching to another model's existing
               still is a history pick, like any other version. */}
           <div className="flex flex-col gap-1">
+            {imageCostIssue && (
+              <output className="block text-sm text-muted-foreground">
+                {imageCostIssue}
+              </output>
+            )}
             <Button
               onClick={() => {
                 if (falNeedsBillingSetup) {
@@ -1967,7 +1992,11 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                 void handleRegenerate();
               }}
               disabled={
-                isGenerating || variantIsGenerating || !shot || !hasVisualPrompt
+                isGenerating ||
+                variantIsGenerating ||
+                !shot ||
+                !hasVisualPrompt ||
+                Boolean(imageCostIssue)
               }
               className={costButtonClassName}
             >

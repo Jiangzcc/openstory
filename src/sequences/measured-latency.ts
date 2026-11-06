@@ -1,3 +1,4 @@
+import { isConfiguredImageModelId } from '@/models/image-channels';
 /**
  * Wall-clock seconds per completed generation, from production D1: each
  * `video_variants` / `frame_variants` row's `created_at` → `generated_at`,
@@ -22,10 +23,10 @@ import {
   DEFAULT_VIDEO_MODEL,
   isValidAudioModel,
   isValidImageToVideoModel,
-  isValidTextToImageModel,
+  isBuiltinTextToImageModel,
   type AudioModel,
   type ImageToVideoModel,
-  type TextToImageModel,
+  type BuiltinTextToImageModel,
 } from '@/models/models';
 
 export type WallClock = {
@@ -95,7 +96,7 @@ export const IMAGE_WALL_CLOCK = {
   krea_3: { p50: 99, p90: 126, n: 0, proxy: 'gpt_image_2' },
   hidream_i1: { p50: 99, p90: 126, n: 0, proxy: 'gpt_image_2' },
   seedream_v5: { p50: 99, p90: 126, n: 0, proxy: 'gpt_image_2' },
-} as const satisfies Record<TextToImageModel, WallClock>;
+} as const satisfies Record<BuiltinTextToImageModel, WallClock>;
 
 export const AUDIO_WALL_CLOCK = {
   elevenlabs_music: { p50: 10, p90: 14, n: 114 }, // pre-D1
@@ -111,9 +112,15 @@ export function videoWallClock(model?: string | null): WallClock {
 }
 
 export function imageWallClock(model?: string | null): WallClock {
-  if (model && isValidTextToImageModel(model)) {
+  if (model && isBuiltinTextToImageModel(model)) {
     return IMAGE_WALL_CLOCK[model];
   }
+  if (isConfiguredImageModelId(model))
+    return {
+      ...IMAGE_WALL_CLOCK[DEFAULT_IMAGE_MODEL],
+      n: 0,
+      proxy: DEFAULT_IMAGE_MODEL,
+    };
   return IMAGE_WALL_CLOCK[DEFAULT_IMAGE_MODEL];
 }
 

@@ -5,7 +5,7 @@ import {
   IMAGE_TO_VIDEO_MODELS,
   isValidAudioModel,
   isValidImageToVideoModel,
-  isValidTextToImageModel,
+  isBuiltinTextToImageModel,
 } from './models';
 import { isSelectableAnalysisModelId } from './models.config';
 import {
@@ -123,7 +123,7 @@ describe('selector grouping', () => {
         TURBO_IMAGE_MODELS,
         QUALITY_DEFAULT_IMAGE,
         (id) =>
-          isValidTextToImageModel(id) ? IMAGE_MODELS[id].qualityRank : 99
+          isBuiltinTextToImageModel(id) ? IMAGE_MODELS[id].qualityRank : 99
       )
     );
     expect(ids[0]).toBe('nano_banana_2_lite');
@@ -214,7 +214,7 @@ describe('turbo catalogs', () => {
       expect(isSelectableAnalysisModelId(id)).toBe(true);
     }
     for (const id of TURBO_IMAGE_MODELS) {
-      expect(isValidTextToImageModel(id)).toBe(true);
+      expect(isBuiltinTextToImageModel(id)).toBe(true);
       expect('hidden' in IMAGE_MODELS[id]).toBe(false);
     }
     for (const id of TURBO_VIDEO_MODELS) {

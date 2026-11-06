@@ -3,6 +3,13 @@ import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
 import { computeGenerationPlan } from './generation-plan';
 import { planCounts, planWork } from '@/sequences/generation-plan';
 import { computePlan } from '@/shots/server/update-stale-plan';
+import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
+import { unpackModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import {
+  estimatePlanImageCost,
+  planUsesConfiguredImages,
+} from '@/billing/configured-image-plan-billing';
+import { addMicros, ZERO_MICROS } from '@/billing/money';
 import { estimatePlanCost } from '@/billing/cost-estimation';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { resolveImageModels } from '@/models/resolve-image-models';
@@ -40,6 +47,7 @@ export async function freezeFreshGenerationPlan(
   const imageModels = resolveImageModels(input.imageModels, input.imageModel);
   const videoModels = resolveVideoModels(input.videoModels, input.videoModel);
   const audioModels = resolveAudioModels(input.audioModels, input.musicModel);
+  const imageModelRouting = frozenImageRouting(input);
   const plan = await computePlan({
     scopedDb,
     sequenceId: input.sequenceId,
@@ -47,26 +55,70 @@ export async function freezeFreshGenerationPlan(
     userId: input.userId,
     sequenceOverrides,
     renderOptions: { imageModels, videoModels, audioModels },
+    imageModelRouting,
   });
   if (plan.music) plan.music.promptSource = input.musicPromptSource;
-  const shots = await scopedDb.shots.listBySequence(input.sequenceId);
-  const counts = planCounts(work);
-  const remainingCost = estimatePlanCost({
-    counts,
+  const remainingCost = await remainingPlanCost(
+    scopedDb,
+    input,
+    plan,
+    { imageModels, videoModels, audioModels },
+    planCounts(work)
+  );
+  return { plan, remainingCost };
+}
+
+async function remainingPlanCost(
+  scopedDb: ScopedDb,
+  input: StoryboardWorkflowInput & { sequenceId: string },
+  plan: UpdateStalePlan,
+  models: {
+    imageModels: ReturnType<typeof resolveImageModels>;
+    videoModels: ReturnType<typeof resolveVideoModels>;
+    audioModels: ReturnType<typeof resolveAudioModels>;
+  },
+  counts: ReturnType<typeof planCounts>
+) {
+  const [shots, pricing] = await Promise.all([
+    scopedDb.shots.listBySequence(input.sequenceId),
+    getEffectiveFalPricing(),
+  ]);
+  const imageModelRouting = frozenImageRouting(input);
+  const imageQuote = planUsesConfiguredImages(plan, imageModelRouting)
+    ? estimatePlanImageCost(plan, imageModelRouting, pricing)
+    : undefined;
+  const remaining = estimatePlanCost({
+    counts: imageQuote
+      ? {
+          ...counts,
+          still: 0,
+          'sheet:character': 0,
+          'sheet:location': 0,
+          'ref:element': 0,
+        }
+      : counts,
     imageModel: input.imageModel,
-    imageModelCount: imageModels.length,
+    imageModelCount: models.imageModels.length,
+    imageModelRouting,
     aspectRatio: input.aspectRatio,
     resolution: input.resolution,
-    videoModels,
+    videoModels: models.videoModels,
     videoDurationSeconds: Math.max(
       1,
       musicRequestDurationSeconds(shots) / Math.max(shots.length, 1)
     ),
     referenceOnly: input.referenceOnly,
     draftMotion: input.draftMotion ?? false,
-    audioModels,
+    audioModels: models.audioModels,
     audioDurationSeconds: musicRequestDurationSeconds(shots),
-    pricing: await getEffectiveFalPricing(),
+    pricing,
   });
-  return { plan, remainingCost };
+  return addMicros(remaining, imageQuote?.costMicros ?? ZERO_MICROS);
+}
+
+function frozenImageRouting(input: StoryboardWorkflowInput) {
+  return input.modelConfiguration
+    ? unpackModelRuntimeConfiguration(input.modelConfiguration)
+        .imageModelRouting
+    : undefined;
 }

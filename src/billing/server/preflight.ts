@@ -6,6 +6,7 @@
 
 import { llmtrTextModel } from '@/models/llmtr';
 import type { TextModelRoutingSnapshot } from '@/models/text-channels';
+import { ZERO_MICROS } from '@/billing/money';
 import type { Microdollars } from '@/billing/money';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { InsufficientCreditsError } from '@/platform/errors';
@@ -31,6 +32,7 @@ type ReservationPreflightScopedDb = {
 };
 
 export type Provider = 'fal' | 'openrouter';
+type ImageKeySource = 'platform' | 'organization';
 export type LlmKeySource = Awaited<
   ReturnType<ScopedDb['apiKeys']['resolveLlmKey']>
 >['source'];
@@ -38,6 +40,8 @@ export type LlmKeySource = Awaited<
 type CreditCoverageOptions = {
   providers?: Provider[];
   llmModel?: string;
+  /** Actual credential owner of the image route this operation spends on. */
+  imageSource?: ImageKeySource;
   /** Sources resolved for every text model this operation will call. */
   llmSources?: readonly LlmKeySource[];
 };
@@ -59,6 +63,7 @@ async function hasOwnCoverage(
   scopedDb: PreflightScopedDb,
   opts: CreditCoverageOptions
 ): Promise<boolean> {
+  if (opts.imageSource === 'platform') return false;
   if (opts.llmSources?.includes('platform')) return false;
   const providers = opts.providers ?? ['fal'];
   const keyChecks = await Promise.all(
@@ -66,7 +71,9 @@ async function hasOwnCoverage(
       provider === 'openrouter' && opts.llmSources !== undefined
         ? opts.llmSources.length > 0 &&
           opts.llmSources.every((source) => source === 'organization')
-        : coversProvider(scopedDb, provider, opts.llmModel)
+        : provider === 'fal' && opts.imageSource === 'organization'
+          ? true
+          : coversProvider(scopedDb, provider, opts.llmModel)
     )
   );
   return providers.length > 0 && keyChecks.every(Boolean);
@@ -135,6 +142,7 @@ export async function reserveRunCredits(
     idempotencyKey?: string;
   } = {}
 ): Promise<string | undefined> {
+  if (estimatedCostMicros === ZERO_MICROS) return undefined;
   if (await hasOwnCoverage(scopedDb, opts)) return undefined;
 
   const result = await scopedDb.billing.createReservation(estimatedCostMicros, {

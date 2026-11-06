@@ -373,6 +373,9 @@ export class ImageWorkflow extends OpenStoryWorkflowEntrypoint<ImageWorkflowInpu
           reservationId: input.reservationId,
           metadata: {
             ...falUsage,
+            ...(imageMetadata.configuredPricing
+              ? { configuredPricing: imageMetadata.configuredPricing }
+              : {}),
             model: generation.params.model,
             shotId: input.shotId,
             sequenceId: input.sequenceId,

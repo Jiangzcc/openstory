@@ -1,3 +1,5 @@
+import { usesConfiguredImageChannel } from '@/models/image-channels';
+import { runConfiguredSingleImageStep } from '../configured-image-step';
 /**
  * Content-rejection handling for shot stills (#1272).
  *
@@ -260,12 +262,36 @@ async function recomputeSnapshotHash(
 export async function generateImageWithContentRetry(
   args: GenerateArgs
 ): Promise<GenerateImageWithContentRetryResult> {
+  if (
+    usesConfiguredImageChannel(
+      args.params.model,
+      args.scopedDb.models.imageModelRouting
+    )
+  ) {
+    const result = await runConfiguredSingleImageStep({
+      ...args,
+      stepName: 'generate-image',
+      reservationId: args.input.reservationId,
+    });
+    return {
+      ...result,
+      params: args.params,
+      prompt: args.input.prompt,
+      versionId: args.versionId,
+      snapshotInputHash: args.snapshotInputHash,
+    };
+  }
   const { step, scopedDb, input, workflowRunId } = args;
   let params = args.params;
   let prompt = input.prompt;
   let snapshotInputHash = args.snapshotInputHash;
   let versionId = args.versionId;
-  const canFallback = params.model !== IMAGE_CONTENT_FALLBACK_MODEL;
+  const canFallback =
+    params.model !== IMAGE_CONTENT_FALLBACK_MODEL &&
+    !usesConfiguredImageChannel(
+      IMAGE_CONTENT_FALLBACK_MODEL,
+      scopedDb.models.imageModelRouting
+    );
   const maxAttempts = MAX_IMAGE_ATTEMPTS + (canFallback ? 1 : 0) + 1;
 
   let lastRejection: string | null = null;

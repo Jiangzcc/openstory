@@ -296,3 +296,21 @@ describe('custom analysis model request shape', () => {
     }
   );
 });
+
+it('accepts configured image identities through singular and multiple model inputs', () => {
+  const base = { script: 'A valid length script for configured image models.' };
+  const result = createSequenceSchema.parse({
+    ...base,
+    imageModel: 'custom-image:qwen',
+    imageModels: ['custom-image:qwen', 'nano_banana_2'],
+  });
+  expect(result.imageModel).toBe('custom-image:qwen');
+  expect(result.imageModels).toEqual(['custom-image:qwen', 'nano_banana_2']);
+  expect(
+    createSequenceSchema.safeParse({ ...base, imageModels: ['custom-image:'] })
+      .success
+  ).toBe(false);
+  expect(
+    createSequenceSchema.safeParse({ ...base, imageModel: 'unknown' }).success
+  ).toBe(false);
+});

@@ -1,3 +1,4 @@
+import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
 import type { StyleConfig } from '@/look/style-config';
 import { loadSequenceStyle } from '@/look/server/sequence-style';
 import { buildPackedMotionPrompt } from '@/motion/server/build-motion-render';
@@ -117,29 +118,32 @@ export const previewShotPromptsFn = createServerFn({ method: 'POST' })
       data.videoModel,
       DEFAULT_VIDEO_MODEL
     );
-    const [packedPreview, byteplusEnabled] = await Promise.all([
-      loadPackedPreviewMembers({
-        scopedDb,
-        sequence,
-        scene,
-        styleConfig,
-        script,
-        shot,
-        sceneShots,
-        linesByShotId,
-        videoModel,
-        motionPrompt,
-        selectedStillUrl: selectedStill?.url ?? null,
-        usesFrame,
-        generateAudio: data.generateAudio ?? true,
-      }),
-      // Where this organization's Seedance lands, not whether the platform has
-      // Ark: an organization on its own fal key is never sent an edit (#2036).
-      seedanceRunsOnArk(toWorkflowScopedDb(scopedDb).credentials),
-    ]);
+    const [packedPreview, byteplusEnabled, modelConfiguration] =
+      await Promise.all([
+        loadPackedPreviewMembers({
+          scopedDb,
+          sequence,
+          scene,
+          styleConfig,
+          script,
+          shot,
+          sceneShots,
+          linesByShotId,
+          videoModel,
+          motionPrompt,
+          selectedStillUrl: selectedStill?.url ?? null,
+          usesFrame,
+          generateAudio: data.generateAudio ?? true,
+        }),
+        // Where this organization's Seedance lands, not whether the platform has
+        // Ark: an organization on its own fal key is never sent an edit (#2036).
+        seedanceRunsOnArk(toWorkflowScopedDb(scopedDb).credentials),
+        loadModelRuntimeConfiguration(),
+      ]);
 
     return buildShotPromptPreview({
       imageModel: safeTextToImageModel(data.imageModel, DEFAULT_IMAGE_MODEL),
+      imageModelRouting: modelConfiguration.imageModelRouting,
       videoModel,
       imagePrompt: data.imagePrompt ?? selectedVisual?.text ?? '',
       motionPrompt,

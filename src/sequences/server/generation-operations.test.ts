@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 /**
  * Agent plan → execute → status (#1460) on migrated SQLite, so sequence,
  * scene and shot access is the real organization scope. The editor's planners,
@@ -89,10 +90,31 @@ vi.doMock('./continue-plan', () => ({
   CONTINUE_CREDIT_PROVIDERS: ['fal', 'openrouter'],
   withContinueSwitches: realContinuePlan.withContinueSwitches,
   prepareContinue: vi.fn(
-    async (args: { sequence: { id: string }; stopAt: unknown }) => {
+    async (args: Parameters<typeof realContinuePlan.prepareContinue>[0]) => {
       await getSequenceRejectingActiveRun(undefined, args.sequence.id);
       const { work, stopAt } = continueFromPlan(args);
-      return { work, stopAt, estimate: { micros: 1_000_000, priced: true } };
+      const modelConfiguration = {
+        ...DEFAULT_MODEL_CONFIGURATION,
+        imageModelRouting: [],
+      };
+      const plan = await computePlan({
+        scopedDb: args.scopedDb,
+        userId: args.userId,
+        sequenceId: args.sequence.id,
+        units: work.map(({ kind, id }: { kind: string; id: string }) => ({
+          kind,
+          id,
+        })),
+        sequenceOverrides: { ...args.requested, draftMotion: args.draftMotion },
+        imageModelRouting: modelConfiguration.imageModelRouting,
+      });
+      return {
+        work,
+        stopAt,
+        estimate: { micros: 1_000_000, priced: true },
+        modelConfiguration,
+        plan,
+      };
     }
   ),
 }));
@@ -131,6 +153,8 @@ let storyboardRun: string;
 function stalePlan(over: Record<string, unknown> = {}): UpdateStalePlan {
   return asStub<UpdateStalePlan>({
     sequence: { imageModel: 'nano_banana_2', videoModel: 'wan_i2v' },
+    aspectRatio: '16:9',
+    references: null,
     targets: [
       {
         shotId,
@@ -138,6 +162,8 @@ function stalePlan(over: Record<string, unknown> = {}): UpdateStalePlan {
         usesStartFrame: true,
         regenImage: true,
         imageLiveHash: 'hash-a',
+        referenceIds: [],
+        imageReferenceCount: 0,
       },
     ],
     music: null,
@@ -602,6 +628,7 @@ describe('planned retry (#1461)', () => {
     expect(executeSmartRetry).toHaveBeenLastCalledWith(expect.anything(), {
       dryRun: true,
       smartOnly: true,
+      modelConfiguration: expect.any(Object),
     });
     expect(plan.work).toMatchObject({
       retryType: 'smart',
@@ -631,6 +658,12 @@ describe('planned retry (#1461)', () => {
     });
     const launch = executeSmartRetry.mock.calls.find(
       ([, opts]) => !opts.dryRun
+    );
+    const latestPreview = executeSmartRetry.mock.calls
+      .filter(([, opts]) => opts.dryRun)
+      .at(-1);
+    expect(launch?.[1].modelConfiguration).toBe(
+      latestPreview?.[1].modelConfiguration
     );
     expect(launch?.[1]).toMatchObject({
       smartOnly: true,

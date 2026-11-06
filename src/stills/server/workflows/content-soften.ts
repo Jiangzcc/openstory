@@ -1,3 +1,5 @@
+import { usesConfiguredImageChannel } from '@/models/image-channels';
+import { runConfiguredSingleImageStep } from '../configured-image-step';
 /**
  * Content-rejection handling shared by every image render that is not a
  * shot still (#1293): character / location / element sheets and variant grids.
@@ -271,6 +273,15 @@ type Outcome =
 export async function generateImageSoftening(
   args: GenerateImageSofteningArgs
 ): Promise<GenerateImageSofteningResult> {
+  if (
+    usesConfiguredImageChannel(
+      args.params.model,
+      args.scopedDb.models.imageModelRouting
+    )
+  ) {
+    const result = await runConfiguredSingleImageStep(args);
+    return { ...result, params: args.params, softened: false };
+  }
   const { step, scopedDb, logTag, subject, stepName } = args;
   const meta = { kind: args.kind, sequenceId: args.sequenceId, ...args.meta };
   const prompt = args.prompt ?? args.params.prompt;
@@ -281,7 +292,12 @@ export async function generateImageSoftening(
       prompt: p,
       model,
     }));
-  const canFallback = args.params.model !== IMAGE_CONTENT_FALLBACK_MODEL;
+  const canFallback =
+    args.params.model !== IMAGE_CONTENT_FALLBACK_MODEL &&
+    !usesConfiguredImageChannel(
+      IMAGE_CONTENT_FALLBACK_MODEL,
+      scopedDb.models.imageModelRouting
+    );
   const maxAttempts = MAX_CONTENT_ATTEMPTS + (canFallback ? 1 : 0) + 1;
 
   const announceRetry = async (attempt: number, promptSoftened: boolean) => {

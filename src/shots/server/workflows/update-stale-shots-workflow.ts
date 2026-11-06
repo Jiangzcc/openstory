@@ -845,6 +845,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           try {
             const prepared = await prepareShotImageWorkflowInput({
               scopedDb: scopedDb.stalenessPlanning,
+              modelConfiguration: scopedDb.models,
               sequence: {
                 ...sequenceSnapshot,
                 referenceOnly: !target.usesStartFrame,

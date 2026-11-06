@@ -10,7 +10,8 @@
  * instead.
  */
 
-import { resolveUpscaleModel } from '@/models/resolve-asset-models';
+import { requireUpscaleModel } from '@/models/resolve-asset-models';
+import { usesConfiguredImageChannel } from '@/models/image-channels';
 import { ZERO_MICROS } from '@/billing/money';
 import {
   deductWorkflowCredits,
@@ -24,6 +25,12 @@ import type { Resolution } from '@/models/resolutions';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { generateImageWithProvider } from '@/stills/server/image-generation';
+import type {
+  ImageGenerationParams,
+  ImageGenerationResult,
+} from '@/stills/server/image-generation';
+import type { TextToImageModel } from '@/models/models';
+import { runConfiguredSingleImageStep } from '@/stills/server/configured-image-step';
 import { recordProvenance } from '@/platform/server/compliance/provenance';
 import { uploadImageToStorage } from '@/stills/server/image-storage';
 import { buildReferenceImagePrompt } from '@/stills/reference-image-prompt';
@@ -237,6 +244,176 @@ export async function persistUpscaleSelection(params: {
   return { promoted: true, thumbnailUrl: url };
 }
 
+type SequenceUpscaleInput = UpscaleShotVariantWorkflowInput & {
+  sequenceId: string;
+};
+
+function upscaleImageParams(
+  input: UpscaleShotVariantWorkflowInput,
+  model: TextToImageModel
+): ImageGenerationParams {
+  const references = [
+    {
+      referenceImageUrl: input.croppedTileUrl,
+      description: 'The source shot to upscale — the output is this image',
+      role: 'primary' as const,
+    },
+    ...(input.characterReferences ?? []).map((reference) => ({
+      ...reference,
+      role: reference.role ?? ('character' as const),
+    })),
+    ...(input.locationReferences ?? []).map((reference) => ({
+      ...reference,
+      role: reference.role ?? ('location' as const),
+    })),
+  ];
+  const { prompt, referenceUrls } = buildReferenceImagePrompt(
+    UPSCALE_PROMPT,
+    references
+  );
+  return {
+    model,
+    prompt,
+    imageSize: input.aspectRatio
+      ? aspectRatioToImageSize(input.aspectRatio)
+      : DEFAULT_IMAGE_SIZE,
+    resolution: input.resolution,
+    referenceImageUrls: referenceUrls,
+    numImages: 1,
+    outputFormat: 'png',
+  };
+}
+
+async function prepareUpscaleVersion(
+  input: SequenceUpscaleInput,
+  scopedDb: WorkflowScopedDb,
+  workflowRunId: string,
+  upscaleModel: TextToImageModel
+) {
+  const frame = await scopedDb.liveRead.frames.getById(input.frameId);
+  if (!frame) {
+    logger.info(
+      `[UpscaleShotVariantWorkflow] Frame ${input.frameId} (shot ${input.shotId}) is gone, skipping`
+    );
+    return null;
+  }
+  const versionId = await bindUpscaleVersion({
+    scopedDb,
+    versionId: input.versionId,
+    frameId: frame.id,
+    sequenceId: input.sequenceId,
+    upscaleModel,
+    sourceVariantId: input.sourceVariantId ?? null,
+    promptVersionId: input.promptVersionId,
+    workflowRunId,
+    resolution: input.resolution,
+  });
+  if (!versionId) {
+    logger.info(
+      `[UpscaleShotVariantWorkflow] Version ${input.versionId} is gone, skipping`
+    );
+    return null;
+  }
+  await getGenerationChannel(input.sequenceId).emit(
+    'generation.image:progress',
+    {
+      shotId: input.shotId,
+      status: 'generating',
+    }
+  );
+  return versionId;
+}
+
+async function storeUpscaleImage(
+  result: ImageGenerationResult,
+  input: SequenceUpscaleInput
+) {
+  const generatedUrl = result.imageUrls[0];
+  if (!generatedUrl) throw new Error('Upscale did not return an image URL');
+  const uploaded = await uploadImageToStorage({
+    imageUrl: generatedUrl,
+    organizationId: input.organizationId,
+    sequenceId: input.sequenceId,
+    shotId: input.shotId,
+  });
+  if (!uploaded.url)
+    throw new Error('Failed to upload upscaled image to storage');
+  return uploaded;
+}
+
+type StoredUpscaleResult = Pick<
+  ImageGenerationResult['metadata'],
+  | 'usedOwnKey'
+  | 'endpointId'
+  | 'unitsBilled'
+  | 'requestId'
+  | 'configuredPricing'
+> & {
+  url: string;
+  path: string;
+  versionId: string;
+  cost: NonNullable<ImageGenerationResult['metadata']['cost']>;
+  via?: ImageGenerationResult['via'];
+};
+
+function storedUpscaleResult(
+  stored: { url: string; path: string },
+  result: Pick<ImageGenerationResult, 'metadata' | 'via'>,
+  versionId: string
+): StoredUpscaleResult {
+  return {
+    ...stored,
+    versionId,
+    cost: result.metadata.cost ?? ZERO_MICROS,
+    usedOwnKey: result.metadata.usedOwnKey,
+    endpointId: result.metadata.endpointId,
+    unitsBilled: result.metadata.unitsBilled,
+    requestId: result.metadata.requestId,
+    configuredPricing: result.metadata.configuredPricing,
+    via: result.via,
+  };
+}
+
+async function generateUpscaleImage(
+  input: SequenceUpscaleInput,
+  model: TextToImageModel,
+  step: WorkflowStep,
+  scopedDb: WorkflowScopedDb,
+  workflowRunId: string
+): Promise<StoredUpscaleResult | null> {
+  if (usesConfiguredImageChannel(model, scopedDb.models.imageModelRouting)) {
+    const versionId = await step.do('prepare-upscale', () =>
+      prepareUpscaleVersion(input, scopedDb, workflowRunId, model)
+    );
+    if (!versionId) return null;
+    const result = await runConfiguredSingleImageStep({
+      step,
+      stepName: 'upscale-image',
+      workflowRunId,
+      scopedDb,
+      params: upscaleImageParams(input, model),
+      reservationId: input.reservationId,
+      store: (image) => storeUpscaleImage(image, input),
+    });
+    return storedUpscaleResult(result.stored, result, versionId);
+  }
+  return step.do('upscale-image', async () => {
+    const versionId = await prepareUpscaleVersion(
+      input,
+      scopedDb,
+      workflowRunId,
+      model
+    );
+    if (!versionId) return null;
+    const result = await generateImageWithProvider(
+      upscaleImageParams(input, model),
+      { credentials: scopedDb.credentials }
+    );
+    const stored = await storeUpscaleImage(result, input);
+    return storedUpscaleResult(stored, result, versionId);
+  });
+}
+
 export class UpscaleShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<UpscaleShotVariantWorkflowInput> {
   protected override readonly failureLabel = 'Upscale';
 
@@ -256,116 +433,29 @@ export class UpscaleShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<Upsc
     }
 
     // Derived from the payload, so it survives a step replay unchanged.
-    const upscaleModel = resolveUpscaleModel(input.sourceModel);
+    const upscaleModel = requireUpscaleModel(
+      input.sourceModel,
+      scopedDb.models.imageModelRouting
+    );
 
     logger.info(
       `[UpscaleShotVariantWorkflow] Starting upscale for shot ${shotId} with model ${upscaleModel}`
     );
 
-    const upscaleResult = await step.do('upscale-image', async () => {
-      // The frame is the trigger's (payload `frameId`) — checked for existence,
-      // never re-resolved, so both this step and the select step write to the
-      // same frame.
-      const frame = await scopedDb.liveRead.frames.getById(input.frameId);
-      if (!frame) {
-        logger.info(
-          `[UpscaleShotVariantWorkflow] Frame ${input.frameId} (shot ${shotId}) is gone, skipping`
-        );
-        return null;
-      }
-
-      const versionId = await bindUpscaleVersion({
-        scopedDb,
-        versionId: input.versionId,
-        frameId: frame.id,
-        sequenceId,
-        upscaleModel,
-        sourceVariantId: input.sourceVariantId ?? null,
-        promptVersionId: input.promptVersionId,
-        workflowRunId,
-        resolution: input.resolution,
-      });
-      if (!versionId) {
-        logger.info(
-          `[UpscaleShotVariantWorkflow] Version ${input.versionId} is gone, skipping`
-        );
-        return null;
-      }
-
-      await getGenerationChannel(sequenceId).emit('generation.image:progress', {
-        shotId,
-        status: 'generating',
-      });
-
-      // The cropped tile rides through the builder as the primary reference so
-      // the prompt's Image numbering matches the image_urls array — prepending
-      // it afterwards would shift every legend/inline binding off by one.
-      const allReferences = [
-        {
-          referenceImageUrl: input.croppedTileUrl,
-          description: 'The source shot to upscale — the output is this image',
-          role: 'primary' as const,
-        },
-        ...(input.characterReferences ?? []).map((r) => ({
-          ...r,
-          role: r.role ?? ('character' as const),
-        })),
-        ...(input.locationReferences ?? []).map((r) => ({
-          ...r,
-          role: r.role ?? ('location' as const),
-        })),
-      ];
-      const { prompt: enhancedPrompt, referenceUrls } =
-        buildReferenceImagePrompt(UPSCALE_PROMPT, allReferences);
-
-      const imageSize = input.aspectRatio
-        ? aspectRatioToImageSize(input.aspectRatio)
-        : DEFAULT_IMAGE_SIZE;
-
-      const result = await generateImageWithProvider(
-        {
-          model: upscaleModel,
-          prompt: enhancedPrompt,
-          imageSize,
-          resolution: input.resolution,
-          referenceImageUrls: referenceUrls,
-          numImages: 1,
-          outputFormat: 'png',
-        },
-        { credentials: scopedDb.credentials }
-      );
-      // Stored in the same step: an inline-bytes result has no URL to pass
-      // to a later one, and the image would ride the checkpoint (#1645).
-      const generatedUrl = result.imageUrls[0];
-      if (!generatedUrl) {
-        throw new Error('Upscale did not return an image URL');
-      }
-      const uploaded = await uploadImageToStorage({
-        imageUrl: generatedUrl,
-        organizationId,
-        sequenceId,
-        shotId,
-      });
-      if (!uploaded.url) {
-        throw new Error('Failed to upload upscaled image to storage');
-      }
-      return {
-        url: uploaded.url,
-        path: uploaded.path,
-        cost: result.metadata.cost ?? ZERO_MICROS,
-        usedOwnKey: result.metadata.usedOwnKey,
-        endpointId: result.metadata.endpointId,
-        unitsBilled: result.metadata.unitsBilled,
-        versionId,
-      };
-    });
-
-    if (!upscaleResult) {
-      return { upscaledUrl: '', upscaledPath: '' };
-    }
-
-    // Before the deduction guard — see recordFalUsageStep (#1069).
-    const falUsage = await recordFalUsageStep(step, scopedDb, upscaleResult);
+    const upscaleInput: SequenceUpscaleInput = { ...input, sequenceId };
+    const upscaleResult = await generateUpscaleImage(
+      upscaleInput,
+      upscaleModel,
+      step,
+      scopedDb,
+      workflowRunId
+    );
+    if (!upscaleResult) return { upscaledUrl: '', upscaledPath: '' };
+    const imageVia = upscaleResult.via ?? 'fal';
+    const falUsage: { requestId?: string } =
+      imageVia === 'fal'
+        ? await recordFalUsageStep(step, scopedDb, upscaleResult)
+        : {};
 
     await step.do('deduct-credits', async () => {
       await deductWorkflowCredits({
@@ -374,8 +464,12 @@ export class UpscaleShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<Upsc
         usedOwnKey: upscaleResult.usedOwnKey,
         description: `Variant upscale (${upscaleModel})`,
         idempotencyKey: `${event.instanceId}:upscale`,
+        reservationId: input.reservationId,
         metadata: {
           ...falUsage,
+          ...(upscaleResult.configuredPricing
+            ? { configuredPricing: upscaleResult.configuredPricing }
+            : {}),
           shotId,
           sequenceId,
           model: upscaleModel,
@@ -399,9 +493,10 @@ export class UpscaleShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<Upsc
         assetKind: 'frame_variant',
         assetId: upscaleResult.versionId,
         storageKey: buildR2Key(STORAGE_BUCKETS.THUMBNAILS, storageResult.path),
-        provider: 'fal',
+        provider: imageVia,
         model: upscaleModel,
-        providerRequestId: falUsage.requestId ?? null,
+        providerRequestId:
+          falUsage.requestId ?? upscaleResult.requestId ?? null,
         workflowRunId,
         prompt: UPSCALE_PROMPT,
         sequenceId,

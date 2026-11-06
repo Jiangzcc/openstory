@@ -1,3 +1,4 @@
+import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
 import { resolveSequenceStyleConfig } from '@/look/style-config';
 /**
  * "Update all" planning (#1077/#1085) — pure domain logic that decides *what*
@@ -92,6 +93,10 @@ import {
 } from '@/sequences/generation-plan';
 import { computeGenerationPlan } from '@/sequences/server/generation-plan';
 import { resolveSceneShotImageReferences } from '@/cast/server/workflows/sheet-snapshots';
+import {
+  matchedImageReferenceCount,
+  type PlannedImageReferences,
+} from '@/shots/image-reference-count';
 import { buildRegenerateShotSnapshot } from '@/shots/server/workflows/regenerate-shots-snapshot';
 import { packedSceneFromScene } from '@/motion/server/build-motion-render';
 import type { MotionRenderShot } from '@/motion/server/build-motion-render';
@@ -204,6 +209,7 @@ export type PlanTarget = {
    * image and video rather than render without it.
    */
   referenceIds: string[];
+  imageReferenceCount: number;
   /**
    * The shot's scene has other live shots. Its clip renders on its own, so
    * it carries the scene header (location, time, lighting, palette, look) a
@@ -515,6 +521,7 @@ export async function planUpdateAll(args: {
   userId: string;
   /** The live plan, when the caller already computed it (agent plans). */
   generationPlan?: readonly PlanUnit[];
+  imageModelRouting?: ImageModelRoutingSnapshot;
 }): Promise<UpdateStalePlan> {
   const { scopedDb, sequenceId, sceneId, shotId, depth, userId } = args;
   const [generationPlan, allShots] = await Promise.all([
@@ -531,6 +538,7 @@ export async function planUpdateAll(args: {
   const plan = await computePlan({
     scopedDb,
     sequenceId,
+    imageModelRouting: args.imageModelRouting,
     units: updateAllUnits(generationPlan, { depth, shotIds }),
     userId,
   });
@@ -598,6 +606,7 @@ export async function computePlan(args: {
   /** Who clicked — stamped on the references wave's payloads. */
   userId: string;
   renderOptions?: PlanRenderOptions;
+  imageModelRouting?: ImageModelRoutingSnapshot;
 }): Promise<UpdateStalePlan> {
   const { scopedDb, sequenceId, units } = args;
 
@@ -646,6 +655,7 @@ export async function computePlan(args: {
     units
   );
   const references = await buildPlanReferences({
+    imageModelRouting: args.imageModelRouting,
     scopedDb,
     sequence,
     userId: args.userId,
@@ -727,6 +737,19 @@ export async function computePlan(args: {
     dialogueVersions.map((version) => [version.shotId, version.lines])
   );
   const refs: ShotStalenessRefs = { characters, locations, elements, style };
+  const plannedImages: PlannedImageReferences = {
+    characterLookIds: new Set([
+      ...(references?.characterSheets.map((sheet) => sheet.lookId) ?? []),
+      ...(references?.lookSheetsAfterDefault.map((sheet) => sheet.lookId) ??
+        []),
+    ]),
+    locationIds: new Set(
+      references?.locationSheets.map((sheet) => sheet.locationDbId) ?? []
+    ),
+    elementIds: new Set(
+      references?.elementSheets?.entries.map((entry) => entry.elementId) ?? []
+    ),
+  };
   const promptDialogueOf = shotPromptDialogueResolver({
     linesByShotId: dialogueLinesByShotId,
     shots: allShots,
@@ -762,6 +785,7 @@ export async function computePlan(args: {
       dialogue: promptDialogueOf(shot),
       scene,
       refs,
+      plannedImages,
       videoState: videoStateByShot.get(shot.id),
       allShots,
       unitKinds: unitKindsByShot.get(shot.id) ?? new Set(),
@@ -983,6 +1007,7 @@ async function decideShotTarget(args: {
   dialogue: ShotPromptDialogue;
   scene: Scene | null;
   refs: ShotStalenessRefs;
+  plannedImages: PlannedImageReferences;
   videoState: ShotVideoState | undefined;
   allShots: Shot[];
   /** The plan's units for this shot. */
@@ -1000,6 +1025,7 @@ async function decideShotTarget(args: {
     dialogue: promptDialogue,
     scene,
     refs,
+    plannedImages,
     videoState,
     allShots,
     unitKinds,
@@ -1088,22 +1114,18 @@ async function decideShotTarget(args: {
       })
     ).snapshotInputHash;
   }
-  const referenceIds = (() => {
-    const matched = resolveSceneShotImageReferences({
-      scene,
-      visualPrompt: selectedPrompt?.text ?? null,
-      characters: refs.characters,
-      locations: refs.locations,
-      elements: refs.elements,
-    });
-    return [
-      // The look whose sheet the shot attaches (#2015): a failed sheet holds
-      // the shots of the scenes that wear it, and no others.
-      ...matched.characters.map((c) => c.lookId),
-      ...matched.locations.map((l) => l.id),
-      ...matched.elements.map((e) => e.id),
-    ];
-  })();
+  const matched = resolveSceneShotImageReferences({
+    scene,
+    visualPrompt: selectedPrompt?.text ?? null,
+    characters: refs.characters,
+    locations: refs.locations,
+    elements: refs.elements,
+  });
+  const referenceIds = [
+    ...matched.characters.map((character) => character.lookId),
+    ...matched.locations.map((location) => location.id),
+    ...matched.elements.map((element) => element.id),
+  ];
 
   return {
     kind: 'target',
@@ -1135,6 +1157,7 @@ async function decideShotTarget(args: {
         ? (videoState?.selectedVersionId ?? null)
         : null,
       referenceIds,
+      imageReferenceCount: matchedImageReferenceCount(matched, plannedImages),
       motionRender: {
         sceneId: shot.sceneId,
         renderSegmentId: shot.renderSegmentId,

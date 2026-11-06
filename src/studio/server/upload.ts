@@ -17,11 +17,12 @@ export function uploadStudioImage(params: {
   imageUrl: string;
   organizationId: string;
   assetId: string;
+  imageIndex?: number;
 }): Promise<{ url: string; path: string; contentType: string }> {
   return uploadImageFromUrl(
     params.imageUrl,
     (extension) =>
-      `${organizationKeyPrefix(params.organizationId)}/studio/${params.assetId}/image.${extension}`
+      `${organizationKeyPrefix(params.organizationId)}/studio/${params.assetId}/${params.imageIndex === undefined ? 'image' : 'image-' + params.imageIndex}.${extension}`
   );
 }
 

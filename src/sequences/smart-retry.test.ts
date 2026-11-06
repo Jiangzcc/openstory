@@ -397,6 +397,7 @@ function makeContext(
   const stub = {
     modelConfiguration: { get: async () => DEFAULT_MODEL_CONFIGURATION },
     textChannels: { getSnapshot: async () => [] },
+    imageChannels: { getSnapshot: async () => [] },
     apiKeys: {
       hasUsableKey: vi.fn(async () => true),
       resolveLlmKey: vi.fn(async () => ({
@@ -625,7 +626,11 @@ describe('executeSmartRetry — full retry fallback', () => {
           organizationId: 't1',
           reservationId: undefined,
         }),
-        { ...DEFAULT_MODEL_CONFIGURATION, textModelRouting: [] }
+        {
+          ...DEFAULT_MODEL_CONFIGURATION,
+          textModelRouting: [],
+          imageModelRouting: [],
+        }
       );
       expect(reserveRunCreditsMock).toHaveBeenCalledOnce();
       expect(triggerWorkflowMock).not.toHaveBeenCalled();

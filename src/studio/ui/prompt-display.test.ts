@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GeneratedAsset } from '@/platform/server/db/schema';
+import type { GeneratedAsset, JsonValue } from '@/platform/server/db/schema';
 import {
   readableStudioPrompt,
   studioGenerationFacts,
@@ -196,5 +196,146 @@ describe('studioReuse', () => {
   it('is null when the generation has no prompt', () => {
     const row = asset({ activity: 'image', input: { aspectRatio: '1:1' } });
     expect(studioReuse(row)).toBeNull();
+  });
+});
+
+describe('Studio image Use again', () => {
+  it('restores total quantity and masks without restoring raw size or hidden defaults', () => {
+    const row = asset({
+      activity: 'image',
+      input: {
+        prompt: 'Restore this image',
+        imageModel: 'custom-image:edit',
+        aspectRatio: '16:9',
+        resolution: '1080p',
+        count: 2,
+        referenceImages: ['/r2/reference.png'],
+        maskImageUrl: '/r2/mask.png',
+        channelParameters: {
+          size: '1536x1024',
+          quality: 'high',
+          n: 2,
+          seed: 0,
+          draft: false,
+        },
+      },
+    });
+    const reused = studioReuse(row);
+    expect(reused).toMatchObject({
+      imageModel: 'custom-image:edit',
+      referenceImages: ['/r2/reference.png'],
+      maskImageUrl: '/r2/mask.png',
+      totalImageCount: 4,
+      aspectRatio: '16:9',
+      resolution: '1080p',
+    });
+    expect(reused).not.toHaveProperty('channelParameters');
+    expect(reused?.imageSettingsIssue).toBeUndefined();
+    expect(row.input.channelParameters).toMatchObject({
+      size: '1536x1024',
+      quality: 'high',
+      n: 2,
+    });
+  });
+
+  it('preserves a bound built-in identity and restores an empty parameter record as one image', () => {
+    const reused = studioReuse(
+      asset({
+        activity: 'image',
+        input: {
+          prompt: 'Go',
+          imageModel: 'flux_2_dev',
+          channelParameters: {},
+        },
+      })
+    );
+    expect(reused).toMatchObject({
+      imageModel: 'flux_2_dev',
+      totalImageCount: 1,
+    });
+    expect(reused).not.toHaveProperty('channelParameters');
+  });
+
+  it.each<{ channelParameters: JsonValue }>([
+    { channelParameters: { size: ['1024x1024'] } },
+    { channelParameters: { authorization: 'stale' } },
+    { channelParameters: { quality: { stale: true }, n: 2 } },
+  ])(
+    'does not let stale hidden parameters block current administrator defaults: %j',
+    ({ channelParameters }) => {
+      const reused = studioReuse(
+        asset({
+          activity: 'image',
+          input: { prompt: 'Go', imageModel: 'flux_2_dev', channelParameters },
+        })
+      );
+      expect(reused).not.toHaveProperty('channelParameters');
+      expect(reused?.imageSettingsIssue).toBeUndefined();
+      expect(reused?.totalImageCount).toBe(
+        typeof channelParameters === 'object' &&
+          channelParameters !== null &&
+          'n' in channelParameters
+          ? 2
+          : 1
+      );
+    }
+  );
+
+  it.each<JsonValue>([null, { n: '2' }, { n: 0 }])(
+    'keeps an unreadable historical quantity invalid: %j',
+    (channelParameters) => {
+      const reused = studioReuse(
+        asset({
+          activity: 'image',
+          input: { prompt: 'Go', imageModel: 'flux_2_dev', channelParameters },
+        })
+      );
+      expect(reused?.totalImageCount).toBe(0);
+      expect(reused).not.toHaveProperty('channelParameters');
+    }
+  );
+
+  it('reports malformed masks while retaining the recovered total quantity', () => {
+    const reused = studioReuse(
+      asset({
+        activity: 'image',
+        input: {
+          prompt: 'Go',
+          imageModel: 'custom-image:edit',
+          channelParameters: { n: 2 },
+          maskImageUrl: 7,
+        },
+      })
+    );
+    expect(reused?.totalImageCount).toBe(2);
+    expect(reused).not.toHaveProperty('channelParameters');
+    expect(reused?.maskImageUrl).toBeUndefined();
+    expect(reused?.imageSettingsIssue).toBeDefined();
+  });
+
+  it('keeps legacy images at one output and video reuse free of image-only settings', () => {
+    const legacy = studioReuse(
+      asset({
+        activity: 'image',
+        input: { prompt: 'Go', imageModel: 'flux_2_dev' },
+      })
+    );
+    expect(legacy).toMatchObject({ totalImageCount: 1 });
+    expect(legacy).not.toHaveProperty('channelParameters');
+    expect(legacy).not.toHaveProperty('imageSettingsIssue');
+    const video = studioReuse(
+      asset({
+        activity: 'video',
+        input: {
+          prompt: 'Go',
+          videoModel: 'seedance_v2_5',
+          channelParameters: { invalid: [] },
+          maskImageUrl: 5,
+        },
+      })
+    );
+    expect(video).not.toHaveProperty('totalImageCount');
+    expect(video).not.toHaveProperty('maskImageUrl');
+    expect(video).not.toHaveProperty('imageSettingsIssue');
   });
 });

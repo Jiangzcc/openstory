@@ -9,6 +9,7 @@
  * a fal id to xAI (or the reverse).
  */
 export type MediaVia = 'fal' | 'xai' | 'byteplus' | 'google';
+export type ImageVia = MediaVia | 'compatible';
 
 export function assertMediaVia(via: string): MediaVia {
   switch (via) {

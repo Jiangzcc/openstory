@@ -1,3 +1,5 @@
+import { usesConfiguredImageChannel } from '@/models/image-channels';
+import { runConfiguredStudioImageStep } from '../configured-studio-image-step';
 /**
  * Images and Videos (#1274).
  *
@@ -118,47 +120,57 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
     // Generate and store in ONE step: a via that answers with inline bytes
     // has no URL to pass on, and the whole image would otherwise ride the
     // 1 MiB checkpoint between the two (#1638, #1645).
-    const generated = await step.do('generate-image', async () => {
-      logger.info(
-        `[StudioGenerationWorkflow] Generating image ${assetId} with ${imageModel}`
-      );
-      const result = await generateImageWithProvider(
-        {
-          model: imageModel,
-          prompt: input.referenceImages.length
-            ? tagStudioReferences(input.prompt)
-            : input.prompt,
-          imageSize,
-          resolution: input.resolution,
-          numImages: 1,
-          ...(input.referenceImages.length > 0 && {
-            referenceImageUrls: input.referenceImages,
-          }),
-        },
-        {
-          credentials: scopedDb.credentials,
-          observability: {
-            observationName: 'studio-image',
-            tags: ['studio', 'image'],
-            userId,
-            metadata: { assetId, model: imageModel },
-          },
-        }
-      );
+    const generated = usesConfiguredImageChannel(
+      imageModel,
+      scopedDb.models.imageModelRouting
+    )
+      ? await runConfiguredStudioImageStep({ event, input, step, scopedDb })
+      : await step.do('generate-image', async () => {
+          logger.info(
+            `[StudioGenerationWorkflow] Generating image ${assetId} with ${imageModel}`
+          );
+          const result = await generateImageWithProvider(
+            {
+              model: imageModel,
+              prompt: input.referenceImages.length
+                ? tagStudioReferences(input.prompt)
+                : input.prompt,
+              imageSize,
+              resolution: input.resolution,
+              numImages: 1,
+              ...(input.referenceImages.length > 0 && {
+                referenceImageUrls: input.referenceImages,
+              }),
+            },
+            {
+              credentials: scopedDb.credentials,
+              observability: {
+                observationName: 'studio-image',
+                tags: ['studio', 'image'],
+                userId,
+                metadata: { assetId, model: imageModel },
+              },
+            }
+          );
 
-      const generatedImageUrl = result.imageUrls[0];
-      if (!generatedImageUrl) {
-        throw new Error('Image generation did not return any image URLs');
-      }
-      const upload = await uploadStudioImage({
-        imageUrl: generatedImageUrl,
-        organizationId,
-        assetId,
-      });
-      return { upload, metadata: result.metadata, via: result.via };
-    });
+          const generatedImageUrl = result.imageUrls[0];
+          if (!generatedImageUrl) {
+            throw new Error('Image generation did not return any image URLs');
+          }
+          const upload = await uploadStudioImage({
+            imageUrl: generatedImageUrl,
+            organizationId,
+            assetId,
+          });
+          return {
+            uploads: [upload],
+            metadata: result.metadata,
+            via: result.via,
+          };
+        });
 
-    const upload = generated.upload;
+    if (generated.uploads.length === 0)
+      throw new Error('Image generation did not store an output.');
     const imageMetadata = generated.metadata;
 
     const imageCost = imageMetadata.cost ?? ZERO_MICROS;
@@ -178,6 +190,9 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
           reservationId: event.payload.reservationId,
           metadata: {
             ...falUsage,
+            ...(imageMetadata.configuredPricing
+              ? { configuredPricing: imageMetadata.configuredPricing }
+              : {}),
             model: imageModel,
             assetId,
           },
@@ -186,23 +201,25 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
       });
     }
 
-    const outputs: GeneratedAssetOutput[] = [
-      { url: upload.url, contentType: upload.contentType },
-    ];
+    const outputs: GeneratedAssetOutput[] = generated.uploads.map((image) => ({
+      url: image.url,
+      contentType: image.contentType,
+    }));
 
     await step.do('record-provenance', async () => {
-      await recordProvenance(scopedDb.provenance, {
-        organizationId,
-        userId,
-        assetKind: 'generated_asset',
-        assetId,
-        storageKey: upload.path,
-        provider: generated.via,
-        model: imageMetadata.endpointId,
-        providerRequestId: imageMetadata.requestId,
-        workflowRunId: event.instanceId,
-        prompt: input.prompt,
-      });
+      for (const upload of generated.uploads)
+        await recordProvenance(scopedDb.provenance, {
+          organizationId,
+          userId,
+          assetKind: 'generated_asset',
+          assetId,
+          storageKey: upload.path,
+          provider: generated.via,
+          model: imageMetadata.endpointId,
+          providerRequestId: imageMetadata.requestId,
+          workflowRunId: event.instanceId,
+          prompt: input.prompt,
+        });
     });
 
     await step.do('persist-result', async () => {

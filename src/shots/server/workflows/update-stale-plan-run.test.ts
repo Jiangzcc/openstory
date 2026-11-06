@@ -19,6 +19,16 @@ import * as realPlan from '../update-stale-plan';
 import { buildMotionRender } from '@/motion/server/build-motion-render';
 import { motionPromptFromVersion } from '@/motion/server/resolve-motion-prompt';
 import { asStub } from '@/test/as-stub';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
+import { createImageModelRoutingSnapshot } from '@/models/image-channels';
+
+const workflowModels = {
+  ...DEFAULT_MODEL_CONFIGURATION,
+  imageModelRouting: createImageModelRoutingSnapshot(
+    imageConfigurationFixture()
+  ),
+};
 
 vi.doMock('@/billing/server/fal-pricing-live', () => ({
   getEffectiveFalPricing: vi.fn(async () => ({})),
@@ -55,6 +65,10 @@ vi.doMock('@/shots/server/scene-script', () => ({
     script: null,
   })),
 }));
+const mockStillReferenceImages = [
+  { referenceImageUrl: 'https://x/cast.png', description: 'cast' },
+];
+
 vi.doMock('@/shots/server/shot-image-input', () => ({
   prepareShotImageWorkflowInput: vi.fn(
     async (args: { modelOverride: string }) => ({
@@ -62,9 +76,7 @@ vi.doMock('@/shots/server/shot-image-input', () => ({
       model: args.modelOverride,
       frameId: 'anchor',
       promptVersionId: 'saved-visual',
-      referenceImages: [
-        { referenceImageUrl: 'https://x/cast.png', description: 'cast' },
-      ],
+      referenceImages: mockStillReferenceImages,
       sceneSnapshot: {
         sceneId: 'scene',
         visualPrompt: 'p',
@@ -172,6 +184,7 @@ const createPendingVoiceClaim = vi.fn(async (id: string) => ({
 function makeScopedDb(): WorkflowScopedDb {
   // minimal stub for the paths under test
   return asStub<WorkflowScopedDb>({
+    models: workflowModels,
     characterLooks: { claimSheet, failSheetClaim },
     characters: {
       createPendingVoiceClaim,
@@ -276,6 +289,7 @@ function target(shotId: string, referenceIds: string[]): PlanTarget {
     createsVideo: false,
     staleVideoVersionId: null,
     referenceIds,
+    imageReferenceCount: mockStillReferenceImages.length,
     attachSceneHeader: false,
     motionRender: {
       packedScene: {},
@@ -1164,6 +1178,7 @@ it('overlays first generated sheets onto the pending bible rows before a fresh s
   expect(result.failures).toEqual([]);
   expect(prepareShotImageWorkflowInput).toHaveBeenCalledWith(
     expect.objectContaining({
+      modelConfiguration: workflowModels,
       refs: expect.objectContaining({
         characters: [
           expect.objectContaining({

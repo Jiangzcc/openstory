@@ -25,6 +25,8 @@ import {
 import type { GeneratedAsset, JsonValue } from '@/platform/server/db/schema';
 import type { StudioDuration, StudioVideoMode } from '@/studio/text-to-video';
 import { studioAspectRatio, studioPrompt } from './outputs';
+import { readStoredStudioImageSettings } from './configured-image-settings';
+import type { StoredStudioImageSettings } from './configured-image-settings';
 
 export type StudioShownReference = {
   kind: 'image' | 'video' | 'audio';
@@ -35,7 +37,7 @@ export type StudioShownReference = {
   tag: string | null;
 };
 
-export type StudioReuse = {
+export type StudioReuse = StoredStudioImageSettings & {
   prompt: string;
   aspectRatio: AspectRatio;
   resolution: Resolution | null;
@@ -251,5 +253,6 @@ export function studioReuse(asset: GeneratedAsset): StudioReuse | null {
     referenceAudio: strings(input.referenceAudio),
     startImageUrl: oneString(input.startImageUrl),
     endImageUrl: oneString(input.endImageUrl),
+    ...(asset.activity === 'image' ? readStoredStudioImageSettings(input) : {}),
   };
 }

@@ -1,3 +1,6 @@
+import { useImageModelCatalog } from '../use-image-model-catalog';
+import { imageModelSelectorOptions } from '../image-model-options';
+import type { ImageOperation } from '@/models/image-channel-parameters';
 import type { TFunction } from 'i18next';
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useTranslation } from 'react-i18next';
@@ -15,23 +18,19 @@ import { useShotsBySequence } from '@/shots/ui/use-shots';
 import { useSequenceStyle } from '@/look/ui/use-styles';
 import {
   AUDIO_MODELS,
-  IMAGE_MODELS,
   IMAGE_TO_VIDEO_MODELS,
   isModelCompatibleWithAspectRatio,
   isOfferedVideoModel,
   isValidAudioModel,
   isValidImageToVideoModel,
-  isValidTextToImageModel,
 } from '@/models/models';
 import {
   compareSelectorModels,
   QUALITY_DEFAULT_AUDIO,
-  QUALITY_DEFAULT_IMAGE,
   QUALITY_DEFAULT_VIDEO,
   SELECTOR_GROUP_ORDER,
   selectorGroup,
   TURBO_AUDIO_MODELS,
-  TURBO_IMAGE_MODELS,
   TURBO_VIDEO_MODELS,
   type SelectorGroup,
 } from '@/models/generation-mode';
@@ -74,13 +73,16 @@ export const AddModelMenuSection = ({
   sequenceId,
   variantType,
   usedModels,
+  imageOperation = 'generate',
 }: {
   sequenceId: string;
   variantType: VariantType;
   usedModels: string[];
+  imageOperation?: ImageOperation;
 }) => {
   const translateEvent = useLiveTranslation('models');
   const { t } = useTranslation('models');
+  const { models: imageCatalog } = useImageModelCatalog();
 
   const addModel = useAddModelToSequence();
   const { data: shots } = useShotsBySequence(sequenceId);
@@ -111,24 +113,15 @@ export const AddModelMenuSection = ({
           f.imagePromptVersion?.text ||
           (f.sceneId ? extractBySceneId.get(f.sceneId) : undefined)
       ).length;
-      return Object.keys(IMAGE_MODELS)
-        .filter(isValidTextToImageModel)
-        .filter((key) => !used.has(key) && !('hidden' in IMAGE_MODELS[key]))
-        .sort((a, b) =>
-          compareSelectorModels(
-            a,
-            b,
-            TURBO_IMAGE_MODELS,
-            QUALITY_DEFAULT_IMAGE,
-            (id) =>
-              isValidTextToImageModel(id) ? IMAGE_MODELS[id].qualityRank : 99
-          )
-        )
-        .map((key) => ({
-          key,
-          name: IMAGE_MODELS[key].name,
+      return imageModelSelectorOptions(imageCatalog, {
+        operation: imageOperation,
+      })
+        .filter((model) => !used.has(model.id) && !model.disabled)
+        .map((model) => ({
+          key: model.id,
+          name: model.name,
           scope: count ? scenes(count, t) : t('all scenes'),
-          group: selectorGroup(key, TURBO_IMAGE_MODELS),
+          group: model.group,
         }));
     }
 
@@ -211,6 +204,8 @@ export const AddModelMenuSection = ({
       }));
   }, [
     variantType,
+    imageCatalog,
+    imageOperation,
     usedModels,
     shots,
     sceneRows,

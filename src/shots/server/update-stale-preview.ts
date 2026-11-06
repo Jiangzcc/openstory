@@ -1,3 +1,9 @@
+import {
+  estimateReferenceSheetPlanCost,
+  referenceSheetImageRequests,
+} from '@/billing/configured-image-plan-billing';
+import { configuredImageSource } from '@/billing/configured-image-billing';
+import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
 /**
  * "Update all" dry-run preview (#1194) — turn a max-depth `computePlan` result
  * into the concrete cascade the dialog shows: which artifacts on which shots
@@ -59,7 +65,8 @@ const addMaybe = (
 export function buildUpdateStalePreview(
   plan: UpdateStalePlan,
   pricing: FalPricingMap,
-  musicModel: string | null
+  musicModel: string | null,
+  imageModelRouting?: ImageModelRoutingSnapshot
 ): UpdateStalePreview {
   const visual = plan.targets.filter((t) => t.regenVisual);
   const motion = plan.targets.filter((t) => t.regenMotion);
@@ -74,6 +81,9 @@ export function buildUpdateStalePreview(
     images.map((t) =>
       estimateImageCost(t.imageModel, plan.aspectRatio, 1, {
         pricing,
+        imageModelRouting,
+        edit: t.imageReferenceCount > 0,
+        referenceImageCount: t.imageReferenceCount,
         resolution: plan.sequence.resolution,
       })
     )
@@ -87,14 +97,27 @@ export function buildUpdateStalePreview(
       references.locationSheets.length +
       (references.elementSheets?.entries.length ?? 0)
     : 0;
+  const mixedSheets =
+    references &&
+    (configuredImageSource(plan.sequence.imageModel, imageModelRouting) ||
+      referenceSheetImageRequests(references).some((request) =>
+        configuredImageSource(request.model, imageModelRouting)
+      ));
   const sheetsCost =
-    sheetCount > 0
-      ? estimateImageCost(
-          safeTextToImageModel(plan.sequence.imageModel, DEFAULT_IMAGE_MODEL),
-          '16:9',
-          sheetCount,
-          { pricing }
-        )
+    references && sheetCount > 0
+      ? mixedSheets
+        ? estimateReferenceSheetPlanCost(
+            references,
+            safeTextToImageModel(plan.sequence.imageModel, DEFAULT_IMAGE_MODEL),
+            imageModelRouting,
+            pricing
+          )
+        : estimateImageCost(
+            safeTextToImageModel(plan.sequence.imageModel, DEFAULT_IMAGE_MODEL),
+            '16:9',
+            sheetCount,
+            { pricing }
+          )
       : ZERO_MICROS;
   const videoModel = safeImageToVideoModel(plan.sequence.videoModel);
   // Dialogue is recorded once per SCENE before the renders (#1657), so it is

@@ -1,3 +1,8 @@
+import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
+import { requireStudioImageCapabilities } from './studio-image-capabilities';
+import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
+import { resolveImageModelRoute } from '@/models/image-channels';
+import { generateId } from '@/platform/id';
 /**
  * Images and Videos create flow (#1274).
  *
@@ -173,6 +178,10 @@ function snapshotInput(
     resolution: input.resolution,
     imageModel: input.imageModel,
     count: input.count,
+    ...(input.channelParameters
+      ? { channelParameters: input.channelParameters }
+      : {}),
+    ...(input.maskImageUrl ? { maskImageUrl: input.maskImageUrl } : {}),
     ...(input.referenceImages.length > 0 && {
       referenceImages: input.referenceImages,
     }),
@@ -350,6 +359,30 @@ export async function createStudioAssets(
     finalFromDraftTaskId?: string;
   } = {}
 ): Promise<StudioCreateResult> {
+  const modelConfiguration =
+    input.activity === 'image'
+      ? await loadModelRuntimeConfiguration()
+      : undefined;
+  const configuredImage =
+    input.activity === 'image'
+      ? await prepareConfiguredImageBilling({
+          model: input.imageModel,
+          modelConfiguration,
+          aspectRatio: input.aspectRatio,
+          resolution: input.resolution,
+          parameters: input.channelParameters,
+          referenceImageCount: input.referenceImages.length,
+          hasMask: Boolean(input.maskImageUrl),
+        })
+      : undefined;
+  const configuredRoute =
+    configuredImage && input.activity === 'image'
+      ? resolveImageModelRoute(
+          configuredImage.modelConfiguration.imageModelRouting,
+          input.imageModel
+        )
+      : undefined;
+  requireStudioImageCapabilities(input, modelConfiguration?.imageModelRouting);
   // Resolved before anything spends: an id becomes the output stored on the
   // row, an address stays the upload. The run receives only those addresses.
   const resolvedClips =
@@ -436,7 +469,9 @@ export async function createStudioAssets(
     };
   }
   const pricing = await getEffectiveFalPricing();
-  const perItemCost = estimateStudioCost({ ...input, count: 1 }, pricing);
+  const perItemCost =
+    configuredImage?.costMicros ??
+    estimateStudioCost({ ...input, count: 1 }, pricing);
   const creditErrorMessage =
     input.activity === 'video'
       ? 'Insufficient credits for video generation'
@@ -484,12 +519,21 @@ export async function createStudioAssets(
   // Hold every item before inserting any row. A shared envelope would let
   // the first child to finish zero leftover for siblings; a later reserve
   // failing after earlier rows exist would leave a partial click.
+  const assetIds = configuredImage
+    ? Array.from({ length: input.count }, () => generateId())
+    : undefined;
   const reservationIds: Array<string | undefined> = [];
   try {
     for (let index = 0; index < input.count; index += 1) {
       reservationIds.push(
         await reserveRunCredits(scopedDb, perItemCost, {
           errorMessage: creditErrorMessage,
+          ...(configuredImage
+            ? {
+                imageSource: configuredImage.imageSource,
+                idempotencyKey: `studio:${assetIds?.[index]}`,
+              }
+            : {}),
         })
       );
     }
@@ -498,12 +542,20 @@ export async function createStudioAssets(
     throw error;
   }
 
-  const endpointId = studioEndpointId(input);
-  const modelName = studioModelName(input);
+  const imageOperation =
+    input.activity === 'image' && input.referenceImages.length > 0
+      ? 'edit'
+      : 'generate';
+  const endpointId =
+    configuredRoute?.operations[imageOperation]?.upstreamModel ??
+    studioEndpointId(input);
+  const modelName = configuredRoute?.name ?? studioModelName(input);
   const runInput: StudioRunInput =
     input.activity === 'video'
       ? { ...input, referenceVideos: referenceVideoUrls }
-      : input;
+      : configuredImage
+        ? { ...input, channelParameters: configuredImage.parameters }
+        : input;
   const snapshot = snapshotInput(runInput, referenceClips);
   const assets: StudioCreateResult['assets'] = [];
 
@@ -517,7 +569,8 @@ export async function createStudioAssets(
           const row = await scopedDb.generatedAssets.insert({
             // Queue-time label only: the via is resolved inside the run, which
             // overwrites this on completion (#1681).
-            provider: 'fal',
+            ...(assetIds?.[index] ? { id: assetIds[index] } : {}),
+            provider: configuredImage ? 'compatible' : 'fal',
             endpointId,
             activity: input.activity,
             modelName,
@@ -543,7 +596,10 @@ export async function createStudioAssets(
             const workflowRunId = await triggerWorkflow(
               '/studio',
               workflowInput,
-              { deduplicationId: `studio-${row.id}` }
+              {
+                deduplicationId: `studio-${row.id}`,
+                ...(modelConfiguration ? { modelConfiguration } : {}),
+              }
             );
             return { rowId: row.id, workflowRunId };
           } catch (error) {

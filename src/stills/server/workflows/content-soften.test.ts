@@ -41,8 +41,11 @@ const step = asStub<WorkflowStep>({
   },
 });
 
-// only `credentials` is read
-const scopedDb = asStub<WorkflowScopedDb>({ credentials: {} });
+// Mock the credentials and captured image routing consumed by this path.
+const scopedDb = asStub<WorkflowScopedDb>({
+  credentials: {},
+  models: { imageModelRouting: [] },
+});
 
 const PARAMS: ImageGenerationParams = {
   model: 'nano_banana_2',

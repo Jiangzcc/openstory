@@ -1,3 +1,6 @@
+import type { ImageModelCatalogEntry } from '@/models/image-channels';
+import { mergeImageModelCatalog } from '@/models/image-model-catalog';
+import { createImageChannelsReadMethods } from './image-channels';
 import type { ModelConfiguration } from '@/models/model-configuration';
 import type { AnalysisModelDefinition } from '@/models/models.config';
 import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
@@ -17,7 +20,8 @@ export const MODEL_CONFIGURATION_KEY =
 export function createModelConfigurationReadMethods(db: Database) {
   return {
     async get(
-      catalog?: readonly AnalysisModelDefinition[]
+      catalog?: readonly AnalysisModelDefinition[],
+      imageCatalog?: readonly ImageModelCatalogEntry[]
     ): Promise<ModelConfiguration> {
       return onPrimary(async () => {
         const models =
@@ -25,6 +29,10 @@ export function createModelConfigurationReadMethods(db: Database) {
           textModelCatalogFromRouting(
             await createTextChannelsReadMethods(db).getSnapshot()
           );
+        const imageModels = mergeImageModelCatalog(
+          imageCatalog ??
+            (await createImageChannelsReadMethods(db).getCatalog())
+        );
         const [row] = await db
           .select()
           .from(appMetadata)
@@ -32,7 +40,7 @@ export function createModelConfigurationReadMethods(db: Database) {
           .limit(1);
         if (!row) return resolveModelConfiguration(null);
         const saved: unknown = JSON.parse(row.value);
-        return resolveModelConfiguration(saved, models);
+        return resolveModelConfiguration(saved, models, imageModels);
       });
     },
   };
@@ -45,7 +53,14 @@ export function createModelConfigurationAdminMethods(db: Database) {
       const models = textModelCatalogFromRouting(
         await createTextChannelsReadMethods(db).getSnapshot()
       );
-      const configuration = createModelConfigurationSchema(models).parse(input);
+      const imageModels = mergeImageModelCatalog(
+        await createImageChannelsReadMethods(db).getCatalog()
+      );
+      const configuration = createModelConfigurationSchema(
+        models,
+        false,
+        imageModels
+      ).parse(input);
       const updatedAt = new Date();
       await db
         .insert(appMetadata)

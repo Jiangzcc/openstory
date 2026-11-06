@@ -45,6 +45,7 @@ type ModelItem = {
   name: string;
   group: string;
   badge?: 'open-weight' | 'proprietary';
+  disabled?: boolean;
   /** Show a "Recommended" badge with the given tooltip text */
   recommendedFor?: string;
   /**
@@ -281,7 +282,7 @@ export const BaseModelSelector: React.FC<BaseModelSelectorProps> = ({
                       // Single-select (Multiple off) should close on pick.
                       if (isMultiActive) e.preventDefault();
                     }}
-                    disabled={isDisabled}
+                    disabled={isDisabled || (model.disabled && !isSelected)}
                     className="cursor-pointer"
                   >
                     <span className="flex items-center gap-2 text-sm">

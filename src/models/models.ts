@@ -7,6 +7,8 @@
 // there is no runtime cycle.
 import { isNativeGrokVideoModel } from './grok-native';
 import type { AnalysisModelId } from './models.config';
+import { isConfiguredImageModelId } from './image-channels';
+import type { ConfiguredImageModelId } from './image-channels';
 import type { AspectRatio } from './aspect-ratios';
 import type { MotionEndpointId } from '@/motion/server/endpoint-map';
 import { modelSupportsAspectRatio } from '@/motion/model-capabilities';
@@ -406,25 +408,27 @@ export const IMAGE_MODELS = {
 } as const;
 
 // Text to image model types
-export type TextToImageModel = keyof typeof IMAGE_MODELS;
-type ImageModelConfig = (typeof IMAGE_MODELS)[TextToImageModel];
+export type BuiltinTextToImageModel = keyof typeof IMAGE_MODELS;
+export type TextToImageModel = BuiltinTextToImageModel | ConfiguredImageModelId;
+type ImageModelConfig = (typeof IMAGE_MODELS)[BuiltinTextToImageModel];
 type TextToImageModelId = ImageModelConfig['id'];
 
-export const DEFAULT_IMAGE_MODEL: TextToImageModel = 'gpt_image_2';
+export const DEFAULT_IMAGE_MODEL: BuiltinTextToImageModel = 'gpt_image_2';
 
 /** Model for the sequence poster. krea_2_turbo stays hidden (no
  *  edit/reference endpoint). Stored preview variants may still name it, or
  *  flux_2_turbo before it. */
-export const PREVIEW_IMAGE_MODEL: TextToImageModel = 'krea_2_turbo';
+export const PREVIEW_IMAGE_MODEL: BuiltinTextToImageModel = 'krea_2_turbo';
 
 /** Model that draws a shot's storyboard sketch (#2094). Krea could not hold
  *  a staged frame from the full shot spec; Lite can, at about five times
  *  the price and a few seconds more. */
-export const SHOT_PREVIEW_IMAGE_MODEL: TextToImageModel = 'nano_banana_2_lite';
+export const SHOT_PREVIEW_IMAGE_MODEL: BuiltinTextToImageModel =
+  'nano_banana_2_lite';
 
 // Helper to get model ID from key
 export function getTextToImageModelId(
-  modelKey: TextToImageModel
+  modelKey: BuiltinTextToImageModel
 ): TextToImageModelId {
   return IMAGE_MODELS[modelKey].id;
 }
@@ -441,6 +445,7 @@ export function getImageModelById(id: string): ImageModelConfig | undefined {
 export function getBytePlusImageModelId(
   modelKey: TextToImageModel
 ): BytePlusImageModel | undefined {
+  if (!isBuiltinTextToImageModel(modelKey)) return undefined;
   const config = IMAGE_MODELS[modelKey];
   return 'byteplusId' in config ? config.byteplusId : undefined;
 }
@@ -512,15 +517,18 @@ export function videoModelSupportsInClipMultiShot(
   );
 }
 
-/**
- * Runtime validation: Check if a string is a valid TextToImageModel key
- * @param value - String value to validate
- * @returns true if value is a valid model key, false otherwise
- */
+// Static registry access requires a built-in identity.
+export function isBuiltinTextToImageModel(
+  value: unknown
+): value is BuiltinTextToImageModel {
+  return typeof value === 'string' && Object.hasOwn(IMAGE_MODELS, value);
+}
+
+// Configured identities require separate route and capability validation.
 export function isValidTextToImageModel(
   value: unknown
 ): value is TextToImageModel {
-  return typeof value === 'string' && Object.keys(IMAGE_MODELS).includes(value);
+  return isBuiltinTextToImageModel(value) || isConfiguredImageModelId(value);
 }
 
 /**
@@ -778,27 +786,28 @@ export function safeAudioModel(
  * Map text-to-image models to their edit endpoints (if available)
  * These endpoints accept image_urls for reference-based generation
  */
-export const EDIT_ENDPOINTS: Partial<Record<TextToImageModel, string>> = {
-  nano_banana_2_1: 'google/nano-banana-2.1/edit',
-  nano_banana_2: 'fal-ai/nano-banana-2/edit',
-  // T2I is `google/nano-banana-2-lite`; fal's documented edit sibling drops
-  // the `2` and carries the token pricing the `/2-lite/edit` catalog row
-  // advertises as $0 compute-seconds.
-  nano_banana_2_lite: 'google/nano-banana-lite/edit',
-  nano_banana_pro: 'fal-ai/nano-banana-pro/edit',
-  gpt_image_2: 'openai/gpt-image-2.5/flare/edit',
-  grok_imagine_image: 'xai/grok-imagine-image/v2.0/edit',
-  grok_imagine_image_quality: 'xai/grok-imagine-image/quality/edit',
-  flux_2_max: 'fal-ai/flux-2-max/edit',
-  phota: 'fal-ai/phota/edit',
-  hunyuan_image_v3: 'fal-ai/hunyuan-image/v3/instruct/edit',
-  flux_2_dev: 'fal-ai/flux-2/edit',
-  flux_2_flash: 'fal-ai/flux-2/flash/edit',
-  flux_2_turbo: 'fal-ai/flux-2/turbo/edit',
-  qwen_image: 'fal-ai/qwen-image-2/pro/edit',
-  seedream_v5: 'bytedance/seedream/v5/pro/edit',
-  krea_3: 'krea/v3/edit',
-};
+export const EDIT_ENDPOINTS: Partial<Record<BuiltinTextToImageModel, string>> =
+  {
+    nano_banana_2_1: 'google/nano-banana-2.1/edit',
+    nano_banana_2: 'fal-ai/nano-banana-2/edit',
+    // T2I is `google/nano-banana-2-lite`; fal's documented edit sibling drops
+    // the `2` and carries the token pricing the `/2-lite/edit` catalog row
+    // advertises as $0 compute-seconds.
+    nano_banana_2_lite: 'google/nano-banana-lite/edit',
+    nano_banana_pro: 'fal-ai/nano-banana-pro/edit',
+    gpt_image_2: 'openai/gpt-image-2.5/flare/edit',
+    grok_imagine_image: 'xai/grok-imagine-image/v2.0/edit',
+    grok_imagine_image_quality: 'xai/grok-imagine-image/quality/edit',
+    flux_2_max: 'fal-ai/flux-2-max/edit',
+    phota: 'fal-ai/phota/edit',
+    hunyuan_image_v3: 'fal-ai/hunyuan-image/v3/instruct/edit',
+    flux_2_dev: 'fal-ai/flux-2/edit',
+    flux_2_flash: 'fal-ai/flux-2/flash/edit',
+    flux_2_turbo: 'fal-ai/flux-2/turbo/edit',
+    qwen_image: 'fal-ai/qwen-image-2/pro/edit',
+    seedream_v5: 'bytedance/seedream/v5/pro/edit',
+    krea_3: 'krea/v3/edit',
+  };
 
 /**
  * Per-model ceiling on `image_urls` for the edit endpoints above.
@@ -812,16 +821,17 @@ export const EDIT_ENDPOINTS: Partial<Record<TextToImageModel, string>> = {
  *
  * Absent = no known cap; send what we have.
  */
-const EDIT_REFERENCE_LIMITS: Partial<Record<TextToImageModel, number>> = {
-  flux_2_dev: 4,
-  flux_2_flash: 4,
-  flux_2_turbo: 4,
-  grok_imagine_image: 3,
-  grok_imagine_image_quality: 3,
-  // Seedream 5.0 Pro: 10 on fal edit and on Ark. Lite was 14.
-  seedream_v5: 10,
-  krea_3: 8,
-};
+const EDIT_REFERENCE_LIMITS: Partial<Record<BuiltinTextToImageModel, number>> =
+  {
+    flux_2_dev: 4,
+    flux_2_flash: 4,
+    flux_2_turbo: 4,
+    grok_imagine_image: 3,
+    grok_imagine_image_quality: 3,
+    // Seedream 5.0 Pro: 10 on fal edit and on Ark. Lite was 14.
+    seedream_v5: 10,
+    krea_3: 8,
+  };
 
 /**
  * Trim reference images to what `model`'s edit endpoint accepts. References
@@ -832,6 +842,7 @@ export function capReferenceImages<T>(
   model: TextToImageModel,
   references: T[]
 ): T[] {
+  if (!isBuiltinTextToImageModel(model)) return references;
   const limit = EDIT_REFERENCE_LIMITS[model];
   return limit === undefined ? references : references.slice(0, limit);
 }
@@ -842,7 +853,9 @@ export function capReferenceImages<T>(
  * @returns The Fal.ai edit endpoint ID, or null if not supported
  */
 export function getEditEndpoint(model: TextToImageModel): string | null {
-  return EDIT_ENDPOINTS[model] ?? null;
+  return isBuiltinTextToImageModel(model)
+    ? (EDIT_ENDPOINTS[model] ?? null)
+    : null;
 }
 
 /**
@@ -1135,5 +1148,5 @@ export function referenceOnlyMotionModels(
  * @returns true if the model has an edit endpoint for reference images
  */
 export function supportsReferenceImages(model: TextToImageModel): boolean {
-  return model in EDIT_ENDPOINTS;
+  return isBuiltinTextToImageModel(model) && model in EDIT_ENDPOINTS;
 }

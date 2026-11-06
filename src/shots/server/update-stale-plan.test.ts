@@ -20,11 +20,19 @@ const styleConfig: StyleConfig = {
  * clean one.
  */
 
-import type { Frame, FrameVariant, Shot } from '@/platform/server/db/schema';
+import type {
+  CharacterMinimal,
+  Frame,
+  FrameVariant,
+  SequenceElementMinimal,
+  SequenceLocationMinimal,
+  Shot,
+} from '@/platform/server/db/schema';
+import type { PlanReferences } from './update-stale-references';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { Scene } from '@/shots/scene-analysis.schema';
 import type { ShotStalenessResult } from './shot-staleness';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { asStub } from '@/test/as-stub';
 
 const FRESH: ShotStalenessResult = {
@@ -143,6 +151,7 @@ const {
   findTargetMissingStartFrameMode,
   siblingPrompts,
 } = await import('./update-stale-plan');
+const referencePlanner = await import('./update-stale-references');
 type PlanTarget = import('./update-stale-plan').PlanTarget;
 type PlanUnitRef = import('@/sequences/generation-plan').PlanUnitRef;
 
@@ -180,6 +189,11 @@ function buildScopedDb(
     visualPrompts?: Map<string, { text: string }>;
     motionPrompts?: Map<string, { text: string }>;
     sequence?: Record<string, unknown>;
+    imageRefs?: {
+      characters?: CharacterMinimal[];
+      locations?: SequenceLocationMinimal[];
+      elements?: SequenceElementMinimal[];
+    };
     /** The selected `sequence_music_variants` row, if any (#1657, #1115). */
     musicPrimary?: Record<string, unknown>;
   } = {}
@@ -239,13 +253,16 @@ function buildScopedDb(
         Promise.resolve(opts.motionPrompts ?? new Map()),
     },
     characters: {
-      list: () => Promise.resolve([]),
+      list: () => Promise.resolve(opts.imageRefs?.characters ?? []),
     },
     locations: {
-      list: () => Promise.resolve([]),
-      listWithReferences: () => Promise.resolve([]),
+      list: () => Promise.resolve(opts.imageRefs?.locations ?? []),
+      listWithReferences: () =>
+        Promise.resolve(opts.imageRefs?.locations ?? []),
     },
-    sequenceElements: { list: () => Promise.resolve([]) },
+    sequenceElements: {
+      list: () => Promise.resolve(opts.imageRefs?.elements ?? []),
+    },
     styles: { getById: () => Promise.resolve(null) },
     renderSegments: {
       listBySequence: () => Promise.resolve(opts.video?.segments ?? []),
@@ -291,6 +308,122 @@ const plan = (
   });
 
 beforeEach(() => stalenessByShot.clear());
+
+describe('computePlan — still references for billing', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('preserves narrator, video and audio dependencies without counting them as still inputs', async () => {
+    const shot = makeShot();
+    const frame = makeFrame();
+    const db = buildScopedDb([shot], [frame], {
+      visualPrompts: new Map([
+        [frame.id, { text: 'NARRATOR sees CLIP and hears AUDIO.' }],
+      ]),
+      imageRefs: {
+        characters: [
+          asStub<CharacterMinimal>({
+            id: 'narrator',
+            characterId: 'narrator',
+            name: 'NARRATOR',
+            lookId: 'narrator-look',
+            looks: [],
+            voiceOnly: true,
+            sheetImageUrl: '/r2/mock-narrator.png',
+          }),
+        ],
+        elements: [
+          asStub<SequenceElementMinimal>({
+            id: 'clip',
+            token: 'CLIP',
+            kind: 'video',
+            imageUrl: '/r2/mock.mp4',
+          }),
+          asStub<SequenceElementMinimal>({
+            id: 'audio',
+            token: 'AUDIO',
+            kind: 'audio',
+            imageUrl: '/r2/mock.mp3',
+          }),
+        ],
+      },
+    });
+    const result = await plan([shot], [frame], {
+      db,
+      units: [{ kind: 'still', id: shot.id }],
+    });
+    expect(result.targets[0]).toMatchObject({
+      referenceIds: ['narrator-look', 'clip', 'audio'],
+      imageReferenceCount: 0,
+      imageLiveHash: FRESH.liveHashes.thumbnail,
+    });
+    expect(
+      JSON.parse(JSON.stringify(result)).targets[0].imageReferenceCount
+    ).toBe(0);
+  });
+
+  it('freezes image inputs owed by this exact references plan as well as existing images', async () => {
+    const references = asStub<PlanReferences>({
+      characterSheets: [{ lookId: 'jack' }],
+      lookSheetsAfterDefault: [{ lookId: 'uniform' }],
+      locationSheets: [{ locationDbId: 'studio' }],
+      elementSheets: { entries: [{ elementId: 'logo' }] },
+      voices: [],
+      cost: { sheets: 0, voices: 0 },
+    });
+    vi.spyOn(referencePlanner, 'buildPlanReferences').mockResolvedValueOnce(
+      references
+    );
+    const shot = makeShot();
+    const frame = makeFrame();
+    const db = buildScopedDb([shot], [frame], {
+      visualPrompts: new Map([
+        [frame.id, { text: 'JACK holds LOGO in the Studio.' }],
+      ]),
+      imageRefs: {
+        characters: [
+          asStub<CharacterMinimal>({
+            id: 'jack',
+            characterId: 'jack',
+            name: 'JACK',
+            lookId: 'uniform',
+            looks: [],
+            voiceOnly: false,
+            sheetImageUrl: null,
+          }),
+        ],
+        locations: [
+          asStub<SequenceLocationMinimal>({
+            id: 'studio',
+            locationId: 'studio',
+            name: 'Studio',
+            referenceImageUrl: null,
+          }),
+        ],
+        elements: [
+          asStub<SequenceElementMinimal>({
+            id: 'logo',
+            token: 'LOGO',
+            kind: 'image',
+            imageUrl: null,
+          }),
+        ],
+      },
+    });
+    const result = await plan([shot], [frame], {
+      db,
+      units: [{ kind: 'still', id: shot.id }],
+    });
+    expect(result.targets[0]).toMatchObject({
+      referenceIds: ['uniform', 'studio', 'logo'],
+      imageReferenceCount: 3,
+      imageLiveHash: FRESH.liveHashes.thumbnail,
+    });
+    expect(result.references).toBe(references);
+    expect(
+      JSON.parse(JSON.stringify(result)).targets[0].imageReferenceCount
+    ).toBe(3);
+  });
+});
 
 describe('computePlan — a dialogue unit (#1703, #1780 §6)', () => {
   const staleAudio: Shot['audioClips'] = [
@@ -513,6 +646,7 @@ describe('claimTargets (#1085)', () => {
       createsVideo: false,
       staleVideoVersionId: null,
       referenceIds: [],
+      imageReferenceCount: 0,
       attachSceneHeader: false,
       motionRender: {
         packedScene: {},

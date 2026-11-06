@@ -1,3 +1,5 @@
+import enImageChannels from './locales/en/image-channels.json';
+import zhImageChannels from './locales/zh-CN/image-channels.json';
 import en0 from './locales/en/assistant.json';
 import zh0 from './locales/zh-CN/assistant.json';
 import en1 from './locales/en/audio.json';
@@ -43,6 +45,7 @@ import zh20 from './locales/zh-CN/presets.json';
 
 export const applicationResources = {
   en: {
+    imageChannels: enImageChannels,
     assistant: en0,
     audio: en1,
     billing: en2,
@@ -66,6 +69,7 @@ export const applicationResources = {
     presets: en20,
   },
   'zh-CN': {
+    imageChannels: zhImageChannels,
     assistant: zh0,
     audio: zh1,
     billing: zh2,

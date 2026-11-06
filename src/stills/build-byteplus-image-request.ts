@@ -18,7 +18,7 @@
 
 import { getBytePlusImageModelId, IMAGE_MODELS } from '@/models/models';
 import { DEFAULT_IMAGE_SIZE, type ImageSize } from '@/models/aspect-ratios';
-import type { ImageGenerationParams } from './build-image-request';
+import type { BuiltinImageGenerationParams } from './build-image-request';
 import type {
   BytePlusImageModel,
   BytePlusImageSize,
@@ -77,7 +77,7 @@ export type BytePlusImageRequest = {
  * here without one is a bug rather than a silent fallback.
  */
 export function buildBytePlusImageRequest(
-  params: ImageGenerationParams
+  params: BuiltinImageGenerationParams
 ): BytePlusImageRequest {
   const modelId = getBytePlusImageModelId(params.model);
   if (!modelId) {

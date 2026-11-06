@@ -1,17 +1,25 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
 import type { StyleConfig } from '@/look/style-config';
 import { asStub } from '@/test/as-stub';
+import type { PlanUnit, PlanUnitKind } from '@/sequences/generation-plan';
+import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
+import type { TextToImageModel } from '@/models/models';
+import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
+import { createImageModelRoutingSnapshot } from '@/models/image-channels';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import { packModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import * as realCostEstimation from '@/billing/cost-estimation';
+import { ZERO_MICROS, usdToMicros } from '@/billing/money';
 
-const computeGenerationPlan = vi.fn(async () => [
+const computeGenerationPlan = vi.fn(async (): Promise<PlanUnit[]> => [
   {
     kind: 'sheet:character',
     id: 'cast',
     state: 'missing',
     requires: [],
     cascaded: false,
-    reused: false,
   },
   {
     kind: 'clip',
@@ -19,21 +27,31 @@ const computeGenerationPlan = vi.fn(async () => [
     state: 'missing',
     requires: [],
     cascaded: false,
-    reused: false,
   },
 ]);
-const computePlan = vi.fn(async () => ({
-  targets: [],
-  references: null,
-  music: null,
-}));
+const computePlan = vi.fn(async () =>
+  asStub<UpdateStalePlan>({ targets: [], references: null, music: null })
+);
+const mockBuiltinImagePrice = usdToMicros(0.03);
+const mockPricing = {
+  'fal-ai/nano-banana-2': {
+    unitPrice: mockBuiltinImagePrice,
+    unit: 'images',
+    typicalUnitsPerCall: 1,
+  },
+};
+const estimatePlanCost = vi.fn(
+  (_options: Parameters<typeof realCostEstimation.estimatePlanCost>[0]) =>
+    ZERO_MICROS
+);
 vi.doMock('./generation-plan', () => ({ computeGenerationPlan }));
 vi.doMock('@/shots/server/update-stale-plan', () => ({ computePlan }));
 vi.doMock('@/billing/server/fal-pricing-live', () => ({
-  getEffectiveFalPricing: vi.fn(async () => ({})),
+  getEffectiveFalPricing: vi.fn(async () => mockPricing),
 }));
 vi.doMock('@/billing/cost-estimation', () => ({
-  estimatePlanCost: vi.fn(() => 0),
+  ...realCostEstimation,
+  estimatePlanCost,
 }));
 const { freezeFreshGenerationPlan } =
   await import('./freeze-fresh-generation-plan');
@@ -75,7 +93,87 @@ const db = asStub<ScopedDb>({
   shots: { listBySequence: vi.fn(async () => []) },
 });
 
+const CONFIGURED_IMAGE_MODEL = 'custom-image:qwen';
+const BUILTIN_IMAGE_MODEL = 'nano_banana_2';
+const mockImageRouting = createImageModelRoutingSnapshot(
+  imageConfigurationFixture()
+);
+const mockModelConfiguration = packModelRuntimeConfiguration({
+  ...DEFAULT_MODEL_CONFIGURATION,
+  imageModelRouting: mockImageRouting,
+});
+const mockNonImageCost = usdToMicros(0.07);
+
+function imagePlan(alternateModel: TextToImageModel): UpdateStalePlan {
+  return asStub<UpdateStalePlan>({
+    aspectRatio: input.aspectRatio,
+    sequence: { resolution: '720p' },
+    music: null,
+    targets: [
+      {
+        imageModel: CONFIGURED_IMAGE_MODEL,
+        regenImage: true,
+        referenceIds: [],
+        imageReferenceCount: 0,
+      },
+      {
+        imageModel: alternateModel,
+        regenImage: true,
+        referenceIds: ['mock-reference'],
+        imageReferenceCount: 1,
+      },
+      {
+        imageModel: CONFIGURED_IMAGE_MODEL,
+        regenImage: false,
+        referenceIds: [],
+        imageReferenceCount: 0,
+      },
+    ],
+    references: {
+      characterSheets: [{ imageModel: alternateModel, face: null }],
+      lookSheetsAfterDefault: [{ imageModel: CONFIGURED_IMAGE_MODEL }],
+      locationSheets: [
+        {
+          imageModel: CONFIGURED_IMAGE_MODEL,
+          referencePhotoUrls: ['mock-photo'],
+        },
+      ],
+      elementSheets: {
+        imageModel: CONFIGURED_IMAGE_MODEL,
+        entries: [{ elementId: 'mock-element' }],
+      },
+    },
+  });
+}
+
+function imagePlanUnits(): PlanUnit[] {
+  const kinds: PlanUnitKind[] = [
+    'still',
+    'still',
+    'sheet:character',
+    'sheet:character',
+    'sheet:location',
+    'ref:element',
+    'spec',
+    'clip',
+  ];
+  return kinds.map((kind, index) => ({
+    kind,
+    id: `mock-${index}`,
+    state: 'missing',
+    requires: [],
+    cascaded: false,
+  }));
+}
+
 describe('fresh planning checkpoint', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+      new Error('Planning regression tests must not call paid or network APIs.')
+    );
+  });
+  afterEach(() => vi.restoreAllMocks());
   it('caps the materialized work and freezes click switches, style and models', async () => {
     await freezeFreshGenerationPlan(db, input);
     expect(computeGenerationPlan).toHaveBeenCalledWith(
@@ -121,4 +219,115 @@ describe('fresh planning checkpoint', () => {
       })
     );
   });
+
+  it.each([
+    {
+      name: 'configured',
+      imageModel: CONFIGURED_IMAGE_MODEL,
+      expectedImageUsd: 0.9,
+    },
+    {
+      name: 'mixed with a built-in default',
+      imageModel: BUILTIN_IMAGE_MODEL,
+      expectedImageUsd: 0.66,
+    },
+  ] as const)(
+    'preserves frozen routes and prices $name plan images exactly once',
+    async ({ imageModel, expectedImageUsd }) => {
+      const plan = imagePlan(imageModel);
+      computeGenerationPlan.mockResolvedValueOnce(imagePlanUnits());
+      computePlan.mockResolvedValueOnce(plan);
+      estimatePlanCost.mockReturnValueOnce(mockNonImageCost);
+      const result = await freezeFreshGenerationPlan(db, {
+        ...input,
+        referenceOnly: false,
+        stopAt: 'motion',
+        imageModel,
+        imageModels: [CONFIGURED_IMAGE_MODEL, BUILTIN_IMAGE_MODEL],
+        modelConfiguration: mockModelConfiguration,
+      });
+      expect(computePlan).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          imageModelRouting: mockImageRouting,
+          renderOptions: expect.objectContaining({
+            imageModels: [CONFIGURED_IMAGE_MODEL, BUILTIN_IMAGE_MODEL],
+          }),
+        })
+      );
+      expect(estimatePlanCost).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          counts: expect.objectContaining({
+            still: 0,
+            'sheet:character': 0,
+            'sheet:location': 0,
+            'ref:element': 0,
+            spec: 1,
+            clip: 1,
+          }),
+          imageModelRouting: mockImageRouting,
+          pricing: mockPricing,
+        })
+      );
+      expect(result.plan).toBe(plan);
+      expect(result.remainingCost).toBe(
+        usdToMicros(expectedImageUsd) + mockNonImageCost
+      );
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    {
+      imageModels: [BUILTIN_IMAGE_MODEL, CONFIGURED_IMAGE_MODEL],
+      references: false,
+      expectedImageUsd: 0.13,
+    },
+    {
+      imageModels: [
+        CONFIGURED_IMAGE_MODEL,
+        BUILTIN_IMAGE_MODEL,
+        CONFIGURED_IMAGE_MODEL,
+      ],
+      references: false,
+      expectedImageUsd: 0.13,
+    },
+    {
+      imageModels: [BUILTIN_IMAGE_MODEL, CONFIGURED_IMAGE_MODEL],
+      references: true,
+      expectedImageUsd: 0.66,
+    },
+  ] satisfies {
+    imageModels: TextToImageModel[];
+    references: boolean;
+    expectedImageUsd: number;
+  }[])(
+    'funds the full frozen fanout $imageModels with references=$references',
+    async ({ imageModels, references, expectedImageUsd }) => {
+      const plan = imagePlan(BUILTIN_IMAGE_MODEL);
+      plan.targets = plan.targets.slice(0, 1);
+      plan.renderOptions = { imageModels };
+      if (!references) plan.references = null;
+      computeGenerationPlan.mockResolvedValueOnce(imagePlanUnits());
+      computePlan.mockResolvedValueOnce(plan);
+      estimatePlanCost.mockReturnValueOnce(mockNonImageCost);
+      const result = await freezeFreshGenerationPlan(db, {
+        ...input,
+        referenceOnly: false,
+        stopAt: 'images',
+        imageModel: imageModels[0] ?? BUILTIN_IMAGE_MODEL,
+        imageModels,
+        modelConfiguration: mockModelConfiguration,
+      });
+      expect(result.remainingCost).toBe(
+        usdToMicros(expectedImageUsd) + mockNonImageCost
+      );
+      expect(estimatePlanCost.mock.calls[0]?.[0].counts).toMatchObject({
+        still: 0,
+        'sheet:character': 0,
+        'sheet:location': 0,
+        'ref:element': 0,
+      });
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    }
+  );
 });

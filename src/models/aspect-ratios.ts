@@ -79,6 +79,15 @@ export const getVariantGridConfig = (
   return VARIANT_GRID_CONFIG[aspectRatio];
 };
 
+export function resolveVariantImageSize(
+  aspectRatio?: AspectRatio,
+  requestedSize?: ImageSize
+): ImageSize {
+  return aspectRatio
+    ? getVariantGridConfig(aspectRatio).imageSize
+    : (requestedSize ?? DEFAULT_IMAGE_SIZE);
+}
+
 export const getAspectRatioClassName = (aspectRatio: AspectRatio): string => {
   const mapping: Record<AspectRatio, string> = {
     '16:9': 'aspect-video', // aspect-video is 16:9

@@ -1,3 +1,4 @@
+import { imageModelIdSchema } from '@/models/image-model-schema';
 /**
  * Public input schema for `POST /api/v1/sequences`. Deliberately ergonomic and
  * lenient: callers pass human-friendly references (style by id or name, cast and
@@ -168,7 +169,7 @@ export const apiCreateSequenceSchema = z
       description:
         'Analysis model id(s); one sequence is created per model. Validated against the model registry. Omitted values use the configured platform analysis default.',
     }),
-    imageModels: z.array(z.string()).min(1).optional().meta({
+    imageModels: z.array(imageModelIdSchema).min(1).optional().meta({
       description:
         'Image model key(s); first is primary. Omitted values use the configured platform image default.',
     }),

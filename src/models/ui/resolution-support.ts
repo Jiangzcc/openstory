@@ -11,7 +11,12 @@
  */
 
 import type { TFunction } from 'i18next';
-import { IMAGE_MODELS, IMAGE_TO_VIDEO_MODELS } from '@/models/models';
+import { IMAGE_TO_VIDEO_MODELS } from '@/models/models';
+import {
+  getImageModelDefinition,
+  imageModelDisplayName,
+} from '@/models/image-model-catalog';
+import type { ImageModelDefinition } from '@/models/image-model-catalog';
 import type { ImageToVideoModel, TextToImageModel } from '@/models/models';
 import { DEFAULT_ASPECT_RATIO, type AspectRatio } from '@/models/aspect-ratios';
 import {
@@ -26,6 +31,7 @@ const NAMED_MODEL_LIMIT = 2;
 
 type Selection = {
   imageModels?: readonly TextToImageModel[];
+  imageCatalog?: readonly ImageModelDefinition[];
   /** Omit (or pass none) when motion is off — an absent render can't widen
    *  the choice. */
   videoModels?: readonly ImageToVideoModel[];
@@ -37,6 +43,11 @@ export function availableResolutions(selection: Selection): Resolution[] {
   const aspectRatio = selection.aspectRatio ?? DEFAULT_ASPECT_RATIO;
   const found = new Set<Resolution>();
   for (const model of selection.imageModels ?? []) {
+    if (
+      getImageModelDefinition(model, selection.imageCatalog)?.source !==
+      'builtin'
+    )
+      continue;
     for (const tier of imageResolutionTiers(model, aspectRatio))
       found.add(tier);
   }
@@ -72,6 +83,7 @@ export function resolutionCeilingNote(
   translate?: TFunction<'interface'>
 ): string | null {
   const aspectRatio = selection.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+  const configured: string[] = [];
   const fixed: string[] = [];
   const lower: string[] = [];
   const higher: string[] = [];
@@ -95,7 +107,15 @@ export function resolutionCeilingNote(
     (floorIsAbove ? higher : lower).push(name);
   };
   for (const model of selection.imageModels ?? []) {
-    sort(IMAGE_MODELS[model].name, imageResolutionTiers(model, aspectRatio));
+    const name = imageModelDisplayName(model, selection.imageCatalog);
+    if (
+      getImageModelDefinition(model, selection.imageCatalog)?.source !==
+      'builtin'
+    ) {
+      configured.push(name);
+      continue;
+    }
+    sort(name, imageResolutionTiers(model, aspectRatio));
   }
   for (const model of selection.videoModels ?? []) {
     sort(IMAGE_TO_VIDEO_MODELS[model].name, motionResolutionTiers(model));
@@ -108,6 +128,7 @@ export function resolutionCeilingNote(
     lower.length > 0 && resolutionClause(lower, 'below', label, translate),
     higher.length > 0 && resolutionClause(higher, 'above', label, translate),
     fixed.length > 0 && resolutionClause(fixed, 'fixed', label, translate),
+    configured.length > 0 && configuredSizeNote(configured, translate),
   ].filter((clause): clause is string => clause !== false);
   return clauses.length > 0 ? clauses.join(' · ') : null;
 }
@@ -146,4 +167,15 @@ function resolutionClause(
   return relation === 'below'
     ? translate('{{value1}} renders below {{value2}}', values)
     : translate('{{value1}} renders above {{value2}}', values);
+}
+
+function configuredSizeNote(
+  names: readonly string[],
+  translate?: TFunction<'interface'>
+): string {
+  const value1 = names.join(translate?.(' and ') ?? ' and ');
+  return (
+    translate?.('{{value1}} uses image channel size settings.', { value1 }) ??
+    value1 + ' uses image channel size settings.'
+  );
 }

@@ -17,7 +17,7 @@
 
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { index, integer, snakeCase, text } from 'drizzle-orm/sqlite-core';
-import type { MediaVia } from '@/models/via';
+import type { ImageVia } from '@/models/via';
 import { generateId } from '@/platform/id';
 import { user } from './auth';
 import { organization } from './organization';
@@ -85,7 +85,7 @@ export const generatedAssets = snakeCase.table(
     // `fal-ai/flux-1/dev`) that pricing aliases key on, whatever via served
     // it; the via's own model id lives on `content_provenance.model`.
     // `modelName` is the catalog display name.
-    provider: text({ length: 50 }).$type<MediaVia>().notNull(),
+    provider: text({ length: 50 }).$type<ImageVia>().notNull(),
     endpointId: text({ length: 200 }).notNull(),
     activity: text({ length: 20 }).$type<GeneratedAssetActivity>().notNull(),
     modelName: text({ length: 200 }).notNull(),

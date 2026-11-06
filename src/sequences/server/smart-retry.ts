@@ -1,3 +1,7 @@
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
+import { configuredImageSource } from '@/billing/configured-image-billing';
+import { generateId } from '@/platform/id';
 import { loadSequenceStyle } from '@/look/server/sequence-style';
 import { packedSceneFromScene } from '@/motion/server/build-motion-render';
 /**
@@ -44,7 +48,7 @@ import { seedanceEditSeconds } from '@/motion/seedance-edit';
 import { seedanceRunsOnArk } from '@/motion/server/motion-generation';
 import { withMeasuredDurations } from '@/cast/server/sequence-elements/media-duration';
 import { addMicros, ZERO_MICROS, type Microdollars } from '@/billing/money';
-import { ValidationError } from '@/platform/errors';
+import { InsufficientCreditsError, ValidationError } from '@/platform/errors';
 import {
   loadShotDialogueLines,
   shotDialogueResolver,
@@ -153,6 +157,7 @@ type SmartRetryPlan = {
 };
 
 export type SmartRetryOptions = {
+  modelConfiguration?: ModelRuntimeConfiguration;
   /** Plan only: compute items and cost; reserve, claim and trigger nothing. */
   dryRun?: boolean;
   /** Refuse instead of falling back to a full storyboard (#1461 `smart`). */
@@ -180,31 +185,40 @@ export async function executeSmartRetry(
 ) {
   const { sequence, user, organizationId } = context;
   const { dryRun = false, runKey } = options;
+  const imageRetryKey = runKey ?? generateId();
   // Not `options.onLaunched?.(trigger())`: an absent callback would skip the trigger.
   const launched = async (workflowRunId: string) => {
     await options.onLaunched?.(workflowRunId);
   };
-  /**
-   * Trigger under this call's key. A reused run owns its own hold, so the one
-   * taken for this call is released: the work is already paid for once.
-   */
+  // Release only holds created by this call; stable replays share the live run's hold.
   const triggerKeyed = async <
     T extends { userId: string; organizationId: string },
   >(
     path: string,
     body: T,
     suffix: string,
-    reservationId: string | undefined
+    reservationId: string | undefined,
+    triggerOptions: {
+      modelConfiguration?: ModelRuntimeConfiguration;
+      idempotentReservation?: boolean;
+      reservationReplayed?: boolean;
+    } = {}
   ) => {
+    const { idempotentReservation = false } = triggerOptions;
     const run = await releaseReservationOnThrow(
       context.scopedDb,
-      reservationId,
+      triggerOptions.reservationReplayed ? undefined : reservationId,
       () =>
         triggerWorkflowRun(path, body, {
-          deduplicationId: runKey ? `${runKey}-${suffix}` : undefined,
+          deduplicationId: runKey
+            ? `${runKey}-${suffix}`
+            : idempotentReservation
+              ? 'image-retry-' + imageRetryKey + '-' + suffix
+              : undefined,
+          modelConfiguration: triggerOptions.modelConfiguration,
         })
     );
-    if (run.reused && reservationId) {
+    if (run.reused && reservationId && !idempotentReservation) {
       await context.scopedDb.billing.zeroReservation(reservationId);
     }
     await launched(run.workflowRunId);
@@ -322,9 +336,13 @@ export async function executeSmartRetry(
     const stopAt = resolveStopAt({
       generationStopAt: sequence.generationStopAt,
     });
+    const configuration =
+      options.modelConfiguration ??
+      (await loadStoryboardModelConfiguration(context.scopedDb));
     const fullCost = estimateStoryboardPreflightCost({
       script: sequence.script ?? '',
       imageModel,
+      imageModelRouting: configuration.imageModelRouting,
       aspectRatio: sequence.aspectRatio,
       resolution: sequence.resolution,
       stopAt,
@@ -336,9 +354,6 @@ export async function executeSmartRetry(
       targetDurationSeconds: sequence.targetDurationSeconds ?? undefined,
       pricing: await getEffectiveFalPricing(),
     });
-    const configuration = await loadStoryboardModelConfiguration(
-      context.scopedDb
-    );
     const llmSources = allowsUnfundedGeneration(stopAt)
       ? undefined
       : await resolveStoryboardLlmSources(
@@ -346,11 +361,13 @@ export async function executeSmartRetry(
           sequence.analysisModel,
           configuration
         );
-    creditProviders = llmSources?.includes('platform')
-      ? []
-      : llmSources
-        ? ['fal']
-        : ['fal', 'openrouter'];
+    creditProviders =
+      configuredImageSource(imageModel, configuration.imageModelRouting) ||
+      llmSources?.includes('platform')
+        ? []
+        : llmSources
+          ? ['fal']
+          : ['fal', 'openrouter'];
     const fullResult = {
       retryType: 'full' as const,
       retriedItems: ['full storyboard'],
@@ -365,6 +382,10 @@ export async function executeSmartRetry(
     const reservationId = await reserveRunCredits(context.scopedDb, fullCost, {
       providers: creditProviders,
       llmSources,
+      imageSource: configuredImageSource(
+        imageModel,
+        configuration.imageModelRouting
+      ),
       errorMessage: 'Insufficient credits to retry storyboard',
       sequenceId: sequence.id,
     });
@@ -463,6 +484,9 @@ export async function executeSmartRetry(
     // Count what we actually trigger — shots skipped below must not be
     // reported as retried (and must not clear the failed flag on their own).
     let triggeredImages = 0;
+    const retryImageConfiguration =
+      options.modelConfiguration ??
+      (await loadStoryboardModelConfiguration(context.scopedDb));
     for (const shot of failedImageShots) {
       const scene = sceneOf(shot);
       const promptVersion = shot.imagePromptVersion;
@@ -477,27 +501,50 @@ export async function executeSmartRetry(
       );
 
       const imageModel = imageModelFor(shot);
-      const imageCost = gateEstimate(
-        estimateImageCost(imageModel, sequence.aspectRatio, 1, {
-          pricing,
-          resolution: sequence.resolution,
-        }),
-        { model: imageModel, operation: 'smart-retry:image' }
-      );
+      const imageBilling = await prepareConfiguredImageBilling({
+        model: imageModel,
+        aspectRatio: sequence.aspectRatio,
+        resolution: sequence.resolution,
+        imageCount: 1,
+        referenceImageCount: referenceImages.length,
+        modelConfiguration: retryImageConfiguration,
+      });
+      if (imageBilling) creditProviders = [];
+      const imageCost =
+        imageBilling?.costMicros ??
+        gateEstimate(
+          estimateImageCost(imageModel, sequence.aspectRatio, 1, {
+            pricing,
+            resolution: sequence.resolution,
+          }),
+          { model: imageModel, operation: 'smart-retry:image' }
+        );
       planned.images.push({ shotId: shot.id, model: imageModel });
       planned.estimateMicros = addMicros(planned.estimateMicros, imageCost);
       if (dryRun) {
         triggeredImages++;
         continue;
       }
+      const reservation =
+        imageCost > 0 && imageBilling
+          ? await context.scopedDb.billing.createReservation(imageCost, {
+              idempotencyKey: imageRetryKey + ':image:' + shot.id,
+              sequenceId: sequence.id,
+            })
+          : undefined;
+      if (reservation && !reservation.ok)
+        throw new InsufficientCreditsError(
+          'Insufficient credits to retry failed items'
+        );
       const reservationId =
-        imageCost > 0
+        reservation?.reservationId ??
+        (imageCost > 0 && !imageBilling
           ? await reserveRunCredits(context.scopedDb, imageCost, {
               providers: ['fal'],
               errorMessage: 'Insufficient credits to retry failed items',
               sequenceId: sequence.id,
             })
-          : undefined;
+          : undefined);
 
       const workflowInput: ImageWorkflowInput = {
         userId: user.id,
@@ -525,7 +572,12 @@ export async function executeSmartRetry(
         '/image',
         workflowInput,
         simpleHash(shot.id),
-        reservationId
+        reservationId,
+        {
+          modelConfiguration: retryImageConfiguration,
+          idempotentReservation: Boolean(imageBilling),
+          reservationReplayed: reservation?.replay,
+        }
       );
       triggeredImages++;
     }

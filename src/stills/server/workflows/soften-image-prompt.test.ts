@@ -111,6 +111,7 @@ function makeScopedDb() {
     frames: { movePendingPromoteVersionIdIf },
     claims: { framePromptVersions: { getByIdForFrame } },
     credentials: {},
+    models: { imageModelRouting: [] },
   };
   return {
     // stub of the soften-path surface

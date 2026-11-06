@@ -34,6 +34,7 @@ const WORKFLOW_PATHS = [
     (f) => !f.endsWith('.test.ts')
   ),
   'src/models/server/llm-call-helper.ts',
+  'src/stills/server/configured-image-step.ts',
   // A workflow-step helper, not a workflow: dialogue speech spends the
   // ElevenLabs key inside the step it drives (#1651, #1657).
   'src/motion/server/generate-dialogue-speech.ts',
@@ -213,6 +214,13 @@ type SanctionedRead = {
  * entry may not read at all.
  */
 const ALLOWED_LIVE_READS: Record<string, SanctionedRead[]> = {
+  'configured-image-step.ts': [
+    {
+      read: 'imageGenerationAttempts.getById',
+      bucket: 'CLAIM-BY-ID',
+      why: 'Recovers only the submission named by this workflow instance and generation step.',
+    },
+  ],
   'motion-batch-workflow.ts': [
     {
       read: 'bytePlusAssets.getAdmission',

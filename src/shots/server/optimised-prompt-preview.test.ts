@@ -1,3 +1,5 @@
+import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
+import { createImageModelRoutingSnapshot } from '@/models/image-channels';
 import type { StyleConfig } from '@/look/style-config';
 const styleConfig: StyleConfig = {
   version: 2,
@@ -510,3 +512,32 @@ describe('buildShotPromptPreview with a bound voice', () => {
     ]);
   });
 });
+
+it.each(['custom-image:qwen', 'gpt_image_2'] as const)(
+  'leaves configured %s previews unavailable instead of inventing a built-in request',
+  (imageModel) => {
+    const configuration = imageConfigurationFixture();
+    const model = configuration.models[0];
+    if (!model) throw new Error('Missing mock binding.');
+    model.id = imageModel;
+    const result = buildShotPromptPreview({
+      styleConfig,
+      imageModel,
+      imageModelRouting: createImageModelRoutingSnapshot(configuration),
+      videoModel: 'grok_imagine_video_1_5',
+      imagePrompt: 'A mock image prompt',
+      motionPrompt: null,
+      shotDurationMs: 5000,
+      startFrameUrl: null,
+      usesStartFrame: true,
+      generateAudio: false,
+      scene: null,
+      characters: [],
+      elements: [],
+      locations: [],
+      byteplusEnabled: false,
+    });
+    expect(result.image).toBeNull();
+    expect(result.imageUsesConfiguredChannel).toBe(true);
+  }
+);

@@ -1,4 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterContextProvider,
+} from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
@@ -21,6 +28,18 @@ const fns = vi.hoisted(() => ({
   syncTextChannelModelsFn: vi.fn(),
 }));
 vi.mock('@/models/text-channels.fn', () => fns);
+const imageFns = vi.hoisted(() => ({
+  getAdminImageChannelsFn: vi.fn(),
+  getImageModelCatalogFn: vi.fn(),
+  saveImageChannelFn: vi.fn(),
+  saveChannelImageModelFn: vi.fn(),
+  syncImageChannelModelsFn: vi.fn(),
+}));
+vi.mock('@/models/image-channels.fn', () => imageFns);
+vi.mock('@/ui/shadcn/tabs', async (importOriginal) => {
+  const tabs = await importOriginal<typeof import('@/ui/shadcn/tabs')>();
+  return { ...tabs, Tabs: vi.fn(tabs.Tabs) };
+});
 vi.mock('./admin-model-configuration', () => ({
   AdminModelConfiguration: () => <div data-testid="existing-default-form" />,
 }));
@@ -30,6 +49,9 @@ vi.mock('./admin-text-channels-fields', async (importOriginal) => {
   return { ...fields, AdminTextSelect: vi.fn(fields.AdminTextSelect) };
 });
 import { adminTextChannelsQueryOptions } from '@/models/text-channels.queries';
+import { adminImageChannelsQueryOptions } from '@/models/image-channels.queries';
+import { Route as ModelsRoute } from '@/routes/_app/admin/models';
+import { Tabs } from '@/ui/shadcn/tabs';
 import { AdminModelsPage } from './admin-models-page';
 import { AdminTextChannels } from './admin-text-channels';
 import { AdminTextChannelForm } from './admin-text-channels-channel-form';
@@ -95,20 +117,26 @@ function setup(
   });
   clients.push(client);
   if (saved) client.setQueryData(adminTextChannelsQueryOptions.queryKey, saved);
+  client.setQueryData(adminImageChannelsQueryOptions.queryKey, {
+    revision: 0,
+    channels: [],
+    models: [],
+  });
   const i18n = createApplicationI18n(locale);
-  const render = (page = false) =>
+  const renderContent = (content: ReactNode) =>
     renderToStaticMarkup(
       <QueryClientProvider client={client}>
-        <I18nextProvider i18n={i18n}>
-          {page ? <AdminModelsPage /> : <AdminTextChannels />}
-        </I18nextProvider>
+        <I18nextProvider i18n={i18n}>{content}</I18nextProvider>
       </QueryClientProvider>
     );
-  return { client, render };
+  const render = (page = false) =>
+    renderContent(page ? <AdminModelsPage /> : <AdminTextChannels />);
+  return { client, render, renderContent };
 }
 afterEach(() => {
   for (const client of clients.splice(0)) client.clear();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('admin text channels UI', () => {
@@ -121,14 +149,21 @@ describe('admin text channels UI', () => {
     expect(html).toContain('Input: 0 USD / 1M tokens');
     expect(html).toContain('Output: 1.25 USD / 1M tokens');
   });
-  it('keeps the default/internal form in the initial tab and keeps both tabs mounted', () => {
+  it('keeps the default/internal form in the initial tab and keeps all three tabs mounted', () => {
     const html = setup('en', configuration).render(true);
     const selected = html.match(
       /<button(?=[^>]*role="tab")(?=[^>]*aria-selected="true")[^>]*>([\s\S]*?)<\/button>/
     )?.[1];
     expect(selected).toContain('Defaults and internal models');
     expect(html).toContain('existing-default-form');
-    expect(html.match(/role="tabpanel"/g)).toHaveLength(2);
+    expect(html.match(/role="tabpanel"/g)).toHaveLength(3);
+    expect(html).toContain('Text channels');
+    expect(html).toContain('Image channels');
+    expect(html).toContain('No image channels configured.');
+    expect(imageFns.getAdminImageChannelsFn).not.toHaveBeenCalled();
+    expect(imageFns.syncImageChannelModelsFn).not.toHaveBeenCalled();
+    expect(imageFns.saveImageChannelFn).not.toHaveBeenCalled();
+    expect(imageFns.saveChannelImageModelFn).not.toHaveBeenCalled();
     expect(html).toContain('data-[state=inactive]:hidden');
   });
   it('renders Chinese admin copy while leaving operator-provided model names intact', () => {
@@ -158,6 +193,91 @@ describe('admin text channels UI', () => {
     expect(html).toContain(
       'class="relative min-h-0 flex-1 overflow-auto"><div class="flex flex-col gap-6">'
     );
+  });
+});
+
+function createModelsRouter(entry: string) {
+  const root = createRootRoute();
+  const models = createRoute({
+    path: '/admin/models',
+    getParentRoute: () => root,
+    validateSearch: ModelsRoute.options.validateSearch,
+    component: ModelsRoute.options.component,
+  });
+  vi.spyOn(ModelsRoute, 'useSearch').mockImplementation(() =>
+    models.useSearch()
+  );
+  vi.spyOn(ModelsRoute, 'useNavigate').mockImplementation(() =>
+    models.useNavigate()
+  );
+  const routeTree = root.addChildren([models]);
+  return createRouter({
+    routeTree,
+    history: createMemoryHistory({ initialEntries: [entry] }),
+    isServer: false,
+    origin: 'http://localhost',
+  });
+}
+
+function renderModelsRouter(
+  router: ReturnType<typeof createModelsRouter>,
+  locale: 'en' | 'zh-CN' = 'en'
+) {
+  const Component = ModelsRoute.options.component;
+  if (!Component) throw new Error('Model configuration route has no component');
+  return setup(locale, configuration).renderContent(
+    <RouterContextProvider router={router}>
+      <Component />
+    </RouterContextProvider>
+  );
+}
+
+function selectedTab(html: string) {
+  return html.match(
+    /<button(?=[^>]*role="tab")(?=[^>]*aria-selected="true")[^>]*>([\s\S]*?)<\/button>/
+  )?.[1];
+}
+
+describe('model configuration tabs integration', () => {
+  it.each([
+    ['/admin/models', 'Defaults and internal models'],
+    ['/admin/models?tab=text-channels', 'Text channels'],
+    ['/admin/models?tab=image-channels', 'Image channels'],
+    ['/admin/models?tab=unknown', 'Defaults and internal models'],
+  ])('restores the selected tab from %s', async (entry, label) => {
+    const router = createModelsRouter(entry);
+    await router.load();
+    const html = renderModelsRouter(router);
+    expect(selectedTab(html)).toContain(label);
+    expect(html.match(/role="tabpanel"/g)).toHaveLength(3);
+  });
+
+  it('updates the models URL when changing tabs and restores it through history', async () => {
+    const router = createModelsRouter('/admin/models?tab=text-channels');
+    await router.load();
+    renderModelsRouter(router);
+    const tabs = vi.mocked(Tabs).mock.calls.at(-1)?.[0];
+    expect(tabs?.onValueChange).toBeTypeOf('function');
+    tabs?.onValueChange?.('image-channels');
+    await router.load();
+    expect(router.state.location.pathname).toBe('/admin/models');
+    expect(router.state.location.search.tab).toBe('image-channels');
+    router.history.back();
+    await router.load();
+    expect(router.state.location.search.tab).toBe('text-channels');
+    router.history.forward();
+    await router.load();
+    expect(router.state.location.search.tab).toBe('image-channels');
+  });
+
+  it('renders the image tab in Chinese using its existing namespace', async () => {
+    const router = createModelsRouter('/admin/models?tab=image-channels');
+    await router.load();
+    const html = renderModelsRouter(router, 'zh-CN');
+    expect(selectedTab(html)).toContain('图片渠道');
+    expect(html).toContain('existing-default-form');
+    expect(html).toContain('Fixture text model');
+    expect(html).not.toContain('Manage platform image channels');
   });
 });
 

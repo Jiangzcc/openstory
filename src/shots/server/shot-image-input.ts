@@ -1,3 +1,4 @@
+import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
 import type { Scene } from '@/shots/scene-analysis.schema';
 /**
  * Image-regeneration trigger input builder (#1077) — the exact payload
@@ -13,6 +14,9 @@ import { isValidTextToImageModel } from '@/models/models';
 import { resolveImageModel } from '@/models/resolve-asset-models';
 import { estimateImageCost, gateEstimate } from '@/billing/cost-estimation';
 import { requireCredits } from '@/billing/server/preflight';
+import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
+import { packModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import type { Resolution } from '@/models/resolutions';
 import {
   aspectRatioToImageSize,
@@ -84,6 +88,8 @@ export function getSceneLocationReferenceImages(
  */
 export async function prepareShotImageWorkflowInput(args: {
   scopedDb: ScopedDb;
+  /** Trusted server snapshot supplied by workflow callers. */
+  modelConfiguration?: ModelRuntimeConfiguration;
   sequence: {
     id: string;
     organizationId: string;
@@ -248,16 +254,31 @@ export async function prepareShotImageWorkflowInput(args: {
     sequenceModel: sequence.imageModel,
   });
 
+  const modelConfiguration =
+    args.modelConfiguration ?? (await loadModelRuntimeConfiguration());
+  const imageBilling = await prepareConfiguredImageBilling({
+    model,
+    modelConfiguration,
+    aspectRatio: sequence.aspectRatio,
+    resolution: sequence.resolution,
+    imageCount: 1,
+    referenceImageCount:
+      characterReferences.length +
+      locationReferences.length +
+      elementReferences.length,
+  });
   await requireCredits(
     scopedDb,
-    gateEstimate(
-      estimateImageCost(model, sequence.aspectRatio, 1, {
-        pricing: await getEffectiveFalPricing(),
-        resolution: sequence.resolution,
-      }),
-      { model, operation: 'shot-image' }
-    ),
+    imageBilling?.costMicros ??
+      gateEstimate(
+        estimateImageCost(model, sequence.aspectRatio, 1, {
+          pricing: await getEffectiveFalPricing(),
+          resolution: sequence.resolution,
+        }),
+        { model, operation: 'shot-image' }
+      ),
     {
+      imageSource: imageBilling?.imageSource,
       errorMessage: 'Insufficient credits for image generation',
       reservationId: args.reservationId,
     }
@@ -297,6 +318,7 @@ export async function prepareShotImageWorkflowInput(args: {
 
   return {
     userId,
+    modelConfiguration: packModelRuntimeConfiguration(modelConfiguration),
     variantOnly: false,
     organizationId: sequence.organizationId,
     prompt,
