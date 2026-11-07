@@ -51,6 +51,11 @@ import {
 } from '@/platform/server/db/d1-session';
 import { createMiddleware } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import {
+  EXTERNAL_PROMPT_LOCALE,
+  promptLocaleFromRequest,
+} from '@/platform/i18n/prompt-locale';
+import type { Locale } from '@/platform/i18n/locale';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 
@@ -64,6 +69,7 @@ export type AuthContext = {
 };
 
 export type OrganizationContext = AuthContext & {
+  promptLocale: Locale;
   organizationId: string;
   scopedDb: ScopedDb;
 };
@@ -336,6 +342,9 @@ export const authWithOrganizationRequestMiddleware = createMiddleware().server(
           user: principal.user,
           session: principal.session,
           oauth: principal.oauth,
+          promptLocale: new URL(request.url).pathname.startsWith('/api/v1')
+            ? EXTERNAL_PROMPT_LOCALE
+            : promptLocaleFromRequest(request),
           organizationId: organization.organizationId,
           scopedDb: createScopedDb(
             organization.organizationId,
@@ -456,6 +465,7 @@ export const authWithOrganizationMiddleware = createMiddleware({
       context: {
         organizationId: organization.organizationId,
         organizationName: organization.organizationName,
+        promptLocale: promptLocaleFromRequest(request),
         scopedDb: createScopedDb(organization.organizationId, context.user.id),
       },
     });

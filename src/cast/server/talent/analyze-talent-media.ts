@@ -14,6 +14,7 @@ import { estimateLLMCost } from '@/billing/cost-estimation';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { ModelConfiguration } from '@/models/model-configuration';
 import type { AnalysisModelId } from '@/models/models.config';
+import type { Locale } from '@/platform/i18n/locale';
 
 type VisionModels = Pick<ModelConfiguration, 'vision' | 'talentVideo'>;
 
@@ -47,6 +48,7 @@ import { getLogger } from '@/platform/logger';
 const logger = getLogger(['openstory', 'cast', 'talent-vision']);
 
 export type AnalyzeTalentMediaForOrganizationInput = {
+  promptLocale: Locale;
   scopedDb: VisionBillingDb;
   userId: string;
   imageUrls: string[];
@@ -61,6 +63,7 @@ export async function analyzeTalentMediaForOrganization(
   const llmKeyInfo = await input.scopedDb.apiKeys.resolveLlmKey(model);
   await requireVisionCredits(input.scopedDb, llmKeyInfo);
   const result = await analyzeTalentMedia({
+    promptLocale: input.promptLocale,
     model,
     imageUrls: input.imageUrls,
     filenames: input.filenames,
@@ -83,6 +86,7 @@ export async function analyzeTalentMediaForOrganization(
  * platform's); with none the clip is refused, never judged by another model.
  */
 export async function analyzeTalentClipForOrganization(input: {
+  promptLocale: Locale;
   scopedDb: VisionBillingDb;
   userId: string;
   /** Storage key of the clip (`<bucket>/<path>`). */
@@ -106,6 +110,7 @@ export async function analyzeTalentClipForOrganization(input: {
 
 async function checkUploadedClip(
   input: {
+    promptLocale: Locale;
     scopedDb: VisionBillingDb;
     userId: string;
     key: string;
@@ -118,6 +123,7 @@ async function checkUploadedClip(
   const file = await uploadClipToGemini(input.key, input.mimeType, llmKey.key);
   try {
     const result = await analyzeTalentClip({
+      promptLocale: input.promptLocale,
       model,
       clip: file,
       llmKey,

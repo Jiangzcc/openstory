@@ -90,6 +90,7 @@ function context(
     styles: { getById: async () => ({ sequenceId: null }) },
   });
   return {
+    promptLocale: 'en' as const,
     scopedDb,
     user: { id: 'u' },
     organizationId: 't',

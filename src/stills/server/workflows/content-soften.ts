@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { usesConfiguredImageChannel } from '@/models/image-channels';
 import { runConfiguredSingleImageStep } from './configured-image-step';
 /**
@@ -65,6 +66,7 @@ export const softenImagePromptResponseSchema = z.object({
 });
 
 export type SoftenRejectedPromptArgs = {
+  promptLocale: Locale;
   scopedDb: WorkflowScopedDb;
   workflowRunId: string;
   sequenceId?: string;
@@ -129,6 +131,7 @@ export async function shortenOverlongMotionPrompt(
     },
     {
       sequenceId: args.sequenceId,
+      promptLocale: args.promptLocale,
       userId: args.userId,
       workflowRunId: args.workflowRunId,
       scopedDb: args.scopedDb,
@@ -171,6 +174,7 @@ async function softenRejectedPrompt(
     },
     {
       sequenceId: args.sequenceId,
+      promptLocale: args.promptLocale,
       userId: args.userId,
       workflowRunId: args.workflowRunId,
       scopedDb: args.scopedDb,
@@ -196,6 +200,7 @@ type StoredGeneratedImage = {
 };
 
 export type GenerateImageSofteningArgs = {
+  promptLocale: Locale;
   step: WorkflowStep;
   scopedDb: WorkflowScopedDb;
   workflowRunId: string;
@@ -433,6 +438,7 @@ export async function generateImageSoftening(
   let softened: string;
   try {
     softened = await softenRejectedImagePrompt(step, {
+      promptLocale: args.promptLocale,
       scopedDb,
       workflowRunId: args.workflowRunId,
       sequenceId: args.sequenceId,

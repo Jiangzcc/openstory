@@ -669,6 +669,7 @@ export const updateStaleShotsFn = createServerFn({ method: 'POST' })
     const { sequence, organizationId, user, scopedDb } = context;
     const { plan, creditFloorMicros, imageSource, modelConfiguration } =
       await prepareUpdateStale({
+        promptLocale: context.promptLocale,
         scopedDb,
         userId: user.id,
         sequence,
@@ -685,6 +686,7 @@ export const updateStaleShotsFn = createServerFn({ method: 'POST' })
     }
     // launchUpdateStale → triggerWorkflow, which runs the generation gate.
     const workflowRunId = await launchUpdateStale({
+      promptLocale: context.promptLocale,
       userId: user.id,
       organizationId,
       sequenceId: sequence.id,

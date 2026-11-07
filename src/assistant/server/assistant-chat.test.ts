@@ -38,6 +38,7 @@ type CapturedChat = {
   middleware: ChatMiddleware[];
   modelOptions: unknown;
   systemPrompts: string[];
+  context: import('@/platform/server/mcp/tool-context').OpenStoryMcpContext;
 };
 const mockChat = vi.fn((_options: CapturedChat) => (async function* () {})());
 const pageContext: PageContextItem[] = [];
@@ -145,6 +146,45 @@ it('uses one routing snapshot and no OpenRouter native search options', async ()
     stream_options: { include_usage: true },
   });
   expect(await response.text()).not.toContain(c.llmKey.key);
+});
+
+it('selects each request language for the final system messages and internal tools', async () => {
+  const chinese = caller([CUSTOM_ROUTE]);
+  const english = caller([CUSTOM_ROUTE]);
+  english.context.request = new Request('https://example.test/assistant', {
+    method: 'POST',
+    headers: { cookie: 'openstory_locale=en' },
+  });
+  params.forwardedProps.pageContext = [
+    {
+      kind: 'draft_script',
+      id: 'draft',
+      label: 'Lena 的剧本',
+      text: 'Lena says "Stay here."',
+    },
+  ];
+  await Promise.all([
+    handleAssistantChat(chinese.context),
+    handleAssistantChat(english.context),
+  ]);
+  const captured = mockChat.mock.calls.map(([options]) => options);
+  const zh = captured.find((options) =>
+    options.systemPrompts[0]?.startsWith('你是 OpenStory')
+  );
+  const en = captured.find((options) =>
+    options.systemPrompts[0]?.startsWith('You are the OpenStory')
+  );
+  expect(zh?.systemPrompts.join('\n')).toContain('未保存的剧本');
+  expect(en?.systemPrompts.join('\n')).toContain('Unsaved script');
+  for (const options of captured) {
+    expect(options.systemPrompts.join('\n')).toContain(
+      'Lena says "Stay here."'
+    );
+    expect(options.systemPrompts.join('\n')).toContain('Lena 的剧本');
+    expect(options.systemPrompts.join('\n')).toContain('replace_unsaved_text');
+  }
+  expect(zh?.context.scoped('sequences:read').promptLocale).toBe('zh-CN');
+  expect(en?.context.scoped('sequences:read').promptLocale).toBe('en');
 });
 
 it('passes full key info to usage billing without putting it in charge metadata', async () => {

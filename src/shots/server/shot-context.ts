@@ -3,6 +3,7 @@
  * its sequence the shot services read, and its resolved scene script. The
  * editor's `shotAccessMiddleware` and the MCP shot tools both load it here.
  */
+import type { Locale } from '@/platform/i18n/locale';
 import type { AspectRatio } from '@/models/aspect-ratios';
 import type { Resolution } from '@/models/resolutions';
 import { NotFoundError } from '@/platform/errors';
@@ -44,6 +45,7 @@ export type ShotTarget = {
 
 /** A shot edit's context: the target plus who acts, in which organization. */
 export type ShotEditContext = ShotTarget & {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   user: Pick<User, 'id'>;
   organizationId: string;

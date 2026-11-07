@@ -370,7 +370,8 @@ async function runCall(
       'phase/scene-splitting-boundaries-chat',
       {
         script: addLineGutter(script),
-      }
+      },
+      'en'
     );
     const call = await timedStructuredCall({
       model,
@@ -412,10 +413,14 @@ async function runCall(
   }
 
   if (job.call === 'bibles') {
-    const { messages } = await getChatPrompt('phase/scene-bibles-chat', {
-      script: addLineGutter(gold.screenplay),
-      elements: '(none)',
-    });
+    const { messages } = await getChatPrompt(
+      'phase/scene-bibles-chat',
+      {
+        script: addLineGutter(gold.screenplay),
+        elements: '(none)',
+      },
+      'en'
+    );
     const call = await timedStructuredCall({
       model,
       messages,
@@ -446,12 +451,16 @@ async function runCall(
   }
 
   if (job.call === 'auto-style') {
-    const { messages } = await getChatPrompt('phase/automatic-style-chat', {
-      script: gold.screenplay,
-      aspectRatio: gold.aspectRatio,
-      categories: STYLE_CATEGORIES.join(', '),
-      paces: STYLE_PACE_VALUES.join(', '),
-    });
+    const { messages } = await getChatPrompt(
+      'phase/automatic-style-chat',
+      {
+        script: gold.screenplay,
+        aspectRatio: gold.aspectRatio,
+        categories: STYLE_CATEGORIES.join(', '),
+        paces: STYLE_PACE_VALUES.join(', '),
+      },
+      'en'
+    );
     const call = await timedStructuredCall({
       model,
       messages,
@@ -488,7 +497,8 @@ async function runCall(
     );
     const { messages } = await getChatPrompt(
       'phase/location-matching-chat',
-      vars
+      vars,
+      'en'
     );
     const call = await timedStructuredCall({
       model,
@@ -538,10 +548,14 @@ async function runCall(
 
   if (job.call === 'music') {
     const summaries = musicSceneSummariesFromAnalysis(gold.scenes);
-    const { messages } = await getChatPrompt('phase/music-design-chat', {
-      scenes: JSON.stringify(summaries, null, 2),
-      sceneCount: String(summaries.length),
-    });
+    const { messages } = await getChatPrompt(
+      'phase/music-design-chat',
+      {
+        scenes: JSON.stringify(summaries, null, 2),
+        sceneCount: String(summaries.length),
+      },
+      'en'
+    );
     const call = await timedStructuredCall({
       model,
       messages,

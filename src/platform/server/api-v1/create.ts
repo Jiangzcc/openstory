@@ -23,6 +23,7 @@ import { isShortScript } from '@/models/should-enhance';
 import { DEFAULT_RESOLUTION } from '@/models/resolutions';
 import { DEFAULT_ASPECT_RATIO } from '@/models/aspect-ratios';
 import type { ScopedDb } from '@/platform/server/db/scoped';
+import type { Locale } from '@/platform/i18n/locale';
 import { createOrganizationCharacter } from '@/cast/server/cast-edit';
 import {
   createOrganizationLocation,
@@ -68,6 +69,7 @@ import type { PortraitAttestation } from '@/cast/upload-rights';
 const logger = getLogger(['openstory', 'api-v1', 'create']);
 
 export type OneShotContext = {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   user: { id: string };
   organizationId: string;
@@ -175,6 +177,7 @@ async function requireIngestedImageRights(
   for (const item of items) {
     for (const url of item.urls) {
       const rights = await classifyUpload({
+        promptLocale: ctx.promptLocale,
         scopedDb: ctx.scopedDb,
         userId: ctx.user.id,
         url,
@@ -292,6 +295,7 @@ export async function runOneShotCreate(
         ...toEnhanceInputs({ style, elements: elementUploads }),
       },
       {
+        promptLocale: ctx.promptLocale,
         scopedDb: ctx.scopedDb,
         userId: ctx.user.id,
         organizationId: ctx.organizationId,
@@ -351,6 +355,7 @@ export async function runOneShotCreate(
                 photoUrls: ingestedLocations.get(item) ?? [],
               },
               {
+                promptLocale: ctx.promptLocale,
                 userId: ctx.user.id,
                 organizationId: ctx.organizationId,
                 triggerSheet: false,
@@ -417,6 +422,7 @@ export async function runOneShotCreate(
     await Promise.allSettled(
       createdLocationIds.map((locationId) =>
         triggerOrganizationLocationSheet(ctx.scopedDb, {
+          promptLocale: ctx.promptLocale,
           userId: ctx.user.id,
           organizationId: ctx.organizationId,
           locationId,

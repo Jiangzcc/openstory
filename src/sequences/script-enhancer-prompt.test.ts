@@ -15,8 +15,38 @@ const NEO_NOIR_V1 = {
 };
 
 describe('createUserPrompt (issue #855)', () => {
+  it('uses Chinese instructions while preserving script, dialogue and reference tokens', () => {
+    const script =
+      'Scene 1 — 8s\n雨中，BONDI_SCREEN 亮起。\nALICE: "Keep my words."';
+    const prompt = createUserPrompt(
+      script,
+      {
+        targetDuration: 8,
+        elements: [
+          {
+            token: 'BONDI_SCREEN',
+            imageUrl: 'https://example.com/screen.png',
+            description: 'An unchanged reference description',
+          },
+        ],
+      },
+      'zh-CN'
+    );
+    expect(prompt).toContain('润色 <USER_SCRIPT> 中的剧本');
+    expect(prompt).toContain(`<USER_SCRIPT>\n${script}\n</USER_SCRIPT>`);
+    expect(prompt).toContain(
+      '- BONDI_SCREEN — An unchanged reference description'
+    );
+    expect(prompt).toContain('TOTAL: <sum>s');
+    expect(prompt).toContain('Scene 3 —');
+  });
+
   it('invents instead of expanding when there is nothing to expand (#1393)', () => {
-    const prompt = createUserPrompt('', { invent: true, targetDuration: 15 });
+    const prompt = createUserPrompt(
+      '',
+      { invent: true, targetDuration: 15 },
+      'en'
+    );
     // No <USER_SCRIPT> block: an "invent something" line inside those tags is
     // narrative material by definition, so it would be written ABOUT, not
     // followed.
@@ -26,9 +56,13 @@ describe('createUserPrompt (issue #855)', () => {
   });
 
   it('carries the per-request payload (script, duration, injection guard)', () => {
-    const prompt = createUserPrompt('a new product launch', {
-      targetDuration: 15,
-    });
+    const prompt = createUserPrompt(
+      'a new product launch',
+      {
+        targetDuration: 15,
+      },
+      'en'
+    );
     expect(prompt).toContain('<USER_SCRIPT>\na new product launch');
     expect(prompt).toContain('Target video duration: 15 seconds');
     // Defense-in-depth: the injection guard sits next to the untrusted script.
@@ -39,9 +73,13 @@ describe('createUserPrompt (issue #855)', () => {
   });
 
   it('anchors length to scene count and a hard sum, with no clip grid (#1374, #1621)', () => {
-    const prompt = createUserPrompt('a brief', {
-      targetDuration: 60,
-    });
+    const prompt = createUserPrompt(
+      'a brief',
+      {
+        targetDuration: 60,
+      },
+      'en'
+    );
     expect(prompt).toContain('Target video duration: 1 minute');
     expect(prompt).not.toMatch(/~\s*\d+\s*words/);
     expect(prompt).toContain('MUST add up to 60 seconds');
@@ -52,14 +90,18 @@ describe('createUserPrompt (issue #855)', () => {
   });
 
   it('threads style name/category/tags so the genre drives the events', () => {
-    const prompt = createUserPrompt('a cinematic short-film scene', {
-      style: {
-        name: 'Action',
-        category: 'film',
-        description: 'Kinetic chases and stunts',
-        tags: ['action', 'blockbuster', 'explosive'],
+    const prompt = createUserPrompt(
+      'a cinematic short-film scene',
+      {
+        style: {
+          name: 'Action',
+          category: 'film',
+          description: 'Kinetic chases and stunts',
+          tags: ['action', 'blockbuster', 'explosive'],
+        },
       },
-    });
+      'en'
+    );
     expect(prompt).toContain('drive WHAT HAPPENS');
     expect(prompt).toContain('Action / film');
     expect(prompt).toContain('Kinetic chases and stunts');
@@ -67,18 +109,22 @@ describe('createUserPrompt (issue #855)', () => {
   });
 
   it('omits the genre block entirely when no style is given', () => {
-    const prompt = createUserPrompt('a brief');
+    const prompt = createUserPrompt('a brief', undefined, 'en');
     expect(prompt).not.toContain('drive WHAT HAPPENS');
   });
 
   it('renders aesthetic config and genre identity from the one style object', () => {
-    const prompt = createUserPrompt('a brief', {
-      style: {
-        config: migrateStyleConfigV1ToV2(NEO_NOIR_V1),
-        name: 'Neo-Noir',
-        tags: [],
+    const prompt = createUserPrompt(
+      'a brief',
+      {
+        style: {
+          config: migrateStyleConfigV1ToV2(NEO_NOIR_V1),
+          name: 'Neo-Noir',
+          tags: [],
+        },
       },
-    });
+      'en'
+    );
     expect(prompt).toContain('apply these aesthetics throughout');
     expect(prompt).toContain('Mood: tense and paranoid');
     expect(prompt).toContain('Lighting: low-key with hard shadows');
@@ -131,17 +177,21 @@ She laughs as a train rattles past below. The lipstick lands
 beside the brand mark on the concrete ledge.
 
 SUPER:  CORAL.  OUT NOW.`;
-    const prompt = createUserPrompt(script, {
-      style: {
-        name: productAd.name,
-        category: productAd.category ?? undefined,
-        description: productAd.description,
-        tags: productAd.tags ?? [],
-        config: productAd.config,
+    const prompt = createUserPrompt(
+      script,
+      {
+        style: {
+          name: productAd.name,
+          category: productAd.category ?? undefined,
+          description: productAd.description,
+          tags: productAd.tags ?? [],
+          config: productAd.config,
+        },
+        aspectRatio: '16:9',
+        targetDuration: 60,
       },
-      aspectRatio: '16:9',
-      targetDuration: 60,
-    });
+      'en'
+    );
     expect(prompt).toContain(`<USER_SCRIPT>\n${script}\n</USER_SCRIPT>`);
     expect(prompt).toContain('Target video duration: 1 minute');
     expect(prompt).toContain('MUST add up to 60 seconds');
@@ -150,21 +200,25 @@ SUPER:  CORAL.  OUT NOW.`;
 
   it('renders authored motion refinements when present', () => {
     const config = migrateStyleConfigV1ToV2(NEO_NOIR_V1);
-    const prompt = createUserPrompt('a brief', {
-      style: {
-        config: {
-          ...config,
-          motion: {
-            ...config.motion,
-            shots: 'wide establishing, then tight inserts',
-            pace: 'measured',
-            energy: 2,
+    const prompt = createUserPrompt(
+      'a brief',
+      {
+        style: {
+          config: {
+            ...config,
+            motion: {
+              ...config.motion,
+              shots: 'wide establishing, then tight inserts',
+              pace: 'measured',
+              energy: 2,
+            },
           },
+          name: 'Neo-Noir',
+          tags: [],
         },
-        name: 'Neo-Noir',
-        tags: [],
       },
-    });
+      'en'
+    );
     expect(prompt).toContain(
       'Shot selection: wide establishing, then tight inserts'
     );
@@ -257,7 +311,11 @@ describe('createUserPrompt with clip and audio elements', () => {
   };
 
   it('labels the kind and length, and explains they cannot be seen', () => {
-    const prompt = createUserPrompt('A short film', { elements: [audio] });
+    const prompt = createUserPrompt(
+      'A short film',
+      { elements: [audio] },
+      'en'
+    );
 
     expect(prompt).toContain('STEVE_LINE_3 [audio, 4s]');
     expect(prompt).toContain('Steve: "We are not doing this again."');
@@ -267,16 +325,20 @@ describe('createUserPrompt with clip and audio elements', () => {
   });
 
   it('still promises the images when an image element is present', () => {
-    const prompt = createUserPrompt('A short film', {
-      elements: [
-        audio,
-        {
-          token: 'LOGO',
-          imageUrl: 'https://example.com/logo.png',
-          description: 'A red hex logo',
-        },
-      ],
-    });
+    const prompt = createUserPrompt(
+      'A short film',
+      {
+        elements: [
+          audio,
+          {
+            token: 'LOGO',
+            imageUrl: 'https://example.com/logo.png',
+            description: 'A red hex logo',
+          },
+        ],
+      },
+      'en'
+    );
 
     expect(prompt).toContain('Images accompany this message');
     expect(prompt).toContain('SOUNDS and CLIPS');

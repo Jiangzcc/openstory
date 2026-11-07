@@ -192,6 +192,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     const stylePromise =
       pendingAutoStyleId && sequenceId
         ? deriveAutoStyle(step, {
+            promptLocale: input.promptLocale,
             scopedDb,
             workflowRunId: parentInstanceId,
             sequenceId,
@@ -214,6 +215,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       parentInstanceId: event.instanceId,
       childId: `scene-split:${sequenceId ?? 'no-seq'}`,
       childPayload: {
+        promptLocale: input.promptLocale,
         userId: input.userId,
         organizationId: input.organizationId,
         sequenceId,
@@ -266,6 +268,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       childId: `location-matching:${sequenceId ?? 'no-seq'}`,
       childPayload: {
         sequenceId,
+        promptLocale: input.promptLocale,
         userId: input.userId,
         organizationId: input.organizationId,
         reservationId: input.reservationId,

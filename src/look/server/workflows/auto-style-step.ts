@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 /**
  * Automatic style derivation (#1213), run by analyze-script in parallel with
  * scene-split. Runs one billed LLM call over the snapshotted script, writes the
@@ -25,6 +26,7 @@ const logger = getLogger(['openstory', 'workflow', 'auto-style']);
 export async function deriveAutoStyle(
   step: WorkflowStep,
   params: {
+    promptLocale: Locale;
     scopedDb: WorkflowScopedDb;
     workflowRunId: string;
     sequenceId: string;
@@ -55,6 +57,7 @@ export async function deriveAutoStyle(
       reasoning: true,
     },
     {
+      promptLocale: params.promptLocale,
       sequenceId,
       workflowRunId: params.workflowRunId,
       scopedDb,

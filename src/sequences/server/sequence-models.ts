@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import {
   prepareConfiguredImageBilling,
   configuredImageRoutingFor,
@@ -76,6 +77,7 @@ import { REFERENCE_ONLY_MODEL_ERROR } from '@/sequences/server/sequence.schemas'
 const logger = getLogger(['openstory', 'sequences', 'models']);
 
 type SequenceModelContext = {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   user: Pick<User, 'id'>;
   sequence: Sequence;
@@ -147,7 +149,12 @@ export function selectEligibleVideoShots(
  * sequence's music on failure — the regression this helper exists to prevent.
  */
 export function buildAddAudioMusicInput(args: {
-  baseCtx: { userId: string; organizationId: string; sequenceId: string };
+  baseCtx: {
+    promptLocale: Locale;
+    userId: string;
+    organizationId: string;
+    sequenceId: string;
+  };
   prompt: string;
   tags: string;
   durationSeconds: number;
@@ -179,6 +186,7 @@ export async function addModelToSequence(
   const { sequence, scopedDb, user } = context;
   const { variantType, model } = data;
   const baseCtx = {
+    promptLocale: context.promptLocale,
     userId: user.id,
     organizationId: sequence.organizationId,
     sequenceId: sequence.id,
@@ -631,6 +639,7 @@ export async function addModelToSequence(
       ? promptByFrameId.get(anchorFrame.id)
       : undefined;
     const input = await buildShotImageWorkflowInput({
+      promptLocale: context.promptLocale,
       shot: f,
       scene: resolveSceneForShot(f, imageSceneContext).scene,
       model,

@@ -35,6 +35,7 @@ function store(
   mimeType: string
 ) {
   return storeUpload({
+    promptLocale: 'en',
     scopedDb,
     userId: '01USER',
     sequenceId: use === 'studio' || use === 'stitch' ? null : '01SEQ',
@@ -133,6 +134,7 @@ describe('storeUpload audio', () => {
 
     try {
       const stored = await storeUpload({
+        promptLocale: 'en',
         scopedDb,
         userId: '01USER',
         sequenceId: '01SEQ',

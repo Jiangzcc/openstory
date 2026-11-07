@@ -10,6 +10,8 @@
  * and the server-only API layer, so the client transform drops them.
  */
 
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
 import { getEnv } from '#env';
 import type { EnhanceScriptInput } from '@/models/ai.fn';
 import {
@@ -162,7 +164,12 @@ export async function prepareBilling(
  */
 export async function* streamScriptEnhancement(
   data: EnhanceScriptInput,
-  ctx: { scopedDb: ScopedDb; userId: string; organizationId: string }
+  ctx: {
+    scopedDb: ScopedDb;
+    userId: string;
+    organizationId: string;
+    promptLocale: Locale;
+  }
 ): AsyncGenerator<EnhanceChunk> {
   const textModelRouting = await ctx.scopedDb.textChannels.getSnapshot();
   const models = await ctx.scopedDb.modelConfiguration.get(
@@ -193,19 +200,27 @@ export async function* streamScriptEnhancement(
   }
 
   const sanitized = sanitizeScriptContent(data.script);
-  const { compiled } = await getPrompt('script/enhance', {
-    userCountry: getRequestCountry() ?? '',
-  });
+  const { compiled } = await getPrompt(
+    'script/enhance',
+    {
+      userCountry: getRequestCountry() ?? '',
+    },
+    ctx.promptLocale
+  );
   const elements = data.elements ?? [];
-  const userPrompt = createUserPrompt(sanitized, {
-    invent: data.invent,
-    style: data.style,
-    aspectRatio: data.aspectRatio,
-    targetDuration: targetSeconds,
-    elements: elements.length > 0 ? elements : undefined,
-  });
+  const userPrompt = createUserPrompt(
+    sanitized,
+    {
+      invent: data.invent,
+      style: data.style,
+      aspectRatio: data.aspectRatio,
+      targetDuration: targetSeconds,
+      elements: elements.length > 0 ? elements : undefined,
+    },
+    ctx.promptLocale
+  );
 
-  const systemMessage = `${compiled}\n\nReturn ONLY the enhanced script text. No JSON, no markdown formatting, no explanations.`;
+  const systemMessage = `${compiled}\n\n${localizedPrompt(ctx.promptLocale, 'Return ONLY the enhanced script text. No JSON, no markdown formatting, no explanations.', '只返回润色后的剧本文本。不要返回 JSON、Markdown 格式或解释。')}`;
 
   // Element images must be made externally fetchable before the LLM call: in
   // local dev they're `http://localhost/r2/…` URLs that only resolve on this
@@ -316,6 +331,7 @@ export async function* streamScriptEnhancement(
   }
 
   yield* runEnhanceScriptTurns({
+    promptLocale: ctx.promptLocale,
     messages,
     targetSeconds,
     generate,
@@ -331,7 +347,12 @@ export async function* streamScriptEnhancement(
 export const enhanceScriptToString = createServerOnlyFn(
   async (
     data: EnhanceScriptInput,
-    ctx: { scopedDb: ScopedDb; userId: string; organizationId: string }
+    ctx: {
+      scopedDb: ScopedDb;
+      userId: string;
+      organizationId: string;
+      promptLocale: Locale;
+    }
   ): Promise<string> => {
     let enhanced = '';
     for await (const chunk of streamScriptEnhancement(data, ctx)) {

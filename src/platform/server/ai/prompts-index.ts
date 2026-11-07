@@ -1,14 +1,11 @@
-/**
- * Prompt Management
- *
- * Prompts are served from the local registry in workflow-prompts.ts
- * (version-controlled, single source of truth).
- */
+// Version-controlled English registry and localized prompt resources.
 
 import {
   WORKFLOW_CHAT_PROMPTS,
   WORKFLOW_TEXT_PROMPTS,
 } from './workflow-prompts';
+import { CHAT_PROMPTS_ZH_CN, TEXT_PROMPTS_ZH_CN } from './prompts/zh-CN';
+import type { Locale } from '@/platform/i18n/locale';
 
 /**
  * Simple {{var}} substitution for local prompt templates.
@@ -60,16 +57,22 @@ export type ChatMessage = {
  *
  * @param name - Prompt name (e.g., 'phase/scene-splitting-boundaries-chat')
  * @param variables - Optional variables to compile into the prompt
+ * @param locale - Language selected for this request or workflow
  * @returns The compiled prompt text
  */
 export async function getPrompt(
   name: string,
-  variables?: Record<string, string>
+  variables: Record<string, string> | undefined,
+  locale: Locale
 ): Promise<{ compiled: string }> {
-  const localPrompt = WORKFLOW_TEXT_PROMPTS[name];
-  if (!localPrompt) {
+  const englishPrompt = WORKFLOW_TEXT_PROMPTS[name];
+  if (!englishPrompt) {
     throw new Error(`Text prompt "${name}" not found in local prompts.`);
   }
+  const localPrompt =
+    locale === 'zh-CN'
+      ? (TEXT_PROMPTS_ZH_CN[name] ?? englishPrompt)
+      : englishPrompt;
 
   const compiled = variables
     ? compileTemplate(localPrompt, variables)
@@ -82,17 +85,23 @@ export async function getPrompt(
  *
  * @param name - Prompt name (e.g., 'phase/scene-splitting-boundaries-chat')
  * @param variables - Variables to compile into the prompt messages
+ * @param locale - Language selected for this request or workflow
  * @returns The compiled messages
  */
 export async function getChatPrompt(
   name: string,
-  variables?: Record<string, string>
+  variables: Record<string, string> | undefined,
+  locale: Locale
 ): Promise<{ messages: ChatMessage[] }> {
-  const localMessages = WORKFLOW_CHAT_PROMPTS[name];
+  const englishMessages = WORKFLOW_CHAT_PROMPTS[name];
   // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- Record<string, T> lookup returns undefined for missing keys
-  if (!localMessages) {
+  if (!englishMessages) {
     throw new Error(`Chat prompt "${name}" not found in local prompts.`);
   }
+  const localMessages =
+    locale === 'zh-CN'
+      ? (CHAT_PROMPTS_ZH_CN[name] ?? englishMessages)
+      : englishMessages;
 
   const messages: ChatMessage[] = variables
     ? localMessages.map((msg) => ({

@@ -12,7 +12,10 @@ import type { Database } from '@/platform/server/db/client';
 import { createTestDb } from '@/platform/server/db/test-d1';
 import { appMetadata } from '@/platform/server/db/schema';
 import { asStub } from '@/test/as-stub';
-import { TEXT_CHANNEL_PROTOCOL } from '@/models/text-channels';
+import {
+  DEFAULT_TEXT_CHANNEL_USER_AGENT,
+  TEXT_CHANNEL_PROTOCOL,
+} from '@/models/text-channels';
 
 vi.doMock('#env', () => ({
   getEnv: () => ({
@@ -125,6 +128,7 @@ it('persists model bindings and projects a safe incremental catalog across scope
     'channelId',
     'upstreamModel',
     'credentialId',
+    'userAgent',
   ]) {
     expect(entry).not.toHaveProperty(field);
   }
@@ -376,4 +380,97 @@ it('persists Responses selection and keeps older run snapshots on their original
   expect(await reader.resolveSecret(originalCredential)).toBe(
     channelInput.apiKey
   );
+});
+
+it('saves and clears a User-Agent without rotating credentials or changing prior snapshots', async () => {
+  const admin = createTextChannelsAdminMethods(db);
+  const reader = createTextChannelsReadMethods(db);
+  await saveMockChannel();
+  await admin.saveModel(modelInput);
+  const legacySnapshot = await reader.getSnapshot();
+  const credentialId = requireValue(legacySnapshot[0]).credentialId;
+  expect(legacySnapshot[0]?.userAgent).toBe(DEFAULT_TEXT_CHANNEL_USER_AGENT);
+  await admin.saveChannel({
+    ...channelInput,
+    revision: 2,
+    apiKey: '',
+    userAgent: '  OpenStory-Deployment/2.0  ',
+  });
+  const customizedSnapshot = await reader.getSnapshot();
+  expect((await reader.get()).channels[0]?.userAgent).toBe(
+    'OpenStory-Deployment/2.0'
+  );
+  expect(customizedSnapshot[0]).toMatchObject({
+    userAgent: 'OpenStory-Deployment/2.0',
+    credentialId,
+  });
+  await admin.saveChannel({
+    ...channelInput,
+    revision: 3,
+    apiKey: '',
+    userAgent: '',
+  });
+  expect((await reader.get()).channels[0]?.userAgent).toBe('');
+  expect((await reader.getSnapshot())[0]).toMatchObject({
+    userAgent: DEFAULT_TEXT_CHANNEL_USER_AGENT,
+    credentialId,
+  });
+  expect(customizedSnapshot[0]?.userAgent).toBe('OpenStory-Deployment/2.0');
+  expect(legacySnapshot[0]?.userAgent).toBe(DEFAULT_TEXT_CHANNEL_USER_AGENT);
+  expect(await reader.resolveSecret(credentialId)).toBe(channelInput.apiKey);
+  expect(await db.select().from(appMetadata)).toHaveLength(2);
+});
+
+it('preserves an omitted User-Agent during key rotation and supports explicitly clearing it', async () => {
+  const admin = createTextChannelsAdminMethods(db);
+  const reader = createTextChannelsReadMethods(db);
+  await admin.saveChannel({
+    ...channelInput,
+    userAgent: 'OpenStory-Deployment/2.0',
+  });
+  await admin.saveModel(modelInput);
+  const originalSnapshot = await reader.getSnapshot();
+  const originalCredential = requireValue(originalSnapshot[0]).credentialId;
+  await admin.saveChannel({
+    ...channelInput,
+    revision: 2,
+    apiKey: 'rotated-mock-provider-secret',
+  });
+  const rotatedSnapshot = await reader.getSnapshot();
+  const rotatedCredential = requireValue(rotatedSnapshot[0]).credentialId;
+  expect((await reader.get()).channels[0]?.userAgent).toBe(
+    'OpenStory-Deployment/2.0'
+  );
+  expect(rotatedSnapshot[0]?.userAgent).toBe('OpenStory-Deployment/2.0');
+  expect(rotatedCredential).not.toBe(originalCredential);
+
+  await admin.saveChannel({
+    ...channelInput,
+    revision: 3,
+    apiKey: 'cleared-rotated-mock-provider-secret',
+    userAgent: '',
+  });
+  const clearedSnapshot = await reader.getSnapshot();
+  const clearedCredential = requireValue(clearedSnapshot[0]).credentialId;
+  expect((await reader.get()).channels[0]?.userAgent).toBe('');
+  expect(clearedSnapshot[0]?.userAgent).toBe(DEFAULT_TEXT_CHANNEL_USER_AGENT);
+  expect(clearedCredential).not.toBe(rotatedCredential);
+  expect(originalSnapshot[0]).toMatchObject({
+    userAgent: 'OpenStory-Deployment/2.0',
+    credentialId: originalCredential,
+  });
+  expect(rotatedSnapshot[0]).toMatchObject({
+    userAgent: 'OpenStory-Deployment/2.0',
+    credentialId: rotatedCredential,
+  });
+  expect(await reader.resolveSecret(originalCredential)).toBe(
+    channelInput.apiKey
+  );
+  expect(await reader.resolveSecret(rotatedCredential)).toBe(
+    'rotated-mock-provider-secret'
+  );
+  expect(await reader.resolveSecret(clearedCredential)).toBe(
+    'cleared-rotated-mock-provider-secret'
+  );
+  expect(await db.select().from(appMetadata)).toHaveLength(4);
 });

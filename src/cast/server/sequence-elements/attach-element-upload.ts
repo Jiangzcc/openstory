@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { fileExists } from '#storage';
 import { deriveTokenFromFilename } from '@/cast/derive-token';
 import {
@@ -32,6 +33,7 @@ async function triggerElementVision(params: {
   token: string;
   organizationId: string;
   userId: string;
+  promptLocale: Locale;
 }): Promise<void> {
   const { organizationId, userId, ...element } = params;
   const input: ElementVisionWorkflowInput = {
@@ -98,6 +100,7 @@ export async function attachElementUpload(params: {
   scopedDb: ScopedDb;
   organizationId: string;
   userId: string;
+  promptLocale: Locale;
   sequenceId: string;
   path: string;
   filename: string;
@@ -161,6 +164,7 @@ export async function attachElementUpload(params: {
   // the element would poll forever in `pending`.
   try {
     await triggerElementVision({
+      promptLocale: params.promptLocale,
       elementId: element.id,
       sequenceId,
       imageUrl,
@@ -219,6 +223,7 @@ export async function attachDraftElementUploads(params: {
   scopedDb: ScopedDb;
   organizationId: string;
   userId: string;
+  promptLocale: Locale;
   sequenceId: string;
   uploads: DraftElementUploadInput[];
 }): Promise<void> {
@@ -280,6 +285,7 @@ export async function replaceElementUpload(params: {
   scopedDb: ScopedDb;
   organizationId: string;
   userId: string;
+  promptLocale: Locale;
   sequenceId: string;
   elementId: string;
   path: string;
@@ -328,6 +334,7 @@ export async function replaceElementUpload(params: {
 
   try {
     await triggerElementVision({
+      promptLocale: params.promptLocale,
       elementId: updated.id,
       sequenceId,
       imageUrl,

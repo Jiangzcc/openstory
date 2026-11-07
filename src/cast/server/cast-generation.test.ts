@@ -89,10 +89,15 @@ function makeScopedDb(): ScopedDb {
 }
 
 function regenerate() {
-  return regenerateCharacterSheet(makeScopedDb(), { userId: 'user-1' }, null, {
-    characterId: 'char-1',
-    lookId: 'char-1',
-  });
+  return regenerateCharacterSheet(
+    makeScopedDb(),
+    { promptLocale: 'en', userId: 'user-1' },
+    null,
+    {
+      characterId: 'char-1',
+      lookId: 'char-1',
+    }
+  );
 }
 
 beforeEach(() => {

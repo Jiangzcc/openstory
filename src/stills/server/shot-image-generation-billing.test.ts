@@ -226,7 +226,13 @@ async function shotContext(
   });
   await scopedDb.frameVariants.select(frameId, image.id, { actorId: userId });
   const target = await loadShotTarget(scopedDb, sequenceId, shotId);
-  return { ...target, scopedDb, user: { id: userId }, organizationId };
+  return {
+    ...target,
+    scopedDb,
+    user: { id: userId },
+    organizationId,
+    promptLocale: 'en',
+  };
 }
 
 const ENTRYPOINTS = [

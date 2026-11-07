@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { toolDefinition } from '@tanstack/ai';
 import { z } from 'zod';
@@ -10,6 +11,7 @@ import type { McpCallerIdentity } from './auth';
 import type { OAuthApiScope } from '@/platform/server/auth/oauth-scopes';
 
 export type ReadToolContext = {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   origin: string;
   userId: string;

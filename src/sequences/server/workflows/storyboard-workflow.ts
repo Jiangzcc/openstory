@@ -220,6 +220,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         parentInstanceId: event.instanceId,
         childId: `analyze-script:${sequenceId}`,
         childPayload: {
+          promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
           sequenceId,
@@ -321,6 +322,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         parentInstanceId: event.instanceId,
         childId: `continue:${sequenceId}:${event.instanceId}`,
         childPayload: {
+          promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
           sequenceId,

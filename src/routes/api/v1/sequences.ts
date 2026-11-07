@@ -45,6 +45,7 @@ import {
 import { getWaitMs, longPoll } from '@/platform/server/api-v1/wait';
 import { getLogger } from '@/platform/logger';
 import { createFileRoute } from '@tanstack/react-router';
+import { EXTERNAL_PROMPT_LOCALE } from '@/platform/i18n/prompt-locale';
 
 const logger = getLogger(['openstory', 'api-v1']);
 
@@ -92,6 +93,7 @@ export const Route = createFileRoute('/api/v1/sequences')({
 
           const input = apiCreateSequenceSchema.parse(body);
           const result = await runOneShotCreate(input, {
+            promptLocale: EXTERNAL_PROMPT_LOCALE,
             scopedDb: context.scopedDb,
             user: context.user,
             organizationId: context.organizationId,

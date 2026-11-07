@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
 import type { Scene } from '@/shots/scene-analysis.schema';
 /**
@@ -87,6 +88,7 @@ export function getSceneLocationReferenceImages(
  * preflight's `InsufficientCreditsError`.
  */
 export async function prepareShotImageWorkflowInput(args: {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   /** Trusted server snapshot supplied by workflow callers. */
   modelConfiguration?: ModelRuntimeConfiguration;
@@ -317,6 +319,7 @@ export async function prepareShotImageWorkflowInput(args: {
   );
 
   return {
+    promptLocale: args.promptLocale,
     userId,
     modelConfiguration: packModelRuntimeConfiguration(modelConfiguration),
     variantOnly: false,

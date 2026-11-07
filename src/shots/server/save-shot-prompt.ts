@@ -31,6 +31,7 @@ export async function saveShotPrompt(
     | 'shot'
     | 'frame'
     | 'sequence'
+    | 'promptLocale'
     | 'scopedDb'
     | 'user'
     | 'organizationId'

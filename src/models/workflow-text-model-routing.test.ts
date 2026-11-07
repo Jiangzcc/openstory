@@ -68,6 +68,7 @@ function maximalChannels(): TextChannel[] {
         '模'.repeat(Math.floor(pathLength / URL_ENCODED_HAN_LENGTH)) +
         'a'.repeat(pathLength % URL_ENCODED_HAN_LENGTH),
       protocol: TEXT_CHANNEL_PROTOCOLS.chatCompletions,
+      userAgent: '"'.repeat(TEXT_CHANNEL_LIMITS.userAgent),
       enabled: true,
       credentialId: String(index).padStart(TEXT_CHANNEL_LIMITS.id, 'k'),
       keyHint: 'mock',
@@ -120,7 +121,7 @@ describe('workflow execution routing snapshot', () => {
     expect(JSON.stringify(packed)).not.toContain('Mock catalog vendor');
   });
 
-  it('does not merge routes with different frozen credentials or endpoints', () => {
+  it('does not merge routes with different frozen credentials, endpoints or User-Agents', () => {
     const original = mockRoute();
     const routes = [
       original,
@@ -130,6 +131,7 @@ describe('workflow execution routing snapshot', () => {
         modelId: 'custom:protocol',
         protocol: TEXT_CHANNEL_PROTOCOLS.chatCompletions,
       }),
+      mockRoute({ modelId: 'custom:user-agent', userAgent: 'Deployment/2.0' }),
     ];
     const packed = packWorkflowTextModelRouting(routes);
     expect(packed.channels).toHaveLength(routes.length);
@@ -186,10 +188,11 @@ describe('workflow execution routing snapshot', () => {
   });
 
   it('owns immutable copies of channel and model execution data', () => {
-    const route = mockRoute();
+    const route = mockRoute({ userAgent: 'Deployment/2.0' });
     const packed = packWorkflowTextModelRouting([route]);
     route.baseUrl = 'https://replacement.invalid';
     route.inputPricePerMillion = 99;
+    route.userAgent = 'Replacement/3.0';
     expect(Object.isFrozen(packed)).toBe(true);
     expect(Object.isFrozen(packed.channels)).toBe(true);
     expect(Object.isFrozen(packed.channels[0])).toBe(true);
@@ -198,7 +201,28 @@ describe('workflow execution routing snapshot', () => {
     expect(unpackWorkflowTextModelRouting(packed)[0]).toMatchObject({
       baseUrl: 'https://mock.invalid/v1',
       inputPricePerMillion: 0.5,
+      userAgent: 'Deployment/2.0',
     });
+  });
+
+  it('round-trips custom User-Agents through JSON without exposing them in the catalog', () => {
+    const route = mockRoute({ userAgent: 'Deployment/2.0' });
+    const packed = packWorkflowTextModelRouting([route]);
+    const replayed = unpackWorkflowTextModelRouting(structuredClone(packed));
+    expect(replayed).toEqual([executionFields(route)]);
+    expect(packed.channels[0]?.userAgent).toBe('Deployment/2.0');
+    expect(JSON.parse(JSON.stringify(packed))).toEqual(packed);
+    expect(toTextModelCatalog(replayed)[0]).not.toHaveProperty('userAgent');
+  });
+
+  it('replays version-one snapshots created before User-Agent was configurable', () => {
+    const route = mockRoute();
+    const packed = packWorkflowTextModelRouting([route]);
+    expect(packed.version).toBe(1);
+    expect(packed.channels[0]).not.toHaveProperty('userAgent');
+    expect(unpackWorkflowTextModelRouting(packed)).toEqual([
+      executionFields(route),
+    ]);
   });
 
   it('replays legacy flat arrays and absent snapshots without upgrading their routes', () => {
@@ -251,6 +275,7 @@ describe('workflow snapshot size boundaries', () => {
         new Set(configuration.channels.map((channel) => channel.baseUrl)).size
       ).toBe(TEXT_CHANNEL_LIMITS.channels);
       for (const channel of configuration.channels) {
+        expect(channel.userAgent).toHaveLength(TEXT_CHANNEL_LIMITS.userAgent);
         expect(new TextEncoder().encode(channel.baseUrl).byteLength).toBe(
           TEXT_CHANNEL_LIMITS.baseUrl
         );

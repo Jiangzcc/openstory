@@ -952,6 +952,7 @@ export class MotionWorkflow extends OpenStoryWorkflowEntrypoint<MotionWorkflowIn
           let softenedText: string | null = null;
           try {
             const softer = await softenRejectedMotionPrompt(step, {
+              promptLocale: input.promptLocale,
               scopedDb,
               workflowRunId,
               sequenceId: input.sequenceId,
@@ -1181,6 +1182,7 @@ export class MotionWorkflow extends OpenStoryWorkflowEntrypoint<MotionWorkflowIn
             `load-motion-prompt-provenance-shorten-${attempt}`
           );
           prompt = await shortenOverlongMotionPrompt(step, {
+            promptLocale: input.promptLocale,
             scopedDb,
             workflowRunId,
             sequenceId: input.sequenceId,
@@ -1756,6 +1758,7 @@ export class MotionWorkflow extends OpenStoryWorkflowEntrypoint<MotionWorkflowIn
             parentInstanceId: event.instanceId,
             childId: `lipsync:${sequenceId}:${shotId}`,
             childPayload: {
+              promptLocale: input.promptLocale,
               userId: input.userId,
               organizationId: input.organizationId,
               sequenceId,

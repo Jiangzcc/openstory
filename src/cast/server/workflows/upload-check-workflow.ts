@@ -62,6 +62,7 @@ export class UploadCheckWorkflow extends OpenStoryWorkflowEntrypoint<UploadCheck
       async (): Promise<CheckOutcome> => {
         try {
           const rights = await classifyUpload({
+            promptLocale: event.payload.promptLocale,
             scopedDb: likenessCheckDb(scopedDb),
             userId,
             url,

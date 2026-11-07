@@ -28,6 +28,7 @@
  *    so matching, staleness and the manifest's `audioSourceKey` do not move.
  */
 
+import type { Locale } from '@/platform/i18n/locale';
 import { voiceProviderOf } from '@/cast/seed-voice';
 import { deductWorkflowCredits } from '@/billing/server/workflow-deduction';
 import {
@@ -75,6 +76,7 @@ const logger = getLogger(['openstory', 'workflow', 'dialogue-speech']);
 const SEED_TAKE_CHUNK_CHARS = 1000;
 
 export type GenerateDialogueSpeechArgs = {
+  promptLocale: Locale;
   scopedDb: WorkflowScopedDb;
   workflowRunId: string;
   userId: string;
@@ -307,6 +309,7 @@ async function recordClaimed(
     const rerecord = new Set<number>();
     for (const shot of over) {
       const shortened = await shortenDialogueLines(step, {
+        promptLocale: args.promptLocale,
         scopedDb: args.scopedDb,
         workflowRunId: args.workflowRunId,
         userId: args.userId,

@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 /**
  * Server-side MP4 export (#968, #1402, #1461): the one operation behind
  * `POST /api/v1/sequences/$id/exports` and MCP `start_export`.
@@ -141,6 +142,7 @@ export type StartedExport = {
 export async function startExport(
   scopedDb: ScopedDb,
   input: {
+    promptLocale: Locale;
     userId: string;
     organizationId: string;
     sequenceId: string;
@@ -192,6 +194,7 @@ export async function startExport(
     workflowRunId = await triggerWorkflow<SequenceExportWorkflowInput>(
       'sequence-export',
       {
+        promptLocale: input.promptLocale,
         userId: input.userId,
         organizationId: input.organizationId,
         sequenceId,

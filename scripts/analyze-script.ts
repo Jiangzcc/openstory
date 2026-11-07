@@ -186,6 +186,7 @@ async function main() {
 
   try {
     const workflowRunId = await triggerWorkflow('/analyze-script', {
+      promptLocale: 'en',
       script,
       styleConfig: parsedStyle,
       aspectRatio,

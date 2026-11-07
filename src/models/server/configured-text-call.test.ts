@@ -196,6 +196,7 @@ function workflowCall(route: TextModelRoute, mode: WorkflowMode) {
     responseSchema: RESPONSE_SCHEMA,
   };
   const context = {
+    promptLocale: 'en' as const,
     scopedDb,
     workflowRunId: 'mock-workflow',
     ...(mode === 'streaming' && {

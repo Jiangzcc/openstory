@@ -3,6 +3,7 @@
  * (`motion.fn.ts`) and the MCP tools: generate a shot's clip, cancel a
  * render, and render Ark drafts at quality.
  */
+import type { Locale } from '@/platform/i18n/locale';
 import { loadSequenceStyle } from '@/look/server/sequence-style';
 import { buildPackedMotionPrompt } from '@/motion/server/build-motion-render';
 import { seedanceEditSeconds } from '@/motion/seedance-edit';
@@ -578,6 +579,7 @@ export async function generateShotMotion(
         ])
       );
       const workflowInput: BatchMotionMusicWorkflowInput = {
+        promptLocale: context.promptLocale,
         userId: context.user.id,
         organizationId,
         sequenceId: sequence.id,
@@ -664,6 +666,7 @@ export async function renderShotAtQuality(context: ShotEditContext) {
   const version = await scopedDb.videoVariants.getSelectedByShot(shot.id);
   if (!version) throw new NotFoundError('No video to render at quality');
   return renderDraftAtQuality({
+    promptLocale: context.promptLocale,
     scopedDb,
     userId: user.id,
     sequence,
@@ -677,6 +680,7 @@ export async function renderShotAtQuality(context: ShotEditContext) {
  * segment, skipping segments already rendering or past the seven-day window.
  */
 export async function renderSequenceDraftsAtQuality(context: {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   user: Pick<User, 'id'>;
   sequence: Sequence;
@@ -697,6 +701,7 @@ export async function renderSequenceDraftsAtQuality(context: {
   for (const version of bySegment.values()) {
     try {
       const run = await renderDraftAtQuality({
+        promptLocale: context.promptLocale,
         scopedDb,
         userId: user.id,
         sequence,

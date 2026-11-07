@@ -25,6 +25,9 @@ import {
 import { getLogger } from '@/platform/logger';
 import { r2KeyFromUrl } from '@/platform/server/storage/buckets';
 import { storageObjectContentType } from '#storage';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
+import { WATCH_CLIP_SYSTEM_ZH } from './auxiliary-prompts';
 
 const logger = getLogger(['openstory', 'models', 'watch-clip']);
 
@@ -33,7 +36,8 @@ const SYSTEM_PROMPT =
 
 export async function watchClipForOrganization(
   scopedDb: ScopedDb,
-  input: { url: string; question: string }
+  input: { url: string; question: string },
+  promptLocale: Locale
 ): Promise<{ answer: string; model: string }> {
   const key = r2KeyFromUrl(input.url);
   if (key === null) {
@@ -66,7 +70,15 @@ export async function watchClipForOrganization(
   }
 
   return refuseGeminiOffRegion('watch clip', () =>
-    watchUploadedClip(scopedDb, input.question, llmKey, key, mimeType, model)
+    watchUploadedClip(
+      scopedDb,
+      input.question,
+      llmKey,
+      key,
+      mimeType,
+      model,
+      promptLocale
+    )
   );
 }
 
@@ -76,12 +88,20 @@ async function watchUploadedClip(
   llmKey: ResolvedLlmKey,
   key: string,
   mimeType: string,
-  requestedModel: AnalysisModelId
+  requestedModel: AnalysisModelId,
+  promptLocale: Locale
 ): Promise<{ answer: string; model: string }> {
   const file = await uploadClipToGemini(key, mimeType, llmKey.key);
   try {
     const messages: ChatMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      {
+        role: 'system',
+        content: localizedPrompt(
+          promptLocale,
+          SYSTEM_PROMPT,
+          WATCH_CLIP_SYSTEM_ZH
+        ),
+      },
       {
         role: 'user',
         content: [

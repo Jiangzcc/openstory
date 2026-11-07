@@ -5,6 +5,7 @@
  * context (`loadShotTarget`); MCP adds only the parent-chain check.
  */
 import { z } from 'zod';
+import type { Locale } from '@/platform/i18n/locale';
 import { NotFoundError, ValidationError } from '@/platform/errors';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { projectRead } from '@/platform/server/read-projection';
@@ -52,7 +53,8 @@ const promptType = z
 export async function shotEdit(
   scopedDb: ScopedDb,
   userId: string,
-  input: { sequenceId: string; shotId: string }
+  input: { sequenceId: string; shotId: string },
+  promptLocale: Locale
 ): Promise<ShotEditContext> {
   await productionAccess(scopedDb).sequence(input.sequenceId);
   const target = await loadShotTarget(scopedDb, input.sequenceId, input.shotId);
@@ -68,6 +70,7 @@ export async function shotEdit(
     throw new NotFoundError('Shot not found in this sequence.');
   }
   return {
+    promptLocale,
     ...target,
     scopedDb,
     user: { id: userId },
@@ -92,8 +95,8 @@ const getShotSpec = productionRead(
     visualWritten: z.boolean(),
     motionWritten: z.boolean(),
   }),
-  async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     return { shotId: context.shot.id, ...(await readShotSpec(context)) };
   }
 );
@@ -135,8 +138,8 @@ const listShotDialogue = productionRead(
     ),
     readings: z.array(readingSchema),
   }),
-  async (input, { scopedDb, userId, origin }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  async (input, { scopedDb, userId, origin, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const [versions, selected, readings] = await Promise.all([
       scopedDb.shotDialogue.listVersions(context.shot.id),
       scopedDb.shotDialogue.getSelected(context.shot.id),
@@ -170,8 +173,8 @@ const updateShotPrompt = openstoryTool({
     versionId: z.string().nullable(),
     unchanged: z.boolean(),
   }),
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const saved = await saveShotPrompt(context, {
       promptType: input.promptType,
       text: input.text,
@@ -194,8 +197,8 @@ const restoreShotPrompt = openstoryTool({
   annotations: writeAnnotations,
   inputSchema: shotInput.extend({ promptType, versionId: ulidSchema }),
   outputSchema: z.object({ versionId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const { variantId } = await restoreShotPromptVersion(
       context,
       input.promptType,
@@ -241,8 +244,8 @@ const rebuildShotPrompts = openstoryTool({
       .default({ visual: false, motion: false }),
   }),
   outputSchema: rebuildResult,
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     if (!context.scene) {
       throw new ValidationError('Shot has no scene to rebuild from');
     }
@@ -267,8 +270,8 @@ const updateShotSpec = openstoryTool({
       .default({ visual: false, motion: false }),
   }),
   outputSchema: rebuildResult,
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await saveShotSpec(
       context,
       input.spec,
@@ -288,8 +291,8 @@ const updateShotDialogue = openstoryTool({
     lines: storedMotionDialogueSchema.shape.lines,
   }),
   outputSchema: z.object({ versionId: z.string().nullable() }),
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     return {
       data: await saveShotDialogue(context, input.lines),
       summary: `Saved ${input.lines.length} dialogue line(s).`,
@@ -305,8 +308,8 @@ const selectDialogueVersion = openstoryTool({
   annotations: { ...writeAnnotations, idempotentHint: true },
   inputSchema: shotInput.extend({ versionId: ulidSchema }),
   outputSchema: z.object({ versionId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await selectShotDialogueVersion(context, input.versionId);
     return { data: result, summary: 'Selected the dialogue version.' };
   },
@@ -320,8 +323,8 @@ const selectDialogueReading = openstoryTool({
   annotations: { ...writeAnnotations, idempotentHint: true },
   inputSchema: shotInput.extend({ readingId: ulidSchema }),
   outputSchema: z.object({ readingId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const { sectionId } = await selectShotDialogueSection(
       context,
       input.readingId
@@ -338,8 +341,8 @@ const discardDialogueReading = openstoryTool({
   annotations: { ...writeAnnotations, destructiveHint: true },
   inputSchema: shotInput.extend({ readingId: ulidSchema }),
   outputSchema: z.object({ readingId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const { sectionId } = await discardShotDialogueSection(
       context,
       input.readingId
@@ -362,8 +365,8 @@ const selectImageVersion = openstoryTool({
     shotId: z.string(),
     imageUrl: z.string().nullable(),
   }),
-  run: async (input, { scopedDb, userId, origin }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, origin, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const version = await scopedDb.frameVariants.select(
       context.frame.id,
       input.versionId,
@@ -391,8 +394,8 @@ const selectVideoVersion = openstoryTool({
     shotId: z.string(),
     videoUrl: z.string().nullable(),
   }),
-  run: async (input, { scopedDb, userId, origin }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, origin, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const version = await scopedDb.videoVariants.select(
       context.shot.id,
       input.versionId,

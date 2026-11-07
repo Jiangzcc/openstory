@@ -19,6 +19,7 @@ export const describeUploadFn = createServerFn({ method: 'POST' })
   )
   .handler(({ context, data }) =>
     describeUpload({
+      promptLocale: context.promptLocale,
       scopedDb: context.scopedDb,
       userId: context.user.id,
       ...data,

@@ -49,6 +49,7 @@ function restoredPromptProvenance(row: {
 export async function restoreShotPromptVersion(
   context: Pick<
     ShotEditContext,
+    | 'promptLocale'
     | 'scopedDb'
     | 'user'
     | 'organizationId'
@@ -142,6 +143,7 @@ export async function readShotSpec(
 export async function saveShotSpec(
   context: Pick<
     ShotEditContext,
+    | 'promptLocale'
     | 'scopedDb'
     | 'user'
     | 'organizationId'

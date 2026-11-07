@@ -24,6 +24,7 @@ import { getAnalysisModelById } from '@/models/models.config';
 import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
 import type { TextModel } from '@/models/models';
 import type { TextModelRoutingSnapshot } from '@/models/text-channels';
+import type { Locale } from '@/platform/i18n/locale';
 
 const logger = getLogger(['openstory', 'studio', 'assets']);
 
@@ -128,7 +129,8 @@ async function resolveStudioDraftKey(
  */
 export async function draftStudioPromptForOrganization(
   scopedDb: ScopedDb,
-  data: StudioPromptDraftInput
+  data: StudioPromptDraftInput,
+  promptLocale: Locale
 ): Promise<{ prompt: string }> {
   const snapshot = await scopedDb.textChannels.getSnapshot();
   const extraModels = textModelCatalogFromRouting(snapshot);
@@ -153,6 +155,7 @@ export async function draftStudioPromptForOrganization(
 
   const result = await draftStudioPrompt({
     ...data,
+    promptLocale,
     model,
     llmKey,
     resolveLlmKey,

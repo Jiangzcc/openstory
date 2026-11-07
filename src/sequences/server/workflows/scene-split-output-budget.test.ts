@@ -153,6 +153,7 @@ async function runSplit({
   });
   // No sequenceId: the supported analysis-only path needs no persistence.
   const payload: SceneSplitWorkflowInput = {
+    promptLocale: 'en' as const,
     userId: 'mock-user',
     organizationId: 'mock-team',
     script: MOCK_SCRIPT,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SCRIPT_ANALYSIS_MODELS } from '@/models/models.config';
 import {
+  TEXT_CHANNEL_LIMITS,
   TEXT_CHANNEL_PROTOCOL,
   TEXT_CHANNEL_PROTOCOLS,
 } from '@/models/text-channels';
@@ -76,6 +77,7 @@ describe('channel initialization and keys', () => {
     expect(draft.protocol).toBe(TEXT_CHANNEL_PROTOCOLS.chatCompletions);
     expect(draft.enabled).toBe(false);
     expect(draft.apiKey).toBe('');
+    expect(draft.userAgent).toBe('');
   });
   it('never puts stored credential identifiers or hints into a write-only key input', () => {
     const draft = textChannelToDraft(channel);
@@ -95,6 +97,59 @@ describe('channel initialization and keys', () => {
       expect(result.data.apiKey).toBeUndefined();
       expect(result.data.revision).toBe(REVISION);
     }
+  });
+});
+
+describe('channel User-Agent', () => {
+  it('uses a blank draft for a saved channel without a User-Agent', () => {
+    const draft = textChannelToDraft(channel);
+    expect(draft.userAgent).toBe('');
+    expect(validateTextChannelDraft(draft, REVISION, channel)).toMatchObject({
+      success: true,
+      data: { userAgent: '' },
+    });
+  });
+  it('retains and submits an edited custom User-Agent', () => {
+    const original = { ...channel, userAgent: 'Studio/1.0' };
+    const draft = textChannelToDraft(original);
+    expect(draft.userAgent).toBe('Studio/1.0');
+    expect(
+      validateTextChannelDraft(
+        { ...draft, userAgent: '  Studio/2.0  ' },
+        REVISION,
+        original
+      )
+    ).toMatchObject({ success: true, data: { userAgent: 'Studio/2.0' } });
+  });
+  it('submits an explicit empty value when clearing a saved User-Agent', () => {
+    const original = { ...channel, userAgent: 'Studio/1.0' };
+    expect(
+      validateTextChannelDraft(
+        { ...textChannelToDraft(original), userAgent: '   ' },
+        REVISION,
+        original
+      )
+    ).toMatchObject({ success: true, data: { userAgent: '' } });
+  });
+  it.each([
+    'Studio/1.0\r\nX-Extra: value',
+    'Studio/1.0\t',
+    '客户端/1.0',
+    'a'.repeat(TEXT_CHANNEL_LIMITS.userAgent + 1),
+  ])('returns a field error for an invalid User-Agent: %j', (userAgent) => {
+    expect(
+      validateTextChannelDraft(
+        { ...textChannelToDraft(channel), userAgent },
+        REVISION,
+        channel
+      )
+    ).toEqual({
+      success: false,
+      errors: {
+        userAgent:
+          'Use up to 256 printable ASCII characters for User-Agent, or leave it blank.',
+      },
+    });
   });
 });
 

@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 /**
  * Sequence music edits shared by the editor's server fns and the MCP tools
  * (#1979): save or restore the music prompt, pick a track, discard / undiscard
@@ -32,7 +33,7 @@ import { musicSceneSummariesFromRows } from '@/audio/server/workflows/music-scen
 
 const logger = getLogger(['openstory', 'audio', 'music-edit']);
 
-type Actor = { userId: string };
+type Actor = { promptLocale: Locale; userId: string };
 
 /** A music track of this sequence. */
 async function requireMusicTrack(
@@ -217,6 +218,7 @@ export async function generateMusic(
   const totalDuration = musicRequestDurationSeconds(allShots);
 
   const baseInput = {
+    promptLocale: actor.promptLocale,
     userId: actor.userId,
     organizationId: sequence.organizationId,
     sequenceId: sequence.id,
@@ -317,6 +319,7 @@ export async function rewriteMusicPrompt(
   const workflowRunId = await triggerWorkflow<MusicPromptWorkflowInput>(
     '/music-prompt',
     {
+      promptLocale: actor.promptLocale,
       userId: actor.userId,
       organizationId: scopedDb.organizationId,
       sequenceId: sequence.id,

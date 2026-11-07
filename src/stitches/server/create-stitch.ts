@@ -6,6 +6,7 @@
  * with the stored URLs. The id is minted first so the stored paths carry it.
  */
 
+import type { Locale } from '@/platform/i18n/locale';
 import { generateId } from '@/platform/id';
 import { ValidationError } from '@/platform/errors';
 import type { ScopedDb } from '@/platform/server/db/scoped';
@@ -42,6 +43,7 @@ const ROLE_TYPE: Record<MediaRole, string> = {
 };
 
 export async function createStitchFromSources(args: {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   userId: string;
   cut: StitchSourcesCut;
@@ -65,6 +67,7 @@ export async function createStitchFromSources(args: {
   const stored = new Map<string, string>();
   for (const [key, { source, role }] of slots) {
     const file = await storeUpload({
+      promptLocale: args.promptLocale,
       scopedDb: args.scopedDb,
       userId: args.userId,
       sequenceId: null,

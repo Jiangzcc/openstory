@@ -141,6 +141,7 @@ function makeEvent(
 ): Readonly<WorkflowEvent<CharacterBibleWorkflowInput>> {
   return {
     payload: {
+      promptLocale: 'en',
       userId: 'u1',
       organizationId: 'organization-1',
       sequenceId: 'seq-1',

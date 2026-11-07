@@ -3,6 +3,8 @@ import { micros } from '@/billing/money';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { asStub } from '@/test/as-stub';
+import type { ChatMessage } from '@/platform/server/ai/prompts-index';
+import { SUPPORTED_LOCALES } from '@/platform/i18n/locale';
 
 const MODEL = 'google/gemini-3.8-flash' as const;
 const COST = micros(320);
@@ -12,7 +14,7 @@ const mockDelete = vi.fn();
 const mockUpload = vi.fn();
 const mockCost = vi.fn(() => COST);
 let servedModel: string = MODEL;
-const mockStream = vi.fn(() =>
+const mockStream = vi.fn((_options: { messages: ChatMessage[] }) =>
   (async function* () {
     yield {
       done: true,
@@ -74,12 +76,39 @@ beforeEach(() => {
 });
 
 describe('configured assistant clip model', () => {
+  it.each(SUPPORTED_LOCALES)(
+    'sends %s instructions without translating the question',
+    async (locale) => {
+      const c = context();
+      const question = 'Lena 说 "Stay here." 后发生了什么？';
+      await watchClipForOrganization(
+        c.scopedDb,
+        { url: '/r2/talent/t/clip.mp4', question },
+        locale
+      );
+      const messages = mockStream.mock.calls[0]?.[0].messages;
+      expect(messages?.[0]?.content).toContain(
+        locale === 'zh-CN'
+          ? '你正在为电影创作者观看'
+          : 'You are watching a clip'
+      );
+      const content = messages?.[1]?.content;
+      expect(Array.isArray(content) ? content[0] : undefined).toEqual({
+        type: 'text',
+        content: question,
+      });
+    }
+  );
   it('resolves, watches and bills the server-selected model', async () => {
     const c = context();
-    const result = await watchClipForOrganization(c.scopedDb, {
-      url: '/r2/talent/t/clip.mp4',
-      question: 'What moves?',
-    });
+    const result = await watchClipForOrganization(
+      c.scopedDb,
+      {
+        url: '/r2/talent/t/clip.mp4',
+        question: 'What moves?',
+      },
+      'en'
+    );
     expect(c.get).toHaveBeenCalledOnce();
     expect(c.resolveOptionalKey).toHaveBeenCalledExactlyOnceWith('google');
     expect(c.resolveLlmKey).not.toHaveBeenCalled();
@@ -99,10 +128,14 @@ describe('configured assistant clip model', () => {
     const c = context();
     servedModel = 'z-ai/glm-5.3-flash';
     await expect(
-      watchClipForOrganization(c.scopedDb, {
-        url: '/r2/talent/t/clip.mp4',
-        question: 'What moves?',
-      })
+      watchClipForOrganization(
+        c.scopedDb,
+        {
+          url: '/r2/talent/t/clip.mp4',
+          question: 'What moves?',
+        },
+        'en'
+      )
     ).rejects.toThrow('answered on');
     expect(c.deductCredits).not.toHaveBeenCalled();
     expect(mockDelete).toHaveBeenCalledOnce();
@@ -112,10 +145,14 @@ describe('configured assistant clip model', () => {
     const c = context();
     c.resolveOptionalKey.mockResolvedValue(undefined);
     await expect(
-      watchClipForOrganization(c.scopedDb, {
-        url: '/r2/talent/t/clip.mp4',
-        question: 'What moves?',
-      })
+      watchClipForOrganization(
+        c.scopedDb,
+        {
+          url: '/r2/talent/t/clip.mp4',
+          question: 'What moves?',
+        },
+        'en'
+      )
     ).rejects.toThrow('Gemini API key');
     expect(mockUpload).not.toHaveBeenCalled();
     expect(c.deductCredits).not.toHaveBeenCalled();

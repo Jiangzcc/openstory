@@ -4,6 +4,7 @@
  * server fns (`media-upload.fn.ts`) and the MCP tools. See the header of
  * `media-upload.fn.ts` for the staleness and DAG contracts.
  */
+import type { Locale } from '@/platform/i18n/locale';
 import { wearLook } from '@/cast/character-looks';
 import { defaultLookFace } from '@/cast/look-sheet-face';
 import {
@@ -86,6 +87,7 @@ const logger = getLogger(['openstory', 'shots', 'media-upload']);
 
 /** Who uploads into which sequence: the editor's sequence middleware context. */
 type SequenceUploadContext = {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   user: Pick<User, 'id'>;
   organizationId: string;
@@ -663,6 +665,7 @@ export async function setCharacterSheetFromUpload(
   // A voice-only character is heard, never seen (#1585): no portrait.
   if (!character.voiceOnly) {
     await triggerSheetPortrait({
+      promptLocale: context.promptLocale,
       userId: user.id,
       organizationId: context.organizationId,
       sequenceId: sequenceId ?? undefined,
@@ -727,7 +730,10 @@ export async function setCharacterReferencePhotoFromUpload(
   await scopedDb.characters.setReferencePhoto(character.id, data.publicUrl);
   return await regenerateCharacterSheet(
     scopedDb,
-    { userId: user.id },
+    {
+      promptLocale: context.promptLocale,
+      userId: user.id,
+    },
     sequence,
     { characterId: character.id, lookId: character.id }
   );
@@ -815,6 +821,7 @@ export async function setLocationSheetFromUpload(
     logger.error('realtime emit failed', { err: error });
   }
   await triggerSheetPortrait({
+    promptLocale: context.promptLocale,
     userId: user.id,
     organizationId: context.organizationId,
     sequenceId: sequenceId ?? undefined,
@@ -985,6 +992,7 @@ async function storeTranscodedWav(
  */
 export async function storeUpload(
   args: StoreTarget & {
+    promptLocale: Locale;
     scopedDb: ScopedDb;
     userId: string;
     /**
@@ -1124,6 +1132,7 @@ export async function storeUpload(
   // The likeness gate (#1581), as the editor's `classifyUploadFn` and the
   // public API's ingest run it: the classifier decides, never the caller.
   const rights = await classifyUpload({
+    promptLocale: args.promptLocale,
     scopedDb,
     userId: args.userId,
     url: stored.url,

@@ -13,11 +13,66 @@ import {
 import {
   mergeImageModelCatalog,
   getImageModelDefinition,
+  getImagePromptRecommendation,
   imageModelDisplayName,
   imageModelSupportsOperation,
   isSelectableImageModelId,
   imageModelSelectionError,
 } from './image-model-catalog';
+
+describe('image prompt length recommendations', () => {
+  it.each([
+    ['gpt_image_2', 32000],
+    ['qwen_image', 2000],
+  ] as const)('reads the built-in %s character reference', (id, expected) => {
+    expect(getImagePromptRecommendation(getImageModelDefinition(id))).toEqual({
+      maxPromptLength: expected,
+    });
+  });
+
+  it.each([
+    ['gpt_image_2', 32000],
+    ['qwen_image', 2000],
+  ] as const)(
+    'keeps the %s character reference after a channel binding',
+    (id, expected) => {
+      const catalog = mergeImageModelCatalog([imageCatalogFixture({ id })]);
+      const model = getImageModelDefinition(id, catalog);
+      expect(model?.source).toBe('configured');
+      expect(getImagePromptRecommendation(model)).toEqual({
+        maxPromptLength: expected,
+      });
+    }
+  );
+
+  it.each([
+    ['custom-image:qwen-image', 'Qwen Image 2 Pro'],
+    ['custom-image:gpt-image-2', 'GPT Image 2.5'],
+  ] as const)(
+    'does not infer a reference from the custom model identity %s',
+    (id, name) => {
+      const catalog = mergeImageModelCatalog([
+        imageCatalogFixture({ id, name }),
+      ]);
+      expect(
+        getImagePromptRecommendation(getImageModelDefinition(id, catalog))
+      ).toEqual({});
+    }
+  );
+
+  it.each(['grok_imagine_image', 'grok_imagine_image_quality'] as const)(
+    'keeps %s without an invented reference',
+    (id) => {
+      expect(getImagePromptRecommendation(getImageModelDefinition(id))).toEqual(
+        {}
+      );
+    }
+  );
+
+  it('has no reference while the selected model is unavailable', () => {
+    expect(getImagePromptRecommendation(undefined)).toEqual({});
+  });
+});
 
 describe('configured image model catalog', () => {
   it('preserves built-in identities while recognizing configured identity without pretending it is built in', () => {

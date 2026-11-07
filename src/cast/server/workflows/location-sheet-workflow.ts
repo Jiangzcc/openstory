@@ -130,6 +130,7 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
     // a via that answers with inline bytes has no URL to pass on, and the
     // whole image would otherwise ride the 1 MiB checkpoint (#1638).
     const generation = await generateImageSoftening({
+      promptLocale: input.promptLocale,
       step,
       scopedDb,
       workflowRunId: event.instanceId,
@@ -263,6 +264,7 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
     await step.do('trigger-portrait', async () => {
       await triggerSheetPortrait(
         {
+          promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId,
           sequenceId: sequenceId ?? undefined,

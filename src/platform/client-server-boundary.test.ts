@@ -72,6 +72,7 @@ const SERVER_ONLY = [
 
 /** Client-side entry points of packages whose root is server-only. */
 const CLIENT_SAFE = [
+  '@tanstack/ai/client',
   'better-auth/client',
   'better-auth/react',
   // The organization client and server share this access-control DSL.
@@ -305,6 +306,13 @@ export function clientRetainedImports(source: string): string[] {
 }
 
 describe('client/server import boundary', () => {
+  test('allows the AI browser entry while retaining server-only AI boundaries', () => {
+    expect(isServerOnly('@tanstack/ai/client')).toBe(false);
+    expect(isServerOnly('@tanstack/ai')).toBe(true);
+    expect(isServerOnly('@tanstack/ai/adapters')).toBe(true);
+    expect(isServerOnly('@tanstack/ai/testing')).toBe(true);
+  });
+
   test.each(['/', '\\'])(
     'path classification preserves server boundaries with %s separators',
     (separator) => {

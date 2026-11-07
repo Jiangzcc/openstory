@@ -6,6 +6,7 @@ export const TEXT_CHANNEL_PROTOCOLS = {
   responses: 'openai-responses',
 } as const;
 export const TEXT_CHANNEL_PROTOCOL = TEXT_CHANNEL_PROTOCOLS.chatCompletions;
+export const DEFAULT_TEXT_CHANNEL_USER_AGENT = 'OpenStory/0.1.0';
 const TEXT_CHANNEL_INITIAL_REVISION = 0;
 export const TEXT_CHANNEL_LIMITS = {
   requiredLength: 1,
@@ -15,6 +16,7 @@ export const TEXT_CHANNEL_LIMITS = {
   upstreamModel: 300,
   description: 2_000,
   apiKey: 8_192,
+  userAgent: 256,
   models: 100,
   channels: 100,
 } as const;
@@ -122,8 +124,18 @@ const channelFields = {
   name: labelSchema,
   baseUrl: textChannelBaseUrlSchema,
   protocol: z.enum(TEXT_CHANNEL_PROTOCOLS),
+  userAgent: z
+    .string()
+    .max(TEXT_CHANNEL_LIMITS.userAgent)
+    .regex(/^[\x20-\x7e]*$/, 'Use printable ASCII characters for User-Agent.')
+    .transform((value) => value.trim())
+    .optional(),
   enabled: z.boolean(),
 };
+
+export function resolveTextChannelUserAgent(userAgent?: string): string {
+  return userAgent?.trim() || DEFAULT_TEXT_CHANNEL_USER_AGENT;
+}
 
 const textChannelSchema = z
   .strictObject({
@@ -250,6 +262,7 @@ export type TextModelRoute = Omit<ChannelTextModel, 'id' | 'enabled'> & {
   protocol: TextChannelProtocol;
   baseUrl: string;
   credentialId: string;
+  userAgent?: string;
 };
 export type TextModelRoutingSnapshot = readonly TextModelRoute[];
 export type TextModelCatalogEntry = Omit<
@@ -283,7 +296,16 @@ export function createTextModelRoutingSnapshot(
     if (!model.enabled || !channel?.enabled || !channel.credentialId) return [];
     const { id, enabled: _enabled, ...binding } = model;
     const { protocol, baseUrl, credentialId } = channel;
-    return [{ ...binding, modelId: id, protocol, baseUrl, credentialId }];
+    return [
+      {
+        ...binding,
+        modelId: id,
+        protocol,
+        baseUrl,
+        credentialId,
+        userAgent: resolveTextChannelUserAgent(channel.userAgent),
+      },
+    ];
   });
 }
 

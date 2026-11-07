@@ -96,6 +96,7 @@ export const Route = createFileRoute('/api/v1/sequences/$id/exports')({
           const origin = new URL(request.url).origin;
           const cut = await resolveExportCut(context.scopedDb, params.id);
           const { row, workflowRunId } = await startExport(context.scopedDb, {
+            promptLocale: context.promptLocale,
             userId: context.user.id,
             organizationId: context.organizationId,
             sequenceId: params.id,

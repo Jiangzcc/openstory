@@ -461,7 +461,13 @@ function makeContext(
   // minimal ScopedDb stub exposing only what executeSmartRetry touches
   const scopedDb = asStub<ScopedDb>(stub);
   return {
-    context: { sequence, user: { id: 'u1' }, organizationId: 't1', scopedDb },
+    context: {
+      promptLocale: 'en' as const,
+      sequence,
+      user: { id: 'u1' },
+      organizationId: 't1',
+      scopedDb,
+    },
     scopedDb,
     updateStatus,
     listBySequence,

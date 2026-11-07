@@ -40,6 +40,7 @@ export class ElementVisionWorkflow extends OpenStoryWorkflowEntrypoint<ElementVi
         scopedDb.models.vision
       );
       return await describeElementImage({
+        promptLocale: input.promptLocale,
         model: scopedDb.models.vision,
         imageUrl,
         filename,

@@ -198,6 +198,15 @@ export abstract class OpenStoryWorkflowEntrypoint<
       );
     }
 
+    if (
+      event.payload.promptLocale !== 'zh-CN' &&
+      event.payload.promptLocale !== 'en'
+    ) {
+      throw new Error(
+        `[${this.constructor.name}] payload missing a valid promptLocale`
+      );
+    }
+
     const scopedDb = toWorkflowScopedDb(
       createScopedDb(event.payload.organizationId, event.payload.userId),
       event.payload.modelConfiguration

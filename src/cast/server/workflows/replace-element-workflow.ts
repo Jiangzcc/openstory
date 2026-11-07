@@ -253,6 +253,7 @@ export class ReplaceElementWorkflow extends OpenStoryWorkflowEntrypoint<ReplaceE
         scopedDb.models.vision
       );
       const result = await describeElementImage({
+        promptLocale: input.promptLocale,
         model: scopedDb.models.vision,
         imageUrl: newImageUrl,
         filename: input.newFilename,
@@ -453,6 +454,7 @@ export class ReplaceElementWorkflow extends OpenStoryWorkflowEntrypoint<ReplaceE
         const claimId = claimIdByShot.get(shotId);
 
         const childPayload: ImageWorkflowInput = {
+          promptLocale: input.promptLocale,
           userId: input.userId,
           variantOnly: false,
           organizationId: input.organizationId,
@@ -608,6 +610,7 @@ export class ReplaceElementWorkflow extends OpenStoryWorkflowEntrypoint<ReplaceE
 
           const durationMs = snapshots[shotId]?.durationMs;
           const renderJobs = buildMotionRender({
+            promptLocale: input.promptLocale,
             userId: input.userId,
             organizationId: input.organizationId,
             sequenceId,

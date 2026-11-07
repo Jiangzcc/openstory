@@ -21,6 +21,7 @@ it.each(['mock-parent-hold', undefined])(
   'passes the exact reservation %s to softening',
   async (reservationId) => {
     const input = {
+      promptLocale: 'en',
       userId: 'mock-user',
       organizationId: 'mock-org',
       sequenceId: 'mock-sequence',

@@ -68,6 +68,7 @@ function fail(
   scopedDb: WorkflowScopedDb
 ) {
   const payload: ImageWorkflowInput = {
+    promptLocale: 'en',
     userId: 'u1',
     organizationId: 't1',
     variantOnly: false,

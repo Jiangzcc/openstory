@@ -74,6 +74,7 @@ const styleConfig: StyleConfig = {
   references: [],
 };
 const input: StoryboardWorkflowInput & { sequenceId: string } = {
+  promptLocale: 'en' as const,
   title: 'Test',
   script: 'Hello',
   elementIds: [],

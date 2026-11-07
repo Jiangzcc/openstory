@@ -24,6 +24,7 @@ import {
 import { NonRetryableError } from 'cloudflare:workflows';
 import type { CloudflareEnv } from './types';
 import type { WorkflowStep } from 'cloudflare:workers';
+import type { Locale } from '@/platform/i18n/locale';
 import { asStub } from '@/test/as-stub';
 
 // Cloudflare's documented event-type rule.
@@ -177,6 +178,7 @@ describe('spawnAndAwaitChild', () => {
       Workflow<{
         userId: string;
         organizationId: string;
+        promptLocale: Locale;
       }>
     >(bindingStub);
     return { step, binding, create, waitForEvent };
@@ -187,10 +189,33 @@ describe('spawnAndAwaitChild', () => {
     parentInstanceId: 'parent_run_A',
     childId: 'motion:01SEQ:01FRAME',
     modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
-    childPayload: { userId: 'u1', organizationId: 't1' },
+    childPayload: {
+      userId: 'u1',
+      organizationId: 't1',
+      promptLocale: 'en' as const,
+    },
     spawnStepName: 'spawn-motion-0',
     awaitStepName: 'await-motion-0',
   };
+
+  test.each(['en', 'zh-CN'] as const)(
+    'keeps the parent-selected %s locale on the child payload',
+    async (promptLocale) => {
+      const { step, binding, create } = harness(() =>
+        Promise.resolve(undefined)
+      );
+      await spawnAndAwaitChild(step, {
+        ...baseArgs,
+        binding,
+        childPayload: { ...baseArgs.childPayload, promptLocale },
+      });
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({ promptLocale }),
+        })
+      );
+    }
+  );
 
   test('overrides child payload settings with the inherited parent snapshot', async () => {
     const { step, binding, create } = harness(() => Promise.resolve(undefined));

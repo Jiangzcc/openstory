@@ -75,12 +75,14 @@ describe('configured Studio prompt draft', () => {
       model: 'anthropic/claude-opus-5.5',
       modelConfiguration: { studioDraft: 'anthropic/claude-opus-5.5' },
     });
-    expect(await draftStudioPromptForOrganization(scopedDb, data)).toEqual({
+    expect(
+      await draftStudioPromptForOrganization(scopedDb, data, 'en')
+    ).toEqual({
       prompt: 'A camera move.',
     });
     expect(resolveLlmKey).toHaveBeenCalledExactlyOnceWith(MODEL, []);
     expect(mockDraft).toHaveBeenCalledWith(
-      expect.objectContaining({ model: MODEL })
+      expect.objectContaining({ model: MODEL, promptLocale: 'en' })
     );
     expect(deductCredits).toHaveBeenCalledWith(
       COST,
@@ -114,10 +116,14 @@ describe('custom Studio draft routes', () => {
   it('uses the configured custom model and one snapshot for every key lookup', async () => {
     const snapshot = [CUSTOM_ROUTE];
     const { scopedDb, resolveLlmKey } = customDraftContext(snapshot);
-    await draftStudioPromptForOrganization(scopedDb, {
-      activity: 'image',
-      references: [],
-    });
+    await draftStudioPromptForOrganization(
+      scopedDb,
+      {
+        activity: 'image',
+        references: [],
+      },
+      'en'
+    );
     expect(resolveLlmKey).toHaveBeenCalledExactlyOnceWith(
       CUSTOM_ROUTE.modelId,
       snapshot
@@ -137,16 +143,20 @@ describe('custom Studio draft routes', () => {
     async ({ snapshot }) => {
       const { scopedDb, resolveLlmKey } = customDraftContext(snapshot);
       await expect(
-        draftStudioPromptForOrganization(scopedDb, {
-          activity: 'image',
-          references: [
-            {
-              url: 'https://cdn.example/cyclist.png',
-              label: 'Cyclist',
-              kind: 'image',
-            },
-          ],
-        })
+        draftStudioPromptForOrganization(
+          scopedDb,
+          {
+            activity: 'image',
+            references: [
+              {
+                url: 'https://cdn.example/cyclist.png',
+                label: 'Cyclist',
+                kind: 'image',
+              },
+            ],
+          },
+          'en'
+        )
       ).rejects.toThrow('unavailable or lacks vision');
       expect(resolveLlmKey).not.toHaveBeenCalled();
       expect(mockDraft).not.toHaveBeenCalled();

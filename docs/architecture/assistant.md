@@ -33,6 +33,13 @@ only assistant-side work per tool happens in
 Scope checks, the likeness gate and billing are the tool's own and are the
 same on both paths. Do not add an assistant-only tool; add an MCP tool.
 
+The local customization selects system instructions and fixed request wrappers
+from the web request's `openstory_locale` cookie (default `zh-CN`). The assistant
+passes the same required `promptLocale` through its internal MCP context; the
+external MCP server supplies `en` at its boundary. User messages, dialogue and
+stored prompts keep their actual content. See
+[system prompt localization](../secondary-development/system-prompt-localization.md).
+
 ## The turn
 
 `POST /api/assistant/chat` (`src/assistant/server/assistant-chat.ts`):
@@ -260,10 +267,23 @@ look at the image and talk about it at once. A click in the panel is not
 
 ## Stories
 
-`assistant-panel.stories.tsx` runs the real `chat()` engine in the browser
-over `fakeText` (`scripted-connection.ts`), so every state (streaming, tool
-running, tool error, confirm-before-spend, upload, long thread) streams the
-same events the server sends.
+Tool approval cards resolve through `ui/assistant-approvals.ts`. Server tools
+are not registered as browser tools, so the client can expose their approval
+as a generic interrupt. Read its original binding with the public
+`@tanstack/ai/client` entry, match the tool call and current run/generation,
+and resolve it with `{ approved }`; registered tool approvals keep the boolean
+API. Only pending or failed resolutions can be answered, so a repeated click
+does not resubmit a staged response. The same path handles restored approvals.
+
+`assistant-panel.stories.tsx` sends scripted AG-UI events through the real
+browser chat client (`scripted-connection.ts`). It seeds mock model defaults
+and the text catalog so server stubs cannot block the composer. Approval
+descriptors use valid mock schema identities, pinned against the SDK in tests.
+Streaming, tool errors, confirm-before-delete, uploads and long threads use
+the same event types as the server.
+
+The 2026-11-07 local compatibility fix and verification boundaries are recorded
+in [assistant approval fix](../secondary-development/assistant-approval-fix.md).
 
 ## Secondary-development localization
 

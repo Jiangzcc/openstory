@@ -116,6 +116,7 @@ export const analyzeDraftElementFn = createServerFn({ method: 'POST' })
     }
 
     const result = await describeElementImage({
+      promptLocale: context.promptLocale,
       model,
       imageUrl: data.publicUrl,
       filename: data.filename,
@@ -185,6 +186,7 @@ export const finalizeElementUploadFn = createServerFn({ method: 'POST' })
     // storing an MP3 as an image.
     elementKindOrThrow(data.filename);
     return await attachElementUpload({
+      promptLocale: context.promptLocale,
       scopedDb: context.scopedDb,
       organizationId: context.organizationId,
       userId: context.user.id,
@@ -352,6 +354,7 @@ export const replaceSequenceElementFn = createServerFn({ method: 'POST' })
   )
   .handler(async ({ context, data }) => ({
     element: await replaceElementUpload({
+      promptLocale: context.promptLocale,
       scopedDb: context.scopedDb,
       organizationId: context.organizationId,
       userId: context.user.id,

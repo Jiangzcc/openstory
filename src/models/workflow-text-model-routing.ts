@@ -4,7 +4,10 @@ const WORKFLOW_ROUTING_VERSION = 1;
 const INVALID_SNAPSHOT = 'Invalid workflow text model routing snapshot.';
 
 type WorkflowTextChannel = Readonly<
-  Pick<TextModelRoute, 'channelId' | 'protocol' | 'baseUrl' | 'credentialId'>
+  Pick<
+    TextModelRoute,
+    'channelId' | 'protocol' | 'baseUrl' | 'credentialId' | 'userAgent'
+  >
 >;
 
 type WorkflowTextModel = Readonly<
@@ -33,6 +36,7 @@ function channelIndexFor(
     protocol: route.protocol,
     baseUrl: route.baseUrl,
     credentialId: route.credentialId,
+    ...(route.userAgent === undefined ? {} : { userAgent: route.userAgent }),
   });
   const identity = JSON.stringify(channel);
   const existing = indices.get(identity);

@@ -217,6 +217,7 @@ function mockContext(
     characters: { listWithSheets: async () => [] },
   });
   return {
+    promptLocale: 'en' as const,
     scopedDb,
     sequence,
     user: { id: wallet.userId },

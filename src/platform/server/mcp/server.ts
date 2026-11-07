@@ -173,6 +173,7 @@ function mcpToolContext(
         throw new InsufficientScopeError(scope);
       }
       return {
+        promptLocale: 'en',
         scopedDb: createScopedDb(auth.organizationId, auth.user.id),
         origin,
         userId: auth.user.id,

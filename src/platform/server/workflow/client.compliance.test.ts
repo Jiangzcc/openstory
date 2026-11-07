@@ -41,6 +41,7 @@ describe('triggerWorkflow enforcement backstop', () => {
 
     await expect(
       triggerWorkflow('/image', {
+        promptLocale: 'en' as const,
         userId: USER_ID,
         organizationId: ORGANIZATION_ID,
       })
@@ -55,6 +56,7 @@ describe('triggerWorkflow enforcement backstop', () => {
 
     await expect(
       triggerWorkflow('/sequence-export', {
+        promptLocale: 'en' as const,
         userId: USER_ID,
         organizationId: ORGANIZATION_ID,
       })
@@ -69,6 +71,7 @@ describe('triggerWorkflow enforcement backstop', () => {
 
     await expect(
       triggerWorkflow('/sequence-export', {
+        promptLocale: 'en' as const,
         userId: USER_ID,
         organizationId: ORGANIZATION_ID,
       })
@@ -83,6 +86,7 @@ describe('triggerWorkflow enforcement backstop', () => {
 
     await expect(
       triggerWorkflow('/image', {
+        promptLocale: 'en' as const,
         userId: USER_ID,
         organizationId: ORGANIZATION_ID,
       })
@@ -93,7 +97,11 @@ describe('triggerWorkflow enforcement backstop', () => {
     await expect(
       triggerWorkflow(
         '/image',
-        { userId: USER_ID, organizationId: ORGANIZATION_ID },
+        {
+          promptLocale: 'en' as const,
+          userId: USER_ID,
+          organizationId: ORGANIZATION_ID,
+        },
         { enforcement: [row('generation_suspended')] }
       )
     ).rejects.toBeInstanceOf(AccountRestrictedError);

@@ -38,6 +38,7 @@ describe('analyzeTalentClipForOrganization', () => {
 
     await expect(
       analyzeTalentClipForOrganization({
+        promptLocale: 'en',
         scopedDb,
         userId: 'u',
         key: 'talent/t/uploads/clip.mp4',
@@ -89,6 +90,7 @@ describe('configured likeness models and billing', () => {
       analysisResult('anthropic/claude-sonnet-5.5')
     );
     await analyzeTalentMediaForOrganization({
+      promptLocale: 'en',
       scopedDb: c.scopedDb,
       userId: 'u',
       imageUrls: ['/r2/talent/t/a.png'],
@@ -117,6 +119,7 @@ describe('configured likeness models and billing', () => {
     };
     mockAnalyzeMedia.mockResolvedValue(analysisResult(snapshotModel));
     await analyzeTalentMediaForOrganization({
+      promptLocale: 'en',
       scopedDb,
       userId: 'u',
       imageUrls: ['/r2/talent/t/a.png'],
@@ -138,6 +141,7 @@ describe('configured likeness models and billing', () => {
     });
     mockAnalyzeClip.mockResolvedValue(analysisResult(VIDEO_MODEL));
     await analyzeTalentClipForOrganization({
+      promptLocale: 'en',
       scopedDb: c.scopedDb,
       userId: 'u',
       key: 'talent/t/clip.mp4',

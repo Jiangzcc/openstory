@@ -211,6 +211,7 @@ const BIBLES_RESULT = {
 };
 
 const INPUT: SceneSplitWorkflowInput = {
+  promptLocale: 'en' as const,
   userId: 'u1',
   organizationId: 't1',
   sequenceId: 'seq_1',
@@ -578,7 +579,8 @@ describe('SceneSplitWorkflow stream step config', () => {
 
       expect(getChatPrompt).toHaveBeenCalledWith(
         'phase/scene-bibles-chat',
-        expect.objectContaining({ userCountry: userCountry ?? '' })
+        expect.objectContaining({ userCountry: userCountry ?? '' }),
+        'en'
       );
     }
   );
@@ -590,7 +592,8 @@ describe('SceneSplitWorkflow stream step config', () => {
     await makeWorkflow().split(makeEvent(), makeStep(), makeScopedDb());
     expect(getChatPrompt).toHaveBeenCalledWith(
       'phase/scene-bibles-chat',
-      expect.objectContaining({ cast: '' })
+      expect.objectContaining({ cast: '' }),
+      'en'
     );
 
     vi.mocked(getChatPrompt).mockClear();
@@ -637,7 +640,8 @@ describe('SceneSplitWorkflow stream step config', () => {
         cast: expect.stringContaining(
           '- char_ada: Ada — 30s, woman, tall. Looks: "Default" (coat)'
         ),
-      })
+      }),
+      'en'
     );
   });
 
@@ -838,7 +842,8 @@ describe('SceneSplitWorkflow shot-list pass (#1486)', () => {
       await import('@/platform/server/ai/prompts-index');
     expect(vi.mocked(getChatPrompt)).toHaveBeenCalledWith(
       'phase/scene-shot-list-chat',
-      expect.objectContaining({ characters: '(none)' })
+      expect.objectContaining({ characters: '(none)' }),
+      'en'
     );
   });
 

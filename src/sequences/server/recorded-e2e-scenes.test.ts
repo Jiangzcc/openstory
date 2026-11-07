@@ -63,12 +63,16 @@ describe('recorded script-bibles fixture', () => {
       ) +
       'Produce an elementBible entry for each one used in the script:\n'.length;
     const elementsEnd = recorded.indexOf('\n</ELEMENTS>');
-    const { messages } = await getChatPrompt('phase/scene-bibles-chat', {
-      script: recorded.slice(scriptStart, scriptEnd),
-      elements: recorded.slice(elementsStart, elementsEnd),
-      // The fixture was recorded with nobody cast (#2050).
-      cast: '',
-    });
+    const { messages } = await getChatPrompt(
+      'phase/scene-bibles-chat',
+      {
+        script: recorded.slice(scriptStart, scriptEnd),
+        elements: recorded.slice(elementsStart, elementsEnd),
+        // The fixture was recorded with nobody cast (#2050).
+        cast: '',
+      },
+      'en'
+    );
     const user = messages.find((message) => message.role === 'user');
     expect(user && typeof user.content === 'string' ? user.content : '').toBe(
       recorded

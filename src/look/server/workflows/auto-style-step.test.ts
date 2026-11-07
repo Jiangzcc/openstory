@@ -71,7 +71,11 @@ describe('deriveAutoStyle', () => {
     const { scopedDb, setGeneratedForSequence, snapshotAutoStyle } =
       makeScopedDb(true);
 
-    const config = await deriveAutoStyle(step, { scopedDb, ...PARAMS });
+    const config = await deriveAutoStyle(step, {
+      promptLocale: 'en' as const,
+      scopedDb,
+      ...PARAMS,
+    });
 
     expect(config.look.mood).toBe('tense and paranoid');
     expect(setGeneratedForSequence).toHaveBeenCalledWith({
@@ -124,7 +128,11 @@ describe('deriveAutoStyle', () => {
     emit.mockReset();
     const { scopedDb, setGeneratedForSequence } = makeScopedDb(true);
 
-    const config = await deriveAutoStyle(step, { scopedDb, ...PARAMS });
+    const config = await deriveAutoStyle(step, {
+      promptLocale: 'en' as const,
+      scopedDb,
+      ...PARAMS,
+    });
 
     expect(config.look.mood).toContain(
       'Photoreal CGI-meets-scientific-visualization'
@@ -149,7 +157,11 @@ describe('deriveAutoStyle', () => {
     const { scopedDb, setGeneratedForSequence } = makeScopedDb(true);
 
     await expect(
-      deriveAutoStyle(step, { scopedDb, ...PARAMS })
+      deriveAutoStyle(step, {
+        promptLocale: 'en' as const,
+        scopedDb,
+        ...PARAMS,
+      })
     ).rejects.toThrow(/invalid option|unsalvageable/i);
     expect(setGeneratedForSequence).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();
@@ -161,7 +173,11 @@ describe('deriveAutoStyle', () => {
     const { scopedDb, snapshotAutoStyle } = makeScopedDb(false);
 
     await expect(
-      deriveAutoStyle(step, { scopedDb, ...PARAMS })
+      deriveAutoStyle(step, {
+        promptLocale: 'en' as const,
+        scopedDb,
+        ...PARAMS,
+      })
     ).rejects.toThrow(/no longer bound/);
     expect(snapshotAutoStyle).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();
@@ -172,7 +188,11 @@ describe('deriveAutoStyle', () => {
     emit.mockReset();
     const { scopedDb, setGeneratedForSequence } = makeScopedDb(true, false);
 
-    const config = await deriveAutoStyle(step, { scopedDb, ...PARAMS });
+    const config = await deriveAutoStyle(step, {
+      promptLocale: 'en' as const,
+      scopedDb,
+      ...PARAMS,
+    });
 
     expect(config.look.mood).toBe('tense and paranoid');
     expect(setGeneratedForSequence).toHaveBeenCalled();
@@ -188,7 +208,11 @@ describe('deriveAutoStyle', () => {
     const { scopedDb, setGeneratedForSequence } = makeScopedDb(true);
 
     await expect(
-      deriveAutoStyle(step, { scopedDb, ...PARAMS })
+      deriveAutoStyle(step, {
+        promptLocale: 'en' as const,
+        scopedDb,
+        ...PARAMS,
+      })
     ).rejects.toThrow(/unsalvageable/);
     expect(setGeneratedForSequence).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();

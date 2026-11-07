@@ -107,6 +107,7 @@ describe('prepareShotImageWorkflowInput skips reads nothing consumes', () => {
       makeScopedDb();
 
     const input = await prepareShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseArgs(scopedDb),
       promptOverride: 'Prompt resolved by the caller',
       promptVersionOverride: 'fpv_from_caller',
@@ -128,6 +129,7 @@ describe('prepareShotImageWorkflowInput skips reads nothing consumes', () => {
     const { scopedDb, getSelectedPrompt } = makeScopedDb();
 
     const input = await prepareShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseArgs(scopedDb),
       promptOverride: 'Prompt resolved by the caller',
       promptVersionOverride: null,
@@ -144,7 +146,10 @@ describe('prepareShotImageWorkflowInput still reads what it does consume', () =>
     const { scopedDb, getSelectedPrompt, getSelectedVariant, getLastFailed } =
       makeScopedDb();
 
-    const input = await prepareShotImageWorkflowInput(baseArgs(scopedDb));
+    const input = await prepareShotImageWorkflowInput({
+      ...baseArgs(scopedDb),
+      promptLocale: 'en',
+    });
 
     expect(getSelectedPrompt).toHaveBeenCalledWith(FRAME_ID);
     expect(getSelectedVariant).toHaveBeenCalledWith(FRAME_ID);
@@ -162,6 +167,7 @@ describe('prepareShotImageWorkflowInput still reads what it does consume', () =>
     const { scopedDb, getSelectedPrompt } = makeScopedDb();
 
     const input = await prepareShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseArgs(scopedDb),
       promptOverride: 'Hand-typed prompt',
       modelOverride: 'nano_banana_pro',
@@ -175,6 +181,7 @@ describe('prepareShotImageWorkflowInput still reads what it does consume', () =>
     const { scopedDb, getSelectedPrompt, writePrompt } = makeScopedDb();
 
     const input = await prepareShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseArgs(scopedDb),
       promptOverride: 'Hand-typed prompt',
       promptVersionOverride: 'fpv_from_caller',
@@ -200,6 +207,7 @@ describe('prepareShotImageWorkflowInput still reads what it does consume', () =>
     const { scopedDb, getSelectedVariant, getLastFailed } = makeScopedDb();
 
     const input = await prepareShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseArgs(scopedDb),
       promptOverride: 'Prompt resolved by the caller',
       promptVersionOverride: 'fpv_from_caller',
@@ -222,6 +230,7 @@ describe('prepareShotImageWorkflowInput refuses a blank prompt before credits', 
 
     await expect(
       prepareShotImageWorkflowInput({
+        promptLocale: 'en' as const,
         ...baseArgs(scopedDb),
         promptOverride: '   ',
         promptVersionOverride: 'fpv_from_caller',
@@ -276,6 +285,7 @@ describe('configured shot image billing snapshots', () => {
       });
       const { scopedDb } = makeScopedDb();
       const input = await prepareShotImageWorkflowInput({
+        promptLocale: 'en' as const,
         ...baseArgs(scopedDb),
         modelOverride: modelId,
         modelConfiguration: frozen,
@@ -326,6 +336,7 @@ describe('configured shot image billing snapshots', () => {
     const { scopedDb } = makeScopedDb();
     const args = baseArgs(scopedDb);
     const input = await prepareShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...args,
       sequence: { ...args.sequence, resolution: '1080p' },
       modelOverride: 'custom-image:qwen',
@@ -357,6 +368,7 @@ describe('configured shot image billing snapshots', () => {
     loadConfiguration.mockResolvedValue(current);
     const { scopedDb } = makeScopedDb();
     const input = await prepareShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseArgs(scopedDb),
       modelOverride: 'custom-image:qwen',
     });
@@ -381,6 +393,7 @@ describe('configured shot image billing snapshots', () => {
     const { scopedDb } = makeScopedDb();
     await expect(
       prepareShotImageWorkflowInput({
+        promptLocale: 'en' as const,
         ...baseArgs(scopedDb),
         modelOverride: 'custom-image:qwen',
       })

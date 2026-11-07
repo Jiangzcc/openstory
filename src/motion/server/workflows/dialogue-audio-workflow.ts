@@ -132,6 +132,7 @@ export class DialogueAudioWorkflow extends OpenStoryWorkflowEntrypoint<DialogueA
         if (plan.adoptShotIds.length === 0) return plan.kept;
 
         const recorded = await generateDialogueSpeech(step, {
+          promptLocale: input.promptLocale,
           scopedDb,
           workflowRunId,
           userId: input.userId,

@@ -51,6 +51,7 @@ import {
 } from '@/platform/server/storage/file';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { UploadAttestation } from '@/platform/server/db/schema/compliance';
+import type { Locale } from '@/platform/i18n/locale';
 
 export type LikenessRequestContext = {
   ipAddress?: string | null;
@@ -176,6 +177,7 @@ export async function recordLikenessFinding(
  * refused, never waved through.
  */
 function analyzeUpload(opts: {
+  promptLocale: Locale;
   scopedDb: LikenessCheckDb;
   userId: string;
   url: string;
@@ -188,6 +190,7 @@ function analyzeUpload(opts: {
   const mimeType = getMimeTypeFromExtension(getExtensionFromUrl(opts.url));
   if (mimeType.startsWith('image/')) {
     return analyzeTalentMediaForOrganization({
+      promptLocale: opts.promptLocale,
       scopedDb: opts.scopedDb,
       userId: opts.userId,
       imageUrls: [opts.url],
@@ -208,6 +211,7 @@ function analyzeUpload(opts: {
     );
   }
   return analyzeTalentClipForOrganization({
+    promptLocale: opts.promptLocale,
     scopedDb: opts.scopedDb,
     userId: opts.userId,
     key,
@@ -245,6 +249,7 @@ export function requireCheckable(url: string, organizationId: string): void {
  * organization use it.
  */
 export async function classifyUpload(opts: {
+  promptLocale: Locale;
   scopedDb: LikenessCheckDb;
   userId: string;
   url: string;

@@ -26,13 +26,15 @@ import { MotionModelSelector } from '@/models/ui/pickers/motion-model-selector';
 import type { MentionItem } from '@/shots/ui/prompt-mention/mention-items';
 import { AspectRatioPills } from '@/ui/settings/aspect-ratio-pills';
 import { ResolutionPills } from '@/ui/settings/resolution-pills';
-import { IMAGE_MODELS, videoPromptHardLimit } from '@/models/models';
+import { videoPromptHardLimit } from '@/models/models';
+import { getImagePromptRecommendation } from '@/models/image-model-catalog';
 import { measurePrompt } from '@/models/prompt-length';
 import type { PromptRecommendation } from '@/models/prompt-length';
 import { useConfiguredImageControls } from './use-configured-image-controls';
 import { isStudioImageCount } from './configured-image-draft';
 import {
   ConfiguredImageControls,
+  ConfiguredImageEstimate,
   ConfiguredImageStatus,
 } from './configured-image-controls';
 import { imageResolutionTiers } from '@/stills/build-image-request';
@@ -618,9 +620,7 @@ export function StudioComposer({
   // Seedance included, counts characters (#1763).
   const promptRecommendation: PromptRecommendation = isVideo
     ? IMAGE_TO_VIDEO_MODELS[compatibleVideoModel]
-    : imageControls.model?.source === 'builtin'
-      ? IMAGE_MODELS[imageControls.model.id]
-      : {};
+    : getImagePromptRecommendation(imageControls.model);
   const promptMeasured = measurePrompt(prompt, promptRecommendation);
   // No number (native Grok images) means nothing to be over.
   const promptOverRecommended =
@@ -1213,7 +1213,7 @@ export function StudioComposer({
 
   const applyShuffle = () => {
     const next = pickShufflePrompt(
-      studioShufflePrompts(activity),
+      studioShufflePrompts(activity).map((sample) => t(sample)),
       prompt,
       Math.random
     );
@@ -2094,7 +2094,9 @@ export function StudioComposer({
               {t('Clear all')}
             </Button>
           )}
-          {(isVideo || !imageControls.isConfigured) && (
+          {!isVideo && imageControls.isConfigured ? (
+            <ConfiguredImageEstimate controls={imageControls} />
+          ) : (
             <ActionCost
               estimate={estimate}
               align="end"

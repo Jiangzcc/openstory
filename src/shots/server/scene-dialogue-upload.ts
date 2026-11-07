@@ -7,6 +7,7 @@
  * voice to key the reading on, a shot recording already.
  */
 
+import type { Locale } from '@/platform/i18n/locale';
 import { scribeCost } from '@/billing/elevenlabs-pricing';
 import {
   releaseReservationOnThrow,
@@ -41,6 +42,7 @@ const HEADER_PROBE_BYTES = 4096;
 
 export async function uploadSceneDialogue(
   context: {
+    promptLocale: Locale;
     scopedDb: ScopedDb;
     sequence: Pick<Sequence, 'id' | 'organizationId' | 'videoModel'>;
     user: { id: string };
@@ -127,6 +129,7 @@ export async function uploadSceneDialogue(
   });
   return releaseReservationOnThrow(scopedDb, reservationId, async () => {
     const payload: DialogueUploadWorkflowInput = {
+      promptLocale: context.promptLocale,
       userId: user.id,
       organizationId: sequence.organizationId,
       sequenceId: sequence.id,

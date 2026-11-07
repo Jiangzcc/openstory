@@ -60,6 +60,7 @@ function attachDrafts(
   sequenceId = 'seq-1'
 ) {
   return attachDraftElementUploads({
+    promptLocale: 'en',
     scopedDb: makeScopedDb(),
     organizationId: 'organization-1',
     userId: 'user-1',
@@ -179,6 +180,7 @@ describe('attachElementUpload', () => {
 
     await expect(
       attachElementUpload({
+        promptLocale: 'en',
         scopedDb: makeScopedDb(),
         organizationId: 'organization-1',
         userId: 'user-1',
@@ -298,6 +300,7 @@ describe('assertDraftElementUploadsAttachable', () => {
     mockRequireRights.mockResolvedValue({ depictsRealPerson: true });
 
     await replaceElementUpload({
+      promptLocale: 'en',
       scopedDb: makeScopedDb(),
       organizationId: 'organization-1',
       userId: 'user-1',

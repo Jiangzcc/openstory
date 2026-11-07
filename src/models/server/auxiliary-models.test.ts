@@ -51,6 +51,7 @@ describe('configured auxiliary image models', () => {
       'element',
       () =>
         describeElementImage({
+          promptLocale: 'en' as const,
           model: CONFIGURED_MODEL,
           imageUrl: '/r2/a.png',
           filename: 'cup.png',
@@ -60,6 +61,7 @@ describe('configured auxiliary image models', () => {
       'talent',
       () =>
         analyzeTalentMedia({
+          promptLocale: 'en' as const,
           model: CONFIGURED_MODEL,
           imageUrls: ['/r2/a.png'],
         }),
@@ -68,6 +70,7 @@ describe('configured auxiliary image models', () => {
       'Studio draft',
       () =>
         draftStudioPrompt({
+          promptLocale: 'en' as const,
           model: CONFIGURED_MODEL,
           activity: 'video',
           references: [],
@@ -93,6 +96,7 @@ describe('configured native talent clip model', () => {
     servedModel = model;
     servedVia = 'google';
     const result = await analyzeTalentClip({
+      promptLocale: 'en' as const,
       model,
       clip: { uri: 'https://files.example/clip', mimeType: 'video/mp4' },
       llmKey: { key: 'test-google', source: 'platform', via: 'google' },

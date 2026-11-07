@@ -139,6 +139,7 @@ export class RegenerateShotsWorkflow extends OpenStoryWorkflowEntrypoint<Regener
         ];
 
         const childPayload: ImageWorkflowInput = {
+          promptLocale: input.promptLocale,
           userId: input.userId,
           variantOnly: false,
           organizationId,
@@ -241,6 +242,7 @@ export class RegenerateShotsWorkflow extends OpenStoryWorkflowEntrypoint<Regener
             await triggerWorkflow<ShotVariantWorkflowInput>(
               '/variant-image',
               {
+                promptLocale: input.promptLocale,
                 userId: input.userId,
                 organizationId,
                 sequenceId,

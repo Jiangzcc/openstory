@@ -134,7 +134,9 @@ export async function buildCharacterSheetDraft(
  */
 export async function buildRegenerateCharacterSheetPayload(
   params: SheetPayloadParams
-): Promise<Omit<CharacterSheetWorkflowInput, 'sheetVersionId'>> {
+): Promise<
+  Omit<CharacterSheetWorkflowInput, 'sheetVersionId' | 'promptLocale'>
+> {
   const { draft, isDefault, liveFace, refusal } =
     await buildCharacterSheetDraft(params);
   if (refusal) throw new ValidationError(refusal);

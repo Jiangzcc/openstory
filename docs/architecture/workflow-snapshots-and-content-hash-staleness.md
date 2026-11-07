@@ -6,6 +6,15 @@ This is the companion to [managing-complex-dependency-graphs-in-collaborative-ai
 
 It composes with [scoped-db-context-implementation.md](./scoped-db-context-implementation.md); every new data-access path described here flows through `ScopedDb`.
 
+The local system-prompt customization also snapshots required `promptLocale`
+from the triggering request onto every workflow payload. Children and automatic
+retries inherit it; execution never re-reads a browser cookie. The workflow base
+rejects missing or unsupported locales because this unreleased project does not
+support old task payloads. Language is execution context and does not enter
+content DTOs, `inputHash`, database rows or idempotency keys. Changing language
+alone therefore does not stale saved prompts. See
+[system prompt localization](../secondary-development/system-prompt-localization.md).
+
 ## The two failure modes we're closing
 
 **1. Lost-work mid-generation.** Content-generation workflows must not read mutable DB state for anything that should be frozen at trigger time. Before the snapshot pattern, `regenerateShotsWorkflow` (`RegenerateShotsWorkflow` in `src/shots/server/workflows/regenerate-shots-workflow.ts`) could re-resolve sequence fields or sheet references mid-flight. If a user edits a character, location, or prompt while the workflow is running, generation can read a mix of pre- and post-edit inputs. The result is written as the primary artifact either way, with no signal that what landed isn't what the user had in mind when they triggered the workflow. `RegenerateShotsWorkflow` is the reference fix: it inlines per-shot snapshot DTOs and a batch `snapshotInputHash` at trigger time via `src/shots/server/workflows/regenerate-shots-snapshot.ts`.

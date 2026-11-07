@@ -70,6 +70,7 @@ export class ShotSpecRewriteWorkflow extends OpenStoryWorkflowEntrypoint<ShotSpe
       },
       {
         sequenceId: input.sequenceId,
+        promptLocale: input.promptLocale,
         userId: input.userId,
         workflowRunId: event.instanceId,
         scopedDb,
@@ -119,6 +120,7 @@ export class ShotSpecRewriteWorkflow extends OpenStoryWorkflowEntrypoint<ShotSpe
         input.frameId
       ) {
         await redrawShotPreviewInRun(scopedDb, {
+          promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
           sequenceId: input.sequenceId,

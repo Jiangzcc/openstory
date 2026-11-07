@@ -1,3 +1,4 @@
+import { promptLocaleFromRequest } from '@/platform/i18n/prompt-locale';
 import { uploadFile } from '#storage';
 import {
   requireUploadCheckAllowed,
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/api/storage/upload')({
           if (!resolved.ok) return resolved.response;
           const { bucket, path, contentType, organizationId } = resolved.target;
           await requireUploadCheckAllowed({
+            promptLocale: promptLocaleFromRequest(request),
             bucket,
             contentType,
             organizationId,
@@ -69,6 +71,7 @@ export const Route = createFileRoute('/api/storage/upload')({
           });
           // The likeness check starts here, not from the browser (#2192).
           await startCheckForStoredUpload({
+            promptLocale: promptLocaleFromRequest(request),
             bucket,
             path,
             contentType,

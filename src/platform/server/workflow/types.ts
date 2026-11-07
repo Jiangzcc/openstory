@@ -3,6 +3,7 @@
  */
 
 import type { WorkflowModelConfiguration } from '@/models/model-runtime-configuration';
+import type { Locale } from '@/platform/i18n/locale';
 import type { VoiceProvider } from '@/cast/seed-voice';
 import type { AspectRatio, ImageSize } from '@/models/aspect-ratios';
 import type {
@@ -86,6 +87,7 @@ type PreClickEditPayload = {
  * All workflows must include userId and organizationId for authorization
  */
 export interface UserWorkflowContext {
+  promptLocale: Locale;
   /** Frozen server settings; absent only on legacy queued runs. */
   modelConfiguration?: WorkflowModelConfiguration;
   userId: string;

@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { configuredImageSource } from '@/billing/configured-image-billing';
 /**
  * Core sequence-creation logic, shared by the `createSequenceFn` server
@@ -113,6 +114,7 @@ export async function resolveStyleSource(
 }
 
 export type CreateSequencesContext = {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   user: { id: string };
   organizationId: string;
@@ -451,6 +453,7 @@ export const createSequences = createServerOnlyFn(
             // the workflow trigger so analyze-script can wait for vision.
             if (elementUploads && elementUploads.length > 0) {
               await attachDraftElementUploads({
+                promptLocale: context.promptLocale,
                 scopedDb: context.scopedDb,
                 organizationId,
                 userId: context.user.id,
@@ -462,6 +465,7 @@ export const createSequences = createServerOnlyFn(
             // Carry forward elements from the source sequence when regenerating.
             if (sourceSequenceId) {
               await copySequenceElements({
+                promptLocale: context.promptLocale,
                 scopedDb: context.scopedDb,
                 organizationId,
                 userId: context.user.id,
@@ -471,6 +475,7 @@ export const createSequences = createServerOnlyFn(
             }
 
             const workflowInput: StoryboardTriggerInput = {
+              promptLocale: context.promptLocale,
               userId: context.user.id,
               organizationId,
               sequenceId: sequence.id,

@@ -67,6 +67,7 @@ async function buildRegeneratePayload(
   }
 
   return {
+    promptLocale: input.promptLocale,
     userId: input.userId,
     organizationId: input.organizationId,
     sequenceId,

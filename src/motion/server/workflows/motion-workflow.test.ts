@@ -216,6 +216,7 @@ function makeEvent(
 ): Readonly<WorkflowEvent<MotionWorkflowInput>> {
   return {
     payload: {
+      promptLocale: 'en',
       userId: 'u1',
       organizationId: 'org-1',
       sequenceId: 'seq-1',
@@ -1229,6 +1230,7 @@ describe('recording its own dialogue (#1657)', () => {
   it('assembles an edited prompt with the upstream dialogue take (#1836)', async () => {
     const { scopedDb, videoVariants } = makeScopedDb();
     const [job] = buildMotionRender({
+      promptLocale: 'en' as const,
       userId: 'u1',
       organizationId: 'org-1',
       sequenceId: 'seq-1',

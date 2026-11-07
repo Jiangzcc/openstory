@@ -14,6 +14,7 @@
  * its body, which the compiler strips.
  */
 
+import type { Locale } from '@/platform/i18n/locale';
 import type { CreateGeneratedAssetData } from '@/models/model-assets.fn';
 import { usdToMicros, type Microdollars } from '@/billing/money';
 import { requireCredits } from '@/billing/server/preflight';
@@ -91,7 +92,8 @@ export type CreateGeneratedAssetResult =
  */
 export async function createGeneratedAsset(
   scopedDb: ScopedDb,
-  data: CreateGeneratedAssetData
+  data: CreateGeneratedAssetData,
+  promptLocale: Locale
 ): Promise<CreateGeneratedAssetResult> {
   const inputSchema = await fetchModelInputSchema(
     data.endpointId,
@@ -122,6 +124,7 @@ export async function createGeneratedAsset(
   });
 
   const workflowInput: AssetGenerationWorkflowInput = {
+    promptLocale,
     userId: scopedDb.userId,
     organizationId: scopedDb.organizationId,
     assetId: row.id,

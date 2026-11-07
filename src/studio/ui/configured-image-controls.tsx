@@ -92,54 +92,52 @@ export function ConfiguredImageStatus({
 }: {
   controls: ImageControls;
 }) {
-  const { t, i18n } = useTranslation('imageChannels');
-  const { showCosts } = useShowCosts();
-  if (controls.issue)
-    return (
-      <output aria-live="polite" className="text-sm text-destructive">
-        {t(controls.issue.key, {
-          defaultValue: controls.issue.key,
-          ...controls.issue.values,
-        })}
-      </output>
-    );
-  if (!showCosts || !controls.isConfigured) return null;
+  const { t } = useTranslation('imageChannels');
+  if (!controls.issue) return null;
   return (
-    <ConfiguredImageEstimate
-      controls={controls}
-      locale={i18n.resolvedLanguage}
-    />
+    <output aria-live="polite" className="text-sm text-destructive">
+      {t(controls.issue.key, {
+        defaultValue: controls.issue.key,
+        ...controls.issue.values,
+      })}
+    </output>
   );
 }
 
-function ConfiguredImageEstimate({
-  controls,
-  locale,
-}: {
-  controls: ImageControls;
-  locale?: string;
-}) {
-  const { t } = useTranslation('imageChannels');
-  if (!controls.quote || controls.estimate === null) return null;
-  const format = new Intl.NumberFormat(locale, {
+function imageCostFormatter(locale?: string) {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD',
+    currencyDisplay: 'narrowSymbol',
     minimumFractionDigits: 2,
     maximumFractionDigits: 6,
   });
+}
+
+export function ConfiguredImageEstimate({
+  controls,
+}: {
+  controls: ImageControls;
+}) {
+  const { t, i18n } = useTranslation('billing');
+  const { showCosts } = useShowCosts();
+  if (
+    !showCosts ||
+    !controls.isConfigured ||
+    controls.issue ||
+    !controls.quote ||
+    controls.estimate === null
+  )
+    return null;
+  const format = imageCostFormatter(i18n.resolvedLanguage);
+  const totalPrice = format.format(microsToUsd(controls.estimate));
   return (
     <output
+      aria-label={t('Estimated cost about {{value1}}', { value1: totalPrice })}
       aria-live="polite"
       className="text-xs text-muted-foreground tabular-nums"
     >
-      {t(
-        'Estimated cost: {{unitPrice}} per image × {{images}} images = {{totalPrice}} (USD)',
-        {
-          unitPrice: format.format(controls.quote.unitPriceUsd),
-          images: controls.totalImageCount,
-          totalPrice: format.format(microsToUsd(controls.estimate)),
-        }
-      )}
+      ~{totalPrice}
     </output>
   );
 }

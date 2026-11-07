@@ -79,7 +79,7 @@ const regenerateCharacterSheetTool = openstoryTool({
     imageModel,
   }),
   outputSchema: runResult.extend({ characterId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const sequence = await productionAccess(scopedDb).sequence(
       input.sequenceId
     );
@@ -89,7 +89,10 @@ const regenerateCharacterSheetTool = openstoryTool({
     );
     const result = await regenerateCharacterSheet(
       scopedDb,
-      { userId },
+      {
+        promptLocale,
+        userId,
+      },
       sequence,
       {
         characterId: character.id,
@@ -124,7 +127,7 @@ const generateCharacterVoiceTool = openstoryTool({
     workflowRunId: z.string().nullable(),
     alreadyInFlight: z.boolean(),
   }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const sequence = await productionAccess(scopedDb).sequence(
       input.sequenceId
     );
@@ -134,7 +137,10 @@ const generateCharacterVoiceTool = openstoryTool({
     );
     const result = await generateCharacterVoice(
       scopedDb,
-      { userId },
+      {
+        promptLocale,
+        userId,
+      },
       sequence,
       { characterId: character.id, takes: input.takes }
     );
@@ -184,7 +190,7 @@ const regenerateLocationSheetTool = openstoryTool({
   annotations: generateAnnotations,
   inputSchema: locationInput.extend({ imageModel }),
   outputSchema: runResult.extend({ locationId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const sequence = await productionAccess(scopedDb).sequence(
       input.sequenceId
     );
@@ -194,7 +200,10 @@ const regenerateLocationSheetTool = openstoryTool({
     );
     const result = await regenerateLocationSheet(
       scopedDb,
-      { userId },
+      {
+        promptLocale,
+        userId,
+      },
       sequence,
       { locationDbId: location.id, imageModel: input.imageModel }
     );
@@ -224,14 +233,17 @@ const recastLocationTool = openstoryTool({
     workflowRunId: z.string(),
     affectedShotIds: z.array(z.string()),
   }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const location = await productionAccess(scopedDb).location(
       input.sequenceId,
       input.locationId
     );
     const result = await recastLocation(
       scopedDb,
-      { userId },
+      {
+        promptLocale,
+        userId,
+      },
       {
         sequenceId: location.sequenceId,
         locationId: location.id,
@@ -269,9 +281,20 @@ const generateMusicTool = openstoryTool({
     started: z.boolean(),
     variantId: z.string().nullable(),
   }),
-  run: async ({ sequenceId: id, ...input }, { scopedDb, userId }) => {
+  run: async (
+    { sequenceId: id, ...input },
+    { scopedDb, userId, promptLocale }
+  ) => {
     const sequence = await productionAccess(scopedDb).sequence(id);
-    const result = await generateMusic(scopedDb, { userId }, sequence, input);
+    const result = await generateMusic(
+      scopedDb,
+      {
+        promptLocale,
+        userId,
+      },
+      sequence,
+      input
+    );
     return {
       data: { started: result.variantId !== null, variantId: result.variantId },
       summary: result.variantId
@@ -292,11 +315,18 @@ const rewriteMusicPromptTool = openstoryTool({
     workflowRunId: z.string().nullable(),
     alreadyUpToDate: z.boolean(),
   }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const sequence = await productionAccess(scopedDb).sequence(
       input.sequenceId
     );
-    const result = await rewriteMusicPrompt(scopedDb, { userId }, sequence);
+    const result = await rewriteMusicPrompt(
+      scopedDb,
+      {
+        promptLocale,
+        userId,
+      },
+      sequence
+    );
     return {
       data: result,
       summary: result.alreadyUpToDate
@@ -321,9 +351,9 @@ const listShotDialogueClaimsTool = productionRead(
       })
     ),
   }),
-  async (input, { scopedDb, userId }) => {
+  async (input, { scopedDb, userId, promptLocale }) => {
     const claims = await listShotDialogueClaims(
-      await shotEdit(scopedDb, userId, input)
+      await shotEdit(scopedDb, userId, input, promptLocale)
     );
     return {
       claims: claims.map((claim) => ({
@@ -342,9 +372,9 @@ const regenerateShotDialogueTool = openstoryTool({
   annotations: generateAnnotations,
   inputSchema: shotInput.extend({ scope: z.enum(['shot', 'scene']) }),
   outputSchema: runResult,
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const result = await regenerateShotDialogue(
-      await shotEdit(scopedDb, userId, input),
+      await shotEdit(scopedDb, userId, input, promptLocale),
       input.scope
     );
     return { data: result, summary: 'Recording dialogue.' };
@@ -359,9 +389,9 @@ const cancelShotDialogueTool = openstoryTool({
   annotations: idempotent,
   inputSchema: shotInput.extend({ claimId: ulidSchema }),
   outputSchema: cancelResult,
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const result = await cancelShotDialogueClaim(
-      await shotEdit(scopedDb, userId, input),
+      await shotEdit(scopedDb, userId, input, promptLocale),
       input.claimId
     );
     return {
@@ -384,9 +414,9 @@ const cancelPendingShotArtifactTool = openstoryTool({
     artifact: z.enum(['visual-prompt', 'motion-prompt', 'image']),
   }),
   outputSchema: cancelResult,
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const result = await cancelPendingArtifact(
-      await shotEdit(scopedDb, userId, input),
+      await shotEdit(scopedDb, userId, input, promptLocale),
       input
     );
     return {

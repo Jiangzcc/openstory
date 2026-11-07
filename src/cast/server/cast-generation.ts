@@ -37,10 +37,11 @@ import { ValidationError } from '@/platform/errors';
 import { getLogger } from '@/platform/logger';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { Sequence } from '@/platform/server/db/schema';
+import type { PromptLocaleContext } from '@/platform/i18n/prompt-locale';
 
 const logger = getLogger(['openstory', 'cast', 'cast-generation']);
 
-type Actor = { userId: string };
+type Actor = { userId: string } & PromptLocaleContext;
 
 async function emitProgress(
   channelId: string,
@@ -142,6 +143,7 @@ export async function regenerateCharacterSheet(
       : undefined;
     const claimed: CharacterSheetWorkflowInput = {
       ...payload,
+      promptLocale: actor.promptLocale,
       sheetVersionId,
       reservationId,
       ownsReservation: Boolean(reservationId),
@@ -201,6 +203,7 @@ export async function generateCharacterVoice(
     data.characterId
   );
   const enqueued = await enqueueCharacterVoiceDesign({
+    promptLocale: actor.promptLocale,
     scopedDb,
     character,
     sequenceId,
@@ -330,6 +333,7 @@ export async function regenerateLocationSheet(
       : undefined;
     const claimed: LocationSheetWorkflowInput = {
       ...payload,
+      promptLocale: actor.promptLocale,
       referenceVersionId,
       reservationId,
       ownsReservation: Boolean(reservationId),
@@ -422,6 +426,7 @@ export async function recastLocation(
     });
 
   const workflowRunId = await triggerWorkflow('/recast-location', {
+    promptLocale: actor.promptLocale,
     locationDbId: location.id,
     locationName: location.name,
     sequenceId: sequence.id,

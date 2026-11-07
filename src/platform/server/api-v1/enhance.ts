@@ -25,6 +25,7 @@ import {
 } from '@/models/models';
 import { aspectRatioSchema } from '@/models/aspect-ratios';
 import type { ScopedDb } from '@/platform/server/db/scoped';
+import type { Locale } from '@/platform/i18n/locale';
 import { handleApiError } from '@/platform/errors';
 import { getLogger, toErrorPayload } from '@/platform/logger';
 import { createSequenceLink, enhanceScriptLink } from './discovery';
@@ -36,6 +37,7 @@ import { resolveApiVideoDefaults } from './video-defaults';
 const logger = getLogger(['openstory', 'api-v1']);
 
 export type EnhanceContext = {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   user: { id: string };
   organizationId: string;
@@ -95,6 +97,7 @@ export async function buildEnhanceGenerator(
   };
 
   return streamScriptEnhancement(data, {
+    promptLocale: ctx.promptLocale,
     scopedDb: ctx.scopedDb,
     userId: ctx.user.id,
     organizationId: ctx.organizationId,

@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { getEnv } from '#env';
 import {
   getCfBindingForTriggerPath,
@@ -113,7 +114,11 @@ type TriggerWorkflowOptions = {
  * value to make a trigger idempotent.
  */
 export async function triggerWorkflow<
-  T extends { userId: string; organizationId: string },
+  T extends {
+    userId: string;
+    organizationId: string;
+    promptLocale: Locale;
+  },
 >(
   urlPath: string,
   body: T,
@@ -128,7 +133,11 @@ export async function triggerWorkflow<
  * a claim for this payload hands it back on reuse (#1113).
  */
 export async function triggerWorkflowRun<
-  T extends { userId: string; organizationId: string },
+  T extends {
+    userId: string;
+    organizationId: string;
+    promptLocale: Locale;
+  },
 >(
   urlPath: string,
   body: T,

@@ -51,6 +51,7 @@ export class MusicPromptWorkflow extends OpenStoryWorkflowEntrypoint<MusicPrompt
       },
       {
         sequenceId,
+        promptLocale: input.promptLocale,
         userId: input.userId,
         workflowRunId: event.instanceId,
         scopedDb,

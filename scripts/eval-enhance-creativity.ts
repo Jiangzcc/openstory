@@ -202,11 +202,15 @@ async function enhance(
   brief: string,
   style: ReturnType<typeof styleByName>
 ): Promise<string> {
-  const userPrompt = createUserPrompt(brief, {
-    style,
-    aspectRatio: '16:9',
-    targetDuration: TARGET_SECONDS,
-  });
+  const userPrompt = createUserPrompt(
+    brief,
+    {
+      style,
+      aspectRatio: '16:9',
+      targetDuration: TARGET_SECONDS,
+    },
+    'en'
+  );
   return callLLM({
     model: RECOMMENDED_MODELS.creative,
     messages: [

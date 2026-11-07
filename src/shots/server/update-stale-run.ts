@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { quoteConfiguredPlanImages } from '@/billing/configured-image-plan-billing';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { loadStoryboardModelConfiguration } from '@/sequences/server/launchers';
@@ -69,6 +70,7 @@ const updateStaleShotsResultSchema = z.object({
 export const UPDATE_STALE_CREDIT_PROVIDERS = ['fal'] as const;
 
 export async function prepareUpdateStale(args: {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   userId: string;
   sequence: Pick<
@@ -132,6 +134,7 @@ export async function prepareUpdateStale(args: {
  * instance lives.
  */
 export async function launchUpdateStale(input: {
+  promptLocale: Locale;
   userId: string;
   organizationId: string;
   sequenceId: string;
@@ -142,6 +145,7 @@ export async function launchUpdateStale(input: {
   const workflowRunId = await triggerWorkflow<UpdateStaleShotsWorkflowInput>(
     '/update-stale-shots',
     {
+      promptLocale: input.promptLocale,
       userId: input.userId,
       organizationId: input.organizationId,
       sequenceId: input.sequenceId,

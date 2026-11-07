@@ -48,6 +48,7 @@ export async function startLipsync(
   });
 
   const body: LipsyncWorkflowInput = {
+    promptLocale: context.promptLocale,
     userId: user.id,
     organizationId,
     sequenceId: sequence.id,

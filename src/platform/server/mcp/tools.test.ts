@@ -152,6 +152,7 @@ async function call(name: string, args: Record<string, unknown> = {}) {
     {
       context: {
         scoped: () => ({
+          promptLocale: 'en',
           scopedDb,
           origin: 'https://openstory.test',
           userId: actorId,
@@ -4670,6 +4671,7 @@ describe('production-context resources (#1462)', () => {
         },
         origin: 'https://openstory.test',
         scoped: () => ({
+          promptLocale: 'en',
           scopedDb,
           origin: 'https://openstory.test',
           userId: actorId,
@@ -5052,6 +5054,7 @@ describe('inline review frames', () => {
         {
           context: {
             scoped: () => ({
+              promptLocale: 'en',
               scopedDb,
               origin: 'https://openstory.test',
               userId: actorId,

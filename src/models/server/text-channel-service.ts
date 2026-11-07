@@ -30,6 +30,7 @@ import {
   TEXT_CHANNEL_LIMITS,
   TEXT_CHANNEL_PROTOCOLS,
   textChannelUpstreamModelSchema,
+  resolveTextChannelUserAgent,
 } from '../text-channels';
 
 export const TEXT_CHANNEL_SYNC_TIMEOUT_MS = 15_000;
@@ -116,6 +117,7 @@ async function prepareChannel(
       ...(await encryptApiKey(apiKey)),
     };
     const channel: TextChannel = {
+      ...previous,
       ...metadata,
       credentialId: credential.id,
       keyHint: getKeyHint(apiKey),
@@ -315,6 +317,7 @@ async function fetchCandidates(channel: TextChannel, apiKey: string) {
       headers: {
         Authorization: 'Bearer ' + apiKey,
         Accept: 'application/json',
+        'User-Agent': resolveTextChannelUserAgent(channel.userAgent),
       },
     });
     if (

@@ -5,6 +5,7 @@ import type {
 import type { ImageOperation } from './image-channel-parameters';
 import { IMAGE_OPERATIONS } from './image-channel-parameters';
 import type { BuiltinTextToImageModel, TextToImageModel } from './models';
+import type { PromptRecommendation } from './prompt-length';
 import {
   IMAGE_MODELS,
   isBuiltinTextToImageModel,
@@ -90,6 +91,14 @@ export function imageModelDisplayName(
   catalog: readonly ImageModelDefinition[] = mergeImageModelCatalog()
 ): string {
   return getImageModelDefinition(id, catalog)?.name ?? id;
+}
+
+export function getImagePromptRecommendation(
+  model: ImageModelDefinition | undefined
+): PromptRecommendation {
+  if (!model || !isBuiltinTextToImageModel(model.id)) return {};
+  const maxPromptLength = IMAGE_MODELS[model.id].maxPromptLength;
+  return maxPromptLength === undefined ? {} : { maxPromptLength };
 }
 
 export function imageModelSupportsOperation(

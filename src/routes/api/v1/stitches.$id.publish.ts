@@ -35,6 +35,7 @@ export const Route = createFileRoute('/api/v1/stitches/$id/publish')({
           }
           const { portraitAttestation } = publishStitchBodySchema.parse(body);
           const stitch = await publishStitch({
+            promptLocale: 'en',
             scopedDb: context.scopedDb,
             userId: context.user.id,
             id: params.id,

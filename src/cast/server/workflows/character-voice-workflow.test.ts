@@ -165,6 +165,7 @@ function makeEvent(
 ): Readonly<WorkflowEvent<CharacterVoiceWorkflowInput>> {
   return {
     payload: {
+      promptLocale: 'en',
       userId: 'u1',
       organizationId: 'organization-1',
       sequenceId: 'seq-1',

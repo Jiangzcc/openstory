@@ -1,13 +1,16 @@
 /**
  * The assistant panel in every state (#2155): empty, streaming, a tool
- * running, a tool error, confirm-before-spend, an upload in progress, and
+ * running, a tool error, confirm-before-delete, an upload in progress, and
  * a long thread. Each story plays a scripted run over the same AG-UI
  * events the server streams, so what shows here is what the server sends.
  */
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import { MODEL_CONFIGURATION_QUERY_KEY } from '@/models/model-configuration.queries';
+import { textModelCatalogQueryOptions } from '@/models/text-channels.queries';
 import { AuthGateStub } from '@/platform/ui/auth/auth-gate-provider';
 import { UploadRightsGateStub } from '@/cast/ui/upload-rights-gate';
 import { generateId } from '@/platform/id';
@@ -53,7 +56,15 @@ function Harness({
   /** Sent on mount so the story shows the reply, not an empty box. */
   send?: string;
 }) {
-  const queryClient = new QueryClient();
+  const [queryClient] = useState(() => {
+    const client = new QueryClient();
+    client.setQueryData(
+      MODEL_CONFIGURATION_QUERY_KEY,
+      DEFAULT_MODEL_CONFIGURATION
+    );
+    client.setQueryData(textModelCatalogQueryOptions.queryKey, []);
+    return client;
+  });
   useEffect(() => {
     switchAssistantThread(generateId());
     openAssistant(prompt ? { prompt } : undefined);

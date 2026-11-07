@@ -53,7 +53,7 @@ describe('buildStyleCatalog', () => {
       makeStyle({ id: 'c', name: 'Gamma' }),
     ];
 
-    const { catalog, orderedStyleIds } = buildStyleCatalog(styles);
+    const { catalog, orderedStyleIds } = buildStyleCatalog(styles, 'en');
 
     expect(orderedStyleIds).toEqual(['a', 'b', 'c']);
     expect(catalog).toContain('[0] Alpha —');
@@ -81,7 +81,7 @@ describe('buildStyleCatalog', () => {
       }),
     ];
 
-    const { catalog } = buildStyleCatalog(styles);
+    const { catalog } = buildStyleCatalog(styles, 'en');
 
     expect(catalog).toContain('[0] Alpha — mood: tense');
     expect(catalog).toContain('popularity: 0');
@@ -107,7 +107,7 @@ describe('buildStyleCatalog', () => {
       }),
     ];
 
-    const { catalog } = buildStyleCatalog(styles);
+    const { catalog } = buildStyleCatalog(styles, 'en');
 
     expect(catalog).toContain('palette: c1, c2, c3, c4, c5, c6');
     expect(catalog).not.toContain('c7');
@@ -126,7 +126,7 @@ describe('buildStyleCatalog', () => {
       }),
     ];
 
-    const { catalog } = buildStyleCatalog(styles);
+    const { catalog } = buildStyleCatalog(styles, 'en');
 
     expect(catalog).toContain('popularity: 42');
     // Truncated to 200 chars + ellipsis, never the full 500.

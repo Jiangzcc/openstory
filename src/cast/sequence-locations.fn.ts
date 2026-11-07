@@ -197,7 +197,7 @@ export const regenerateLocationSheetFn = createServerFn({ method: 'POST' })
   .handler(({ context, data }) =>
     regenerateLocationSheet(
       context.scopedDb,
-      { userId: context.user.id },
+      { userId: context.user.id, promptLocale: context.promptLocale },
       context.sequence,
       data
     )
@@ -235,5 +235,9 @@ export const recastLocationFn = createServerFn({ method: 'POST' })
     )
   )
   .handler(({ context, data }) =>
-    recastLocation(context.scopedDb, { userId: context.user.id }, data)
+    recastLocation(
+      context.scopedDb,
+      { userId: context.user.id, promptLocale: context.promptLocale },
+      data
+    )
   );

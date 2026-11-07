@@ -57,7 +57,10 @@ export const createStudioAssetsFn = createServerFn({ method: 'POST' })
   .middleware([authWithOrganizationMiddleware])
   .validator(zodValidator(studioCreateInputSchema))
   .handler(async ({ context, data }) => {
-    return createStudioAssets(context.scopedDb, data, likenessRequest());
+    return createStudioAssets(context.scopedDb, data, {
+      ...likenessRequest(),
+      promptLocale: context.promptLocale,
+    });
   });
 
 /**
@@ -131,11 +134,10 @@ export const renderStudioAssetAtQualityFn = createServerFn({ method: 'POST' })
   .middleware([authWithOrganizationMiddleware])
   .validator(zodValidator(z.object({ id: ulidSchema })))
   .handler(async ({ context, data }) => {
-    return renderStudioAssetAtQuality(
-      context.scopedDb,
-      data.id,
-      likenessRequest()
-    );
+    return renderStudioAssetAtQuality(context.scopedDb, data.id, {
+      ...likenessRequest(),
+      promptLocale: context.promptLocale,
+    });
   });
 
 /** Rewrite a finished clip from a prompt (#1925); see `editStudioAsset`. */
@@ -151,13 +153,10 @@ export const editStudioAssetFn = createServerFn({ method: 'POST' })
     )
   )
   .handler(async ({ context, data }) => {
-    return editStudioAsset(
-      context.scopedDb,
-      data.id,
-      data.prompt,
-      data.draft,
-      likenessRequest()
-    );
+    return editStudioAsset(context.scopedDb, data.id, data.prompt, data.draft, {
+      ...likenessRequest(),
+      promptLocale: context.promptLocale,
+    });
   });
 
 /** The prompts a clip was made from (#1925); see `getStudioEditHistory`. */
@@ -194,5 +193,9 @@ export const draftStudioPromptFn = createServerFn({ method: 'POST' })
   .middleware([authWithOrganizationMiddleware])
   .validator(zodValidator(studioPromptDraftInputSchema))
   .handler(async ({ context, data }) => {
-    return draftStudioPromptForOrganization(context.scopedDb, data);
+    return draftStudioPromptForOrganization(
+      context.scopedDb,
+      data,
+      context.promptLocale
+    );
   });

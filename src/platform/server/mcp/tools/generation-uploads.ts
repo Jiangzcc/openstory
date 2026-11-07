@@ -222,8 +222,13 @@ const getShotVariantGrid = productionRead(
       })
       .nullable(),
   }),
-  async (input, { scopedDb, userId, origin }) => {
-    const { shot, frame, sequence } = await shotEdit(scopedDb, userId, input);
+  async (input, { scopedDb, userId, origin, promptLocale }) => {
+    const { shot, frame, sequence } = await shotEdit(
+      scopedDb,
+      userId,
+      input,
+      promptLocale
+    );
     const sheet = await scopedDb.frameVariants.getLatestGridSheet(frame.id);
     const config = getVariantGridConfig(sequence.aspectRatio);
     return {
@@ -259,8 +264,11 @@ const generateShotImageTool = openstoryTool({
     workflowRunId: z.string().nullable(),
     alreadyInFlight: z.boolean(),
   }),
-  run: async ({ model, prompt, ...input }, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (
+    { model, prompt, ...input },
+    { scopedDb, userId, promptLocale }
+  ) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await generateShotImage(context, { model, prompt });
     return {
       data: result,
@@ -282,8 +290,11 @@ const generateShotImageVariantsTool = openstoryTool({
     seed: generateVariantSchema.shape.seed,
   }),
   outputSchema: runResult,
-  run: async ({ model, seed, ...input }, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (
+    { model, seed, ...input },
+    { scopedDb, userId, promptLocale }
+  ) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await generateShotImageVariants(context, { model, seed });
     return { data: result, summary: 'Started the variant grid.' };
   },
@@ -304,8 +315,11 @@ const selectShotImageVariantTool = openstoryTool({
     tileUrl: z.string(),
     workflowRunId: z.string(),
   }),
-  run: async ({ variantIndex, ...input }, { scopedDb, userId, origin }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (
+    { variantIndex, ...input },
+    { scopedDb, userId, origin, promptLocale }
+  ) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await selectShotImageVariant(context, { variantIndex });
     return {
       data: {
@@ -337,9 +351,9 @@ const generateShotVideoTool = openstoryTool({
   outputSchema: runResult.extend({ packedShotIds: z.array(z.string()) }),
   run: async (
     { model, prompt, duration, generateAudio, draft, ...input },
-    { scopedDb, userId }
+    { scopedDb, userId, promptLocale }
   ) => {
-    const context = await shotEdit(scopedDb, userId, input);
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await generateShotMotion(context, {
       model,
       prompt,
@@ -362,8 +376,8 @@ const lipsyncShotTool = openstoryTool({
   annotations: paid,
   inputSchema: shotInput,
   outputSchema: runResult,
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await startLipsync(context);
     return { data: result, summary: 'Started lip-sync.' };
   },
@@ -377,8 +391,8 @@ const cancelVideoRenderTool = openstoryTool({
   annotations: { ...writeAnnotations, idempotentHint: true },
   inputSchema: shotInput.extend({ versionId: ulidSchema }),
   outputSchema: z.object({ cancelled: z.boolean() }),
-  run: async ({ versionId, ...input }, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async ({ versionId, ...input }, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await cancelVideoRender(context, {
       sequenceId: context.sequence.id,
       versionId,
@@ -400,8 +414,8 @@ const renderShotAtQualityTool = openstoryTool({
   annotations: paid,
   inputSchema: shotInput,
   outputSchema: z.object({ workflowRunId: z.string(), versionId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     return {
       data: await renderShotAtQuality(context),
       summary: 'Started the 1080p render.',
@@ -417,11 +431,12 @@ const renderSequenceDraftsAtQualityTool = openstoryTool({
   annotations: paid,
   inputSchema: z.strictObject({ sequenceId }),
   outputSchema: z.object({ started: z.number(), skipped: z.number() }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const sequence = await productionAccess(scopedDb).sequence(
       input.sequenceId
     );
     const result = await renderSequenceDraftsAtQuality({
+      promptLocale,
       scopedDb,
       user: { id: userId },
       sequence,
@@ -453,10 +468,18 @@ const addModelToSequenceTool = openstoryTool({
     count: z.number(),
     failed: z.number(),
   }),
-  run: async ({ sequenceId: id, ...data }, { scopedDb, userId }) => {
+  run: async (
+    { sequenceId: id, ...data },
+    { scopedDb, userId, promptLocale }
+  ) => {
     const sequence = await productionAccess(scopedDb).sequence(id);
     const result = await addModelToSequence(
-      { scopedDb, user: { id: userId }, sequence },
+      {
+        promptLocale,
+        scopedDb,
+        user: { id: userId },
+        sequence,
+      },
       data
     );
     return {
@@ -482,10 +505,18 @@ const selectSequenceModelTool = openstoryTool({
     variantType: z.string(),
     model: z.string(),
   }),
-  run: async ({ sequenceId: id, ...data }, { scopedDb, userId }) => {
+  run: async (
+    { sequenceId: id, ...data },
+    { scopedDb, userId, promptLocale }
+  ) => {
     const sequence = await productionAccess(scopedDb).sequence(id);
     const result = await setSequenceModel(
-      { scopedDb, user: { id: userId }, sequence },
+      {
+        promptLocale,
+        scopedDb,
+        user: { id: userId },
+        sequence,
+      },
       data
     );
     return {
@@ -548,11 +579,12 @@ const uploadMediaTool = openstoryTool({
     bytes: z.number().nullable(),
     rights: z.enum(['cleared', 'signed', 'not_checked']),
   }),
-  run: async (input, { scopedDb, userId, origin, request }) => {
+  run: async (input, { scopedDb, userId, origin, request, promptLocale }) => {
     const sequence = input.sequenceId
       ? await productionAccess(scopedDb).sequence(input.sequenceId)
       : null;
     const stored = await storeUpload({
+      promptLocale,
       scopedDb,
       userId,
       sequenceId: sequence?.id ?? null,
@@ -595,8 +627,11 @@ const setShotImageFromUploadTool = openstoryTool({
     promptVersionId: z.string().nullable(),
     promptChanged: z.boolean(),
   }),
-  run: async ({ upload, prompt, ...input }, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async (
+    { upload, prompt, ...input },
+    { scopedDb, userId, promptLocale }
+  ) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await replaceFrameContent(context, {
       publicUrl: storedUpload(upload),
       promptText: prompt,
@@ -617,8 +652,8 @@ const setShotVideoFromUploadTool = openstoryTool({
     versionId: z.string(),
     durationSeconds: z.number().nullable(),
   }),
-  run: async ({ upload, ...input }, { scopedDb, userId }) => {
-    const context = await shotEdit(scopedDb, userId, input);
+  run: async ({ upload, ...input }, { scopedDb, userId, promptLocale }) => {
+    const context = await shotEdit(scopedDb, userId, input, promptLocale);
     const result = await setShotVideoFromUpload(context, {
       publicUrl: storedUpload(upload),
     });
@@ -641,10 +676,14 @@ const setMusicFromUploadTool = openstoryTool({
   annotations: writeAnnotations,
   inputSchema: z.strictObject({ sequenceId, upload: uploadRef }),
   outputSchema: z.object({ variantId: z.string() }),
-  run: async ({ upload, sequenceId: id }, { scopedDb, userId }) => {
+  run: async (
+    { upload, sequenceId: id },
+    { scopedDb, userId, promptLocale }
+  ) => {
     const sequence = await productionAccess(scopedDb).sequence(id);
     const result = await setSequenceMusicFromUpload(
       {
+        promptLocale,
         scopedDb,
         user: { id: userId },
         organizationId: scopedDb.organizationId,
@@ -671,12 +710,17 @@ const setSceneDialogueFromUploadTool = openstoryTool({
     upload: uploadRef,
   }),
   outputSchema: z.object({ workflowRunId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const sequence = await productionAccess(scopedDb).sequence(
       input.sequenceId
     );
     const result = await uploadSceneDialogue(
-      { scopedDb, sequence, user: { id: userId } },
+      {
+        promptLocale,
+        scopedDb,
+        sequence,
+        user: { id: userId },
+      },
       { sceneId: input.sceneId, publicUrl: storedUpload(input.upload) }
     );
     return { data: result, summary: 'Placing the recording on the scene.' };
@@ -700,7 +744,7 @@ const setCharacterSheetFromUploadTool = openstoryTool({
     upload: uploadRef,
   }),
   outputSchema: z.object({ characterId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const character = await productionAccess(scopedDb).character(
       input.sequenceId,
       input.characterId
@@ -710,6 +754,7 @@ const setCharacterSheetFromUploadTool = openstoryTool({
     );
     await setCharacterSheetFromUpload(
       {
+        promptLocale,
         scopedDb,
         user: { id: userId },
         organizationId: scopedDb.organizationId,
@@ -740,7 +785,7 @@ const setLocationSheetFromUploadTool = openstoryTool({
     upload: uploadRef,
   }),
   outputSchema: z.object({ locationId: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const location = await productionAccess(scopedDb).location(
       input.sequenceId,
       input.locationId
@@ -750,6 +795,7 @@ const setLocationSheetFromUploadTool = openstoryTool({
     );
     await setLocationSheetFromUpload(
       {
+        promptLocale,
         scopedDb,
         user: { id: userId },
         organizationId: scopedDb.organizationId,
@@ -794,11 +840,12 @@ const addElementTool = openstoryTool({
     token: z.string(),
     kind: z.string(),
   }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const sequence = await productionAccess(scopedDb).sequence(
       input.sequenceId
     );
     const element = await attachElementUpload({
+      promptLocale,
       scopedDb,
       organizationId: scopedDb.organizationId,
       userId,
@@ -829,12 +876,13 @@ const replaceElementTool = openstoryTool({
     name: elementName,
   }),
   outputSchema: z.object({ elementId: z.string(), kind: z.string() }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const element = await productionAccess(scopedDb).element(
       input.sequenceId,
       input.elementId
     );
     const updated = await replaceElementUpload({
+      promptLocale,
       scopedDb,
       organizationId: scopedDb.organizationId,
       userId,

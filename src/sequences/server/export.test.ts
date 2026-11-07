@@ -110,6 +110,7 @@ beforeEach(async () => {
 const scoped = () => createScopedDb(organizationId, generateId());
 const start = async () =>
   startExport(scoped(), {
+    promptLocale: 'en' as const,
     userId: generateId(),
     organizationId,
     sequenceId,
@@ -148,6 +149,7 @@ describe('export service', () => {
   it('refuseOtherCut joins a render of the same cut but refuses one of another cut', async () => {
     const first = await start();
     const sameCut = await startExport(scoped(), {
+      promptLocale: 'en' as const,
       userId: generateId(),
       organizationId,
       sequenceId,
@@ -164,6 +166,7 @@ describe('export service', () => {
       .where(eq(videoVariants.id, videoId));
     await expect(
       startExport(scoped(), {
+        promptLocale: 'en' as const,
         userId: generateId(),
         organizationId,
         sequenceId,

@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 /**
  * Fit a shot's recorded dialogue inside the clip that has to carry it (#1651).
  *
@@ -64,6 +65,7 @@ export const shortenDialogueResponseSchema = z.object({
  * the null return reports.
  */
 export type ShortenDialogueArgs = {
+  promptLocale: Locale;
   scopedDb: WorkflowScopedDb;
   workflowRunId: string;
   userId: string;
@@ -112,6 +114,7 @@ export async function shortenDialogueLines(
     },
     {
       sequenceId: args.sequenceId,
+      promptLocale: args.promptLocale,
       userId: args.userId,
       workflowRunId: args.workflowRunId,
       scopedDb: args.scopedDb,

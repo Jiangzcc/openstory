@@ -7,6 +7,8 @@ import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { ModelConfiguration } from '@/models/model-configuration';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { asStub } from '@/test/as-stub';
+import type { Locale } from '@/platform/i18n/locale';
+import type { UploadSubject } from './describe-upload';
 
 const callLLMStream = vi.fn();
 vi.doMock('@/models/server/llm-client', async (importOriginal) => ({
@@ -52,9 +54,11 @@ function context(
 
 function describeImage(
   scopedDb: Parameters<typeof describeUpload>[0]['scopedDb'],
-  subject: 'character' | 'location' = 'character'
+  subject: 'character' | 'location' = 'character',
+  promptLocale: Locale = 'en'
 ) {
   return describeUpload({
+    promptLocale,
     scopedDb,
     userId: 'u',
     url,
@@ -89,6 +93,32 @@ beforeEach(() => {
 const cleared = [{ statementVersion: 'likeness-cleared-v1' }];
 
 describe('describeUpload', () => {
+  it.each<UploadSubject>(['character', 'location'])(
+    'keeps concurrent %s instructions in the requested language',
+    async (subject) => {
+      const c = context(cleared);
+      const results = await Promise.all([
+        describeImage(c.scopedDb, subject, 'zh-CN'),
+        describeImage(c.scopedDb, subject, 'en'),
+      ]);
+      const chinese = callLLMStream.mock.calls[0]?.[0];
+      const english = callLLMStream.mock.calls[1]?.[0];
+      expect(chinese.messages[0].content).toContain('你为影视制作');
+      expect(english.messages[0].content).toContain('You describe');
+      expect(chinese.messages[1].content[0].content).toBe(
+        '上传的文件名：x.jpg'
+      );
+      expect(english.messages[1].content[0].content).toBe(
+        'Uploaded filename: x.jpg'
+      );
+      expect(chinese.messages[0].content).toContain('"isCharacterSheet"');
+      expect(results.map((result) => result.description)).toEqual([
+        'A portrait description.',
+        'A portrait description.',
+      ]);
+    }
+  );
+
   it('sends nothing to the model for an upload with no likeness verdict', async () => {
     const c = context([]);
     await expect(describeImage(c.scopedDb)).rejects.toBeInstanceOf(

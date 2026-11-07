@@ -247,7 +247,7 @@ export const generateCharacterVoiceFn = createServerFn({ method: 'POST' })
   .handler(({ context, data }) =>
     generateCharacterVoice(
       context.scopedDb,
-      { userId: context.user.id },
+      { userId: context.user.id, promptLocale: context.promptLocale },
       context.sequence,
       data
     )
@@ -563,7 +563,7 @@ export const regenerateCharacterSheetFn = createServerFn({ method: 'POST' })
   .handler(({ context, data }) =>
     regenerateCharacterSheet(
       context.scopedDb,
-      { userId: context.user.id },
+      { userId: context.user.id, promptLocale: context.promptLocale },
       context.sequence,
       // No look named: the default look, whose id is the character's.
       { ...data, lookId: data.lookId ?? data.characterId }

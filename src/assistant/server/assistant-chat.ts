@@ -47,6 +47,11 @@ import {
 } from '../page-context';
 import { REPLACE_UNSAVED_TEXT } from '../unsaved-text-tool';
 import { toVisionImageSource } from '@/platform/server/storage/external-url';
+import {
+  localizedPrompt,
+  promptLocaleFromRequest,
+} from '@/platform/i18n/prompt-locale';
+import { ASSISTANT_SYSTEM_ZH, ASSISTANT_WEB_ZH } from './assistant-prompts';
 
 /** How many context stills ride on one message; each costs vision tokens. */
 const MAX_CONTEXT_IMAGES = 4;
@@ -153,12 +158,18 @@ function systemPrompts(
   pageContext: PageContextItem[],
   web: boolean
 ): string[] {
+  const locale = promptLocaleFromRequest(caller.request);
+  const date = new Date().toISOString().slice(0, 10);
   const prompts = [
-    SYSTEM_PROMPT,
-    `The user is ${caller.user.name} in organization "${caller.organizationName}". Today is ${new Date().toISOString().slice(0, 10)}.`,
+    localizedPrompt(locale, SYSTEM_PROMPT, ASSISTANT_SYSTEM_ZH),
+    localizedPrompt(
+      locale,
+      `The user is ${caller.user.name} in organization "${caller.organizationName}". Today is ${date}.`,
+      `用户是 ${caller.user.name}，所属组织为“${caller.organizationName}”。今天是 ${date}。`
+    ),
   ];
-  if (web) prompts.push(WEB_PROMPT);
-  const page = describePageContext(pageContext);
+  if (web) prompts.push(localizedPrompt(locale, WEB_PROMPT, ASSISTANT_WEB_ZH));
+  const page = describePageContext(pageContext, locale);
   if (page) prompts.push(page);
   return prompts;
 }
@@ -166,6 +177,7 @@ function systemPrompts(
 /** The tool context: a session caller has every scope. */
 export function toolContext(caller: AssistantCaller): OpenStoryMcpContext {
   const readContext = {
+    promptLocale: promptLocaleFromRequest(caller.request),
     scopedDb: caller.scopedDb,
     origin: caller.origin,
     userId: caller.user.id,

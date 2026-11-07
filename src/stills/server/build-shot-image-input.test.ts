@@ -79,6 +79,7 @@ describe('buildShotImageWorkflowInput — prompt fallback chain (#547)', () => {
   it('prefers opts.prompt over every stored source', async () => {
     const shot = makeShot();
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       scene: makeScene({ extract: 'DESC' }),
       shot,
@@ -92,6 +93,7 @@ describe('buildShotImageWorkflowInput — prompt fallback chain (#547)', () => {
   it('falls back to the stored frame imagePrompt when no override', async () => {
     const shot = makeShot();
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: 'STORED',
@@ -102,6 +104,7 @@ describe('buildShotImageWorkflowInput — prompt fallback chain (#547)', () => {
   it('falls back to shot.description last', async () => {
     const shot = makeShot();
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       scene: makeScene({ extract: 'DESC' }),
       shot,
@@ -113,6 +116,7 @@ describe('buildShotImageWorkflowInput — prompt fallback chain (#547)', () => {
   it('returns null when no prompt is available anywhere (caller skips the shot)', async () => {
     const shot = makeShot();
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: null,
@@ -125,6 +129,7 @@ describe('buildShotImageWorkflowInput — variantOnly (#547)', () => {
   it('propagates variantOnly: true', async () => {
     const shot = makeShot();
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: 'P',
@@ -136,6 +141,7 @@ describe('buildShotImageWorkflowInput — variantOnly (#547)', () => {
   it('defaults variantOnly to false (the single-shot regenerate path keeps writing the primary)', async () => {
     const shot = makeShot();
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: 'P',
@@ -148,6 +154,7 @@ describe('buildShotImageWorkflowInput — sceneId + core shape', () => {
   it("uses the scene's id for the snapshot when present", async () => {
     const shot = makeShot();
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       scene: makeScene({ sceneId: 'scene-xyz', extract: 'DESC' }),
       shot,
@@ -158,6 +165,7 @@ describe('buildShotImageWorkflowInput — sceneId + core shape', () => {
   it('falls back to shot.id when the shot has no scene', async () => {
     const shot = makeShot({ id: 'shot-99' });
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: 'P',
@@ -168,6 +176,7 @@ describe('buildShotImageWorkflowInput — sceneId + core shape', () => {
   it('sets the workflow fields (shotId, sequenceId, numImages, hash)', async () => {
     const shot = makeShot({ id: 'shot-7' });
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: 'P',
@@ -185,6 +194,7 @@ describe('buildShotImageWorkflowInput — reference images', () => {
   it('has no reference images when nothing matches', async () => {
     const shot = makeShot();
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: 'P',
@@ -212,6 +222,7 @@ describe('buildShotImageWorkflowInput — reference images', () => {
       consistencyTag: null,
     };
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: 'P',
@@ -252,6 +263,7 @@ describe('buildShotImageWorkflowInput — reference images', () => {
       consistencyTag: null,
     };
     const input = await buildShotImageWorkflowInput({
+      promptLocale: 'en' as const,
       ...baseOpts,
       shot,
       imagePrompt: 'SCARLETT stands in the doorway.',

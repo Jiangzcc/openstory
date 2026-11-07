@@ -43,13 +43,14 @@ const createStitchTool = openstoryTool({
     url: z.string(),
     files: z.number(),
   }),
-  run: async (input, { scopedDb, userId, origin, request }) => {
+  run: async (input, { scopedDb, userId, origin, request, promptLocale }) => {
     const { id, files } = await createStitchFromSources({
       scopedDb,
       userId,
       cut: input.cut,
       portraitAttestation: input.portraitAttestation,
       request,
+      promptLocale,
     });
     const url = new URL(`/stitch/${id}`, origin).href;
     return {

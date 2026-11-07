@@ -202,6 +202,7 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
     // failure: throw rather than persist a null sheet and render the
     // character unanchored (#939).
     const generation = await generateImageSoftening({
+      promptLocale: input.promptLocale,
       step,
       scopedDb,
       workflowRunId,
@@ -306,6 +307,7 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
     await step.do('trigger-portrait', async () => {
       await triggerSheetPortrait(
         {
+          promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId,
           sequenceId: sequenceId ?? undefined,

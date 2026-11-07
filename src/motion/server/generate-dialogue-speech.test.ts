@@ -168,6 +168,7 @@ function args(
   overrides: Partial<Parameters<typeof generateDialogueSpeech>[1]> = {}
 ) {
   return {
+    promptLocale: 'en' as const,
     scopedDb,
     workflowRunId: 'run-1',
     userId: 'user-1',

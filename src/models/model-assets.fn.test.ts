@@ -161,7 +161,7 @@ describe('createGeneratedAsset', () => {
     const scopedDb = createScopedDb(ORGANIZATION_ID, USER_ID);
 
     await expect(
-      createGeneratedAsset(scopedDb, createData({ prompt: 'ok' }))
+      createGeneratedAsset(scopedDb, createData({ prompt: 'ok' }), 'en')
     ).rejects.toBeInstanceOf(AccountRestrictedError);
 
     expect(mockRequireCredits).not.toHaveBeenCalled();
@@ -174,7 +174,8 @@ describe('createGeneratedAsset', () => {
 
     const result = await createGeneratedAsset(
       scopedDb,
-      createData({ num_images: 2 })
+      createData({ num_images: 2 }),
+      'en'
     );
 
     expect(result.ok).toBe(false);
@@ -193,7 +194,7 @@ describe('createGeneratedAsset', () => {
     const scopedDb = createScopedDb(ORGANIZATION_ID, USER_ID);
 
     await expect(
-      createGeneratedAsset(scopedDb, createData({ prompt: 'a red fox' }))
+      createGeneratedAsset(scopedDb, createData({ prompt: 'a red fox' }), 'en')
     ).rejects.toThrow('Insufficient credits');
 
     expect(mockTriggerWorkflow).not.toHaveBeenCalled();
@@ -205,7 +206,8 @@ describe('createGeneratedAsset', () => {
 
     const result = await createGeneratedAsset(
       scopedDb,
-      createData({ prompt: 'a red fox', num_images: 2 })
+      createData({ prompt: 'a red fox', num_images: 2 }),
+      'en'
     );
 
     expect(result.ok).toBe(true);
@@ -232,6 +234,7 @@ describe('createGeneratedAsset', () => {
     expect(mockTriggerWorkflow).toHaveBeenCalledWith(
       '/asset',
       {
+        promptLocale: 'en',
         userId: USER_ID,
         organizationId: ORGANIZATION_ID,
         assetId: result.id,
@@ -248,7 +251,7 @@ describe('createGeneratedAsset', () => {
     const scopedDb = createScopedDb(ORGANIZATION_ID, USER_ID);
 
     await expect(
-      createGeneratedAsset(scopedDb, createData({ prompt: 'a red fox' }))
+      createGeneratedAsset(scopedDb, createData({ prompt: 'a red fox' }), 'en')
     ).rejects.toThrow('binding exploded');
 
     // Without this the row would sit 'queued' forever with no workflowRunId

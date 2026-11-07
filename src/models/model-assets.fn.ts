@@ -57,7 +57,7 @@ export const createGeneratedAssetFn = createServerFn({ method: 'POST' })
   .validator(zodValidator(createGeneratedAssetInputSchema))
   .handler(async ({ context, data }) => {
     assertModelsEnabled();
-    return createGeneratedAsset(context.scopedDb, data);
+    return createGeneratedAsset(context.scopedDb, data, context.promptLocale);
   });
 
 // ---------------------------------------------------------------------------

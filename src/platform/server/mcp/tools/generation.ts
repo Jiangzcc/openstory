@@ -143,10 +143,14 @@ export const planGenerationTool = openstoryTool({
   annotations: writeAnnotations,
   inputSchema: planGenerationInput,
   outputSchema: planOutput,
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const plan = await planGeneration(
       scopedDb,
-      { userId, organizationId: scopedDb.organizationId },
+      {
+        promptLocale,
+        userId,
+        organizationId: scopedDb.organizationId,
+      },
       input.sequenceId,
       toRequest(input)
     );
@@ -164,10 +168,14 @@ export const retryFailedWorkTool = openstoryTool({
     mode: z.enum(['smart', 'full_if_required']).default('smart'),
   }),
   outputSchema: planOutput,
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const plan = await planGeneration(
       scopedDb,
-      { userId, organizationId: scopedDb.organizationId },
+      {
+        promptLocale,
+        userId,
+        organizationId: scopedDb.organizationId,
+      },
       input.sequenceId,
       { mode: 'retry', retry: input.mode }
     );
@@ -187,10 +195,14 @@ export const executeGenerationTool = openstoryTool({
   },
   inputSchema: sequenceInput.extend({ planToken, confirm: z.literal(true) }),
   outputSchema: operationSchema,
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const operation = await executeGeneration(
       scopedDb,
-      { userId, organizationId: scopedDb.organizationId },
+      {
+        promptLocale,
+        userId,
+        organizationId: scopedDb.organizationId,
+      },
       input.sequenceId,
       input.planToken
     );
@@ -277,10 +289,14 @@ export const startExportTool = openstoryTool({
     action: exportActions,
     workflowRunId: z.string().nullable(),
   }),
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const started = await startExportOperation(
       scopedDb,
-      { userId, organizationId: scopedDb.organizationId },
+      {
+        promptLocale,
+        userId,
+        organizationId: scopedDb.organizationId,
+      },
       input.sequenceId
     );
     return {

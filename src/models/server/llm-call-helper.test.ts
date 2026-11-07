@@ -100,6 +100,7 @@ const callConfig = {
 };
 
 const callContext = {
+  promptLocale: 'en' as const,
   sequenceId: '01TESTSEQUENCE0000000000',
   workflowRunId: 'wf-test',
   shotPromptStream: { shotId: 'shot-1', promptType: 'visual' as const },
@@ -107,6 +108,7 @@ const callContext = {
 
 /** Context without shot stream → durableLLMCallCf (non-UI stream drain). */
 const nonStreamContext = {
+  promptLocale: 'en' as const,
   sequenceId: '01TESTSEQUENCE0000000000',
   workflowRunId: 'wf-test',
 };
@@ -428,7 +430,10 @@ describe('snapshotted durable vision fallback', () => {
           modelId: 'deepseek/deepseek-v3.2',
           visionImageUrls: ['https://example.test/still.png'],
         },
-        { ...baseContext, scopedDb }
+        {
+          ...baseContext,
+          scopedDb,
+        }
       );
       expect(result).toEqual(validObject);
       expect(resolveLlmKey).toHaveBeenCalledExactlyOnceWith(visionModel);
@@ -463,7 +468,10 @@ describe('snapshotted durable vision fallback', () => {
       await run(
         step,
         { ...callConfig, visionImageUrls: ['https://example.test/still.png'] },
-        { ...baseContext, scopedDb }
+        {
+          ...baseContext,
+          scopedDb,
+        }
       );
       expect(resolveLlmKey).toHaveBeenCalledExactlyOnceWith(callConfig.modelId);
       expect(mockCreateAdapter).toHaveBeenCalledWith(
@@ -533,7 +541,10 @@ it.each(
     const error = await run(
       step,
       { ...callConfig, modelId },
-      { ...context, scopedDb }
+      {
+        ...context,
+        scopedDb,
+      }
     ).catch((failure: unknown) => failure);
     if (!(error instanceof Error))
       throw new Error('Expected the mock credential failure');
@@ -573,7 +584,10 @@ it.each([false, true])(
         modelId: 'google/gemini-3.8-flash',
         visionImageUrls: ['https://mock.test/still.png'],
       },
-      { ...context, scopedDb }
+      {
+        ...context,
+        scopedDb,
+      }
     ).catch((failure: unknown) => failure);
     expect(error).toBe(downloadFailure);
     expect(readLlmAuthFailureSource(downloadFailure.message)).toBeUndefined();
@@ -621,7 +635,10 @@ it.each([false, true])(
     const error = await run(
       step,
       { ...callConfig, modelId },
-      { ...context, scopedDb }
+      {
+        ...context,
+        scopedDb,
+      }
     ).catch((failure: unknown) => failure);
     if (!(error instanceof Error))
       throw new Error('Expected the mock platform failure');
@@ -656,7 +673,10 @@ it.each([false, true])(
     const error = await run(
       step,
       { ...callConfig, modelId },
-      { ...context, scopedDb }
+      {
+        ...context,
+        scopedDb,
+      }
     ).catch((failure: unknown) => failure);
     if (!(error instanceof Error))
       throw new Error('Expected the mock platform failure');

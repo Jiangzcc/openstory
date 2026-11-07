@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { toImageModelCatalog } from '@/models/image-channels';
 /**
  * Centralised top-level workflow launchers.
@@ -418,6 +419,7 @@ export async function triggerStoryboard(
 export function triggerContinue(
   scopedDb: ScopedDb,
   input: {
+    promptLocale: Locale;
     userId: string;
     organizationId: string;
     sequence: Pick<Sequence, 'id' | 'imageModel' | 'videoModel' | 'musicModel'>;
@@ -432,6 +434,7 @@ export function triggerContinue(
   return triggerStoryboard(
     scopedDb,
     {
+      promptLocale: input.promptLocale,
       userId: input.userId,
       organizationId: input.organizationId,
       sequenceId: sequence.id,

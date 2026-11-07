@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 /**
  * Agent plans, replay-safe execution and operation status (#1460, #1461).
  * The MCP tools are thin adapters over these functions.
@@ -140,7 +141,7 @@ function decodePlanToken(encoded: string, sequenceId: string): PlanToken {
   return token.data;
 }
 
-type Actor = { userId: string; organizationId: string };
+type Actor = { promptLocale: Locale; userId: string; organizationId: string };
 
 const shotList = z.array(z.string());
 /** What a stale/missing plan does, per stage. */
@@ -302,6 +303,7 @@ async function prepareGeneration(
     // The editor's own gate and plan: processing check and credit floor.
     const { plan, creditFloorMicros, imageSource, modelConfiguration } =
       await prepareUpdateStale({
+        promptLocale: actor.promptLocale,
         scopedDb,
         userId: actor.userId,
         sequence,
@@ -327,6 +329,7 @@ async function prepareGeneration(
       launch: async (runKey, onLaunched) => {
         await onLaunched(
           await launchUpdateStale({
+            promptLocale: actor.promptLocale,
             userId: actor.userId,
             organizationId: actor.organizationId,
             sequenceId: sequence.id,
@@ -382,6 +385,7 @@ async function prepareGeneration(
         },
         () =>
           triggerContinue(scopedDb, {
+            promptLocale: actor.promptLocale,
             userId: actor.userId,
             organizationId: actor.organizationId,
             sequence,
@@ -403,6 +407,7 @@ async function prepareRetry(
   request: Extract<GenerationRequest, { mode: 'retry' }>
 ): Promise<Prepared> {
   const context = {
+    promptLocale: actor.promptLocale,
     sequence,
     user: { id: actor.userId },
     organizationId: actor.organizationId,
@@ -685,6 +690,7 @@ export async function startExportOperation(
   const cut = await resolveExportCut(scopedDb, sequenceId);
   // One decision: the refusal and the reported action are the start's own.
   const { row, workflowRunId, action } = await startExport(scopedDb, {
+    promptLocale: actor.promptLocale,
     userId: actor.userId,
     organizationId: actor.organizationId,
     sequenceId,

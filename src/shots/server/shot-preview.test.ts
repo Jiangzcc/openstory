@@ -125,7 +125,11 @@ describe('configured shot previews', () => {
 
   it('loads trusted administrator settings when triggered from a request', async () => {
     mocks.loadModelRuntimeConfiguration.mockResolvedValue(configured);
-    await triggerShotPreview({ ...target, prompt: MOTION });
+    await triggerShotPreview({
+      promptLocale: 'en' as const,
+      ...target,
+      prompt: MOTION,
+    });
     expect(mocks.loadModelRuntimeConfiguration).toHaveBeenCalledOnce();
     expect(mocks.trigger).toHaveBeenCalledWith(
       '/image',
@@ -162,6 +166,7 @@ describe('configured shot previews', () => {
       },
     });
     await redrawShotPreviewInRun(scopedDb, {
+      promptLocale: 'en' as const,
       ...target,
       motionPrompt: MOTION,
       characterBible: [],
@@ -231,7 +236,11 @@ it('includes text routing when a request redraws a preview', async () => {
 it('loads complete runtime configuration when no preview snapshot is supplied', async () => {
   mocks.loadModelRuntimeConfiguration.mockResolvedValue(runtimeSnapshot);
 
-  const runId = await triggerShotPreview({ ...previewTarget, prompt: MOTION });
+  const runId = await triggerShotPreview({
+    promptLocale: 'en' as const,
+    ...previewTarget,
+    prompt: MOTION,
+  });
 
   expect(runId).toBe('run-1');
   expect(mocks.loadModelRuntimeConfiguration).toHaveBeenCalledOnce();
@@ -258,6 +267,7 @@ it('inherits the complete preview snapshot without loading newer settings', asyn
   });
 
   await redrawShotPreviewInRun(scopedDb, {
+    promptLocale: 'en' as const,
     ...previewTarget,
     motionPrompt: MOTION,
     characterBible: [],

@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import type { ChannelTextModel, TextChannel } from './text-channels';
 import {
+  DEFAULT_TEXT_CHANNEL_USER_AGENT,
   TEXT_CHANNEL_PROTOCOL,
   TEXT_CHANNEL_PROTOCOLS,
   TEXT_CHANNEL_LIMITS,
@@ -9,6 +10,7 @@ import {
   emptyTextChannelsConfiguration,
   isCustomTextModelId,
   resolveTextModelRoute,
+  resolveTextChannelUserAgent,
   saveChannelTextModelSchema,
   saveTextChannelSchema,
   textChannelBaseUrlSchema,
@@ -68,6 +70,88 @@ it('normalizes trailing slashes without dropping an API path prefix', () => {
   expect(
     textChannelBaseUrlSchema.parse(' https://provider.example/v1/// ')
   ).toBe('https://provider.example/v1');
+});
+
+it('reads older channel settings and snapshots the default product User-Agent', () => {
+  const configuration = textChannelsConfigurationSchema.parse({
+    revision: 1,
+    channels: [channel],
+    models: [model],
+  });
+  expect(configuration.channels[0]).not.toHaveProperty('userAgent');
+  expect(createTextModelRoutingSnapshot(configuration)[0]?.userAgent).toBe(
+    DEFAULT_TEXT_CHANNEL_USER_AGENT
+  );
+  expect(resolveTextChannelUserAgent()).toBe(DEFAULT_TEXT_CHANNEL_USER_AGENT);
+});
+
+it.each(['', '   '])(
+  'keeps a cleared User-Agent explicit and resolves %j to the product default',
+  (userAgent) => {
+    const configuration = textChannelsConfigurationSchema.parse({
+      revision: 1,
+      channels: [{ ...channel, userAgent }],
+      models: [model],
+    });
+    expect(configuration.channels[0]?.userAgent).toBe('');
+    expect(createTextModelRoutingSnapshot(configuration)[0]?.userAgent).toBe(
+      DEFAULT_TEXT_CHANNEL_USER_AGENT
+    );
+  }
+);
+
+it('trims and freezes a custom User-Agent into a new routing snapshot', () => {
+  const source = { ...channel, userAgent: '  OpenStory-Deployment/2.0  ' };
+  const configuration = textChannelsConfigurationSchema.parse({
+    revision: 1,
+    channels: [source],
+    models: [model],
+  });
+  const snapshot = createTextModelRoutingSnapshot(configuration);
+  expect(snapshot[0]?.userAgent).toBe('OpenStory-Deployment/2.0');
+  source.userAgent = 'Replacement/3.0';
+  expect(snapshot[0]?.userAgent).toBe('OpenStory-Deployment/2.0');
+});
+
+it.each([
+  { name: 'CRLF', value: 'OpenStory/1.0\r\nX-Injected: true' },
+  { name: 'leading newline', value: '\nOpenStory/1.0' },
+  { name: 'trailing newline', value: 'OpenStory/1.0\n' },
+  { name: 'tab', value: 'OpenStory/1.0\t' },
+  { name: 'NUL', value: 'OpenStory/1.0\0' },
+  { name: 'DEL', value: 'OpenStory/1.0\x7f' },
+  { name: 'non-ASCII', value: '创作平台/1.0' },
+  { name: 'oversized', value: 'a'.repeat(TEXT_CHANNEL_LIMITS.userAgent + 1) },
+])('rejects a $name User-Agent before persistence', ({ value }) => {
+  const input = {
+    revision: 0,
+    id: channel.id,
+    name: channel.name,
+    baseUrl: channel.baseUrl,
+    protocol: channel.protocol,
+    enabled: true,
+    userAgent: value,
+  };
+  expect(saveTextChannelSchema.safeParse(input).success).toBe(false);
+  expect(
+    textChannelsConfigurationSchema.safeParse({
+      revision: 1,
+      channels: [{ ...channel, userAgent: value }],
+      models: [model],
+    }).success
+  ).toBe(false);
+});
+
+it('accepts a printable User-Agent at the length limit', () => {
+  const userAgent = 'a'.repeat(TEXT_CHANNEL_LIMITS.userAgent);
+  const configuration = textChannelsConfigurationSchema.parse({
+    revision: 1,
+    channels: [{ ...channel, userAgent }],
+    models: [model],
+  });
+  expect(createTextModelRoutingSnapshot(configuration)[0]?.userAgent).toBe(
+    userAgent
+  );
 });
 
 it('requires explicit rates and rejects negative and nonfinite rates', () => {
@@ -199,7 +283,7 @@ it('includes only enabled models with enabled credential-bearing channels', () =
 it('projects only public model metadata into the incremental catalog', () => {
   const snapshot = createTextModelRoutingSnapshot({
     revision: 2,
-    channels: [channel],
+    channels: [{ ...channel, userAgent: 'Private-Deployment/2.0' }],
     models: [model],
   });
   const [entry] = toTextModelCatalog(snapshot);
@@ -220,6 +304,7 @@ it('projects only public model metadata into the incremental catalog', () => {
     'credentialId',
     'keyHint',
     'upstreamModel',
+    'userAgent',
   ]) {
     expect(entry).not.toHaveProperty(privateField);
   }

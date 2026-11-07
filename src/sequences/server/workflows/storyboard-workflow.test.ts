@@ -111,6 +111,7 @@ function makeEvent(
   > = {}
 ): Readonly<WorkflowEvent<StoryboardWorkflowInput>> {
   const payload: StoryboardWorkflowInput = {
+    promptLocale: 'en' as const,
     userId: 'u1',
     organizationId: 't1',
     includeMusic: true,

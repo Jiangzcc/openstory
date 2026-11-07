@@ -90,6 +90,7 @@ const line = (shotId: string, text: string) => ({
 });
 
 const input: DialogueUploadWorkflowInput = {
+  promptLocale: 'en' as const,
   userId: 'user-1',
   organizationId: 'org-1',
   sequenceId: 'seq-1',

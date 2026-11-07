@@ -282,6 +282,7 @@ export const recordShotDialogueLineFn = createServerFn({ method: 'POST' })
         { contentType: 'audio/wav' }
       );
       const input: DialogueTakeWorkflowInput = {
+        promptLocale: context.promptLocale,
         userId: user.id,
         organizationId: sequence.organizationId,
         sequenceId: sequence.id,

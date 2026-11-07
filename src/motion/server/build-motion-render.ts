@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 /** Pure render planning shared by every trigger: tile, assemble, and stamp inputs. */
 import {
   videoPromptHardLimit,
@@ -27,7 +28,12 @@ export type MotionRenderShot = BatchMotionMusicWorkflowInput['shots'][number];
 
 type MotionRenderSources = Pick<
   MotionWorkflowInput,
-  'userId' | 'organizationId' | 'sequenceId' | 'reservationId' | 'variantOnly'
+  | 'promptLocale'
+  | 'userId'
+  | 'organizationId'
+  | 'sequenceId'
+  | 'reservationId'
+  | 'variantOnly'
 > & {
   shots: readonly MotionRenderShot[];
   videoModels?: ImageToVideoModel[];
@@ -121,6 +127,7 @@ export function buildMotionRender(sources: MotionRenderSources): Array<{
       model: ImageToVideoModel;
       shotId: string;
     } = {
+      promptLocale: sources.promptLocale,
       userId: sources.userId,
       organizationId: sources.organizationId,
       shotId: shot.shotId,
@@ -184,6 +191,7 @@ function maxEditSeconds(
 
 /** Finals reuse the provider's frozen draft request; the builder stamps its provenance. */
 export function buildDraftFinalRender(source: {
+  promptLocale: Locale;
   userId: string;
   organizationId: string;
   sequence: {
@@ -200,6 +208,7 @@ export function buildDraftFinalRender(source: {
   draft: NonNullable<MotionWorkflowInput['finalFromDraft']>;
 }): MotionWorkflowInput {
   return {
+    promptLocale: source.promptLocale,
     userId: source.userId,
     organizationId: source.organizationId,
     sequenceId: source.sequence.id,

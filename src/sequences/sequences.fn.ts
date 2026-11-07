@@ -160,6 +160,7 @@ export const createSequenceFn = createServerFn({ method: 'POST' })
   )
   .handler(async ({ data, context }) => {
     const { sequences } = await createSequences(data, {
+      promptLocale: context.promptLocale,
       scopedDb: context.scopedDb,
       user: context.user,
       organizationId: context.organizationId,
@@ -222,6 +223,7 @@ export const continueGenerationFn = createServerFn({ method: 'POST' })
       },
       async () =>
         triggerContinue(context.scopedDb, {
+          promptLocale: context.promptLocale,
           userId: context.user.id,
           organizationId: context.organizationId,
           sequence,
@@ -442,6 +444,7 @@ export const retryStoryboardFn = createServerFn({ method: 'POST' })
         );
 
     const workflowInput: StoryboardTriggerInput = {
+      promptLocale: context.promptLocale,
       userId: user.id,
       organizationId,
       sequenceId: sequence.id,
@@ -577,7 +580,10 @@ export const generateMusicFn = createServerFn({ method: 'POST' })
   .handler(({ data, context }) =>
     generateMusic(
       context.scopedDb,
-      { userId: context.user.id },
+      {
+        promptLocale: context.promptLocale,
+        userId: context.user.id,
+      },
       context.sequence,
       data
     )

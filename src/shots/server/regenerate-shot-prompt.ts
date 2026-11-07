@@ -48,7 +48,13 @@ import { redrawShotPreview } from './shot-preview';
 
 type RegenerateContext = Pick<
   ShotEditContext,
-  'shot' | 'frame' | 'sequence' | 'scopedDb' | 'user' | 'organizationId'
+  | 'promptLocale'
+  | 'shot'
+  | 'frame'
+  | 'sequence'
+  | 'scopedDb'
+  | 'user'
+  | 'organizationId'
 >;
 
 /**
@@ -244,7 +250,13 @@ export async function regenerateShotPrompt(
         analysisModel,
         createdBy: user.id,
       });
-      await redrawShotPreview({ ...context, scene }, motion.text);
+      await redrawShotPreview(
+        {
+          ...context,
+          scene,
+        },
+        motion.text
+      );
     }
     return result({ rebuilt: true });
   }
@@ -303,6 +315,7 @@ export async function regenerateShotPrompt(
     const workflowRunId = await triggerWorkflow<ShotSpecRewriteWorkflowInput>(
       '/shot-spec-rewrite',
       {
+        promptLocale: context.promptLocale,
         userId: user.id,
         organizationId,
         sequenceId: sequence.id,

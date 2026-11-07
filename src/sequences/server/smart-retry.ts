@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
 import { configuredImageSource } from '@/billing/configured-image-billing';
@@ -136,6 +137,7 @@ function getSceneCharacterReferenceImages(
 
 /** The slice of the middleware context `executeSmartRetry` needs. */
 export type SmartRetryContext = {
+  promptLocale: Locale;
   sequence: Sequence;
   user: { id: string };
   organizationId: string;
@@ -192,7 +194,7 @@ export async function executeSmartRetry(
   };
   // Release only holds created by this call; stable replays share the live run's hold.
   const triggerKeyed = async <
-    T extends { userId: string; organizationId: string },
+    T extends { promptLocale: Locale; userId: string; organizationId: string },
   >(
     path: string,
     body: T,
@@ -399,6 +401,7 @@ export async function executeSmartRetry(
         triggerStoryboard(
           context.scopedDb,
           {
+            promptLocale: context.promptLocale,
             userId: user.id,
             organizationId,
             sequenceId: sequence.id,
@@ -547,6 +550,7 @@ export async function executeSmartRetry(
           : undefined);
 
       const workflowInput: ImageWorkflowInput = {
+        promptLocale: context.promptLocale,
         userId: user.id,
         variantOnly: false,
         organizationId,
@@ -724,6 +728,7 @@ export async function executeSmartRetry(
               })
             : undefined;
         const workflowInput: BatchMotionMusicWorkflowInput = {
+          promptLocale: context.promptLocale,
           userId: user.id,
           organizationId,
           reservationId,
@@ -787,6 +792,7 @@ export async function executeSmartRetry(
       });
       if (variantId) {
         const musicInput: MusicWorkflowInput = {
+          promptLocale: context.promptLocale,
           userId: user.id,
           organizationId,
           sequenceId: sequence.id,
@@ -847,6 +853,7 @@ export async function executeSmartRetry(
     if (!dryRun) {
       // Generate music prompt
       const musicPromptInput: MusicPromptWorkflowInput = {
+        promptLocale: context.promptLocale,
         userId: user.id,
         organizationId,
         sequenceId: sequence.id,

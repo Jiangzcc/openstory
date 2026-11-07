@@ -79,6 +79,7 @@ function makeScopedDb(claimId: string | null) {
 }
 
 const input: DialogueTakeWorkflowInput = {
+  promptLocale: 'en' as const,
   userId: 'user-1',
   organizationId: 'org-1',
   sequenceId: 'seq-1',

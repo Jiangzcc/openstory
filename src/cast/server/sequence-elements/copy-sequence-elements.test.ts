@@ -37,6 +37,7 @@ describe('copySequenceElements', () => {
     });
 
     await copySequenceElements({
+      promptLocale: 'en',
       scopedDb,
       organizationId: 'organization-1',
       userId: 'user-1',

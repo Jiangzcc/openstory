@@ -11,10 +11,12 @@ import type { ScopedDb } from '@/platform/server/db/scoped';
 import { recordTriggerFailure } from '@/sequences/server/db/sequence-events';
 import type { CharacterVoiceWorkflowInput } from '@/platform/server/workflow/types';
 import { storedAnalysisModelId } from '@/models/models.config';
+import type { Locale } from '@/platform/i18n/locale';
 
 const VOICE_DESIGN_NEVER_STARTED = 'Voice design never started';
 
 export async function enqueueCharacterVoiceDesign(args: {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   character: CharacterWithSheet;
   /** The sequence the design was asked from; null from the Characters page. */
@@ -60,6 +62,7 @@ export async function enqueueCharacterVoiceDesign(args: {
   }
   const husk = claim.version;
   const payload: CharacterVoiceWorkflowInput = {
+    promptLocale: args.promptLocale,
     userId,
     organizationId: scopedDb.organizationId,
     sequenceId,

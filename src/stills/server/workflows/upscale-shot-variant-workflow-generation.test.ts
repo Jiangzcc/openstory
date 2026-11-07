@@ -55,6 +55,7 @@ const STORED_IMAGE = {
 };
 const COST = usdToMicros(0.2);
 const PAYLOAD = {
+  promptLocale: 'en',
   userId: 'mock-user',
   organizationId: 'mock-org',
   sequenceId: 'mock-sequence',

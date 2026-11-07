@@ -469,6 +469,7 @@ export async function generateImageWithContentRetry(
     let softened: string;
     try {
       softened = await softenRejectedImagePrompt(step, {
+        promptLocale: args.input.promptLocale,
         scopedDb,
         workflowRunId,
         sequenceId: input.sequenceId,

@@ -50,6 +50,7 @@ describe('runEnhanceScriptTurns', () => {
     const generate = generateFrom([`${body}\nTOTAL: 30s`]);
     const { script } = await drain(
       runEnhanceScriptTurns({
+        promptLocale: 'en' as const,
         messages: [{ role: 'user', content: 'brief' }],
         targetSeconds: 30,
         generate,
@@ -71,6 +72,7 @@ describe('runEnhanceScriptTurns', () => {
     };
     const { script } = await drain(
       runEnhanceScriptTurns({
+        promptLocale: 'en' as const,
         messages: [{ role: 'user', content: 'nine beats plus a title card' }],
         targetSeconds: 30,
         generate,
@@ -96,6 +98,7 @@ describe('runEnhanceScriptTurns', () => {
     };
     const { script } = await drain(
       runEnhanceScriptTurns({
+        promptLocale: 'en' as const,
         messages: [{ role: 'user', content: 'brief' }],
         targetSeconds: 30,
         generate,

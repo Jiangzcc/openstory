@@ -33,7 +33,12 @@ export const classifyUploadFn = createServerFn({ method: 'POST' })
   .middleware([authWithOrganizationMiddleware])
   .validator(zodValidator(uploadRefSchema))
   .handler(({ context, data }): Promise<UploadCheck> =>
-    readUploadCheck(context.scopedDb, data, requestContext())
+    readUploadCheck(
+      context.scopedDb,
+      data,
+      requestContext(),
+      context.promptLocale
+    )
   );
 
 /** Run the check again after it failed. */
@@ -41,7 +46,12 @@ export const retryUploadCheckFn = createServerFn({ method: 'POST' })
   .middleware([authWithOrganizationMiddleware])
   .validator(zodValidator(uploadRefSchema))
   .handler(({ context, data }): Promise<UploadCheck> =>
-    retryUploadCheck(context.scopedDb, data, requestContext())
+    retryUploadCheck(
+      context.scopedDb,
+      data,
+      requestContext(),
+      context.promptLocale
+    )
   );
 
 /** Record the portrait sign-off for real-person uploads. */

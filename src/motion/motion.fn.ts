@@ -463,6 +463,7 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
         }
 
         const workflowInput: BatchMotionMusicWorkflowInput = {
+          promptLocale: context.promptLocale,
           userId: user.id,
           organizationId,
           sequenceId: sequence.id,

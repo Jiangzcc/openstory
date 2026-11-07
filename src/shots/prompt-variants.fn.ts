@@ -178,7 +178,10 @@ export const restoreSequenceMusicPromptVariantFn = createServerFn({
     async ({ context, data }) =>
       await restoreMusicPromptVersion(
         context.scopedDb,
-        { userId: context.user.id },
+        {
+          promptLocale: context.promptLocale,
+          userId: context.user.id,
+        },
         data.sequenceId,
         data.variantId
       )
@@ -283,7 +286,10 @@ export const saveMusicPromptFn = createServerFn({ method: 'POST' })
     async ({ context, data }) =>
       await saveMusicPrompt(
         context.scopedDb,
-        { userId: context.user.id },
+        {
+          promptLocale: context.promptLocale,
+          userId: context.user.id,
+        },
         context.sequence,
         data
       )
@@ -297,7 +303,10 @@ export const regenerateMusicPromptFn = createServerFn({ method: 'POST' })
   .handler(({ context }) =>
     rewriteMusicPrompt(
       context.scopedDb,
-      { userId: context.user.id },
+      {
+        promptLocale: context.promptLocale,
+        userId: context.user.id,
+      },
       context.sequence
     )
   );

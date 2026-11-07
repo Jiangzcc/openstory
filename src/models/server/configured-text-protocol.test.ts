@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { chat, toolDefinition } from '@tanstack/ai';
 import type { StreamChunk } from '@tanstack/ai';
 import { z } from 'zod';
-import { TEXT_CHANNEL_PROTOCOLS } from '@/models/text-channels';
+import {
+  DEFAULT_TEXT_CHANNEL_USER_AGENT,
+  TEXT_CHANNEL_PROTOCOLS,
+} from '@/models/text-channels';
 import type {
   TextChannelProtocol,
   TextModelRoute,
@@ -287,6 +290,9 @@ async function expectPrivateRequest(
   expect(request.method).toBe('POST');
   expect(request.headers.get('authorization')).toBe(`Bearer ${API_KEY}`);
   expect(request.headers.get('content-type')).toContain('application/json');
+  expect(request.headers.get('user-agent')).toBe(
+    DEFAULT_TEXT_CHANNEL_USER_AGENT
+  );
   expect(request.url).not.toContain(API_KEY);
   expect(JSON.stringify(await requestBody(index))).not.toContain(API_KEY);
   expect(JSON.stringify(chunks)).not.toContain(API_KEY);
@@ -365,6 +371,56 @@ it.each(PROTOCOL_CASES)(
     });
   }
 );
+
+it.each(PROTOCOL_CASES)(
+  'sends the snapshotted custom User-Agent to $path without changing authentication',
+  async ({ protocol, path }) => {
+    const route = {
+      ...configuredRoute(protocol),
+      userAgent: 'OpenStory-Channel/2.0',
+    };
+    mockFetch.mockResolvedValueOnce(successfulResponse(protocol));
+    const chunks = await collect(
+      chat({
+        ...chatOptions(protocol),
+        adapter: createAdapter(route.modelId, {
+          via: 'compatible',
+          key: API_KEY,
+          route,
+        }),
+      })
+    );
+    expectSuccessfulStream(chunks);
+    const request = requestAt(0);
+    expect(request.url).toBe(`${BASE_URL}${path}`);
+    expect(request.headers.get('user-agent')).toBe(route.userAgent);
+    expect(request.headers.get('authorization')).toBe(`Bearer ${API_KEY}`);
+    expect(JSON.stringify(await requestBody())).not.toContain(route.userAgent);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  }
+);
+
+it('uses the product User-Agent for an explicitly cleared channel override', async () => {
+  const route = {
+    ...configuredRoute(TEXT_CHANNEL_PROTOCOLS.chatCompletions),
+    userAgent: '',
+  };
+  mockFetch.mockResolvedValueOnce(
+    successfulResponse(TEXT_CHANNEL_PROTOCOLS.chatCompletions)
+  );
+  const chunks = await collect(
+    chat({
+      ...chatOptions(TEXT_CHANNEL_PROTOCOLS.chatCompletions),
+      adapter: createAdapter(route.modelId, {
+        via: 'compatible',
+        key: API_KEY,
+        route,
+      }),
+    })
+  );
+  expectSuccessfulStream(chunks);
+  await expectPrivateRequest('/chat/completions', chunks);
+});
 
 it('sends Chat Completions messages, sampling, capped max_tokens and usage opt-in', async () => {
   const protocol = TEXT_CHANNEL_PROTOCOLS.chatCompletions;

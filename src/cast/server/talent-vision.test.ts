@@ -82,10 +82,33 @@ describe('talentMediaAnalysisSchema', () => {
 });
 
 describe('buildTalentVisionMessages', () => {
-  it('uses the singular prompt for one image', () => {
-    const messages = buildTalentVisionMessages([
-      { type: 'url', value: 'https://example.com/a.png' },
+  it('uses Chinese instructions without changing filenames or safety enums', () => {
+    const source = {
+      type: 'url',
+      value: 'https://example.com/a.png',
+    } satisfies Parameters<typeof buildTalentVisionMessages>[0][number];
+    const messages = buildTalentVisionMessages([source], 'zh-CN', [
+      'Hello_中文.png',
     ]);
+    const system = messages[0]?.content;
+    expect(system).toContain('首先判断主体是什么。不要默认它是人类');
+    expect(system).toContain('"human" | "animated" | "other"');
+    expect(system).toContain('任何媒介、任何艺术风格');
+    const parts = messages[1]?.content;
+    if (!Array.isArray(parts)) throw new Error('expected multimodal content');
+    expect(parts[0]).toEqual({
+      type: 'text',
+      content:
+        '分析这份角色参考：图片是否已经是角色参考图？描述主体。\n上传的文件名：Hello_中文.png',
+    });
+    expect(parts[1]).toEqual({ type: 'image', source });
+  });
+
+  it('uses the singular prompt for one image', () => {
+    const messages = buildTalentVisionMessages(
+      [{ type: 'url', value: 'https://example.com/a.png' }],
+      'en'
+    );
     expect(messages[0]?.role).toBe('system');
     const user = messages[1];
     expect(user?.role).toBe('user');
@@ -101,10 +124,13 @@ describe('buildTalentVisionMessages', () => {
   });
 
   it('uses the plural prompt and one image part per source', () => {
-    const messages = buildTalentVisionMessages([
-      { type: 'url', value: 'https://example.com/a.png' },
-      { type: 'url', value: 'https://example.com/b.png' },
-    ]);
+    const messages = buildTalentVisionMessages(
+      [
+        { type: 'url', value: 'https://example.com/a.png' },
+        { type: 'url', value: 'https://example.com/b.png' },
+      ],
+      'en'
+    );
     const parts = messages[1]?.content;
     if (!Array.isArray(parts)) throw new Error('expected multimodal content');
     expect(parts[0]).toMatchObject({
@@ -117,6 +143,7 @@ describe('buildTalentVisionMessages', () => {
   it('appends uploaded filenames after the classify prompt', () => {
     const messages = buildTalentVisionMessages(
       [{ type: 'url', value: 'https://example.com/a.png' }],
+      'en',
       ['character-sheet.jpg']
     );
     const parts = messages[1]?.content;
@@ -195,9 +222,10 @@ describe('e2e talent-vision aimock fixture', () => {
   // (`classifyUpload` without one); its recorded answer is the robot sheet.
   it('matches the singular prompt with the sheet-metadata answer', () => {
     const fixtures = loadFixtures();
-    const messages = buildTalentVisionMessages([
-      { type: 'url', value: 'https://example.com/a.png' },
-    ]);
+    const messages = buildTalentVisionMessages(
+      [{ type: 'url', value: 'https://example.com/a.png' }],
+      'en'
+    );
     const parts = messages[1]?.content;
     if (!Array.isArray(parts)) throw new Error('expected multimodal content');
     const text = parts[0];

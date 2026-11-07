@@ -38,9 +38,7 @@ const STUDIO_VIDEO_PROMPTS = [
   "The moth's wings twitch once under the pin; a cabinet reflection of someone walking by",
 ] as const;
 
-export function studioShufflePrompts(
-  activity: StudioActivity
-): readonly string[] {
+export function studioShufflePrompts(activity: StudioActivity) {
   return activity === 'video' ? STUDIO_VIDEO_PROMPTS : STUDIO_IMAGE_PROMPTS;
 }
 

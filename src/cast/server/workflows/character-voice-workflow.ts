@@ -122,6 +122,7 @@ export class CharacterVoiceWorkflow extends OpenStoryWorkflowEntrypoint<Characte
           {
             sequenceId: sequenceId ?? undefined,
             userId: input.userId,
+            promptLocale: input.promptLocale,
             workflowRunId: event.instanceId,
             scopedDb,
             reservationId: input.reservationId,
@@ -353,6 +354,7 @@ export class CharacterVoiceWorkflow extends OpenStoryWorkflowEntrypoint<Characte
       {
         sequenceId: sequenceId ?? undefined,
         userId: input.userId,
+        promptLocale: input.promptLocale,
         workflowRunId: event.instanceId,
         scopedDb,
         reservationId: input.reservationId,

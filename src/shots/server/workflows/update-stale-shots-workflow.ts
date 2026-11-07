@@ -476,7 +476,10 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
         }
       };
       const spawnCharacterSheet = async (
-        payload: Omit<CharacterSheetWorkflowInput, 'sheetVersionId'>,
+        payload: Omit<
+          CharacterSheetWorkflowInput,
+          'sheetVersionId' | 'promptLocale'
+        >,
         sheetVersionId: string
       ) => {
         const id = payload.lookId;
@@ -492,6 +495,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             childId: `character-sheet:${id}`,
             childPayload: {
               ...payload,
+              promptLocale: input.promptLocale,
               sheetVersionId,
               reservationId: input.reservationId,
             },
@@ -517,7 +521,10 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
         }
       };
       const drawCharacterSheet = async (
-        payload: Omit<CharacterSheetWorkflowInput, 'sheetVersionId'>
+        payload: Omit<
+          CharacterSheetWorkflowInput,
+          'sheetVersionId' | 'promptLocale'
+        >
       ) => {
         const sheetVersionId = await claimCharacterSheet(payload);
         if (sheetVersionId) await spawnCharacterSheet(payload, sheetVersionId);
@@ -570,6 +577,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
               childId: `location-sheet:${id}`,
               childPayload: {
                 ...payload,
+                promptLocale: input.promptLocale,
                 referenceVersionId,
                 reservationId: input.reservationId,
               },
@@ -594,7 +602,9 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
         }),
         ...(references.elementSheets
           ? [
-              (async (payload: ElementSheetWorkflowInput) => {
+              (async (
+                payload: Omit<ElementSheetWorkflowInput, 'promptLocale'>
+              ) => {
                 try {
                   const generated = await spawnAndAwaitChild<
                     ElementSheetWorkflowInput,
@@ -607,6 +617,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                     childId: `element-sheets:${sequenceId}:${parentInstanceId}`,
                     childPayload: {
                       ...payload,
+                      promptLocale: input.promptLocale,
                       reservationId: input.reservationId,
                     },
                     spawnStepName: 'spawn-element-sheets',
@@ -650,6 +661,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
               childId: `character-voice:${id}`,
               childPayload: {
                 ...payload,
+                promptLocale: input.promptLocale,
                 targetVersionId: claim.version.id,
                 reservationId: input.reservationId,
               },
@@ -849,6 +861,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           const { scene, script } = resolveSceneForShot(shot, sceneContext);
           try {
             const prepared = await prepareShotImageWorkflowInput({
+              promptLocale: input.promptLocale,
               scopedDb: scopedDb.stalenessPlanning,
               modelConfiguration: scopedDb.models,
               sequence: {
@@ -941,6 +954,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           await triggerWorkflow<ShotVariantWorkflowInput>(
             '/variant-image',
             {
+              promptLocale: input.promptLocale,
               userId,
               organizationId,
               sequenceId,
@@ -1011,7 +1025,11 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
     const preparedVideos = new Map<string, MotionRenderShot>();
     type PreparedLipsync = Omit<
       LipsyncWorkflowInput,
-      'userId' | 'organizationId' | 'reservationId' | 'ownsReservation'
+      | 'userId'
+      | 'organizationId'
+      | 'reservationId'
+      | 'ownsReservation'
+      | 'promptLocale'
     >;
     const preparedLipsync = new Map<string, PreparedLipsync>();
     const prepareVideo = async (
@@ -1436,6 +1454,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             parentInstanceId,
             childId: `dialogue-audio:${sequenceId}:${parentInstanceId}`,
             childPayload: {
+              promptLocale: input.promptLocale,
               userId,
               organizationId,
               sequenceId,
@@ -1673,6 +1692,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                     parentInstanceId,
                     childId: `shot-spec-rewrite:${sequenceId}:${target.shotId}`,
                     childPayload: {
+                      promptLocale: input.promptLocale,
                       userId,
                       organizationId,
                       sequenceId,
@@ -1977,6 +1997,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                 parentInstanceId,
                 childId: `music-prompt:${sequenceId}`,
                 childPayload: {
+                  promptLocale: input.promptLocale,
                   userId,
                   organizationId,
                   sequenceId,
@@ -2035,6 +2056,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                   parentInstanceId,
                   childId: `music:${sequenceId}${suffix}`,
                   childPayload: {
+                    promptLocale: input.promptLocale,
                     userId,
                     organizationId,
                     sequenceId,
@@ -2119,6 +2141,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
     const renderJobs = plan.renderOptions?.videoModels?.length
       ? [
           ...buildMotionRender({
+            promptLocale: input.promptLocale,
             userId,
             organizationId,
             sequenceId,
@@ -2131,6 +2154,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             videoModels: plan.renderOptions.videoModels,
           }),
           ...buildMotionRender({
+            promptLocale: input.promptLocale,
             userId,
             organizationId,
             sequenceId,
@@ -2139,6 +2163,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           }),
         ]
       : buildMotionRender({
+          promptLocale: input.promptLocale,
           userId,
           organizationId,
           sequenceId,
@@ -2240,6 +2265,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             childId: `lipsync:${sequenceId}:${target.shotId}`,
             childPayload: {
               ...payload,
+              promptLocale: input.promptLocale,
               userId,
               organizationId,
               reservationId: input.reservationId,

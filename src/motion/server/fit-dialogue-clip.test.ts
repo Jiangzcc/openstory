@@ -47,6 +47,7 @@ const LINES: VoicedDialogueLine[] = [
 
 const shorten = () =>
   shortenDialogueLines(step, {
+    promptLocale: 'en' as const,
     scopedDb,
     workflowRunId: 'run-1',
     userId: 'user-1',

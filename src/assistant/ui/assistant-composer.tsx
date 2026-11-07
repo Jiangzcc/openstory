@@ -1,5 +1,6 @@
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useTranslation } from 'react-i18next';
+import { useLocale } from '@/ui/i18n/use-locale';
 import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { localizePageContextLabel } from './localize-page-context-label';
 /**
@@ -191,6 +192,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
 }) => {
   const translateEvent = useLiveTranslation('assistant');
   const { t } = useTranslation('assistant');
+  const { locale } = useLocale();
 
   const [text, setText] = useState(initialPrompt ?? '');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -304,7 +306,7 @@ export const AssistantComposer: React.FC<AssistantComposerProps> = ({
 
   const send = () => {
     if (!canSend) return;
-    onSend(messageContent(text, attachments));
+    onSend(messageContent(text, attachments, locale));
     setText('');
     setAttachments([]);
     textareaRef.current?.focus();

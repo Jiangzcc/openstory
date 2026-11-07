@@ -120,6 +120,7 @@ function makeEvent(
   // minimal WorkflowEvent stub: run() only reads payload + instanceId
   return {
     payload: {
+      promptLocale: 'en',
       userId: 'u1',
       organizationId: 't1',
       ...(withParent ? { _parent: PARENT_HINT } : {}),
@@ -168,6 +169,26 @@ function makeWorkflow(impl: (scopedDb: WorkflowScopedDb) => Promise<unknown>) {
 }
 
 describe('OpenStoryWorkflowEntrypoint.run', () => {
+  test.each([undefined, 'fr'])(
+    'rejects a task with invalid prompt locale %s before executing',
+    async (promptLocale) => {
+      const impl = vi.fn(async () => undefined);
+      const { workflow } = makeWorkflow(impl);
+      // Malformed runtime payload bypasses the typed trigger entrypoints.
+      const event = asStub<WorkflowEvent<TestPayload>>({
+        ...makeEvent(false),
+        payload: {
+          ...makeEvent(false).payload,
+          promptLocale,
+        },
+      });
+      await expect(workflow.run(event, makeStep())).rejects.toThrow(
+        'payload missing a valid promptLocale'
+      );
+      expect(impl).not.toHaveBeenCalled();
+    }
+  );
+
   test('replays the queued model snapshot without reading current configuration', async () => {
     getModelConfiguration.mockClear();
     getModelConfiguration.mockResolvedValue(DEFAULT_MODEL_CONFIGURATION);
@@ -244,6 +265,7 @@ describe('OpenStoryWorkflowEntrypoint.run', () => {
       {
         ...makeEvent(false),
         payload: {
+          promptLocale: 'en',
           userId: 'u1',
           organizationId: 't1',
           characterBible: [
@@ -258,6 +280,7 @@ describe('OpenStoryWorkflowEntrypoint.run', () => {
       makeStep()
     );
     expect(seen).toEqual({
+      promptLocale: 'en',
       userId: 'u1',
       organizationId: 't1',
       characterBible: [

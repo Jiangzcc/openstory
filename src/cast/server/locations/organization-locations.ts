@@ -13,6 +13,7 @@ import { getLogger } from '@/platform/logger';
 import type { LocationWithReference } from '@/platform/server/db/schema';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { STORAGE_BUCKETS } from '@/platform/server/storage/buckets';
+import type { PromptLocaleContext } from '@/platform/i18n/prompt-locale';
 
 const logger = getLogger(['openstory', 'locations', 'organization-locations']);
 
@@ -50,11 +51,15 @@ export async function attachLocationReferenceImages(
  */
 export async function triggerOrganizationLocationSheet(
   scopedDb: ScopedDb,
-  ctx: { userId: string; organizationId: string; locationId: string }
+  ctx: {
+    userId: string;
+    organizationId: string;
+    locationId: string;
+  } & PromptLocaleContext
 ): Promise<string> {
   const { workflowRunId } = await regenerateLocationSheet(
     scopedDb,
-    { userId: ctx.userId },
+    { userId: ctx.userId, promptLocale: ctx.promptLocale },
     null,
     { locationDbId: ctx.locationId }
   );
@@ -75,7 +80,11 @@ export async function createOrganizationLocation(
     /** User-upload URLs in the LOCATIONS bucket (`uploads/`); not moved. */
     photoUrls: string[];
   },
-  ctx: { userId: string; organizationId: string; triggerSheet: boolean }
+  ctx: {
+    userId: string;
+    organizationId: string;
+    triggerSheet: boolean;
+  } & PromptLocaleContext
 ): Promise<LocationWithReference> {
   // Gated before anything is written: a refused photo makes no location.
   const photos = await attachLocationReferenceImages(
@@ -96,6 +105,7 @@ export async function createOrganizationLocation(
 
   try {
     await triggerOrganizationLocationSheet(scopedDb, {
+      promptLocale: ctx.promptLocale,
       userId: ctx.userId,
       organizationId: ctx.organizationId,
       locationId: location.id,

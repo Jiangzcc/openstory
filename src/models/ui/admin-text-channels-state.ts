@@ -24,9 +24,10 @@ const BUILTIN_TEXT_MODEL_OPTIONS = SCRIPT_ANALYSIS_MODELS.map(
 
 export type TextChannelDraft = Omit<
   SaveTextChannelInput,
-  'revision' | 'apiKey'
+  'revision' | 'apiKey' | 'userAgent'
 > & {
   apiKey: string;
+  userAgent: string;
 };
 export type TextModelDraft = Omit<
   ChannelTextModel,
@@ -54,6 +55,8 @@ const CHANNEL_FIELD_MESSAGES = {
     'Use HTTPS, or HTTP on localhost, without credentials, query or fragment.',
   protocol: 'Choose Chat Completions or Responses.',
   apiKey: 'Enter a valid API key without line breaks.',
+  userAgent:
+    'Use up to 256 printable ASCII characters for User-Agent, or leave it blank.',
 } satisfies Record<string, string>;
 const MODEL_FIELD_MESSAGES = {
   id: 'Choose a built-in model or enter a valid custom model ID.',
@@ -80,12 +83,21 @@ export function createTextChannelDraft(): TextChannelDraft {
     protocol: TEXT_CHANNEL_PROTOCOL,
     enabled: false,
     apiKey: '',
+    userAgent: '',
   };
 }
 
 export function textChannelToDraft(channel: TextChannel): TextChannelDraft {
-  const { id, name, baseUrl, protocol, enabled } = channel;
-  return { id, name, baseUrl, protocol, enabled, apiKey: '' };
+  const { id, name, baseUrl, protocol, enabled, userAgent } = channel;
+  return {
+    id,
+    name,
+    baseUrl,
+    protocol,
+    enabled,
+    apiKey: '',
+    userAgent: userAgent ?? '',
+  };
 }
 
 export function createTextModelDraft(channelId = ''): TextModelDraft {

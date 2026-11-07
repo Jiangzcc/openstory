@@ -31,6 +31,7 @@ const baseScene: ShotImageSceneSnapshot = {
 };
 
 const baseInput: ImageWorkflowInput = {
+  promptLocale: 'en' as const,
   userId: 'u1',
   variantOnly: false,
   organizationId: 't1',

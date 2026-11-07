@@ -89,7 +89,9 @@ export async function buildRegenerateLocationSheetPayload(params: {
   imageModel?: string | null;
   /** Already read for this location; omitted, they are read here (#2082). */
   preloaded?: LocationSheetPayloadRows;
-}): Promise<Omit<LocationSheetWorkflowInput, 'referenceVersionId'>> {
+}): Promise<
+  Omit<LocationSheetWorkflowInput, 'referenceVersionId' | 'promptLocale'>
+> {
   const { scopedDb, userId, organizationId, sequence, location } = params;
 
   const { liveVersion, photos } =

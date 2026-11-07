@@ -101,6 +101,7 @@ export async function generateShotImage(
   }
 
   const workflowInput = await prepareShotImageWorkflowInput({
+    promptLocale: context.promptLocale,
     scopedDb: context.scopedDb,
     sequence: shotPromptSequence(sequence, shot),
     shot,
@@ -304,6 +305,7 @@ export async function generateShotImageVariants(
   );
 
   const workflowInput: ShotVariantWorkflowInput = {
+    promptLocale: context.promptLocale,
     userId: user.id,
     organizationId: sequence.organizationId,
     sequenceId: sequence.id,
@@ -503,6 +505,7 @@ export async function selectShotImageVariant(
   );
 
   const workflowInput: UpscaleShotVariantWorkflowInput = {
+    promptLocale: context.promptLocale,
     userId: user.id,
     organizationId: sequence.organizationId,
     sequenceId: sequence.id,

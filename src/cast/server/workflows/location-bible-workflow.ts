@@ -205,6 +205,7 @@ export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationB
             return claim;
           });
           const childPayload: LocationSheetWorkflowInput = {
+            promptLocale: input.promptLocale,
             ...unclaimed,
             referenceVersionId: claimed.versionId,
           };

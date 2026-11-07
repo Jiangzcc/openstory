@@ -100,6 +100,7 @@ describe('enqueueCharacterVoiceDesign', () => {
     const { scopedDb, createPendingVoiceClaim } = makeScopedDb({});
     const trigger = vi.fn(async () => 'run-1');
     const result = await enqueueCharacterVoiceDesign({
+      promptLocale: 'en',
       scopedDb,
       character: character(),
       sequenceId: 'seq-1',
@@ -131,6 +132,7 @@ describe('enqueueCharacterVoiceDesign', () => {
   it('stamps the workflow run id after a successful trigger (#1715)', async () => {
     const { scopedDb, stampVoiceClaimWorkflowRunId } = makeScopedDb({});
     await enqueueCharacterVoiceDesign({
+      promptLocale: 'en',
       scopedDb,
       character: character(),
       sequenceId: 'seq-1',
@@ -151,6 +153,7 @@ describe('enqueueCharacterVoiceDesign', () => {
     });
     const trigger = vi.fn(async () => 'run-2');
     const result = await enqueueCharacterVoiceDesign({
+      promptLocale: 'en',
       scopedDb,
       character: character(),
       sequenceId: 'seq-1',
@@ -171,6 +174,7 @@ describe('enqueueCharacterVoiceDesign', () => {
       makeScopedDb({});
     await expect(
       enqueueCharacterVoiceDesign({
+        promptLocale: 'en',
         scopedDb,
         character: character(),
         sequenceId: 'seq-1',
@@ -197,6 +201,7 @@ describe('enqueueCharacterVoiceDesign', () => {
       });
     const trigger = vi.fn(async () => 'run-2');
     const result = await enqueueCharacterVoiceDesign({
+      promptLocale: 'en',
       scopedDb,
       character: character(),
       sequenceId: 'seq-1',
@@ -238,6 +243,7 @@ describe('enqueueCharacterVoiceDesign', () => {
     });
     const trigger = vi.fn(async () => 'run-2');
     const result = await enqueueCharacterVoiceDesign({
+      promptLocale: 'en',
       scopedDb,
       character: character(),
       sequenceId: 'seq-1',
@@ -267,6 +273,7 @@ describe('enqueueCharacterVoiceDesign', () => {
       });
     const trigger = vi.fn(async () => 'run-2');
     const result = await enqueueCharacterVoiceDesign({
+      promptLocale: 'en',
       scopedDb,
       character: character(),
       sequenceId: 'seq-1',

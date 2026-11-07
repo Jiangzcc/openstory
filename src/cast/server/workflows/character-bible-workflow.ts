@@ -232,6 +232,7 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
           ).versionId
       );
       const childPayload: CharacterSheetWorkflowInput = {
+        promptLocale: input.promptLocale,
         ...unclaimed,
         sheetVersionId,
       };
@@ -303,6 +304,7 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
             return;
           }
           const childPayload: CharacterVoiceWorkflowInput = {
+            promptLocale: input.promptLocale,
             userId: input.userId,
             organizationId: input.organizationId,
             sequenceId,

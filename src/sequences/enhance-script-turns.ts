@@ -4,6 +4,7 @@
  * `script-enhancement.ts`; this module is the testable loop.
  */
 
+import type { Locale } from '@/platform/i18n/locale';
 import {
   buildDurationCorrectionPrompt,
   createTotalLineFilter,
@@ -47,6 +48,7 @@ async function* streamTurn(
 
 export async function* runEnhanceScriptTurns(opts: {
   messages: ChatMessage[];
+  promptLocale: Locale;
   targetSeconds: number;
   generate: EnhanceGenerate;
 }): AsyncGenerator<EnhanceChunk> {
@@ -60,11 +62,14 @@ export async function* runEnhanceScriptTurns(opts: {
 
   if (needsCorrection) {
     const sum = labels.reduce((a, b) => a + b, 0);
-    const correction = buildDurationCorrectionPrompt({
-      sum,
-      targetSeconds: opts.targetSeconds,
-      sceneCount: labels.length,
-    });
+    const correction = buildDurationCorrectionPrompt(
+      {
+        sum,
+        targetSeconds: opts.targetSeconds,
+        sceneCount: labels.length,
+      },
+      opts.promptLocale
+    );
     const corrected = yield* streamTurn(
       opts.generate,
       [

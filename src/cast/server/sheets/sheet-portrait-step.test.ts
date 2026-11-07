@@ -74,6 +74,7 @@ import { runSheetPortraitStep } from './sheet-portrait-step';
 const COST = usdToMicros(0.2);
 const HOLD = 'mock-portrait-hold';
 const INPUT = {
+  promptLocale: 'en',
   userId: 'mock-user',
   organizationId: 'mock-org',
   subject: {

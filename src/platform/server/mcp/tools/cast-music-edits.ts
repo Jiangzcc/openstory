@@ -985,9 +985,20 @@ const updateMusicPrompt = openstoryTool({
     versionId: z.string().nullable(),
     unchanged: z.boolean(),
   }),
-  run: async ({ sequenceId: id, ...input }, { scopedDb, userId }) => {
+  run: async (
+    { sequenceId: id, ...input },
+    { scopedDb, userId, promptLocale }
+  ) => {
     const sequence = await productionAccess(scopedDb).sequence(id);
-    const saved = await saveMusicPrompt(scopedDb, { userId }, sequence, input);
+    const saved = await saveMusicPrompt(
+      scopedDb,
+      {
+        promptLocale,
+        userId,
+      },
+      sequence,
+      input
+    );
     return {
       data: {
         versionId: saved.unchanged ? null : saved.versionId,
@@ -1008,13 +1019,16 @@ const restoreMusicPrompt = openstoryTool({
   annotations: writeAnnotations,
   inputSchema: z.strictObject({ sequenceId, versionId: ulidSchema }),
   outputSchema: versionResult,
-  run: async (input, { scopedDb, userId }) => {
+  run: async (input, { scopedDb, userId, promptLocale }) => {
     const sequence = await productionAccess(scopedDb).sequence(
       input.sequenceId
     );
     const { variantId } = await restoreMusicPromptVersion(
       scopedDb,
-      { userId },
+      {
+        promptLocale,
+        userId,
+      },
       sequence.id,
       input.versionId
     );

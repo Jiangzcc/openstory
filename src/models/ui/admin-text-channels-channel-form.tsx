@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
+  DEFAULT_TEXT_CHANNEL_USER_AGENT,
   TEXT_CHANNEL_LIMITS,
   TEXT_CHANNEL_PROTOCOLS,
 } from '@/models/text-channels';
@@ -127,7 +128,26 @@ function ChannelConnectionFields({ editor }: { editor: ChannelFieldsEditor }) {
         placeholder="API base URL, e.g. https://api.example.com/v1"
       />
       <ChannelProtocolField editor={editor} />
+      <ChannelUserAgentField editor={editor} />
     </>
+  );
+}
+
+function ChannelUserAgentField({ editor }: { editor: ChannelFieldsEditor }) {
+  if (!editor.draft) return null;
+  return (
+    <AdminTextInput
+      id="text-channel-user-agent"
+      label="User-Agent"
+      value={editor.draft.values.userAgent}
+      onChange={(value) => editor.change('userAgent', value)}
+      error={editor.draft.errors.userAgent}
+      maxLength={TEXT_CHANNEL_LIMITS.userAgent}
+      required={false}
+      autoComplete="off"
+      placeholder={DEFAULT_TEXT_CHANNEL_USER_AGENT}
+      hint="Leave blank to use OpenStory/0.1.0."
+    />
   );
 }
 

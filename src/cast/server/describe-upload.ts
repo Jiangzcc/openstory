@@ -19,6 +19,9 @@ import type { UploadRightsReader } from '@/cast/server/upload-rights';
 import type { VisionBillingDb } from '@/cast/server/talent/analyze-talent-media';
 import { toVisionImageSource } from '@/platform/server/storage/external-url';
 import { z } from 'zod';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
+import { UPLOAD_DESCRIPTION_PROMPTS_ZH_CN } from './vision-prompts.zh-cn';
 
 export type UploadSubject = 'character' | 'location';
 
@@ -33,6 +36,7 @@ const SYSTEM_PROMPTS: Record<UploadSubject, string> = {
 };
 
 export async function describeUpload(opts: {
+  promptLocale: Locale;
   scopedDb: Pick<ScopedDb, 'organizationId'> &
     UploadRightsReader &
     VisionBillingDb;
@@ -71,11 +75,25 @@ export async function describeUpload(opts: {
   for await (const chunk of callLLMStream({
     model: visionModel,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPTS[opts.subject] },
+      {
+        role: 'system',
+        content: localizedPrompt(
+          opts.promptLocale,
+          SYSTEM_PROMPTS[opts.subject],
+          UPLOAD_DESCRIPTION_PROMPTS_ZH_CN[opts.subject]
+        ),
+      },
       {
         role: 'user',
         content: [
-          { type: 'text', content: `Uploaded filename: ${opts.filename}` },
+          {
+            type: 'text',
+            content: localizedPrompt(
+              opts.promptLocale,
+              `Uploaded filename: ${opts.filename}`,
+              `上传的文件名：${opts.filename}`
+            ),
+          },
           { type: 'image', source: await toVisionImageSource(opts.url) },
         ],
       },

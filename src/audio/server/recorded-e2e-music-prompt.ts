@@ -12,10 +12,14 @@ import { replayRecordedE2eScenes } from '@/sequences/server/recorded-e2e-scenes'
 export async function reconstructRecordedMusicDesignPrompt(): Promise<string> {
   const { scenes } = replayRecordedE2eScenes();
   const summaries = musicSceneSummariesFromAnalysis(scenes);
-  const { messages } = await getChatPrompt('phase/music-design-chat', {
-    scenes: JSON.stringify(summaries, null, 2),
-    sceneCount: String(summaries.length),
-  });
+  const { messages } = await getChatPrompt(
+    'phase/music-design-chat',
+    {
+      scenes: JSON.stringify(summaries, null, 2),
+      sceneCount: String(summaries.length),
+    },
+    'en'
+  );
   const user = messages.find((message) => message.role === 'user');
   if (!user || typeof user.content !== 'string') {
     throw new Error('music-design: no user message');

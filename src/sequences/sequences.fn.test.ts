@@ -235,7 +235,12 @@ describe('sumShotDurationsSeconds (#547)', () => {
 });
 
 describe('buildAddAudioMusicInput (#547)', () => {
-  const baseCtx = { userId: 'u1', organizationId: 't1', sequenceId: 'seq-1' };
+  const baseCtx = {
+    promptLocale: 'en' as const,
+    userId: 'u1',
+    organizationId: 't1',
+    sequenceId: 'seq-1',
+  };
 
   it('always sets isPrimary:false so an added audio model never repoints the primary track', () => {
     const input = buildAddAudioMusicInput({
@@ -259,6 +264,7 @@ describe('buildAddAudioMusicInput (#547)', () => {
       model: 'elevenlabs_music',
     });
     expect(input).toEqual({
+      promptLocale: 'en',
       userId: 'u1',
       organizationId: 't1',
       sequenceId: 'seq-1',

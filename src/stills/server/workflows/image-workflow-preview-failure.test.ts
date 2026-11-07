@@ -39,6 +39,7 @@ describe('ImageWorkflow onFailure skipStorage', () => {
   it('emits generation.image:progress failed for a preview', async () => {
     emit.mockClear();
     const payload: ImageWorkflowInput = {
+      promptLocale: 'en' as const,
       userId: 'u1',
       variantOnly: false,
       organizationId: 't1',

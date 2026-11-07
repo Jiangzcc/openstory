@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
  * the panel shell can swap threads by key.
  */
 
-import type { ChatInterrupt, ToolApprovalInterrupt } from '@tanstack/ai-client';
 import type { ConnectionAdapter } from '@tanstack/ai-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useRef } from 'react';
@@ -23,6 +22,7 @@ import {
 } from '@/models/ui/use-text-model-catalog';
 import { setAssistantModel, useAssistantState } from './assistant-store';
 import { useAssistantChat } from './use-assistant-chat';
+import { resolveAssistantToolApproval } from './assistant-approvals';
 
 export type AssistantConversationProps = {
   threadId: string;
@@ -69,22 +69,13 @@ export const AssistantConversation: React.FC<AssistantConversationProps> = ({
     getItemKey: (index) => messages[index]?.id ?? index,
   });
 
-  // Bound approvals, by tool call, so the card that asked carries its buttons.
-  // Answered by tool call id. The server tools are not registered on the
-  // client, so the typed list cannot name their approvals; widen to the
-  // untyped approval shape the stream carries.
-  const pending: ReadonlyArray<ChatInterrupt | ToolApprovalInterrupt> =
-    interrupts;
-  const resolve = (toolCallId: string, approved: boolean) =>
-    pending
-      .find(
-        (i): i is ToolApprovalInterrupt =>
-          i.kind === 'tool-approval' && i.toolCallId === toolCallId
-      )
-      ?.resolveInterrupt(approved);
   const approvals = {
-    approve: (toolCallId: string) => resolve(toolCallId, true),
-    deny: (toolCallId: string) => resolve(toolCallId, false),
+    approve: (toolCallId: string) => {
+      resolveAssistantToolApproval(interrupts, toolCallId, true);
+    },
+    deny: (toolCallId: string) => {
+      resolveAssistantToolApproval(interrupts, toolCallId, false);
+    },
   };
 
   const lastId = messages.at(-1)?.id;

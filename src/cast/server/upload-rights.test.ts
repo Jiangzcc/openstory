@@ -84,6 +84,7 @@ describe('classifyUpload', () => {
     verdict('other');
 
     const first = await classifyUpload({
+      promptLocale: 'en',
       scopedDb,
       userId: USER_ID,
       url,
@@ -114,6 +115,7 @@ describe('classifyUpload', () => {
     ]);
 
     const second = await classifyUpload({
+      promptLocale: 'en',
       scopedDb,
       userId: USER_ID,
       url,
@@ -131,7 +133,13 @@ describe('classifyUpload', () => {
     verdict('human');
 
     expect(
-      await classifyUpload({ scopedDb, userId: USER_ID, url, request })
+      await classifyUpload({
+        promptLocale: 'en',
+        scopedDb,
+        userId: USER_ID,
+        url,
+        request,
+      })
     ).toEqual({ status: 'needs_portrait' });
     expect(await db.select().from(uploadAttestations)).toMatchObject([
       {
@@ -140,7 +148,13 @@ describe('classifyUpload', () => {
       },
     ]);
     expect(
-      await classifyUpload({ scopedDb, userId: USER_ID, url, request })
+      await classifyUpload({
+        promptLocale: 'en',
+        scopedDb,
+        userId: USER_ID,
+        url,
+        request,
+      })
     ).toEqual({ status: 'needs_portrait' });
     expect(mockAnalyze).toHaveBeenCalledTimes(1);
     await expect(requireUploadRights(scopedDb, [url])).rejects.toBeInstanceOf(
@@ -153,7 +167,13 @@ describe('classifyUpload', () => {
     mockAnalyze.mockRejectedValueOnce(new Error('vision down'));
 
     await expect(
-      classifyUpload({ scopedDb, userId: USER_ID, url, request })
+      classifyUpload({
+        promptLocale: 'en',
+        scopedDb,
+        userId: USER_ID,
+        url,
+        request,
+      })
     ).rejects.toThrow('vision down');
     expect(await db.select().from(uploadAttestations)).toEqual([]);
     await expect(requireUploadRights(scopedDb, [url])).rejects.toBeInstanceOf(
@@ -170,6 +190,7 @@ describe('classifyUpload', () => {
     });
 
     const rights = await classifyUpload({
+      promptLocale: 'en',
       scopedDb,
       userId: USER_ID,
       url: clip,
@@ -193,7 +214,13 @@ describe('classifyUpload', () => {
     const clip = `/r2/talent/${generateId()}/uploads/01CLIP.mp4`;
 
     await expect(
-      classifyUpload({ scopedDb, userId: USER_ID, url: clip, request })
+      classifyUpload({
+        promptLocale: 'en',
+        scopedDb,
+        userId: USER_ID,
+        url: clip,
+        request,
+      })
     ).rejects.toThrow('not an upload of yours');
     expect(mockAnalyzeClip).not.toHaveBeenCalled();
   });
@@ -206,7 +233,13 @@ describe('classifyUpload', () => {
       `/r2/talent/${ORGANIZATION_ID}/uploads/../../${generateId()}/01X.png`,
     ]) {
       await expect(
-        classifyUpload({ scopedDb, userId: USER_ID, url, request })
+        classifyUpload({
+          promptLocale: 'en',
+          scopedDb,
+          userId: USER_ID,
+          url,
+          request,
+        })
       ).rejects.toThrow('not an upload of yours');
     }
     expect(mockAnalyze).not.toHaveBeenCalled();
@@ -217,7 +250,13 @@ describe('classifyUpload', () => {
     const clip = 'https://example.com/someone.mp4';
 
     await expect(
-      classifyUpload({ scopedDb, userId: USER_ID, url: clip, request })
+      classifyUpload({
+        promptLocale: 'en',
+        scopedDb,
+        userId: USER_ID,
+        url: clip,
+        request,
+      })
     ).rejects.toThrow('can’t be checked for a real person');
     expect(mockAnalyze).not.toHaveBeenCalled();
     expect(mockAnalyzeClip).not.toHaveBeenCalled();
@@ -244,7 +283,13 @@ describe('attestUploads', () => {
     );
 
     expect(
-      await classifyUpload({ scopedDb, userId: USER_ID, url, request })
+      await classifyUpload({
+        promptLocale: 'en',
+        scopedDb,
+        userId: USER_ID,
+        url,
+        request,
+      })
     ).toEqual({ status: 'signed' });
     expect(await likenessFromLedger(scopedDb, url)).toBe('real');
     expect(mockAnalyze).not.toHaveBeenCalled();
@@ -275,7 +320,13 @@ describe('attestUploads', () => {
       authorizationBasis: 'this is me',
     });
     expect(
-      await classifyUpload({ scopedDb, userId: USER_ID, url, request })
+      await classifyUpload({
+        promptLocale: 'en',
+        scopedDb,
+        userId: USER_ID,
+        url,
+        request,
+      })
     ).toEqual({ status: 'signed' });
     expect(await requireUploadRights(scopedDb, [url])).toEqual(
       new Map([[url, { depictsRealPerson: true }]])
@@ -313,7 +364,13 @@ describe('attestUploads', () => {
     });
 
     expect(
-      await classifyUpload({ scopedDb, userId: USER_ID, url, request })
+      await classifyUpload({
+        promptLocale: 'en',
+        scopedDb,
+        userId: USER_ID,
+        url,
+        request,
+      })
     ).toEqual({ status: 'signed' });
     expect(await requireUploadRights(scopedDb, [url])).toEqual(
       new Map([[url, { depictsRealPerson: true }]])
@@ -330,6 +387,7 @@ describe('likenessFromLedger', () => {
     verdict('other');
     expect(
       await classifyUpload({
+        promptLocale: 'en',
         scopedDb,
         userId: USER_ID,
         url: cleared,
@@ -339,6 +397,7 @@ describe('likenessFromLedger', () => {
     verdict('human');
     expect(
       await classifyUpload({
+        promptLocale: 'en',
         scopedDb,
         userId: USER_ID,
         url: signed,

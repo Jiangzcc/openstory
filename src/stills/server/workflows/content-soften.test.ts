@@ -92,6 +92,7 @@ function run(
   overrides: Partial<Parameters<typeof generateImageSoftening>[0]> = {}
 ) {
   return generateImageSoftening({
+    promptLocale: 'en',
     step,
     scopedDb,
     workflowRunId: 'wf-1',

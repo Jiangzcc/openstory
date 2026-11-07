@@ -47,6 +47,13 @@ import { authWithOrganizationMiddleware } from '@/platform/middleware.fn';
 import { shotAccessMiddleware } from '@/shots/shot-access.fn';
 
 import { getLogger } from '@/platform/logger';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
+import {
+  SHORTEN_PROMPT_SYSTEM_ZH,
+  ESTIMATE_SCENE_DURATION_SYSTEM_ZH,
+  RECOMMEND_STYLES_SYSTEM_ZH,
+} from './server/auxiliary-prompts';
 
 const logger = getLogger(['openstory', 'serverFn', 'ai']);
 
@@ -126,7 +133,14 @@ export const shortenPromptFn = createServerFn({ method: 'POST' })
     for await (const chunk of callLLMStream({
       model,
       messages: [
-        { role: 'system' as const, content: SHORTEN_PROMPT_SYSTEM },
+        {
+          role: 'system' as const,
+          content: localizedPrompt(
+            context.promptLocale,
+            SHORTEN_PROMPT_SYSTEM,
+            SHORTEN_PROMPT_SYSTEM_ZH
+          ),
+        },
         { role: 'user' as const, content: data.prompt },
       ],
       max_tokens: 500,
@@ -221,12 +235,16 @@ export const estimateSceneDurationFn = createServerFn({ method: 'POST' })
 
     const sceneMetadata = context.scene?.metadata;
     const userPrompt = [
-      sceneMetadata?.title && `Title: ${sceneMetadata.title}`,
-      sceneMetadata?.location && `Location: ${sceneMetadata.location}`,
-      sceneMetadata?.timeOfDay && `Time of day: ${sceneMetadata.timeOfDay}`,
-      sceneMetadata?.storyBeat && `Story beat: ${sceneMetadata.storyBeat}`,
+      sceneMetadata?.title &&
+        `${localizedPrompt(context.promptLocale, 'Title', '标题')}: ${sceneMetadata.title}`,
+      sceneMetadata?.location &&
+        `${localizedPrompt(context.promptLocale, 'Location', '地点')}: ${sceneMetadata.location}`,
+      sceneMetadata?.timeOfDay &&
+        `${localizedPrompt(context.promptLocale, 'Time of day', '时段')}: ${sceneMetadata.timeOfDay}`,
+      sceneMetadata?.storyBeat &&
+        `${localizedPrompt(context.promptLocale, 'Story beat', '情节节点')}: ${sceneMetadata.storyBeat}`,
       '',
-      'Script:',
+      localizedPrompt(context.promptLocale, 'Script:', '剧本：'),
       data.extract,
     ]
       .filter(Boolean)
@@ -239,7 +257,14 @@ export const estimateSceneDurationFn = createServerFn({ method: 'POST' })
     for await (const chunk of callLLMStream({
       model: analysisModel,
       messages: [
-        { role: 'system' as const, content: ESTIMATE_SCENE_DURATION_SYSTEM },
+        {
+          role: 'system' as const,
+          content: localizedPrompt(
+            context.promptLocale,
+            ESTIMATE_SCENE_DURATION_SYSTEM,
+            ESTIMATE_SCENE_DURATION_SYSTEM_ZH
+          ),
+        },
         { role: 'user' as const, content: userPrompt },
       ],
       // The answer is ~20 tokens, but this runs on the sequence's own model,
@@ -339,6 +364,7 @@ export const enhanceScriptStreamFn = createServerFn({ method: 'POST' })
       scopedDb: context.scopedDb,
       userId: context.user.id,
       organizationId: context.organizationId,
+      promptLocale: context.promptLocale,
     });
   });
 
@@ -395,7 +421,10 @@ function truncateField(value: string | null | undefined, max: number): string {
  * style-id list in the same order so a returned index maps back to a style.
  * Long config fields are truncated to keep ~80 styles near ~5k tokens.
  */
-export function buildStyleCatalog(styles: Style[]): {
+export function buildStyleCatalog(
+  styles: Style[],
+  locale: Locale
+): {
   catalog: string;
   orderedStyleIds: string[];
 } {
@@ -405,15 +434,16 @@ export function buildStyleCatalog(styles: Style[]): {
     const { look, motion, references } = parseStyleConfig(style.config);
     const parts = [
       truncateField(style.description, 200),
-      `mood: ${truncateField(look.mood, 100)}`,
-      `art: ${truncateField(look.artStyle, 100)}`,
-      `lighting: ${truncateField(look.lighting, 100)}`,
-      `camera: ${truncateField(motion.camera, 100)}`,
-      `grade: ${truncateField(look.colorGrading, 100)}`,
+      `${localizedPrompt(locale, 'mood', '氛围')}: ${truncateField(look.mood, 100)}`,
+      `${localizedPrompt(locale, 'art', '美术')}: ${truncateField(look.artStyle, 100)}`,
+      `${localizedPrompt(locale, 'lighting', '光线')}: ${truncateField(look.lighting, 100)}`,
+      `${localizedPrompt(locale, 'camera', '摄影')}: ${truncateField(motion.camera, 100)}`,
+      `${localizedPrompt(locale, 'grade', '调色')}: ${truncateField(look.colorGrading, 100)}`,
       look.colorPalette.length > 0 &&
-        `palette: ${look.colorPalette.slice(0, 6).join(', ')}`,
-      references.length > 0 && `refs: ${references.slice(0, 4).join(', ')}`,
-      `popularity: ${style.usageCount}`,
+        `${localizedPrompt(locale, 'palette', '色板')}: ${look.colorPalette.slice(0, 6).join(', ')}`,
+      references.length > 0 &&
+        `${localizedPrompt(locale, 'refs', '参考')}: ${references.slice(0, 4).join(', ')}`,
+      `${localizedPrompt(locale, 'popularity', '热度')}: ${style.usageCount}`,
     ].filter(Boolean);
     return `[${index}] ${style.name} — ${parts.join(' · ')}`;
   });
@@ -492,15 +522,28 @@ export const recommendStylesForScriptFn = createServerFn({ method: 'POST' })
       { textModelRouting, structuredOutput: true }
     );
 
-    const { catalog, orderedStyleIds } = buildStyleCatalog(styles);
+    const { catalog, orderedStyleIds } = buildStyleCatalog(
+      styles,
+      context.promptLocale
+    );
     const sanitizedScript = sanitizeScriptContent(data.script);
-    const userPrompt = `STYLE CATALOG (choose by index):
+    const userPrompt = localizedPrompt(
+      context.promptLocale,
+      `STYLE CATALOG (choose by index):
 ${catalog}
 
 SCRIPT:
 ${truncateField(sanitizedScript, RECOMMEND_SCRIPT_BUDGET)}
 
-Return up to ${limit} best-fit styles, strongest first.`;
+Return up to ${limit} best-fit styles, strongest first.`,
+      `STYLE CATALOG（按索引选择）：
+${catalog}
+
+SCRIPT：
+${truncateField(sanitizedScript, RECOMMEND_SCRIPT_BUDGET)}
+
+最多返回 ${limit} 个最适合的风格，最合适的排在前面。`
+    );
 
     let result;
     let usage;
@@ -509,7 +552,14 @@ Return up to ${limit} best-fit styles, strongest first.`;
     for await (const chunk of callLLMStream({
       model,
       messages: [
-        { role: 'system' as const, content: RECOMMEND_STYLES_SYSTEM },
+        {
+          role: 'system' as const,
+          content: localizedPrompt(
+            context.promptLocale,
+            RECOMMEND_STYLES_SYSTEM,
+            RECOMMEND_STYLES_SYSTEM_ZH
+          ),
+        },
         { role: 'user' as const, content: userPrompt },
       ],
       temperature: 0.4,

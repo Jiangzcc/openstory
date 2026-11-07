@@ -78,6 +78,7 @@ function context(
     },
   });
   return {
+    promptLocale: 'en' as const,
     scopedDb,
     userId: 'u1',
     organizationId: 't1',

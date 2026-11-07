@@ -46,6 +46,7 @@ const getById = vi.fn();
 const publish = vi.fn();
 const scopedDb = asStub<ScopedDb>({ stitches: { getById, publish } });
 const args = {
+  promptLocale: 'en' as const,
   scopedDb,
   userId: 'U',
   id: 'S',

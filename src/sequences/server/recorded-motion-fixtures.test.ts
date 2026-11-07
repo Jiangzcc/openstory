@@ -83,6 +83,7 @@ it('recorded packed and individual motion requests match canonical direction and
       const groups = mode === 'packed' ? [shots] : shots.map((s) => [s]);
       for (const group of groups) {
         const jobs = buildMotionRender({
+          promptLocale: 'en' as const,
           shots: group,
           userId: 'u',
           organizationId: 't',

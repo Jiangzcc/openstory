@@ -97,7 +97,11 @@ vi.doMock('@/models/server/byteplus-config', async (importOriginal) => {
 });
 
 const studioCreate = await import('./create-studio-asset');
-const TEST_REQUEST = { ipAddress: '203.0.113.9', userAgent: 'vitest' };
+const TEST_REQUEST = {
+  ipAddress: '203.0.113.9',
+  userAgent: 'vitest',
+  promptLocale: 'en',
+} satisfies Parameters<typeof studioCreate.createStudioAssets>[2];
 const createStudioAssets = (
   ...[scopedDb, input, options]: [
     Parameters<typeof studioCreate.createStudioAssets>[0],

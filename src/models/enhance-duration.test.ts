@@ -141,8 +141,22 @@ describe('assessDurationFit', () => {
 });
 
 describe('buildDurationPromptParagraph', () => {
+  it('keeps Chinese instructions compatible with scene and total parsers', () => {
+    const paragraph = buildDurationPromptParagraph(
+      { targetSeconds: 30 },
+      'zh-CN'
+    );
+    expect(paragraph).toContain('目标视频时长');
+    expect(paragraph).toContain('TOTAL: <sum>s');
+    const label = paragraph.match(/Scene 3 — \d+s/)?.[0];
+    if (!label) throw new Error('Chinese prompt is missing the scene label');
+    const script = `${label}\nALICE: "Keep these words."\nTOTAL: 8s`;
+    expect(parseSceneDurationLabels(script)).toEqual([8]);
+    expect(stripTotalLine(script)).toBe(`${label}\nALICE: "Keep these words."`);
+  });
+
   it('requires a hard sum, a TOTAL line, and title-card substitution — no clip grid (#1621)', () => {
-    const paragraph = buildDurationPromptParagraph({ targetSeconds: 30 });
+    const paragraph = buildDurationPromptParagraph({ targetSeconds: 30 }, 'en');
     expect(paragraph).toContain('Target video duration: 30 seconds');
     expect(paragraph).toContain('MUST add up to 30 seconds');
     expect(paragraph).toContain('TOTAL: <sum>s');
@@ -155,12 +169,30 @@ describe('buildDurationPromptParagraph', () => {
 });
 
 describe('buildDurationCorrectionPrompt', () => {
+  it('keeps the Chinese correction numeric target and output protocol', () => {
+    const prompt = buildDurationCorrectionPrompt(
+      {
+        sum: 43,
+        targetSeconds: 30,
+        sceneCount: 9,
+      },
+      'zh-CN'
+    );
+    expect(prompt).toContain('合计 43s');
+    expect(prompt).toContain('目标是 30s');
+    expect(prompt).toContain('Scene N — Xs');
+    expect(prompt).toContain('TOTAL: <sum>s');
+  });
+
   it('names the actual sum with no clip-grid rule (#1621)', () => {
-    const prompt = buildDurationCorrectionPrompt({
-      sum: 43,
-      targetSeconds: 30,
-      sceneCount: 9,
-    });
+    const prompt = buildDurationCorrectionPrompt(
+      {
+        sum: 43,
+        targetSeconds: 30,
+        sceneCount: 9,
+      },
+      'en'
+    );
     expect(prompt).toContain('sum to 43s');
     expect(prompt).toContain('target is 30s');
     expect(prompt).toContain('scene duration labels');

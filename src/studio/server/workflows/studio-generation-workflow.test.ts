@@ -214,6 +214,7 @@ function makeEvent(
 ): Readonly<WorkflowEvent<StudioGenerationWorkflowInput>> {
   return {
     payload: {
+      promptLocale: 'en',
       userId: 'u1',
       organizationId: 'organization-1',
       assetId: 'asset-1',

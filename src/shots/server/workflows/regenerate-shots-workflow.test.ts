@@ -63,6 +63,7 @@ function makeStep(): WorkflowStep {
 function makeEvent(): Readonly<WorkflowEvent<RegenerateShotsWorkflowInput>> {
   return {
     payload: {
+      promptLocale: 'en',
       userId: 'u1',
       organizationId: 't1',
       sequenceId: 'seq_1',

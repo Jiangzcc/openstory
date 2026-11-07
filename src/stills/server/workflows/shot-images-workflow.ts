@@ -304,6 +304,7 @@ export class ShotImagesWorkflow extends OpenStoryWorkflowEntrypoint<ShotImagesWo
         snapshotHashByKey[snapshotHashKey(item, model)];
 
       const childBody: ImageWorkflowInput = {
+        promptLocale: input.promptLocale,
         userId: input.userId,
         variantOnly: false,
         organizationId: input.organizationId,
@@ -372,6 +373,7 @@ export class ShotImagesWorkflow extends OpenStoryWorkflowEntrypoint<ShotImagesWo
           await triggerWorkflow<ShotVariantWorkflowInput>(
             '/variant-image',
             {
+              promptLocale: input.promptLocale,
               userId: input.userId,
               organizationId: input.organizationId,
               sequenceId,

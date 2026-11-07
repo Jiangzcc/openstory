@@ -42,7 +42,10 @@ import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { multiplyMicros, type Microdollars } from '@/billing/money';
 
 export type PlanReferences = {
-  characterSheets: Omit<CharacterSheetWorkflowInput, 'sheetVersionId'>[];
+  characterSheets: Omit<
+    CharacterSheetWorkflowInput,
+    'sheetVersionId' | 'promptLocale'
+  >[];
   /**
    * Looks other than the default whose default sheet this run also makes
    * (#2015): the second references wave. Each is a draft with no face; the
@@ -50,10 +53,16 @@ export type PlanReferences = {
    * look a script uses.
    */
   lookSheetsAfterDefault: CharacterSheetDraft[];
-  locationSheets: Omit<LocationSheetWorkflowInput, 'referenceVersionId'>[];
+  locationSheets: Omit<
+    LocationSheetWorkflowInput,
+    'referenceVersionId' | 'promptLocale'
+  >[];
   /** Null when no element reference is owed. */
-  elementSheets: ElementSheetWorkflowInput | null;
-  voices: Omit<CharacterVoiceWorkflowInput, 'targetVersionId'>[];
+  elementSheets: Omit<ElementSheetWorkflowInput, 'promptLocale'> | null;
+  voices: Omit<
+    CharacterVoiceWorkflowInput,
+    'targetVersionId' | 'promptLocale'
+  >[];
   /**
    * The wave's price at the click. Its children have no preflight of their
    * own, so the run checks the balance against this before it spawns them.
@@ -149,7 +158,8 @@ export async function buildPlanReferences(args: {
   );
 
   const owedElements = elements.filter((el) => elementIds.has(el.id));
-  let elementSheets: ElementSheetWorkflowInput | null = null;
+  let elementSheets: Omit<ElementSheetWorkflowInput, 'promptLocale'> | null =
+    null;
   if (owedElements.length > 0) {
     const style =
       sequence.styleConfig == null && sequence.styleId
@@ -190,17 +200,24 @@ export async function buildPlanReferences(args: {
   );
   const voices = characters
     .filter((c) => voiceIds.has(c.id))
-    .map((character): Omit<CharacterVoiceWorkflowInput, 'targetVersionId'> => ({
-      userId,
-      organizationId: scopedDb.organizationId,
-      sequenceId: sequence.id,
-      characterDbId: character.id,
-      characterBible: characterToBible(character),
-      voiceDescription: character.voiceDescription ?? '',
-      analysisModelId,
-      voiceProvider: newVoiceProvider(),
-      takes: SEED_VOICE_DEFAULT_TAKES,
-    }));
+    .map(
+      (
+        character
+      ): Omit<
+        CharacterVoiceWorkflowInput,
+        'targetVersionId' | 'promptLocale'
+      > => ({
+        userId,
+        organizationId: scopedDb.organizationId,
+        sequenceId: sequence.id,
+        characterDbId: character.id,
+        characterBible: characterToBible(character),
+        voiceDescription: character.voiceDescription ?? '',
+        analysisModelId,
+        voiceProvider: newVoiceProvider(),
+        takes: SEED_VOICE_DEFAULT_TAKES,
+      })
+    );
 
   const references = {
     characterSheets,

@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 /**
  * Builds the per-shot `ImageWorkflowInput` for an image generation — the
  * reference-image attachment + per-scene snapshot hash that both the
@@ -41,6 +42,7 @@ function sortedHashes(
 }
 
 export async function buildShotImageWorkflowInput(opts: {
+  promptLocale: Locale;
   shot: Shot;
   model: TextToImageModel;
   userId: string;
@@ -141,6 +143,7 @@ export async function buildShotImageWorkflowInput(opts: {
   );
 
   return {
+    promptLocale: opts.promptLocale,
     userId,
     organizationId,
     prompt,

@@ -130,6 +130,7 @@ describe('renderDraftAtQuality', () => {
 
     await expect(
       renderDraftAtQuality({
+        promptLocale: 'en',
         scopedDb,
         userId: 'u1',
         sequence,
@@ -146,6 +147,7 @@ describe('renderDraftAtQuality', () => {
     const { scopedDb } = makeScopedDb([draft]);
 
     const result = await renderDraftAtQuality({
+      promptLocale: 'en',
       scopedDb,
       userId: 'u1',
       sequence,
@@ -205,6 +207,7 @@ describe('renderDraftAtQuality', () => {
     const { scopedDb } = makeScopedDb([draft]);
 
     await renderDraftAtQuality({
+      promptLocale: 'en',
       scopedDb,
       userId: 'u1',
       sequence,
@@ -237,6 +240,7 @@ describe('renderDraftAtQuality', () => {
 
     await expect(
       renderDraftAtQuality({
+        promptLocale: 'en',
         scopedDb,
         userId: 'u1',
         sequence,
@@ -255,6 +259,7 @@ describe('renderDraftAtQuality', () => {
     ]);
 
     await renderDraftAtQuality({
+      promptLocale: 'en',
       scopedDb,
       userId: 'u1',
       sequence,
@@ -274,6 +279,7 @@ describe('renderDraftAtQuality', () => {
 
     await expect(
       renderDraftAtQuality({
+        promptLocale: 'en',
         scopedDb,
         userId: 'u1',
         sequence,

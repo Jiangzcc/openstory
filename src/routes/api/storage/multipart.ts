@@ -1,3 +1,4 @@
+import { promptLocaleFromRequest } from '@/platform/i18n/prompt-locale';
 import {
   abortMultipartUpload,
   completeMultipartUpload,
@@ -54,6 +55,7 @@ export const Route = createFileRoute('/api/storage/multipart')({
           // Before the bytes: at create, and again before complete stores them.
           if (action === 'create' || action === 'complete') {
             await requireUploadCheckAllowed({
+              promptLocale: promptLocaleFromRequest(request),
               bucket,
               contentType,
               organizationId,
@@ -94,6 +96,7 @@ export const Route = createFileRoute('/api/storage/multipart')({
             );
             // The likeness check starts here, not from the browser (#2192).
             await startCheckForStoredUpload({
+              promptLocale: promptLocaleFromRequest(request),
               bucket,
               path,
               contentType,

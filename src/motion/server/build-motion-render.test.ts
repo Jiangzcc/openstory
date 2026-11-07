@@ -35,6 +35,7 @@ describe('buildMotionRender', () => {
   it('adds scene settings to standalone structured and raw-text shots', () => {
     for (const structured of [true, false]) {
       const input = buildMotionRender({
+        promptLocale: 'en' as const,
         ...context,
         shots: [
           {
@@ -61,7 +62,11 @@ describe('buildMotionRender', () => {
       shot('a', 'opens the door'),
       shot('b', 'runs down the dock'),
     ];
-    const jobs = buildMotionRender({ ...context, shots });
+    const jobs = buildMotionRender({
+      promptLocale: 'en' as const,
+      ...context,
+      shots,
+    });
     expect(jobs).toHaveLength(1);
     const input = jobs[0]?.input;
     expect(input?.duration).toBe(4);
@@ -76,6 +81,7 @@ describe('buildMotionRender', () => {
 
   it('keeps the scene header when only one Grok sibling is submitted', () => {
     const jobs = buildMotionRender({
+      promptLocale: 'en' as const,
       ...context,
       shots: [shot('a', 'opens the door')],
       videoModels: ['grok_imagine_video_1_5'],
@@ -95,7 +101,11 @@ describe('buildMotionRender', () => {
       },
       audio: null,
     };
-    const [job] = buildMotionRender({ ...context, shots: [edited] });
+    const [job] = buildMotionRender({
+      promptLocale: 'en' as const,
+      ...context,
+      shots: [edited],
+    });
     expect(job?.input.prompt).toContain('Ada raises her hand');
     expect(job?.input.prompt).toContain('The new words');
     expect(job?.input.prompt).not.toContain('obsolete');
@@ -115,6 +125,7 @@ describe('buildMotionRender', () => {
       ],
     };
     const jobs = buildMotionRender({
+      promptLocale: 'en' as const,
       ...context,
       shots: [a, b, { ...shot('c', 'waits'), renderSegmentId: 'other' }],
     });

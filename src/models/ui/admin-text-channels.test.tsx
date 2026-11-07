@@ -11,6 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  DEFAULT_TEXT_CHANNEL_USER_AGENT,
   TEXT_CHANNEL_PROTOCOL,
   TEXT_CHANNEL_PROTOCOLS,
 } from '@/models/text-channels';
@@ -46,7 +47,11 @@ vi.mock('./admin-model-configuration', () => ({
 vi.mock('./admin-text-channels-fields', async (importOriginal) => {
   const fields =
     await importOriginal<typeof import('./admin-text-channels-fields')>();
-  return { ...fields, AdminTextSelect: vi.fn(fields.AdminTextSelect) };
+  return {
+    ...fields,
+    AdminTextInput: vi.fn(fields.AdminTextInput),
+    AdminTextSelect: vi.fn(fields.AdminTextSelect),
+  };
 });
 import { adminTextChannelsQueryOptions } from '@/models/text-channels.queries';
 import { adminImageChannelsQueryOptions } from '@/models/image-channels.queries';
@@ -447,6 +452,69 @@ describe('text channel protocol feedback', () => {
     const { html } = renderChannel(editor, 'zh-CN');
     expect(html).toContain('aria-describedby="text-channel-protocol-error"');
     expect(html).toContain('请选择 Chat Completions 或 Responses 协议。');
+  });
+});
+
+describe('text channel User-Agent field', () => {
+  it.each([
+    {
+      locale: 'en',
+      label: 'User-Agent',
+      hint: 'Leave blank to use OpenStory/0.1.0.',
+    },
+    {
+      locale: 'zh-CN',
+      label: 'User-Agent（客户端标识）',
+      hint: '留空使用 OpenStory/0.1.0。',
+    },
+  ] as const)(
+    'shows the optional default identity in $locale',
+    ({ locale, label, hint }) => {
+      const { html } = renderChannel(channelEditor(), locale);
+      expect(html).toContain('for="text-channel-user-agent">' + label);
+      expect(html).toContain(
+        'placeholder="' + DEFAULT_TEXT_CHANNEL_USER_AGENT + '"'
+      );
+      expect(html).toContain(hint);
+      expect(html).toContain('aria-describedby="text-channel-user-agent-hint"');
+      const input = vi
+        .mocked(AdminTextInput)
+        .mock.calls.find(
+          ([props]) => props.id === 'text-channel-user-agent'
+        )?.[0];
+      expect(input).toMatchObject({
+        required: false,
+        value: '',
+        maxLength: 256,
+      });
+    }
+  );
+  it('displays the saved identity and writes changes through the existing editor', () => {
+    const original = configuration.channels[0];
+    if (!original) throw new Error('Missing saved channel fixture');
+    const editor = channelEditor({ ...original, userAgent: 'Studio/1.0' });
+    expect(renderChannel(editor).html).toContain('value="Studio/1.0"');
+    const input = vi
+      .mocked(AdminTextInput)
+      .mock.calls.find(
+        ([props]) => props.id === 'text-channel-user-agent'
+      )?.[0];
+    if (!input?.onChange) throw new Error('User-Agent input was not rendered');
+    input.onChange('');
+    expect(editor.change).toHaveBeenCalledExactlyOnceWith('userAgent', '');
+  });
+  it('associates the translated validation error and default hint with the field', () => {
+    const editor = channelEditor();
+    if (!editor.draft) throw new Error('Missing fixture draft');
+    editor.draft.errors.userAgent =
+      'Use up to 256 printable ASCII characters for User-Agent, or leave it blank.';
+    const { html } = renderChannel(editor, 'zh-CN');
+    expect(html).toContain(
+      'aria-describedby="text-channel-user-agent-hint text-channel-user-agent-error"'
+    );
+    expect(html).toContain(
+      'User-Agent 最多填写 256 个可打印 ASCII 字符，也可留空。'
+    );
   });
 });
 

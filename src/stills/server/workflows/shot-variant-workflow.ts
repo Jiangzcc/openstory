@@ -212,6 +212,7 @@ export class ShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<ShotVariant
     // Reseeds on a content flag, then one softened prompt rebuilt with the
     // same reference legend (#1293).
     const generation = await generateImageSoftening({
+      promptLocale: input.promptLocale,
       step,
       scopedDb,
       workflowRunId,

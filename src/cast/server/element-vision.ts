@@ -17,6 +17,9 @@ import { toVisionImageSource } from '@/platform/server/storage/external-url';
 import { z } from 'zod';
 import { callLLMStream, llmCostFromUsage } from '@/models/server/llm-client';
 import type { AnalysisModelId } from '@/models/models.config';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
+import { ELEMENT_VISION_PROMPT_ZH_CN } from './vision-prompts.zh-cn';
 
 /**
  * LLM wire shape. Plain `z.string()` — Anthropic rejects `minLength` /
@@ -32,6 +35,7 @@ export const elementVisionResponseSchema = z.object({
 type ElementDescription = z.infer<typeof elementVisionResponseSchema>;
 
 export type DescribeElementInput = {
+  promptLocale: Locale;
   model: AnalysisModelId;
   imageUrl: string;
   filename: string;
@@ -74,7 +78,8 @@ function normalizeSuggestedToken(raw: string): string {
  */
 function buildVisionMessages(
   filename: string,
-  imageSource: ChatMessageImagePart['source']
+  imageSource: ChatMessageImagePart['source'],
+  promptLocale: Locale
 ): ChatMessage[] {
   const system = `You are a visual reference describer. You will be shown a single image that will serve as a canonical reference for an element (logo, product, screenshot, or similar object) in a film/video production. Your job is to describe what the image visually contains so that AI image generators can later reproduce the element faithfully across scenes, AND to suggest a concise UPPERCASE token that a screenwriter would type to reference this element in a script.
 
@@ -85,12 +90,25 @@ Your output MUST be strict JSON with three fields:
 
 Return ONLY the JSON object. No prose, no markdown fences.`;
 
-  const userText = `Uploaded filename: ${filename}
+  const userText = localizedPrompt(
+    promptLocale,
+    `Uploaded filename: ${filename}
 
-Describe the element in the image below and suggest a token.`;
+Describe the element in the image below and suggest a token.`,
+    `上传的文件名：${filename}
+
+描述下方图片中的元素，并建议一个引用 token。`
+  );
 
   return [
-    { role: 'system', content: system },
+    {
+      role: 'system',
+      content: localizedPrompt(
+        promptLocale,
+        system,
+        ELEMENT_VISION_PROMPT_ZH_CN
+      ),
+    },
     {
       role: 'user',
       content: [
@@ -107,7 +125,11 @@ export async function describeElementImage(
   // Local /r2/ URLs aren't reachable by real OpenRouter — inline the image
   // bytes as a data part instead (no-op in prod and e2e replay).
   const imageSource = await toVisionImageSource(input.imageUrl);
-  const messages = buildVisionMessages(input.filename, imageSource);
+  const messages = buildVisionMessages(
+    input.filename,
+    imageSource,
+    input.promptLocale
+  );
 
   // Centralized call (see talent-vision): the #1259 region fallback, the
   // OpenRouter provider pin that keeps this schema on a host advertising

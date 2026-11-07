@@ -103,6 +103,7 @@ describe('analyzeTalentMedia region fallback', () => {
     chatBehaviours.push('region-block', 'ok');
 
     const result = await analyzeTalentMedia({
+      promptLocale: 'en',
       model: TALENT_VISION_MODEL,
       imageUrls: IMAGES,
     });
@@ -125,6 +126,7 @@ describe('analyzeTalentMedia region fallback', () => {
     }));
 
     const result = await analyzeTalentMedia({
+      promptLocale: 'en',
       model: TALENT_VISION_MODEL,
       imageUrls: IMAGES,
       llmKey: { key: 'k', via: 'llmtr', source: 'organization' },
@@ -142,6 +144,7 @@ describe('analyzeTalentMedia region fallback', () => {
     chatBehaviours.push('ok');
 
     const result = await analyzeTalentMedia({
+      promptLocale: 'en',
       model: TALENT_VISION_MODEL,
       imageUrls: IMAGES,
     });
@@ -154,7 +157,11 @@ describe('analyzeTalentMedia region fallback', () => {
     chatBehaviours.push('other-error', 'ok');
 
     await expect(
-      analyzeTalentMedia({ model: TALENT_VISION_MODEL, imageUrls: IMAGES })
+      analyzeTalentMedia({
+        promptLocale: 'en',
+        model: TALENT_VISION_MODEL,
+        imageUrls: IMAGES,
+      })
     ).rejects.toThrow('402 Insufficient credits');
     expect(adapterModels).toEqual([TALENT_VISION_MODEL]);
   });
@@ -166,6 +173,7 @@ describe('analyzeTalentClip region fallback', () => {
 
     await expect(
       analyzeTalentClip({
+        promptLocale: 'en',
         model: 'google/gemini-3.8-flash',
         clip: { uri: 'https://files.example/abc', mimeType: 'video/mp4' },
         llmKey: { key: 'k', via: 'google', source: 'platform' },

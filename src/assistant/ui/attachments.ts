@@ -8,6 +8,8 @@
  */
 
 import type { ContentPart } from '@tanstack/ai';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
 
 export type AttachmentKind = 'image' | 'video' | 'audio' | 'text';
 
@@ -91,7 +93,8 @@ export async function readText(file: File): Promise<string> {
  */
 export function messageContent(
   text: string,
-  attachments: Attachment[]
+  attachments: Attachment[],
+  locale: Locale
 ): string | { content: ContentPart[] } {
   const ready = attachments.filter((a) => a.status === 'ready');
   if (ready.length === 0) return text;
@@ -100,7 +103,11 @@ export function messageContent(
   if (uploads.length > 0) {
     lines.push(
       '',
-      'Attached uploads (pass the upload value to a set_*_from_upload or Studio tool):',
+      localizedPrompt(
+        locale,
+        'Attached uploads (pass the upload value to a set_*_from_upload or Studio tool):',
+        '附加的上传素材（将 upload 值传给 set_*_from_upload 或 Studio 工具）：'
+      ),
       ...uploads.map(
         (a) => `- ${a.name} (${a.mimeType}): upload = ${a.upload ?? ''}`
       )
@@ -108,7 +115,17 @@ export function messageContent(
   }
   for (const a of ready) {
     if (a.text !== undefined) {
-      lines.push('', `Attached file ${a.name}:`, '```', a.text, '```');
+      lines.push(
+        '',
+        localizedPrompt(
+          locale,
+          `Attached file ${a.name}:`,
+          `附加文件 ${a.name}：`
+        ),
+        '```',
+        a.text,
+        '```'
+      );
     }
   }
   const parts: ContentPart[] = [{ type: 'text', content: lines.join('\n') }];

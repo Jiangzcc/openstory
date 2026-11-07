@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { configuredImageSource } from '@/billing/configured-image-billing';
 /**
  * A shot's storyboard preview: the grey animatic sketch on the scene rail
@@ -33,6 +34,7 @@ import type { ShotEditContext } from './shot-context';
 const logger = getLogger(['openstory', 'shots', 'shot-preview']);
 
 type PreviewTarget = {
+  promptLocale: Locale;
   userId: string;
   organizationId: string;
   sequenceId: string;
@@ -59,6 +61,7 @@ export async function triggerShotPreview(
   return triggerWorkflow(
     '/image',
     {
+      promptLocale: target.promptLocale,
       userId: target.userId,
       organizationId: target.organizationId,
       sequenceId: target.sequenceId,
@@ -99,6 +102,7 @@ async function previewCostMicros(
 export async function redrawShotPreview(
   context: Pick<
     ShotEditContext,
+    | 'promptLocale'
     | 'scopedDb'
     | 'user'
     | 'organizationId'
@@ -135,6 +139,7 @@ export async function redrawShotPreview(
     );
     await triggerShotPreview(
       {
+        promptLocale: context.promptLocale,
         userId: user.id,
         organizationId,
         sequenceId: sequence.id,

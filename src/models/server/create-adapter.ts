@@ -26,6 +26,7 @@ import {
 } from '@/models/llmtr';
 import type { TextModel } from '@/models/models';
 import type { TextModelRoute } from '@/models/text-channels';
+import { resolveTextChannelUserAgent } from '@/models/text-channels';
 import { isCustomAnalysisModelId } from '@/models/models.config';
 import { isGoogleRegionBlockedHere } from '@/models/google-region';
 import { workersSafeFetch } from '@/platform/server/ai/workers-safe-fetch';
@@ -215,6 +216,9 @@ export function createAdapter(model: TextModel, keyInfo?: LlmKeyInfo) {
       baseURL: resolved.route.baseUrl,
       apiKey: resolved.key,
       api: configuredTextApi(resolved.route.protocol),
+      defaultHeaders: {
+        'User-Agent': resolveTextChannelUserAgent(resolved.route.userAgent),
+      },
       maxRetries: CONFIGURED_TEXT_SDK_RETRIES,
       fetch: workersSafeFetch,
     });

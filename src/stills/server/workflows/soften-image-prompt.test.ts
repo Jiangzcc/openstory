@@ -78,6 +78,7 @@ function makeInput(
   overrides: Partial<ImageWorkflowInput> = {}
 ): ImageWorkflowInput {
   return {
+    promptLocale: 'en',
     userId: 'u1',
     variantOnly: false,
     organizationId: 't1',

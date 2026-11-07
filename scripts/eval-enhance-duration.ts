@@ -63,10 +63,14 @@ const SYSTEM = `${WORKFLOW_TEXT_PROMPTS['script/enhance'] ?? ''}
 Return ONLY the enhanced script text. No JSON, no markdown formatting, no explanations.`;
 
 async function enhanceOnce(): Promise<string> {
-  const userPrompt = createUserPrompt(BRIEF, {
-    targetDuration: TARGET,
-    aspectRatio: '16:9',
-  });
+  const userPrompt = createUserPrompt(
+    BRIEF,
+    {
+      targetDuration: TARGET,
+      aspectRatio: '16:9',
+    },
+    'en'
+  );
   return callLLM({
     model: RECOMMENDED_MODELS.creative,
     messages: [

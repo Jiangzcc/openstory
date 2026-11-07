@@ -48,6 +48,34 @@ async function* typed(
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Mock identities for a payloadless approval, pinned against the SDK in tests.
+const SCRIPTED_APPROVAL = {
+  responseSchema: {
+    oneOf: [
+      {
+        type: 'object',
+        properties: { approved: { const: true } },
+        required: ['approved'],
+        additionalProperties: false,
+      },
+      {
+        type: 'object',
+        properties: { approved: { const: false } },
+        required: ['approved'],
+        additionalProperties: false,
+      },
+    ],
+  },
+  hashes: {
+    inputSchemaHash:
+      'sha256:eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c',
+    approvalSchemaHash:
+      'sha256:22f76d9a1c618a3cfaa891208a14f6e5e6ab1be4ff1c38cc8a8cd1e8fd0c0e4e',
+    responseSchemaHash:
+      'sha256:ed82fe780755de70bdc8e477ffff9696d7dd16dd9b328a62a9d2d85525ba6b96',
+  },
+};
+
 let counter = 0;
 const nextId = (prefix: string) => `${prefix}_${++counter}`;
 
@@ -158,7 +186,7 @@ async function* play(
                 reason: 'tool_call',
                 message: `Approval required to run ${call.name}`,
                 toolCallId,
-                responseSchema: {},
+                responseSchema: SCRIPTED_APPROVAL.responseSchema,
                 metadata: {
                   kind: 'approval',
                   toolName: call.name,
@@ -172,9 +200,7 @@ async function* play(
                     toolName: call.name,
                     toolCallId,
                     originalArgs: call.input,
-                    inputSchemaHash: '',
-                    approvalSchemaHash: '',
-                    responseSchemaHash: '',
+                    ...SCRIPTED_APPROVAL.hashes,
                   },
                 },
               },

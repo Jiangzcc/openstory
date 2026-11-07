@@ -62,6 +62,7 @@ export type SheetPayload<T> = Omit<
   | 'sheetId'
   | 'referenceClaimId'
   | 'snapshotInputHash'
+  | 'promptLocale'
 >;
 
 /**
@@ -143,7 +144,9 @@ export type CharacterSheetDraft = Omit<
 export async function finishCharacterSheetPayload(
   draft: CharacterSheetDraft,
   face: CharacterSheetWorkflowInput['face']
-): Promise<Omit<CharacterSheetWorkflowInput, 'sheetVersionId'>> {
+): Promise<
+  Omit<CharacterSheetWorkflowInput, 'sheetVersionId' | 'promptLocale'>
+> {
   const fields = { ...draft, face };
   return {
     ...fields,

@@ -683,6 +683,7 @@ describe('executor packed clips', () => {
       };
       // The manual path reconstructs selected immutable prompt rows and D1 scene data.
       const manualJobs = buildMotionRender({
+        promptLocale: 'en' as const,
         ...context,
         shots: ids.map((shotId) => ({
           shotId,

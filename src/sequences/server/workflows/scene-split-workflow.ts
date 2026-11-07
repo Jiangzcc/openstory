@@ -132,6 +132,7 @@ import {
   getChatPrompt,
   type ChatMessage,
 } from '@/platform/server/ai/prompts-index';
+import { boundaryRepairPrompt } from '../scene-split-prompts';
 import {
   buildPreviewPrompt,
   previewTextForShot,
@@ -279,6 +280,7 @@ async function triggerPreviewImage({
     );
     await triggerShotPreview(
       {
+        promptLocale: input.promptLocale,
         userId: input.userId,
         organizationId: input.organizationId,
         sequenceId,
@@ -373,7 +375,11 @@ async function runStructuredCall<T extends object>({
   onAccumulated?: (accumulated: string, done: boolean) => Promise<void>;
 }): Promise<T & LlmStepBilling> {
   const { modelId } = input;
-  const { messages } = await getChatPrompt(promptName, promptVars);
+  const { messages } = await getChatPrompt(
+    promptName,
+    promptVars,
+    input.promptLocale
+  );
   const llmKeyInfo = await scopedDb.credentials.resolveLlmKey(modelId);
   const maxTokens = getLlmMaxOutputTokens(
     modelId,
@@ -593,9 +599,13 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
       'scene-splitting-stream',
       STREAM_STEP_RETRIES,
       async (): Promise<string> => {
-        const { messages } = await getChatPrompt(input.promptName, {
-          script: gutteredScript,
-        });
+        const { messages } = await getChatPrompt(
+          input.promptName,
+          {
+            script: gutteredScript,
+          },
+          input.promptLocale
+        );
 
         const llmKeyInfo = await scopedDb.credentials.resolveLlmKey(
           scopedDb.models.sceneSplit
@@ -775,10 +785,7 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
               { role: 'assistant', content: finalText },
               {
                 role: 'user',
-                content:
-                  `Some of your boundary quotes could not be located verbatim in the script and were discarded:\n` +
-                  failedQuotes.map((q) => `- ${JSON.stringify(q)}`).join('\n') +
-                  `\n\nRe-emit the COMPLETE result. Every quote must be copied character-for-character from the script (no line-number gutter, no paraphrasing, no smart-quote substitution), in script order.`,
+                content: boundaryRepairPrompt(failedQuotes, input.promptLocale),
               },
             ],
             { withEvents: false }

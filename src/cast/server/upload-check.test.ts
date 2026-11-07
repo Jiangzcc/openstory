@@ -20,7 +20,10 @@ const suspended: EnforcementRow = {
   revokedAt: null,
 };
 
-const upload = (contentType: string) => ({
+const upload = (
+  contentType: string
+): Parameters<typeof requireUploadCheckAllowed>[0] => ({
+  promptLocale: 'en',
   bucket: STORAGE_BUCKETS.TALENT,
   contentType,
   organizationId: generateId(),

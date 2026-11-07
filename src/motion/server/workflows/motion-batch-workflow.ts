@@ -228,6 +228,7 @@ export class MotionBatchWorkflow extends OpenStoryWorkflowEntrypoint<BatchMotion
         parentInstanceId,
         childId: `music:${sequenceId}:${model}`,
         childPayload: {
+          promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
           sequenceId,
@@ -340,6 +341,7 @@ export class MotionBatchWorkflow extends OpenStoryWorkflowEntrypoint<BatchMotion
       parentInstanceId,
       childId: `dialogue-audio:${sequenceId}:${parentInstanceId}`,
       childPayload: {
+        promptLocale: input.promptLocale,
         userId: input.userId,
         organizationId: input.organizationId,
         sequenceId,

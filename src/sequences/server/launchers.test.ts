@@ -68,6 +68,7 @@ const {
 } = await import('./launchers');
 
 const INPUT: StoryboardTriggerInput = {
+  promptLocale: 'en' as const,
   userId: 'u1',
   organizationId: 't1',
   sequenceId: 'seq_1',

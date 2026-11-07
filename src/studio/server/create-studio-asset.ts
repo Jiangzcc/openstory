@@ -85,6 +85,7 @@ import {
 import { triggerWorkflow } from '@/platform/server/workflow/client';
 import { captureProductEvent } from '@/platform/server/observability/product-events';
 import type { StudioGenerationWorkflowInput } from '@/platform/server/workflow/types';
+import type { PromptLocaleContext } from '@/platform/i18n/prompt-locale';
 
 const logger = getLogger(['openstory', 'studio', 'create']);
 
@@ -213,7 +214,7 @@ async function zeroUnusedReservations(
 async function requireOwnEditSource(
   scopedDb: ScopedDb,
   input: { sourceAssetId?: string; sourceVideoUrl?: string },
-  request: LikenessRequestContext
+  request: LikenessRequestContext & PromptLocaleContext
 ): Promise<void> {
   const source = input.sourceAssetId
     ? await scopedDb.generatedAssets.getById(input.sourceAssetId)
@@ -321,7 +322,7 @@ async function resolveReferenceClip(
 async function requireStudioClipChain(
   scopedDb: ScopedDb,
   start: ClipLink[],
-  request: LikenessRequestContext
+  request: LikenessRequestContext & PromptLocaleContext
 ): Promise<void> {
   const seen = new Set<string>();
   const queue = [...start];
@@ -331,7 +332,12 @@ async function requireStudioClipChain(
     seen.add(seenKey);
     if ('url' in link) {
       refuseTraversableReferenceUrl(link.url);
-      await requireCheckedUploadRights(scopedDb, [link.url], request);
+      await requireCheckedUploadRights(
+        scopedDb,
+        [link.url],
+        request,
+        request.promptLocale
+      );
       continue;
     }
     const asset = await scopedDb.generatedAssets.getById(link.assetId);
@@ -353,7 +359,7 @@ export async function createStudioAssets(
   scopedDb: ScopedDb,
   input: StudioCreateInput,
   /** Who asked, for an upload this create has to check itself (#2192). */
-  request: LikenessRequestContext,
+  request: LikenessRequestContext & PromptLocaleContext,
   options: {
     /** See `StudioGenerationWorkflowInput.finalFromDraftTaskId` (#1756). */
     finalFromDraftTaskId?: string;
@@ -488,7 +494,12 @@ export async function createStudioAssets(
   for (const url of gatedMedia) {
     refuseTraversableReferenceUrl(url);
   }
-  await requireCheckedUploadRights(scopedDb, gatedMedia, request);
+  await requireCheckedUploadRights(
+    scopedDb,
+    gatedMedia,
+    request,
+    request.promptLocale
+  );
   if (input.activity === 'video' && input.mode === 'reference') {
     // The gate judged a stored file by its type; a clip stored as a still
     // was judged as a still. A Studio clip's type is its stored output.
@@ -580,6 +591,7 @@ export async function createStudioAssets(
           });
 
           const workflowInput: StudioGenerationWorkflowInput = {
+            promptLocale: request.promptLocale,
             userId: scopedDb.userId,
             organizationId: scopedDb.organizationId,
             assetId: row.id,
@@ -668,7 +680,7 @@ export async function createStudioAssets(
 export async function renderStudioAssetAtQuality(
   scopedDb: ScopedDb,
   assetId: string,
-  request: LikenessRequestContext
+  request: LikenessRequestContext & PromptLocaleContext
 ): Promise<StudioCreateResult> {
   const asset = await scopedDb.generatedAssets.getById(assetId);
   if (!asset || asset.source !== 'studio') {
@@ -713,7 +725,7 @@ export async function editStudioAsset(
    * draft, whatever is asked: its final comes from Render final.
    */
   draft: boolean,
-  request: LikenessRequestContext
+  request: LikenessRequestContext & PromptLocaleContext
 ): Promise<StudioCreateResult> {
   const asset = await scopedDb.generatedAssets.getById(assetId);
   if (!asset || asset.source !== 'studio' || asset.activity !== 'video') {

@@ -97,6 +97,7 @@ export const createOrganizationLocationFn = createServerFn({ method: 'POST' })
         context.scopedDb,
         { ...data, description: data.description || null },
         {
+          promptLocale: context.promptLocale,
           userId: context.user.id,
           organizationId: context.organizationId,
           triggerSheet: true,

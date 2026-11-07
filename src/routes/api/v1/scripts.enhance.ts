@@ -50,6 +50,7 @@ export const Route = createFileRoute('/api/v1/scripts/enhance')({
           );
           const input = { ...parsed, videoModel };
           const gen = await buildEnhanceGenerator(input, {
+            promptLocale: 'en',
             scopedDb: context.scopedDb,
             user: context.user,
             organizationId: context.organizationId,

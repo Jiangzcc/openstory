@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { copyFile } from '#storage';
 import { carryUploadRightsIfChecked } from '@/cast/server/upload-rights';
 import { generateId } from '@/platform/id';
@@ -23,6 +24,7 @@ export async function copySequenceElements(params: {
   scopedDb: ScopedDb;
   organizationId: string;
   userId: string;
+  promptLocale: Locale;
   sourceSequenceId: string;
   targetSequenceId: string;
 }): Promise<void> {
@@ -85,6 +87,7 @@ export async function copySequenceElements(params: {
     // Vision reads pixels; a clip or a voice line has none to read.
     if (!carryVision && publicUrl && source.kind === 'image') {
       const input: ElementVisionWorkflowInput = {
+        promptLocale: params.promptLocale,
         userId,
         organizationId,
         sequenceId: targetSequenceId,

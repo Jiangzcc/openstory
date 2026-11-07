@@ -29,7 +29,11 @@ vi.mock('@/platform/server/storage/buckets', () => ({
 
 import { triggerWorkflowRun } from './client';
 
-const REQUEST = { userId: 'user-1', organizationId: 'team-1' };
+const REQUEST = {
+  promptLocale: 'en' as const,
+  userId: 'user-1',
+  organizationId: 'team-1',
+};
 const SNAPSHOT: ModelRuntimeConfiguration = {
   ...DEFAULT_MODEL_CONFIGURATION,
   sceneSplit: 'z-ai/glm-5.3-flash',
@@ -113,6 +117,29 @@ describe('workflow model configuration snapshots (1)', () => {
 });
 
 describe('workflow model configuration snapshots (2)', () => {
+  test('snapshots the locale independently for concurrent website tasks', async () => {
+    await Promise.all(
+      (['zh-CN', 'en'] as const).map((promptLocale) =>
+        triggerWorkflowRun('/storyboard', {
+          ...REQUEST,
+          userId: `user-${promptLocale}`,
+          promptLocale,
+        })
+      )
+    );
+    expect(mocks.triggerCfWorkflow).toHaveBeenCalledTimes(2);
+    for (const promptLocale of ['zh-CN', 'en']) {
+      expect(mocks.triggerCfWorkflow).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.objectContaining({
+            userId: `user-${promptLocale}`,
+            promptLocale,
+          }),
+        })
+      );
+    }
+  });
+
   test('does not start a new run if its configuration cannot be loaded', async () => {
     mocks.loadModelConfiguration.mockRejectedValueOnce(
       new Error('configuration unavailable')

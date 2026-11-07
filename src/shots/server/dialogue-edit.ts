@@ -55,7 +55,7 @@ type ShotDialogueLines = z.infer<typeof storedMotionDialogueSchema>['lines'];
 
 type DialogueEditContext = Pick<
   ShotEditContext,
-  'scopedDb' | 'shot' | 'sequence' | 'user'
+  'promptLocale' | 'scopedDb' | 'shot' | 'sequence' | 'user'
 >;
 
 export async function currentSourceKeys(
@@ -396,6 +396,7 @@ export async function regenerateShotDialogue(
   );
   return releaseReservationOnThrow(scopedDb, reservationId, async () => {
     const input: DialogueAudioWorkflowInput = {
+      promptLocale: context.promptLocale,
       userId: user.id,
       organizationId: sequence.organizationId,
       sequenceId: sequence.id,

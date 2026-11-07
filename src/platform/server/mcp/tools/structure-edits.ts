@@ -91,8 +91,9 @@ const createSequenceTool = openstoryTool({
     ),
     enhancedScript: z.string().optional(),
   }),
-  run: async (input, { scopedDb, userId, request, origin }) => {
+  run: async (input, { scopedDb, userId, request, origin, promptLocale }) => {
     const result = await runOneShotCreate(input, {
+      promptLocale,
       scopedDb,
       user: { id: userId },
       organizationId: scopedDb.organizationId,
@@ -202,9 +203,13 @@ const regenerateStoryboardTool = openstoryTool({
     workflowRunId: z.string(),
     appUrl: z.string(),
   }),
-  run: async ({ sequenceId: id, ...change }, { scopedDb, userId, origin }) => {
+  run: async (
+    { sequenceId: id, ...change },
+    { scopedDb, userId, origin, promptLocale }
+  ) => {
     const source = await productionAccess(scopedDb).sequence(id);
     const { entries } = await createSequences(regenerateInput(source, change), {
+      promptLocale,
       scopedDb,
       user: { id: userId },
       organizationId: scopedDb.organizationId,
@@ -492,8 +497,8 @@ const updateShotTool = openstoryTool({
     durationSeconds: z.number().nullable(),
     useStartFrame: z.boolean().nullable(),
   }),
-  run: async (input, { scopedDb, userId }) => {
-    const target = await shotEdit(scopedDb, userId, input);
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const target = await shotEdit(scopedDb, userId, input, promptLocale);
     let shot: Omit<Shot, 'sequence'> = target.shot;
     if (input.useStartFrame !== undefined) {
       shot =

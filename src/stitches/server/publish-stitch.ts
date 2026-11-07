@@ -7,6 +7,7 @@
  * sign-off, recorded here as it is for `upload_media`.
  */
 
+import type { Locale } from '@/platform/i18n/locale';
 import { fileExists } from '#storage';
 import {
   attestUploads,
@@ -26,6 +27,7 @@ import { mapCutMedia, type MediaRole } from '@/stitches/cut';
 import { storedStitchPath } from '@/stitches/server/stitch-storage';
 
 export async function publishStitch(args: {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   userId: string;
   id: string;
@@ -55,6 +57,7 @@ export async function publishStitch(args: {
   }
   for (const url of images) {
     const rights = await classifyUpload({
+      promptLocale: args.promptLocale,
       scopedDb: args.scopedDb,
       userId: args.userId,
       url,

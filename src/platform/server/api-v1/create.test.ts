@@ -122,6 +122,7 @@ describe('runOneShotCreate', () => {
   const callLog: string[] = [];
 
   const ctx = {
+    promptLocale: 'en' as const,
     user: { id: 'user-1' },
     organizationId: 'organization-1',
     request: { ipAddress: '203.0.113.9', userAgent: 'vitest' },
@@ -435,6 +436,7 @@ describe('runOneShotCreate', () => {
       {
         userId: 'user-1',
         organizationId: 'organization-1',
+        promptLocale: 'en',
         triggerSheet: false,
       },
     ]);
@@ -460,6 +462,7 @@ describe('runOneShotCreate', () => {
         userId: 'user-1',
         organizationId: 'organization-1',
         locationId: 'loc-Pier',
+        promptLocale: 'en',
       }
     );
     expect(locationDelete).not.toHaveBeenCalled();

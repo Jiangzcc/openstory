@@ -256,7 +256,7 @@ beforeEach(async () => {
 });
 
 const scoped = () => createScopedDb(organizationId, userId);
-const actor = () => ({ userId, organizationId });
+const actor = () => ({ userId, organizationId, promptLocale: 'en' as const });
 const execute = (planToken: string, db = scoped()) =>
   executeGeneration(db, actor(), sequenceId, planToken);
 

@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 /**
  * Durable LLM-call helpers for Cloudflare Workflows.
  *
@@ -287,6 +288,7 @@ export function chatModelOptionsForCall(
 }
 
 export type DurableLLMCallContext = {
+  promptLocale: Locale;
   sequenceId?: string;
   userId?: string;
   /**
@@ -373,7 +375,8 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
   const { messages } = await step.do(`prepare-${name}`, async () => {
     const { messages } = await getChatPrompt(
       config.promptName,
-      config.promptVariables
+      config.promptVariables,
+      callContext.promptLocale
     );
     return { messages };
   });
@@ -579,7 +582,8 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
   const { messages } = await step.do(`prepare-${name}`, async () => {
     const { messages } = await getChatPrompt(
       config.promptName,
-      config.promptVariables
+      config.promptVariables,
+      callContext.promptLocale
     );
     return { messages };
   });

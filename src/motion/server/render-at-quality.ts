@@ -1,3 +1,4 @@
+import type { Locale } from '@/platform/i18n/locale';
 import { buildDraftFinalRender } from './build-motion-render';
 /**
  * Render an approved Ark draft at quality (#1756).
@@ -67,6 +68,7 @@ export function draftRenderBlocker(
 }
 
 export async function renderDraftAtQuality(options: {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   userId: string;
   sequence: RenderableSequence;
@@ -134,6 +136,7 @@ export async function renderDraftAtQuality(options: {
 
   return releaseReservationOnThrow(scopedDb, reservationId, async () => {
     const payload = buildDraftFinalRender({
+      promptLocale: options.promptLocale,
       userId: options.userId,
       organizationId: scopedDb.organizationId,
       sequence,

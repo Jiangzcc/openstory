@@ -31,6 +31,7 @@ import { buildInstanceId } from '@/platform/server/workflow/instance-id';
 import { readInstanceIfExists } from '@/platform/server/workflow/run-outcome';
 import type { UserWorkflowContext } from '@/platform/server/workflow/types';
 import type { ScopedDb } from '@/platform/server/db/scoped';
+import type { Locale } from '@/platform/i18n/locale';
 import type { UploadCheck, UploadRef } from '@/cast/upload-rights';
 import {
   classifyUpload,
@@ -86,6 +87,7 @@ async function startUploadCheck(
 }
 
 type StoredUpload = {
+  promptLocale: Locale;
   bucket: StorageBucket;
   contentType: string;
   organizationId: string;
@@ -118,6 +120,7 @@ export async function startCheckForStoredUpload(
 ): Promise<void> {
   if (!checksOnUpload(opts.bucket, opts.contentType)) return;
   await startUploadCheck({
+    promptLocale: opts.promptLocale,
     userId: opts.userId,
     organizationId: opts.organizationId,
     url: getPublicUrl(opts.bucket, opts.path),
@@ -187,9 +190,11 @@ function checkFailure(run: CheckRun): OpenStoryError {
 function checkInput(
   scopedDb: Pick<ScopedDb, 'organizationId' | 'userId'>,
   ref: UploadRef,
-  request: LikenessRequestContext
+  request: LikenessRequestContext,
+  promptLocale: Locale
 ): UploadCheckWorkflowInput {
   return {
+    promptLocale,
     userId: scopedDb.userId,
     organizationId: scopedDb.organizationId,
     url: ref.url,
@@ -207,14 +212,15 @@ function checkInput(
 export async function readUploadCheck(
   scopedDb: ScopedDb,
   ref: UploadRef,
-  request: LikenessRequestContext
+  request: LikenessRequestContext,
+  promptLocale: Locale
 ): Promise<UploadCheck> {
   requireCheckable(ref.url, scopedDb.organizationId);
   const onRecord = await uploadRightsOnRecord(scopedDb, ref.url);
   if (onRecord) return onRecord;
   const run = await latestCheckRun(scopedDb.organizationId, ref.url);
   if (!run) {
-    await startUploadCheck(checkInput(scopedDb, ref, request));
+    await startUploadCheck(checkInput(scopedDb, ref, request, promptLocale));
     return { status: 'checking' };
   }
   switch (run.status) {
@@ -240,7 +246,8 @@ export async function readUploadCheck(
 export async function retryUploadCheck(
   scopedDb: ScopedDb,
   ref: UploadRef,
-  request: LikenessRequestContext
+  request: LikenessRequestContext,
+  promptLocale: Locale
 ): Promise<UploadCheck> {
   requireCheckable(ref.url, scopedDb.organizationId);
   const onRecord = await uploadRightsOnRecord(scopedDb, ref.url);
@@ -254,7 +261,7 @@ export async function retryUploadCheck(
       `This upload couldn’t be checked after ${MAX_ATTEMPTS} tries. Upload it again.`
     );
   }
-  await startUploadCheck(checkInput(scopedDb, ref, request));
+  await startUploadCheck(checkInput(scopedDb, ref, request, promptLocale));
   return { status: 'checking' };
 }
 
@@ -275,7 +282,8 @@ function isRunning(run: CheckRun): boolean {
 export async function requireCheckedUploadRights(
   scopedDb: ScopedDb,
   urls: string[],
-  request: LikenessRequestContext
+  request: LikenessRequestContext,
+  promptLocale: Locale
 ): Promise<Map<string, { depictsRealPerson: boolean }>> {
   for (const url of new Set(urls)) {
     if (!isCheckable(url, scopedDb.organizationId)) continue;
@@ -286,7 +294,13 @@ export async function requireCheckedUploadRights(
         'This upload is still being checked for a real person. Try again in a moment.'
       );
     }
-    await classifyUpload({ scopedDb, userId: scopedDb.userId, url, request });
+    await classifyUpload({
+      scopedDb,
+      userId: scopedDb.userId,
+      url,
+      request,
+      promptLocale,
+    });
   }
   return requireUploadRights(scopedDb, urls);
 }

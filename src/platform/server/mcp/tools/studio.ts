@@ -103,7 +103,7 @@ const createStudioAssetsTool = openstoryTool({
     endImageUrl: mediaRef.optional(),
   }),
   outputSchema: startedSchema,
-  run: async (input, { scopedDb, request }) => {
+  run: async (input, { scopedDb, request, promptLocale }) => {
     if (input.activity === 'image') {
       const extra = VIDEO_ONLY.find((key) => input[key] !== undefined);
       const refs = input.referenceVideos.length + input.referenceAudio.length;
@@ -128,7 +128,7 @@ const createStudioAssetsTool = openstoryTool({
           input.startImageUrl && fromShareableUrl(input.startImageUrl),
         endImageUrl: input.endImageUrl && fromShareableUrl(input.endImageUrl),
       }),
-      request
+      { ...request, promptLocale }
     );
     const n = result.assets.length;
     return {
@@ -149,14 +149,11 @@ const editStudioAssetTool = openstoryTool({
     draft: z.boolean().default(false),
   }),
   outputSchema: startedSchema,
-  run: async (input, { scopedDb, request }) => ({
-    data: await editStudioAsset(
-      scopedDb,
-      input.id,
-      input.prompt,
-      input.draft,
-      request
-    ),
+  run: async (input, { scopedDb, request, promptLocale }) => ({
+    data: await editStudioAsset(scopedDb, input.id, input.prompt, input.draft, {
+      ...request,
+      promptLocale,
+    }),
     summary: 'Started the edit.',
   }),
 });
@@ -168,8 +165,11 @@ const renderStudioAssetAtQualityTool = openstoryTool({
   annotations: paid,
   inputSchema: z.strictObject({ id: assetId }),
   outputSchema: startedSchema,
-  run: async (input, { scopedDb, request }) => ({
-    data: await renderStudioAssetAtQuality(scopedDb, input.id, request),
+  run: async (input, { scopedDb, request, promptLocale }) => ({
+    data: await renderStudioAssetAtQuality(scopedDb, input.id, {
+      ...request,
+      promptLocale,
+    }),
     summary: 'Started the 1080p render.',
   }),
 });
@@ -224,7 +224,7 @@ const draftStudioPromptTool = openstoryTool({
     endImageUrl: mediaRef.optional(),
   }),
   outputSchema: z.object({ prompt: z.string() }),
-  run: async (input, { scopedDb }) => ({
+  run: async (input, { scopedDb, promptLocale }) => ({
     data: await draftStudioPromptForOrganization(
       scopedDb,
       studioPromptDraftInputSchema.parse({
@@ -236,7 +236,8 @@ const draftStudioPromptTool = openstoryTool({
         startImageUrl:
           input.startImageUrl && fromShareableUrl(input.startImageUrl),
         endImageUrl: input.endImageUrl && fromShareableUrl(input.endImageUrl),
-      })
+      }),
+      promptLocale
     ),
     summary: 'Drafted a prompt.',
   }),
@@ -253,11 +254,15 @@ const watchClipTool = openstoryTool({
     question: z.string().min(1).max(2000),
   }),
   outputSchema: z.object({ answer: z.string(), model: z.string() }),
-  run: async (input, { scopedDb }) => ({
-    data: await watchClipForOrganization(scopedDb, {
-      url: fromShareableUrl(input.url),
-      question: input.question,
-    }),
+  run: async (input, { scopedDb, promptLocale }) => ({
+    data: await watchClipForOrganization(
+      scopedDb,
+      {
+        url: fromShareableUrl(input.url),
+        question: input.question,
+      },
+      promptLocale
+    ),
     summary: 'Watched the clip.',
   }),
 });

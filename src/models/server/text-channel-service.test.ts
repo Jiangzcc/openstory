@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { TextChannelsAdminStore } from './text-channel-service';
 import type { TextChannelsConfiguration } from '../text-channels';
 import {
+  DEFAULT_TEXT_CHANNEL_USER_AGENT,
   TEXT_CHANNEL_PROTOCOL,
   TEXT_CHANNEL_PROTOCOLS,
 } from '../text-channels';
@@ -85,6 +86,7 @@ it('syncs only GET /models with the immutable stored key and never writes import
     headers: {
       Authorization: 'Bearer ' + MOCK_PROVIDER_SECRET,
       Accept: 'application/json',
+      'User-Agent': DEFAULT_TEXT_CHANNEL_USER_AGENT,
     },
   });
   expect(init?.signal).toBeInstanceOf(AbortSignal);
@@ -95,6 +97,28 @@ it('syncs only GET /models with the immutable stored key and never writes import
   expect(result.candidates[0]).not.toHaveProperty('enabled');
   expect(result.candidates[0]).not.toHaveProperty('inputPricePerMillion');
 });
+
+it.each(['OpenStory-Channel/2.0', ''])(
+  'uses the channel User-Agent for model discovery: %j',
+  async (userAgent) => {
+    const store = mockStore();
+    const read = await store.read();
+    requireValue(read.configuration.channels[0]).userAgent = userAgent;
+    vi.mocked(store.read).mockResolvedValue(read);
+    fetchMock.mockResolvedValue(mockModelsResponse({ data: [] }));
+    await createTextChannelsAdminService(store).syncModels({
+      channelId: 'mock-provider',
+    });
+    const [, init] = requireValue(fetchMock.mock.calls[0]);
+    expect(new Headers(init?.headers).get('user-agent')).toBe(
+      userAgent || DEFAULT_TEXT_CHANNEL_USER_AGENT
+    );
+    expect(new Headers(init?.headers).get('authorization')).toBe(
+      'Bearer ' + MOCK_PROVIDER_SECRET
+    );
+    expect(store.commit).not.toHaveBeenCalled();
+  }
+);
 
 it('returns incremental text candidates without classifying nontext models as text bindings', async () => {
   const store = mockStore();

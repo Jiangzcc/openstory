@@ -57,6 +57,7 @@ export class MotionMusicPromptsWorkflow extends OpenStoryWorkflowEntrypoint<Moti
       parentInstanceId: event.instanceId,
       childId: `music-prompt:${sequenceId}`,
       childPayload: {
+        promptLocale: input.promptLocale,
         userId,
         organizationId,
         sequenceId,

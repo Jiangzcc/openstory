@@ -17,6 +17,13 @@ import type { StudioActivity, StudioReferenceKind } from '@/studio/schema';
 import { toVisionImageSource } from '@/platform/server/storage/external-url';
 import { callLLMStream, llmCostFromUsage } from '@/models/server/llm-client';
 import type { AnalysisModelId } from '@/models/models.config';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
+import {
+  STUDIO_IMAGE_DRAFT_ZH,
+  STUDIO_VIDEO_DRAFT_ZH,
+  STUDIO_INVENT_ZH,
+} from './studio-prompt-draft-prompts';
 
 type DraftReference = {
   url: string;
@@ -25,6 +32,7 @@ type DraftReference = {
 };
 
 export type DraftStudioPromptInput = {
+  promptLocale: Locale;
   model: AnalysisModelId;
   activity: StudioActivity;
   /** Attached references in `@Image1`… order, per kind. */
@@ -69,25 +77,54 @@ export async function buildDraftMessages(
   const tokens = tokensFor(input.references);
   const frames = input.startImageUrl
     ? [
-        { url: input.startImageUrl, token: 'the start frame' },
+        {
+          url: input.startImageUrl,
+          token: localizedPrompt(
+            input.promptLocale,
+            'the start frame',
+            '起始帧'
+          ),
+        },
         ...(input.endImageUrl
-          ? [{ url: input.endImageUrl, token: 'the end frame' }]
+          ? [
+              {
+                url: input.endImageUrl,
+                token: localizedPrompt(
+                  input.promptLocale,
+                  'the end frame',
+                  '结束帧'
+                ),
+              },
+            ]
           : []),
       ]
     : [];
 
   const system =
     input.activity === 'video'
-      ? `You write prompts for an AI video generator. Write ONE prompt of 40-90 words describing a single continuous shot: subject, action, camera move, lighting, mood. Plain prose, present tense, no headings, no lists, no quotes.
+      ? localizedPrompt(
+          input.promptLocale,
+          `You write prompts for an AI video generator. Write ONE prompt of 40-90 words describing a single continuous shot: subject, action, camera move, lighting, mood. Plain prose, present tense, no headings, no lists, no quotes.
 
-Every attached reference has a token. Refer to a reference ONLY by its bare token (for example: Image1, Video2, Audio1) exactly where it should appear — a character token where the character acts, a location token for the setting, a video token for motion or style to follow, an audio token for what should play. Use each token at least once. Never write the @ sign. Never describe a reference in detail — the token stands for it.`
-      : `You write prompts for an AI image generator. Write ONE prompt of 30-70 words: subject, composition, lighting, style. Plain prose, no headings, no lists, no quotes.`;
+Every attached reference has a token. Refer to a reference ONLY by its bare token (for example: Image1, Video2, Audio1) exactly where it should appear — a character token where the character acts, a location token for the setting, a video token for motion or style to follow, an audio token for what should play. Use each token at least once. Never write the @ sign. Never describe a reference in detail — the token stands for it.`,
+          STUDIO_VIDEO_DRAFT_ZH
+        )
+      : localizedPrompt(
+          input.promptLocale,
+          `You write prompts for an AI image generator. Write ONE prompt of 30-70 words: subject, composition, lighting, style. Plain prose, no headings, no lists, no quotes.`,
+          STUDIO_IMAGE_DRAFT_ZH
+        );
 
   const parts: ChatMessage['content'] = [];
   const lines: string[] = [];
   for (const [index, ref] of input.references.entries()) {
     const token = tokens[index] ?? '';
-    lines.push(`${token}: ${ref.kind} — "${ref.label}"`);
+    const kind = localizedPrompt(
+      input.promptLocale,
+      ref.kind,
+      { image: '图片', video: '视频', audio: '音频' }[ref.kind]
+    );
+    lines.push(`${token}: ${kind} — "${ref.label}"`);
     if (ref.kind === 'image') {
       parts.push({ type: 'text', content: `${token}:` });
       parts.push({ type: 'image', source: await toVisionImageSource(ref.url) });
@@ -107,17 +144,41 @@ Every attached reference has a token. Refer to a reference ONLY by its bare toke
   const userText = [
     ...(fromNothing
       ? [
-          'Nothing is attached and nothing has been written. Invent the idea: pick a specific subject, place and moment you find interesting — an unexpected one, not the first cliché that comes to mind.',
+          localizedPrompt(
+            input.promptLocale,
+            'Nothing is attached and nothing has been written. Invent the idea: pick a specific subject, place and moment you find interesting — an unexpected one, not the first cliché that comes to mind.',
+            STUDIO_INVENT_ZH
+          ),
         ]
-      : ['References:', ...lines]),
+      : [
+          localizedPrompt(input.promptLocale, 'References:', '参考素材：'),
+          ...lines,
+        ]),
     ...(frames.length > 0
       ? [
-          'Describe the motion from the start frame' +
-            (input.endImageUrl ? ' to the end frame.' : '.'),
+          localizedPrompt(
+            input.promptLocale,
+            'Describe the motion from the start frame' +
+              (input.endImageUrl ? ' to the end frame.' : '.'),
+            '描述从起始帧开始' +
+              (input.endImageUrl ? '到结束帧之间的运动。' : '的运动。')
+          ),
         ]
       : []),
-    ...(intent ? [`The user's own notes, keep their intent: "${intent}"`] : []),
-    'Write the prompt now.',
+    ...(intent
+      ? [
+          localizedPrompt(
+            input.promptLocale,
+            `The user's own notes, keep their intent: "${intent}"`,
+            `以下是用户自己的备注，请保留其意图：“${intent}”`
+          ),
+        ]
+      : []),
+    localizedPrompt(
+      input.promptLocale,
+      'Write the prompt now.',
+      '现在撰写提示词。'
+    ),
   ].join('\n');
 
   return {

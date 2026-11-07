@@ -6,6 +6,7 @@
  */
 
 import type { ImageToVideoModel } from './models';
+import type { Locale } from '@/platform/i18n/locale';
 import { durationGridForModel, snapDuration } from '@/motion/snap-duration';
 
 /** Enhancer labels: `Scene 3 — 5s` (hyphen / en / em dash). */
@@ -163,19 +164,29 @@ function formatDuration(seconds: number): string {
  * does not know the video model's grid. Coverage (how many shots a scene
  * needs, and their legal lengths) is decided later, by the shot-list pass.
  */
-export function buildDurationPromptParagraph(opts: {
-  targetSeconds: number;
-}): string {
+export function buildDurationPromptParagraph(
+  opts: {
+    targetSeconds: number;
+  },
+  promptLocale: Locale
+): string {
   const exampleSeconds = Math.max(4, Math.round(opts.targetSeconds / 4));
+  if (promptLocale === 'zh-CN')
+    return `目标视频时长：${formatDuration(opts.targetSeconds)}。将同一地点、同一叙事节拍的内容归为一个场景。每个场景必须标注预计时长，例如 "Scene 3 — ${exampleSeconds}s"；这是场景时长，不是片段长度。场景时长之和必须为 ${opts.targetSeconds} 秒（允许 ±${DURATION_PROMPT_TOLERANCE_SECONDS} 秒）。返回前数清场景并求和，直到满足目标。通过调整场景数量达到目标，不要拉长单个场景。如果需求包含标题卡、logo、SUPER 或屏幕文字，不要编写这些卡片，图像模型无法渲染文字；改为有真实主体和动作的结尾。结构标记保留英文原样。最后单独写一行：TOTAL: <sum>s`;
 
   return `Target video duration: ${formatDuration(opts.targetSeconds)}. Group content that shares a location and beat into one scene. Label every scene with its intended duration (e.g. a "Scene 3 — ${exampleSeconds}s" heading) — that is the scene's playing time, not a clip length. Scene labels MUST add up to ${opts.targetSeconds} seconds (±${DURATION_PROMPT_TOLERANCE_SECONDS} seconds). Count the scenes, add the labels, and do not return until they sum to the target. Reach the target through the number of scenes, not by stretching one scene's length. If the brief asks for a title card, logo, SUPER, or on-screen text, do not write that card — the image model cannot render text. Substitute a final living beat with a real subject. End with a single line: TOTAL: <sum>s`;
 }
 
-export function buildDurationCorrectionPrompt(opts: {
-  sum: number;
-  targetSeconds: number;
-  sceneCount: number;
-}): string {
+export function buildDurationCorrectionPrompt(
+  opts: {
+    sum: number;
+    targetSeconds: number;
+    sceneCount: number;
+  },
+  promptLocale: Locale
+): string {
+  if (promptLocale === 'zh-CN')
+    return `场景时长标签合计 ${opts.sum}s，但目标是 ${opts.targetSeconds}s。调整时长或场景数量，使标签之和为 ${opts.targetSeconds}s（允许 ±${DURATION_PROMPT_TOLERANCE_SECONDS}s）。保留故事。如果原需求包含标题卡，继续使用有动作的结尾替代，不要添加标题卡。保留 Scene N — Xs 标签格式。最后单独写一行：TOTAL: <sum>s。只返回修改后的剧本。`;
   return `Your scene duration labels sum to ${opts.sum}s, but the target is ${opts.targetSeconds}s. Revise the durations and/or scene count so the labels add up to ${opts.targetSeconds}s (±${DURATION_PROMPT_TOLERANCE_SECONDS}s). Keep the story. If the brief asked for a title card, keep the living-beat substitution — do not write a title card. End with a single line: TOTAL: <sum>s. Return ONLY the revised script.`;
 }
 

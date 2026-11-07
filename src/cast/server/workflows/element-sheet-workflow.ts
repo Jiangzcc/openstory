@@ -166,6 +166,7 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
 
         // Reseeds on a content flag, then one softened prompt (#1293).
         const generation = await generateImageSoftening({
+          promptLocale: input.promptLocale,
           step,
           scopedDb,
           workflowRunId: event.instanceId,

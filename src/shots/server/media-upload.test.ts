@@ -820,7 +820,13 @@ describe('character sheet upload for a look other than the default (#2015)', () 
 
     // No default sheet yet: the upload is not refused.
     await setCharacterSheetFromUpload(
-      { scopedDb, user: { id: actorId }, organizationId, sequence },
+      {
+        promptLocale: 'en' as const,
+        scopedDb,
+        user: { id: actorId },
+        organizationId,
+        sequence,
+      },
       { characterId: mia.id, lookId: gala.id, publicUrl: url }
     );
     const uploaded = await scopedDb.characterLooks.getById(gala.id);
