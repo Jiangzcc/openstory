@@ -1,5 +1,9 @@
 import { FirstAppearance } from '@/cast/ui/first-appearance';
 import { localizeSheetRetry } from '@/cast/ui/localize-sheet-status';
+import {
+  localizeDefaultLookCaption,
+  localizeLookSheetFaceMessage,
+} from '@/cast/ui/localize-look-sheet-face';
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useTranslation } from 'react-i18next';
 import { InButtonCost } from '@/billing/ui/action-cost';
@@ -9,12 +13,7 @@ import { SheetComparisonDialog } from '@/cast/ui/sheets/sheet-comparison-dialog'
 import { SheetStalenessBanners } from '@/cast/ui/sheets/sheet-staleness-banners';
 import { SheetVersionStrip } from '@/cast/ui/sheets/sheet-version-strip';
 import { wearLook } from '@/cast/character-looks';
-import {
-  defaultLookCaption,
-  defaultLookFaceState,
-  defaultLookName,
-  lookSheetFaceMessage,
-} from '@/cast/look-sheet-face';
+import { defaultLookFaceState, defaultLookName } from '@/cast/look-sheet-face';
 import { CharacterLooksRow } from '@/cast/ui/talent/character-looks-row';
 import { StalenessIndicator } from '@/shots/ui/staleness/staleness-indicator';
 import { Badge } from '@/ui/shadcn/badge';
@@ -122,9 +121,10 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
   const faceBlocked = activeLook?.isDefault === false && faceState !== 'ready';
   const faceMessage =
     activeLook?.isDefault === false
-      ? lookSheetFaceMessage(defaultLookName(liveLooks), faceState)
+      ? localizeLookSheetFaceMessage(t, defaultLookName(liveLooks), faceState)
       : activeLook
-        ? defaultLookCaption(
+        ? localizeDefaultLookCaption(
+            t,
             activeLook.name,
             liveLooks.some((look) => !look.isDefault)
           )

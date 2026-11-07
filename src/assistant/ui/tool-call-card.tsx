@@ -11,6 +11,7 @@ import { viewForChatTool } from '@/platform/mcp-views';
 import { Button } from '@/ui/shadcn/button';
 import { cn } from '@/ui/utils';
 import { McpAppFrame } from './mcp-app-frame';
+import { toolInputLabel } from './tool-input-labels';
 
 /** "openstory_get_shot_frames" (or the MCP "openstory.…") → "Get shot frames". */
 export function toolTitle(name: string): string {
@@ -119,7 +120,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
     <div
       data-status={status}
       className={cn(
-        'flex flex-col gap-2 rounded-lg border bg-card px-3 py-2 text-sm',
+        'flex min-w-0 max-w-full flex-col gap-2 rounded-lg border bg-card px-3 py-2 text-sm',
         status === 'error' && 'border-destructive/40',
         status === 'waiting' && 'border-ring'
       )}
@@ -147,11 +148,18 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
         </span>
       </div>
       {inputs.length > 0 && (
-        <dl className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+        <dl className="grid min-w-0 max-w-full gap-1 text-xs text-muted-foreground">
           {inputs.map(([key, value]) => (
-            <div key={key} className="flex gap-1">
-              <dt>{key}</dt>
-              <dd className="truncate text-foreground">{value}</dd>
+            <div
+              key={key}
+              className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-start gap-2"
+            >
+              <dt className="min-w-0 [overflow-wrap:anywhere]">
+                {translateLabel(toolInputLabel(key))}
+              </dt>
+              <dd className="min-w-0 whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">
+                {value}
+              </dd>
             </div>
           ))}
         </dl>
@@ -177,11 +185,11 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
         <McpAppFrame uri={viewUri} result={result} onMessage={onViewMessage} />
       )}
       {details && (
-        <details className="group text-xs">
+        <details className="group min-w-0 max-w-full text-xs">
           <summary className="cursor-pointer text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             {status === 'error' ? t('What went wrong') : t('Result')}
           </summary>
-          <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-2">
+          <pre className="mt-1 max-h-64 min-w-0 max-w-full overflow-auto whitespace-pre-wrap rounded-md bg-muted p-2 [overflow-wrap:anywhere]">
             {details}
           </pre>
         </details>

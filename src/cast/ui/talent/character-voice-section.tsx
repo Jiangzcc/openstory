@@ -165,7 +165,12 @@ export const CharacterVoiceSection: React.FC<{
     character.voicePreviews ?? [],
     character.voiceId,
     savedVoice?.category
-  );
+  ).map((take, index) => ({
+    ...take,
+    label: t('Take {{number}}', {
+      number: take.preview.takeNumber ?? index + 1,
+    }),
+  }));
   const inUseTake = takes.find((take) => take.inUse);
   const otherTakes = takes.filter((take) => !take.inUse);
   const choosingId = chooseTake.isPending

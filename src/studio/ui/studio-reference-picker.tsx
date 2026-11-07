@@ -57,6 +57,7 @@ import {
 } from 'lucide-react';
 import type { StudioReferenceKind } from '@/studio/schema';
 import { useMemo, useRef, useState } from 'react';
+import type { TFunction } from 'i18next';
 
 export type StudioReference = {
   /** Stored (origin-relative `/r2/…`) or absolute URL. */
@@ -107,7 +108,7 @@ type Source =
   | 'draw';
 type LibrarySource = Exclude<Source, 'audio' | 'draw'>;
 
-const SOURCES: { key: Source; label: string; icon: typeof Sparkles }[] = [
+const SOURCES = [
   { key: 'generations', label: 'Generations', icon: Sparkles },
   { key: 'uploads', label: 'Uploads', icon: FolderUp },
   { key: 'sequences', label: 'Sequences', icon: Clapperboard },
@@ -115,20 +116,26 @@ const SOURCES: { key: Source; label: string; icon: typeof Sparkles }[] = [
   { key: 'locations', label: 'Locations', icon: MapPin },
   { key: 'audio', label: 'Audio', icon: AudioLines },
   { key: 'draw', label: 'Draw', icon: PencilRuler },
-];
+] as const;
 
-const EMPTY: Record<LibrarySource, string> = {
+const EMPTY = {
   generations:
     'No generations yet — make an image or clip and it shows up here.',
   uploads: 'Nothing uploaded yet — anything you upload or paste lands here.',
   sequences: 'No sequences yet.',
   cast: 'No characters with a sheet yet.',
   locations: 'No locations with a reference image yet.',
-};
+} as const satisfies Record<LibrarySource, string>;
 
-function shotReferences(sequence: SequenceWithShots): StudioReference[] {
+function shotReferences(
+  sequence: SequenceWithShots,
+  t: TFunction<'studio'>
+): StudioReference[] {
   return sequence.shots.flatMap((shot, index) => {
-    const label = `${sequence.title} · shot ${index + 1}`;
+    const label = t('{{value1}} · shot {{value2}}', {
+      value1: sequence.title,
+      value2: index + 1,
+    });
     const still = shot.imageUrl;
     const stillOk = still && isBrowserDisplayableStillUrl(still);
     const refs: StudioReference[] = [];
@@ -137,7 +144,7 @@ function shotReferences(sequence: SequenceWithShots): StudioReference[] {
     if (clip && shot.videoStatus === 'completed') {
       refs.push({
         url: clip,
-        label: `${label} (clip)`,
+        label: t('{{value1}} (clip)', { value1: label }),
         kind: 'video',
         posterUrl: stillOk ? still : undefined,
       });
@@ -148,6 +155,7 @@ function shotReferences(sequence: SequenceWithShots): StudioReference[] {
 
 /** The organization's pickable media, as flat `{ url, label, kind }` rows per source. */
 export function useStudioLibrary(): StudioLibrary {
+  const { t } = useTranslation('studio');
   // The organization's characters and locations; the ones with a picture are offered.
   const { data: session } = useAuthSession();
   const { data: characters } = useLibraryCharacters(!!session);
@@ -166,7 +174,7 @@ export function useStudioLibrary(): StudioLibrary {
       .flatMap((asset): StudioReference[] => {
         const url = studioPrimaryOutput(asset)?.url;
         if (!url) return [];
-        const label = studioPrompt(asset).slice(0, 60) || 'Generation';
+        const label = studioPrompt(asset).slice(0, 60) || t('Generation');
         return asset.activity === 'video'
           ? [
               {
@@ -184,7 +192,7 @@ export function useStudioLibrary(): StudioLibrary {
       generations,
       uploads: uploads ?? [],
       sequences: sequences.map((sequence) => {
-        const shots = shotReferences(sequence);
+        const shots = shotReferences(sequence, t);
         return {
           id: sequence.id,
           title: sequence.title,
@@ -218,7 +226,7 @@ export function useStudioLibrary(): StudioLibrary {
           : []
       ),
     };
-  }, [characters, locations, sequences, images.data, videos.data, uploads]);
+  }, [characters, locations, sequences, images.data, videos.data, uploads, t]);
 }
 
 type TileGridProps = {
@@ -339,7 +347,7 @@ function SequenceDetail({
   const { data: locations } = useSequenceLocations(sequence.id);
   const loading = !elements || !characters || !locations;
 
-  const shots = shotReferences(sequence);
+  const shots = shotReferences(sequence, t);
   const elementRefs = (elements ?? []).flatMap((el) =>
     el.imageUrl
       ? [
@@ -442,7 +450,7 @@ export function StudioReferencePicker({
   onUpload,
   acceptAlso,
 }: StudioReferencePickerProps) {
-  const { t } = useTranslation('studio');
+  const { t } = useTranslation(['studio', 'labels']);
 
   const fileInput = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<Source>('generations');
@@ -510,8 +518,18 @@ export function StudioReferencePicker({
                       'Up to {{value1}} stills{{value2}}{{value3}}. Upload or paste.',
                       {
                         value1: slots.image,
-                        value2: slots.video > 0 ? `, ${slots.video} clips` : '',
-                        value3: slots.audio > 0 ? `, ${slots.audio} audio` : '',
+                        value2:
+                          slots.video > 0
+                            ? t(', {{value1}} clips', {
+                                value1: slots.video,
+                              })
+                            : '',
+                        value3:
+                          slots.audio > 0
+                            ? t(', {{value1}} audio', {
+                                value1: slots.audio,
+                              })
+                            : '',
                       }
                     )
                   : t('Pick any, upload, or paste.')}
@@ -564,7 +582,7 @@ export function StudioReferencePicker({
                 }}
               >
                 <Icon aria-hidden="true" />
-                {label}
+                {key === 'audio' ? t('Audio', { ns: 'labels' }) : t(label)}
                 {key !== 'audio' && key !== 'draw' && (
                   <span className="ml-auto font-mono text-xs text-muted-foreground">
                     {library[key].length}
@@ -629,7 +647,7 @@ export function StudioReferencePicker({
                 />
               ) : library.sequences.length === 0 ? (
                 <p className="p-4 text-sm text-muted-foreground">
-                  {EMPTY.sequences}
+                  {t(EMPTY.sequences)}
                 </p>
               ) : (
                 <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
@@ -673,7 +691,7 @@ export function StudioReferencePicker({
               )
             ) : library[source].length === 0 ? (
               <p className="p-4 text-sm text-muted-foreground">
-                {EMPTY[source]}
+                {t(EMPTY[source])}
               </p>
             ) : (
               <TileGrid items={library[source]} {...grid} />

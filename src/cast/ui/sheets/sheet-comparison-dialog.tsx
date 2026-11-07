@@ -45,10 +45,10 @@ type SheetComparisonDialogProps = {
   upstreamChanges?: string[];
 };
 
-const ENTITY_LABEL: Record<SheetEntityType, string> = {
+const ENTITY_LABEL = {
   character: 'character sheet',
   location: 'location reference',
-};
+} as const satisfies Record<SheetEntityType, string>;
 
 const ASPECT_CLASS: Record<SheetAspectRatio, string> = {
   square: 'aspect-square',
@@ -120,7 +120,7 @@ export const SheetComparisonDialog: React.FC<SheetComparisonDialogProps> = ({
 }) => {
   const { t } = useTranslation('cast');
 
-  const label = ENTITY_LABEL[entityType];
+  const label = t(ENTITY_LABEL[entityType]);
   const aspectClass = ASPECT_CLASS[aspectRatio ?? defaultAspectFor(entityType)];
   const busy = isPromoting || isDiscarding;
 

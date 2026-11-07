@@ -140,7 +140,16 @@ run free.
 `usePageContext` (`src/assistant/ui/use-page-context.ts`) reads the router:
 route params name the sequence, character or location; search params name
 the selected scene or shot. Labels come from the query cache the page has
-already filled. No page registers anything, so none can forget to. The
+already filled. `page-context-from-cache.ts` reads the same character detail
+or location list/current cache as the page, then organization caches as a
+fallback. A read-only subscription refreshes names when data arrives or is
+renamed; unchanged labels reuse the snapshot and no query is created.
+Scope selection follows each detail page: a character defaults to its latest
+casting sequence, while a location stays on its own scope unless one is
+picked. A scope the page does not display cannot supply an inactive cached
+name.
+Generated fallback labels and shot numbers are localized; actual names remain
+verbatim, including names that match a fallback. No page registers anything, so none can forget to. The
 items are chips in the composer; a removed chip stays removed for the
 thread (`dismissedContext` in the store). A page can hand over extra
 context and a prompt with `openAssistant({ context, prompt })`.
@@ -206,6 +215,13 @@ like any script file; nothing of it is stored.
 Consecutive tool calls in one reply fold into a single `<details>`
 (`groupToolCalls` in `assistant-message.tsx`), open while any call runs or
 waits on the user and shut once all are done.
+
+Tool titles are localized after `toolTitle` humanizes the wire name. Known
+scalar parameter names use `ui/tool-input-labels.ts` and the assistant
+language resources; unknown names keep their source text. This only changes
+card labels, never arguments or result JSON. Cards and groups constrain their
+width, parameter rows use two shrinkable columns, and result/error text wraps
+continuous tokens. The three-input, 40-character scalar summary stays intact.
 
 ## The web
 
@@ -287,7 +303,7 @@ in [assistant approval fix](../secondary-development/assistant-approval-fix.md).
 
 ## Secondary-development localization
 
-Secondary-development localization uses the request-local i18n instance for tool display names, grouped status and built-in starters. A built-in starter fills or sends the same localized text its button displays, using the language selected when clicked. Existing drafts, user-authored messages and unknown custom starters remain verbatim. Context-chip nouns and known attachment statuses are translated only for display; context labels, attachment names and unknown diagnostics remain verbatim. MCP/chat tool names, tool arguments and approval rules stay unchanged.
+Secondary-development localization uses the request-local i18n instance for tool display names, grouped status and built-in starters. A built-in starter fills or sends the same localized text its button displays, using the language selected when clicked. Existing drafts, user-authored messages and unknown custom starters remain verbatim. Context-chip nouns, generated fallback labels and known attachment statuses are translated only for display; actual context names, attachment names and unknown diagnostics remain verbatim. MCP/chat tool names, tool arguments and approval rules stay unchanged.
 
 ## Platform model recommendations
 

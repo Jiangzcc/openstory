@@ -565,6 +565,7 @@
   "video": "video",
   "music": "music",
   "sheet": "sheet",
+  "sequence": "sequence",
   "voice": "voice",
   "text": "text",
   "script": "script",

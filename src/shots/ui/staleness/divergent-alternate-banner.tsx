@@ -98,7 +98,7 @@ export const DivergentAlternateBanner: React.FC<
       <AlertDescription>
         {t(
           'An alternate {{value1}} was generated with the inputs you had at the time.',
-          { value1: ARTIFACT_LABEL[artifact] }
+          { value1: translateLabel(ARTIFACT_LABEL[artifact]) }
         )}
       </AlertDescription>
       <div className="col-start-2 mt-2 flex flex-wrap items-center gap-2">

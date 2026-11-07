@@ -135,7 +135,7 @@ const ToolCallGroup: React.FC<{
       open={status !== 'done'}
       data-status={status}
       className={cn(
-        'rounded-lg border bg-card',
+        'min-w-0 max-w-full rounded-lg border bg-card',
         status === 'error' && 'border-destructive/40',
         status === 'waiting' && 'border-ring'
       )}
@@ -153,7 +153,7 @@ const ToolCallGroup: React.FC<{
         </span>
         <span className="shrink-0 text-xs text-muted-foreground">{label}</span>
       </summary>
-      <div className="flex flex-col gap-2 border-t p-2">{children}</div>
+      <div className="flex min-w-0 flex-col gap-2 border-t p-2">{children}</div>
     </details>
   );
 };
@@ -249,7 +249,7 @@ export const AssistantMessage: React.FC<{
     />
   );
   return (
-    <div className="flex flex-col gap-2 text-sm">
+    <div className="flex min-w-0 max-w-full flex-col gap-2 text-sm">
       {groupToolCalls(message.parts).map((block, index) => {
         if (block.type === 'tools') {
           const [first, ...rest] = block.calls;

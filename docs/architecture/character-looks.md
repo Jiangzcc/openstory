@@ -367,8 +367,11 @@ before `persist-scene-looks` writes the picks. Only persisted ids are stored.
   is open. The line under the chips names it ("This is the default look,
   Clean white shirt…"). On any other look the heading is that look's name,
   and the line says it is drawn from the default look. Generate stays
-  disabled until the default look has a sheet — the same sentence the
-  refusal returns. Upload is always enabled. A scene's look picker labels the default "(default look)".
+  disabled until the default look has a sheet. The UI translates the
+  ready/generating/missing captions in `ui/localize-look-sheet-face.ts`,
+  preserving user look names as interpolation values; `look-sheet-face.ts`
+  continues to supply the state and server refusal. Upload is always enabled.
+  A scene's look picker labels the default "(default look)".
   MCP: see `mcp-capability-map.md`.
 
 ## Traps

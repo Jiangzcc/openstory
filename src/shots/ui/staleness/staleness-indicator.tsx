@@ -327,7 +327,7 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
       <AlertTitle>{t('Inputs changed')}</AlertTitle>
       <AlertDescription>
         {t('This {{value1}} was generated from earlier inputs.', {
-          value1: ARTIFACT_LABEL[inlineArtifact],
+          value1: translateLabel(ARTIFACT_LABEL[inlineArtifact]),
         })}
       </AlertDescription>
       <AlertAction className="flex items-center gap-1">

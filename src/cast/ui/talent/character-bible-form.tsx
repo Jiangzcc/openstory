@@ -1,8 +1,10 @@
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { useTranslation } from 'react-i18next';
 import { personLockMessage } from '@/cast/likeness';
 import type { PersonLock } from '@/cast/likeness';
 import { BibleField } from '@/cast/ui/bible-field';
+import { RenderingField } from '@/cast/ui/rendering-field';
 import { Button } from '@/ui/shadcn/button';
 import { Checkbox } from '@/ui/shadcn/checkbox';
 import { Label } from '@/ui/shadcn/label';
@@ -17,6 +19,7 @@ import { useUpdateSequenceCharacter } from '@/cast/ui/use-sequence-characters';
 import { useUpdateOrganizationCharacter } from '@/cast/ui/use-organization-characters';
 import type { CharacterWithSheet } from '@/platform/server/db/schema';
 import { localizeCastNameConflict } from '@/cast/ui/localize-cast-name-conflict';
+import { localizeCharacterFormError } from '@/cast/ui/localize-character-form-error';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -73,6 +76,7 @@ export const CharacterBibleForm: React.FC<{
   character: BibleFormCharacter & Pick<CharacterWithSheet, 'voiceDescription'>;
 }> = (props) => {
   const translateEvent = useLiveTranslation('cast');
+  const translateLabel = useLabelTranslation('cast');
   const { t } = useTranslation('cast');
 
   const { character } = props;
@@ -95,7 +99,7 @@ export const CharacterBibleForm: React.FC<{
       // Native `required` covers the empty name; this is the length ceiling,
       // which would otherwise make Save look like it did nothing.
       toast.error(translateEvent('Check the character fields'), {
-        description: result.error.issues[0]?.message,
+        description: localizeCharacterFormError(result.error, translateEvent),
       });
       return;
     }
@@ -166,10 +170,8 @@ export const CharacterBibleForm: React.FC<{
         />
       )}
       {/* Always shown: unticking Voice only needs it in the same save. */}
-      <BibleField
+      <RenderingField
         idPrefix="character"
-        label={t('Rendered as')}
-        name="rendering"
         defaultValue={character.rendering}
         required={!character.voiceOnly}
       />
@@ -213,7 +215,7 @@ export const CharacterBibleForm: React.FC<{
             id="character-isPerson-reason"
             className="text-xs text-muted-foreground"
           >
-            {personLockMessage(character.personLock)}
+            {translateLabel(personLockMessage(character.personLock))}
           </p>
         )}
       </div>

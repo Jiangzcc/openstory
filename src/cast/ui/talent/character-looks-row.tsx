@@ -1,6 +1,7 @@
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import type { TFunction } from 'i18next';
 import { AskAssistantButton } from '@/assistant/ui/ask-assistant-button';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -44,13 +45,13 @@ function parseLookForm(form: HTMLFormElement) {
 }
 
 /** What is wrong with the form, in the field's own words. */
-function lookFormError(error: z.ZodError): string {
+function lookFormError(error: z.ZodError, t: TFunction<'cast'>): string {
   const issue = error.issues[0];
   const field = issue?.path[0];
-  if (field === 'name') return 'A look needs a name, up to 255 characters.';
-  if (field === 'clothing') return 'Clothing is too long.';
-  if (field === 'styling') return 'Hair, makeup, injuries is too long.';
-  return issue?.message ?? 'Check the fields and try again.';
+  if (field === 'name') return t('A look needs a name, up to 255 characters.');
+  if (field === 'clothing') return t('Clothing is too long.');
+  if (field === 'styling') return t('Hair, makeup, injuries is too long.');
+  return issue?.message ?? t('Check the fields and try again.');
 }
 
 const LookFields: React.FC<{ idPrefix: string; look?: LookRowItem }> = ({
@@ -118,7 +119,7 @@ export const CharacterLooksRow: React.FC<{
     const parsed = parseLookForm(event.currentTarget);
     if (!parsed.success) {
       toast.error(translateEvent('Look not saved'), {
-        description: lookFormError(parsed.error),
+        description: lookFormError(parsed.error, translateEvent),
       });
       return;
     }
@@ -143,7 +144,7 @@ export const CharacterLooksRow: React.FC<{
     const parsed = parseLookForm(event.currentTarget);
     if (!parsed.success) {
       toast.error(translateEvent('Look not saved'), {
-        description: lookFormError(parsed.error),
+        description: lookFormError(parsed.error, translateEvent),
       });
       return;
     }

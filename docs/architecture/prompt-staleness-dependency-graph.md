@@ -15,6 +15,12 @@ It is the operational companion to
 [workflow-snapshots-and-content-hash-staleness.md](./workflow-snapshots-and-content-hash-staleness.md)
 (the design) — read that first for _why_ we hash inputs at all.
 
+The localized UI describes changed inputs as content and settings, covering
+descriptions, references and model parameters. `StalenessIndicator` and
+`DivergentAlternateBanner` translate artifact labels before interpolating
+them into notices, including accessible names. These notices leave the hash
+and selection comparisons below unchanged.
+
 ## Status — implemented in #867, re-fixed on a new path in #1732
 
 All three defects below are now **fixed**; §5/§6 are kept as the rationale.

@@ -1,6 +1,7 @@
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useTranslation } from 'react-i18next';
 import { describeUploadFn } from '@/cast/describe-upload.fn';
+import { localizeCharacterFormError } from '@/cast/ui/localize-character-form-error';
 import { errorMessage } from '@/platform/errors';
 import { useUploadDraftCharacterSheet } from '@/shots/ui/use-media-upload';
 import { Button } from '@/ui/shadcn/button';
@@ -132,7 +133,7 @@ export const NewCharacterForm: React.FC<{
     );
     if (!result.success) {
       toast.error(translateEvent('Check the character'), {
-        description: result.error.issues[0]?.message,
+        description: localizeCharacterFormError(result.error, translateEvent),
       });
       return;
     }

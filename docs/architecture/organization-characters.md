@@ -33,6 +33,11 @@ a sequence holds a link to it. See `organization-locations.md`.
   out; the Characters page requires it. The backfill
   (`20261009063136_backfill_character_rendering`) took the first casting
   sequence's style. It is the only thing a sheet takes from a style.
+- The bible form's `RenderingField` localizes only the exact built-in
+  `PHOTOREAL_RENDERING` value for display. Its named hidden input keeps the
+  original value on an unchanged save; custom text and unsaved edits stay
+  verbatim across language changes. Generation still compares the canonical
+  English value.
 - **`sequence_cast`** — one row per character per sequence, holding only
   what is the sequence's:
   - `sequenceId`, `characterId`, `scriptCharacterId` (the analysis id, e.g.

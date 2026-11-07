@@ -211,6 +211,11 @@ rendered as ("Photoreal live action", "3D animated, Pixar-like"). It is the
 only thing a location sheet takes from a style. The sheet prompt and the
 sheet hash read no sequence style.
 
+The bible form shares the character form's `RenderingField`: only the exact
+built-in `PHOTOREAL_RENDERING` gets a translated display value. An unchanged
+save submits its original value, and custom text and unsaved edits remain
+verbatim across language changes. This does not alter sheet inputs or hashes.
+
 - Every bible writer passes through `renderingForLocation`
   (`src/cast/rendering.ts`): a blank one throws a `ValidationError`, on
   create and on edit.

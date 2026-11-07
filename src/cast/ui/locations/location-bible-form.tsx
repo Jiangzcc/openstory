@@ -1,6 +1,7 @@
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useTranslation } from 'react-i18next';
 import { BibleField } from '@/cast/ui/bible-field';
+import { RenderingField } from '@/cast/ui/rendering-field';
 import { Button } from '@/ui/shadcn/button';
 import { Label } from '@/ui/shadcn/label';
 import {
@@ -147,10 +148,8 @@ export const LocationBibleForm: React.FC<{
         name="ambiance"
         defaultValue={location.ambiance}
       />
-      <BibleField
+      <RenderingField
         idPrefix="location"
-        label={t('Rendered as')}
-        name="rendering"
         defaultValue={location.rendering}
         required
       />
