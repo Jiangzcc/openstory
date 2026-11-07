@@ -97,6 +97,7 @@ export async function prepareUpdateStale(args: {
   }
   const modelConfiguration = await loadStoryboardModelConfiguration(scopedDb);
   const plan = await planUpdateAll({
+    promptLocale: args.promptLocale,
     imageModelRouting: modelConfiguration.imageModelRouting,
     scopedDb,
     sequenceId: sequence.id,

@@ -359,7 +359,7 @@ const StyleDetailContent: FC<{
               <ConfigRow
                 key={row.label}
                 label={translateLabel(row.label)}
-                value={row.value}
+                value={translateTemplate(row.value)}
               />
             ))}
           </dl>
@@ -374,7 +374,7 @@ const StyleDetailContent: FC<{
                 <div className="flex flex-wrap gap-1.5">
                   {display.references.map((film) => (
                     <Badge key={film} variant="outline">
-                      {film}
+                      {translateTemplate(film)}
                     </Badge>
                   ))}
                 </div>
@@ -390,7 +390,7 @@ const StyleDetailContent: FC<{
               <div className="flex flex-wrap gap-1.5">
                 {tags.map((tag) => (
                   <Badge key={tag} variant="secondary">
-                    {tag}
+                    {translateTemplate(tag)}
                   </Badge>
                 ))}
               </div>

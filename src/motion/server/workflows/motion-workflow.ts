@@ -274,6 +274,7 @@ export class MotionWorkflow extends OpenStoryWorkflowEntrypoint<MotionWorkflowIn
      */
     const assembleShotPrompt = (motionPrompt: AssemblableMotionPrompt) =>
       buildMotionShotPrompt({
+        promptLocale: input.promptLocale,
         motionPrompt: {
           ...motionPrompt,
           dialogue: withVoicedLineTokens(motionPrompt.dialogue, voicedLines),
@@ -314,6 +315,7 @@ export class MotionWorkflow extends OpenStoryWorkflowEntrypoint<MotionWorkflowIn
       ];
       if (input.coveredShots && packedClip) {
         const packed = buildPackedMotionPrompt({
+          promptLocale: input.promptLocale,
           shots: input.coveredShots.map((member) => ({
             durationSeconds: member.duration ?? durationHint ?? 3,
             motionPrompt: member.motionPrompt

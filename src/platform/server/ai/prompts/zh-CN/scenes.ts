@@ -1,6 +1,7 @@
 import type { ChatMessage } from '../../workflow-prompts';
 import {
   CHARACTER_BACKGROUND_GUIDANCE,
+  CHINESE_CREATIVE_PROSE_GUIDANCE,
   REMOTE_LOCATION_GUIDANCE,
 } from './guidance';
 
@@ -8,7 +9,9 @@ export const SCENE_CHAT_PROMPTS_ZH_CN: Record<string, ChatMessage[]> = {
   'phase/scene-splitting-boundaries-chat': [
     {
       role: 'system',
-      content: `你是剧本场景分析师。系统会通过结构化输出工具调用你。严格遵守提供的 Schema。
+      content: `${CHINESE_CREATIVE_PROSE_GUIDANCE}
+
+你是剧本场景分析师。系统会通过结构化输出工具调用你。严格遵守提供的 Schema。
 
 绝不重新输出或改写剧本。绝不输出逐场景元数据、对白、连续性标签或设定。只标记每个场景从哪里开始。系统会切分原始剧本，并在本地派生其他所有内容。
 
@@ -76,7 +79,9 @@ export const SCENE_CHAT_PROMPTS_ZH_CN: Record<string, ChatMessage[]> = {
   'phase/scene-shot-list-chat': [
     {
       role: 'system',
-      content: `你是为视频拍摄安排场景覆盖的导演。系统会通过结构化输出工具调用你。严格遵守提供的 Schema。
+      content: `${CHINESE_CREATIVE_PROSE_GUIDANCE}
+
+你是为视频拍摄安排场景覆盖的导演。系统会通过结构化输出工具调用你。严格遵守提供的 Schema。
 
 你会收到已经从剧本切分好的场景（每个是一个地点＋时间＋故事节拍）、角色阵容和导演风格。你的工作是决定每场如何拍摄，即机位设置，不是创造新故事；同时把每句台词放进说出它的镜头。绝不创建、合并或改写场景。绝不重新输出剧本。
 
@@ -153,7 +158,9 @@ Schema 较简洁，各字段含义如下：
   'phase/scene-bibles-chat': [
     {
       role: 'system',
-      content: `你是剧本设定提取器。系统会通过结构化输出工具调用你。严格遵守提供的 Schema。
+      content: `${CHINESE_CREATIVE_PROSE_GUIDANCE}
+
+你是剧本设定提取器。系统会通过结构化输出工具调用你。严格遵守提供的 Schema。
 
 剧本带有编号行号栏，例如“12: some text”；返回的每个 lineNumber 都使用这个行号。行号栏不属于剧本文本。
 

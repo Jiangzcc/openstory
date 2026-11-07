@@ -354,6 +354,7 @@ async function prepareGeneration(
     request.generateStartFrames ?? sequence.generateStartFrames;
   const draftMotion = request.draftMotion ?? sequence.draftMotion;
   const { plan, stopAt, estimate, modelConfiguration } = await prepareContinue({
+    promptLocale: actor.promptLocale,
     scopedDb,
     userId: actor.userId,
     sequence,

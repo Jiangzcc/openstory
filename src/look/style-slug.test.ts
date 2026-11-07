@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { styleSlug } from './style-slug';
 
 describe('styleSlug', () => {
+  it('keeps Chinese-only names distinct without changing existing mixed slugs', () => {
+    expect(styleSlug('雨夜霓虹')).toBe('雨夜霓虹');
+    expect(styleSlug('暖色 日常')).toBe('暖色-日常');
+    expect(styleSlug('雨夜 Noir')).toBe('noir');
+  });
   it('lowercases and hyphenates spaces', () => {
     expect(styleSlug('Product Ad')).toBe('product-ad');
     expect(styleSlug('White Background Studio')).toBe(

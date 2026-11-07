@@ -37,6 +37,8 @@ import {
 import { allocateClipDurations } from '@/motion/snap-duration';
 import { sliceHasDurationLabel } from '@/sequences/scene-from-slice';
 import type { StyleConfig } from '@/look/style-config';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
 import type {
   CharacterBibleEntry,
   DialogueLine,
@@ -528,17 +530,27 @@ export function buildShotInserts(
 
 /** Director brief for the shot-list pass: motion + mood, not the still look. */
 export function formatDirectorStyleForShotList(
-  style: StyleConfig | null | undefined
+  style: StyleConfig | null | undefined,
+  locale: Locale = 'en'
 ): string {
   if (!style) return '';
-  const lines = [`Mood: ${style.look.mood}`, `Camera: ${style.motion.camera}`];
-  if (style.motion.shots) lines.push(`Shot selection: ${style.motion.shots}`);
-  if (style.motion.pace) lines.push(`Pace: ${style.motion.pace}`);
+  const label = (english: string, chinese: string) =>
+    localizedPrompt(locale, english, chinese);
+  const lines = [
+    `${label('Mood', '氛围')}: ${style.look.mood}`,
+    `${label('Camera', '运镜')}: ${style.motion.camera}`,
+  ];
+  if (style.motion.shots)
+    lines.push(`${label('Shot selection', '镜头选择')}: ${style.motion.shots}`);
+  if (style.motion.pace)
+    lines.push(`${label('Pace', '节奏')}: ${style.motion.pace}`);
   if (style.motion.energy !== undefined) {
-    lines.push(`Energy: ${style.motion.energy}/5`);
+    lines.push(`${label('Energy', '动感强度')}: ${style.motion.energy}/5`);
   }
   if (style.references.length > 0) {
-    lines.push(`References: ${style.references.slice(0, 4).join('; ')}`);
+    lines.push(
+      `${label('References', '审美参考')}: ${style.references.slice(0, 4).join('; ')}`
+    );
   }
   return lines.join('\n');
 }

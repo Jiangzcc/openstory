@@ -190,7 +190,11 @@ export async function generateShotMotion(
     scriptDialogueOf: () => context.script?.dialogue,
   });
   const styleConfig = await loadSequenceStyle(context.scopedDb, sequence);
-  const packedScene = packedSceneFromScene(context.scene, styleConfig);
+  const packedScene = packedSceneFromScene(
+    context.scene,
+    styleConfig,
+    context.promptLocale
+  );
   const packableSceneShots = sceneShots.map((row) => ({
     ...row,
     shotId: row.id,
@@ -202,6 +206,7 @@ export async function generateShotMotion(
   ) =>
     packedPromptFitsLimit(
       buildPackedMotionPrompt({
+        promptLocale: context.promptLocale,
         shots: members.map((member) => {
           const version = sceneMotionByShot.get(member.shotId);
           return {
@@ -306,6 +311,7 @@ export async function generateShotMotion(
   // and what is persisted as the user-edit version (`data.prompt`) differ.
   const prompt = resolveMotionPrompt(
     {
+      promptLocale: context.promptLocale,
       motionPrompt: data.prompt
         ? {
             fullPrompt: data.prompt,
@@ -498,6 +504,7 @@ export async function generateShotMotion(
             const memberPrompt = resolveMotionPromptFromVersion(
               version,
               {
+                promptLocale: context.promptLocale,
                 dialogue: dialogueOf(member),
                 characterTags: context.scene?.continuity?.characterTags,
                 description: context.scene?.originalScript.extract ?? null,

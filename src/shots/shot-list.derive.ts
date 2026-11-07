@@ -1,4 +1,6 @@
 import { sceneDirection } from './scene-direction';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
 /**
  * Shot-list prompt derivation (#908)
  * ============================================================================
@@ -48,9 +50,10 @@ export type DeriveScene = Parameters<typeof sceneDirection>[0] & {
  */
 function sceneContextParts(
   scene: DeriveScene,
-  styleConfig: StyleConfig
+  styleConfig: StyleConfig,
+  locale: Locale
 ): string[] {
-  const direction = sceneDirection(scene, styleConfig);
+  const direction = sceneDirection(scene, styleConfig, locale);
   const environmentTag = scene.continuity?.environmentTag ?? '';
   const multipleLocations = environmentTag.includes(',');
   return [
@@ -83,11 +86,12 @@ function framingParts(spec: StoredShotSpec): string[] {
 export function deriveStillPrompt(
   spec: StoredShotSpec,
   scene: DeriveScene,
-  styleConfig: StyleConfig
+  styleConfig: StyleConfig,
+  locale: Locale = 'en'
 ): string {
   return joinParts([
     ...framingParts(spec),
-    ...sceneContextParts(scene, styleConfig),
+    ...sceneContextParts(scene, styleConfig, locale),
   ]);
 }
 
@@ -100,7 +104,7 @@ export function deriveStillPrompt(
  */
 export function deriveMotionPrompt(
   spec: StoredShotSpec,
-  options: { referenceOnly: boolean }
+  options: { referenceOnly: boolean; promptLocale?: Locale }
 ): { text: string; audio: MotionAudio } {
   const { action, direction, cameraMovement, soundCue } = spec;
   const cameraPhrase = joinParts(
@@ -108,7 +112,13 @@ export function deriveMotionPrompt(
     ' '
   );
   const motion = joinParts(
-    [action, direction, cameraPhrase ? `Camera: ${cameraPhrase}` : ''],
+    [
+      action,
+      direction,
+      cameraPhrase
+        ? `${localizedPrompt(options.promptLocale ?? 'en', 'Camera', '运镜')}: ${cameraPhrase}`
+        : '',
+    ],
     '. '
   );
   return {

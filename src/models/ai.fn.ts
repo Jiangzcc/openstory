@@ -38,6 +38,7 @@ import {
 import { aspectRatioSchema } from './aspect-ratios';
 import type { Style } from '@/platform/server/db/schema/libraries';
 import { parseStyleConfig, StyleConfigSchema } from '@/look/style-config';
+import { localizeTemplateStyleConfig } from '@/look/localization/style-content';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -523,7 +524,10 @@ export const recommendStylesForScriptFn = createServerFn({ method: 'POST' })
     );
 
     const { catalog, orderedStyleIds } = buildStyleCatalog(
-      styles,
+      styles.map((style) => ({
+        ...style,
+        config: localizeTemplateStyleConfig(style, context.promptLocale),
+      })),
       context.promptLocale
     );
     const sanitizedScript = sanitizeScriptContent(data.script);

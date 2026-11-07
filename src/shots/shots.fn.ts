@@ -781,6 +781,7 @@ export const getUpdateStalePreviewFn = createServerFn({ method: 'GET' })
     const { sequence, scopedDb } = context;
     const modelConfiguration = await loadStoryboardModelConfiguration(scopedDb);
     const plan = await planUpdateAll({
+      promptLocale: context.promptLocale,
       scopedDb,
       sequenceId: sequence.id,
       sceneId: data.sceneId,

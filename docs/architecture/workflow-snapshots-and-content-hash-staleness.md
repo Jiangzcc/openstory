@@ -174,8 +174,9 @@ is a `sequence_style_versions` row — `created` with the sequence,
 `switched` on a style change, `derived` when an automatic style's recipe
 lands (#1213) — and `sequences.selectedStyleVersionId` points at the live
 one. The three writers are in `src/sequences/server/db/sequences.ts`; a
-switch appends the row, moves the pointer and revokes the sequence's sheet
-claims in one batch. Every sequence read resolves `styleConfig` from the
+switch appends the row and moves the pointer in one batch. It revokes no
+character or location sheet claim: those sheets read their own bible's
+`rendering`, not the sequence style. Every sequence read resolves `styleConfig` from the
 live row (`sequenceColumns`). The migration snapshotted every existing
 recipe as a `backfill` row keyed to the sequence's own id; a sequence with
 no snapshot (an automatic style still deriving) stays pointer-less.
@@ -185,6 +186,36 @@ sequence with no version and never written.
 A stale artifact's cause names the knobs that moved between the snapshot live
 when it was made and the live one, over the same body the hashes read:
 `Style: lighting, palette` instead of a bare "Style".
+
+### Localized platform recipes (secondary development, 2026-11-07)
+
+Platform catalog names and source recipes remain canonical. Before a new
+selection is persisted, `resolveStyleSource` resolves exact known platform
+prose using the request's `promptLocale`. Non-template rows and unknown or
+edited fields retain their authored text. The database methods receive only
+the trusted `resolvedStyleConfig`, never a locale or a client-provided
+translation. Creation and explicit selection reuse the version-and-pointer
+batch above; an automatic-style clone takes its source sequence's snapshot.
+
+That resolved recipe is the actual input read by both generation and
+staleness. Translating only a workflow payload while retaining a different
+catalog-language snapshot would make the two hash projections disagree.
+Catalog edits, translation-resource updates and UI language switches must
+not re-resolve an existing snapshot. An explicit recipe change still changes
+the ordinary content hash. `styleConfigHashBody`, the hash input fields and
+the dependency graph edges are unchanged; the locale is not a new hash input.
+
+New prompt derivation receives `promptLocale` for authored natural-language
+wrappers, while saved specs, user text, dialogue and provider tokens retain
+their content. Continue, Update all, fresh handoff and preview planning pass
+the current task locale explicitly, so system fallback lighting is frozen
+in that language. Authored lighting, time and location text stays intact;
+the content plan DTO and hash structure gain no locale field. Automatic
+style response coercion also chooses missing-field prose by the task locale
+before the resulting authored recipe is saved. Rebuilding an English spec
+does not translate its prose. See
+the [style localization implementation and verification record](../secondary-development/style-localization.md)
+for the exact boundaries and real-database freshness regression.
 
 ### Where the helpers live
 

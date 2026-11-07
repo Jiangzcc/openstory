@@ -122,7 +122,8 @@ export async function redrawShotPreview(
       motionPrompt,
       charactersToBible(
         dressForScene(characters, scene?.continuity?.characterLooks)
-      )
+      ),
+      context.promptLocale
     );
     const latest = await scopedDb.frameVariants.getLatestPreview(frame.id);
     if (latest?.promptHash === simpleHash(prompt)) return;
@@ -186,7 +187,11 @@ export async function redrawShotPreviewInRun(
     await triggerShotPreview(
       {
         ...target,
-        prompt: buildPreviewPrompt(target.motionPrompt, target.characterBible),
+        prompt: buildPreviewPrompt(
+          target.motionPrompt,
+          target.characterBible,
+          target.promptLocale
+        ),
       },
       {
         deduplicationId: target.deduplicationId,

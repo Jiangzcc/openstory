@@ -1,10 +1,9 @@
-import { afterAll, beforeAll, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createTestDb } from '@/platform/server/db/test-d1';
 import { eq } from 'drizzle-orm';
 import type { Database } from '@/platform/server/db/client';
 import {
   framePromptVersions,
-  sequences,
   shotPromptVersions,
   shotSpecVersions,
   shots,
@@ -13,7 +12,10 @@ import {
   user,
 } from '@/platform/server/db/schema';
 import { generateId } from '@/platform/id';
-import type { StyleConfig } from '@/look/style-config';
+import { DEFAULT_STYLE_TEMPLATES } from '@/look/style-templates';
+import { localizeTemplateStyleConfig } from '@/look/localization/style-content';
+import type { Locale } from '@/platform/i18n/locale';
+import { SUPPORTED_LOCALES } from '@/platform/i18n/locale';
 import type {
   CharacterBibleEntry,
   LocationBibleEntry,
@@ -32,18 +34,6 @@ const { createScopedDb } = await import('@/platform/server/db/scoped');
 const { computeGenerationPlan } = await import('./generation-plan');
 const { computePlan } = await import('@/shots/server/update-stale-plan');
 
-const styleConfig: StyleConfig = {
-  version: 2,
-  look: {
-    artStyle: 'watercolor',
-    mood: 'quiet',
-    lighting: 'soft',
-    colorPalette: ['blue'],
-    colorGrading: 'cool',
-  },
-  motion: { camera: 'locked' },
-  references: [],
-};
 const character: CharacterBibleEntry = {
   characterId: 'maya',
   name: 'Maya',
@@ -107,40 +97,49 @@ const scene: Scene = {
     durationSeconds: 3,
   })),
 };
-beforeAll(async () => {
+beforeEach(async () => {
   ({ db, close: closeDb } = await createTestDb());
 });
-afterAll(() => closeDb());
+afterEach(() => closeDb());
 
-it('keeps persisted derived prompts current before sheets exist, while retaining edit staleness', async () => {
+async function expectFreshLocalizedPlan(promptLocale: Locale) {
+  const template = DEFAULT_STYLE_TEMPLATES[0];
+  if (!template) throw new Error('Missing platform template');
+  const styleConfig = localizeTemplateStyleConfig(template, promptLocale);
   const organizationId = generateId(),
     actorId = generateId(),
     sequenceId = generateId(),
     styleId = generateId();
-  await db
-    .insert(organization)
-    .values({ id: organizationId, name: 'Organization', slug: organizationId });
+  await db.insert(organization).values({
+    id: organizationId,
+    name: 'Organization',
+    slug: organizationId,
+  });
   await db
     .insert(user)
     .values({ id: actorId, name: 'User', email: 'persist@example.com' });
-  await db
-    .insert(styles)
-    .values({ id: styleId, organizationId, name: 'Look', config: styleConfig });
-  await db.insert(sequences).values({
+  await db.insert(styles).values({ ...template, id: styleId, organizationId });
+  const scopedDb = createScopedDb(organizationId, actorId);
+  await scopedDb.sequences.create({
     id: sequenceId,
-    organizationId,
     title: 'Sequence',
     styleId,
-    status: 'completed',
+    resolvedStyleConfig: styleConfig,
     analysisModel: DEFAULT_ANALYSIS_MODEL,
     imageModel: 'nano_banana_2',
     videoModel: 'kling_v3_pro',
     aspectRatio: '16:9',
     generateStartFrames: true,
-    includeMusic: false,
     generationStopAt: 'images',
   });
-  const scopedDb = createScopedDb(organizationId, actorId);
+  await scopedDb.sequences.update({
+    id: sequenceId,
+    status: 'completed',
+    includeMusic: false,
+  });
+  expect((await scopedDb.sequences.getById(sequenceId))?.styleConfig).toEqual(
+    styleConfig
+  );
   const narrative = {
     title: 'Hall',
     location: 'Hall',
@@ -202,6 +201,7 @@ it('keeps persisted derived prompts current before sheets exist, while retaining
           aspectRatio: '16:9',
           analysisModel: DEFAULT_ANALYSIS_MODEL,
           referenceOnly: false,
+          promptLocale,
         }
       );
       expect(written).toEqual({ stillPrompt: true });
@@ -241,6 +241,11 @@ it('keeps persisted derived prompts current before sheets exist, while retaining
     .from(shots)
     .where(eq(shots.id, first.shotId));
   expect(moved?.selectedSpecVersionId).toBe(changed.id);
+  expect(
+    (await computeGenerationPlan(scopedDb, sequenceId)).units.filter(
+      (unit) => unit.kind.startsWith('prompt:') && unit.state === 'stale'
+    )
+  ).toHaveLength(2);
   // Restore so the assertions below still see the persisted spec selected.
   await db
     .update(shots)
@@ -257,6 +262,10 @@ it('keeps persisted derived prompts current before sheets exist, while retaining
     expect(motion.map((row) => [row.source, row.specVersionId])).toEqual([
       ['derived', spec?.id],
     ]);
+    expect(motion[0]?.text).toContain('Maya walks');
+    expect(motion[0]?.text).toContain(
+      promptLocale === 'zh-CN' ? '运镜:' : 'Camera:'
+    );
     const still = await db
       .select()
       .from(framePromptVersions)
@@ -264,6 +273,9 @@ it('keeps persisted derived prompts current before sheets exist, while retaining
     expect(still.map((row) => [row.source, row.specVersionId])).toEqual([
       ['derived', spec?.id],
     ]);
+    expect(still[0]?.text).toContain(styleConfig.look.artStyle);
+    expect(still[0]?.text).toContain('Maya in the hall');
+    expect(still[0]?.text).toContain('hall');
   }
   const { units } = await computeGenerationPlan(scopedDb, sequenceId);
   expect(
@@ -328,6 +340,22 @@ it('keeps persisted derived prompts current before sheets exist, while retaining
       },
     })
     .where(eq(styles.id, styleId));
+  expect(
+    (await computeGenerationPlan(scopedDb, sequenceId)).units
+      .filter((unit) => unit.kind.startsWith('prompt:'))
+      .every((unit) => unit.state === 'done')
+  ).toBe(true);
+  expect((await scopedDb.sequences.getById(sequenceId))?.styleConfig).toEqual(
+    styleConfig
+  );
+  await scopedDb.sequences.update({
+    id: sequenceId,
+    styleId,
+    resolvedStyleConfig: {
+      ...styleConfig,
+      look: { ...styleConfig.look, colorPalette: ['red'] },
+    },
+  });
   const { units: changedStyle } = await computeGenerationPlan(
     scopedDb,
     sequenceId
@@ -337,4 +365,9 @@ it('keeps persisted derived prompts current before sheets exist, while retaining
       .filter((u) => u.kind.startsWith('prompt:'))
       .every((u) => u.state === 'stale')
   ).toBe(true);
-});
+}
+
+it.each(SUPPORTED_LOCALES)(
+  'keeps %s snapshot-derived prompts current before sheets exist, while retaining edit staleness',
+  expectFreshLocalizedPlan
+);

@@ -1,5 +1,7 @@
 import type { Scene } from './scene-analysis.schema';
 import type { StyleConfig } from '@/look/style-config';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
 
 /** The moment belongs to the scene; palette, grading and art style to the look. */
 export function sceneDirection(
@@ -10,7 +12,8 @@ export function sceneDirection(
       colorPalette?: string | null;
     } | null;
   },
-  style?: StyleConfig
+  style?: StyleConfig,
+  locale: Locale = 'en'
 ) {
   const timeOfDay = scene.metadata?.timeOfDay?.trim() || '';
   return {
@@ -19,8 +22,16 @@ export function sceneDirection(
     lightingSetup:
       scene.continuity?.lightingSetup?.trim() ||
       (timeOfDay
-        ? `Natural lighting appropriate to ${timeOfDay}`
-        : 'Natural, even lighting'),
+        ? localizedPrompt(
+            locale,
+            `Natural lighting appropriate to ${timeOfDay}`,
+            `符合${timeOfDay}的自然光`
+          )
+        : localizedPrompt(
+            locale,
+            'Natural, even lighting',
+            '自然、均匀的光线'
+          )),
     colorPalette:
       scene.continuity?.colorPalette?.trim() ||
       style?.look.colorPalette.join(', ') ||

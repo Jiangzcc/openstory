@@ -6,6 +6,7 @@
  */
 
 import type { StyleConfig } from '@/platform/server/db/schema/libraries';
+import type { Locale } from '@/platform/i18n/locale';
 import type { FramePromptVersion } from '@/platform/server/db/schema/frame-prompt-versions';
 import type { ShotPromptVersion } from '@/platform/server/db/schema/shot-prompt-versions';
 import {
@@ -73,6 +74,7 @@ export type DerivedPromptDb = {
 };
 
 export type CompleteDerivedPromptsInput = {
+  promptLocale?: Locale;
   spec: StoredShotSpec;
   specVersionId: string;
   scene: Scene;
@@ -127,9 +129,11 @@ export async function completeDerivedPrompts(
   const stillText = deriveStillPrompt(
     input.spec,
     input.scene,
-    input.styleConfig
+    input.styleConfig,
+    input.promptLocale
   );
   const motion = deriveMotionPrompt(input.spec, {
+    promptLocale: input.promptLocale,
     referenceOnly: input.referenceOnly,
   });
   const visualHash = await hashVisualPromptInput(

@@ -5,6 +5,8 @@ import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { PageContainer } from '@/ui/layout/page-container';
 import { PageIntro } from '@/ui/typography/page-intro';
 import { ScriptView } from './script-view';
+import { resolveComposerStyleSync } from './composer-style-sync';
+import type { ComposerStyleSync } from './composer-style-sync';
 import { Skeleton } from '@/ui/shadcn/skeleton';
 import { useBillingGate } from '@/billing/ui/use-billing-gate';
 import { useSequence } from '@/sequences/ui/use-sequences';
@@ -12,7 +14,8 @@ import { useStyles } from '@/look/ui/use-styles';
 import { useUser } from '@/platform/ui/use-user';
 import { SITE_CONFIG } from '@/ui/marketing/constants';
 import { AUTO_STYLE_ID } from '@/look/auto-style';
-import { briefForStyle } from '@/look/brief-for-style';
+import { canonicalStyleSample } from '@/look/ui/localized-style-sample';
+import { resolveLocale } from '@/platform/i18n/locale';
 import { styleSlug } from '@/look/style-slug';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
@@ -75,6 +78,7 @@ export function NewSequencePage({
   composerPath,
 }: NewSequencePageProps) {
   const translateLabel = useLabelTranslation('labels');
+  const { i18n } = useTranslation('sequences');
 
   const navigate = useNavigate();
   // Copy mode (#1037): hand the composer the source sequence and it seeds its
@@ -102,10 +106,10 @@ export function NewSequencePage({
   // The composer mirrors its style pick into `?style=` (see `handleStyleChange`
   // below). When that self-sync is what changed the URL, the composer must NOT
   // re-seed or remount — only a genuine external navigation (a fresh "Try" /
-  // "Use this style" link, or the showcase) should. `lastSelfSyncRef` remembers
-  // the slug we wrote; `seedRef` freezes the one-time seed across our own syncs
+  // "Use this style" link, or the showcase) should. `styleSyncRef` remembers
+  // the pending source and target; `seedRef` freezes the seed across our own syncs
   // so picking a style never clears the script.
-  const lastSelfSyncRef = useRef<string | null>(null);
+  const styleSyncRef = useRef<ComposerStyleSync | null>(null);
   const seedRef = useRef<{ key: string; script?: string; styleId?: string }>({
     key: 'blank',
   });
@@ -117,7 +121,7 @@ export function NewSequencePage({
   const prevUserIdRef = useRef(userId);
   if (prevUserIdRef.current !== userId) {
     prevUserIdRef.current = userId;
-    lastSelfSyncRef.current = null;
+    styleSyncRef.current = null;
     seedRef.current = { key: '' };
   }
 
@@ -131,10 +135,10 @@ export function NewSequencePage({
   let candidateScript: string | undefined;
   if (seedStyle && !styleOnly) {
     try {
-      candidateScript = briefForStyle({
-        name: seedStyle.name,
-        category: seedStyle.category,
-      });
+      candidateScript = canonicalStyleSample(
+        seedStyle,
+        resolveLocale(i18n.resolvedLanguage)
+      );
     } catch {
       // Unmapped style — leave the composer blank rather than seed nothing.
       candidateScript = undefined;
@@ -153,8 +157,11 @@ export function NewSequencePage({
   // Adopt the URL's seed unless this `?style=` is the composer echoing its own
   // pick back — then keep the frozen seed so the composer stays mounted and the
   // script is preserved.
-  const isSelfSync =
-    styleParam != null && styleParam === lastSelfSyncRef.current;
+  const { isSelfSync, sync } = resolveComposerStyleSync(styleSyncRef.current, {
+    style: styleParam,
+    prefill,
+  });
+  styleSyncRef.current = sync;
   if (!isSelfSync && candidateKey !== seedRef.current.key) {
     seedRef.current = {
       key: candidateKey,
@@ -176,7 +183,10 @@ export function NewSequencePage({
       const selected = styles?.find((s) => s.id === styleId);
       if (!selected && styleId !== AUTO_STYLE_ID) return;
       const slug = selected ? styleSlug(selected.name) : AUTO_STYLE_ID;
-      lastSelfSyncRef.current = slug;
+      styleSyncRef.current = {
+        target: slug,
+        source: { style: styleParam, prefill },
+      };
       void navigate({
         to: composerPath,
         // Spread prev so future search keys are not clobbered on style pick.
@@ -188,7 +198,7 @@ export function NewSequencePage({
         replace: true,
       });
     },
-    [styles, navigate, composerPath]
+    [styles, navigate, composerPath, styleParam, prefill]
   );
 
   const { needsBillingSetup, hasFalKey, stripeEnabled } = useBillingGate();

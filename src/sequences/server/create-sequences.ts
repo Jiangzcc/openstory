@@ -47,6 +47,8 @@ import {
   placeholderAutoStyleDraft,
 } from '@/look/auto-style';
 import { parseStyleConfig } from '@/look/style-config';
+import type { StyleConfig } from '@/look/style-config';
+import { localizeTemplateStyleConfig } from '@/look/localization/style-content';
 import type { Sequence } from '@/platform/server/db/schema';
 import {
   REFERENCE_ONLY_MODEL_ERROR,
@@ -72,7 +74,7 @@ import { createServerOnlyFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 
 export type StyleSource =
-  | { kind: 'library' }
+  | { kind: 'library'; config: StyleConfig }
   /** Fresh automatic style: placeholder row now, recipe derived by the run. */
   | { kind: 'pending'; draft: AutoStyleDraft }
   /** Copy of another sequence's (already derived) automatic style. */
@@ -83,7 +85,8 @@ export async function resolveStyleSource(
     styles: ScopedDb['styles'];
     sequences: Pick<ScopedDb['sequences'], 'getById'>;
   },
-  styleId: string
+  styleId: string,
+  locale: Locale = 'en'
 ): Promise<StyleSource> {
   if (styleId === AUTO_STYLE_ID) {
     return { kind: 'pending', draft: placeholderAutoStyleDraft() };
@@ -94,7 +97,12 @@ export async function resolveStyleSource(
   if (!style) {
     throw new ValidationError(`Style ${styleId} not found`);
   }
-  if (style.sequenceId === null) return { kind: 'library' };
+  if (style.sequenceId === null) {
+    return {
+      kind: 'library',
+      config: localizeTemplateStyleConfig(style, locale),
+    };
+  }
   // Copying a sequence whose style is still being derived: the source row
   // holds only the placeholder, so the copy derives its own.
   const source = await scopedDb.sequences.getById(style.sequenceId);
@@ -106,7 +114,7 @@ export async function resolveStyleSource(
     draft: {
       name: style.name,
       description: style.description,
-      config: parseStyleConfig(style.config),
+      config: parseStyleConfig(source.styleConfig),
       category: style.category,
       tags: style.tags ?? [],
     },
@@ -377,7 +385,11 @@ export const createSequences = createServerOnlyFn(
     // Automatic style (#1213). `'auto'` asks for a fresh script-derived style;
     // a style already bound to another sequence (regenerate / copy of an auto
     // sequence) is cloned rather than shared, so each sequence owns its row.
-    const styleSource = await resolveStyleSource(context.scopedDb, styleId);
+    const styleSource = await resolveStyleSource(
+      context.scopedDb,
+      styleId,
+      context.promptLocale
+    );
 
     const created = await Promise.all(
       analysisModels.map(async (modelId) => {
@@ -418,6 +430,8 @@ export const createSequences = createServerOnlyFn(
               title: data.title || UNTITLED_SEQUENCE_TITLE,
               script: data.script,
               styleId: boundStyle?.id ?? styleId,
+              resolvedStyleConfig:
+                styleSource.kind === 'library' ? styleSource.config : undefined,
               deferStyleSnapshot: styleSource.kind === 'pending',
               aspectRatio,
               resolution,

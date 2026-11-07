@@ -1,6 +1,7 @@
 import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
 import { usesConfiguredImageChannel } from '@/models/image-channels';
 import type { StyleConfig } from '@/look/style-config';
+import type { Locale } from '@/platform/i18n/locale';
 import { buildPackedMotionPrompt } from '@/motion/server/build-motion-render';
 /**
  * Assembled request the scene editor's optimised-prompt inspector shows
@@ -281,6 +282,7 @@ function absolutizeRefs<T extends { referenceImageUrl: string }>(
 }
 
 export function buildShotPromptPreview(input: {
+  promptLocale?: Locale;
   styleConfig: StyleConfig;
   imageModel: TextToImageModel;
   videoModel: ImageToVideoModel;
@@ -313,6 +315,7 @@ export function buildShotPromptPreview(input: {
    */
   packedDurationShotNumbers?: readonly number[];
 }): ShotPromptPreview {
+  const promptLocale = input.promptLocale ?? 'en';
   const byteplusEnabled = input.byteplusEnabled ?? isBytePlusConfigured();
   const audioClips = input.audioClips ?? [];
   const clipByToken = new Map(audioClips.map((clip) => [clip.token, clip]));
@@ -346,6 +349,7 @@ export function buildShotPromptPreview(input: {
   const packedFirst = packedMembers[0];
   const packed = isPacked
     ? buildPackedMotionPrompt({
+        promptLocale,
         shots: packedMembers.map((member): PackedMotionPromptShot => ({
           durationSeconds: Math.max(
             1,
@@ -358,13 +362,18 @@ export function buildShotPromptPreview(input: {
         })),
         model: input.videoModel,
         generateAudio: input.generateAudio,
-        scene: packedSceneFromScene(input.scene, input.styleConfig),
+        scene: packedSceneFromScene(
+          input.scene,
+          input.styleConfig,
+          promptLocale
+        ),
       })
     : null;
   const assembledMotionPrompt = packed
     ? packed.prompt
     : motionPrompt || input.scene?.originalScript?.extract
       ? buildPackedMotionPrompt({
+          promptLocale,
           shots: [
             {
               durationSeconds: (input.shotDurationMs ?? 3000) / 1000,
@@ -376,7 +385,11 @@ export function buildShotPromptPreview(input: {
           ],
           model: input.videoModel,
           generateAudio: input.generateAudio,
-          scene: packedSceneFromScene(input.scene, input.styleConfig),
+          scene: packedSceneFromScene(
+            input.scene,
+            input.styleConfig,
+            promptLocale
+          ),
         }).prompt
       : '';
   const motionUsesStartFrame = packedFirst

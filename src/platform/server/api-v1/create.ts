@@ -292,7 +292,11 @@ export async function runOneShotCreate(
           videoDefaults.videoModel,
         aspectRatio: input.aspectRatio,
         // Feed the enhancer the same style + element inputs the UI does.
-        ...toEnhanceInputs({ style, elements: elementUploads }),
+        ...toEnhanceInputs({
+          style,
+          elements: elementUploads,
+          promptLocale: ctx.promptLocale,
+        }),
       },
       {
         promptLocale: ctx.promptLocale,

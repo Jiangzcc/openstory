@@ -3,6 +3,7 @@ import {
   planUsesConfiguredImages,
 } from '@/billing/configured-image-plan-billing';
 import { computePlan } from '@/shots/server/update-stale-plan';
+import type { Locale } from '@/platform/i18n/locale';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import { addMicros, ZERO_MICROS } from '@/billing/money';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
@@ -178,6 +179,7 @@ async function estimateContinueCost(args: ContinueEstimateInput): Promise<{
 }
 
 export async function prepareContinueEstimate(args: {
+  promptLocale?: Locale;
   scopedDb: ScopedDb;
   userId: string;
   sequence: Sequence;
@@ -188,6 +190,7 @@ export async function prepareContinueEstimate(args: {
   const { scopedDb, sequence, requested, work } = args;
   const modelConfiguration = await loadStoryboardModelConfiguration(scopedDb);
   const plan = await computePlan({
+    promptLocale: args.promptLocale,
     scopedDb,
     userId: args.userId,
     sequenceId: sequence.id,
@@ -215,6 +218,7 @@ export async function prepareContinueEstimate(args: {
  * `estimate.micros` against the balance (a check, not a hold, #1818).
  */
 export async function prepareContinue(args: {
+  promptLocale?: Locale;
   scopedDb: ScopedDb;
   userId: string;
   sequence: Sequence;

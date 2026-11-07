@@ -21,6 +21,9 @@ import { createCharacterLooksMethods } from '@/cast/server/db/character-looks';
 import { createLocationsMethods } from '@/cast/server/db/locations';
 import { createSequencesMethods } from './sequences';
 import { isStyleConfigV2, parseStyleConfig } from '@/look/style-config';
+import { DEFAULT_STYLE_TEMPLATES } from '@/look/style-templates';
+import { localizeTemplateStyleConfig } from '@/look/localization/style-content';
+import { SUPPORTED_LOCALES } from '@/platform/i18n/locale';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -83,7 +86,132 @@ async function insertStyle(name: string, config: typeof V1_A) {
   return row;
 }
 
+async function insertPlatformTemplate() {
+  const template = DEFAULT_STYLE_TEMPLATES[0];
+  if (!template) throw new Error('Missing platform template');
+  const [row] = await db
+    .insert(styles)
+    .values({ ...template, organizationId })
+    .returning();
+  if (!row) throw new Error('Missing inserted platform template');
+  return row;
+}
+
 describe('createSequencesMethods style snapshot', () => {
+  it.each(SUPPORTED_LOCALES)(
+    'stores the actual %s recipe and keeps the catalog unchanged',
+    async (locale) => {
+      const style = await insertPlatformTemplate();
+      const methods = createSequencesMethods(db, organizationId, userId);
+      const config = localizeTemplateStyleConfig(style, locale);
+      const sequence = await methods.create({
+        generationStopAt: 'images',
+        title: 'Localized sequence',
+        styleId: style.id,
+        resolvedStyleConfig: config,
+      });
+      const versions = await methods.listStyleVersions(sequence.id);
+      expect(versions).toHaveLength(1);
+      expect(sequence.styleConfig).toEqual(config);
+      expect(versions[0]?.config).toEqual(config);
+      expect(sequence.selectedStyleVersionId).toBe(versions[0]?.id);
+      const [catalog] = await db
+        .select()
+        .from(styles)
+        .where(eq(styles.id, style.id));
+      expect(catalog?.config).toEqual(style.config);
+      expect(parseStyleConfig(sequence.styleConfig).look.mood).toBe(
+        locale === 'zh-CN'
+          ? '清新、富有感官体验，自然流露时髦气息'
+          : 'Fresh, sensory, and effortlessly cool'
+      );
+    }
+  );
+
+  it('keeps a localized snapshot through language resolution, catalog edits and unrelated saves', async () => {
+    const style = await insertPlatformTemplate();
+    const methods = createSequencesMethods(db, organizationId, userId);
+    const chinese = localizeTemplateStyleConfig(style, 'zh-CN');
+    const sequence = await methods.create({
+      generationStopAt: 'images',
+      title: 'S',
+      styleId: style.id,
+      resolvedStyleConfig: chinese,
+    });
+    expect(localizeTemplateStyleConfig(style, 'en')).not.toEqual(chinese);
+    await db
+      .update(styles)
+      .set({ config: V1_B })
+      .where(eq(styles.id, style.id));
+    const updated = await methods.update({ id: sequence.id, title: 'Renamed' });
+    expect(updated.styleConfig).toEqual(chinese);
+    expect(updated.selectedStyleVersionId).toBe(
+      sequence.selectedStyleVersionId
+    );
+    expect(await methods.listStyleVersions(sequence.id)).toHaveLength(1);
+  });
+
+  it('records an explicit localized reselection in one live version and preserves the old recipe', async () => {
+    const style = await insertPlatformTemplate();
+    const methods = createSequencesMethods(db, organizationId, userId);
+    const sequence = await methods.create({
+      generationStopAt: 'images',
+      title: 'S',
+      styleId: style.id,
+    });
+    const chinese = localizeTemplateStyleConfig(style, 'zh-CN');
+    const updated = await methods.update({
+      id: sequence.id,
+      styleId: style.id,
+      resolvedStyleConfig: chinese,
+    });
+    const versions = await methods.listStyleVersions(sequence.id);
+    expect(versions.map((version) => version.source)).toEqual([
+      'created',
+      'switched',
+    ]);
+    expect(versions[0]?.config).toEqual(parseStyleConfig(style.config));
+    expect(versions[1]?.config).toEqual(chinese);
+    expect(updated.selectedStyleVersionId).toBe(versions[1]?.id);
+    expect(updated.styleConfig).toEqual(chinese);
+  });
+
+  it('rejects a resolved config without a style selection and leaves its version intact', async () => {
+    const style = await insertPlatformTemplate();
+    const methods = createSequencesMethods(db, organizationId, userId);
+    const sequence = await methods.create({
+      generationStopAt: 'images',
+      title: 'S',
+      styleId: style.id,
+    });
+    await expect(
+      methods.update({
+        id: sequence.id,
+        resolvedStyleConfig: localizeTemplateStyleConfig(style, 'zh-CN'),
+      })
+    ).rejects.toThrow('requires a style id');
+    expect(await methods.getById(sequence.id)).toMatchObject({
+      selectedStyleVersionId: sequence.selectedStyleVersionId,
+      styleConfig: sequence.styleConfig,
+    });
+    expect(await methods.listStyleVersions(sequence.id)).toHaveLength(1);
+  });
+
+  it('rejects an invalid resolved config before inserting any sequence or style version', async () => {
+    const style = await insertPlatformTemplate();
+    const methods = createSequencesMethods(db, organizationId, userId);
+    const config = parseStyleConfig(style.config);
+    await expect(
+      methods.create({
+        generationStopAt: 'images',
+        title: 'S',
+        styleId: style.id,
+        resolvedStyleConfig: { ...config, look: { ...config.look, mood: '' } },
+      })
+    ).rejects.toThrow();
+    expect(await db.select().from(sequences)).toHaveLength(0);
+  });
+
   it('copies a parsed v2 recipe onto the sequence at create', async () => {
     const style = await insertStyle('Noir', V1_A);
     const methods = createSequencesMethods(db, organizationId, userId);
@@ -266,6 +394,21 @@ describe('createSequencesMethods style snapshot', () => {
       styleA.id
     );
     await methods.update({ id: sequence.id, styleId: styleB.id });
+    expect(await liveClaim()).toEqual(claim);
+  });
+
+  it('keeps both sheet claims while selecting the localized platform recipe', async () => {
+    const style = await insertPlatformTemplate();
+    const { methods, sequence, claim, liveClaim } = await claimedLocation(
+      style.id
+    );
+    const chinese = localizeTemplateStyleConfig(style, 'zh-CN');
+    const updated = await methods.update({
+      id: sequence.id,
+      styleId: style.id,
+      resolvedStyleConfig: chinese,
+    });
+    expect(updated.styleConfig).toEqual(chinese);
     expect(await liveClaim()).toEqual(claim);
   });
 

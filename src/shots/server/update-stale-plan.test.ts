@@ -1,4 +1,5 @@
 import type { StyleConfig } from '@/look/style-config';
+import type { Locale } from '@/platform/i18n/locale';
 const styleConfig: StyleConfig = {
   version: 2,
   look: {
@@ -152,6 +153,7 @@ const {
   siblingPrompts,
 } = await import('./update-stale-plan');
 const referencePlanner = await import('./update-stale-references');
+const sceneScript = await import('./scene-script');
 type PlanTarget = import('./update-stale-plan').PlanTarget;
 type PlanUnitRef = import('@/sequences/generation-plan').PlanUnitRef;
 
@@ -293,12 +295,14 @@ const plan = (
   shots: Shot[],
   frames: Frame[],
   opts: {
+    promptLocale?: Parameters<typeof computePlan>[0]['promptLocale'];
     units?: PlanUnitRef[];
     db?: ScopedDb;
     renderOptions?: Parameters<typeof computePlan>[0]['renderOptions'];
   } = {}
 ) =>
   computePlan({
+    promptLocale: opts.promptLocale,
     scopedDb: opts.db ?? buildScopedDb(shots, frames),
     sequenceId: 'seq-1',
     units:
@@ -308,6 +312,55 @@ const plan = (
   });
 
 beforeEach(() => stalenessByShot.clear());
+
+describe('computePlan — scene header language', () => {
+  it.each<{ promptLocale?: Locale; expected: string }>([
+    { promptLocale: undefined, expected: 'Natural, even lighting' },
+    { promptLocale: 'en', expected: 'Natural, even lighting' },
+    { promptLocale: 'zh-CN', expected: '自然、均匀的光线' },
+  ])('freezes fallback lighting for $promptLocale', async (testCase) => {
+    const result = await plan([makeShot()], [makeFrame()], testCase);
+    expect(result.targets[0]?.motionRender.packedScene.lightingSetup).toBe(
+      testCase.expected
+    );
+    expect(result).not.toHaveProperty('promptLocale');
+  });
+
+  it('localizes the fallback while preserving the recorded time of day', async () => {
+    vi.mocked(sceneScript.resolveSceneForShot).mockReturnValueOnce({
+      scene: asStub<Scene>({
+        ...scene,
+        metadata: { title: 'Scene 1', location: 'Kitchen', timeOfDay: 'dawn' },
+      }),
+      script: null,
+    });
+    const result = await plan([makeShot()], [makeFrame()], {
+      promptLocale: 'zh-CN',
+    });
+    expect(result.targets[0]?.motionRender.packedScene).toMatchObject({
+      lightingSetup: '符合dawn的自然光',
+      timeOfDay: 'dawn',
+      location: 'Kitchen',
+    });
+  });
+
+  it.each<Locale>(['en', 'zh-CN'])(
+    'preserves recorded lighting under %s',
+    async (promptLocale) => {
+      vi.mocked(sceneScript.resolveSceneForShot).mockReturnValueOnce({
+        scene: asStub<Scene>({
+          ...scene,
+          continuity: { lightingSetup: 'Natural, even lighting' },
+        }),
+        script: null,
+      });
+      const result = await plan([makeShot()], [makeFrame()], { promptLocale });
+      expect(result.targets[0]?.motionRender.packedScene.lightingSetup).toBe(
+        'Natural, even lighting'
+      );
+    }
+  );
+});
 
 describe('computePlan — still references for billing', () => {
   afterEach(() => vi.restoreAllMocks());

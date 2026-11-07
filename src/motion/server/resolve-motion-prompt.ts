@@ -18,6 +18,7 @@ import type {
   MotionDialogue,
 } from '@/shots/scene-analysis.schema';
 import type { ImageToVideoModel } from '@/models/models';
+import type { Locale } from '@/platform/i18n/locale';
 
 /** The `shot_prompt_versions` motion-row fields needed to rebuild a prompt. */
 type MotionVersionRow = {
@@ -47,6 +48,7 @@ export function motionPromptFromVersion(
 }
 
 type ResolveMotionPromptInput = {
+  promptLocale?: Locale;
   /**
    * The shot's selected motion prompt (reconstructed from its version row), or
    * null when the shot has no motion prompt yet.
@@ -76,6 +78,7 @@ export function resolveMotionPrompt(
 ): string {
   if (input.motionPrompt) {
     return buildMotionShotPrompt({
+      promptLocale: input.promptLocale,
       motionPrompt: input.motionPrompt,
       model,
       characterTags: input.characterTags,
@@ -92,6 +95,7 @@ export function resolveMotionPrompt(
 export function resolveMotionPromptFromVersion(
   version: MotionVersionRow | null | undefined,
   opts: {
+    promptLocale?: Locale;
     /** What the shot says now — see {@link motionPromptFromVersion}. */
     dialogue: MotionDialogue;
     characterTags?: readonly string[];
@@ -103,6 +107,7 @@ export function resolveMotionPromptFromVersion(
   if (!version) return opts.description || '';
   return resolveMotionPrompt(
     {
+      promptLocale: opts.promptLocale,
       motionPrompt: motionPromptFromVersion(version, opts.dialogue),
       characterTags: opts.characterTags,
       description: opts.description,

@@ -12,7 +12,7 @@ import { getLogger } from '@/platform/logger';
 import { getGenerationChannel } from '@/platform/realtime';
 import {
   autoStyleDraftFromResponse,
-  autoStyleResponseSchema,
+  createAutoStyleResponseSchema,
   STYLE_CATEGORIES,
   type AutoStyleDraft,
 } from '@/look/auto-style';
@@ -52,7 +52,7 @@ export async function deriveAutoStyle(
         paces: STYLE_PACE_VALUES.join(', '),
       },
       modelId: params.analysisModelId,
-      responseSchema: autoStyleResponseSchema,
+      responseSchema: createAutoStyleResponseSchema(params.promptLocale),
       additionalMetadata: { styleId },
       reasoning: true,
     },

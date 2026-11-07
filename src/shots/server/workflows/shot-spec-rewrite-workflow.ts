@@ -93,6 +93,7 @@ export class ShotSpecRewriteWorkflow extends OpenStoryWorkflowEntrypoint<ShotSpe
       }
 
       const prompts = await completeDerivedPrompts(scopedDb, {
+        promptLocale: input.promptLocale,
         spec: version.spec,
         specVersionId: version.id,
         scene: input.scene,
@@ -129,6 +130,7 @@ export class ShotSpecRewriteWorkflow extends OpenStoryWorkflowEntrypoint<ShotSpe
           aspectRatio: input.aspectRatio,
           reservationId: input.reservationId,
           motionPrompt: deriveMotionPrompt(version.spec, {
+            promptLocale: input.promptLocale,
             referenceOnly: true,
           }).text,
           characterBible: input.characterBible,

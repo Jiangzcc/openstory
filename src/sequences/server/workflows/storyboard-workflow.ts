@@ -130,11 +130,21 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
             sequenceId,
             aspectRatio,
             reservationId: input.reservationId,
-            prompt: buildPosterPrompt(title, script, styleConfig),
+            prompt: buildPosterPrompt(
+              title,
+              script,
+              styleConfig,
+              input.promptLocale
+            ),
           })
         : await step.do('generate-poster', async () => {
             try {
-              const prompt = buildPosterPrompt(title, script, styleConfig);
+              const prompt = buildPosterPrompt(
+                title,
+                script,
+                styleConfig,
+                input.promptLocale
+              );
               const result = await generateImageWithProvider(
                 {
                   model: scopedDb.models.poster,

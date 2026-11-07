@@ -9,11 +9,21 @@
  * all derive their paths from here so the segments can never drift apart.
  */
 export function styleSlug(name: string): string {
-  return name
+  const slug = name
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, '') // drop punctuation, keep spaces + hyphens
     .replace(/\s+/g, '-') // spaces → hyphens
     .replace(/-+/g, '-') // collapse repeats
     .replace(/^-+|-+$/g, ''); // trim leading/trailing hyphens
+  return (
+    slug ||
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  );
 }

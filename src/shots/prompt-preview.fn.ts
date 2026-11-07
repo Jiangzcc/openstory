@@ -1,5 +1,6 @@
 import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
 import type { StyleConfig } from '@/look/style-config';
+import type { Locale } from '@/platform/i18n/locale';
 import { loadSequenceStyle } from '@/look/server/sequence-style';
 import { buildPackedMotionPrompt } from '@/motion/server/build-motion-render';
 /**
@@ -121,6 +122,7 @@ export const previewShotPromptsFn = createServerFn({ method: 'POST' })
     const [packedPreview, byteplusEnabled, modelConfiguration] =
       await Promise.all([
         loadPackedPreviewMembers({
+          promptLocale: context.promptLocale,
           scopedDb,
           sequence,
           scene,
@@ -142,6 +144,7 @@ export const previewShotPromptsFn = createServerFn({ method: 'POST' })
       ]);
 
     return buildShotPromptPreview({
+      promptLocale: context.promptLocale,
       imageModel: safeTextToImageModel(data.imageModel, DEFAULT_IMAGE_MODEL),
       imageModelRouting: modelConfiguration.imageModelRouting,
       videoModel,
@@ -173,6 +176,7 @@ export const previewShotPromptsFn = createServerFn({ method: 'POST' })
  * submit uses, so the preview cannot drift from the wire payload.
  */
 async function loadPackedPreviewMembers(input: {
+  promptLocale: Locale;
   scopedDb: ShotContext['scopedDb'];
   sequence: ShotContext['sequence'];
   scene: ShotContext['scene'];
@@ -219,10 +223,15 @@ async function loadPackedPreviewMembers(input: {
     renderSegmentId: row.renderSegmentId,
     shotNumber: row.shotNumber,
   }));
-  const packedScene = packedSceneFromScene(input.scene, input.styleConfig);
+  const packedScene = packedSceneFromScene(
+    input.scene,
+    input.styleConfig,
+    input.promptLocale
+  );
   const promptFits = (members: readonly (typeof packable)[number][]) =>
     packedPromptFitsLimit(
       buildPackedMotionPrompt({
+        promptLocale: input.promptLocale,
         shots: members.map((member) => ({
           durationSeconds: resolveShotDuration({
             durationMs: member.durationMs,

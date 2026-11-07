@@ -54,6 +54,7 @@ export function buildMotionRender(sources: MotionRenderSources): Array<{
       return models.every((packModel) =>
         packedPromptFitsLimit(
           buildPackedMotionPrompt({
+            promptLocale: sources.promptLocale,
             shots: members.map((member) => ({
               durationSeconds: member.duration ?? 3,
               motionPrompt: member.motionPrompt,
@@ -82,6 +83,7 @@ export function buildMotionRender(sources: MotionRenderSources): Array<{
     const packed =
       members && members.length > 1
         ? buildPackedMotionPrompt({
+            promptLocale: sources.promptLocale,
             shots: members.map((member) => ({
               durationSeconds: member.duration ?? shot.duration ?? 3,
               motionPrompt: member.motionPrompt,
@@ -102,6 +104,7 @@ export function buildMotionRender(sources: MotionRenderSources): Array<{
     const prompt =
       packed?.prompt ??
       buildPackedMotionPrompt({
+        promptLocale: sources.promptLocale,
         shots: [
           {
             durationSeconds: shot.duration ?? 3,

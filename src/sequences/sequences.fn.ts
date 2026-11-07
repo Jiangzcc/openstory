@@ -118,6 +118,7 @@ export const estimateGenerationSliceFn = createServerFn({ method: 'GET' })
       getEffectiveFalPricing(),
     ]);
     const { estimate } = await prepareContinueEstimate({
+      promptLocale: context.promptLocale,
       scopedDb,
       userId: context.user.id,
       sequence,
@@ -195,6 +196,7 @@ export const continueGenerationFn = createServerFn({ method: 'POST' })
     // are written onto the row the trigger snapshots.
     const { plan, stopAt, estimate, modelConfiguration } =
       await prepareContinue({
+        promptLocale: context.promptLocale,
         scopedDb,
         userId: context.user.id,
         sequence,

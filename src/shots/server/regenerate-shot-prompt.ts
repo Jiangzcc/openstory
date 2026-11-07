@@ -174,9 +174,11 @@ export async function regenerateShotPrompt(
     const stillText = deriveStillPrompt(
       selectedSpec.spec,
       scene,
-      ctx.styleConfig
+      ctx.styleConfig,
+      context.promptLocale
     );
     const motion = deriveMotionPrompt(selectedSpec.spec, {
+      promptLocale: context.promptLocale,
       referenceOnly: shotReferenceOnly,
     });
     const narrowedVisual = narrowVisual(stillText);

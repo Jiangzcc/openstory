@@ -328,6 +328,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     await step.do('persist-shot-specs', async () => {
       for (const item of shotWorkItems(scenes, shotMapping)) {
         const written = await persistShotSpec(scopedDb, item, {
+          promptLocale: input.promptLocale,
           styleConfig,
           characterBible: castCharacterBible,
           locationBible,

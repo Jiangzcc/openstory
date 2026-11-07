@@ -7,7 +7,12 @@
  */
 import type { SequenceElementKind } from '@/cast/element-kind';
 import { getLogger } from '@/platform/logger';
-import { parseStyleConfig, type StyleConfig } from '@/look/style-config';
+import type { StyleConfig } from '@/look/style-config';
+import type { Locale } from '@/platform/i18n/locale';
+import {
+  localizeTemplateStyleConfig,
+  translateStyleContent,
+} from '@/look/localization/style-content';
 
 const logger = getLogger(['openstory', 'ai', 'enhance-inputs']);
 
@@ -34,6 +39,7 @@ export type EnhanceStyle = {
  * stored blob (v1 or v2) — `toEnhanceInputs` up-converts it.
  */
 type StyleLike = {
+  isTemplate?: boolean | null;
   config?: unknown;
   name?: string | null;
   category?: string | null;
@@ -77,13 +83,14 @@ type EnhanceElement = {
  * result into the enhance request so both call sites stay in lockstep.
  */
 export function toEnhanceInputs(args: {
+  promptLocale?: Locale;
   style?: StyleLike | null;
   elements?: readonly ElementLike[] | null;
 }): {
   style?: EnhanceStyle;
   elements?: EnhanceElement[];
 } {
-  const { style, elements } = args;
+  const { style, elements, promptLocale = 'en' } = args;
   // An element can be woven into the script only if it has BOTH a token (the
   // script reference) and an image URL (draft `tempPublicUrl` or persisted
   // `imageUrl`). Drop the rest.
@@ -125,11 +132,18 @@ export function toEnhanceInputs(args: {
           // Up-convert the stored blob here so everything downstream (wire
           // schema, prompt builder) sees exactly one shape. Throws loudly on a
           // corrupt blob — that's data corruption, not an input to tolerate.
-          config: style.config ? parseStyleConfig(style.config) : undefined,
+          config: style.config
+            ? localizeTemplateStyleConfig(
+                { config: style.config, isTemplate: style.isTemplate === true },
+                promptLocale
+              )
+            : undefined,
           name: style.name ?? undefined,
           category: style.category ?? null,
           description: style.description ?? null,
-          tags: style.tags ?? [],
+          tags: (style.tags ?? []).map((tag) =>
+            style.isTemplate ? translateStyleContent(tag, promptLocale) : tag
+          ),
         }
       : undefined,
     elements: mapped.length > 0 ? mapped : undefined,

@@ -3,6 +3,8 @@ import { REFERENCE_LIKENESS_INSTRUCTION } from '@/cast/character-prompt';
 import { UNTITLED_SEQUENCE_TITLE } from '@/sequences/untitled-sequence-title';
 import type { CharacterBibleEntry } from '@/shots/scene-analysis.schema';
 import type { ShotSpec } from '@/shots/shot-list.schema';
+import type { Locale } from '@/platform/i18n/locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
 
 const MAX_PROMPT_LENGTH = 2000;
 const MAX_SCRIPT_LENGTH = 500;
@@ -43,11 +45,16 @@ const SKETCH_SUFFIX =
 const NO_TEXT_SUFFIX =
   'No text, no titles, no subtitles, no watermarks, no letters, no words, no signs, no UI elements.';
 
-function formatStyleDetails(styleConfig: StyleConfig): string {
+const SKETCH_SUFFIX_ZH =
+  '绘制为分镜师的动态分镜画面：明确的铅笔线条搭配平涂灰色马克笔色块，仅用三至四个明度层次；即使描述指定了颜色，也只使用灰度。轮廓清晰，透视和空间深度正确，以简洁形体交代场景。人物的姿势、动作和简洁表情必须清楚可辨。只画镜头的单一起始瞬间：每个角色只出现一次；后续动作仅用少量醒目的箭头表示摄影机和主体的移动。保持前期制作草图的粗略质感，不是完成的插画、照片或三维渲染。画面铺满整张图，不留边框、框线、纸张边距，也不画多格分镜。';
+const NO_TEXT_SUFFIX_ZH =
+  '不要文字、标题、字幕、水印、字母、词语、标牌或界面元素。';
+
+function formatStyleDetails(styleConfig: StyleConfig, locale: Locale): string {
   const details = [
-    `Art style: ${styleConfig.look.artStyle}`,
-    `Mood: ${styleConfig.look.mood}`,
-    `Lighting: ${styleConfig.look.lighting}`,
+    `${localizedPrompt(locale, 'Art style', '美术风格')}: ${styleConfig.look.artStyle}`,
+    `${localizedPrompt(locale, 'Mood', '氛围')}: ${styleConfig.look.mood}`,
+    `${localizedPrompt(locale, 'Lighting', '布光')}: ${styleConfig.look.lighting}`,
   ];
 
   return details.join('. ') + '.';
@@ -66,7 +73,8 @@ function clampPrompt(prompt: string, max = MAX_PROMPT_LENGTH): string {
 export function buildPosterPrompt(
   title: string,
   script: string,
-  styleConfig?: StyleConfig
+  styleConfig?: StyleConfig,
+  locale: Locale = 'en'
 ): string {
   const scriptExcerpt = script.slice(0, MAX_SCRIPT_LENGTH).trim();
 
@@ -74,17 +82,25 @@ export function buildPosterPrompt(
   // is normally still the placeholder — say nothing rather than "Untitled".
   const parts: string[] = [
     title === UNTITLED_SEQUENCE_TITLE
-      ? `A cinematic establishing shot.`
-      : `A cinematic establishing shot for "${title}".`,
-    `Opening scene: ${scriptExcerpt}`,
+      ? localizedPrompt(
+          locale,
+          'A cinematic establishing shot.',
+          '电影感的场景建立镜头。'
+        )
+      : localizedPrompt(
+          locale,
+          `A cinematic establishing shot for "${title}".`,
+          `为《${title}》绘制电影感的场景建立镜头。`
+        ),
+    `${localizedPrompt(locale, 'Opening scene', '开场场景')}: ${scriptExcerpt}`,
   ];
 
   if (styleConfig) {
-    const style = formatStyleDetails(styleConfig);
+    const style = formatStyleDetails(styleConfig, locale);
     if (style) parts.push(style);
   }
 
-  parts.push(NO_TEXT_SUFFIX);
+  parts.push(localizedPrompt(locale, NO_TEXT_SUFFIX, NO_TEXT_SUFFIX_ZH));
   return clampPrompt(parts.join(' '));
 }
 
@@ -98,7 +114,8 @@ export function buildPosterPrompt(
  */
 export function previewTextForShot(
   scene: PreviewShotScene,
-  shotNumber: number
+  shotNumber: number,
+  locale: Locale = 'en'
 ): string {
   const spec = scene.shots?.find((shot) => shot.shotNumber === shotNumber);
   if (spec) {
@@ -112,8 +129,9 @@ export function previewTextForShot(
       spec.framing.angle,
       spec.framing.composition,
       spec.framing.subjectStartState,
-      spec.action && `Then: ${spec.action}`,
-      camera && `Camera: ${camera}`,
+      spec.action &&
+        `${localizedPrompt(locale, 'Then', '随后')}: ${spec.action}`,
+      camera && `${localizedPrompt(locale, 'Camera', '运镜')}: ${camera}`,
       spec.direction,
     ]
       .map(clean)
@@ -121,7 +139,9 @@ export function previewTextForShot(
     if (parts.length > 0) return parts.join('. ');
   }
   return (
-    scene.originalScript.extract || scene.metadata.title || 'A cinematic scene'
+    scene.originalScript.extract ||
+    scene.metadata.title ||
+    localizedPrompt(locale, 'A cinematic scene', '电影感的场景')
   );
 }
 
@@ -132,7 +152,8 @@ export function previewTextForShot(
  */
 function previewCastForShot(
   shotText: string,
-  cast: ReadonlyArray<PreviewCharacter>
+  cast: ReadonlyArray<PreviewCharacter>,
+  locale: Locale
 ): string {
   const text = shotText.toLowerCase();
   return (
@@ -157,7 +178,11 @@ function previewCastForShot(
           .filter((part) => part.length > 0)
           .join(', ');
         const clothing = entry.standardClothing.trim().replace(/\.+$/, '');
-        const line = [who, clothing && `wearing ${clothing}`]
+        const line = [
+          who,
+          clothing &&
+            localizedPrompt(locale, `wearing ${clothing}`, `穿着${clothing}`),
+        ]
           .filter((part) => part.length > 0)
           .join(', ');
         const text = `${entry.name.trim()}: ${line}`;
@@ -183,20 +208,26 @@ function previewCastForShot(
  */
 export function buildPreviewPrompt(
   shotText: string,
-  cast: ReadonlyArray<PreviewCharacter>
+  cast: ReadonlyArray<PreviewCharacter>,
+  locale: Locale = 'en'
 ): string {
   const excerpt = shotText
     .slice(0, MAX_SHOT_TEXT_LENGTH)
     .trim()
     .replace(/\.+$/, '');
-  const characters = previewCastForShot(excerpt, cast);
+  const characters = previewCastForShot(excerpt, cast, locale);
 
   return clampPrompt(
     [
-      `Storyboard animatic frame. ${excerpt}.`,
-      characters && `Characters: ${characters}`,
-      SKETCH_SUFFIX,
-      NO_TEXT_SUFFIX,
+      localizedPrompt(
+        locale,
+        `Storyboard animatic frame. ${excerpt}.`,
+        `动态分镜画面。${excerpt}。`
+      ),
+      characters &&
+        `${localizedPrompt(locale, 'Characters', '角色')}: ${characters}`,
+      localizedPrompt(locale, SKETCH_SUFFIX, SKETCH_SUFFIX_ZH),
+      localizedPrompt(locale, NO_TEXT_SUFFIX, NO_TEXT_SUFFIX_ZH),
     ]
       .filter((part) => part)
       .join(' '),

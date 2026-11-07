@@ -647,6 +647,7 @@ export async function executeSmartRetry(
       const prompt = resolveMotionPromptFromVersion(
         selectedMotion,
         {
+          promptLocale: context.promptLocale,
           dialogue: shotDialogue,
           characterTags: scene?.continuity?.characterTags,
           description: scene?.originalScript.extract ?? null,
@@ -683,7 +684,11 @@ export async function executeSmartRetry(
       batchShots.push({
         shotId: shot.id,
         sceneId: shot.sceneId,
-        packedScene: packedSceneFromScene(scene, styleConfig),
+        packedScene: packedSceneFromScene(
+          scene,
+          styleConfig,
+          context.promptLocale
+        ),
         attachSceneHeader:
           shots.filter((row) => row.sceneId === shot.sceneId).length > 1,
         sequenceTitle: sequence.title,

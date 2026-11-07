@@ -238,7 +238,9 @@ test.describe('Sequences', () => {
     );
   });
 
-  test('shuffled sample survives a reload (#1384)', async ({ page }) => {
+  test('repeated shuffled samples stay visible and survive a reload (#1384)', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.evaluate(() =>
       localStorage.removeItem('openstory:sequence-draft:v1')
@@ -252,16 +254,28 @@ test.describe('Sequences', () => {
     ).toBeVisible({ timeout: 15_000 });
     const shuffle = page.getByRole('button', { name: 'Surprise me' });
     await expect(shuffle).toBeEnabled({ timeout: 15_000 });
-    await shuffle.click();
     const editor = page.locator('[data-slot="markdown-editor"]');
-    await expect(editor).not.toHaveAttribute('data-markdown', '', {
-      timeout: 15_000,
-    });
-    const shuffled = await editor.getAttribute('data-markdown');
-    if (!shuffled) {
-      throw new Error('Surprise me left the composer empty');
+    let shuffled = '';
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const previousStyle = new URL(page.url()).searchParams.get('style');
+      await shuffle.click();
+      await expect
+        .poll(() => new URL(page.url()).searchParams.get('style'))
+        .not.toBe(previousStyle);
+      await expect(editor).not.toHaveAttribute('data-markdown', '');
+      await expect(editor).not.toHaveAttribute('data-markdown', shuffled);
+      const sample = await editor.getAttribute('data-markdown');
+      if (!sample) throw new Error('Surprise me left the composer empty');
+      shuffled = sample;
+      await expect
+        .poll(async () =>
+          (await editor.locator('.ProseMirror').innerText())
+            .replace(/\s+/g, ' ')
+            .trim()
+        )
+        .toBe(shuffled.replace(/\s+/g, ' ').trim());
+      await waitForSequenceDraftScript(page, shuffled);
     }
-    await waitForSequenceDraftScript(page, shuffled);
     await page.reload();
     await waitForScriptEditor(page);
     await expect(page.locator('[data-slot="markdown-editor"]')).toHaveAttribute(

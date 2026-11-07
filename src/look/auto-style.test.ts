@@ -7,6 +7,7 @@ import {
   DEFAULT_AUTO_STYLE_PACE,
   STYLE_CATEGORIES,
   autoStyleResponseSchema,
+  createAutoStyleResponseSchema,
   type AutoStyleResponse,
   autoStyleDraftFromResponse,
   placeholderAutoStyleDraft,
@@ -130,6 +131,68 @@ describe('autoStyleResponseSchema vocabulary (#1285, #1410)', () => {
       enum: [...STYLE_PACE_VALUES],
     });
     expect(json.properties?.pace).not.toHaveProperty('default');
+  });
+});
+
+const OMITTED_RECIPE = {
+  name: 'Keep this title 原名',
+  description: 'Keep this description.',
+  category: 'film',
+  tags: ['user-tag'],
+  colorPalette: ['#111111'],
+  energy: 3,
+  pace: 'measured',
+  references: ['User reference'],
+};
+
+describe('localized automatic-style fallbacks', () => {
+  it('fills only omitted Chinese recipe fields with Chinese prose', () => {
+    const parsed = createAutoStyleResponseSchema('zh-CN').parse({
+      ...OMITTED_RECIPE,
+      mood: 'User supplied mood, keep it verbatim.',
+    });
+    expect(parsed).toEqual({
+      ...OMITTED_RECIPE,
+      mood: 'User supplied mood, keep it verbatim.',
+      artStyle: '写实真人影像',
+      lighting: '符合场景光源的自然光线',
+      colorGrading: '中性、忠于真实',
+      camera: '稳定、经典的镜头覆盖',
+      medium: '',
+      shots: '',
+    });
+    expect(
+      StyleConfigSchema.safeParse(autoStyleDraftFromResponse(parsed).config)
+        .success
+    ).toBe(true);
+  });
+
+  it('keeps every original English fallback verbatim after Chinese parses', () => {
+    createAutoStyleResponseSchema('zh-CN').parse(OMITTED_RECIPE);
+    const parsed = createAutoStyleResponseSchema('en').parse(OMITTED_RECIPE);
+    expect(parsed).toEqual({
+      ...OMITTED_RECIPE,
+      mood: 'grounded, naturalistic',
+      artStyle: 'photorealistic live action',
+      lighting: 'motivated natural light',
+      colorGrading: 'neutral, true-to-life',
+      camera: 'steady, classical coverage',
+      medium: '',
+      shots: '',
+    });
+    expect(autoStyleResponseSchema.parse(OMITTED_RECIPE)).toEqual(parsed);
+  });
+
+  it('preserves complete prose, names, technical values and references', () => {
+    expect(createAutoStyleResponseSchema('zh-CN').parse(RESPONSE)).toEqual(
+      RESPONSE
+    );
+  });
+
+  it('keeps the provider JSON schema identical across languages', () => {
+    expect(z.toJSONSchema(createAutoStyleResponseSchema('zh-CN'))).toEqual(
+      z.toJSONSchema(autoStyleResponseSchema)
+    );
   });
 });
 

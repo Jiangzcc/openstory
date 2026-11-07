@@ -4,6 +4,7 @@
  * its binding mid-run (promoted) is never rewritten.
  */
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
+import type { Locale } from '@/platform/i18n/locale';
 import type { AutoStyleResponse } from '@/look/auto-style';
 import type { WorkflowStep } from 'cloudflare:workers';
 import { describe, expect, it, vi } from 'vitest';
@@ -144,6 +145,57 @@ describe('deriveAutoStyle', () => {
       })
     );
   });
+
+  it.each<[Locale, string, string, string]>([
+    ['zh-CN', '质朴、自然', '写实真人影像', '稳定、经典的镜头覆盖'],
+    [
+      'en',
+      'grounded, naturalistic',
+      'photorealistic live action',
+      'steady, classical coverage',
+    ],
+  ])(
+    'persists omitted recipe fields using the %s task language',
+    async (promptLocale, mood, artStyle, camera) => {
+      durableLLMCallCf.mockImplementationOnce(
+        async (_step: unknown, cfg: { responseSchema: z.ZodType }) =>
+          cfg.responseSchema.parse({
+            name: 'User title 原名',
+            description: 'Keep this description.',
+            category: 'film',
+            tags: ['user-tag'],
+            colorPalette: ['#111111'],
+            energy: 3,
+            pace: 'measured',
+            references: ['User reference'],
+          })
+      );
+      const { scopedDb, setGeneratedForSequence } = makeScopedDb(true);
+      const config = await deriveAutoStyle(step, {
+        promptLocale,
+        scopedDb,
+        ...PARAMS,
+      });
+
+      expect(config.look).toMatchObject({ mood, artStyle });
+      expect(config.motion.camera).toBe(camera);
+      expect(setGeneratedForSequence).toHaveBeenCalledWith({
+        styleId: PARAMS.styleId,
+        sequenceId: PARAMS.sequenceId,
+        draft: expect.objectContaining({
+          name: 'User title 原名',
+          description: 'Keep this description.',
+          tags: ['user-tag'],
+          config,
+        }),
+      });
+      expect(durableLLMCallCf).toHaveBeenLastCalledWith(
+        step,
+        expect.anything(),
+        expect.objectContaining({ promptLocale })
+      );
+    }
+  );
 
   it('rejects an off-vocabulary category at schema parse (#1410)', async () => {
     // durableLLMCallCf parses through `responseSchema` — mirror that here.

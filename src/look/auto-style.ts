@@ -6,6 +6,8 @@
  * Drizzle-free so the composer can import the sentinel and labels.
  */
 import { z } from 'zod';
+import type { Locale } from '@/platform/i18n/locale';
+import { AUTO_STYLE_FALLBACKS_ZH_CN } from './localization/auto-style-fallbacks';
 import {
   STYLE_PACE_VALUES,
   StyleConfigSchema,
@@ -81,7 +83,7 @@ function coercePalette(value: unknown): unknown {
  * `z.toJSONSchema` still emits the inner object, so the provider schema
  * stays aligned with the prompt (no `look`/`motion` keys).
  */
-function coerceCollapsedAutoStyle(raw: unknown): unknown {
+function coerceCollapsedAutoStyle(raw: unknown, locale: Locale): unknown {
   if (!isRecord(raw)) return raw;
   const look = raw.look;
   const motion = raw.motion;
@@ -89,24 +91,27 @@ function coerceCollapsedAutoStyle(raw: unknown): unknown {
   const motionObj = isRecord(motion) ? motion : undefined;
   const lookProse = typeof look === 'string' ? look : undefined;
   const motionProse = typeof motion === 'string' ? motion : undefined;
-  const fallback = AUTO_STYLE_PLACEHOLDER_CONFIG.look;
+  const fallback =
+    locale === 'zh-CN'
+      ? AUTO_STYLE_FALLBACKS_ZH_CN
+      : AUTO_STYLE_PLACEHOLDER_CONFIG;
   return {
     ...raw,
-    mood: firstProse(raw.mood, lookObj?.mood, lookProse) ?? fallback.mood,
+    mood: firstProse(raw.mood, lookObj?.mood, lookProse) ?? fallback.look.mood,
     artStyle:
       firstProse(raw.artStyle, lookObj?.artStyle, lookProse) ??
-      fallback.artStyle,
+      fallback.look.artStyle,
     medium: firstProse(raw.medium, lookObj?.medium) ?? '',
     lighting:
       firstProse(raw.lighting, lookObj?.lighting, lookProse) ??
-      fallback.lighting,
+      fallback.look.lighting,
     colorPalette: coercePalette(raw.colorPalette ?? lookObj?.colorPalette),
     colorGrading:
       firstProse(raw.colorGrading, lookObj?.colorGrading, lookProse) ??
-      fallback.colorGrading,
+      fallback.look.colorGrading,
     camera:
       firstProse(raw.camera, motionObj?.camera, motionProse) ??
-      AUTO_STYLE_PLACEHOLDER_CONFIG.motion.camera,
+      fallback.motion.camera,
     shots: firstProse(raw.shots, motionObj?.shots) ?? '',
   };
 }
@@ -126,30 +131,36 @@ function coerceCollapsedAutoStyle(raw: unknown): unknown {
  * or the placeholder (#1304) if a non-enforcing route still ignores the
  * schema keys.
  */
-export const autoStyleResponseSchema = z.preprocess(
-  coerceCollapsedAutoStyle,
-  z.object({
-    name: z.string(),
-    description: z.string(),
-    category: z.enum(STYLE_CATEGORIES),
-    tags: z.array(z.string()),
-    mood: z.string(),
-    artStyle: z.string(),
-    medium: z.string(),
-    lighting: z.string(),
-    colorPalette: z.array(z.string()).meta({
-      description:
-        'Array of 3–6 hex color strings (e.g. ["#0a0a14", "#e8322f"]), dominant first. Not a comma-separated string.',
-    }),
-    colorGrading: z.string(),
-    camera: z.string(),
-    shots: z.string(),
-    pace: z.enum(STYLE_PACE_VALUES),
-    /** 1 = stillness, 5 = kinetic chaos. */
-    energy: z.number(),
-    references: z.array(z.string()),
-  })
-);
+const autoStyleResponseFields = z.object({
+  name: z.string(),
+  description: z.string(),
+  category: z.enum(STYLE_CATEGORIES),
+  tags: z.array(z.string()),
+  mood: z.string(),
+  artStyle: z.string(),
+  medium: z.string(),
+  lighting: z.string(),
+  colorPalette: z.array(z.string()).meta({
+    description:
+      'Array of 3–6 hex color strings (e.g. ["#0a0a14", "#e8322f"]), dominant first. Not a comma-separated string.',
+  }),
+  colorGrading: z.string(),
+  camera: z.string(),
+  shots: z.string(),
+  pace: z.enum(STYLE_PACE_VALUES),
+  /** 1 = stillness, 5 = kinetic chaos. */
+  energy: z.number(),
+  references: z.array(z.string()),
+});
+
+export function createAutoStyleResponseSchema(locale: Locale) {
+  return z.preprocess(
+    (raw) => coerceCollapsedAutoStyle(raw, locale),
+    autoStyleResponseFields
+  );
+}
+
+export const autoStyleResponseSchema = createAutoStyleResponseSchema('en');
 
 export type AutoStyleResponse = z.infer<typeof autoStyleResponseSchema>;
 

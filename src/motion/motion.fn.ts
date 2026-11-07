@@ -290,6 +290,7 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
       return resolveMotionPromptFromVersion(
         version,
         {
+          promptLocale: context.promptLocale,
           dialogue: batchDialogueOf(shot),
           characterTags: sceneOf(shot)?.continuity?.characterTags,
           description: null,
@@ -318,6 +319,7 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
       resolveMotionPromptFromVersion(
         selectedMotionByShot.get(shot.id),
         {
+          promptLocale: context.promptLocale,
           dialogue: batchDialogueOf(shot),
           characterTags: sceneOf(shot)?.continuity?.characterTags,
           description: sceneOf(shot)?.originalScript.extract ?? null,
@@ -485,7 +487,11 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
               shotId: shot.id,
               sceneId: shot.sceneId,
               renderSegmentId: shot.renderSegmentId,
-              packedScene: packedSceneFromScene(scene, styleConfig),
+              packedScene: packedSceneFromScene(
+                scene,
+                styleConfig,
+                context.promptLocale
+              ),
               attachSceneHeader:
                 !!shot.sceneId &&
                 allShots.filter((row) => row.sceneId === shot.sceneId).length >

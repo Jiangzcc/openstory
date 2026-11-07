@@ -180,8 +180,8 @@ describe('fresh planning checkpoint', () => {
     );
   });
   afterEach(() => vi.restoreAllMocks());
-  it('caps the materialized work and freezes click switches, style and models', async () => {
-    await freezeFreshGenerationPlan(db, input);
+  it('caps the work and freezes click language, switches, style and models', async () => {
+    await freezeFreshGenerationPlan(db, { ...input, promptLocale: 'zh-CN' });
     expect(computeGenerationPlan).toHaveBeenCalledWith(
       db,
       'sequence',
@@ -196,6 +196,7 @@ describe('fresh planning checkpoint', () => {
     );
     expect(computePlan).toHaveBeenLastCalledWith(
       expect.objectContaining({
+        promptLocale: 'zh-CN',
         units: [
           expect.objectContaining({ kind: 'sheet:character', id: 'cast' }),
         ],

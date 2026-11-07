@@ -1253,6 +1253,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           const prompt = resolveMotionPromptFromVersion(
             motionVersion,
             {
+              promptLocale: input.promptLocale,
               dialogue: target.dialogue,
               characterTags: target.motionRender.characterTags,
               description: target.motionRender.description,
@@ -1779,6 +1780,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                   `rebuild-prompts-${target.shotId}`,
                   async () => {
                     const result = await completeDerivedPrompts(scopedDb, {
+                      promptLocale: input.promptLocale,
                       spec,
                       specVersionId,
                       scene,

@@ -11,6 +11,7 @@ import type {
 } from '@/models/text-channels';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { asStub } from '@/test/as-stub';
+import { MOCK_SYSTEM_STYLES } from '@/look/style-templates';
 import { createSequenceSchema } from './sequence.schemas';
 
 const CUSTOM_ROUTE: TextModelRoute = {
@@ -87,7 +88,7 @@ function context(
     imageChannels: { getSnapshot: vi.fn(async () => opts.imageRouting ?? []) },
     modelConfiguration: { get: async () => configuration },
     sequences: { create, listPage },
-    styles: { getById: async () => ({ sequenceId: null }) },
+    styles: { getById: async () => MOCK_SYSTEM_STYLES[0] },
   });
   return {
     promptLocale: 'en' as const,

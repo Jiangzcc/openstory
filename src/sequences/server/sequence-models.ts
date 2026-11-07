@@ -465,6 +465,7 @@ export async function addModelToSequence(
       });
       const prompt = resolveMotionPrompt(
         {
+          promptLocale: context.promptLocale,
           motionPrompt: motionPrompt ?? null,
           characterTags: sceneOf(f)?.continuity?.characterTags,
           description: sceneOf(f)?.originalScript.extract ?? null,
@@ -474,7 +475,11 @@ export async function addModelToSequence(
       return {
         shotId: f.id,
         sceneId: f.sceneId,
-        packedScene: packedSceneFromScene(sceneOf(f), styleConfig),
+        packedScene: packedSceneFromScene(
+          sceneOf(f),
+          styleConfig,
+          context.promptLocale
+        ),
         attachSceneHeader:
           allShots.filter((row) => row.sceneId === f.sceneId).length > 1,
         // Reference-only carries no still; every other eligible shot

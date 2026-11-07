@@ -87,6 +87,7 @@ export async function buildEnhanceGenerator(
     // there's no sequence to persist them into); map url → the tempPublicUrl
     // field `toEnhanceInputs` reads.
     ...toEnhanceInputs({
+      promptLocale: ctx.promptLocale,
       style,
       elements: input.elements?.map((el) => ({
         token: el.token,

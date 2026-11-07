@@ -42,6 +42,7 @@ import type {
 import { alias } from 'drizzle-orm/sqlite-core';
 import type { GenerationStage } from '@/sequences/pipeline';
 import { parseStyleConfig } from '@/look/style-config';
+import type { StyleConfig } from '@/look/style-config';
 import {
   type ImageStatus,
   type SequenceListShot,
@@ -628,6 +629,7 @@ export function createSequencesMethods(
       title: string;
       script?: string | null;
       styleId: string;
+      resolvedStyleConfig?: StyleConfig;
       /**
        * Automatic style (#1213): the style row is a placeholder until the
        * storyboard run derives the recipe, so no snapshot is taken here — a
@@ -654,7 +656,9 @@ export function createSequencesMethods(
     }): Promise<Sequence> => {
       const styleConfig = params.deferStyleSnapshot
         ? null
-        : await snapshotConfigForStyleId(db, params.styleId);
+        : params.resolvedStyleConfig
+          ? parseStyleConfig(params.resolvedStyleConfig)
+          : await snapshotConfigForStyleId(db, params.styleId);
       const id = params.id ?? generateId();
       const styleVersionId = styleConfig ? generateId() : null;
       const sequenceData: NewSequence = {
@@ -803,6 +807,7 @@ export function createSequencesMethods(
       title?: string;
       script?: string | null;
       styleId?: string;
+      resolvedStyleConfig?: StyleConfig;
       status?: SequenceStatus;
       workflowRunId?: string;
       analysisModel?: string;
@@ -828,10 +833,17 @@ export function createSequencesMethods(
       // Scoped by organizationId like every other write here — `workflowRunId` in
       // particular is the generation-mutex column (#839), so a cross-organization id
       // must never be able to stomp it.
-      const { id, ...values } = params;
+      const { id, resolvedStyleConfig, ...values } = params;
+      if (resolvedStyleConfig && params.styleId === undefined) {
+        throw new ValidationError(
+          'A resolved style config requires a style id'
+        );
+      }
       const styleConfig =
         params.styleId !== undefined
-          ? await snapshotConfigForStyleId(db, params.styleId)
+          ? resolvedStyleConfig
+            ? parseStyleConfig(resolvedStyleConfig)
+            : await snapshotConfigForStyleId(db, params.styleId)
           : undefined;
       const scoped = and(
         eq(sequences.id, id),

@@ -22,7 +22,10 @@ import { describe, expect, test } from 'vitest';
 import type { z } from 'zod';
 import { elementVisionResponseSchema } from '@/cast/server/element-vision';
 import { talentMediaAnalysisSchema } from '@/cast/server/talent-vision';
-import { autoStyleResponseSchema } from '@/look/auto-style';
+import {
+  autoStyleResponseSchema,
+  createAutoStyleResponseSchema,
+} from '@/look/auto-style';
 import { shortenDialogueResponseSchema } from '@/motion/server/fit-dialogue-clip';
 import { softenImagePromptResponseSchema } from '@/stills/server/workflows/content-soften';
 import {
@@ -60,6 +63,7 @@ const MEASURED_SCHEMAS: Record<string, z.ZodType> = {
   elementVisionResponseSchema,
   talentMediaAnalysisSchema,
   autoStyleResponseSchema,
+  createAutoStyleResponseSchema: createAutoStyleResponseSchema('zh-CN'),
   softenImagePromptResponseSchema,
   shortenDialogueResponseSchema,
   shotListPassResultSchema,

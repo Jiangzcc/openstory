@@ -25,6 +25,38 @@ Only the hard limit gates clip **packing** (`packedPromptFitsLimit`, which retur
 
 **When a hard limit really refuses** in sequence generation, the motion workflow recovers rather than cutting: `isPromptTooLongError` classifies our own `PromptTooLongError` and the provider's 422 alike, `shortenOverlongMotionPrompt` rewrites the prompt with an LLM under the real budget, and the result is saved as a `shortened` shot prompt version (selected on a primary render, history-only on a variant). The shortening is therefore a visible, revertable edit in Versions, not something that happened inside a request builder. One rewrite per run; a second refusal fails the clip and names both numbers.
 
+## Prompt language (secondary development, 2026-11-07)
+
+Sequence motion assembly receives the run's `promptLocale` for authored
+natural-language directions: silence, no background music, continuity,
+master-audio preservation and lip synchronization. Single-shot and packed
+render planning, packing-length checks and request previews pass the same
+language. Model extension and smart retry carry it through their existing
+entry points. The default English builder retains its original output.
+Continue, Update all, fresh handoff and preview planning explicitly pass
+the task locale when freezing system fallback directions. Existing scene
+lighting, time and location text stays intact; the content plan DTO and
+hash structure have no new language field.
+
+This is not a translation pass over the finished prompt. Saved descriptions,
+dialogue, tone, sound cues and reference tokens remain authored content.
+Seedance timestamps, `Shot N`, `cut to`, audio delimiters, Kling's
+`multi_prompt` durations and MiniMax's `<d>`, `[English]`,
+`overall_soundscape` and `non_diegetic_music: N/A` remain provider syntax.
+The MiniMax language marker keeps its existing dialogue rule; UI language
+must not choose the language a character speaks.
+
+Platform style prose is resolved before the sequence style snapshot is
+written, not just before a provider request. Later renders consume that
+saved recipe. Chinese rewriting and refusal-softening instructions ask for
+Chinese new creative prose while retaining their original content and
+safety rules; the English templates remain intact. Automatic-style
+response coercion chooses missing-field prose in the task's language
+before saving the generated recipe, without translating existing fields.
+Local mock and assembly
+tests cover the language and syntax boundaries, not real-provider Chinese
+generation quality. See the [style localization record](../secondary-development/style-localization.md).
+
 ## Fal.ai Integration
 
 **Always check `/llms.txt` before updating models.** Machine-readable, authoritative param specs:

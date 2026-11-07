@@ -22,6 +22,10 @@ import {
 } from '@/look/auto-style';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { resolveStyleSource } from './create-sequences';
+import { DEFAULT_STYLE_TEMPLATES } from '@/look/style-templates';
+import { parseStyleConfig } from '@/look/style-config';
+import { eq } from 'drizzle-orm';
+import { SUPPORTED_LOCALES } from '@/platform/i18n/locale';
 
 let closeDb: () => Promise<void>;
 let db: Database;
@@ -57,6 +61,17 @@ function scoped(id = organizationId) {
     styles: createStylesMethods(db, id, userId),
     sequences: createSequencesMethods(db, id, userId),
   };
+}
+
+async function insertTemplate(isTemplate: boolean | null = true) {
+  const template = DEFAULT_STYLE_TEMPLATES[0];
+  if (!template) throw new Error('Missing platform template');
+  const [row] = await db
+    .insert(styles)
+    .values({ ...template, organizationId, isTemplate })
+    .returning();
+  if (!row) throw new Error('Missing inserted template');
+  return row;
 }
 
 async function createAutoSequence(derive: boolean) {
@@ -105,9 +120,61 @@ describe('resolveStyleSource', () => {
       })
       .returning();
     if (!row) throw new Error('insert returned nothing');
-    await expect(resolveStyleSource(scoped(), row.id)).resolves.toEqual({
+    await expect(resolveStyleSource(scoped(), row.id)).resolves.toMatchObject({
       kind: 'library',
     });
+  });
+
+  it('resolves Chinese and English platform recipes without changing the shared catalog', async () => {
+    const style = await insertTemplate();
+    const chinese = await resolveStyleSource(scoped(), style.id, 'zh-CN');
+    const english = await resolveStyleSource(scoped(), style.id, 'en');
+    if (chinese.kind !== 'library' || english.kind !== 'library') {
+      throw new Error('Expected library recipes');
+    }
+    expect(chinese.config.look.mood).toBe(
+      '清新、富有感官体验，自然流露时髦气息'
+    );
+    expect(chinese.config.look.artStyle).toContain('现代产品摄影');
+    expect(chinese.config.motion.camera).toContain('手持与固定镜头');
+    expect(english.config).toEqual(parseStyleConfig(style.config));
+    expect(await resolveStyleSource(scoped(), style.id)).toEqual(english);
+    expect((await scoped().styles.getById(style.id))?.config).toEqual(
+      style.config
+    );
+  });
+
+  it.each([false, null])(
+    'preserves a same-named user style with isTemplate=%s',
+    async (isTemplate) => {
+      const style = await insertTemplate(isTemplate);
+      const resolved = await resolveStyleSource(scoped(), style.id, 'zh-CN');
+      expect(resolved).toEqual({
+        kind: 'library',
+        config: parseStyleConfig(style.config),
+      });
+    }
+  );
+
+  it('keeps edited and unknown template fields while resolving the known recipe', async () => {
+    const style = await insertTemplate();
+    const config = parseStyleConfig(style.config);
+    const edited = {
+      ...config,
+      look: { ...config.look, mood: 'USER_MOOD — preserve exactly' },
+      references: ['USER_REFERENCE — do not translate'],
+    };
+    await db
+      .update(styles)
+      .set({ config: edited })
+      .where(eq(styles.id, style.id));
+    const resolved = await resolveStyleSource(scoped(), style.id, 'zh-CN');
+    if (resolved.kind !== 'library')
+      throw new Error('Expected a library recipe');
+    expect(resolved.config.look.mood).toBe(edited.look.mood);
+    expect(resolved.config.references).toEqual(edited.references);
+    expect(resolved.config.look.artStyle).toContain('现代产品摄影');
+    expect((await scoped().styles.getById(style.id))?.config).toEqual(edited);
   });
 
   it('a derived automatic style is cloned', async () => {
@@ -115,6 +182,24 @@ describe('resolveStyleSource', () => {
     await expect(resolveStyleSource(scoped(), style.id)).resolves.toMatchObject(
       { kind: 'clone', draft: { name: 'Derived Noir' } }
     );
+  });
+
+  it('clones the saved automatic recipe after its live row changes, regardless of locale', async () => {
+    const style = await createAutoSequence(true);
+    const original = parseStyleConfig(style.config);
+    await db
+      .update(styles)
+      .set({
+        config: { ...original, look: { ...original.look, mood: 'Later edit' } },
+      })
+      .where(eq(styles.id, style.id));
+    for (const locale of SUPPORTED_LOCALES) {
+      const resolved = await resolveStyleSource(scoped(), style.id, locale);
+      expect(resolved).toMatchObject({
+        kind: 'clone',
+        draft: { config: original },
+      });
+    }
   });
 
   it('an automatic style still deriving becomes a fresh pending one', async () => {

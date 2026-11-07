@@ -84,7 +84,8 @@ describe('bilingual workflow prompt catalog', () => {
     expect(messages[1]?.content).toContain(original);
     expect(messages[1]?.content).toContain('<ORIGINAL_PROMPT>');
     expect(messages[1]?.content).toContain('unexpected result');
-    expect(messages[0]?.content).toContain('语法正确的英语');
+    expect(messages[0]?.content).toContain('语法正确的中文');
+    expect(messages[0]?.content).toContain('自由描述使用简体中文');
     expect(messages[0]?.content).toContain('原样保留全大写角色名');
   });
 

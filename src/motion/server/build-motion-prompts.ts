@@ -1,15 +1,8 @@
 import { sceneDirection } from '@/shots/scene-direction';
 import type { StyleConfig } from '@/look/style-config';
-/**
- * Model-Aware Motion Prompt Builder
- *
- * The LLM generates a rich `fullPrompt` with camera direction, performance,
- * and atmosphere. This module enriches that prompt with model-specific
- * dialogue formatting and audio sections at generation time.
- *
- * Strategy: fullPrompt is always the base. Provider builders ADD to it
- * (dialogue lines, audio sections) rather than rebuilding from components.
- */
+import type { Locale } from '@/platform/i18n/locale';
+import { motionPromptText } from './motion-prompt-language';
+/** Enrich authored motion prose with model-specific dialogue and audio directions. */
 
 import type {
   AssemblableMotionPrompt,
@@ -27,21 +20,7 @@ import {
   isElementVoiceToken,
 } from '@/motion/dialogue-tts';
 
-/**
- * Music is a sequence-level track (`sequence_music_variants`) the user can mute, swap
- * or regenerate; a score the video model bakes into the clip cannot be removed
- * and fights the real one on playback (#1165). Dialogue and diegetic sound are
- * still wanted, so `generate_audio: false` is the wrong lever — every
- * audio-capable model gets this direction in its audio section instead.
- *
- * Phrasing follows Seedance 2.5's documented negative-audio control, which
- * pairs the exclusion with a whitelist ("No BGM; generate only environmental
- * sounds and action sounds") — dialogue is added to that whitelist since a
- * bare negation risks damping the audio we do want. "no music" rides along
- * for the Google/OpenAI models, which don't share ByteDance's BGM vocabulary.
- * Guides: https://docs.byteplus.com/en/docs/ModelArk/2607689 (2.5),
- * https://docs.byteplus.com/en/docs/ModelArk/2222480 (2.0)
- */
+/** Keep the sequence's removable music track separate from dialogue and diegetic sound. */
 const NO_MUSIC_DIRECTION =
   'No BGM, no music. Generate only dialogue, environmental sounds, and action sounds.';
 
@@ -49,8 +28,11 @@ const NO_MUSIC_DIRECTION =
 const NO_MUSIC_NO_DIALOGUE_DIRECTION =
   'No BGM, no music, no dialogue. Generate only environmental sounds and action sounds.';
 
-function noMusicDirection(hasDialogue: boolean): string {
-  return hasDialogue ? NO_MUSIC_DIRECTION : NO_MUSIC_NO_DIALOGUE_DIRECTION;
+function noMusicDirection(hasDialogue: boolean, locale: Locale): string {
+  return motionPromptText(
+    hasDialogue ? NO_MUSIC_DIRECTION : NO_MUSIC_NO_DIALOGUE_DIRECTION,
+    locale
+  );
 }
 
 /** Audio "off" for a model that always renders sound (Kling 4). */
@@ -69,6 +51,7 @@ export type PackedMotionSceneHeader = {
 };
 
 type AssembleOptions = {
+  promptLocale?: Locale;
   motionPrompt: AssemblableMotionPrompt;
   model: ImageToVideoModel;
   /**
@@ -114,6 +97,7 @@ type AssembleOptions = {
  * that prompt.
  */
 export function buildMotionShotPrompt({
+  promptLocale = 'en',
   motionPrompt,
   model,
   characterTags,
@@ -146,14 +130,15 @@ export function buildMotionShotPrompt({
         if (model === 'kling_v4' && generateAudio === false) {
           assembled = omitSharedConstraints
             ? fullPrompt
-            : `${fullPrompt}\n\n${SILENT_SOUNDSCAPE}`;
+            : `${fullPrompt}\n\n${motionPromptText(SILENT_SOUNDSCAPE, promptLocale)}`;
           break;
         }
         assembled = buildKlingPrompt(
           fullPrompt,
           dialogueData,
           audioData,
-          omitSharedConstraints
+          omitSharedConstraints,
+          promptLocale
         );
         break;
       case 'ByteDance':
@@ -163,7 +148,8 @@ export function buildMotionShotPrompt({
           audioData,
           characterTags,
           singleTake,
-          omitSharedConstraints
+          omitSharedConstraints,
+          promptLocale
         );
         break;
       case 'MiniMax':
@@ -172,7 +158,8 @@ export function buildMotionShotPrompt({
           dialogueData,
           audioData,
           generateAudio,
-          omitSharedConstraints
+          omitSharedConstraints,
+          promptLocale
         );
         break;
       case 'Google':
@@ -181,18 +168,19 @@ export function buildMotionShotPrompt({
         if (generateAudio === false) {
           assembled = omitSharedConstraints
             ? fullPrompt
-            : `${fullPrompt}\n\n${SILENT_SOUNDSCAPE}`;
+            : `${fullPrompt}\n\n${motionPromptText(SILENT_SOUNDSCAPE, promptLocale)}`;
         } else {
           assembled = buildVeoPrompt(
             fullPrompt,
             dialogueData,
             audioData,
-            omitSharedConstraints
+            omitSharedConstraints,
+            promptLocale
           );
         }
         // Omni Flash defaults to multi-shot; pin a oner only on a 1-shot segment.
         if (singleTake && model === 'gemini_omni_flash') {
-          assembled = `${assembled}\n\nSingle unbroken scene.`;
+          assembled = `${assembled}\n\n${motionPromptText('Single unbroken scene.', promptLocale)}`;
         }
         break;
       default:
@@ -200,7 +188,8 @@ export function buildMotionShotPrompt({
           fullPrompt,
           dialogueData,
           audioData,
-          omitSharedConstraints
+          omitSharedConstraints,
+          promptLocale
         );
         break;
     }
@@ -242,9 +231,10 @@ export function packedSceneFromScene(
       }
     | null
     | undefined,
-  styleConfig: StyleConfig
+  styleConfig: StyleConfig,
+  promptLocale: Locale = 'en'
 ): PackedMotionSceneHeader {
-  return sceneDirection(scene ?? {}, styleConfig);
+  return sceneDirection(scene ?? {}, styleConfig, promptLocale);
 }
 
 /**
@@ -294,11 +284,13 @@ export type PackedMotionPrompt = {
  * whole trailing shot — callers split membership instead.
  */
 export function buildPackedMotionPrompt({
+  promptLocale = 'en',
   shots,
   model,
   generateAudio,
   scene,
 }: {
+  promptLocale?: Locale;
   shots: readonly PackedMotionPromptShot[];
   model: ImageToVideoModel;
   generateAudio?: boolean;
@@ -312,7 +304,8 @@ export function buildPackedMotionPrompt({
       model,
       generateAudio,
       true,
-      false
+      false,
+      promptLocale
     );
     const header = first.attachSceneHeader
       ? formatPackedEnvironment(scene)
@@ -322,7 +315,7 @@ export function buildPackedMotionPrompt({
 
   const characterTags = uniqueCharacterTags(shots);
   const bodies = shots.map((shot) =>
-    assembleOnePackedShot(shot, model, generateAudio, false, true)
+    assembleOnePackedShot(shot, model, generateAudio, false, true, promptLocale)
   );
   const list = formatPackedShotList(model, shots, bodies);
   if (model === 'seedance_v2_5') {
@@ -331,8 +324,13 @@ export function buildPackedMotionPrompt({
     // https://docs.byteplus.com/en/docs/ModelArk/2607689
     const env = formatPackedEnvironment(scene);
     const guards = [
-      'No BGM; generate only environmental sounds and action sounds.',
-      characterTags.length > 0 ? 'Avoid jitter and bent limbs.' : '',
+      motionPromptText(
+        'No BGM; generate only environmental sounds and action sounds.',
+        promptLocale
+      ),
+      characterTags.length > 0
+        ? motionPromptText('Avoid jitter and bent limbs.', promptLocale)
+        : '',
     ].filter((part) => part.length > 0);
     return {
       prompt: [env, list, guards.join('\n')]
@@ -341,6 +339,7 @@ export function buildPackedMotionPrompt({
     };
   }
   const header = formatPackedHeader({
+    promptLocale,
     scene,
     characterTags,
     model,
@@ -400,6 +399,7 @@ function formatPackedEnvironment(scene?: PackedMotionSceneHeader): string {
 }
 
 function formatPackedHeader(input: {
+  promptLocale: Locale;
   scene?: PackedMotionSceneHeader;
   characterTags: readonly string[];
   model: ImageToVideoModel;
@@ -411,18 +411,20 @@ function formatPackedHeader(input: {
   if (env.length > 0) parts.push(env);
   if (input.model === 'minimax_h3_max' && input.generateAudio === false) {
     parts.push(
-      'overall_soundscape: Silent. No dialogue, no sound effects, no music.\nnon_diegetic_music: N/A'
+      `overall_soundscape: ${motionPromptText(SILENT_SOUNDSCAPE, input.promptLocale)}\nnon_diegetic_music: N/A`
     );
   } else if (input.model === 'kling_v4' && input.generateAudio === false) {
-    parts.push(SILENT_SOUNDSCAPE);
+    parts.push(motionPromptText(SILENT_SOUNDSCAPE, input.promptLocale));
   } else {
-    parts.push(noMusicDirection(input.hasDialogue));
+    parts.push(noMusicDirection(input.hasDialogue, input.promptLocale));
     if (input.model === 'minimax_h3_max') {
       parts.push('non_diegetic_music: N/A');
     }
   }
   if (input.characterTags.length > 0) {
-    parts.push('Avoid jitter and bent limbs.');
+    parts.push(
+      motionPromptText('Avoid jitter and bent limbs.', input.promptLocale)
+    );
   }
   return parts.join('\n\n');
 }
@@ -432,10 +434,12 @@ function assembleOnePackedShot(
   model: ImageToVideoModel,
   generateAudio: boolean | undefined,
   singleTake: boolean,
-  omitSharedConstraints: boolean
+  omitSharedConstraints: boolean,
+  promptLocale: Locale
 ): string {
   if (shot.motionPrompt) {
     return buildMotionShotPrompt({
+      promptLocale,
       motionPrompt: shot.motionPrompt,
       model,
       characterTags: shot.characterTags,
@@ -446,7 +450,7 @@ function assembleOnePackedShot(
   }
   const fallback = shot.prompt ?? '';
   if (singleTake && model === 'gemini_omni_flash' && fallback.length > 0) {
-    return `${fallback}\n\nSingle unbroken scene.`;
+    return `${fallback}\n\n${motionPromptText('Single unbroken scene.', promptLocale)}`;
   }
   return fallback;
 }
@@ -497,13 +501,14 @@ function buildKlingPrompt(
   fullPrompt: string,
   dialogue: MotionDialogue | undefined,
   audio: MotionAudio | undefined,
-  omitSharedConstraints: boolean
+  omitSharedConstraints: boolean,
+  promptLocale: Locale
 ): string {
   const parts = [fullPrompt];
 
   // Append dialogue with Kling-specific character labels and temporal markers
   if (dialogue) {
-    parts.push(formatKlingDialogue(dialogue.lines));
+    parts.push(formatKlingDialogue(dialogue.lines, promptLocale));
   }
 
   // Ambient sound woven into the prompt (Kling generates audio natively)
@@ -513,27 +518,33 @@ function buildKlingPrompt(
     ambientParts.push(audio.soundEffects.join(', '));
   if (omitSharedConstraints) {
     if (ambientParts.length > 0) {
-      parts.push(`Ambient sounds: ${ambientParts.join('. ')}.`);
+      parts.push(
+        `${motionPromptText('Ambient sounds', promptLocale)}: ${ambientParts.join('. ')}.`
+      );
     }
   } else {
     parts.push(
       ambientParts.length > 0
-        ? `Ambient sounds: ${ambientParts.join('. ')}. ${noMusicDirection(Boolean(dialogue))}`
-        : noMusicDirection(Boolean(dialogue))
+        ? `${motionPromptText('Ambient sounds', promptLocale)}: ${ambientParts.join('. ')}. ${noMusicDirection(Boolean(dialogue), promptLocale)}`
+        : noMusicDirection(Boolean(dialogue), promptLocale)
     );
   }
 
   return parts.join('\n\n');
 }
 
-function formatKlingDialogue(lines: DialogueLine[]): string {
+function formatKlingDialogue(
+  lines: DialogueLine[],
+  promptLocale: Locale
+): string {
   return lines
     .map((line) => {
-      const label = line.character || 'Narrator';
+      const label =
+        line.character || motionPromptText('Narrator', promptLocale);
       const tone = line.tone ? `, ${line.tone}` : '';
       return `[${label}${tone}]: "${line.line}"`;
     })
-    .join('\nImmediately, ');
+    .join(`\n${motionPromptText('Immediately, ', promptLocale)}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -564,7 +575,8 @@ function buildSeedancePrompt(
   audio: MotionAudio | undefined,
   characterTags: readonly string[] | undefined,
   singleTake: boolean,
-  omitSharedConstraints: boolean
+  omitSharedConstraints: boolean,
+  promptLocale: Locale
 ): string {
   const parts = [fullPrompt];
 
@@ -589,15 +601,17 @@ function buildSeedancePrompt(
     );
     const spoken = dialogue.lines
       .filter((line) => line.voiceToken !== DIALOGUE_CLIP_TOKEN)
-      .map((line) => spokenLine(line, `{${line.line}}`, 'voice'));
+      .map((line) => spokenLine(line, `{${line.line}}`, 'voice', promptLocale));
     if (recorded.length > 0) {
       const speakers = recorded
         .map((line) => line.character)
         .filter((name, at, all) => name && name !== all[at - 1]);
       spoken.unshift(
-        `${DIALOGUE_CLIP_TOKEN}: ${MASTER_AUDIO_DIRECTION}` +
+        `${DIALOGUE_CLIP_TOKEN}: ${motionPromptText(MASTER_AUDIO_DIRECTION, promptLocale)}` +
           (speakers.length > 0
-            ? ` Lipsync ${speakers.join(', then ')} to ${DIALOGUE_CLIP_TOKEN}${speakers.length > 1 ? ', in that order' : ''}.`
+            ? promptLocale === 'zh-CN'
+              ? ` 将${speakers.join('，然后')}的口型与${DIALOGUE_CLIP_TOKEN}同步${speakers.length > 1 ? '，按此顺序' : ''}。`
+              : ` Lipsync ${speakers.join(', then ')} to ${DIALOGUE_CLIP_TOKEN}${speakers.length > 1 ? ', in that order' : ''}.`
             : '')
       );
     }
@@ -611,13 +625,15 @@ function buildSeedancePrompt(
   // Constraint words, which the ByteDance guide asks for at the end of the
   // prompt. Seedance invents edits otherwise, conflicting with
   // one-scene-one-take — omit that pin when the clip is a packed multi-shot.
-  const guards = [noMusicDirection(Boolean(dialogue))];
+  const guards = [noMusicDirection(Boolean(dialogue), promptLocale)];
   if (singleTake) {
-    guards.push('Single continuous shot, no cuts.');
+    guards.push(
+      motionPromptText('Single continuous shot, no cuts.', promptLocale)
+    );
   }
   // Standard guard from the ByteDance prompt guide for scenes with characters
   if (characterTags && characterTags.length > 0) {
-    guards.push('Avoid jitter and bent limbs.');
+    guards.push(motionPromptText('Avoid jitter and bent limbs.', promptLocale));
   }
   parts.push(guards.join(' '));
 
@@ -639,7 +655,8 @@ function buildMinimaxH3Prompt(
   dialogue: MotionDialogue | undefined,
   audio: MotionAudio | undefined,
   generateAudio: boolean | undefined,
-  omitSharedConstraints: boolean
+  omitSharedConstraints: boolean,
+  promptLocale: Locale
 ): string {
   const parts = [fullPrompt];
 
@@ -648,7 +665,7 @@ function buildMinimaxH3Prompt(
   if (generateAudio === false) {
     if (!omitSharedConstraints) {
       parts.push(
-        'overall_soundscape: Silent. No dialogue, no sound effects, no music.\nnon_diegetic_music: N/A'
+        `overall_soundscape: ${motionPromptText(SILENT_SOUNDSCAPE, promptLocale)}\nnon_diegetic_music: N/A`
       );
     }
     return parts.join('\n\n');
@@ -660,7 +677,12 @@ function buildMinimaxH3Prompt(
     parts.push(
       dialogue.lines
         .map((line) =>
-          spokenLine(line, `<d>[English] ${line.line}</d>`, 'tone')
+          spokenLine(
+            line,
+            `<d>[English] ${line.line}</d>`,
+            'tone',
+            promptLocale
+          )
         )
         .join(' ')
     );
@@ -676,7 +698,7 @@ function buildMinimaxH3Prompt(
     }
     return parts.join('\n\n');
   }
-  soundscape.push(noMusicDirection(Boolean(dialogue)));
+  soundscape.push(noMusicDirection(Boolean(dialogue), promptLocale));
   parts.push(
     `overall_soundscape: ${soundscape.join(' ')}\nnon_diegetic_music: N/A`
   );
@@ -689,35 +711,27 @@ function asSentence(text: string): string {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
-/**
- * One line of dialogue as ONE speaking event (#1559).
- *
- * With a recording bound, the line names it as the source of the words, voice
- * and delivery in the same sentence that carries the transcript. A separate
- * binding sentence after "X says: {…}" read as a second utterance — two
- * speaking events for one line invite the model to say it twice — and a tone
- * adjective beside a recording asks for a delivery the recording already has.
- *
- * Asking for the words FROM the recording is deliberate: by default a
- * reference clip supplies only timbre, accent, pace and emotion, and "the
- * exception is when the user explicitly asks to reuse the dialogue in the
- * audio" (Seedance 2.5 guide). A file bound to a line IS that line.
- *
- * The token is emitted RAW. `buildReferenceVideoPrompt` substitutes it for the
- * endpoint's tag (`@Audio1`), which is why the reference matchers must scan
- * the ASSEMBLED prompt, not `fullPrompt`: this is the only place it appears.
- */
+/** Bind the raw recording token and transcript in one speaking event to avoid repetition. */
 function spokenLine(
   line: DialogueLine,
   words: string,
-  toneNoun: 'voice' | 'tone'
+  toneNoun: 'voice' | 'tone',
+  promptLocale: Locale
 ): string {
-  const subject = line.character || 'A voice';
+  const subject = line.character || motionPromptText('A voice', promptLocale);
   if (
     line.voiceToken === DIALOGUE_CLIP_TOKEN ||
     isElementVoiceToken(line.voiceToken)
   ) {
-    return `${subject} speaks this line exactly as recorded in ${line.voiceToken}: ${words}`;
+    return promptLocale === 'zh-CN'
+      ? `${subject}完全按照${line.voiceToken}中的录音说出这句台词：${words}`
+      : `${subject} speaks this line exactly as recorded in ${line.voiceToken}: ${words}`;
+  }
+  if (promptLocale === 'zh-CN') {
+    const tone = line.tone
+      ? `以${line.tone}的${toneNoun === 'voice' ? '嗓音' : '语气'}`
+      : '';
+    return `${subject}${tone}说：${words}`;
   }
   const tone = line.tone ? ` in a ${line.tone} ${toneNoun}` : '';
   return `${subject} says${tone}: ${words}`;
@@ -733,7 +747,8 @@ function buildVeoPrompt(
   fullPrompt: string,
   dialogue: MotionDialogue | undefined,
   audio: MotionAudio | undefined,
-  omitSharedConstraints: boolean
+  omitSharedConstraints: boolean,
+  promptLocale: Locale
 ): string {
   const parts = [fullPrompt];
 
@@ -741,7 +756,12 @@ function buildVeoPrompt(
   if (dialogue) {
     const dialogueNarrative = dialogue.lines
       .map((line) => {
-        const subject = line.character || 'A voice';
+        const subject =
+          line.character || motionPromptText('A voice', promptLocale);
+        if (promptLocale === 'zh-CN') {
+          const tone = line.tone ? `以${line.tone}的嗓音` : '';
+          return `${subject}${tone}说：“${line.line}”`;
+        }
         const tone = line.tone ? ` in a ${line.tone} voice` : '';
         return `${subject} says${tone}, "${line.line}"`;
       })
@@ -756,14 +776,16 @@ function buildVeoPrompt(
     audioParts.push(audio.soundEffects.join(', '));
   if (omitSharedConstraints) {
     if (audioParts.length > 0) {
-      parts.push(`Audio: ${audioParts.join('. ')}.`);
+      parts.push(
+        `${motionPromptText('Audio', promptLocale)}: ${audioParts.join('. ')}.`
+      );
     }
     return parts.join('\n\n');
   }
   parts.push(
     audioParts.length > 0
-      ? `Audio: ${audioParts.join('. ')}. ${noMusicDirection(Boolean(dialogue))}`
-      : `Audio: ${noMusicDirection(Boolean(dialogue))}`
+      ? `${motionPromptText('Audio', promptLocale)}: ${audioParts.join('. ')}. ${noMusicDirection(Boolean(dialogue), promptLocale)}`
+      : `${motionPromptText('Audio', promptLocale)}: ${noMusicDirection(Boolean(dialogue), promptLocale)}`
   );
 
   return parts.join('\n\n');

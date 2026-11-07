@@ -1,4 +1,5 @@
 import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
+import type { Locale } from '@/platform/i18n/locale';
 import { resolveSequenceStyleConfig } from '@/look/style-config';
 /**
  * "Update all" planning (#1077/#1085) — pure domain logic that decides *what*
@@ -522,6 +523,7 @@ function toPlanSequence(sequence: Sequence): PlanSequence {
  * is reported, not dropped.
  */
 export async function planUpdateAll(args: {
+  promptLocale?: Locale;
   scopedDb: ScopedDb;
   sequenceId: string;
   sceneId?: string;
@@ -548,6 +550,7 @@ export async function planUpdateAll(args: {
         )
       : null;
   const plan = await computePlan({
+    promptLocale: args.promptLocale,
     scopedDb,
     sequenceId,
     imageModelRouting: args.imageModelRouting,
@@ -610,6 +613,7 @@ export type FreshPlanSequenceOverrides = Partial<
 >;
 
 export async function computePlan(args: {
+  promptLocale?: Locale;
   scopedDb: ScopedDb;
   /** Fresh handoff retains the switches/models frozen by the original click. */
   sequenceOverrides?: FreshPlanSequenceOverrides;
@@ -790,6 +794,7 @@ export async function computePlan(args: {
     const { scene } = resolveSceneForShot(shot, scriptBySceneId);
 
     const decision = await decideShotTarget({
+      promptLocale: args.promptLocale ?? 'en',
       scopedDb,
       sequence: args.renderOptions?.imageModels?.[0]
         ? { ...sequence, imageModel: args.renderOptions.imageModels[0] }
@@ -1010,6 +1015,7 @@ type ShotDecision =
   | { kind: 'noop' };
 
 async function decideShotTarget(args: {
+  promptLocale: Locale;
   scopedDb: ScopedDb;
   sequence: Sequence;
   shot: Shot;
@@ -1212,7 +1218,8 @@ async function decideShotTarget(args: {
           resolveSequenceStyleConfig({
             snapshot: sequence.styleConfig,
             live: refs.style?.config,
-          })
+          }),
+          args.promptLocale
         ),
         characterTags: scene.continuity?.characterTags,
         characterLooks: scene.continuity?.characterLooks ?? null,

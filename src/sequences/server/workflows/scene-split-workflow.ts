@@ -271,7 +271,11 @@ async function triggerPreviewImage({
   characterBible: ReadonlyArray<CharacterBibleEntry>;
   scopedDb: WorkflowScopedDb;
 }): Promise<void> {
-  const shotText = previewTextForShot(scene, shot.shotNumber);
+  const shotText = previewTextForShot(
+    scene,
+    shot.shotNumber,
+    input.promptLocale
+  );
 
   try {
     const enforcement = await scopedDb.liveRead.compliance.listEnforcementFor(
@@ -287,7 +291,11 @@ async function triggerPreviewImage({
         shotId: shot.id,
         frameId: shot.frameId,
         aspectRatio: input.aspectRatio,
-        prompt: buildPreviewPrompt(shotText, characterBible),
+        prompt: buildPreviewPrompt(
+          shotText,
+          characterBible,
+          input.promptLocale
+        ),
       },
       {
         deduplicationId: previewImageDedupId(parentInstanceId, shot.id),
@@ -1049,7 +1057,10 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
               promptName: SHOT_LIST_PROMPT_NAME,
               promptVars: {
                 scenes: formatScenesForShotListPrompt(batch, clipGrid),
-                style: formatDirectorStyleForShotList(input.styleConfig),
+                style: formatDirectorStyleForShotList(
+                  input.styleConfig,
+                  input.promptLocale
+                ),
                 characters: formatCastForShotList(characterBible),
                 // Placement budget for speech (#1651): a shot's clip has to
                 // hold the lines put in it, or the recorded take overruns the

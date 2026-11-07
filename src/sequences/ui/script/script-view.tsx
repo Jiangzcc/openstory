@@ -1,6 +1,8 @@
 import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { useLiveTranslation } from '@/ui/i18n/use-live-translation';
 import { useTranslation } from 'react-i18next';
+import { resolveLocale } from '@/platform/i18n/locale';
+import { localizedStyleSample } from '@/look/ui/localized-style-sample';
 import { openAssistant } from '@/assistant/ui/assistant-store';
 import { elementKindFromFilename } from '@/cast/element-kind';
 import { ThinkingBar } from '@/ui/ai/thinking-bar';
@@ -153,10 +155,7 @@ import {
   type PersistableSequenceDraft,
   type SequenceDraft,
 } from './sequence-draft';
-import {
-  pickShuffleStyle,
-  sampleScriptForStyle,
-} from '@/look/ui/composer-sample';
+import { pickShuffleStyle } from '@/look/ui/composer-sample';
 import {
   ALL_COMPOSER_STYLE_CATEGORIES,
   DEFAULT_COMPOSER_STYLE_CATEGORY,
@@ -635,7 +634,10 @@ export const ScriptView: FC<{
     style: (typeof styles)[number],
     event: 'sample_script_shuffled' | 'sample_script_tried'
   ) => {
-    const sample = sampleScriptForStyle(style);
+    const sample = localizedStyleSample(
+      style,
+      resolveLocale(i18n.resolvedLanguage)
+    );
     if (!sample) return;
     posthog.capture(event, { style_id: style.id });
     setContentState((s) => ({ ...s, script: sample }));
@@ -880,10 +882,13 @@ export const ScriptView: FC<{
     if (!sampleStyleId || !styleId || styleId === sampleStyleId) return;
     const style = styles.find((s) => s.id === styleId);
     if (!style) return;
-    const sample = sampleScriptForStyle(style);
+    const sample = localizedStyleSample(
+      style,
+      resolveLocale(i18n.resolvedLanguage)
+    );
     setContentState((s) => ({ ...s, script: sample ?? '' }));
     setSampleStyleId(sample ? style.id : null);
-  }, [sampleStyleId, styleId, styles]);
+  }, [sampleStyleId, styleId, styles, i18n.resolvedLanguage]);
 
   // Persist draft to localStorage when creating new sequences. Shuffle/Try
   // samples are user intent — store the text and sampleStyleId so login and
@@ -1229,6 +1234,7 @@ export const ScriptView: FC<{
           analysisModel: analysisModels[0],
           aspectRatio,
           ...toEnhanceInputs({
+            promptLocale: resolveLocale(i18n.resolvedLanguage),
             style: selectedStyle,
             elements: enhanceElements,
           }),

@@ -54,6 +54,7 @@ export async function freezeFreshGenerationPlan(
   const audioModels = resolveAudioModels(input.audioModels, input.musicModel);
   const imageModelRouting = frozenImageRouting(input);
   const plan = await computePlan({
+    promptLocale: input.promptLocale,
     scopedDb,
     sequenceId: input.sequenceId,
     units: work,

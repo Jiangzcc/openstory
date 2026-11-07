@@ -5,6 +5,7 @@
  */
 
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
+import type { Locale } from '@/platform/i18n/locale';
 import {
   hashMotionPromptInput,
   hashVisualPromptInput,
@@ -36,7 +37,10 @@ export async function persistShotSpec(
     'shotSpecVersions' | 'framePromptVersions' | 'shotPromptVersions'
   >,
   item: ShotWorkItem,
-  context: Omit<VisualPromptHashInput, 'scene'> & { referenceOnly: boolean }
+  context: Omit<VisualPromptHashInput, 'scene'> & {
+    referenceOnly: boolean;
+    promptLocale?: Locale;
+  }
 ): Promise<{ stillPrompt: boolean }> {
   const { shotId, frameId, shotNumber } = item.mapping;
   const spec = shotSpecForItem(item);
@@ -71,7 +75,12 @@ export async function persistShotSpec(
   };
 
   if (!referenceOnly && frameId !== null) {
-    const text = deriveStillPrompt(stored, item.scene, context.styleConfig);
+    const text = deriveStillPrompt(
+      stored,
+      item.scene,
+      context.styleConfig,
+      context.promptLocale
+    );
     await scopedDb.framePromptVersions.write({
       frameId,
       source: 'derived',
@@ -83,7 +92,10 @@ export async function persistShotSpec(
       analysisModel: context.analysisModel,
     });
   }
-  const motion = deriveMotionPrompt(stored, { referenceOnly });
+  const motion = deriveMotionPrompt(stored, {
+    referenceOnly,
+    promptLocale: context.promptLocale,
+  });
   await scopedDb.shotPromptVersions.write({
     shotId,
     promptType: 'motion',
