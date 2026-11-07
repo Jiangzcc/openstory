@@ -11,6 +11,9 @@
  * `ui/message` so the agent picks up without polling. It writes nothing.
  */
 
+import enMessages from '@/platform/i18n/locales/en/mcp-views.json';
+import zhMessages from '@/platform/i18n/locales/zh-CN/mcp-views.json';
+
 // ponytail: each open card polls and announces on its own; two cards of one
 // run post two messages. Share a watcher if hosts start keeping many open.
 const POLL_MS = 10_000;
@@ -19,6 +22,16 @@ const POLL_LIMIT = 360;
 
 /** The page's bridge, exported so a test can run it against a fake window. */
 export const SEQUENCE_CARD_SCRIPT = `(() => {
+  const messages = ${JSON.stringify({ en: enMessages, 'zh-CN': zhMessages })};
+  let locale = 'en';
+  let styleNames = {};
+  let errorText = null;
+  const t = (source, values = {}) => {
+    const translated = messages[locale][source];
+    return (typeof translated === 'string' ? translated : source)
+      .replace(/\\{\\{(\\w+)\\}\\}/g, (match, key) => values[key] === undefined ? match : String(values[key]));
+  };
+  const statusLabel = (status) => t(status === 'partially_ready' ? 'partially ready' : status || '');
   const post = (message) => window.parent.postMessage({ jsonrpc: '2.0', ...message }, '*');
   const byId = (id) => document.getElementById(id);
   let lastHeight = -1;
@@ -50,6 +63,11 @@ export const SEQUENCE_CARD_SCRIPT = `(() => {
 
   const applyHost = (context) => {
     if (!context) return;
+    if (typeof context.locale === 'string') locale = context.locale.startsWith('zh') ? 'zh-CN' : 'en';
+    if (context['openstory/styleNames']) styleNames = context['openstory/styleNames'];
+    document.documentElement.lang = locale;
+    document.title = t('Sequence');
+    byId('open').textContent = t('Open in OpenStory');
     if (context.theme) document.documentElement.style.colorScheme = context.theme;
     const variables = context.styles && context.styles.variables;
     if (variables) {
@@ -57,27 +75,33 @@ export const SEQUENCE_CARD_SCRIPT = `(() => {
         if (typeof value === 'string') document.documentElement.style.setProperty(name, value);
       }
     }
+    if (current) render(current);
+    else byId('title').textContent = t('Loading…');
+    if (errorText !== null) showError(errorText.text, errorText.localize);
+    reportSize();
   };
 
-  const showError = (text) => {
-    byId('title').textContent = 'Sequence unavailable';
+  const showError = (text, localize = false) => {
+    errorText = { text, localize };
+    byId('title').textContent = t('Sequence unavailable');
     const error = byId('error');
-    error.textContent = text;
+    error.textContent = localize ? t(text) : text;
     error.hidden = false;
     reportSize();
   };
 
   const render = (data) => {
-    byId('title').textContent = data.title || 'Untitled sequence';
-    const style = data.style && data.style.name;
-    byId('meta').textContent = [data.status, style, data.aspectRatio].filter(Boolean).join(' · ');
+    byId('title').textContent = data.title || t('Untitled sequence');
+    const translatedStyle = data.style && styleNames[data.style.id];
+    const style = typeof translatedStyle === 'string' ? translatedStyle : data.style && data.style.name;
+    byId('meta').textContent = [statusLabel(data.status), style, data.aspectRatio].filter(Boolean).join(' · ');
     const poster = byId('poster');
     if (data.poster && data.poster.url) {
       poster.onload = reportSize;
       // A row on a host the CSP does not allow: hide it, not a broken image.
       poster.onerror = () => { poster.hidden = true; reportSize(); };
       poster.src = data.poster.url;
-      poster.alt = 'Poster for ' + (data.title || 'the sequence');
+      poster.alt = t('Poster for {{title}}', { title: data.title || t('the sequence') });
       poster.hidden = false;
     }
     const counts = byId('counts');
@@ -85,7 +109,7 @@ export const SEQUENCE_CARD_SCRIPT = `(() => {
     for (const [key, value] of Object.entries(data.counts || {})) {
       if (typeof value !== 'number') continue;
       const dt = document.createElement('dt');
-      dt.textContent = key.replace(/([A-Z])/g, ' $1').toLowerCase();
+      dt.textContent = t(key.replace(/([A-Z])/g, ' $1').toLowerCase());
       const dd = document.createElement('dd');
       dd.textContent = String(value);
       counts.append(dt, dd);
@@ -107,9 +131,10 @@ export const SEQUENCE_CARD_SCRIPT = `(() => {
   const POLL_LIMIT = ${POLL_LIMIT};
   const announce = (data) => {
     const counts = data.counts || {};
-    const text =
-      'OpenStory: "' + (current.title || 'Untitled sequence') + '" (' + current.id + ') finished: ' +
-      data.status + '. ' + (counts.videosReady || 0) + '/' + (counts.shots || 0) + ' videos ready.';
+    const text = t('OpenStory: "{{title}}" ({{id}}) finished: {{status}}. {{ready}}/{{shots}} videos ready.', {
+      title: current.title || t('Untitled sequence'), id: current.id, status: statusLabel(data.status),
+      ready: counts.videosReady || 0, shots: counts.shots || 0,
+    });
     request('ui/message', { role: 'user', content: [{ type: 'text', text }] }).catch(() => {});
   };
   // Stops on any failed call: a host that refuses once will refuse again, and
@@ -139,9 +164,8 @@ export const SEQUENCE_CARD_SCRIPT = `(() => {
     if (!result || result.isError || !data || typeof data !== 'object') {
       const text =
         (data && data.error && data.error.message) ||
-        (result && result.content && result.content[0] && result.content[0].text) ||
-        'The sequence could not be loaded.';
-      showError(text);
+        (result && result.content && result.content[0] && result.content[0].text);
+      showError(text || 'The sequence could not be loaded.', !text);
       return;
     }
     current = data;
@@ -169,7 +193,7 @@ export const SEQUENCE_CARD_SCRIPT = `(() => {
     }
     if (message.id === 1 && !message.method) {
       if (message.error) {
-        showError('This host could not start the view.');
+        showError('This host could not start the view.', true);
         return;
       }
       applyHost(message.result && message.result.hostContext);
@@ -193,7 +217,7 @@ export const SEQUENCE_CARD_SCRIPT = `(() => {
     if (message.method === 'ui/notifications/tool-result') {
       onToolResult(message.params);
     } else if (message.method === 'ui/notifications/tool-cancelled') {
-      showError('The request was cancelled.');
+      showError('The request was cancelled.', true);
     } else if (message.method === 'ui/notifications/host-context-changed') {
       applyHost(message.params);
     }

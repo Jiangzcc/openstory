@@ -21,6 +21,7 @@
  */
 
 import type { AnyTool } from '@tanstack/ai';
+import { z } from 'zod';
 import { MCP_TOOLS } from '@/platform/server/mcp/server';
 
 /** Tools the model sees in full on every turn: the ones most turns start with. */
@@ -123,6 +124,11 @@ export function assistantTools(): AnyTool[] {
     return {
       ...tool,
       name: chatToolName(tool.name),
+      // A root metadata id becomes a $ref instead of object parameters.
+      inputSchema:
+        tool.inputSchema instanceof z.ZodObject && tool.inputSchema.meta()?.id
+          ? tool.inputSchema.safeExtend({})
+          : tool.inputSchema,
       needsApproval: needsApproval(tool),
       lazy: !EAGER_TOOLS.has(tool.name),
       execute: async (input: unknown, ctx: unknown) =>

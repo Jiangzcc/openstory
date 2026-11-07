@@ -69,7 +69,7 @@ describe('i18n runtime', () => {
 
 describe('translation resources', () => {
   it('keeps Chinese and English resource keys and rich-text tokens aligned', () => {
-    for (const namespace of ['auth', 'common'] as const) {
+    for (const namespace of ['auth', 'common', 'mcpViews'] as const) {
       const en = resources.en[namespace];
       const zh = resources['zh-CN'][namespace];
       expect(Object.keys(zh).sort()).toEqual(Object.keys(en).sort());
@@ -82,6 +82,9 @@ describe('translation resources', () => {
     }
     expect(resourceTokensByKey(resources['zh-CN'].common)).toEqual(
       resourceTokensByKey(resources.en.common)
+    );
+    expect(resourceTokensByKey(resources['zh-CN'].mcpViews)).toEqual(
+      resourceTokensByKey(resources.en.mcpViews)
     );
   });
 });

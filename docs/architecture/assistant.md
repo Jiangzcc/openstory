@@ -33,6 +33,16 @@ only assistant-side work per tool happens in
 Scope checks, the likeness gate and billing are the tool's own and are the
 same on both paths. Do not add an assistant-only tool; add an MCP tool.
 
+Tool input schemas must serialize to an explicit root object, including after
+lazy discovery. The local assistant bridge uses `safeExtend({})` on Zod object
+inputs with a metadata id to retain validation and defaults without the root
+OpenAPI metadata id. With Zod 4.6, that id otherwise emits a
+root `$ref` to `definitions/CreateSequenceRequest`; DeepSeek rejects the whole
+request with `parameters must be a JSON Schema of type object` once the tool
+is discovered. The public API and MCP schemas keep their ids, and nested
+definitions stay available in chat. `assistant-tool-schema.test.ts` checks the full
+catalog and real adapter request bodies before and after discovery.
+
 The local customization selects system instructions and fixed request wrappers
 from the web request's `openstory_locale` cookie (default `zh-CN`). The assistant
 passes the same required `promptLocale` through its internal MCP context; the
@@ -251,6 +261,22 @@ under the session), `open-link`
 opens a tab, and `ui/message` goes into the thread as the user. Nothing is
 registered per view: a new view is one entry in `TOOL_VIEWS` and its HTML
 in `getMcpViewFn`.
+
+The upstream sequence card is shared with outside MCP hosts. The local host
+adds the interface language to `hostContext.locale` on initialize and sends
+`ui/notifications/host-context-changed` when the language or resolved style
+changes. The card keeps the same HTML and renders known labels from the small
+`platform/i18n/locales/*/mcp-views.json` resources; an outside host that supplies
+no locale still gets English. This is display localization, separate from
+the assistant's `promptLocale`.
+
+`mcp-app-context.ts` adds the local `openstory/styleNames` host-context extension,
+keyed by style id. It uses the existing read-only style lookup and translates
+through `presets` only when the server row has `isTemplate === true`. A custom
+style named `Animated` stays `Animated`. Tool results, user titles, unknown
+states and provider diagnostics remain verbatim. See the
+[implementation record](../secondary-development/assistant-mcp-localization-20261107.md)
+for coverage and verification limits.
 
 ## Unsaved work as context
 

@@ -13,8 +13,10 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import type { ToolResultPart } from '@tanstack/ai';
 import { useState } from 'react';
+import { useStyle } from '@/look/ui/use-styles';
 import { Skeleton } from '@/ui/shadcn/skeleton';
 import { callMcpReadToolFn, getMcpViewFn } from '../assistant.fn';
+import { mcpAppHostContext, mcpResultStyleId } from './mcp-app-context';
 
 const PROTOCOL_VERSION = '2026-01-26';
 
@@ -65,7 +67,9 @@ export const McpAppFrame: React.FC<{
   /** A `ui/message` from the view: text sent into the thread as the user. */
   onMessage?: (text: string) => void;
 }> = ({ uri, result, onMessage }) => {
-  const { t } = useTranslation('assistant');
+  const { t, i18n } = useTranslation('assistant');
+  const { data: style } = useStyle(mcpResultStyleId(result.content));
+  const hostContext = mcpAppHostContext(i18n, style);
 
   const view = useQuery({
     queryKey: ['mcp-view', uri],
@@ -96,6 +100,7 @@ export const McpAppFrame: React.FC<{
               hostInfo: { name: 'openstory-app', version: '1' },
               hostCapabilities: { serverTools: {}, openLinks: {} },
               hostContext: {
+                ...hostContext,
                 theme: document.documentElement.classList.contains('dark')
                   ? 'dark'
                   : 'light',
@@ -164,6 +169,10 @@ export const McpAppFrame: React.FC<{
       }
     };
     window.addEventListener('message', onMessage_);
+    post({
+      method: 'ui/notifications/host-context-changed',
+      params: hostContext,
+    });
     return () => window.removeEventListener('message', onMessage_);
   };
 

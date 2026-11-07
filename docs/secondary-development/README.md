@@ -16,6 +16,8 @@
 - [首期功能规格](mvp-specification.md)：角色、功能、页面、流程及上游复用范围。
 - [管理员默认模型配置](model-configuration-assessment.md)：默认推荐、内部辅助模型、后台配置和工作流快照；原有默认配置实施与验证记录。
 - [文本渠道实施记录](text-channels.md)：管理员渠道、文本模型绑定、候选发现、凭证轮换、路由快照及本次组织接口适配；历史验证与本次合入验证分开记录。
+- [助手工具 Schema 修复](assistant-tool-schema-fix-20261107.md)：DeepSeek 角色创建请求的 400 原因、最小桥接修复及真实调用验证边界。
+- [助手作品卡片国际化](assistant-mcp-localization-20261107.md)：复用上游 MCP Apps 卡片，补齐语言传递、状态与计数文案、内置模板名称翻译及外部宿主兼容边界。
 - [本轮上游合入记录](upstream-merge-implementation-20261107.md)：云端 `main` 更新、工作流与图片报价兼容、国际化及验证边界。
 - [上次上游合入记录](upstream-merge-implementation-20261105.md)：组织接口兼容、历史验证及当时剩余边界。
 - [合入后二开对抗性审查](adversarial-review-20261105.md)：二开模型/渠道、配置快照与国际化的反例、根因修复及本轮验证边界。
