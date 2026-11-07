@@ -56,6 +56,7 @@ function violationsIn(text: string): string[] {
 
 it('render paths use the canonical prompt builder and construct inputs centrally', () => {
   const violations = globSync('src/**/*.ts')
+    .map((path) => path.replaceAll('\\', '/'))
     .filter(
       (path) =>
         !path.endsWith('.test.ts') &&

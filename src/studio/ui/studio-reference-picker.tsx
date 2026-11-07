@@ -481,7 +481,7 @@ export function StudioReferencePicker({
 
   const accept =
     source === 'audio'
-      ? 'audio/mpeg,audio/wav,.mp3,.wav'
+      ? 'audio/*'
       : [
           'image/*',
           ...(slots.video > 0
@@ -590,7 +590,7 @@ export function StudioReferencePicker({
                     <span>
                       <Trans
                         ns="studio"
-                        i18nKey="MP3 or WAV, up to {{value1}} more. Seedance: 15 seconds combined. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt."
+                        i18nKey="Up to {{value1}} more. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt."
                         components={[
                           <span key="0" className="font-mono" />,
                           <span key="1" className="font-mono" />,
@@ -599,7 +599,16 @@ export function StudioReferencePicker({
                       />
                     </span>
                   ) : (
-                    <span>{t('MP3 or WAV.')}</span>
+                    <span>
+                      <Trans
+                        ns="studio"
+                        i18nKey="Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt."
+                        components={[
+                          <span key="0" className="font-mono" />,
+                          <span key="1" className="font-mono" />,
+                        ]}
+                      />
+                    </span>
                   )}
                 </p>
                 <Button

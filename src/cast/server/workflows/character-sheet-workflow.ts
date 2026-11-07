@@ -39,6 +39,7 @@ import {
   queuedLegacyStyling,
   assertQueuedWithFace,
   assertQueuedWithRendering,
+  normalizeQueuedReferencePhoto,
   assertQueuedWithLooks,
 } from './sheet-snapshots';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
@@ -110,7 +111,7 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
     step: WorkflowStep,
     scopedDb: WorkflowScopedDb
   ): Promise<CharacterSheetWorkflowResult> {
-    const input = event.payload;
+    const input = normalizeQueuedReferencePhoto(event.payload);
     const workflowRunId = event.instanceId;
     assertQueuedWithLooks(input);
     assertQueuedWithFace(input);
@@ -167,7 +168,8 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
         const { prompt, referenceUrls } = buildCharacterSheetPrompt(
           input.characterMetadata,
           input.lookStyling,
-          input.face === null ? null : input.face.url
+          input.face === null ? null : input.face.url,
+          input.referencePhotoUrl
         );
         const model = input.imageModel ?? DEFAULT_IMAGE_MODEL;
 

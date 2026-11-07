@@ -158,6 +158,41 @@ describe('configured image plan billing', () => {
       imageSource: 'platform',
     });
   });
+  it('prices a default character sheet photo with the edit rate', () => {
+    const references = referencePlan();
+    references.locationSheets = [];
+    references.characterSheets = [
+      asStub<PlanReferences['characterSheets'][number]>({
+        imageModel: MODEL,
+        face: null,
+        referencePhotoUrl: 'https://mock.invalid/reference-photo.png',
+      }),
+    ];
+    const generate = mockElementRoute();
+    const dualRoute: ImageModelRoute = {
+      ...route,
+      operations: { ...generate.operations, ...route.operations },
+      parameters: route.parameters.map((parameter) => ({
+        ...parameter,
+        operations: ['generate', 'edit'],
+      })),
+      priceCards: [
+        ...generate.priceCards.map((card) => ({ ...card, unitPriceUsd: 0.01 })),
+        ...route.priceCards,
+      ],
+    };
+    const request = { ...plan(references), targets: [] };
+    expect(quoteConfiguredPlanImages(request, [dualRoute])).toMatchObject({
+      costMicros: 30000,
+      creditFloorMicros: 30000,
+    });
+    expect(
+      estimateReferenceSheetPlanCost(references, MODEL, [dualRoute], {})
+    ).toBe(30000);
+    expect(() => quoteConfiguredPlanImages(request, [generate])).toThrow(
+      'operation'
+    );
+  });
   it('does not impose a configured image source on a plan with no image work', () => {
     const empty = { ...plan(), targets: [] };
     expect(planUsesConfiguredImages(empty)).toBe(false);

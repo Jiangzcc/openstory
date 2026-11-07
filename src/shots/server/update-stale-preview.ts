@@ -29,6 +29,7 @@ import {
 import { estimateTtsCost } from '@/billing/elevenlabs-pricing';
 import { addMicros, ZERO_MICROS, type Microdollars } from '@/billing/money';
 import { ttsCharacterCount } from '@/motion/dialogue-tts';
+import { estimateLipsyncCost } from '@/motion/lipsync';
 import type { UpdateStalePlan } from './update-stale-plan';
 import type { UpdateStaleDepth } from '@/shots/update-stale-depth';
 
@@ -38,6 +39,11 @@ export type UpdateStalePreview = {
   imageShotIds: string[];
   dialogueShotIds: string[];
   videoShotIds: string[];
+  /**
+   * Shots inside `videoShotIds` whose clip is lip-synced instead of
+   * re-rendered (#2263). Absent when the plan predates the field.
+   */
+  lipsyncShotIds?: string[];
   musicPrompt: boolean;
   musicTrack: boolean;
   /**
@@ -135,15 +141,19 @@ export function buildUpdateStalePreview(
   }
   const videosCost = sum(
     videos.map((t) =>
-      estimateVideoCost(
-        videoModel,
-        (t.durationMs ?? DEFAULT_VIDEO_DURATION_MS) / 1000,
-        {
-          pricing,
-          resolution: plan.sequence.resolution,
-          referenceOnly: !t.usesStartFrame,
-        }
-      )
+      t.lipsyncVideo
+        ? estimateLipsyncCost(
+            (t.durationMs ?? DEFAULT_VIDEO_DURATION_MS) / 1000
+          )
+        : estimateVideoCost(
+            videoModel,
+            (t.durationMs ?? DEFAULT_VIDEO_DURATION_MS) / 1000,
+            {
+              pricing,
+              resolution: plan.sequence.resolution,
+              referenceOnly: !t.usesStartFrame,
+            }
+          )
     )
   );
   const musicCost = music
@@ -167,6 +177,7 @@ export function buildUpdateStalePreview(
     imageShotIds: images.map((t) => t.shotId),
     dialogueShotIds: dialogues.map((t) => t.shotId),
     videoShotIds: videos.map((t) => t.shotId),
+    lipsyncShotIds: videos.filter((t) => t.lipsyncVideo).map((t) => t.shotId),
     musicPrompt: music?.regenPrompt ?? false,
     musicTrack: music?.regenTrack ?? false,
     costByLevel: {

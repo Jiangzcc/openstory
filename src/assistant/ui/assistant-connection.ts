@@ -8,7 +8,13 @@ const ASSISTANT_CHAT_URL = '/api/assistant/chat';
 const REQUEST_ERROR_CODE = 'ASSISTANT_REQUEST_ERROR';
 const THREAD_NOT_FOUND_CODE = 'THREAD_NOT_FOUND';
 const NOT_FOUND_STATUS = 404;
-type AssistantConnection = Required<ReturnType<typeof fetchServerSentEvents>>;
+type AssistantConnection = ReturnType<typeof fetchServerSentEvents> &
+  Required<
+    Pick<
+      ReturnType<typeof fetchServerSentEvents>,
+      'hydrate' | 'hydrateGeneration'
+    >
+  >;
 
 const errorEnvelopeSchema = z.object({
   error: z.object({

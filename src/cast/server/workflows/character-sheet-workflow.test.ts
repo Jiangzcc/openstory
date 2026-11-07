@@ -13,6 +13,7 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { CharacterSheetWorkflowInput } from '@/platform/server/workflow/types';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { asStub } from '@/test/as-stub';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 
 const mockGenerateImageWithProvider = vi.fn();
 const mockStoreGeneratedPng = vi.fn();
@@ -71,10 +72,17 @@ function makeWorkflow(): Probe {
   return new Probe(ctx, env);
 }
 
-function makeStep(): WorkflowStep {
+function makeStep(
+  cachedResults: Map<string, unknown> = new Map()
+): WorkflowStep {
   // minimal WorkflowStep stub: runImpl only uses `do`
   return asStub<WorkflowStep>({
-    do: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
+    do: vi.fn(async (name: string, fn: () => Promise<unknown>) => {
+      if (cachedResults.has(name)) return cachedResults.get(name);
+      const result = await fn();
+      cachedResults.set(name, result);
+      return result;
+    }),
   });
 }
 
@@ -86,6 +94,7 @@ const mockFailSheetClaimByVersion = vi.fn();
 function makeScopedDb(): WorkflowScopedDb {
   // stub covering only the scoped-db surface runImpl touches
   return asStub<WorkflowScopedDb>({
+    models: DEFAULT_MODEL_CONFIGURATION,
     characters: { updateSheetStatus: mockUpdateSheetStatus },
     characterLooks: {
       failSheetClaim: mockFailSheetClaim,
@@ -130,6 +139,7 @@ async function makeEvent(
     lookVersionId: 'lookver-1',
     lookStyling: null,
     face: null,
+    referencePhotoUrl: null,
     bibleVersionId: null,
     characterName: 'Sam',
     characterMetadata,
@@ -196,6 +206,46 @@ describe('CharacterSheetWorkflow looks', () => {
     });
     expect(mockPromoteIfPending.mock.invocationCallOrder[0] ?? 0).toBeLessThan(
       mockTriggerSheetPortrait.mock.invocationCallOrder[0] ?? 0
+    );
+  });
+
+  it('replays a pre-reference-photo run without regenerating or changing its claim', async () => {
+    const legacy = await makeEvent();
+    delete asStub<Partial<CharacterSheetWorkflowInput>>(legacy.payload)
+      .referencePhotoUrl;
+    const checkpoints = new Map<string, unknown>();
+    const first = await makeWorkflow().runBody(
+      legacy,
+      makeStep(checkpoints),
+      makeScopedDb()
+    );
+    expect(mockGenerateImageWithProvider.mock.lastCall?.[0]).toMatchObject({
+      referenceImageUrls: undefined,
+    });
+    expect(checkpoints.has('generate-sheet-image')).toBe(true);
+    vi.clearAllMocks();
+
+    const replay = await makeWorkflow().runBody(
+      legacy,
+      makeStep(
+        new Map([
+          ['generate-sheet-image', checkpoints.get('generate-sheet-image')],
+          ['deduct-credits', undefined],
+        ])
+      ),
+      makeScopedDb()
+    );
+
+    expect(replay).toEqual(first);
+    expect(mockGenerateImageWithProvider).not.toHaveBeenCalled();
+    expect(mockStoreGeneratedPng).not.toHaveBeenCalled();
+    expect(mockDeductWorkflowCredits).not.toHaveBeenCalled();
+    expect(mockPromoteIfPending).toHaveBeenCalledWith(
+      expect.objectContaining({
+        claimed: true,
+        versionId: 'ver-1',
+        inputHash: legacy.payload.snapshotInputHash,
+      })
     );
   });
 });

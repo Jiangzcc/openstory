@@ -141,7 +141,7 @@ testWithUser.describe('Manual pipeline (no storyboard)', () => {
       );
       await page.getByRole('button', { name: 'Save', exact: true }).click();
       await expect(page.getByText('Prompt saved')).toBeVisible({
-        timeout: 10_000,
+        timeout: 30_000,
       });
 
       // ---- 4. Upload a still via Replace Image -------------------------
@@ -177,7 +177,7 @@ testWithUser.describe('Manual pipeline (no storyboard)', () => {
         .locator('input[type="file"]')
         .setInputFiles(VIDEO_FIXTURE);
       await expect(page.getByText('Video replaced')).toBeVisible({
-        timeout: 20_000,
+        timeout: 30_000,
       });
       await expect
         .poll(

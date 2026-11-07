@@ -75,6 +75,7 @@ import { Route as ApiOpenrouterCallbackRouteImport } from './routes/api/openrout
 import { Route as ApiStorageMultipartRouteImport } from './routes/api/storage/multipart'
 import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
 import { Route as ApiTestCharacterRouteImport } from './routes/api/test/character'
+import { Route as ApiTestCoverageRouteImport } from './routes/api/test/coverage'
 import { Route as ApiTestImageRouteImport } from './routes/api/test/image'
 import { Route as ApiTestLocationRouteImport } from './routes/api/test/location'
 import { Route as ApiTestSequenceRouteImport } from './routes/api/test/sequence'
@@ -442,6 +443,11 @@ const ApiTestCharacterRoute = ApiTestCharacterRouteImport.update({
   path: '/character',
   getParentRoute: () => ApiTestRouteRoute,
 } as any)
+const ApiTestCoverageRoute = ApiTestCoverageRouteImport.update({
+  id: '/coverage',
+  path: '/coverage',
+  getParentRoute: () => ApiTestRouteRoute,
+} as any)
 const ApiTestImageRoute = ApiTestImageRouteImport.update({
   id: '/image',
   path: '/image',
@@ -689,6 +695,7 @@ export interface FileRoutesByFullPath {
   '/api/storage/multipart': typeof ApiStorageMultipartRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/test/character': typeof ApiTestCharacterRoute
+  '/api/test/coverage': typeof ApiTestCoverageRoute
   '/api/test/image': typeof ApiTestImageRoute
   '/api/test/location': typeof ApiTestLocationRoute
   '/api/test/sequence': typeof ApiTestSequenceRoute
@@ -789,6 +796,7 @@ export interface FileRoutesByTo {
   '/api/storage/multipart': typeof ApiStorageMultipartRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/test/character': typeof ApiTestCharacterRoute
+  '/api/test/coverage': typeof ApiTestCoverageRoute
   '/api/test/image': typeof ApiTestImageRoute
   '/api/test/location': typeof ApiTestLocationRoute
   '/api/test/sequence': typeof ApiTestSequenceRoute
@@ -894,6 +902,7 @@ export interface FileRoutesById {
   '/api/storage/multipart': typeof ApiStorageMultipartRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
   '/api/test/character': typeof ApiTestCharacterRoute
+  '/api/test/coverage': typeof ApiTestCoverageRoute
   '/api/test/image': typeof ApiTestImageRoute
   '/api/test/location': typeof ApiTestLocationRoute
   '/api/test/sequence': typeof ApiTestSequenceRoute
@@ -999,6 +1008,7 @@ export interface FileRouteTypes {
     | '/api/storage/multipart'
     | '/api/storage/upload'
     | '/api/test/character'
+    | '/api/test/coverage'
     | '/api/test/image'
     | '/api/test/location'
     | '/api/test/sequence'
@@ -1099,6 +1109,7 @@ export interface FileRouteTypes {
     | '/api/storage/multipart'
     | '/api/storage/upload'
     | '/api/test/character'
+    | '/api/test/coverage'
     | '/api/test/image'
     | '/api/test/location'
     | '/api/test/sequence'
@@ -1203,6 +1214,7 @@ export interface FileRouteTypes {
     | '/api/storage/multipart'
     | '/api/storage/upload'
     | '/api/test/character'
+    | '/api/test/coverage'
     | '/api/test/image'
     | '/api/test/location'
     | '/api/test/sequence'
@@ -1753,6 +1765,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTestCharacterRouteImport
       parentRoute: typeof ApiTestRouteRoute
     }
+    '/api/test/coverage': {
+      id: '/api/test/coverage'
+      path: '/coverage'
+      fullPath: '/api/test/coverage'
+      preLoaderRoute: typeof ApiTestCoverageRouteImport
+      parentRoute: typeof ApiTestRouteRoute
+    }
     '/api/test/image': {
       id: '/api/test/image'
       path: '/image'
@@ -2203,6 +2222,7 @@ const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
 
 interface ApiTestRouteRouteChildren {
   ApiTestCharacterRoute: typeof ApiTestCharacterRoute
+  ApiTestCoverageRoute: typeof ApiTestCoverageRoute
   ApiTestImageRoute: typeof ApiTestImageRoute
   ApiTestLocationRoute: typeof ApiTestLocationRoute
   ApiTestSequenceRoute: typeof ApiTestSequenceRoute
@@ -2214,6 +2234,7 @@ interface ApiTestRouteRouteChildren {
 
 const ApiTestRouteRouteChildren: ApiTestRouteRouteChildren = {
   ApiTestCharacterRoute: ApiTestCharacterRoute,
+  ApiTestCoverageRoute: ApiTestCoverageRoute,
   ApiTestImageRoute: ApiTestImageRoute,
   ApiTestLocationRoute: ApiTestLocationRoute,
   ApiTestSequenceRoute: ApiTestSequenceRoute,

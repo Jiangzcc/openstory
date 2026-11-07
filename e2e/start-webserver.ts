@@ -19,8 +19,8 @@ execFileSync('bun', ['scripts/seed.ts', '--test'], {
   stdio: 'inherit',
 });
 
-const vite = resolve(process.cwd(), 'node_modules/.bin/vite');
-const child = spawn(vite, process.argv.slice(2), {
+const vite = resolve(process.cwd(), 'node_modules/vite/bin/vite.js');
+const child = spawn('node', [vite, ...process.argv.slice(2)], {
   stdio: 'inherit',
   env: process.env,
 });

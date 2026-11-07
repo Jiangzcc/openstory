@@ -21,7 +21,10 @@ import { Badge } from '@/ui/shadcn/badge';
 import { Button } from '@/ui/shadcn/button';
 import { ScrollArea } from '@/ui/shadcn/scroll-area';
 import { Skeleton } from '@/ui/shadcn/skeleton';
-import { useUploadCharacterSheet } from '@/shots/ui/use-media-upload';
+import {
+  useClearCharacterReferencePhoto,
+  useUploadCharacterSheet,
+} from '@/shots/ui/use-media-upload';
 import {
   characterSheetVariantKeys,
   useCharacterOwnDivergentVariants,
@@ -32,11 +35,17 @@ import {
   useUndiscardCharacterSheetVariant,
 } from '@/cast/ui/use-character-sheet-variants';
 import {
+  CharacterReplaceConfirm,
+  CharacterReplacePicker,
+} from '@/cast/ui/character-replace-dialog';
+import type { OrganizationCharacter } from '@/cast/server/db/characters';
+import {
   restoreSequenceCharacter,
   sequenceCharacterKeys,
   useCharacter,
   useCharacterSheetStaleness,
   useRegenerateCharacterSheet,
+  useReplaceSequenceCharacter,
   useSoftDeleteSequenceCharacter,
 } from '@/cast/ui/use-sequence-characters';
 import { castChannelId } from '@/cast/cast-channel';
@@ -136,8 +145,15 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
   const selectVersion = useSelectCharacterSheetVersion();
   const navigate = useNavigate();
   const softDelete = useSoftDeleteSequenceCharacter();
+  const replaceCharacter = useReplaceSequenceCharacter();
   const uploadSheet = useUploadCharacterSheet();
+  const clearPhoto = useClearCharacterReferencePhoto();
   const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isReplaceConfirmOpen, setIsReplaceConfirmOpen] = useState(false);
+  const [replacement, setReplacement] = useState<OrganizationCharacter | null>(
+    null
+  );
 
   // Soft-remove (#1108 Phase 2): navigate back to the cast list, leave a
   // 60s undo toast. The undo closure survives this component's unmount —
@@ -714,6 +730,43 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
                 )}
               </div>
 
+              {activeLook?.isDefault && character.referencePhotoUrl && (
+                <div className="flex items-center gap-3">
+                  <AppImage
+                    src={character.referencePhotoUrl}
+                    alt={t('Reference photo')}
+                    width={64}
+                    height={64}
+                    className="size-16 rounded-md object-cover"
+                  />
+                  <div className="flex flex-col items-start gap-1">
+                    <p className="text-sm text-muted-foreground">
+                      {t('This sheet is drawn from this photo.')}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={clearPhoto.isPending}
+                      onClick={() =>
+                        clearPhoto.mutate(
+                          { sequenceId, characterId },
+                          {
+                            onError: (error) =>
+                              toast.error(translateEvent('Photo not removed'), {
+                                description: errorMessage(error),
+                              }),
+                          }
+                        )
+                      }
+                    >
+                      {clearPhoto.isPending
+                        ? t('Removing…')
+                        : t('Remove photo')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <CharacterVoiceSection
                 sequenceId={sequenceId}
                 character={character}
@@ -764,6 +817,16 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsRemoveConfirmOpen(false);
+                setIsPickerOpen(true);
+              }}
+            >
+              {t('Replace')}
+            </Button>
             <AlertDialogAction
               disabled={softDelete.isPending}
               onClick={() => handleRemove(character.name)}
@@ -773,6 +836,62 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {sequenceId !== null && (
+        <CharacterReplacePicker
+          open={isPickerOpen}
+          onOpenChange={setIsPickerOpen}
+          excludeCharacterId={characterId}
+          onSelect={(picked) => {
+            setReplacement(picked);
+            setIsReplaceConfirmOpen(true);
+          }}
+        />
+      )}
+      {sequenceId !== null && replacement && (
+        <CharacterReplaceConfirm
+          open={isReplaceConfirmOpen}
+          onOpenChange={setIsReplaceConfirmOpen}
+          characterName={character.name}
+          withCharacterName={replacement.name}
+          alreadyCast={replacement.sequences.some(
+            (sequence) => sequence.id === sequenceId
+          )}
+          isLoading={replaceCharacter.isPending}
+          onConfirm={() => {
+            const withCharacter = replacement;
+            replaceCharacter.mutate(
+              {
+                sequenceId,
+                characterId,
+                withCharacterId: withCharacter.id,
+              },
+              {
+                onSuccess: (staying) => {
+                  setIsReplaceConfirmOpen(false);
+                  toast(
+                    translateEvent(
+                      'Replaced {{characterName}} with {{withCharacterName}}',
+                      {
+                        characterName: character.name,
+                        withCharacterName: withCharacter.name,
+                      }
+                    )
+                  );
+                  void navigate({
+                    to: '/sequences/$id/cast/$characterId',
+                    params: { id: sequenceId, characterId: staying.id },
+                  });
+                },
+                onError: (replaceError) =>
+                  toast.error(translateEvent('Failed to replace character'), {
+                    description: errorMessage(replaceError),
+                  }),
+              }
+            );
+          }}
+        />
+      )}
 
       {compareVariant && (
         <SheetComparisonDialog

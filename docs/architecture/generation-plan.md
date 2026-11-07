@@ -220,6 +220,13 @@ refetch on focus, invalidated by realtime and by any refused continue —
   first with work are locked (done).
 - **SFX & dialogue is always on for a batch.** Only a single shot's editor can
   turn it off.
+- **A speaker the plan cannot place is a line, not a crash (#2257).**
+  `matchSpeaker` still refuses an ambiguous cue (`Newsreader 3` is nobody
+  when the cast is `Newsreader 1` and `Newsreader 2`; `SARAH` against
+  `Sarah Chen` and `Sarah's Mother` still conflicts). The plan catches
+  that, leaves the line out of the voice and dialogue units, and returns
+  `speakerConflicts` with the same message. The footer prints it.
+  Recording the line still refuses.
 - **The continue button** (`Generate`, or `Regenerate` when every unit it owes
   exists and is only stale — `planWorkLabel`; under it `2 references, 12
 prompts, 12 images`, `planWorkLine` — a Generate that also redoes stale
@@ -353,6 +360,13 @@ never bypasses the balance check. The references wave gates the combined
 sheet and voice liability immediately before its fan-out (a fal key covers
 only sheets); another per-child gate would repeat that same check without
 reserving anything further.
+
+The develop integration keeps configured image pricing aligned with the
+frozen sheet inputs: a default-look reference photo or a non-default look's
+face selects the edit operation and its configured price, with one reference
+image. The reference wave quote, direct sheet preflight and execution use that
+same operation. New lip-sync children spawned by motion or Update all inherit
+`scopedDb.models`, preserving the parent's configured routing snapshot.
 
 Music prompt and track flags come only from the chosen units. A completed,
 non-stale track is `done` and is not remade just because the stop is Music.

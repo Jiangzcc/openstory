@@ -4,7 +4,7 @@ import type { AspectRatio } from '@/models/aspect-ratios';
 import { aspectRatioToImageSize } from '@/models/aspect-ratios';
 import { getLogger } from '@/platform/logger';
 import { isEngineAbortError } from '@/platform/server/workflow/errors';
-import { runConfiguredSingleImageStep } from '@/stills/server/configured-image-step';
+import { runConfiguredSingleImageStep } from '@/stills/server/workflows/configured-image-step';
 import { uploadPosterToStorage } from '@/stills/server/image-storage';
 
 const logger = getLogger(['openstory', 'image-channel', 'poster']);

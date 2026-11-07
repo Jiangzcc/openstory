@@ -10,22 +10,22 @@ import type { Microdollars } from '@/billing/money';
 import { deductWorkflowCredits } from '@/billing/server/workflow-deduction';
 import { asStub } from '@/test/as-stub';
 import { getLogger } from '@/platform/logger';
-import { CompatibleImageError } from './compatible-image-error';
-import { COMPATIBLE_IMAGE_LIMITS } from './compatible-image-limits';
+import { CompatibleImageError } from '../compatible-image-error';
+import { COMPATIBLE_IMAGE_LIMITS } from '../compatible-image-limits';
 import {
   IMAGE_ATTEMPT_STATUS,
   storedChannelGenerationSchema,
-} from './configured-image-attempt';
+} from '../configured-image-attempt';
 import type {
   ImageAttemptIdentity,
   ImageGenerationAttempt,
   StoredChannelGeneration,
-} from './configured-image-attempt';
+} from '../configured-image-attempt';
 import type {
   CompatibleImageInput,
   CompatibleImageResult,
-} from './compatible-image-types';
-import type { ImageGenerationResult } from './image-generation';
+} from '../compatible-image-types';
+import type { ImageGenerationResult } from '../image-generation';
 import {
   runConfiguredImageStep,
   runConfiguredSingleImageStep,
@@ -38,7 +38,7 @@ const { supplierCall } = vi.hoisted(() => ({
 }));
 
 // Mock only the paid supplier boundary; generation, quoting and preflight stay real.
-vi.mock('./compatible-image-client', () => ({
+vi.mock('../compatible-image-client', () => ({
   generateCompatibleImages: supplierCall,
 }));
 

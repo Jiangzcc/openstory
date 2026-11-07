@@ -4,25 +4,25 @@ import { isEngineAbortError } from '@/platform/server/workflow/errors';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { requireCredits } from '@/billing/server/preflight';
 import { getLogger } from '@/platform/logger';
-import { generateImageWithProvider } from './image-generation';
+import { generateImageWithProvider } from '../image-generation';
 import type {
   ImageGenerationParams,
   ImageGenerationResult,
-} from './image-generation';
-import { configuredImageGenerationQuote } from './configured-image-generation';
-import { CompatibleImageError } from './compatible-image-error';
+} from '../image-generation';
+import { configuredImageGenerationQuote } from '../configured-image-generation';
+import { CompatibleImageError } from '../compatible-image-error';
 import {
   COMPATIBLE_IMAGE_LIMITS,
   COMPATIBLE_IMAGE_STEP_TIMEOUT,
-} from './compatible-image-limits';
+} from '../compatible-image-limits';
 import {
   IMAGE_ATTEMPT_STATUS,
   storedChannelGenerationSchema,
-} from './configured-image-attempt';
+} from '../configured-image-attempt';
 import type {
   ImageAttemptIdentity,
   StoredChannelGeneration,
-} from './configured-image-attempt';
+} from '../configured-image-attempt';
 
 const logger = getLogger(['openstory', 'image-channel']);
 const NO_RESPONSE_STATUS = 'no_response';

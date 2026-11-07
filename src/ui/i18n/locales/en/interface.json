@@ -379,5 +379,11 @@
   "Organizations": "Organizations",
   "Current": "Current",
   "Loading…": "Loading…",
-  "{{value1}} uses image channel size settings.": "{{value1}} uses image channel size settings."
+  "{{value1}} uses image channel size settings.": "{{value1}} uses image channel size settings.",
+  "Discard this character?": "Discard this character?",
+  "Discard this location?": "Discard this location?",
+  "Discard this {{item}}?": "Discard this {{item}}?",
+  "What you entered will be lost.": "What you entered will be lost.",
+  "Keep editing": "Keep editing",
+  "Discard": "Discard"
 }

@@ -22,6 +22,7 @@ import { foldLegacyFeaturesInPayload } from '@/cast/bible-looks';
 import {
   computeCharacterSheetHashFromDtoBefore2065,
   assertQueuedWithFace,
+  normalizeQueuedReferencePhoto,
   characterSheetHashMatchesStored,
   computeCharacterSheetHashFromDto,
   queuedLegacyStyling,
@@ -60,6 +61,7 @@ describe('character-sheet hash', () => {
     lookVersionId: 'c1',
     lookStyling: null,
     face: null,
+    referencePhotoUrl: null,
     bibleVersionId: null,
     characterName: 'Jack',
     characterMetadata: {
@@ -110,6 +112,50 @@ describe('character-sheet hash', () => {
     // The version is the identity: the url is where the run fetches it.
     expect(movedUrlOnly).toBe(faced);
   });
+
+  it('keeps a pre-reference-photo snapshot on its original no-photo hash', async () => {
+    const { referencePhotoUrl: _photo, ...legacy } = baseInput;
+    const normalized = normalizeQueuedReferencePhoto(legacy);
+    const undefinedPhoto = normalizeQueuedReferencePhoto({
+      ...legacy,
+      referencePhotoUrl: undefined,
+    });
+    const originalHash = await computeCharacterSheetHashFromDto(baseInput);
+
+    expect(normalized.referencePhotoUrl).toBeNull();
+    expect(undefinedPhoto).toEqual(normalized);
+    expect(await computeCharacterSheetHashFromDto(normalized)).toBe(
+      originalHash
+    );
+    expect(
+      await characterSheetHashMatchesStored(
+        originalHash,
+        normalized,
+        queuedLegacyStyling(normalized),
+        null
+      )
+    ).toBe(true);
+    expect(
+      await characterSheetHashMatchesStored(
+        originalHash,
+        { ...normalized, referencePhotoUrl: '/r2/jack-photo.png' },
+        queuedLegacyStyling(normalized),
+        null
+      )
+    ).toBe(false);
+  });
+
+  it.each([42, true, {}, []])(
+    'refuses an invalid queued photo value %j',
+    (photo) => {
+      expect(() =>
+        normalizeQueuedReferencePhoto({
+          ...baseInput,
+          referencePhotoUrl: photo,
+        })
+      ).toThrow('referencePhotoUrl must be a string or null');
+    }
+  );
 
   it('4e: a sheet run queued before #2065 folds at the payload seam and still passes its own snapshot check', async () => {
     // As queued: the features on the bible entry, the look's own styling

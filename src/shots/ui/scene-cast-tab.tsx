@@ -32,7 +32,12 @@ import type { SceneWithScript } from './use-scenes';
 import { useUpdateScene } from './use-scene-structure';
 import { facetIdsForShots, useSceneFacetMaps } from './use-scene-facets';
 import {
+  CharacterReplaceConfirm,
+  CharacterReplacePicker,
+} from '@/cast/ui/character-replace-dialog';
+import {
   restoreSequenceCharacter,
+  useReplaceSequenceCharacter,
   useSequenceCharacters,
   useSoftDeleteSequenceCharacter,
 } from '@/cast/ui/use-sequence-characters';
@@ -267,9 +272,18 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
   const { data: facetMaps } = useSceneFacetMaps(sequenceId);
   const queryClient = useQueryClient();
   const softDelete = useSoftDeleteSequenceCharacter();
+  const replaceCharacter = useReplaceSequenceCharacter();
   const [pendingDelete, setPendingDelete] = useState<CharacterWithSheet | null>(
     null
   );
+  const [replacing, setReplacing] = useState<CharacterWithSheet | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false);
+  const [replacement, setReplacement] = useState<{
+    id: string;
+    name: string;
+    alreadyCast: boolean;
+  } | null>(null);
 
   const handleConfirmDelete = (character: CharacterWithSheet) => {
     softDelete.mutate(
@@ -402,6 +416,18 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (!pendingDelete) return;
+                setReplacing(pendingDelete);
+                setPendingDelete(null);
+                setPickerOpen(true);
+              }}
+            >
+              {t('Replace')}
+            </Button>
             <AlertDialogAction
               disabled={softDelete.isPending}
               // Radix's Action closes the dialog on click; hold it open so the
@@ -417,6 +443,64 @@ export const SceneCastTab: React.FC<SceneCastTabProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {replacing && (
+        <CharacterReplacePicker
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          excludeCharacterId={replacing.id}
+          onSelect={(picked) => {
+            setReplacement({
+              id: picked.id,
+              name: picked.name,
+              alreadyCast: picked.sequences.some(
+                (sequence) => sequence.id === sequenceId
+              ),
+            });
+            setReplaceConfirmOpen(true);
+          }}
+        />
+      )}
+      {replacing && replacement && (
+        <CharacterReplaceConfirm
+          open={replaceConfirmOpen}
+          onOpenChange={setReplaceConfirmOpen}
+          characterName={replacing.name}
+          withCharacterName={replacement.name}
+          alreadyCast={replacement.alreadyCast}
+          isLoading={replaceCharacter.isPending}
+          onConfirm={() => {
+            const from = replacing;
+            const withCharacter = replacement;
+            replaceCharacter.mutate(
+              {
+                sequenceId,
+                characterId: from.id,
+                withCharacterId: withCharacter.id,
+              },
+              {
+                onSuccess: () => {
+                  setReplaceConfirmOpen(false);
+                  setReplacing(null);
+                  toast(
+                    translateEvent(
+                      'Replaced {{character}} with {{replacement}}',
+                      {
+                        character: from.name,
+                        replacement: withCharacter.name,
+                      }
+                    )
+                  );
+                },
+                onError: (error) =>
+                  toast.error(translateEvent('Failed to replace character'), {
+                    description: errorMessage(error),
+                  }),
+              }
+            );
+          }}
+        />
+      )}
     </div>
   );
 };

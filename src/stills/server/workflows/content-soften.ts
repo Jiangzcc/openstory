@@ -1,5 +1,5 @@
 import { usesConfiguredImageChannel } from '@/models/image-channels';
-import { runConfiguredSingleImageStep } from '../configured-image-step';
+import { runConfiguredSingleImageStep } from './configured-image-step';
 /**
  * Content-rejection handling shared by every image render that is not a
  * shot still (#1293): character / location / element sheets and variant grids.

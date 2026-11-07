@@ -1,5 +1,5 @@
 import { usesConfiguredImageChannel } from '@/models/image-channels';
-import { runConfiguredSingleImageStep } from '../configured-image-step';
+import { runConfiguredSingleImageStep } from './configured-image-step';
 /**
  * Content-rejection handling for shot stills (#1272).
  *

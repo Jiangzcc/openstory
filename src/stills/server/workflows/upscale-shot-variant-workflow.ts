@@ -30,7 +30,7 @@ import type {
   ImageGenerationResult,
 } from '@/stills/server/image-generation';
 import type { TextToImageModel } from '@/models/models';
-import { runConfiguredSingleImageStep } from '@/stills/server/configured-image-step';
+import { runConfiguredSingleImageStep } from './configured-image-step';
 import { recordProvenance } from '@/platform/server/compliance/provenance';
 import { uploadImageToStorage } from '@/stills/server/image-storage';
 import { buildReferenceImagePrompt } from '@/stills/reference-image-prompt';

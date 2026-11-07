@@ -444,8 +444,9 @@ describe('stitch skill', () => {
         global: false,
         packageRoot: packageRoot(),
       });
-      const rel = (dest: string) => dest.slice(cwd.length + 1);
-      expect(dests.map(rel)).toEqual([
+      const rel = (dest: string, root = cwd) =>
+        dest.slice(root.length + 1).replaceAll('\\', '/');
+      expect(dests.map((dest) => rel(dest))).toEqual([
         '.agents/skills/stitch',
         '.agents/skills/stitch-player',
         '.claude/skills/stitch',
@@ -470,7 +471,7 @@ describe('stitch skill', () => {
         global: true,
         packageRoot: packageRoot(),
       });
-      expect(globalDests.map((dest) => dest.slice(home.length + 1))).toEqual([
+      expect(globalDests.map((dest) => rel(dest, home))).toEqual([
         '.agents/skills/stitch',
         '.agents/skills/stitch-player',
         '.claude/skills/stitch',

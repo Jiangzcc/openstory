@@ -104,6 +104,17 @@ export function assertQueuedWithFace(input: object): void {
   }
 }
 
+/** A pre-reference-photo run keeps the no-photo snapshot it was queued with. */
+export function normalizeQueuedReferencePhoto<T extends object>(input: T) {
+  const photo = 'referencePhotoUrl' in input ? input.referencePhotoUrl : null;
+  if (photo != null && typeof photo !== 'string') {
+    throw new WorkflowValidationError(
+      'referencePhotoUrl must be a string or null'
+    );
+  }
+  return { ...input, referencePhotoUrl: photo ?? null };
+}
+
 /**
  * A sheet payload queued before the bible carried `rendering` (#2017): the
  * sheet would read the sequence's style, which is no longer on the payload.
@@ -179,6 +190,7 @@ function characterSheetHashInput(
     characterBible: characterBibleFields(input.characterMetadata),
     styling: input.lookStyling,
     faceSheetVersionId: input.face === null ? null : input.face.versionId,
+    referencePhotoUrl: input.referencePhotoUrl,
     talentSheetHash: null,
     talent: null,
     imageModel: input.imageModel ?? DEFAULT_IMAGE_MODEL,

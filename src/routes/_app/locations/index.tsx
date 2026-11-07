@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { PHOTOREAL_RENDERING } from '@/cast/rendering';
 import { NewLocationDialog } from '@/cast/ui/location-library/new-location-dialog';
 import { OrganizationLocationList } from '@/cast/ui/location-library/organization-location-list';
 import { LibraryGridSkeleton } from '@/cast/ui/library-virtual-grid';
@@ -36,6 +37,7 @@ function LocationsPage() {
         actions={
           session ? (
             <NewLocationDialog
+              rendering={() => PHOTOREAL_RENDERING}
               onCreated={(location) =>
                 void navigate({
                   to: '/locations/$locationId',

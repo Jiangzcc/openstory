@@ -84,7 +84,7 @@ export function referenceSheetImageRequests(
   });
   return [
     ...references.characterSheets.map((sheet) =>
-      request(sheet.imageModel, sheet.face ? 1 : 0)
+      request(sheet.imageModel, sheet.face || sheet.referencePhotoUrl ? 1 : 0)
     ),
     ...references.lookSheetsAfterDefault.map((sheet) =>
       request(sheet.imageModel, 1)

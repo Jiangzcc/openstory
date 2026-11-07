@@ -148,7 +148,13 @@ export const updateSceneFn = createServerFn({ method: 'POST' })
       { userId: user.id },
       { sequenceId: sequence.id, sceneId: dbSceneId(sceneId), narrative }
     );
-    return scene;
+    const version = scene.selectedScriptVersionId
+      ? await scopedDb.sceneScriptVersions.getByIdForScene(
+          scene.selectedScriptVersionId,
+          scene.id
+        )
+      : null;
+    return { ...scene, script: version?.content ?? null };
   });
 
 /** Reorder the live scenes; a pure reorder changes no content hash. */

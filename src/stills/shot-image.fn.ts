@@ -212,6 +212,8 @@ export type ShotVideoVersionRow = {
   url: string | null;
   createdAt: Date;
   selected: boolean;
+  /** `lipsync` is a sync-3 pass over a render (#2263); null is a render or upload. */
+  source: 'lipsync' | null;
 };
 
 const shotHistoryListInputSchema = z.object({
@@ -277,6 +279,7 @@ export const listShotVideoVersionsFn = createServerFn({ method: 'GET' })
       url: v.url,
       createdAt: v.createdAt,
       selected: v.id === selectedId,
+      source: v.source ?? null,
     }));
   });
 

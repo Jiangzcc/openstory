@@ -8,6 +8,8 @@ src/models/model-configuration.ts defines supported slots, original defaults and
 
 Creation fills omitted models before the existing schema validates them. Existing explicit choices and stored asset/sequence models remain authoritative. Mode recommendations, new-sequence video recommendations and generic operation defaults are separate slots because upstream gave them distinct behavior. Provider availability and aspect-ratio checks still apply.
 
+An anonymous Enhance click opens sign-in and preserves its intent before checking model readiness. Authenticated enhancement and post-login intent recovery still wait for the model settings and catalog validation before making a model request.
+
 The form scroll container is positioned with relative so Base UI Select's absolutely positioned hidden inputs stay inside it. Without that containing block, the inputs position against the outer main and extend the document's scroll area, creating a second scrollbar.
 
 ## Consistency and session changes

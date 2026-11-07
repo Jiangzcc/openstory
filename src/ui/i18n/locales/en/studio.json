@@ -144,8 +144,6 @@
   "Upload audio": "Upload audio",
   "Upload": "Upload",
   "Reference source": "Reference source",
-  "MP3 or WAV, up to {{value1}} more. Seedance: 15 seconds combined. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt.": "MP3 or WAV, up to {{value1}} more. Seedance: 15 seconds combined. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt.",
-  "MP3 or WAV.": "MP3 or WAV.",
   "{{value1}} shots": "{{value1}} shots",
   "Add {{value1}}": "Add {{value1}}",
   "Add": "Add",
@@ -201,5 +199,7 @@
   "A short clip from one of my stills": "A short clip from one of my stills",
   "A looping background for a title card": "A looping background for a title card",
   "Animate a character sheet into a turnaround": "Animate a character sheet into a turnaround",
-  "Drafts render at 480p, the final at 1080p": "Drafts render at 480p, the final at 1080p"
+  "Drafts render at 480p, the final at 1080p": "Drafts render at 480p, the final at 1080p",
+  "Up to {{value1}} more. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt.": "Up to {{value1}} more. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt.",
+  "Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt.": "Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt."
 }

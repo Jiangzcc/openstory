@@ -7,15 +7,15 @@ import { createImageModelRoutingSnapshot } from '@/models/image-channels';
 import type {
   ImageGenerationAttempt,
   ImageAttemptIdentity,
-} from './configured-image-attempt';
-import type { ImageGenerationResult } from './image-generation';
+} from '../configured-image-attempt';
+import type { ImageGenerationResult } from '../image-generation';
 import { runConfiguredImageStep } from './configured-image-step';
 
 const { generate, requireCredits } = vi.hoisted(() => ({
   generate: vi.fn<() => Promise<ImageGenerationResult>>(),
   requireCredits: vi.fn(async () => undefined),
 }));
-vi.mock('./image-generation', () => ({ generateImageWithProvider: generate }));
+vi.mock('../image-generation', () => ({ generateImageWithProvider: generate }));
 vi.mock('@/billing/server/preflight', () => ({ requireCredits }));
 
 const ENGINE_ABORT_MESSAGE = 'Aborting engine: Grace period complete';

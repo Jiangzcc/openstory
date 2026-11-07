@@ -17,7 +17,7 @@ only assistant-side work per tool happens in
 - The MCP envelope is unwrapped: `structuredContent` goes to the model and
   the card; an error envelope becomes a thrown error, which TanStack AI
   reports as the tool's error result and the run goes on.
-- A delete (`destructiveHint`) is `needsApproval`: the run pauses on a card
+- A delete or a character merge (`destructiveHint`) is `needsApproval`: the run pauses on a card
   with Allow / Deny. A spend does not ask: the user is inside the app, the
   page shows the generation as it starts, and it can be cancelled there.
   A read never asks. `assistant-tools.test.ts` pins this against the catalog.
@@ -73,6 +73,10 @@ response unchanged for its status-based reconnect rules, then restores
 connection boundary. Each send, join and hydrate owns its error state.
 A rejected HTTP request must not be thrown from the fetch client: the SDK
 classifies a fetch rejection as a network read failure and may retry it.
+
+The connection requires the SDK's two hydration methods. Other optional
+capabilities stay optional across SDK upgrades, including TanStack AI 1.2's
+`cancelRun`; no server cancellation URL is configured here.
 
 `INSUFFICIENT_CREDITS` renders the localized assistant credit message and
 uses the existing low-balance notification. Actual transport failures keep

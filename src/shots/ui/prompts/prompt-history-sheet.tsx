@@ -128,7 +128,15 @@ type MediaRow = {
   url: string | null;
   createdAt: Date;
   selected: boolean;
-  kind?: 'model' | 'framing';
+  /** Image rows: how the still was made. */
+  kind?: 'model' | 'framing' | 'upload';
+  /** Video rows: `lipsync` is a sync-3 pass over a render (#2263). */
+  source?: 'lipsync' | null;
+};
+
+const KIND_LABEL: Record<'framing' | 'upload', 'Framing' | 'Upload'> = {
+  framing: 'Framing',
+  upload: 'Upload',
 };
 
 function formatTimestamp(d: Date, locale: Locale): string {
@@ -323,17 +331,27 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
                 )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <MediaStatusIcon status={row.status} />
-                    <span className="truncate text-sm font-medium">
-                      {modelLabel}
-                    </span>
-                    {row.selected && (
-                      <Badge variant="outline">{t('Current')}</Badge>
-                    )}
-                  </div>
-                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                {/* Keep the model name clear of badges and the timestamp. */}
+                <div className="flex min-w-0 items-center gap-2">
+                  <MediaStatusIcon status={row.status} />
+                  <span
+                    className="truncate text-sm font-medium"
+                    title={modelLabel}
+                  >
+                    {modelLabel}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {row.selected && (
+                    <Badge variant="outline">{t('Current')}</Badge>
+                  )}
+                  {row.source === 'lipsync' && (
+                    <Badge variant="secondary">{t('Lip-synced')}</Badge>
+                  )}
+                  {row.kind && row.kind !== 'model' && (
+                    <Badge variant="secondary">{t(KIND_LABEL[row.kind])}</Badge>
+                  )}
+                  <span className="ml-auto text-xs text-muted-foreground tabular-nums">
                     {formatTimestamp(row.createdAt, locale)}
                   </span>
                 </div>

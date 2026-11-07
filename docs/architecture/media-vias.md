@@ -216,3 +216,24 @@ Returned PNG/JPEG/WebP bytes, dimensions, MIME and counts are checked. Header/co
 Costs use the frozen configurable USD card and existing organization wallet precision. Supplier-reported token usage and separately maintained supplier costs are not treated as verified invoices. E2E replay accepts local mock image endpoints only. See [model configuration](model-configuration.md) and the [image channel implementation](../secondary-development/image-channels.md).
 
 Durable step results are a cross-deployment interface: Studio normalizes the legacy single `upload` checkpoint into the current `uploads` collection after reading `generate-image`, without running generation or storage again. The configured poster bridge also rethrows engine interruptions at the step boundary; only ordinary optional-poster failures become an absent poster. The 2026-11-07 repairs and local verification are recorded in [image channel review repairs](../secondary-development/image-channel-review-fixes.md).
+
+## Sync lipsync (#2263)
+
+Post-process a finished clip. Endpoint `fal-ai/sync-lipsync/v3`, price card
+id `sync-lipsync-3` at $8 per minute of the source video until `model_pricing`
+carries the fal row. A clip with no positive duration is refused, never
+priced as a default length. `sync_mode` is `cut_off`: the dialogue section already
+fits the shot. The new `video_variants` row has `source: 'lipsync'` and the
+`audioSourceKey` it was synced to. A later line or voice edit marks that
+version out of date. The render it was made from stays selected until the
+lip-sync promotes. One video plus one dialogue file. A packed clip is
+already that pair: the spanning section of the scene's speech, the same
+file Seedance and MiniMax send with the render. Kling, Omni Flash and Grok
+Imagine never receive it as a reference. The motion trigger still
+snapshots the file. The regenerate price and its credit hold include
+the sync-3 amount ($8 per minute of the quoted clip) when that run will
+lip-sync. Motion promotes the unsynced clip, then sync-3 appends
+a `source: 'lipsync'` version and promotes that. Seedance and MiniMax are
+never synced, draft or final. Update all still takes this path when a single-shot clip's only
+drift is audio. Native fal spend, same as other fal jobs: an
+organization fal key skips the credit check.

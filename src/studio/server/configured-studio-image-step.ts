@@ -5,7 +5,7 @@ import type { StudioGenerationWorkflowInput } from '@/platform/server/workflow/t
 import type { WorkflowEvent } from 'cloudflare:workers';
 import { aspectRatioToImageSize } from '@/models/aspect-ratios';
 import { IMAGE_PARAMETER_LIMITS } from '@/models/image-channel-parameters';
-import { runConfiguredImageStep } from '@/stills/server/configured-image-step';
+import { runConfiguredImageStep } from '@/stills/server/workflows/configured-image-step';
 import { uploadStudioImage } from './upload';
 import { tagStudioReferences } from '@/studio/text-to-video';
 

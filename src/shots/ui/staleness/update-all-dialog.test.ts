@@ -1,5 +1,6 @@
 import type { ShotStaleness } from '@/shots/ui/use-shot-staleness';
 import { describe, expect, it } from 'vitest';
+import { createApplicationI18n } from '@/ui/i18n/runtime';
 import {
   describeCauses,
   levelsFromStaleShots,
@@ -158,5 +159,40 @@ describe('previewLevels', () => {
       { depth: 'dialogue', label: 'Dialogue for shot 2' },
       { depth: 'video', label: 'Videos for shots 2 & 3' },
     ]);
+  });
+
+  it('names a lip-sync apart from a re-render (#2263)', () => {
+    expect(
+      previewLevels(
+        {
+          ...preview,
+          musicPrompt: false,
+          videoShotIds: ['a', 'b'],
+          lipsyncShotIds: ['b'],
+        },
+        numbers,
+        false
+      )
+    ).toEqual([
+      {
+        depth: 'prompts',
+        label: 'Image prompts for shots 2 & 3 · Motion prompts for shot 3',
+      },
+      { depth: 'images', label: 'Images for shots 2 & 3' },
+      { depth: 'video', label: 'Videos for shot 2 · Lip-sync for shot 3' },
+    ]);
+  });
+
+  it('keeps the render and lip-sync scopes distinct in Chinese', () => {
+    const translate = createApplicationI18n('zh-CN').getFixedT(null, 'shots');
+    const levels = previewLevels(
+      { ...preview, videoShotIds: ['a', 'b'], lipsyncShotIds: ['b'] },
+      numbers,
+      false,
+      translate
+    );
+    expect(levels.find((level) => level.depth === 'video')?.label).toBe(
+      '镜头 2的视频 · 为镜头 3同步口型'
+    );
   });
 });

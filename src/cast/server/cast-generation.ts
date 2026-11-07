@@ -99,7 +99,7 @@ export async function regenerateCharacterSheet(
     model: payload.imageModel ?? DEFAULT_IMAGE_MODEL,
     aspectRatio: '16:9',
     imageCount: 1,
-    referenceImageCount: payload.face ? 1 : 0,
+    referenceImageCount: payload.face || payload.referencePhotoUrl ? 1 : 0,
   });
   if (imageBilling)
     await requireCredits(scopedDb, imageBilling.costMicros, imageBilling);

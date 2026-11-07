@@ -114,14 +114,19 @@ export const SegmentVideoPanel: React.FC<SegmentVideoPanelProps> = ({
                   variant={isSelected ? 'default' : 'outline'}
                   disabled={!selectable || selecting}
                   onClick={() => onSelectVersion(version.id)}
-                  aria-label={t('Select version {{value1}}{{value2}}', {
-                    value1: i + 1,
-                    value2: version.draftTaskId
-                      ? t(' (draft)')
-                      : version.resolution
-                        ? ` (${version.resolution})`
-                        : '',
-                  })}
+                  aria-label={t(
+                    'Select version {{value1}}{{value2}}{{source}}',
+                    {
+                      value1: i + 1,
+                      value2: version.draftTaskId
+                        ? t(' (draft)')
+                        : version.resolution
+                          ? ` (${version.resolution})`
+                          : '',
+                      source:
+                        version.source === 'lipsync' ? t(' (lip-synced)') : '',
+                    }
+                  )}
                   aria-pressed={isSelected}
                   className="h-7 gap-1.5 px-2 text-xs"
                 >
@@ -135,6 +140,12 @@ export const SegmentVideoPanel: React.FC<SegmentVideoPanelProps> = ({
                         : version.resolution === '4k'
                           ? '4K'
                           : version.resolution}
+                    </span>
+                  )}
+                  {/* A lip-sync is the same picture with new mouths (#2263). */}
+                  {version.source === 'lipsync' && (
+                    <span className="font-mono text-[10px] opacity-70">
+                      {t('lip-sync')}
                     </span>
                   )}
                 </Button>

@@ -379,5 +379,11 @@
   "Organizations": "组织",
   "Current": "当前组织",
   "Loading…": "正在加载…",
-  "{{value1}} uses image channel size settings.": "{{value1}}使用图片渠道的尺寸设置。"
+  "{{value1}} uses image channel size settings.": "{{value1}}使用图片渠道的尺寸设置。",
+  "Discard this character?": "要放弃新建这个角色吗？",
+  "Discard this location?": "要放弃新建这个地点吗？",
+  "Discard this {{item}}?": "要放弃这个{{item}}吗？",
+  "What you entered will be lost.": "你输入的内容将丢失。",
+  "Keep editing": "继续编辑",
+  "Discard": "放弃"
 }

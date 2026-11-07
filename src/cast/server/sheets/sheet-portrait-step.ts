@@ -5,7 +5,7 @@ import { generateId } from '@/platform/id';
 import { getLogger } from '@/platform/logger';
 import { usesConfiguredImageChannel } from '@/models/image-channels';
 import { configuredImageGenerationQuote } from '@/stills/server/configured-image-generation';
-import { runConfiguredSingleImageStep } from '@/stills/server/configured-image-step';
+import { runConfiguredSingleImageStep } from '@/stills/server/workflows/configured-image-step';
 import type { ImageGenerationResult } from '@/stills/server/image-generation';
 import { extractImageCost } from '@/billing/server/workflow-deduction';
 import { recordProvenance } from '@/platform/server/compliance/provenance';

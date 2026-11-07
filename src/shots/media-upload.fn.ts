@@ -38,18 +38,22 @@ import { createServerFn } from '@tanstack/react-start';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import {
+  authWithOrganizationMiddleware,
   castAccessMiddleware,
   sequenceAccessMiddleware,
 } from '@/platform/middleware.fn';
 import { shotAccessMiddleware } from '@/shots/shot-access.fn';
 import {
+  clearCharacterReferencePhoto,
   replaceFrameContent,
+  setCharacterReferencePhotoFromUpload,
   setCharacterSheetFromUpload,
   setLocationSheetFromUpload,
   setSequenceMusicFromUpload,
   setShotVideoFromUpload,
 } from '@/shots/server/media-upload';
 import { generateId } from '@/platform/id';
+import { uploadSceneDialogue } from '@/shots/server/scene-dialogue-upload';
 
 /**
  * Extension for an upload, rejecting anything outside the surface's allow-list.
@@ -136,6 +140,23 @@ export const presignSequenceMusicUploadFn = createServerFn({ method: 'POST' })
     );
   });
 
+/** A scene's recording (#2264); the browser sends it as a 16-bit WAV. */
+export const presignSceneDialogueUploadFn = createServerFn({ method: 'POST' })
+  .middleware([sequenceAccessMiddleware])
+  .validator(
+    zodValidator(
+      z.object({ sequenceId: ulidSchema, filename: z.string().min(1) })
+    )
+  )
+  .handler(async ({ context, data }) => {
+    return signedUpload(
+      STORAGE_BUCKETS.AUDIO,
+      `${organizationKeyPrefix(context.organizationId)}/sequences/${context.sequence.id}/dialogue-uploads/${generateId()}`,
+      data.filename,
+      'audio'
+    );
+  });
+
 // Finalize — the logic lives in `@/shots/server/media-upload`, shared with MCP.
 
 const replaceFrameContentInput = z.object({
@@ -203,6 +224,22 @@ export const presignCharacterSheetUploadFn = createServerFn({ method: 'POST' })
     );
   });
 
+/**
+ * A sheet for a character not made yet (#2254): checked on drop, attached
+ * with `setCharacterSheetFromUploadFn` once the character exists.
+ */
+export const presignCharacterDraftUploadFn = createServerFn({ method: 'POST' })
+  .middleware([authWithOrganizationMiddleware])
+  .validator(zodValidator(z.object({ filename: z.string().min(1) })))
+  .handler(({ context, data }) =>
+    signedUpload(
+      STORAGE_BUCKETS.CHARACTERS,
+      `${organizationKeyPrefix(context.organizationId)}/characters/drafts/${generateId()}`,
+      data.filename,
+      'image'
+    )
+  );
+
 const setCharacterSheetInput = z.object({
   sequenceId: ulidSchema.nullable(),
   characterId: ulidSchema,
@@ -220,6 +257,38 @@ export const setCharacterSheetFromUploadFn = createServerFn({ method: 'POST' })
       lookId: data.lookId ?? data.characterId,
     })
   );
+
+/**
+ * Draw a character's default look from an uploaded photo (#2254): stored as
+ * its reference photo, then a sheet run starts.
+ */
+export const setCharacterReferencePhotoFromUploadFn = createServerFn({
+  method: 'POST',
+})
+  .middleware([castAccessMiddleware])
+  .validator(
+    zodValidator(
+      z.object({
+        sequenceId: ulidSchema.nullable(),
+        characterId: ulidSchema,
+        publicUrl: mediaUrlSchema,
+      })
+    )
+  )
+  .handler(({ context, data }) =>
+    setCharacterReferencePhotoFromUpload(context, data)
+  );
+
+export const clearCharacterReferencePhotoFn = createServerFn({
+  method: 'POST',
+})
+  .middleware([castAccessMiddleware])
+  .validator(
+    zodValidator(
+      z.object({ sequenceId: ulidSchema.nullable(), characterId: ulidSchema })
+    )
+  )
+  .handler(({ context, data }) => clearCharacterReferencePhoto(context, data));
 
 // `sequenceId` null is the Locations page (#1695): the same upload, stored
 // under the organization, with no sequence event or channel.
@@ -250,3 +319,17 @@ export const setLocationSheetFromUploadFn = createServerFn({ method: 'POST' })
   .middleware([castAccessMiddleware])
   .validator(zodValidator(setLocationSheetInput))
   .handler(({ context, data }) => setLocationSheetFromUpload(context, data));
+
+/** Make an uploaded recording the scene's dialogue (#2264). */
+export const uploadSceneDialogueFn = createServerFn({ method: 'POST' })
+  .middleware([sequenceAccessMiddleware])
+  .validator(
+    zodValidator(
+      z.object({
+        sequenceId: ulidSchema,
+        sceneId: ulidSchema,
+        publicUrl: mediaUrlSchema,
+      })
+    )
+  )
+  .handler(({ context, data }) => uploadSceneDialogue(context, data));

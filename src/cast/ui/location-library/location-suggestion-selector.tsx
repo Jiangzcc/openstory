@@ -33,6 +33,8 @@ type LocationSuggestionSelectorProps = {
   selectedLocationIds: readonly string[];
   onSelectionChange: (ids: string[]) => void;
   disabled: boolean;
+  /** What a location made here is rendered as: the picked style's medium. */
+  rendering: () => string;
 };
 
 const Picture: React.FC<{
@@ -62,6 +64,7 @@ export const LocationSuggestionSelector: React.FC<
   selectedLocationIds,
   onSelectionChange,
   disabled,
+  rendering,
 }) => {
   const { t } = useTranslation('cast');
 
@@ -91,10 +94,11 @@ export const LocationSuggestionSelector: React.FC<
   const newLocation = (
     <NewLocationDialog
       trigger={
-        <Button type="button" variant="outline" size="sm">
+        <Button type="button" variant="outline">
           {t('New location')}
         </Button>
       }
+      rendering={rendering}
       // Picked as it is made, so it need not be found in the grid.
       onCreated={(location) => {
         if (!selectedLocationIds.includes(location.id)) {
@@ -178,23 +182,24 @@ export const LocationSuggestionSelector: React.FC<
             <DialogHeader>
               <DialogTitle>{t('Locations')}</DialogTitle>
               <DialogDescription>
-                {t(
-                  'Places the script names are matched to your picks. The rest are made new.'
-                )}
+                {t('Pick locations to use. The script adds any others.')}
               </DialogDescription>
             </DialogHeader>
 
-            <Input
-              type="search"
-              aria-label={t('Search locations')}
-              placeholder={t('Search locations…')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              // Enter would submit the form and close the picker mid-search.
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.preventDefault();
-              }}
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="search"
+                aria-label={t('Search locations')}
+                placeholder={t('Search locations…')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                // Enter would submit the form and close the picker mid-search.
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.preventDefault();
+                }}
+              />
+              {!signedOut && newLocation}
+            </div>
 
             <ScrollArea className="h-[min(400px,40dvh)]">
               {failed ? (
@@ -255,8 +260,7 @@ export const LocationSuggestionSelector: React.FC<
               )}
             </ScrollArea>
 
-            <div className="flex items-center justify-between">
-              {signedOut ? <span /> : newLocation}
+            <div className="flex justify-end">
               <Button type="submit">
                 {selectedLocationIds.length > 0
                   ? t('Use {{value1}}', { value1: selectedLocationIds.length })

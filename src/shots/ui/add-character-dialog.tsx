@@ -13,7 +13,8 @@ import { Input } from '@/ui/shadcn/input';
 import { AppImage } from '@/ui/shadcn/app-image';
 import { Skeleton } from '@/ui/shadcn/skeleton';
 import { NewCharacterForm } from '@/cast/ui/new-character-form';
-import { useCreateSequenceCharacter } from '@/cast/ui/use-sequence-characters';
+import { useNewCharacter } from '@/cast/ui/use-new-character';
+import { useDiscardGuard } from '@/ui/use-discard-guard';
 import {
   useAttachLibraryCharacter,
   useLibraryCharacters,
@@ -27,8 +28,8 @@ import { toast } from 'sonner';
 /**
  * The cast panel's one way in. It opens on the organization's characters (#2050):
  * picking one is the same attach the `@` picker makes, one link, every look,
- * nothing copied. New character swaps the list for the manual create (#1108
- * Phase 2): a name, then the character's page beside the inspector.
+ * nothing copied. New character swaps the list for the create (#2254): a
+ * name, a description and an image, then the character's page.
  */
 export const AddCharacterDialog: React.FC<{
   sequenceId: string;
@@ -43,7 +44,7 @@ export const AddCharacterDialog: React.FC<{
   const [query, setQuery] = useState('');
   const { data: library } = useLibraryCharacters(open);
   const attach = useAttachLibraryCharacter();
-  const createCharacter = useCreateSequenceCharacter();
+  const createCharacter = useNewCharacter({ sequenceId }, null);
   const navigate = useNavigate();
 
   const q = query.trim().toLowerCase();
@@ -51,7 +52,9 @@ export const AddCharacterDialog: React.FC<{
     (c) => !castCharacterIds.has(c.id) && c.name.toLowerCase().includes(q)
   );
 
+  const guard = useDiscardGuard('character');
   const close = () => {
+    guard.reset();
     setOpen(false);
     setCreating(false);
     setQuery('');
@@ -82,7 +85,9 @@ export const AddCharacterDialog: React.FC<{
   return (
     <Dialog
       open={open}
-      onOpenChange={(next) => (next ? setOpen(true) : close())}
+      onOpenChange={(next) =>
+        next ? setOpen(true) : guard.confirmDiscard(close)
+      }
     >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
@@ -94,31 +99,29 @@ export const AddCharacterDialog: React.FC<{
           <DialogHeader>
             <DialogTitle>{t('New character')}</DialogTitle>
             <DialogDescription>
-              {t('Name it. The rest is filled in on its page.')}
+              {t('The rest of the bible, looks and voice are on its page.', {
+                ns: 'cast',
+              })}
             </DialogDescription>
           </DialogHeader>
           <NewCharacterForm
             isPending={createCharacter.isPending}
-            submitLabel={t('Create')}
-            pendingLabel={t('Creating…')}
+            onEdit={guard.markDirty}
             onSubmit={(fields) =>
-              createCharacter.mutate(
-                { sequenceId, ...fields },
-                {
-                  onSuccess: (character) => {
-                    close();
-                    void navigate({
-                      to: '/sequences/$id/cast/$characterId',
-                      params: { id: sequenceId, characterId: character.id },
-                      search: true,
-                    });
-                  },
-                  onError: (error) =>
-                    toast.error(translateEvent('Failed to add character'), {
-                      description: errorMessage(error),
-                    }),
-                }
-              )
+              createCharacter.mutate(fields, {
+                onSuccess: ({ character }) => {
+                  close();
+                  void navigate({
+                    to: '/sequences/$id/cast/$characterId',
+                    params: { id: sequenceId, characterId: character.id },
+                    search: true,
+                  });
+                },
+                onError: (error) =>
+                  toast.error(translateEvent('Failed to add character'), {
+                    description: errorMessage(error),
+                  }),
+              })
             }
           />
           <Button
@@ -126,7 +129,7 @@ export const AddCharacterDialog: React.FC<{
             variant="ghost"
             size="sm"
             className="self-start"
-            onClick={() => setCreating(false)}
+            onClick={() => guard.confirmDiscard(() => setCreating(false))}
           >
             {t('Back to characters')}
           </Button>
@@ -222,6 +225,7 @@ export const AddCharacterDialog: React.FC<{
           </div>
         </DialogContent>
       )}
+      {guard.dialog}
     </Dialog>
   );
 };

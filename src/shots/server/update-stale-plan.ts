@@ -73,6 +73,7 @@ import {
 } from '@/shots/shot-list.schema';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { loadSequenceSegments } from '@/shots/server/sequence-segments';
+import type { SelectedVersionDrift } from '@/shots/scene-segments';
 import {
   loadSceneContextBySequence,
   resolveSceneForShot,
@@ -191,6 +192,13 @@ export type PlanTarget = {
    * stale. Video/music use status columns rather than pending-claim rows.
    */
   regenVideo: boolean;
+  /**
+   * The selected clip is stale only because its dialogue audio moved, and
+   * it covers this one shot. Update all lip-syncs it (#2263) instead of
+   * re-rendering. Omitted when false so a plan that never lip-syncs stays
+   * the same shape.
+   */
+  lipsyncVideo?: boolean;
   /**
    * A continue (#1818) renders the shot's FIRST video too; Update all never
    * does, so the render stands down when the selection is gone.
@@ -420,6 +428,9 @@ export type UpdateStalePlan = {
     name: string;
     voiceId: string;
     voiceOnly: boolean;
+    /** Set when Replace pointed the slot at someone else. */
+    scriptName?: string | null;
+    aliases?: readonly { name: string }[];
   }[];
   /**
    * Scenes to record ONCE before any video renders (#1657): every scene with
@@ -525,7 +536,8 @@ export async function planUpdateAll(args: {
 }): Promise<UpdateStalePlan> {
   const { scopedDb, sequenceId, sceneId, shotId, depth, userId } = args;
   const [generationPlan, allShots] = await Promise.all([
-    args.generationPlan ?? computeGenerationPlan(scopedDb, sequenceId),
+    args.generationPlan ??
+      computeGenerationPlan(scopedDb, sequenceId).then((plan) => plan.units),
     scopedDb.shots.listBySequence(sequenceId),
   ]);
   const shotIds = args.shotIds
@@ -704,7 +716,15 @@ export async function computePlan(args: {
       ? pendingVoiceId(row.id)
       : row.voiceId;
     return voiceId
-      ? [{ name: row.name, voiceId, voiceOnly: row.voiceOnly }]
+      ? [
+          {
+            name: row.name,
+            voiceId,
+            voiceOnly: row.voiceOnly,
+            scriptName: row.scriptName,
+            aliases: row.aliases,
+          },
+        ]
       : [];
   });
   const anchorsByShot = new Map(anchorRows.map((f) => [f.shotId, f]));
@@ -937,6 +957,8 @@ type ShotVideoState = {
   selectedModel: string | null;
   alreadyStale: boolean;
   generating: boolean;
+  /** Absent on a segment assembled before drift existed: stale means picture. */
+  drift: SelectedVersionDrift;
 };
 
 /**
@@ -971,6 +993,7 @@ async function loadVideoStateByShot(
         selectedModel: segment.selectedVersion?.model ?? null,
         alreadyStale: segment.stale,
         generating,
+        drift: segment.drift ?? (segment.stale ? 'picture' : 'current'),
       });
     }
   }
@@ -1127,6 +1150,27 @@ async function decideShotTarget(args: {
     ...matched.elements.map((element) => element.id),
   ];
 
+  const siblingShotIds = shot.renderSegmentId
+    ? allShots
+        .filter(
+          (member) =>
+            !member.deletedAt && member.renderSegmentId === shot.renderSegmentId
+        )
+        .map((member) => member.id)
+    : [];
+  // Picture, prompt and spec work still re-render. A packed clip has no
+  // single dialogue file to sync.
+  const lipsyncVideo =
+    flags.regenVideo &&
+    !flags.regenVisual &&
+    !flags.regenMotion &&
+    !flags.regenImage &&
+    !flags.rewriteSpec &&
+    videoState?.drift === 'audio' &&
+    siblingShotIds.length === 1 &&
+    ((shot.audioClips?.some((clip) => Boolean(clip.url)) ?? false) ||
+      flags.regenDialogue);
+
   return {
     kind: 'target',
     target: {
@@ -1152,6 +1196,7 @@ async function decideShotTarget(args: {
       imageLiveHash,
       imageModel,
       regenVideo: flags.regenVideo,
+      ...(lipsyncVideo ? { lipsyncVideo: true as const } : {}),
       createsVideo: flags.regenVideo && !videoState?.hasVideo,
       staleVideoVersionId: flags.regenVideo
         ? (videoState?.selectedVersionId ?? null)
@@ -1161,15 +1206,7 @@ async function decideShotTarget(args: {
       motionRender: {
         sceneId: shot.sceneId,
         renderSegmentId: shot.renderSegmentId,
-        siblingShotIds: shot.renderSegmentId
-          ? allShots
-              .filter(
-                (member) =>
-                  !member.deletedAt &&
-                  member.renderSegmentId === shot.renderSegmentId
-              )
-              .map((member) => member.id)
-          : [],
+        siblingShotIds,
         packedScene: packedSceneFromScene(
           scene,
           resolveSequenceStyleConfig({

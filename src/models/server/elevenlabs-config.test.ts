@@ -57,7 +57,10 @@ describe('isElevenLabsConfigured', () => {
   it('enables native ElevenLabs against aimock in every built CI E2E job', () => {
     // Preview reads the .dev.vars next to the built wrangler config. The
     // Playwright command's process.env overrides do not supply those bindings.
-    const workflow = readFileSync('.github/workflows/test.yml', 'utf8');
+    const workflow = readFileSync(
+      '.github/workflows/test.yml',
+      'utf8'
+    ).replaceAll('\r\n', '\n');
     const devVarsBlocks = Array.from(
       workflow.matchAll(
         /cat > dist\/server\/\.dev\.vars <<EOF\n([\s\S]*?)\n\s*EOF/g

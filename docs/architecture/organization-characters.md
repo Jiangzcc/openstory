@@ -175,8 +175,53 @@ What follows from one character in two sequences:
   its default look (the character's own id) and that look's first version.
   No cast link and no event (events are per sequence). The consistency tag
   is `char_<name>: <name>`, the tag a hand-added character of that name gets
-  in a sequence. The dialog and the cast panel's Add Character share one
-  form (`NewCharacterForm`).
+  in a sequence.
+- **One New character form** (#2254, `NewCharacterForm` + `useNewCharacter`)
+  on the Characters tab, the cast panel's Add Character and the create
+  screen's Cast picker: a name, an optional description (the bible's
+  `physicalDescription`) and an optional photo or sheet. From no sequence it
+  creates with `createOrganizationCharacterFn` (the Characters tab says
+  photoreal; the Cast picker says the picked style's medium,
+  `renderingOfStyle`); the cast panel with `createSequenceCharacterFn`.
+  - The image is uploaded on drop, before the character exists
+    (`presignCharacterDraftUploadFn`, `org/<id>/characters/drafts/`), and
+    goes through the likeness check and sign-off there, as an element does.
+  - Create never waits for the image: the character is made at once and
+    `useNewCharacter` finishes the image after, as a promise the form hands
+    over. The image is described once cleared or signed
+    (`describeUploadFn` → `describeUpload`, billed per call; it refuses an
+    upload with no verdict before calling the model). The develop integration
+    resolves the configured vision model through the existing key resolver;
+    a workflow caller uses its frozen model configuration. Billing retains
+    the actual answering model and via. While the form is open
+    the description fills a blank one; after Create, a character made with
+    no description takes it (`updateOrganizationCharacterFn`), before the
+    attach so the sheet run it starts is not revoked.
+  - The same vision call says whether the image is already a sheet. A sheet
+    is attached as the default look's sheet
+    (`setCharacterSheetFromUploadFn`). A photo becomes the character's
+    reference photo (`setCharacterReferencePhotoFromUploadFn`,
+    `characters.referencePhotoUrl`) and a sheet run starts, drawn from it;
+    every later default-look sheet is drawn from it too, until it is removed
+    on the character's page. `isPerson` follows the ledger either way. A
+    failed upload, check or attach keeps the character and says so in a
+    toast. A failed description says so too, and the image is still
+    attached, as a reference photo. The Cast picker selects the new
+    character and the draft keeps its script; Generate waits while a new
+    character's image is still finishing, as it does for an element, so
+    the run never draws a text sheet the photo then replaces.
+  - Closing the dialog after any edit asks first (`useDiscardGuard`), as
+    New location does.
+  - The develop integration prices a default-look reference photo as an image
+    edit, both for a direct regeneration and the frozen generation plan. A
+    non-default look still uses only its default sheet as its face; these are
+    alternatives, so a sheet request has at most one reference image.
+  - A sheet run queued before `referencePhotoUrl` existed keeps its no-photo
+    snapshot: missing or undefined normalizes to null at the payload seam,
+    without reading the current character. The original hash, claim and named
+    steps remain intact, including a cached `generate-sheet-image` result.
+    Explicit non-string/non-null values are refused. Older looks, face and
+    rendering guards still apply.
 - **Shot count** is on that page only. A shot is matched to a character by
   scene tags in memory, one sequence at a time
   (`getOrganizationCharacterShotCountsFn`).
@@ -289,12 +334,29 @@ the script then names her like any cast member.
   carries a cast id with another name, or a cast character's name under a
   new id, fails the run with a plain message ("Run it again"). The prompt
   says a script character with a cast character's name IS that character.
+  The prompt text is unchanged. A name one letter away is a second
+  character. The writer replaces or removes them.
+- **Replace** (`replace_character`, the remove confirm on the cast tab and
+  the character page) points the slot at another organization character.
+  The slot keeps its script id, and the tag and name scenes already use
+  (`scriptConsistencyTag`, `scriptName`). The other character's sheet,
+  looks and voice are what those scenes read. Nothing is copied and no
+  line is rewritten. Shots go stale by derivation. When that character is
+  already in the sequence, this slot is dropped and its script id, name
+  and tag are remembered on the one that stays (`aliases`). Remove still
+  only soft-removes, and Restore does not undo a Replace. `isPerson` and
+  the likeness ledger are not written. The screenplay on `sequences.script`
+  is not rewritten. No generation starts.
 - **Plain names, where two characters share one.** Analysis may make two
   "Sarah"s, and a hand-made one may sit beside an analysed one. Look picks
   are keyed on the character's tag (a NEW entry whose tag is in use gets a
   number, `sarah_2`); dialogue speakers are matched by text, so
   `matchSpeaker` refuses two whole-name matches (`ConflictError`, "Rename
-  one so dialogue knows who speaks"); scene tags (`reconcileSceneTags`) tag
+  one so dialogue knows who speaks"). A number is part of the name
+  (`Newsreader 3` is not `Newsreader 1`), and a partial match is only when
+  one side's tokens sit inside the other's. The generation plan reports
+  that refusal on `speakerConflicts` instead of failing the page;
+  recording the line still refuses. Scene tags (`reconcileSceneTags`) tag
   both wherever the name appears. A known limit until a scene tag can name
   the cast link; rename one of them.
 - **A character the page cannot list** (another organization's, deleted, or gone)

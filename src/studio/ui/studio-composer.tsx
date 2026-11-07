@@ -13,7 +13,8 @@ import { useTranslation } from 'react-i18next';
  *   - Frames    — a start frame, plus an end frame where the model takes one
  */
 
-import { readMediaDuration } from '@/cast/element-kind';
+import { elementKindFromFile, readMediaDuration } from '@/cast/element-kind';
+import { normalizeElementFile } from '@/cast/ui/element/normalize-element-file';
 import { isSeedanceEdit } from '@/motion/seedance-edit';
 import { unusableShotReferenceLines } from '@/motion/reference-support';
 import { localizeReferenceProblem } from '@/motion/ui/localize-reference-problem';
@@ -1013,13 +1014,7 @@ export function StudioComposer({
   };
 
   const fileKind = (file: File): StudioReferenceKind | null =>
-    file.type.startsWith('image/')
-      ? 'image'
-      : file.type.startsWith('video/')
-        ? 'video'
-        : file.type.startsWith('audio/')
-          ? 'audio'
-          : null;
+    elementKindFromFile(file);
 
   // The rule a sequence shot answers to (`unusableShotReferenceLines`): the
   // model's clip window, format, the Seedance edit window and the combined
@@ -1075,7 +1070,9 @@ export function StudioComposer({
       }
       setUploading((n) => n + 1);
       try {
-        const { url } = await upload.mutateAsync({ file });
+        const stored =
+          kind === 'audio' ? await normalizeElementFile(file) : file;
+        const { url } = await upload.mutateAsync({ file: stored });
         placeReference(
           { url, label: file.name, kind, durationSeconds },
           target

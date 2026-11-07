@@ -144,8 +144,6 @@
   "Upload audio": "上传音频",
   "Upload": "上传",
   "Reference source": "参考素材来源",
-  "MP3 or WAV, up to {{value1}} more. Seedance: 15 seconds combined. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt.": "支持 MP3 或 WAV，还可添加 {{value1}} 段。Seedance 的参考音频合计不得超过 15 秒。每段音频会在提示词中标记为 <0>@Audio1</0>、<1>@Audio2</1>…",
-  "MP3 or WAV.": "MP3 或 WAV。",
   "{{value1}} shots": "{{value1}} 个镜头",
   "Add {{value1}}": "添加 {{value1}} 项",
   "Add": "添加",
@@ -201,5 +199,7 @@
   "A short clip from one of my stills": "用我的一张静帧制作一段短视频",
   "A looping background for a title card": "为片头标题制作循环播放的背景",
   "Animate a character sheet into a turnaround": "让角色设定图动起来，展示角色转身效果",
-  "Drafts render at 480p, the final at 1080p": "预览版为 480p，正式版为 1080p"
+  "Drafts render at 480p, the final at 1080p": "预览版为 480p，正式版为 1080p",
+  "Up to {{value1}} more. Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt.": "还可添加 {{value1}} 段。每段音频在提示词中会变为 <0>@Audio1</0>、<1>@Audio2</1>… 等引用。",
+  "Each clip becomes <0>@Audio1</0>, <1>@Audio2</1>… in the prompt.": "每段音频在提示词中会变为 <0>@Audio1</0>、<1>@Audio2</1>… 等引用。"
 }

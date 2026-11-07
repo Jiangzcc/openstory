@@ -111,8 +111,16 @@ export function useUpdateScene(sequenceId: string) {
         characterLooks?: Record<string, string | null>;
       };
     }) => updateSceneFn({ data: { sequenceId, ...input } }),
-    onSuccess: () =>
-      invalidateStructure(queryClient, sequenceId, { staleness: true }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<SceneWithScript[]>(
+        sceneKeys.list(sequenceId),
+        (old) =>
+          old?.map((scene) =>
+            scene.id === updated.id ? { ...scene, ...updated } : scene
+          )
+      );
+      invalidateStructure(queryClient, sequenceId, { staleness: true });
+    },
   });
 }
 

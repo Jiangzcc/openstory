@@ -13,22 +13,27 @@ import { packModelRuntimeConfiguration } from '@/models/model-runtime-configurat
 import * as realCostEstimation from '@/billing/cost-estimation';
 import { ZERO_MICROS, usdToMicros } from '@/billing/money';
 
-const computeGenerationPlan = vi.fn(async (): Promise<PlanUnit[]> => [
-  {
-    kind: 'sheet:character',
-    id: 'cast',
-    state: 'missing',
-    requires: [],
-    cascaded: false,
-  },
-  {
-    kind: 'clip',
-    id: 'shot',
-    state: 'missing',
-    requires: [],
-    cascaded: false,
-  },
-]);
+const computeGenerationPlan = vi.fn(
+  async (): Promise<{ units: PlanUnit[]; speakerConflicts: [] }> => ({
+    units: [
+      {
+        kind: 'sheet:character',
+        id: 'cast',
+        state: 'missing',
+        requires: [],
+        cascaded: false,
+      },
+      {
+        kind: 'clip',
+        id: 'shot',
+        state: 'missing',
+        requires: [],
+        cascaded: false,
+      },
+    ],
+    speakerConflicts: [],
+  })
+);
 const computePlan = vi.fn(async () =>
   asStub<UpdateStalePlan>({ targets: [], references: null, music: null })
 );
@@ -235,7 +240,10 @@ describe('fresh planning checkpoint', () => {
     'preserves frozen routes and prices $name plan images exactly once',
     async ({ imageModel, expectedImageUsd }) => {
       const plan = imagePlan(imageModel);
-      computeGenerationPlan.mockResolvedValueOnce(imagePlanUnits());
+      computeGenerationPlan.mockResolvedValueOnce({
+        units: imagePlanUnits(),
+        speakerConflicts: [],
+      });
       computePlan.mockResolvedValueOnce(plan);
       estimatePlanCost.mockReturnValueOnce(mockNonImageCost);
       const result = await freezeFreshGenerationPlan(db, {
@@ -307,7 +315,10 @@ describe('fresh planning checkpoint', () => {
       plan.targets = plan.targets.slice(0, 1);
       plan.renderOptions = { imageModels };
       if (!references) plan.references = null;
-      computeGenerationPlan.mockResolvedValueOnce(imagePlanUnits());
+      computeGenerationPlan.mockResolvedValueOnce({
+        units: imagePlanUnits(),
+        speakerConflicts: [],
+      });
       computePlan.mockResolvedValueOnce(plan);
       estimatePlanCost.mockReturnValueOnce(mockNonImageCost);
       const result = await freezeFreshGenerationPlan(db, {
