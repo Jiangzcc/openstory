@@ -235,12 +235,14 @@ describe('StoryboardWorkflow.onFailure', () => {
   });
 });
 
-function makeStep() {
+function makeStep(cachedResults: ReadonlyMap<string, unknown> = new Map()) {
   const names: string[] = [];
   // minimal WorkflowStep stub: runImpl only uses `do`
   const step = asStub<WorkflowStep>({
     do: vi.fn((_name: string, fn: () => Promise<unknown>) => {
       names.push(_name);
+      if (cachedResults.has(_name))
+        return Promise.resolve(cachedResults.get(_name));
       return fn();
     }),
   });
@@ -266,6 +268,32 @@ function makeRunImplDb() {
 }
 
 describe('StoryboardWorkflow email-ready', () => {
+  test('restores a legacy native poster checkpoint without generating or charging again', async () => {
+    const { generateImageWithProvider } =
+      await import('@/stills/server/image-generation');
+    vi.mocked(generateImageWithProvider).mockClear();
+    spawnAndAwaitChild.mockReset().mockResolvedValue(undefined);
+    const poster = {
+      url: '/r2/thumbnails/mock-legacy-poster.png',
+      metadata: { endpointId: 'mock-native', usedOwnKey: false },
+    };
+    const { scopedDb, update } = makeRunImplDb();
+    const { step, names } = makeStep(
+      new Map<string, unknown>([
+        ['generate-poster', poster],
+        ['record-fal-usage-poster', undefined],
+        ['deduct-poster-credits', undefined],
+      ])
+    );
+
+    await makeWorkflow().invokeRunImpl(makeEvent('seq_1'), step, scopedDb);
+
+    expect(update).toHaveBeenCalledWith({ id: 'seq_1', posterUrl: poster.url });
+    expect(generateImageWithProvider).not.toHaveBeenCalled();
+    expect(names).toContain('generate-poster');
+    expect(names).not.toContain('generate-poster:record');
+  });
+
   test('uses the snapshotted poster model and inherits configuration in analysis', async () => {
     const { generateImageWithProvider } =
       await import('@/stills/server/image-generation');

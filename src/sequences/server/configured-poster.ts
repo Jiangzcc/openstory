@@ -3,6 +3,7 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { AspectRatio } from '@/models/aspect-ratios';
 import { aspectRatioToImageSize } from '@/models/aspect-ratios';
 import { getLogger } from '@/platform/logger';
+import { isEngineAbortError } from '@/platform/server/workflow/errors';
 import { runConfiguredSingleImageStep } from '@/stills/server/configured-image-step';
 import { uploadPosterToStorage } from '@/stills/server/image-storage';
 
@@ -40,6 +41,7 @@ export async function generateConfiguredPoster(args: {
     });
     return { url: result.stored.url, metadata: result.metadata };
   } catch (error) {
+    if (isEngineAbortError(error)) throw error;
     logger.warn('Configured poster generation did not complete.', {
       sequenceId: args.sequenceId,
       error: error instanceof Error ? error.message : 'Unknown image failure',

@@ -70,6 +70,17 @@ export const imageChannelPriceCardsSchema = z
     hasUniquePriceMatches,
     'Price cards must not duplicate an operation and parameter match.'
   );
+export function imageUnitPriceFitsWallet(unitPriceUsd: number): boolean {
+  const unitMicros = Math.round(
+    unitPriceUsd * IMAGE_PRICE_LIMITS.microUsdPerUsd
+  );
+  return (
+    Number.isSafeInteger(unitMicros) &&
+    unitMicros >= 0 &&
+    unitMicros / IMAGE_PRICE_LIMITS.microUsdPerUsd === unitPriceUsd
+  );
+}
+
 export type ConfiguredImagePriceQuote = {
   priceCardId: string;
   unitPriceUsd: number;
@@ -112,6 +123,8 @@ export function quoteConfiguredImagePrice(
   const card = best[0];
   if (!card) throw new Error('Configured image price is unavailable.');
   const unitPriceUsd = priceSchema.parse(card.unitPriceUsd);
+  if (!imageUnitPriceFitsWallet(unitPriceUsd))
+    throw new Error('The configured price is outside wallet precision.');
   const totalUsd = unitPriceUsd * count;
   if (!Number.isFinite(totalUsd))
     throw new Error('Configured image price exceeds the supported range.');

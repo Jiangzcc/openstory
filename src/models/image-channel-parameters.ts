@@ -1,6 +1,13 @@
 import { z } from 'zod';
+import {
+  IMAGE_PARAMETER_OPERATIONS,
+  IMAGE_PARAMETER_CONTRACT_LIMITS,
+  imageParameterScalarSchema,
+  imageParameterContract,
+  isSafeImageParameterKey,
+} from './image-parameter-contract';
 
-export const IMAGE_OPERATIONS = ['generate', 'edit'] as const;
+export const IMAGE_OPERATIONS = IMAGE_PARAMETER_OPERATIONS;
 const IMAGE_PARAMETER_STATUSES = [
   'verified',
   'unverified',
@@ -13,14 +20,14 @@ const IMAGE_PARAMETER_TYPES = [
   'boolean',
 ] as const;
 export const IMAGE_PARAMETER_LIMITS = {
-  definitions: 64,
+  definitions: IMAGE_PARAMETER_CONTRACT_LIMITS.definitions,
   values: 100,
-  key: 80,
+  key: IMAGE_PARAMETER_CONTRACT_LIMITS.key,
   label: 200,
-  text: 2048,
+  text: IMAGE_PARAMETER_CONTRACT_LIMITS.text,
   requiredLength: 1,
-  maximumImages: 16,
-  maximumCompression: 100,
+  maximumImages: IMAGE_PARAMETER_CONTRACT_LIMITS.maximumImages,
+  maximumCompression: IMAGE_PARAMETER_CONTRACT_LIMITS.maximumCompression,
 } as const;
 export type ImageOperation = (typeof IMAGE_OPERATIONS)[number];
 export type ImageChannelParameterValue = string | number | boolean;
@@ -30,11 +37,8 @@ export type ImageChannelParameterValues = Record<
 >;
 export const imageOperationSchema = z.enum(IMAGE_OPERATIONS);
 export const imageParameterStatusSchema = z.enum(IMAGE_PARAMETER_STATUSES);
-const imageChannelParameterValueSchema = z.union([
-  z.string().max(IMAGE_PARAMETER_LIMITS.text),
-  z.number().finite().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
-  z.boolean(),
-]);
+const imageChannelParameterValueSchema = imageParameterScalarSchema;
+// Stored declarations retain their original parsing contract for recovery.
 const RESERVED_PARAMETER_KEYS = new Set([
   'model',
   'prompt',
@@ -210,15 +214,69 @@ export const imageChannelParameterSchema = parameterDefinitionSchema
     'Invalid standard image parameter definition.'
   );
 export type ImageChannelParameter = z.infer<typeof imageChannelParameterSchema>;
+function uniqueParameterOperations(
+  definitions: ImageChannelParameter[]
+): boolean {
+  const identities = definitions.flatMap((definition) =>
+    definition.operations.map((operation) => operation + ':' + definition.key)
+  );
+  return new Set(identities).size === identities.length;
+}
+
 export const imageChannelParametersSchema = z
   .array(imageChannelParameterSchema)
   .max(IMAGE_PARAMETER_LIMITS.definitions)
-  .refine((definitions) => {
-    const identities = definitions.flatMap((definition) =>
-      definition.operations.map((operation) => operation + ':' + definition.key)
-    );
-    return new Set(identities).size === identities.length;
-  }, 'Image parameters must be unique within each operation.');
+  .refine(
+    uniqueParameterOperations,
+    'Image parameters must be unique within each operation.'
+  );
+
+function parameterSupportsOperation(
+  definition: ImageChannelParameter,
+  operation: ImageOperation
+): boolean {
+  if (!isSafeImageParameterKey(definition.key)) return false;
+  const contract = imageParameterContract(definition.key, operation);
+  if (!contract) return true;
+  if (!contract.available || definition.type !== contract.type) return false;
+  const values = [...(definition.values ?? [])];
+  if (definition.defaultValue !== undefined)
+    values.push(definition.defaultValue);
+  return values.every((value) => contract.schema.safeParse(value).success);
+}
+
+const saveImageChannelParameterSchema = imageChannelParameterSchema
+  .refine(
+    (definition) => isSafeImageParameterKey(definition.key),
+    'Reserved image parameter.'
+  )
+  .refine(
+    (definition) =>
+      definition.status !== 'verified' ||
+      definition.operations.every((operation) =>
+        parameterSupportsOperation(definition, operation)
+      ),
+    'Invalid standard image parameter definition.'
+  );
+export const saveImageChannelParametersSchema = z
+  .array(saveImageChannelParameterSchema)
+  .max(IMAGE_PARAMETER_LIMITS.definitions)
+  .refine(
+    uniqueParameterOperations,
+    'Image parameters must be unique within each operation.'
+  );
+
+export function imageChannelParametersSupportOperation(
+  definitions: readonly ImageChannelParameter[],
+  operation: ImageOperation
+): boolean {
+  return definitions.every(
+    (definition) =>
+      definition.status !== 'verified' ||
+      !definition.operations.includes(operation) ||
+      parameterSupportsOperation(definition, operation)
+  );
+}
 export const imageChannelParameterValuesSchema = z
   .record(parameterKeySchema, imageChannelParameterValueSchema)
   .refine(
@@ -229,7 +287,8 @@ export const imageChannelParameterValuesSchema = z
 
 function resolveParameterValue(
   definition: ImageChannelParameter,
-  input: ImageChannelParameterValues
+  input: ImageChannelParameterValues,
+  operation: ImageOperation
 ): ImageChannelParameterValue | undefined {
   const value = Object.hasOwn(input, definition.key)
     ? input[definition.key]
@@ -238,7 +297,12 @@ function resolveParameterValue(
     throw new Error(
       'Missing required image parameter: ' + definition.key + '.'
     );
-  if (value !== undefined && !matchesImageChannelParameter(definition, value))
+  const contract = imageParameterContract(definition.key, operation);
+  if (
+    value !== undefined &&
+    (!matchesImageChannelParameter(definition, value) ||
+      (contract && !contract.schema.safeParse(value).success))
+  )
     throw new Error('Invalid image parameter: ' + definition.key + '.');
   return value;
 }
@@ -261,7 +325,11 @@ export function validateImageChannelParameters(
   }
   const result: ImageChannelParameterValues = {};
   for (const definition of active) {
-    const value = resolveParameterValue(definition, values);
+    if (!parameterSupportsOperation(definition, operation))
+      throw new Error(
+        'Image parameter is unavailable: ' + definition.key + '.'
+      );
+    const value = resolveParameterValue(definition, values, operation);
     if (value !== undefined) result[definition.key] = value;
   }
   return result;

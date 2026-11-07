@@ -95,3 +95,54 @@ it.each([
     );
   }
 );
+
+it.each([
+  ['edit', { moderation: 'auto' }],
+  ['edit', { style: 'natural' }],
+  ['edit', { quality: 'hd' }],
+  ['generate', { input_fidelity: 'high' }],
+  ['generate', { quality: 'premium' }],
+  ['edit', { input_fidelity: 'medium' }],
+  ['generate', { background: 'solid' }],
+  ['generate', { output_format: 'jpg' }],
+  ['generate', { response_format: 'base64' }],
+  ['generate', { moderation: 'strict' }],
+] as const)(
+  'rejects operation-incompatible %s values before provider submission: %j',
+  async (operation, parameters) => {
+    const fetchMock = vi.fn<typeof fetch>();
+    const input = mockImageInput({
+      operation,
+      references: operation === 'edit' ? [mockImageFile()] : [],
+    });
+    Object.assign(input, { parameters });
+    await expect(
+      generateCompatibleImages(input, { fetch: fetchMock })
+    ).rejects.toMatchObject({
+      code: 'invalid_input',
+      submissionState: 'not_submitted',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  }
+);
+
+it.each([
+  'imageurl',
+  'imageurls',
+  'proto',
+  'a_p_i_k_e_y',
+  'extra__body',
+  'b_a_s_e_u_r_l',
+  'm_o_d_e_l',
+])('retains normalized reserved-name rejection: %s', (key) => {
+  expect(() => parseCompatibleImageParameters({ [key]: 'synthetic' })).toThrow(
+    'Invalid compatible image request'
+  );
+});
+
+it('rejects null parameter bags while preserving omitted parameters', () => {
+  expect(parseCompatibleImageParameters(undefined)).toEqual({});
+  expect(() => parseCompatibleImageParameters(null)).toThrow(
+    'Invalid compatible image request'
+  );
+});

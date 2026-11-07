@@ -44,6 +44,7 @@ import { aspectRatioToImageSize } from '@/models/aspect-ratios';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { GeneratedAssetOutput } from '@/platform/server/db/schema';
 import { generateImageWithProvider } from '@/stills/server/image-generation';
+import type { ImageGenerationResult } from '@/stills/server/image-generation';
 import { assetLeaseOwner } from '@/models/server/byteplus-asset-pool';
 import { ingestArkAssets } from '@/models/server/byteplus-asset-steps';
 import { resolveMotionVia } from '@/motion/server/motion-generation';
@@ -87,6 +88,28 @@ function classifyMotionFailure(message: string): StudioPollOutcome {
     : { kind: 'failed', error: `Motion generation failed: ${message}` };
 }
 
+type StudioImageResult = {
+  uploads: Awaited<ReturnType<typeof uploadStudioImage>>[];
+  metadata: ImageGenerationResult['metadata'];
+  via: ImageGenerationResult['via'];
+};
+type StudioImageCheckpoint =
+  | StudioImageResult
+  | (Omit<StudioImageResult, 'uploads'> & {
+      upload: StudioImageResult['uploads'][number];
+    });
+
+function restoreStudioImageCheckpoint(
+  checkpoint: StudioImageCheckpoint
+): StudioImageResult {
+  if ('uploads' in checkpoint) return checkpoint;
+  return {
+    uploads: [checkpoint.upload],
+    metadata: checkpoint.metadata,
+    via: checkpoint.via,
+  };
+}
+
 export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<StudioGenerationWorkflowInput> {
   protected override readonly failureLabel = 'Studio generation';
 
@@ -120,12 +143,12 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
     // Generate and store in ONE step: a via that answers with inline bytes
     // has no URL to pass on, and the whole image would otherwise ride the
     // 1 MiB checkpoint between the two (#1638, #1645).
-    const generated = usesConfiguredImageChannel(
+    const checkpoint: StudioImageCheckpoint = usesConfiguredImageChannel(
       imageModel,
       scopedDb.models.imageModelRouting
     )
       ? await runConfiguredStudioImageStep({ event, input, step, scopedDb })
-      : await step.do('generate-image', async () => {
+      : await step.do<StudioImageCheckpoint>('generate-image', async () => {
           logger.info(
             `[StudioGenerationWorkflow] Generating image ${assetId} with ${imageModel}`
           );
@@ -169,6 +192,7 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
           };
         });
 
+    const generated = restoreStudioImageCheckpoint(checkpoint);
     if (generated.uploads.length === 0)
       throw new Error('Image generation did not store an output.');
     const imageMetadata = generated.metadata;

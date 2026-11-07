@@ -268,3 +268,45 @@ describe('built-in configured image billing', () => {
     ).toThrow('reference');
   });
 });
+
+describe('configured image unit precision', () => {
+  it.each([0.0000003, 0.0000015])(
+    'refuses a two-image request priced at %s USD per image',
+    (unitPriceUsd) => {
+      const batchRoute = {
+        ...route,
+        priceCards: [
+          {
+            id: 'batch',
+            operation: 'generate' as const,
+            match: {},
+            unitPriceUsd,
+          },
+        ],
+      };
+      expect(() =>
+        quote({ imageModelRouting: [batchRoute], imageCount: 2 })
+      ).toThrow('precision');
+    }
+  );
+
+  it('keeps a partial output billable at the smallest positive unit price', () => {
+    const unitRoute = {
+      ...route,
+      priceCards: [
+        {
+          id: 'unit',
+          operation: 'generate' as const,
+          match: {},
+          unitPriceUsd: 0.000001,
+        },
+      ],
+    };
+    expect(
+      quote({ imageModelRouting: [unitRoute], imageCount: 2 }).costMicros
+    ).toBe(2);
+    expect(
+      quote({ imageModelRouting: [unitRoute], imageCount: 1 }).costMicros
+    ).toBe(1);
+  });
+});

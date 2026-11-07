@@ -134,6 +134,7 @@ import { useDraftGenerationEstimate } from '@/sequences/ui/use-draft-generation-
 import { clampResolution } from '@/models/resolutions';
 import type { Resolution } from '@/models/resolutions';
 import { availableResolutions } from '@/models/ui/resolution-support';
+import { useImageModelCatalog } from '@/models/ui/use-image-model-catalog';
 import type { AspectRatio } from '@/models/aspect-ratios';
 import {
   markPendingIntent,
@@ -367,6 +368,7 @@ export const ScriptView: FC<{
     configuration: modelConfiguration,
     textModelCatalog,
   } = useGenerationSettings();
+  const { models: imageCatalog } = useImageModelCatalog();
 
   // Load draft from localStorage (script, style, location)
   const { draft, isLoaded: draftLoaded, saveDraft } = useSequenceDraft();
@@ -462,6 +464,7 @@ export const ScriptView: FC<{
         genSettings.resolution,
         availableResolutions({
           imageModels,
+          imageCatalog,
           videoModels: includesStage(stopAt, 'motion') ? videoModels : [],
           aspectRatio,
         })
@@ -1579,6 +1582,7 @@ export const ScriptView: FC<{
             resolution={resolution}
             analysisModels={analysisModels}
             imageModels={imageModels}
+            imageCatalog={imageCatalog}
             videoModels={videoModels}
             generateStartFrames={generateStartFrames}
             audioModels={audioModels}

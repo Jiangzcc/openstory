@@ -12,7 +12,7 @@ import {
 } from '@/models/image-channels';
 import { quoteConfiguredImagePrice } from '@/models/image-channel-pricing';
 import { ValidationError } from '@/platform/errors';
-import { usdToMicros } from './money';
+import { multiplyMicros, usdToMicros } from './money';
 import type { Microdollars } from './money';
 
 export type ConfiguredImageBillingInput = {
@@ -93,7 +93,7 @@ export function quoteConfiguredImageRequest(
   return {
     ...quote,
     parameters,
-    costMicros: checkedImageMicros(quote.totalUsd),
+    costMicros: multiplyMicros(checkedImageMicros(quote.unitPriceUsd), count),
     imageSource: 'platform' as const,
   };
 }
@@ -107,7 +107,10 @@ export function estimateConfiguredImageCost(
       'Image estimate count must be a nonnegative integer.'
     );
   const quote = quoteConfiguredImageRequest(input);
-  const total = checkedImageMicros(quote.unitPriceUsd * totalImages);
+  const total = multiplyMicros(
+    checkedImageMicros(quote.unitPriceUsd),
+    totalImages
+  );
   if (!Number.isSafeInteger(total))
     throw new ValidationError(
       'The configured image estimate exceeds wallet precision.'

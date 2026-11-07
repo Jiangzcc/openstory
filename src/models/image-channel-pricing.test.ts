@@ -128,3 +128,21 @@ it('rejects duplicate price matches with different IDs and property order', () =
     ]).success
   ).toBe(false);
 });
+
+it.each([0.0000003, 0.0000015, 0.0123456])(
+  'rejects unit price %s before a batch total can hide fractional microdollars',
+  (unitPriceUsd) => {
+    expect(() =>
+      quoteConfiguredImagePrice([{ ...base, unitPriceUsd }], 'generate', {}, 2)
+    ).toThrow('precision');
+  }
+);
+
+it.each([0, 0.000001, 0.000123, 0.07, 999999.999999])(
+  'preserves a representable per-image price %s',
+  (unitPriceUsd) => {
+    expect(
+      quoteConfiguredImagePrice([{ ...base, unitPriceUsd }], 'generate', {}, 2)
+    ).toMatchObject({ unitPriceUsd, imageCount: 2 });
+  }
+);

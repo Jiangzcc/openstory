@@ -15,8 +15,12 @@ import { IMAGE_TO_VIDEO_MODELS } from '@/models/models';
 import {
   getImageModelDefinition,
   imageModelDisplayName,
+  imageModelSupportsOperation,
 } from '@/models/image-model-catalog';
 import type { ImageModelDefinition } from '@/models/image-model-catalog';
+import { configuredImageOutputOptions } from '@/models/configured-image-specification';
+import { IMAGE_OPERATIONS } from '@/models/image-channel-parameters';
+import type { ImageOperation } from '@/models/image-channel-parameters';
 import type { ImageToVideoModel, TextToImageModel } from '@/models/models';
 import { DEFAULT_ASPECT_RATIO, type AspectRatio } from '@/models/aspect-ratios';
 import {
@@ -32,23 +36,62 @@ const NAMED_MODEL_LIMIT = 2;
 type Selection = {
   imageModels?: readonly TextToImageModel[];
   imageCatalog?: readonly ImageModelDefinition[];
+  imageOperation?: ImageOperation;
+  imageReferenceCount?: number;
   /** Omit (or pass none) when motion is off — an absent render can't widen
    *  the choice. */
   videoModels?: readonly ImageToVideoModel[];
   aspectRatio?: AspectRatio;
 };
 
-/** Tiers at least one selected model can deliver, low to high. */
-export function availableResolutions(selection: Selection): Resolution[] {
-  const aspectRatio = selection.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+function selectedImageOperations(
+  selection: Selection
+): readonly ImageOperation[] {
+  if (selection.imageOperation) return [selection.imageOperation];
+  if (selection.imageReferenceCount === undefined) return IMAGE_OPERATIONS;
+  return [selection.imageReferenceCount > 0 ? 'edit' : 'generate'];
+}
+
+function selectedImageResolutionTiers(
+  model: ImageModelDefinition | undefined,
+  selection: Selection
+): Resolution[] {
+  if (!model) return [];
+  const ratio = selection.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+  if (model.source === 'builtin') return imageResolutionTiers(model.id, ratio);
+  if (!model.configuration.available) return [];
   const found = new Set<Resolution>();
-  for (const model of selection.imageModels ?? []) {
+  for (const operation of selectedImageOperations(selection)) {
     if (
-      getImageModelDefinition(model, selection.imageCatalog)?.source !==
-      'builtin'
+      !imageModelSupportsOperation(
+        model,
+        operation,
+        selection.imageReferenceCount
+      )
     )
       continue;
-    for (const tier of imageResolutionTiers(model, aspectRatio))
+    if (
+      !model.configuration.priceCards.some(
+        (card) => card.operation === operation
+      )
+    )
+      continue;
+    const options = configuredImageOutputOptions(
+      model.configuration.parameters,
+      operation,
+      ratio
+    );
+    for (const tier of options.resolutions) found.add(tier);
+  }
+  return RESOLUTIONS.filter((tier) => found.has(tier));
+}
+
+/** Tiers at least one selected model can deliver, low to high. */
+export function availableResolutions(selection: Selection): Resolution[] {
+  const found = new Set<Resolution>();
+  for (const id of selection.imageModels ?? []) {
+    const model = getImageModelDefinition(id, selection.imageCatalog);
+    for (const tier of selectedImageResolutionTiers(model, selection))
       found.add(tier);
   }
   for (const model of selection.videoModels ?? []) {
@@ -82,45 +125,27 @@ export function resolutionCeilingNote(
   selection: Selection,
   translate?: TFunction<'interface'>
 ): string | null {
-  const aspectRatio = selection.aspectRatio ?? DEFAULT_ASPECT_RATIO;
   const configured: string[] = [];
-  const fixed: string[] = [];
-  const lower: string[] = [];
-  const higher: string[] = [];
-  const index = RESOLUTIONS.indexOf(resolution);
-  const sort = (name: string, tiers: readonly Resolution[]) => {
-    // One reachable tier means the tier never moves this model, so say that
-    // rather than staying silent when the ask happens to match it.
-    if (tiers.length < 2) {
-      fixed.push(name);
-      return;
-    }
-    if (tiers.includes(resolution)) return;
-    // A model can miss the tier from either side. A model whose floor is 1080p
-    // renders a 720p ask *above* it — saying "below" there tells the user they
-    // are getting less while they are billed for more. `tiers` is non-empty
-    // here (the fixed case returned above) and ordered low to high, so its
-    // first entry is the model's floor.
-    const floor = tiers[0];
-    const floorIsAbove =
-      floor !== undefined && RESOLUTIONS.indexOf(floor) > index;
-    (floorIsAbove ? higher : lower).push(name);
-  };
-  for (const model of selection.imageModels ?? []) {
-    const name = imageModelDisplayName(model, selection.imageCatalog);
-    if (
-      getImageModelDefinition(model, selection.imageCatalog)?.source !==
-      'builtin'
-    ) {
+  const limits: ResolutionLimits = { fixed: [], lower: [], higher: [] };
+  for (const id of selection.imageModels ?? []) {
+    const model = getImageModelDefinition(id, selection.imageCatalog);
+    const name = imageModelDisplayName(id, selection.imageCatalog);
+    const tiers = selectedImageResolutionTiers(model, selection);
+    if (!tiers.length && model?.source !== 'builtin') {
       configured.push(name);
       continue;
     }
-    sort(name, imageResolutionTiers(model, aspectRatio));
+    recordResolutionLimit(name, tiers, resolution, limits);
   }
   for (const model of selection.videoModels ?? []) {
-    sort(IMAGE_TO_VIDEO_MODELS[model].name, motionResolutionTiers(model));
+    recordResolutionLimit(
+      IMAGE_TO_VIDEO_MODELS[model].name,
+      motionResolutionTiers(model),
+      resolution,
+      limits
+    );
   }
-
+  const { lower, higher, fixed } = limits;
   const label =
     RESOLUTION_OPTIONS.find((option) => option.value === resolution)?.label ??
     resolution;
@@ -131,6 +156,26 @@ export function resolutionCeilingNote(
     configured.length > 0 && configuredSizeNote(configured, translate),
   ].filter((clause): clause is string => clause !== false);
   return clauses.length > 0 ? clauses.join(' · ') : null;
+}
+
+type ResolutionLimits = { fixed: string[]; lower: string[]; higher: string[] };
+
+function recordResolutionLimit(
+  name: string,
+  tiers: readonly Resolution[],
+  resolution: Resolution,
+  limits: ResolutionLimits
+): void {
+  if (tiers.length < 2) {
+    limits.fixed.push(name);
+    return;
+  }
+  if (tiers.includes(resolution)) return;
+  const floor = tiers[0];
+  const floorIsAbove =
+    floor !== undefined &&
+    RESOLUTIONS.indexOf(floor) > RESOLUTIONS.indexOf(resolution);
+  (floorIsAbove ? limits.higher : limits.lower).push(name);
 }
 
 /** "X renders" / "X and Y render" / "X and Y and 2 more render". */

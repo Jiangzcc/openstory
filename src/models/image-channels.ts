@@ -3,12 +3,17 @@ import { isBuiltinTextToImageModel } from './models';
 import type { BuiltinTextToImageModel } from './models';
 import {
   imageChannelParametersSchema,
+  saveImageChannelParametersSchema,
+  imageChannelParametersSupportOperation,
   imageParameterStatusSchema,
   IMAGE_OPERATIONS,
   IMAGE_PARAMETER_LIMITS,
   matchesImageChannelParameter,
 } from './image-channel-parameters';
-import { imageChannelPriceCardsSchema } from './image-channel-pricing';
+import {
+  imageChannelPriceCardsSchema,
+  imageUnitPriceFitsWallet,
+} from './image-channel-pricing';
 import type {
   ImageChannelParameter,
   ImageOperation,
@@ -258,9 +263,36 @@ export const channelImageModelSchema = z
     'Every enabled verified operation needs a configured USD price.'
   );
 export type ChannelImageModel = z.infer<typeof channelImageModelSchema>;
-export const saveChannelImageModelSchema = channelImageModelSchema.safeExtend({
-  revision: revisionSchema,
-});
+function validateEnabledImageParameters(
+  model: ChannelImageModel,
+  context: z.RefinementCtx
+) {
+  if (!model.enabled) return;
+  const parameters = saveImageChannelParametersSchema.safeParse(
+    model.parameters
+  );
+  if (!parameters.success) {
+    for (const issue of parameters.error.issues)
+      context.addIssue({ ...issue, path: ['parameters', ...issue.path] });
+  }
+}
+
+export const saveChannelImageModelSchema = channelImageModelSchema
+  .safeExtend({
+    revision: revisionSchema,
+  })
+  .superRefine(validateEnabledImageParameters)
+  .refine(
+    (model) =>
+      !model.enabled ||
+      model.priceCards.every((card) =>
+        imageUnitPriceFitsWallet(card.unitPriceUsd)
+      ),
+    {
+      message: 'The configured price is outside wallet precision.',
+      path: ['priceCards'],
+    }
+  );
 export type SaveChannelImageModelInput = z.infer<
   typeof saveChannelImageModelSchema
 >;
@@ -372,7 +404,11 @@ function projectImageModelCatalogEntry(
   const operations: ImageModelCatalogEntry['operations'] = {};
   for (const operation of IMAGE_OPERATIONS) {
     const binding = model.operations[operation];
-    if (binding?.status !== 'verified') continue;
+    if (
+      binding?.status !== 'verified' ||
+      !imageChannelParametersSupportOperation(model.parameters, operation)
+    )
+      continue;
     const { upstreamModel: _upstreamModel, ...capabilities } = binding;
     operations[operation] = capabilities;
   }

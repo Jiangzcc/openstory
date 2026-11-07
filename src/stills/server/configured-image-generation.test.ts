@@ -461,3 +461,84 @@ it.each(['generate', 'edit'] as const)(
     expect(result.metadata.cost).toBe(quote.costMicros);
   }
 );
+
+it('refuses a fractional-micro unit price before resolving credentials or submitting a batch', async () => {
+  const configuration = imageConfigurationFixture();
+  const model = configuration.models[0];
+  if (!model) throw new Error('Missing mock image model.');
+  model.parameters.push({
+    key: 'n',
+    label: 'Count',
+    type: 'integer',
+    status: 'verified',
+    operations: ['generate'],
+    required: true,
+    defaultValue: 2,
+    minimum: 2,
+    maximum: 2,
+  });
+  model.priceCards = model.priceCards.map((price) => ({
+    ...price,
+    unitPriceUsd: 0.0000003,
+  }));
+  const credentials = mockCredentials(
+    createImageModelRoutingSnapshot(configuration)
+  );
+  await expect(
+    generateConfiguredImage(
+      {
+        model: model.id,
+        prompt: 'Mock batch',
+        imageSize: 'landscape_16_9',
+        numImages: 2,
+      },
+      { credentials, configuredAttemptId: 'mock-batch-attempt' }
+    )
+  ).rejects.toThrow('precision');
+  expect(credentials.resolveImageChannelKey).not.toHaveBeenCalled();
+  expect(mocks.references).not.toHaveBeenCalled();
+  expect(mocks.generate).not.toHaveBeenCalled();
+});
+
+it('bills one delivered image at one microdollar when a two-image request is partial', async () => {
+  const configuration = imageConfigurationFixture();
+  const model = configuration.models[0];
+  if (!model) throw new Error('Missing mock image model.');
+  model.parameters.push({
+    key: 'n',
+    label: 'Count',
+    type: 'integer',
+    status: 'verified',
+    operations: ['generate'],
+    required: true,
+    defaultValue: 2,
+    minimum: 2,
+    maximum: 2,
+  });
+  model.priceCards = model.priceCards.map((price) => ({
+    ...price,
+    unitPriceUsd: 0.000001,
+  }));
+  mocks.generate.mockResolvedValue(
+    mockResult({ requestedCount: 2, actualCount: 1, status: 'partial' })
+  );
+  const result = await generateConfiguredImage(
+    {
+      model: model.id,
+      prompt: 'Mock partial batch',
+      imageSize: 'landscape_16_9',
+      numImages: 2,
+    },
+    {
+      credentials: mockCredentials(
+        createImageModelRoutingSnapshot(configuration)
+      ),
+      configuredAttemptId: 'mock-partial-attempt',
+    }
+  );
+  expect(result.metadata.cost).toBe(1);
+  expect(result.metadata.configuredPricing).toMatchObject({
+    imageCount: 1,
+    requestedCount: 2,
+  });
+});

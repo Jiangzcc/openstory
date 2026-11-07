@@ -25,6 +25,7 @@ import {
 import type { AnalysisModelId } from '@/models/models.config';
 import type { AspectRatio } from '@/models/aspect-ratios';
 import type { Resolution } from '@/models/resolutions';
+import type { ImageModelDefinition } from '@/models/image-model-catalog';
 import {
   availableResolutions,
   resolutionCeilingNote,
@@ -39,6 +40,7 @@ type GenerationSettingsProps = {
   resolution: Resolution;
   analysisModels: AnalysisModelId[];
   imageModels: TextToImageModel[];
+  imageCatalog: readonly ImageModelDefinition[];
   videoModels: ImageToVideoModel[];
   /**
    * Generate a still per shot before motion (the frame-based workflow). Off,
@@ -76,6 +78,7 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
   resolution,
   analysisModels,
   imageModels,
+  imageCatalog,
   videoModels,
   generateStartFrames = false,
   audioModels,
@@ -100,6 +103,7 @@ export const GenerationSettings: FC<GenerationSettingsProps> = ({
   // always count toward the tier choice here.
   const modelSelection = {
     imageModels,
+    imageCatalog,
     videoModels,
     aspectRatio,
   };

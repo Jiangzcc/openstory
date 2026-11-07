@@ -101,7 +101,7 @@ function makeWorkflow(): Probe {
   return new Probe(ctx, env);
 }
 
-function makeStep() {
+function makeStep(cachedResults: ReadonlyMap<string, unknown> = new Map()) {
   const names: string[] = [];
   const doStep = vi.fn(
     (
@@ -109,6 +109,8 @@ function makeStep() {
       ...args: [() => Promise<unknown>] | [object, () => Promise<unknown>]
     ) => {
       names.push(name);
+      if (cachedResults.has(name))
+        return Promise.resolve(cachedResults.get(name));
       const fn = args.length === 1 ? args[0] : args[1];
       return fn();
     }
@@ -353,6 +355,92 @@ it('configured images use a 15-minute generate/store step and charge after stora
     'asset-1',
     expect.objectContaining({ provider: 'compatible', costMicros: 100_000 })
   );
+  expect(attempts.markUnknown).not.toHaveBeenCalled();
+});
+
+it.each(['upload', 'uploads'] as const)(
+  'restores a cached %s result without generating or uploading again',
+  async (field) => {
+    const upload = {
+      url: '/r2/thumbnails/mock-cached.png',
+      path: 'mock-cached.png',
+      contentType: 'image/png',
+    };
+    const metadata = {
+      cost: micros(12_000),
+      usedOwnKey: false,
+      endpointId: 'mock-native-image',
+    };
+    const checkpoint = {
+      [field]: field === 'upload' ? upload : [upload],
+      metadata,
+      via: 'fal',
+    };
+    const step = makeStep(
+      new Map<string, unknown>([
+        ['generate-image', checkpoint],
+        ['deduct-credits', undefined],
+      ])
+    );
+    const { scopedDb, generatedAssets } = makeScopedDb();
+
+    const result = await makeWorkflow().runBody(
+      makeEvent(IMAGE),
+      step,
+      scopedDb
+    );
+
+    expect(result.outputs).toEqual([
+      { url: upload.url, contentType: upload.contentType },
+    ]);
+    expect(generatedAssets.markCompleted).toHaveBeenCalledWith('asset-1', {
+      outputs: result.outputs,
+      costMicros: metadata.cost,
+      provider: 'fal',
+    });
+    expect(mockGenerateImageWithProvider).not.toHaveBeenCalled();
+    expect(uploadStudioImage).not.toHaveBeenCalled();
+    expect(mockDeductWorkflowCredits).not.toHaveBeenCalled();
+  }
+);
+
+it('restores the configured stored checkpoint and retries only metadata persistence', async () => {
+  const generation = configuredImageResult();
+  const stored = [
+    {
+      url: '/r2/thumbnails/mock-configured.png',
+      path: 'mock-configured.png',
+      contentType: 'image/png',
+    },
+  ];
+  const checkpoint = {
+    stored,
+    metadata: generation.metadata,
+    via: generation.via,
+  };
+  const step = makeStep(
+    new Map<string, unknown>([['generate-image', checkpoint]])
+  );
+  const { scopedDb, attempts, generatedAssets } = makeConfiguredImageScope();
+  const input = { ...IMAGE, imageModel: 'custom-image:qwen' as const };
+
+  const result = await makeWorkflow().runBody(makeEvent(input), step, scopedDb);
+
+  expect(result.outputs).toEqual(
+    stored.map(({ url, contentType }) => ({ url, contentType }))
+  );
+  expect(attempts.complete).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ id: 'run-1:generate-image' }),
+    checkpoint
+  );
+  expect(generatedAssets.markCompleted).toHaveBeenCalledWith('asset-1', {
+    outputs: result.outputs,
+    costMicros: generation.metadata.cost,
+    provider: 'compatible',
+  });
+  expect(mockGenerateImageWithProvider).not.toHaveBeenCalled();
+  expect(uploadStudioImage).not.toHaveBeenCalled();
+  expect(attempts.claim).not.toHaveBeenCalled();
   expect(attempts.markUnknown).not.toHaveBeenCalled();
 });
 

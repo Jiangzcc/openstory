@@ -9,7 +9,7 @@ import {
   resolveImageModelRoute,
 } from '@/models/image-channels';
 import { quoteConfiguredImageRequest } from '@/billing/configured-image-billing';
-import { usdToMicros } from '@/billing/money';
+import { multiplyMicros, usdToMicros } from '@/billing/money';
 import { resolveConfiguredImageParameters } from '@/models/configured-image-request';
 import { generateCompatibleImages } from './compatible-image-client';
 import type { CompatibleImageResult } from './compatible-image-types';
@@ -170,7 +170,7 @@ function configuredImageResult(
       file_sizes: result.images.map((image) => image.byteLength),
       numImages: result.actualCount,
       ...(seed === undefined ? {} : { seed }),
-      cost: usdToMicros(quote.unitPriceUsd * result.actualCount),
+      cost: multiplyMicros(usdToMicros(quote.unitPriceUsd), result.actualCount),
       usedOwnKey: false,
       requestId: result.requestId,
       configuredPricing: {

@@ -166,6 +166,7 @@ export async function generateShotImage(
     const imageBilling = await prepareConfiguredImageBilling({
       model: workflowInput.model ?? DEFAULT_IMAGE_MODEL,
       aspectRatio: sequence.aspectRatio,
+      resolution: workflowInput.resolution,
       imageCount: workflowInput.numImages ?? 1,
       referenceImageCount: workflowInput.referenceImages?.length ?? 0,
       modelConfiguration,
@@ -272,6 +273,7 @@ export async function generateShotImageVariants(
     modelConfiguration,
     model: data.model ?? DEFAULT_IMAGE_MODEL,
     aspectRatio: IMAGE_SIZE_ASPECT_RATIOS[imageSize],
+    resolution: sequence.resolution,
     referenceImageCount:
       1 + characterReferences.length + locationReferences.length,
     imageCount: numImages,
@@ -451,6 +453,7 @@ export async function selectShotImageVariant(
     model: upscaleModel,
     modelConfiguration,
     aspectRatio: sequence.aspectRatio,
+    resolution: sequence.resolution,
     imageCount: 1,
     referenceImageCount:
       1 + characterReferences.length + locationReferences.length,

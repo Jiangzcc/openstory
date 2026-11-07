@@ -22,8 +22,8 @@ export function imageRoutingCapacityFixture(
       operations: { generate: { ...generate, upstreamModel: 'mock-' + index } },
       parameters: [
         {
-          key: 'quality',
-          label: 'Quality',
+          key: 'preset',
+          label: 'Preset',
           type: 'string',
           status: 'verified',
           operations: ['generate'],
@@ -35,7 +35,7 @@ export function imageRoutingCapacityFixture(
       priceCards: Array.from({ length: 100 }, (_, value) => ({
         id: 'price-' + value,
         operation: 'generate',
-        match: { quality: 'q-' + value },
+        match: { preset: 'q-' + value },
         unitPriceUsd: distinctPrices ? index + value + 1 : 0.1,
       })),
     })
