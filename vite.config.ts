@@ -315,6 +315,8 @@ export default defineConfig({
     process.env.E2E_COVERAGE === 'true' && e2eServerCoverage(),
     cloudflare({
       viteEnvironment: { name: 'ssr' },
+      // Work around local inspector connection resets observed on Windows.
+      inspectorPort: process.platform === 'win32' ? false : undefined,
       // Named tunnel only — `tunnel: true` is a Quick Tunnel that auto-starts
       // on listen (`*.trycloudflare.com`). Omit the option entirely when there
       // is no ~/.openstory/dev-tunnels.json so `bun dev` stays loopback-only.
