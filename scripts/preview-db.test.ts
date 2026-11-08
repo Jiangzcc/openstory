@@ -1,5 +1,5 @@
 import { writeFileSync } from 'node:fs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
   process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
@@ -9,7 +9,16 @@ vi.hoisted(() => {
 const exec = vi.hoisted(() => vi.fn());
 vi.mock('node:child_process', () => ({ execFileSync: exec }));
 
-const { fork, promote, markReady, discard } = await import('./preview-db');
+const {
+  fork,
+  promote,
+  markReady,
+  discard,
+  changesMigrations,
+  planMergedPreviewClose,
+  sweepCandidate,
+  sweep,
+} = await import('./preview-db');
 
 const base = { revision: 2, database_id: 'base-id' };
 let forked: {
@@ -138,6 +147,54 @@ beforeEach(() => {
 });
 
 describe('preview D1 lineage', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([undefined, '', 'missing-slash', 'owner/repo/extra'])(
+    'refuses sweep without a valid repository before accessing D1: %s',
+    async (repository) => {
+      vi.stubEnv('GITHUB_REPOSITORY', repository);
+      vi.stubEnv('GH_TOKEN', 'test-github-token');
+      await expect(sweep(true)).rejects.toThrow('GITHUB_REPOSITORY');
+      expect(fetch).not.toHaveBeenCalled();
+      expect(queries).toEqual([]);
+    }
+  );
+
+  it('refuses sweep without a GitHub token before accessing D1', async () => {
+    vi.stubEnv('GITHUB_REPOSITORY', 'fork-owner/story');
+    vi.stubEnv('GH_TOKEN', undefined);
+    vi.stubEnv('GITHUB_TOKEN', undefined);
+    await expect(sweep(false)).rejects.toThrow('GH_TOKEN or GITHUB_TOKEN');
+    expect(fetch).not.toHaveBeenCalled();
+    expect(queries).toEqual([]);
+  });
+
+  it('checks the configured fork and preserves an open PR database', async () => {
+    vi.stubEnv('GITHUB_REPOSITORY', 'fork-owner/story');
+    vi.stubEnv('GH_TOKEN', 'test-github-token');
+    const originalFetch = vi.mocked(fetch).getMockImplementation();
+    if (!originalFetch) throw new Error('Missing fetch mock');
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      if (url.hostname === 'api.github.com') {
+        return new Response(JSON.stringify({ state: 'open' }));
+      }
+      if (url.searchParams.has('per_page') && !url.searchParams.has('name')) {
+        return response([{ name: 'openstory-pr-12', uuid: 'pr-db' }]);
+      }
+      return originalFetch(input, init);
+    });
+    await sweep(true);
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.github.com/repos/fork-owner/story/pulls/12',
+      expect.anything()
+    );
+    expect(
+      vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === 'DELETE')
+    ).toBe(false);
+    expect(previewExists).toBe(true);
+  });
+
   it('records an occupied database instead of importing into it', async () => {
     previewHasTables = true;
     await fork(12, 'pr-db');
@@ -190,9 +247,25 @@ describe('preview D1 lineage', () => {
     forked = { pr: 12, revision: 1, database_id: 'pr-db', ready: 1 };
     await expect(promote(12)).rejects.toThrow('Preview DB conflict');
     expect(base.database_id).toBe('base-id');
+    expect(previewExists).toBe(true);
     expect(queries).not.toContainEqual(
       expect.stringMatching(/^UPDATE preview_base/)
     );
+  });
+
+  it('deletes a merged preview that changed no migrations', async () => {
+    forked = { pr: 12, revision: 1, database_id: 'pr-db', ready: 1 };
+    await promote(12, false);
+    expect(previewExists).toBe(false);
+    expect(forked).toBeNull();
+    expect(base).toEqual({ revision: 2, database_id: 'base-id' });
+  });
+
+  it('still refuses to delete a no-migration preview that is the base', async () => {
+    forked = { pr: 12, revision: 2, database_id: 'pr-db', ready: 1 };
+    base.database_id = 'pr-db';
+    await expect(promote(12, false)).rejects.toThrow('active preview base');
+    expect(previewExists).toBe(true);
   });
 
   it('refuses to promote a preview with no completed fork', async () => {
@@ -214,6 +287,60 @@ describe('preview D1 lineage', () => {
     expect(forked).toBeNull();
     await fork(12, 'new-pr-db');
     expect(forked).toMatchObject({ revision: 2, database_id: 'new-pr-db' });
+  });
+
+  it('plans promotion from migration changes and fork freshness', () => {
+    expect(
+      changesMigrations(['src/app.ts', 'drizzle/migrations-wrangler/x.sql'])
+    ).toBe(false);
+    expect(
+      changesMigrations(['drizzle/migrations/20261108_x/migration.sql'])
+    ).toBe(true);
+    expect(
+      planMergedPreviewClose({
+        changesMigrations: false,
+        forkRevision: 1,
+        baseRevision: 4,
+        alreadyBase: false,
+      })
+    ).toBe('discard');
+    expect(
+      planMergedPreviewClose({
+        changesMigrations: true,
+        forkRevision: 1,
+        baseRevision: 4,
+        alreadyBase: false,
+      })
+    ).toBe('conflict');
+    expect(
+      planMergedPreviewClose({
+        changesMigrations: true,
+        forkRevision: 4,
+        baseRevision: 4,
+        alreadyBase: false,
+      })
+    ).toBe('promote');
+  });
+
+  it('sweeps only closed preview databases that are not the base', () => {
+    expect(
+      sweepCandidate('openstory-prd', 'prod', 'base', 'closed')
+    ).toBeUndefined();
+    expect(
+      sweepCandidate('openstory-preview-registry', 'reg', 'base', 'closed')
+    ).toBeUndefined();
+    expect(
+      sweepCandidate('openstory-pr-12', 'pr-db', 'pr-db', 'closed')
+    ).toBeUndefined();
+    expect(
+      sweepCandidate('openstory-pr-12', 'pr-db', 'base', 'open')
+    ).toBeUndefined();
+    expect(sweepCandidate('openstory-pr-120', 'other', 'base', 'closed')).toBe(
+      120
+    );
+    expect(sweepCandidate('openstory-pr-12', 'pr-db', 'base', 'closed')).toBe(
+      12
+    );
   });
 
   it('does not clear the record or delete the current base', async () => {
