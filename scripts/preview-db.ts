@@ -18,6 +18,7 @@ import {
 export const REGISTRY_NAME = 'openstory-preview-registry';
 const PRODUCTION_NAME = 'openstory-prd';
 const PREVIEW_DB_NAME = /^openstory-pr-(\d+)$/;
+const FORK_DELETING = -1;
 
 export function canPromote(
   forkRevision: number,
@@ -197,10 +198,12 @@ export async function fork(pr: number, databaseId: string): Promise<void> {
   const db = await registry();
   const [existing] = await query<Fork>(
     db,
-    'SELECT revision, database_id FROM preview_forks WHERE pr = ?',
+    'SELECT revision, database_id, ready FROM preview_forks WHERE pr = ?',
     [pr]
   );
   if (existing) {
+    if (existing.ready === FORK_DELETING)
+      throw new Error(`PR ${pr} preview database deletion is in progress`);
     if (existing.database_id !== databaseId)
       throw new Error(
         `PR ${pr} database changed; refusing to reuse its fork record`
@@ -328,8 +331,14 @@ export async function promote(
   const result = await api<QueryResult[]>(`${root}/${db}/query`, {
     method: 'POST',
     body: JSON.stringify({
-      sql: 'UPDATE preview_base SET revision = revision + 1, database_id = ? WHERE id = 1 AND revision = ?',
-      params: [forked.database_id, forked.revision],
+      sql: 'UPDATE preview_base SET revision = revision + 1, database_id = ? WHERE id = 1 AND revision = ? AND EXISTS (SELECT 1 FROM preview_forks WHERE pr = ? AND database_id = ? AND revision = ? AND ready = 1)',
+      params: [
+        forked.database_id,
+        forked.revision,
+        pr,
+        forked.database_id,
+        forked.revision,
+      ],
     }),
   });
   if (!result[0]?.success || result[0].meta.changes !== 1) {
@@ -347,15 +356,17 @@ export async function markReady(pr: number, databaseId: string): Promise<void> {
   const rows = await api<QueryResult[]>(`${root}/${db}/query`, {
     method: 'POST',
     body: JSON.stringify({
-      sql: 'UPDATE preview_forks SET ready = 1 WHERE pr = ? AND database_id = ?',
+      sql: 'UPDATE preview_forks SET ready = 1 WHERE pr = ? AND database_id = ? AND ready IN (0, 1)',
       params: [pr, databaseId],
     }),
   });
   if (!rows[0]?.success || rows[0].meta.changes !== 1)
-    throw new Error(`Cannot mark PR ${pr} preview ready: missing fork record`);
+    throw new Error(
+      `Cannot mark PR ${pr} preview ready: missing or deleting fork record`
+    );
 }
 
-/** Close an unmerged PR. Delete the database before clearing its fork record. */
+/** Claim deletion atomically against promotion, retaining failed deletions. */
 export async function discard(pr: number): Promise<void> {
   const db = await registry();
   const [existing] = await query<Fork>(
@@ -365,28 +376,29 @@ export async function discard(pr: number): Promise<void> {
   );
   const name = `openstory-pr-${pr}`;
   const targetId = await databaseIdByName(name);
-  const target = targetId ? { name, uuid: targetId } : undefined;
-  if (existing && target && existing.database_id !== target.uuid)
+  if (existing && targetId && existing.database_id !== targetId)
     throw new Error(`PR ${pr} database ID differs from its fork record`);
-  const base = await baseOf(db);
-  if (
-    target?.uuid === base.database_id ||
-    existing?.database_id === base.database_id
-  )
+  const databaseId = targetId ?? existing?.database_id;
+  if (!databaseId) return;
+  // The upsert also reserves orphan databases before any external deletion.
+  const [claimed] = await query<Fork>(
+    db,
+    'INSERT INTO preview_forks (pr, revision, database_id, ready) SELECT ?, revision, ?, -1 FROM preview_base WHERE id = 1 AND database_id IS NOT ? ON CONFLICT(pr) DO UPDATE SET ready = -1 WHERE preview_forks.database_id = excluded.database_id RETURNING revision, database_id, ready',
+    [pr, databaseId, databaseId]
+  );
+  if (!claimed)
     throw new Error(
-      `PR ${pr} database is the active preview base; refusing to delete it`
+      `PR ${pr} database is the active preview base or its fork record changed; refusing to delete it`
     );
-  if (target) {
-    await api<unknown>(`${root}/${target.uuid}`, { method: 'DELETE' });
-    console.log(`Deleted unmerged preview database ${name} (${target.uuid})`);
+  if (targetId) {
+    await api<unknown>(`${root}/${targetId}`, { method: 'DELETE' });
+    console.log(`Deleted unmerged preview database ${name} (${targetId})`);
   }
-  if (existing) {
-    await query(
-      db,
-      'DELETE FROM preview_forks WHERE pr = ? AND database_id = ?',
-      [pr, existing.database_id]
-    );
-  }
+  await query(
+    db,
+    'DELETE FROM preview_forks WHERE pr = ? AND database_id = ? AND ready = -1',
+    [pr, databaseId]
+  );
 }
 
 const USAGE =

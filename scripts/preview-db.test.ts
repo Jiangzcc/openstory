@@ -1,5 +1,14 @@
 import { writeFileSync } from 'node:fs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import { createTestDb } from '@/platform/server/db/test-d1';
 
 vi.hoisted(() => {
   process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
@@ -20,13 +29,38 @@ const {
   sweep,
 } = await import('./preview-db');
 
-const base = { revision: 2, database_id: 'base-id' };
-let forked: {
+type PreviewFork = {
   pr: number;
   revision: number;
   database_id: string;
   ready: number;
-} | null;
+};
+const { db, close } = await createTestDb();
+const registryDb = db.$client;
+await registryDb.exec(
+  "CREATE TABLE preview_base (id INTEGER PRIMARY KEY CHECK (id = 1), revision INTEGER NOT NULL, database_id TEXT); INSERT INTO preview_base VALUES (1, 2, 'base-id'); CREATE TABLE preview_forks (pr INTEGER PRIMARY KEY, revision INTEGER NOT NULL, database_id TEXT NOT NULL, ready INTEGER NOT NULL DEFAULT 0)"
+);
+afterAll(close);
+
+async function forkRecord() {
+  return registryDb
+    .prepare('SELECT * FROM preview_forks WHERE pr = 12')
+    .first<PreviewFork>();
+}
+
+async function baseRecord() {
+  return registryDb
+    .prepare('SELECT revision, database_id FROM preview_base WHERE id = 1')
+    .first<{ revision: number; database_id: string | null }>();
+}
+
+async function setFork(revision: number, ready = 1, databaseId = 'pr-db') {
+  await registryDb
+    .prepare('INSERT INTO preview_forks VALUES (12, ?, ?, ?)')
+    .bind(revision, databaseId, ready)
+    .run();
+}
+
 let queries: string[];
 let previewExists: boolean;
 let previewHasTables: boolean;
@@ -38,10 +72,39 @@ function response(result: unknown): Response {
   });
 }
 
-beforeEach(() => {
-  forked = null;
-  base.revision = 2;
-  base.database_id = 'base-id';
+function requestSql(init?: RequestInit): string {
+  const body: unknown = JSON.parse(
+    typeof init?.body === 'string' ? init.body : '{}'
+  );
+  return body &&
+    typeof body === 'object' &&
+    'sql' in body &&
+    typeof body.sql === 'string'
+    ? body.sql
+    : '';
+}
+
+function interceptRequest(
+  matches: (url: URL, init?: RequestInit) => boolean,
+  action: () => Promise<void>
+) {
+  const originalFetch = vi.mocked(fetch).getMockImplementation();
+  if (!originalFetch) throw new Error('Missing fetch mock');
+  let intercepted = false;
+  vi.mocked(fetch).mockImplementation(async (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input);
+    if (!intercepted && matches(url, init)) {
+      intercepted = true;
+      await action();
+    }
+    return originalFetch(input, init);
+  });
+}
+
+beforeEach(async () => {
+  await registryDb.exec(
+    "DELETE FROM preview_forks; UPDATE preview_base SET revision = 2, database_id = 'base-id' WHERE id = 1"
+  );
   queries = [];
   previewExists = true;
   previewHasTables = false;
@@ -100,48 +163,22 @@ beforeEach(() => {
       };
       // oxlint-enable typescript/no-unsafe-type-assertion
       queries.push(sql);
-      let results: unknown[] = [];
-      let changes = 0;
-      if (sql.includes('sqlite_schema') && previewHasTables)
-        results = [{ name: 'organization' }];
-      if (sql.includes('SELECT revision, database_id FROM preview_base'))
-        results = [{ ...base }];
-      if (sql.includes('FROM preview_forks WHERE pr') && forked)
-        results = [{ ...forked }];
-      if (sql.startsWith('INSERT INTO preview_forks')) {
-        forked = {
-          pr: Number(params[0]),
-          revision: Number(params[1]),
-          database_id: String(params[2]),
-          ready: 0,
-        };
-        changes = 1;
-      }
-      if (
-        sql.startsWith('DELETE FROM preview_forks') &&
-        forked?.pr === params[0]
-      ) {
-        forked = null;
-        changes = 1;
-      }
-      if (
-        sql.startsWith('UPDATE preview_forks') &&
-        forked &&
-        forked.pr === params[0] &&
-        forked.database_id === params[1]
-      ) {
-        forked.ready = 1;
-        changes = 1;
-      }
-      if (
-        sql.startsWith('UPDATE preview_base') &&
-        base.revision === params[1]
-      ) {
-        base.revision++;
-        base.database_id = String(params[0]);
-        changes = 1;
-      }
-      return response([{ success: true, results, meta: { changes } }]);
+      if (url.endsWith('/registry-id/query'))
+        return response([
+          await registryDb
+            .prepare(sql)
+            .bind(...params)
+            .all(),
+        ]);
+      if (sql.includes('sqlite_schema'))
+        return response([
+          {
+            success: true,
+            results: previewHasTables ? [{ name: 'organization' }] : [],
+            meta: { changes: 0 },
+          },
+        ]);
+      throw new Error(`Unmocked Cloudflare request: ${url}`);
     })
   );
 });
@@ -199,7 +236,7 @@ describe('preview D1 lineage', () => {
     previewHasTables = true;
     await fork(12, 'pr-db');
     expect(exec).not.toHaveBeenCalled();
-    expect(forked).toEqual({
+    expect(await forkRecord()).toEqual({
       pr: 12,
       revision: 2,
       database_id: 'pr-db',
@@ -223,7 +260,7 @@ describe('preview D1 lineage', () => {
   it('forks only once, preserving the PR database on redeploy', async () => {
     await fork(12, 'pr-db');
     expect(exec).toHaveBeenCalledTimes(4); // schema/data export and import
-    expect(forked).toEqual({
+    expect(await forkRecord()).toEqual({
       pr: 12,
       revision: 2,
       database_id: 'pr-db',
@@ -234,9 +271,9 @@ describe('preview D1 lineage', () => {
   });
 
   it('promotes a matching fork and treats retries as successful', async () => {
-    forked = { pr: 12, revision: 2, database_id: 'pr-db', ready: 1 };
+    await setFork(2);
     await promote(12);
-    expect(base).toEqual({ revision: 3, database_id: 'pr-db' });
+    expect(await baseRecord()).toEqual({ revision: 3, database_id: 'pr-db' });
     await promote(12);
     expect(
       queries.filter((sql) => sql.startsWith('UPDATE preview_base'))
@@ -244,9 +281,9 @@ describe('preview D1 lineage', () => {
   });
 
   it('preserves the PR database if another merge advanced the base', async () => {
-    forked = { pr: 12, revision: 1, database_id: 'pr-db', ready: 1 };
+    await setFork(1);
     await expect(promote(12)).rejects.toThrow('Preview DB conflict');
-    expect(base.database_id).toBe('base-id');
+    expect(await baseRecord()).toMatchObject({ database_id: 'base-id' });
     expect(previewExists).toBe(true);
     expect(queries).not.toContainEqual(
       expect.stringMatching(/^UPDATE preview_base/)
@@ -254,16 +291,16 @@ describe('preview D1 lineage', () => {
   });
 
   it('deletes a merged preview that changed no migrations', async () => {
-    forked = { pr: 12, revision: 1, database_id: 'pr-db', ready: 1 };
+    await setFork(1);
     await promote(12, false);
     expect(previewExists).toBe(false);
-    expect(forked).toBeNull();
-    expect(base).toEqual({ revision: 2, database_id: 'base-id' });
+    expect(await forkRecord()).toBeNull();
+    expect(await baseRecord()).toEqual({ revision: 2, database_id: 'base-id' });
   });
 
   it('still refuses to delete a no-migration preview that is the base', async () => {
-    forked = { pr: 12, revision: 2, database_id: 'pr-db', ready: 1 };
-    base.database_id = 'pr-db';
+    await setFork(2);
+    await registryDb.exec("UPDATE preview_base SET database_id = 'pr-db'");
     await expect(promote(12, false)).rejects.toThrow('active preview base');
     expect(previewExists).toBe(true);
   });
@@ -273,20 +310,23 @@ describe('preview D1 lineage', () => {
   });
 
   it('refuses to promote a preview that never deployed', async () => {
-    forked = { pr: 12, revision: 2, database_id: 'pr-db', ready: 0 };
+    await setFork(2, 0);
     await expect(promote(12)).rejects.toThrow('never deployed');
     await markReady(12, 'pr-db');
     await promote(12);
-    expect(base.database_id).toBe('pr-db');
+    expect(await baseRecord()).toMatchObject({ database_id: 'pr-db' });
   });
 
   it('discards an unmerged PR and lets reopening fork the current base', async () => {
-    forked = { pr: 12, revision: 1, database_id: 'pr-db', ready: 1 };
+    await setFork(1);
     await discard(12);
     expect(previewExists).toBe(false);
-    expect(forked).toBeNull();
+    expect(await forkRecord()).toBeNull();
     await fork(12, 'new-pr-db');
-    expect(forked).toMatchObject({ revision: 2, database_id: 'new-pr-db' });
+    expect(await forkRecord()).toMatchObject({
+      revision: 2,
+      database_id: 'new-pr-db',
+    });
   });
 
   it('plans promotion from migration changes and fork freshness', () => {
@@ -344,10 +384,157 @@ describe('preview D1 lineage', () => {
   });
 
   it('does not clear the record or delete the current base', async () => {
-    forked = { pr: 12, revision: 2, database_id: 'pr-db', ready: 1 };
-    base.database_id = 'pr-db';
+    await setFork(2);
+    await registryDb.exec("UPDATE preview_base SET database_id = 'pr-db'");
     await expect(discard(12)).rejects.toThrow('active preview base');
     expect(previewExists).toBe(true);
-    expect(forked).not.toBeNull();
+    expect(await forkRecord()).not.toBeNull();
   });
+
+  it('preserves the base when promotion wins before the deletion claim', async () => {
+    await setFork(2);
+    interceptRequest(
+      (_url, init) => requestSql(init).includes('ON CONFLICT(pr)'),
+      () => promote(12)
+    );
+    await expect(discard(12)).rejects.toThrow('active preview base');
+    expect(await baseRecord()).toEqual({ revision: 3, database_id: 'pr-db' });
+    expect(await forkRecord()).toMatchObject({ ready: 1 });
+    expect(previewExists).toBe(true);
+  });
+
+  it('rejects a stale promotion when deletion wins before its CAS', async () => {
+    await setFork(2);
+    interceptRequest(
+      (_url, init) => requestSql(init).startsWith('UPDATE preview_base'),
+      () => discard(12)
+    );
+    await expect(promote(12)).rejects.toThrow('lost a race');
+    expect(await baseRecord()).toEqual({ revision: 2, database_id: 'base-id' });
+    expect(await forkRecord()).toBeNull();
+    expect(previewExists).toBe(false);
+  });
+
+  it('reserves an orphan before deletion and refuses readiness or reuse', async () => {
+    interceptRequest(
+      (url, init) =>
+        url.pathname.endsWith('/pr-db') && init?.method === 'DELETE',
+      async () => {
+        expect(await forkRecord()).toMatchObject({
+          database_id: 'pr-db',
+          revision: 2,
+          ready: -1,
+        });
+        await expect(markReady(12, 'pr-db')).rejects.toThrow('deleting');
+        await expect(fork(12, 'pr-db')).rejects.toThrow(
+          'deletion is in progress'
+        );
+        await expect(promote(12)).rejects.toThrow('never deployed');
+      }
+    );
+    await discard(12);
+    expect(await forkRecord()).toBeNull();
+    expect(previewExists).toBe(false);
+  });
+
+  it('claims a fork registered after an orphan lookup before deleting', async () => {
+    interceptRequest(
+      (_url, init) => requestSql(init).includes('ON CONFLICT(pr)'),
+      () => setFork(2)
+    );
+    interceptRequest(
+      (url, init) =>
+        url.pathname.endsWith('/pr-db') && init?.method === 'DELETE',
+      async () => {
+        expect(await forkRecord()).toMatchObject({ ready: -1 });
+        await expect(markReady(12, 'pr-db')).rejects.toThrow('deleting');
+      }
+    );
+    await discard(12);
+    expect(previewExists).toBe(false);
+    expect(await forkRecord()).toBeNull();
+  });
+
+  it('preserves an orphan promoted after its initial fork lookup', async () => {
+    interceptRequest(
+      (_url, init) => requestSql(init).includes('ON CONFLICT(pr)'),
+      async () => {
+        await setFork(2);
+        await promote(12);
+      }
+    );
+    await expect(discard(12)).rejects.toThrow('active preview base');
+    expect(await baseRecord()).toMatchObject({ database_id: 'pr-db' });
+    expect(previewExists).toBe(true);
+  });
+
+  it.each([false, true])(
+    'retains a retryable deletion claim after a failed delete, existing fork: %s',
+    async (hasFork) => {
+      if (hasFork) await setFork(2);
+      interceptRequest(
+        (url, init) =>
+          url.pathname.endsWith('/pr-db') && init?.method === 'DELETE',
+        async () => {
+          throw new Error('mocked delete connection failure');
+        }
+      );
+      await expect(discard(12)).rejects.toThrow('mocked delete connection');
+      expect(await forkRecord()).toMatchObject({ ready: -1 });
+      expect(previewExists).toBe(true);
+      await expect(markReady(12, 'pr-db')).rejects.toThrow('deleting');
+      await expect(fork(12, 'pr-db')).rejects.toThrow(
+        'deletion is in progress'
+      );
+      await discard(12);
+      expect(previewExists).toBe(false);
+      expect(await forkRecord()).toBeNull();
+    }
+  );
+
+  it('clears a deletion claim after the remote database is already gone', async () => {
+    await setFork(2, -1);
+    previewExists = false;
+    await discard(12);
+    expect(await forkRecord()).toBeNull();
+    expect(
+      vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === 'DELETE')
+    ).toBe(false);
+  });
+
+  it('claims an orphan while the initial base is null', async () => {
+    await registryDb.exec('UPDATE preview_base SET database_id = NULL');
+    await discard(12);
+    expect(previewExists).toBe(false);
+    expect(await forkRecord()).toBeNull();
+  });
+
+  it('does not overwrite a different fork registered during deletion', async () => {
+    interceptRequest(
+      (_url, init) => requestSql(init).includes('ON CONFLICT(pr)'),
+      () => setFork(2, 1, 'replacement-db')
+    );
+    await expect(discard(12)).rejects.toThrow('fork record changed');
+    expect(await forkRecord()).toMatchObject({
+      database_id: 'replacement-db',
+      ready: 1,
+    });
+    expect(previewExists).toBe(true);
+  });
+
+  it.each(['ready = 1', "database_id = 'replacement-db'"])(
+    'clears only its matching deletion claim: %s',
+    async (replacement) => {
+      await setFork(2);
+      interceptRequest(
+        (_url, init) =>
+          requestSql(init).startsWith('DELETE FROM preview_forks'),
+        async () => {
+          await registryDb.exec(`UPDATE preview_forks SET ${replacement}`);
+        }
+      );
+      await discard(12);
+      expect(await forkRecord()).not.toBeNull();
+    }
+  );
 });
