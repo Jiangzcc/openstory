@@ -6,6 +6,10 @@ const mocks = vi.hoisted(() => ({
   loadContext: vi.fn(),
   hashMotion: vi.fn(),
   loadDialogue: vi.fn(),
+  emit: vi.fn(),
+}));
+vi.mock('@/platform/realtime', () => ({
+  getGenerationChannel: () => ({ emit: mocks.emit }),
 }));
 vi.mock('./rescan-continuity-from-prompt', () => ({
   rescanContinuityFromPrompt: mocks.rescan,
@@ -32,6 +36,7 @@ const getSelectedMotion = vi.fn();
 const writeDialogue = vi.fn();
 // only the fields read by this helper are needed in the fixture
 const context = asStub<ShotContext>({
+  promptLocale: 'en',
   shot: { id: 'shot-1', sceneId: 'scene-1', useStartFrame: false },
   frame: { id: 'frame-1' },
   sequence: { id: 'sequence-1', generateStartFrames: false },
@@ -46,6 +51,7 @@ const context = asStub<ShotContext>({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.emit.mockResolvedValue(undefined);
   getSelectedMotion.mockResolvedValue({
     text: 'Old action',
     audio: { soundEffects: 'Footsteps' },
@@ -125,6 +131,26 @@ describe('saveShotPrompt', () => {
       })
     ).toMatchObject({ unchanged: true });
     expect(mocks.rescan).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
+  });
+
+  it('keeps a successful dialogue save when realtime is unavailable', async () => {
+    mocks.emit.mockRejectedValueOnce(new Error('Mock realtime outage'));
+    const lines = [{ character: 'A', line: 'Saved line', tone: 'quiet' }];
+    await expect(
+      saveShotPrompt(context, {
+        promptType: 'motion',
+        text: 'Old action',
+        dialogue: { presence: true, lines },
+      })
+    ).resolves.toMatchObject({ unchanged: false });
+    expect(writeDialogue).toHaveBeenCalledWith('shot-1', lines, 'user-edit', {
+      createdBy: 'user-1',
+    });
+    expect(mocks.emit).toHaveBeenCalledWith('generation.shot:updated', {
+      shotId: 'shot-1',
+      updateType: 'dialogue-lines',
+    });
     expect(write).not.toHaveBeenCalled();
   });
 });

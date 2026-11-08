@@ -67,6 +67,7 @@ import {
   uploadSceneDialogueFn,
 } from '@/shots/media-upload.fn';
 import { putToR2 } from '@/ui/upload';
+import { shotPromptPreviewShotKey } from './shot-prompt-preview-query';
 
 /**
  * Everything that reads a shot's lines, after they moved (a restore or an
@@ -89,6 +90,9 @@ export const invalidateLinesMoved = (
     queryClient.invalidateQueries({ queryKey: segmentKeys.list(sequenceId) }),
     queryClient.invalidateQueries({ queryKey: shotKeys.detail(shotId) }),
     queryClient.invalidateQueries({ queryKey: shotStalenessNamespace }),
+    queryClient.invalidateQueries({
+      queryKey: shotPromptPreviewShotKey(sequenceId, shotId),
+    }),
   ]);
 
 /**
