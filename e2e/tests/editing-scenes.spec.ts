@@ -5,7 +5,7 @@
  */
 import type { APIRequestContext, BrowserContext, Page } from 'playwright/test';
 import { z } from 'zod';
-import { E2E_RECORDING } from '../recording-mode';
+import { E2E_RECORDING, replayTimeout } from '../recording-mode';
 import { call } from '../fixtures/mcp';
 import {
   authenticateUser,
@@ -277,8 +277,8 @@ test.describe('Editing scenes', () => {
     'Workflows run only in the full pipeline (`bun test:e2e:full`).'
   );
   test.describe.configure({ mode: 'serial' });
-  test.use({ actionTimeout: 15_000 });
-  test.setTimeout(E2E_RECORDING ? 30 * 60_000 : 120_000);
+  test.use({ actionTimeout: replayTimeout(15_000) });
+  test.setTimeout(E2E_RECORDING ? 30 * 60_000 : replayTimeout(120_000));
 
   test.afterAll(async () => {
     if (!user) return;
@@ -342,7 +342,7 @@ test.describe('Editing scenes', () => {
           );
         },
         {
-          timeout: E2E_RECORDING ? 8 * 60_000 : 100_000,
+          timeout: E2E_RECORDING ? 8 * 60_000 : replayTimeout(100_000),
           intervals: [2_000, 5_000, 10_000],
         }
       )
@@ -504,7 +504,9 @@ test.describe('Editing scenes', () => {
       .getByRole('alertdialog')
       .getByRole('button', { name: 'Remove', exact: true })
       .click();
-    await expect(group(second)).toHaveCount(0);
+    await expect(group(second)).toHaveCount(0, {
+      timeout: replayTimeout(30_000),
+    });
     const block = page.getByRole('region', { name: 'Dialogue' }).first();
     for (const line of inScene(before, second).flatMap((r) => r.lines)) {
       await expect(block).not.toContainText(line);

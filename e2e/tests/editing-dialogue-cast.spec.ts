@@ -13,7 +13,7 @@ import type {
   Page,
 } from 'playwright/test';
 import { z } from 'zod';
-import { E2E_RECORDING } from '../recording-mode';
+import { E2E_RECORDING, replayTimeout } from '../recording-mode';
 import { call } from '../fixtures/mcp';
 import {
   authenticateUser,
@@ -194,7 +194,7 @@ async function settle(sequenceId: string): Promise<void> {
         return status.status === 'completed' && status.counts.shots > 0;
       },
       {
-        timeout: E2E_RECORDING ? 15 * 60_000 : 100_000,
+        timeout: E2E_RECORDING ? 15 * 60_000 : replayTimeout(100_000),
         intervals: [2_000, 5_000, 10_000],
       }
     )
@@ -246,15 +246,40 @@ async function clickUntil(button: Locator, next: Locator): Promise<void> {
 
 const editButtons = () =>
   page.getByRole('button', { name: /^Edit .+'s line$/ });
+async function submitLines(button: Locator): Promise<void> {
+  const submitted = page.waitForRequest(
+    (outgoing) =>
+      outgoing.method() === 'POST' &&
+      outgoing.url().includes('/_serverFn/saveShotDialogueFn')
+  );
+  await button.click();
+  const response = await (await submitted).response();
+  if (!response) throw new Error('The dialogue save received no response');
+  expect(response.status()).toBe(200);
+  const failure = await response.finished();
+  if (failure) throw failure;
+}
 const saveLine = () =>
-  page.getByRole('button', { name: 'Save', exact: true }).click();
+  submitLines(page.getByRole('button', { name: 'Save', exact: true }));
 
 /** The shot's lines as the API sees them, once they equal `want`. */
 async function expectLines(shotId: string, want: string[]): Promise<void> {
   await expect
     .poll(
-      async () =>
-        (await readShots(firstId)).find((r) => r.id === shotId)?.lines,
+      async () => {
+        const dialogue = await call(
+          request,
+          'list_shot_dialogue',
+          { sequenceId: firstId, shotId },
+          Dialogue
+        );
+        const selected = dialogue.versions.find(
+          (version) => version.id === dialogue.selectedVersionId
+        );
+        return (
+          selected?.lines.map((line) => `${line.character}: ${line.line}`) ?? []
+        );
+      },
       { timeout: 20_000, message: `lines of ${shotId}` }
     )
     .toEqual(want);
@@ -266,7 +291,7 @@ test.describe('Editing dialogue and cast', () => {
     'Workflows run only in the full pipeline (`bun test:e2e:full`).'
   );
   test.describe.configure({ mode: 'serial' });
-  test.setTimeout(E2E_RECORDING ? 5 * 60_000 : 120_000);
+  test.setTimeout(E2E_RECORDING ? 5 * 60_000 : replayTimeout(120_000));
 
   test.afterAll(async () => {
     if (!user) return;
@@ -282,7 +307,7 @@ test.describe('Editing dialogue and cast', () => {
   test('a generated sequence gives every shot exactly its own lines', async ({
     browser,
   }) => {
-    test.setTimeout(E2E_RECORDING ? 30 * 60_000 : 120_000);
+    test.setTimeout(E2E_RECORDING ? 30 * 60_000 : replayTimeout(120_000));
     user = await createTestUser({ name: 'E2E Dialogue Editor' });
     context = await browser.newContext({
       baseURL: 'http://localhost:3020',
@@ -409,7 +434,7 @@ test.describe('Editing dialogue and cast', () => {
     const at = from.lines.indexOf(moved);
     const remove = page.getByRole('button', { name: 'Remove', exact: true });
     await clickUntil(editButtons().nth(at), remove);
-    await remove.click();
+    await submitLines(remove);
     await expectLines(
       from.id,
       from.lines.filter((l) => l !== moved)
@@ -425,7 +450,9 @@ test.describe('Editing dialogue and cast', () => {
     await saveLine();
     await expectLines(to.id, [...to.lines, `DEV: ${words}`]);
 
-    await editButtons().last().click();
+    await editButtons()
+      .last()
+      .click({ timeout: replayTimeout(30_000) });
     await page.getByRole('combobox', { name: /^Line \d+ character$/ }).click();
     await page.getByRole('option', { name: 'MAYA' }).click();
     await saveLine();

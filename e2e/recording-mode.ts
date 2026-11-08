@@ -9,3 +9,16 @@ const RECORDING_TIMEOUT_MULTIPLIER = 10;
 
 export const t = (ms: number): number =>
   E2E_RECORDING ? ms * RECORDING_TIMEOUT_MULTIPLIER : ms;
+
+export function replayTimeout(ms: number): number {
+  if (E2E_RECORDING) return ms;
+  const configured = process.env.E2E_REPLAY_TIMEOUT_MULTIPLIER;
+  if (configured === undefined) return ms;
+  const multiplier = Number(configured);
+  if (!Number.isFinite(multiplier) || multiplier < 1) {
+    throw new Error(
+      'E2E_REPLAY_TIMEOUT_MULTIPLIER must be a finite number >= 1.'
+    );
+  }
+  return ms * multiplier;
+}

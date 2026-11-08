@@ -3,9 +3,14 @@
  * shot at a time. Each edit names what goes out of date and what stays fresh.
  * Runs in the full pipeline (one recorded run).
  */
-import type { APIRequestContext, BrowserContext, Page } from 'playwright/test';
+import type {
+  APIRequestContext,
+  BrowserContext,
+  Locator,
+  Page,
+} from 'playwright/test';
 import { z } from 'zod';
-import { E2E_RECORDING } from '../recording-mode';
+import { E2E_RECORDING, replayTimeout } from '../recording-mode';
 import { call, upload } from '../fixtures/mcp';
 import {
   authenticateUser,
@@ -17,6 +22,12 @@ import {
 // These drive live workflows under parallel specs; UI reads settle slowly.
 const expect = baseExpect.configure({ timeout: 30_000 });
 import { RECORDED_PIPELINE_SETTINGS } from '../fixtures/test-utils';
+
+declare global {
+  interface Window {
+    __openstoryE2eDialogueLinesObserved: (data: string) => Promise<void>;
+  }
+}
 
 const SCRIPT = `
 INT. BAKERY KITCHEN - EARLY MORNING
@@ -75,7 +86,12 @@ const Dialogue = z.object({
     z.object({
       id: z.string(),
       lines: z.array(
-        z.object({ character: z.string(), line: z.string(), tone: z.string() })
+        z.object({
+          character: z.string(),
+          line: z.string(),
+          tone: z.string(),
+          voiceToken: z.string().optional(),
+        })
       ),
     })
   ),
@@ -251,6 +267,94 @@ async function openShot(row: ShotState): Promise<void> {
   await expect(page).toHaveURL(new RegExp(`shot=${row.id}`));
 }
 
+async function observeDialogueLines(shotId: string): Promise<() => number> {
+  let received = 0;
+  const update = z.object({
+    event: z.literal('generation.shot:updated'),
+    channel: z.literal(sequenceId),
+    data: z.object({
+      shotId: z.literal(shotId),
+      updateType: z.literal('dialogue-lines'),
+    }),
+  });
+  await page.exposeFunction(
+    '__openstoryE2eDialogueLinesObserved',
+    (data: string) => {
+      let payload: unknown;
+      try {
+        payload = JSON.parse(data);
+      } catch {
+        return;
+      }
+      if (update.safeParse(payload).success) received += 1;
+    }
+  );
+  await page.addInitScript(() => {
+    const NativeEventSource = window.EventSource;
+    window.EventSource = class extends NativeEventSource {
+      constructor(url: string | URL, options?: EventSourceInit) {
+        super(url, options);
+        this.addEventListener('message', (event: MessageEvent<string>) => {
+          void window.__openstoryE2eDialogueLinesObserved(event.data);
+        });
+      }
+    };
+  });
+  return () => received;
+}
+
+async function synchronizeDialogueStream(
+  shotId: string,
+  version: z.infer<typeof Dialogue>['versions'][number],
+  received: () => number
+): Promise<void> {
+  const before = received();
+  const maxNotifications = 4;
+  for (let attempt = 0; attempt < maxNotifications; attempt += 1) {
+    // Only readiness notifications repeat; unchanged lines keep their version.
+    const saved = await call(
+      request,
+      'update_shot_dialogue',
+      { ...s(), shotId, lines: version.lines },
+      z.object({ versionId: z.string().nullable() })
+    );
+    expect(saved.versionId, 'readiness save keeps the selected version').toBe(
+      version.id
+    );
+    try {
+      await expect
+        .poll(received, {
+          timeout: 10_000,
+          message: 'the page receives this shot’s dialogue-lines notification',
+        })
+        .toBeGreaterThan(before);
+      return;
+    } catch (error) {
+      if (attempt === maxNotifications - 1) throw error;
+    }
+  }
+}
+
+async function setStartFrame(toggle: Locator, on: boolean): Promise<void> {
+  await expect(toggle).toBeEnabled({ timeout: replayTimeout(30_000) });
+  const submitted = page.waitForRequest(
+    (outgoing) =>
+      outgoing.method() === 'POST' &&
+      outgoing.url().includes('/_serverFn/setShotUseStartFrameFn')
+  );
+  await toggle.click();
+  const response = await (await submitted).response();
+  if (!response) throw new Error('The start-frame save received no response');
+  expect(response.status()).toBe(200);
+  const failure = await response.finished();
+  if (failure) throw failure;
+  await expect(toggle).toBeChecked({
+    checked: on,
+    timeout: replayTimeout(30_000),
+  });
+  await expect(toggle).toBeEnabled({ timeout: replayTimeout(30_000) });
+}
+
 const OUT_OF_DATE = 'Out of date since your last edit';
 
 let target: ShotState; // the shot with a spoken line
@@ -263,7 +367,7 @@ test.describe('Editing shots', () => {
     'Workflows run only in the full pipeline (`bun test:e2e:full`).'
   );
   test.describe.configure({ mode: 'serial' });
-  test.setTimeout(E2E_RECORDING ? 30 * 60_000 : 120_000);
+  test.setTimeout(E2E_RECORDING ? 30 * 60_000 : replayTimeout(120_000));
 
   test.afterAll(async () => {
     if (!user) return;
@@ -327,7 +431,7 @@ test.describe('Editing shots', () => {
           );
         },
         {
-          timeout: E2E_RECORDING ? 25 * 60_000 : 100_000,
+          timeout: E2E_RECORDING ? 25 * 60_000 : replayTimeout(100_000),
           intervals: [2_000, 5_000, 10_000],
         }
       )
@@ -431,12 +535,18 @@ test.describe('Editing shots', () => {
   });
 
   test("a shot's motion prompt follows its lines: no lines means the no-dialogue suffix", async () => {
-    const { selectedVersionId } = await call(
+    const { selectedVersionId, versions } = await call(
       request,
       'list_shot_dialogue',
       { ...s(), shotId: target.id },
-      z.object({ selectedVersionId: z.string() })
+      Dialogue
     );
+    const selected = versions.find(
+      (version) => version.id === selectedVersionId
+    );
+    if (!selected)
+      throw new Error('The speaking shot has no selected dialogue version');
+    const received = await observeDialogueLines(target.id);
     await openShot(target);
     const optimised = page.getByRole('button', { name: /Optimised prompt/ });
     const openOptimised = async () => {
@@ -454,6 +564,7 @@ test.describe('Editing shots', () => {
     await openOptimised();
     const panel = page.getByRole('tabpanel', { name: 'Video' });
     await expect(panel).toContainText(SUFFIX_WITH_DIALOGUE);
+    await synchronizeDialogueStream(target.id, selected, received);
 
     await call(request, 'update_shot_dialogue', {
       ...s(),
@@ -534,16 +645,13 @@ test.describe('Editing shots', () => {
       useStartFrame: true,
     });
     await openShot(target);
-    await page.getByRole('tab', { name: 'Video' }).click();
     const toggle = page.getByRole('checkbox', { name: 'Use start frame' });
-    // Saved through a mutation; a click before hydration does nothing, so retry.
-    const setToggle = (on: boolean) =>
-      expect(async () => {
-        if ((await toggle.isChecked()) !== on) await toggle.click();
-        await expect(toggle).toBeChecked({ checked: on, timeout: 5_000 });
-      }).toPass({ timeout: 30_000 });
+    await expect(async () => {
+      await page.getByRole('tab', { name: 'Video' }).click();
+      await expect(toggle).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
     await expect(toggle).toBeChecked();
-    await setToggle(false);
+    await setStartFrame(toggle, false);
 
     // No still to track: the still is untracked, the clip is owed again.
     await expectShot(target.id, {
@@ -553,7 +661,7 @@ test.describe('Editing shots', () => {
     });
     await expectOthers(target.id, { motionPrompt: 'fresh' });
 
-    await setToggle(true);
+    await setStartFrame(toggle, true);
     await expectShot(target.id, {
       thumbnail: 'fresh',
       visualPrompt: 'fresh',
