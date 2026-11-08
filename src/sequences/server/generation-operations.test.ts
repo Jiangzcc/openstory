@@ -626,6 +626,7 @@ describe('planned retry (#1461)', () => {
     executeSmartRetry.mockResolvedValue({
       planned: retryPlan,
       creditProviders: [],
+      skippedShots: 2,
     });
     const plan = await planGeneration(scoped(), actor(), sequenceId, retry);
     expect(executeSmartRetry).toHaveBeenLastCalledWith(expect.anything(), {
@@ -638,6 +639,7 @@ describe('planned retry (#1461)', () => {
       images: retryPlan.images,
     });
     expect(plan.estimate.micros).toBe(900_000);
+    expect(plan.skippedShots).toBe(2);
     expect(requireCredits).toHaveBeenLastCalledWith(
       expect.anything(),
       900_000,

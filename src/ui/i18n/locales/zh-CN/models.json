@@ -1,4 +1,6 @@
 {
+  "{{count}} shot has no image prompt, skipped.": "{{count}} 个镜头没有图片提示词，已跳过。",
+  "{{count}} shots have no image prompt, skipped.": "{{count}} 个镜头没有图片提示词，已跳过。",
   "{{value1}} model details": "{{value1}}模型详情",
   "No models found": "未找到模型",
   "Try a different search or activity filter.": "试试其他关键词，或切换生成类型。",

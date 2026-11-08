@@ -253,7 +253,17 @@ export const AddModelMenuSection = ({
                               value1: name,
                               value2: r.count,
                             }
-                          )
+                          ),
+                      r.skipped > 0
+                        ? {
+                            description: translateEvent(
+                              r.skipped === 1
+                                ? '{{count}} shot has no image prompt, skipped.'
+                                : '{{count}} shots have no image prompt, skipped.',
+                              { count: r.skipped }
+                            ),
+                          }
+                        : undefined
                     ),
                   onError: (e) => toast.error(e.message),
                 }

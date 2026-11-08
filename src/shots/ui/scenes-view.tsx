@@ -1302,7 +1302,17 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
           ? translateEvent('Continuing generation')
           : translateEvent('Retrying: {{value1}}', {
               value1: result.retriedItems.join(', '),
-            })
+            }),
+        result.skippedShots > 0
+          ? {
+              description: translateEvent(
+                result.skippedShots === 1
+                  ? '{{count}} shot has no image prompt, skipped.'
+                  : '{{count}} shots have no image prompt, skipped.',
+                { count: result.skippedShots }
+              ),
+            }
+          : undefined
       );
       void queryClient.invalidateQueries({
         queryKey: ['sequence', sequenceId],

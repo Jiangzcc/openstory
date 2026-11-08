@@ -192,6 +192,8 @@ type Prepared = {
   creditProviders: readonly Provider[];
   hasWork: boolean;
   work: PlanWork;
+  /** Failed stills a retry leaves out: no image prompt, no spec (#2291). Not hashed. */
+  skippedShots: number;
   /**
    * Start the work under `runKey` (deduplication id), reporting each run as
    * it starts so a throw part-way still names the runs that did.
@@ -325,6 +327,7 @@ async function prepareGeneration(
       creditCheckMicros: creditFloorMicros,
       creditProviders: imageSource ? [] : UPDATE_STALE_CREDIT_PROVIDERS,
       hasWork: hasWork(plan),
+      skippedShots: 0,
       work: summarize(plan, inFlight),
       launch: async (runKey, onLaunched) => {
         await onLaunched(
@@ -371,6 +374,7 @@ async function prepareGeneration(
     creditCheckMicros: estimate.micros,
     creditProviders: estimate.imageSource ? [] : CONTINUE_CREDIT_PROVIDERS,
     hasWork: hasWork(plan),
+    skippedShots: 0,
     work: summarize(plan, inFlight),
     // The storyboard mutex is the launch-once guard here: a repeat while the
     // run is live is GENERATION_IN_PROGRESS, and after it PLAN_CHANGED.
@@ -417,11 +421,14 @@ async function prepareRetry(
   const smartOnly = request.retry === 'smart';
   const modelConfiguration = await loadStoryboardModelConfiguration(scopedDb);
   // The dry run reads the storyboard mutex: a live run throws here.
-  const { planned, creditProviders } = await executeSmartRetry(context, {
-    dryRun: true,
-    smartOnly,
-    modelConfiguration,
-  });
+  const { planned, creditProviders, skippedShots } = await executeSmartRetry(
+    context,
+    {
+      dryRun: true,
+      smartOnly,
+      modelConfiguration,
+    }
+  );
   const { estimateMicros, ...work } = planned;
   return {
     sequence,
@@ -433,6 +440,7 @@ async function prepareRetry(
     creditProviders,
     hasWork: true,
     work,
+    skippedShots,
     launch: async (runKey, onLaunched) => {
       await executeSmartRetry(context, {
         smartOnly,
@@ -535,6 +543,7 @@ export async function planGeneration(
         prepared.estimateMicros === null ? null : prepared.estimateMicros / 1e6,
     },
     work: prepared.work,
+    skippedShots: prepared.skippedShots,
     blockers,
   };
 }

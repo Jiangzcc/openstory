@@ -1,4 +1,6 @@
 {
+  "{{count}} shot has no image prompt, skipped.": "{{count}} shot has no image prompt, skipped.",
+  "{{count}} shots have no image prompt, skipped.": "{{count}} shots have no image prompt, skipped.",
   "Added {{value1}}": "Added {{value1}}",
   "Could not add {{value1}}": "Could not add {{value1}}",
   "Add Character": "Add Character",

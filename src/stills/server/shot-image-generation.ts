@@ -65,15 +65,10 @@ export async function generateShotImage(
 ) {
   const { shot, frame, sequence, user, scene: resolvedScene, script } = context;
 
-  // Refuse before credits: an empty/whitespace visual prompt has nothing
-  // to render. A missing override falls through to the stored selected
-  // prompt so a stale tab matches the button (#1594).
-  const storedVisualPrompt =
-    data.prompt === undefined
-      ? ((await context.scopedDb.framePromptVersions.getSelected(frame.id))
-          ?.text ?? null)
-      : undefined;
-  requireGenerationPrompt(data.prompt, storedVisualPrompt);
+  // Explicit blanks are refused; missing prompts may derive from the spec.
+  if (data.prompt !== undefined) {
+    requireGenerationPrompt(data.prompt, undefined);
+  }
 
   // Auto-link any element/cast/location tags the user mentioned in their
   // edited prompt before computing reference attachment, so a freshly-
@@ -113,6 +108,7 @@ export async function generateShotImage(
     promptOverride: data.prompt,
     modelOverride: data.model,
     userEditedPrompt,
+    deriveMissingPrompt: true,
   });
 
   // Server-side dedup (#1085): a live claim for exactly this snapshot hash

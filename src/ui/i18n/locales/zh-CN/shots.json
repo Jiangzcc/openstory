@@ -1,4 +1,6 @@
 {
+  "{{count}} shot has no image prompt, skipped.": "{{count}} 个镜头没有图片提示词，已跳过。",
+  "{{count}} shots have no image prompt, skipped.": "{{count}} 个镜头没有图片提示词，已跳过。",
   "Added {{value1}}": "已添加{{value1}}",
   "Could not add {{value1}}": "无法添加{{value1}}",
   "Add Character": "添加角色",

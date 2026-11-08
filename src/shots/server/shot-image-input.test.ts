@@ -24,6 +24,9 @@ import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configura
 import { DEFAULT_IMAGE_MODEL } from '@/models/models';
 import type { Frame, Shot } from '@/platform/server/db/schema';
 import { asStub } from '@/test/as-stub';
+import { migrateStyleConfigV1ToV2 } from '@/look/style-config';
+import type { Scene } from '@/shots/scene-analysis.schema';
+import { storedShotSpec } from '@/shots/shot-list.schema';
 
 vi.doMock('@/billing/server/fal-pricing-live', () => ({
   getEffectiveFalPricing: async () => ({}),
@@ -42,6 +45,7 @@ vi.doMock('@/platform/server/db/scoped', () => ({
 
 // Dynamic import so the mocks above apply (vi.doMock is not hoisted).
 const { prepareShotImageWorkflowInput } = await import('./shot-image-input');
+const { NO_STILL_PROMPT_MESSAGE } = await import('./still-prompt');
 
 const FRAME_ID = 'frm_1';
 
@@ -96,6 +100,7 @@ function baseArgs(scopedDb: ReturnType<typeof makeScopedDb>['scopedDb']) {
     scene: null,
     scriptExtract: 'INT. HALLWAY — NIGHT',
     userId: 'usr_1',
+    deriveMissingPrompt: true,
     // Sequence-scoped refs supplied, so the bible reads don't run either.
     refs: { characters: [], locations: [], elements: [] },
   };
@@ -236,7 +241,7 @@ describe('prepareShotImageWorkflowInput refuses a blank prompt before credits', 
         promptVersionOverride: 'fpv_from_caller',
         modelOverride: 'nano_banana_pro',
       })
-    ).rejects.toThrow('Shot has no prompt or description to regenerate from');
+    ).rejects.toThrow(NO_STILL_PROMPT_MESSAGE);
 
     expect(requireCredits).not.toHaveBeenCalled();
   });
@@ -400,5 +405,108 @@ describe('configured shot image billing snapshots', () => {
     ).rejects.toThrow('Configured image model is unavailable.');
     expect(loadConfiguration).toHaveBeenCalledTimes(1);
     expect(requireCredits).not.toHaveBeenCalled();
+  });
+});
+
+describe('prepareShotImageWorkflowInput never prompts a still with the script (#2291)', () => {
+  beforeEach(() => {
+    loadConfiguration.mockResolvedValue(DEFAULT_MODEL_CONFIGURATION);
+  });
+
+  const LINE = 'We open in five minutes.';
+  const scene = asStub<Scene>({
+    metadata: { location: 'INT. BAKERY KITCHEN', timeOfDay: 'early morning' },
+    continuity: {},
+    originalScript: {
+      extract: `MARA kneads dough.\n\nMARA\n${LINE}`,
+      dialogue: [{ character: 'MARA', line: LINE, tone: '' }],
+    },
+  });
+  const spec = storedShotSpec({
+    shotNumber: 1,
+    framing: {
+      shotSize: 'medium wide',
+      angle: 'eye level',
+      composition: 'MARA at the steel bench',
+      subjectStartState: 'MARA leans over the dough',
+    },
+    action: 'MARA kneads the dough',
+    cameraMovement: { move: 'handheld drift', pacing: 'unhurried' },
+    direction: '',
+    soundCue: '',
+    dialogue: [{ character: 'MARA', line: LINE, tone: '' }],
+    durationSeconds: 5,
+  });
+  const styleConfig = migrateStyleConfigV1ToV2({
+    mood: 'calm',
+    artStyle: 'documentary',
+    lighting: 'natural',
+    colorPalette: ['#eee'],
+    cameraWork: 'handheld',
+    referenceFilms: [],
+    colorGrading: 'natural',
+  });
+
+  function promptlessDb(withSpec: boolean) {
+    return asStub<
+      Parameters<typeof prepareShotImageWorkflowInput>[0]['scopedDb']
+    >({
+      framePromptVersions: { getSelected: vi.fn(async () => null) },
+      frameVariants: {
+        getSelected: vi.fn(async () => null),
+        getLastFailed: vi.fn(async () => null),
+      },
+      shotSpecVersions: {
+        getSelected: vi.fn(async () => (withSpec ? { spec } : null)),
+      },
+      sequences: { getById: vi.fn(async () => ({ styleConfig })) },
+      styles: { getById: vi.fn(async () => null) },
+    });
+  }
+
+  it.each([
+    ['en', 'Natural lighting appropriate to early morning'],
+    ['zh-CN', '符合early morning的自然光'],
+  ] as const)(
+    'derives a %s prompt without the spoken line',
+    async (promptLocale, lighting) => {
+      const scopedDb = promptlessDb(true);
+      const input = await prepareShotImageWorkflowInput({
+        ...baseArgs(scopedDb),
+        promptLocale,
+        scene,
+        scriptExtract: scene.originalScript.extract,
+      });
+      expect(input.prompt).toContain('MARA leans over the dough');
+      expect(input.prompt).toContain(lighting);
+      expect(input.prompt).not.toContain(LINE);
+      expect(input.promptLocale).toBe(promptLocale);
+    }
+  );
+
+  it('a workflow step never reads the spec pointer mid-run', async () => {
+    const scopedDb = promptlessDb(true);
+    await expect(
+      prepareShotImageWorkflowInput({
+        ...baseArgs(scopedDb),
+        promptLocale: 'en',
+        scene,
+        scriptExtract: scene.originalScript.extract,
+        deriveMissingPrompt: false,
+      })
+    ).rejects.toThrow(NO_STILL_PROMPT_MESSAGE);
+    expect(scopedDb.shotSpecVersions.getSelected).not.toHaveBeenCalled();
+  });
+
+  it('refuses a shot with no prompt and no spec', async () => {
+    const scopedDb = promptlessDb(false);
+    await expect(
+      prepareShotImageWorkflowInput({
+        ...baseArgs(scopedDb),
+        promptLocale: 'en',
+        scene,
+        scriptExtract: scene.originalScript.extract,
+      })
+    ).rejects.toThrow(NO_STILL_PROMPT_MESSAGE);
   });
 });

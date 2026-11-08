@@ -4,6 +4,10 @@ import { prepareConfiguredImageBilling } from '@/billing/server/configured-image
 import { configuredImageSource } from '@/billing/configured-image-billing';
 import { generateId } from '@/platform/id';
 import { loadSequenceStyle } from '@/look/server/sequence-style';
+import {
+  derivedStillPrompt,
+  lazySequenceStyle,
+} from '@/shots/server/still-prompt';
 import { packedSceneFromScene } from '@/motion/server/build-motion-render';
 /**
  * Smart-retry orchestration (#1257: moved out of `functions/smart-retry.ts`).
@@ -373,6 +377,7 @@ export async function executeSmartRetry(
     const fullResult = {
       retryType: 'full' as const,
       retriedItems: ['full storyboard'],
+      skippedShots: 0,
       planned: {
         ...planned,
         retryType: 'full' as const,
@@ -425,6 +430,7 @@ export async function executeSmartRetry(
 
   // Smart retry: only retry failed parts
   const retried: string[] = [];
+  let skippedShots = 0;
 
   // Model identity lives on the version that produced each asset (#1066).
   // Every shot here is in a failed state, so the FAILED attempt's model is the
@@ -490,12 +496,24 @@ export async function executeSmartRetry(
     const retryImageConfiguration =
       options.modelConfiguration ??
       (await loadStoryboardModelConfiguration(context.scopedDb));
+    const styleConfig = lazySequenceStyle(context.scopedDb, sequence);
     for (const shot of failedImageShots) {
       const scene = sceneOf(shot);
       const promptVersion = shot.imagePromptVersion;
-      const prompt = promptVersion?.text || scene?.originalScript.extract;
+      const prompt =
+        promptVersion?.text ||
+        (await derivedStillPrompt(context.scopedDb, {
+          promptLocale: context.promptLocale,
+          shotId: shot.id,
+          scene: scene ?? null,
+          styleConfig,
+        }));
 
-      if (!prompt) continue;
+      // No image prompt and no spec to derive one from (#2291).
+      if (!prompt) {
+        skippedShots++;
+        continue;
+      }
 
       const characterTags = scene?.continuity?.characterTags ?? [];
       const referenceImages = getSceneCharacterReferenceImages(
@@ -898,6 +916,7 @@ export async function executeSmartRetry(
     return {
       retryType: 'smart' as const,
       retriedItems: retried,
+      skippedShots,
       planned,
       creditProviders,
     };
@@ -935,6 +954,7 @@ export async function executeSmartRetry(
   return {
     retryType: 'smart' as const,
     retriedItems: retried,
+    skippedShots,
     planned,
     creditProviders,
   };

@@ -42,6 +42,8 @@ import type {
 } from '@/platform/server/workflow/types';
 import { multiplyMicros, negateMicros, usdToMicros } from '@/billing/money';
 import type { Microdollars } from '@/billing/money';
+import { storedShotSpec } from '@/shots/shot-list.schema';
+import { EMPTY_GENERATION_PROMPT_MESSAGE } from '@/shots/generation-prompt';
 
 type QueuedImageInput =
   | ImageWorkflowInput
@@ -96,13 +98,28 @@ const MOCK_STYLE_CONFIG = {
   mood: 'neutral',
   artStyle: 'cinematic',
   lighting: 'natural',
-  colorPalette: [],
+  colorPalette: ['#eee'],
   cameraWork: 'static',
   referenceFilms: [],
   colorGrading: 'neutral',
 };
 const FUNDED_REQUESTS = 2;
 const PARTIAL_FUNDING = 1.5;
+const MOCK_SPEC = storedShotSpec({
+  shotNumber: 1,
+  framing: {
+    shotSize: 'medium',
+    angle: 'eye level',
+    composition: '保留用户构图 / SKU-A',
+    subjectStartState: 'MARA holds a bowl',
+  },
+  action: '',
+  cameraMovement: { move: '', pacing: '' },
+  direction: '',
+  soundCue: '',
+  dialogue: [],
+  durationSeconds: 5,
+});
 
 function mockImageChannels() {
   const source = imageConfigurationFixture();
@@ -200,21 +217,24 @@ type FundedSequence = Awaited<ReturnType<typeof fundedSequence>>;
 
 async function shotContext(
   account: FundedSequence,
-  shotNumber = 1
+  shotNumber = 1,
+  withPrompt = true
 ): Promise<ShotEditContext> {
   const shotId = generateId();
   const frameId = generateId();
   const { scopedDb, sequenceId, organizationId, userId } = account;
   await fixture.db.insert(shots).values({ id: shotId, sequenceId, shotNumber });
   await fixture.db.insert(frames).values({ id: frameId, shotId, sequenceId });
-  await scopedDb.framePromptVersions.write({
-    frameId,
-    text: MOCK_PROMPT,
-    source: 'user-edit',
-    inputHash: null,
-    analysisModel: null,
-    createdBy: userId,
-  });
+  if (withPrompt) {
+    await scopedDb.framePromptVersions.write({
+      frameId,
+      text: MOCK_PROMPT,
+      source: 'user-edit',
+      inputHash: null,
+      analysisModel: null,
+      createdBy: userId,
+    });
+  }
   const image = await scopedDb.frameVariants.appendVersion({
     frameId,
     sequenceId,
@@ -257,6 +277,97 @@ const ENTRYPOINTS = [
       selectShotImageVariant(context, { variantIndex: 0 }),
   },
 ] as const;
+
+async function promptlessShotContext(account: FundedSequence) {
+  const context = await shotContext(account, 1, false);
+  const narrative = {
+    title: 'Kitchen',
+    location: '用户地点 / KITCHEN',
+    timeOfDay: '',
+    storyBeat: '',
+    continuity: null,
+  };
+  const scene = await account.scopedDb.scenes.create(
+    { sequenceId: account.sequenceId, orderIndex: 0 },
+    narrative,
+    { createdBy: account.userId }
+  );
+  await account.scopedDb.sceneScriptVersions.write({
+    sceneId: scene.id,
+    content: {
+      extract: 'MARA\nDo not letter this line.',
+      dialogue: [
+        { character: 'MARA', line: 'Do not letter this line.', tone: '' },
+      ],
+    },
+    narrative,
+    source: 'split',
+  });
+  await account.scopedDb.shots.update(context.shot.id, {
+    sceneId: scene.id,
+  });
+  await account.scopedDb.shotSpecVersions.write({
+    shotId: context.shot.id,
+    spec: MOCK_SPEC,
+    source: 'analysis',
+    inputHash: null,
+    createdBy: account.userId,
+  });
+  const target = await loadShotTarget(
+    account.scopedDb,
+    account.sequenceId,
+    context.shot.id
+  );
+  return { ...context, ...target };
+}
+
+describe('single-shot prompt derivation against real D1', () => {
+  it.each([
+    ['en', 'Natural, even lighting'],
+    ['zh-CN', '自然、均匀的光线'],
+  ] as const)(
+    'queues a %s spec-derived prompt without a stored prompt',
+    async (promptLocale, lighting) => {
+      const cost = usdToMicros(MOCK_RATES.generate['1080p']);
+      const account = await fundedSequence(cost);
+      const context = await promptlessShotContext(account);
+      await generateShotImage({ ...context, promptLocale }, {});
+      const queued = dispatchedQuote();
+      if (!('prompt' in queued.input)) {
+        throw new Error('Expected the image workflow payload.');
+      }
+      expect(queued.input.prompt).toContain(lighting);
+      expect(queued.input.prompt).toContain('MARA holds a bowl');
+      expect(queued.input.prompt).toContain('保留用户构图 / SKU-A');
+      expect(queued.input.prompt).not.toContain('Do not letter this line.');
+      expect(queued.input.promptLocale).toBe(promptLocale);
+      expect(queued.quote.costMicros).toBe(cost);
+      expect(dispatch).toHaveBeenCalledTimes(1);
+      expect(await account.scopedDb.billing.getAvailable()).toMatchObject({
+        balance: cost,
+        reserved: cost,
+        available: 0,
+      });
+    }
+  );
+
+  it.each(['', '   '])(
+    'refuses an explicit blank override %j before reserving',
+    async (prompt) => {
+      const cost = usdToMicros(MOCK_RATES.generate['1080p']);
+      const account = await fundedSequence(cost);
+      await expect(
+        generateShotImage(await shotContext(account), { prompt })
+      ).rejects.toThrow(EMPTY_GENERATION_PROMPT_MESSAGE);
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(await account.scopedDb.billing.getAvailable()).toMatchObject({
+        balance: cost,
+        reserved: 0,
+        available: cost,
+      });
+    }
+  );
+});
 
 function dispatchedParameters(
   input: QueuedImageInput,
