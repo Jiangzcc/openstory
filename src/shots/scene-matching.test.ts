@@ -107,6 +107,16 @@ describe('participant-owned remote locations', () => {
     ).toEqual([apartment[0]]);
   });
 
+  it('keeps non-Latin room names distinct during exact tag matching', () => {
+    const rooms = [
+      { name: 'Set 厨房', locationId: 'set_厨房', consistencyTag: null },
+      { name: 'Set 卧室', locationId: 'set_卧室', consistencyTag: null },
+    ];
+    expect(matchLocationsToScene(rooms, 'set_厨房', 'Set 厨房')).toEqual([
+      rooms[0],
+    ]);
+  });
+
   it('keeps an explicitly named physical location ahead of ownership inference', () => {
     expect(
       matchLocationsToScene(locations, '', '', 'NORA visits Finn’s kitchen.')

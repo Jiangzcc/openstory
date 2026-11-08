@@ -39,7 +39,9 @@ code now says "shot"; the file map in §7 is current.
    writes (`ShotPromptView` is required), and verify passes the selected
    text, so stamp and verify hash the same set. A location is picked from
    the scene's tagged rooms when the scene has any, so a prompt written for
-   the scene's old location does not outvote a new one (#2289). Causes, the clip's
+   the scene's old location does not outvote a new one (#2289). Exact location
+   keys preserve Unicode letters and numbers so non-Latin room names stay distinct.
+   Causes, the clip's
    `referenceKeys` compare and the motion render's reference attachment use
    the same resolution. A digest stamped on the scene roster before #2012 is
    still accepted at verify until `LEGACY_HASH_UNTIL`, with every roster

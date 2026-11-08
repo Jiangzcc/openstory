@@ -396,7 +396,7 @@ function matchLocationsByTag<T extends LocationMatchInput>(
 function normalizeLocationKey(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/[^\p{L}\p{N}]+/gu, '_')
     .replace(/^_+|_+$/g, '');
 }
 
