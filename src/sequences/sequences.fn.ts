@@ -1,3 +1,4 @@
+import { resolutionSchema } from '@/models/resolutions';
 import { configuredImageSource } from '@/billing/configured-image-billing';
 import {
   getAnalysisModelById,
@@ -90,6 +91,31 @@ export const getSequenceFn = createServerFn({ method: 'GET' })
     return context.sequence;
   });
 
+const sequenceModelsSchema = z.object({
+  analysisModel: z
+    .string()
+    .refine(
+      (value) =>
+        isValidAnalysisModelId(value) || isCustomAnalysisModelId(value),
+      { message: 'Invalid analysis model' }
+    )
+    .optional(),
+  imageModel: z
+    .string()
+    .refine(isValidTextToImageModel, { message: 'Invalid image model' })
+    .optional(),
+  videoModel: z
+    .string()
+    .refine(isValidImageToVideoModel, { message: 'Invalid video model' })
+    .optional(),
+  musicModel: z
+    .string()
+    .refine(isValidAudioModel, { message: 'Invalid music model' })
+    .optional(),
+  /** Output tier (#1449), picked where a motion run starts. */
+  resolution: resolutionSchema.optional(),
+});
+
 const continueFlagsSchema = z.object({
   sequenceId: ulidSchema,
   stopAt: generationStageSchema,
@@ -106,9 +132,19 @@ const continueFlagsSchema = z.object({
  */
 export const estimateGenerationSliceFn = createServerFn({ method: 'GET' })
   .middleware([sequenceAccessMiddleware])
-  .validator(zodValidator(continueFlagsSchema))
+  .validator(
+    zodValidator(continueFlagsSchema.extend(sequenceModelsSchema.shape))
+  )
   .handler(async ({ data, context }) => {
-    const { sequence, scopedDb } = context;
+    const { sequence: saved, scopedDb } = context;
+    // The footer quote uses the pickers, which move before the save lands.
+    const sequence = {
+      ...saved,
+      imageModel: data.imageModel ?? saved.imageModel,
+      videoModel: data.videoModel ?? saved.videoModel,
+      musicModel: data.musicModel ?? saved.musicModel,
+      resolution: data.resolution ?? saved.resolution,
+    };
     const [{ units: plan }] = await Promise.all([
       computeGenerationPlan(scopedDb, sequence.id, {
         generateStartFrames: data.generateStartFrames,
@@ -287,29 +323,6 @@ export const setSequenceTargetDurationFn = createServerFn({ method: 'POST' })
     });
   });
 
-const sequenceModelsSchema = z.object({
-  analysisModel: z
-    .string()
-    .refine(
-      (value) =>
-        isValidAnalysisModelId(value) || isCustomAnalysisModelId(value),
-      { message: 'Invalid analysis model' }
-    )
-    .optional(),
-  imageModel: z
-    .string()
-    .refine(isValidTextToImageModel, { message: 'Invalid image model' })
-    .optional(),
-  videoModel: z
-    .string()
-    .refine(isValidImageToVideoModel, { message: 'Invalid video model' })
-    .optional(),
-  musicModel: z
-    .string()
-    .refine(isValidAudioModel, { message: 'Invalid music model' })
-    .optional(),
-});
-
 /**
  * Persist the sequence's model defaults — the last model picked for each kind
  * (#2004). Work not yet made inherits them; anything already made keeps the
@@ -345,7 +358,8 @@ export const setSequenceModelsFn = createServerFn({ method: 'POST' })
         sequence.analysisModel ||
       (models.imageModel ?? sequence.imageModel) !== sequence.imageModel ||
       (models.videoModel ?? sequence.videoModel) !== sequence.videoModel ||
-      (models.musicModel ?? sequence.musicModel) !== sequence.musicModel;
+      (models.musicModel ?? sequence.musicModel) !== sequence.musicModel ||
+      (models.resolution ?? sequence.resolution) !== sequence.resolution;
     if (!moved) return sequence;
     return await context.scopedDb.sequences.update({
       id: sequenceId,

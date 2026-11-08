@@ -73,5 +73,9 @@
   "Recommended for this style": "Recommended for this style",
   "all scenes": "all scenes",
   "1 track": "1 track",
-  "Add": "Add"
+  "Add": "Add",
+  "Resolution": "Resolution",
+  "Drafts render at 480p, finals at 1080p.": "Drafts render at 480p, finals at 1080p.",
+  "{{model}} renders at a fixed size.": "{{model}} renders at a fixed size.",
+  "Applies to the next generation.": "Applies to the next generation."
 }

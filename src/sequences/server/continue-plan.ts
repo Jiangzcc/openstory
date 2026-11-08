@@ -194,7 +194,13 @@ export async function prepareContinueEstimate(args: {
     scopedDb,
     userId: args.userId,
     sequenceId: sequence.id,
-    sequenceOverrides: { ...requested, draftMotion: args.draftMotion },
+    sequenceOverrides: {
+      ...requested,
+      draftMotion: args.draftMotion,
+      imageModel: sequence.imageModel,
+      videoModel: sequence.videoModel,
+      resolution: sequence.resolution,
+    },
     units: work.map(({ kind, id }) => ({ kind, id })),
     imageModelRouting: modelConfiguration.imageModelRouting,
   });

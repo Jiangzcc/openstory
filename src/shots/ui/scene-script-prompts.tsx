@@ -109,7 +109,8 @@ import { estimateVideoCost } from '@/billing/cost-estimation';
 import { addMicros } from '@/billing/money';
 import { estimateMotionLipsyncCost } from '@/motion/lipsync';
 import { DEFAULT_ASPECT_RATIO, type AspectRatio } from '@/models/aspect-ratios';
-import type { Resolution } from '@/models/resolutions';
+import { DEFAULT_RESOLUTION, type Resolution } from '@/models/resolutions';
+import { MotionResolutionPicker } from '@/models/ui/pickers/motion-resolution-picker';
 import { getStorageDomainFn } from '@/platform/storage-config.fn';
 import { shotPromptPreviewQueryOptions } from './shot-prompt-preview-query';
 import { OptimisedPromptPanel } from './optimised-prompt-panel';
@@ -285,6 +286,8 @@ type SceneScriptPromptsProps = {
   aspectRatio?: AspectRatio;
   /** Output resolution tier (#1449) — sizes the preview and its estimate. */
   resolution?: Resolution;
+  /** Persist the sequence's tier; offers the picker under the motion model. */
+  onResolutionChange?: (resolution: Resolution) => void;
   /** Image variant (frame_variants, #989) for the shot's look model. */
   variantForSelectedModel?: FrameVariant;
   /** The selected shot's video variant for the effective video model (#545). */
@@ -366,6 +369,7 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
   onRegenerateStart,
   aspectRatio,
   resolution,
+  onResolutionChange,
   variantForSelectedModel,
   videoVariantForSelectedModel,
   segment,
@@ -2249,6 +2253,16 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
               {t('Changing the model applies to the next generation.')}
             </p>
           </div>
+
+          {onResolutionChange && (
+            <MotionResolutionPicker
+              model={regenMotionModel}
+              value={resolution ?? DEFAULT_RESOLUTION}
+              onChange={onResolutionChange}
+              draft={regenAsDraft}
+              disabled={isGeneratingMotion || videoVariantIsGenerating}
+            />
+          )}
 
           {/* Always in the inspector layout — packed multi-shot requests
               (#1510) are what submit sends, and the collapsed header's

@@ -73,5 +73,9 @@
   "Recommended for this style": "推荐用于此风格",
   "all scenes": "所有场景",
   "1 track": "1 首配乐",
-  "Add": "添加"
+  "Add": "添加",
+  "Resolution": "分辨率",
+  "Drafts render at 480p, finals at 1080p.": "草稿以 480p 生成，最终视频以 1080p 生成。",
+  "{{model}} renders at a fixed size.": "{{model}} 使用固定尺寸生成。",
+  "Applies to the next generation.": "应用于下一次生成。"
 }
