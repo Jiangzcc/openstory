@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-08T12:24:43.428Z",
+  "branch": "develop",
+  "executionStart": "a1dd140dabd381a35366a0d6404b3b4c55cdf700",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "validatedCodeCommit": "723f4e6ae357939a03c8e8d0c86e1cff1db9c6f3",
+  "validatedCodeTree": "6858d0f4963c82da8e018281f05f8cb0b8021662",
+  "commits": {
+    "p0": "9f3bcb295df64ee9e8d45faee3f20256034be3c5",
+    "testRestoration": "2434f40b40ca2ff64cd84a4bc39d095dffffca71",
+    "regionRecovery": "723f4e6ae357939a03c8e8d0c86e1cff1db9c6f3"
+  },
+  "environment": {
+    "node": "v26.13.0",
+    "bun": "1.4.4",
+    "vitest": "5.1.0",
+    "externalIO": "mocked, fetch-denied",
+    "databases": "no user or remote database accessed"
+  },
+  "p0": {
+    "status": "passed",
+    "checks": 28,
+    "details": "preservation/20261108-p0/scope.json and committed inventories"
+  },
+  "rounds": {
+    "restoration": {
+      "localReport": ".tmp/upstream-preservation-p0-p1-20261108/tests-restoration/final-result.json",
+      "success": true,
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "files": [
+        {
+          "path": "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        }
+      ]
+    },
+    "regionBefore": {
+      "localReport": ".tmp/upstream-preservation-p0-p1-20261108/region-fix/before.json",
+      "success": false,
+      "total": 16,
+      "passed": 12,
+      "failed": 4,
+      "skipped": 0,
+      "todo": 0,
+      "files": [
+        {
+          "path": "src/models/server/llm-call-helper-region.test.ts",
+          "passed": 12,
+          "failed": 4,
+          "skipped": 0
+        }
+      ]
+    },
+    "regionFirstFix": {
+      "localReport": ".tmp/upstream-preservation-p0-p1-20261108/region-fix/after.json",
+      "success": true,
+      "total": 16,
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "files": [
+        {
+          "path": "src/models/server/llm-call-helper-region.test.ts",
+          "passed": 16,
+          "failed": 0,
+          "skipped": 0
+        }
+      ]
+    },
+    "firstIntegrated": {
+      "localReport": ".tmp/upstream-preservation-p0-p1-20261108/integrated-result.json",
+      "success": true,
+      "total": 270,
+      "passed": 270,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "files": [
+        {
+          "path": "src/models/google-region.test.ts",
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/region-policy.test.ts",
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/configured-text-call.test.ts",
+          "passed": 83,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-auth-failure-stream.test.ts",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-call-helper-region.test.ts",
+          "passed": 16,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-call-helper.test.ts",
+          "passed": 30,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-client.test.ts",
+          "passed": 82,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-key-routing.test.ts",
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        }
+      ]
+    },
+    "independentRaceDifferential": {
+      "localReport": ".tmp/upstream-preservation-p0-p1-20261108/p1-final-review/race-result.json",
+      "success": false,
+      "total": 32,
+      "passed": 2,
+      "failed": 2,
+      "skipped": 28,
+      "todo": 0,
+      "files": [
+        {
+          "path": ".tmp/upstream-preservation-p0-p1-20261108/p1-final-review/region-race-before.test.ts",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 14
+        },
+        {
+          "path": ".tmp/upstream-preservation-p0-p1-20261108/p1-final-review/region-race-current.test.ts",
+          "passed": 0,
+          "failed": 2,
+          "skipped": 14
+        }
+      ]
+    },
+    "formalRaceBefore": {
+      "localReport": ".tmp/upstream-preservation-p0-p1-20261108/region-fix/race-before.json",
+      "success": false,
+      "total": 20,
+      "passed": 16,
+      "failed": 4,
+      "skipped": 0,
+      "todo": 0,
+      "files": [
+        {
+          "path": "src/models/server/llm-call-helper-region.test.ts",
+          "passed": 16,
+          "failed": 4,
+          "skipped": 0
+        }
+      ]
+    },
+    "finalRegionRelated": {
+      "localReport": ".tmp/upstream-preservation-p0-p1-20261108/region-fix/related-race-final.json",
+      "success": true,
+      "total": 265,
+      "passed": 265,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "files": [
+        {
+          "path": "src/models/google-region.test.ts",
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/region-policy.test.ts",
+          "passed": 17,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/configured-text-call.test.ts",
+          "passed": 83,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-auth-failure-stream.test.ts",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-call-helper-region.test.ts",
+          "passed": 20,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-call-helper.test.ts",
+          "passed": 30,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-client.test.ts",
+          "passed": 82,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-key-routing.test.ts",
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0
+        }
+      ]
+    },
+    "finalIntegrated": {
+      "localReport": ".tmp/upstream-preservation-p0-p1-20261108/integrated-final-result.json",
+      "success": true,
+      "total": 276,
+      "passed": 276,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "files": [
+        {
+          "path": "src/models/google-region.test.ts",
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/region-policy.test.ts",
+          "passed": 17,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/configured-text-call.test.ts",
+          "passed": 83,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-auth-failure-stream.test.ts",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-call-helper-region.test.ts",
+          "passed": 20,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-call-helper.test.ts",
+          "passed": 30,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-client.test.ts",
+          "passed": 82,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/models/server/llm-key-routing.test.ts",
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        }
+      ]
+    }
+  },
+  "finalCommand": "bun run test src/sequences/server/workflows/analyze-script-workflow.test.ts src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/models/server/llm-call-helper-region.test.ts src/models/server/llm-call-helper.test.ts src/models/server/configured-text-call.test.ts src/models/server/llm-client.test.ts src/models/server/llm-key-routing.test.ts src/models/server/llm-auth-failure-stream.test.ts src/models/region-policy.test.ts src/models/google-region.test.ts --reporter=json --outputFile=.tmp/upstream-preservation-p0-p1-20261108/integrated-final-result.json",
+  "validatedTestBlobs": [
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+      "blob": "e156c08c3053195701800aacb816eb5cfa1a3cc0"
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+      "blob": "582626fb3aaa8024ca275eb1bd38b2cad0b1aba0"
+    },
+    {
+      "path": "src/models/server/llm-call-helper-region.test.ts",
+      "blob": "d17d400d7a984ca8690eb39e38be13effb6f9a94"
+    },
+    {
+      "path": "src/models/server/llm-call-helper.test.ts",
+      "blob": "c72d9354dba39b2a27c947d54b12e52ece9eb20e"
+    },
+    {
+      "path": "src/models/server/configured-text-call.test.ts",
+      "blob": "56a12e086b7d48326daf63a801c2127ca8703e73"
+    },
+    {
+      "path": "src/models/server/llm-client.test.ts",
+      "blob": "0768c05830c5aebc11a544161fd502f801b7745f"
+    },
+    {
+      "path": "src/models/server/llm-key-routing.test.ts",
+      "blob": "ff7b9c54e3149ef65eaabda8f5079e74d1db59b9"
+    },
+    {
+      "path": "src/models/server/llm-auth-failure-stream.test.ts",
+      "blob": "a09d6a0b4a4df1d07070ddc198301ec6371b2882"
+    },
+    {
+      "path": "src/models/region-policy.test.ts",
+      "blob": "010dac95a41a6a9765159bbe471fa4e8d099d15e"
+    },
+    {
+      "path": "src/models/google-region.test.ts",
+      "blob": "8f2b820812bdec761da59daa3b274cdf192c42c3"
+    }
+  ],
+  "normalCommitHooks": {
+    "testRestoration": {
+      "status": "passed",
+      "localLog": ".tmp/upstream-preservation-p0-p1-20261108/tests-restoration/commit.log"
+    },
+    "regionRecovery": {
+      "status": "passed",
+      "localLog": ".tmp/upstream-preservation-p0-p1-20261108/region-fix/commit.log"
+    },
+    "checks": [
+      "staged type-aware lint",
+      "staged format",
+      "global tsgo --noEmit",
+      "global knip",
+      "client-server-boundary 17/17"
+    ],
+    "existingHints": "knip emitted six configuration hints; no unused-code error",
+    "initialTypecheck": "new test lookup union inference failed; explicit OrganizationLlmKeyLookup fixed it; subsequent typecheck and normal hooks passed"
+  },
+  "preservedFiles": [
+    {
+      "path": "vite.config.ts",
+      "sha256": "46b07b708607adae81be9ccab036c87ef8eadff90143aa656e4c4ec338f69081",
+      "bytes": 13975,
+      "finalSha256": "46b07b708607adae81be9ccab036c87ef8eadff90143aa656e4c4ec338f69081",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/windows-dev-startup-20261108.md",
+      "sha256": "4e41e95195bc243da8e3bcd5d12e91d82b7e309ad93ba90ceb9a527a605fe082",
+      "bytes": 2661,
+      "finalSha256": "4e41e95195bc243da8e3bcd5d12e91d82b7e309ad93ba90ceb9a527a605fe082",
+      "unchanged": true
+    }
+  ],
+  "limitations": [
+    "P0 is an unreviewed candidate inventory, not P2 semantic approval",
+    "Test evidence uses real helper/resolver/error modules with mocked external I/O, not actual provider, production billing, browser or durable replay acceptance",
+    "Review harness preparation errors are retained locally and excluded from application case results",
+    "Local raw logs and worktree backups are ignored and may be absent from another checkout; fixed sources, portable summaries and formal regression tests are committed"
+  ],
+  "pendingUpstream": {
+    "fixed": "6a9dcadb33d915fbedf80720a844968a6a8bea62",
+    "mainlineNodes": 7,
+    "historicalCommits": 9,
+    "status": "not integrated in this batch"
+  },
+  "push": false,
+  "deployment": false
+}
