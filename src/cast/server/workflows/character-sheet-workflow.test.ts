@@ -210,44 +210,37 @@ describe('CharacterSheetWorkflow looks', () => {
     );
   });
 
-  it('replays a pre-reference-photo run without regenerating or changing its claim', async () => {
+  it('refuses a pre-reference-photo run before any step or cached generation', async () => {
     const legacy = await makeEvent();
     delete asStub<Partial<CharacterSheetWorkflowInput>>(legacy.payload)
       .referencePhotoUrl;
-    const checkpoints = new Map<string, unknown>();
-    const first = await makeWorkflow().runBody(
-      legacy,
-      makeStep(checkpoints),
-      makeScopedDb()
+    const step = makeStep(
+      new Map([
+        [
+          'generate-sheet-image',
+          {
+            url: '/r2/cached-sheet.png',
+            path: 'cached-sheet.png',
+            metadata: {},
+            via: 'fal',
+          },
+        ],
+      ])
     );
-    expect(mockGenerateImageWithProvider.mock.lastCall?.[0]).toMatchObject({
-      referenceImageUrls: undefined,
-    });
-    expect(checkpoints.has('generate-sheet-image')).toBe(true);
-    vi.clearAllMocks();
+    const doStep = vi.spyOn(step, 'do');
 
-    const replay = await makeWorkflow().runBody(
-      legacy,
-      makeStep(
-        new Map([
-          ['generate-sheet-image', checkpoints.get('generate-sheet-image')],
-          ['deduct-credits', undefined],
-        ])
-      ),
-      makeScopedDb()
+    await expect(
+      makeWorkflow().runBody(legacy, step, makeScopedDb())
+    ).rejects.toThrow(
+      'Queued before character reference photos shipped. Run it again.'
     );
 
-    expect(replay).toEqual(first);
+    expect(doStep).not.toHaveBeenCalled();
     expect(mockGenerateImageWithProvider).not.toHaveBeenCalled();
     expect(mockStoreGeneratedPng).not.toHaveBeenCalled();
     expect(mockDeductWorkflowCredits).not.toHaveBeenCalled();
-    expect(mockPromoteIfPending).toHaveBeenCalledWith(
-      expect.objectContaining({
-        claimed: true,
-        versionId: 'ver-1',
-        inputHash: legacy.payload.snapshotInputHash,
-      })
-    );
+    expect(mockPromoteIfPending).not.toHaveBeenCalled();
+    expect(mockTriggerSheetPortrait).not.toHaveBeenCalled();
   });
 });
 

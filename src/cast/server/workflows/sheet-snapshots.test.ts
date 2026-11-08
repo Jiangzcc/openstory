@@ -22,7 +22,7 @@ import { foldLegacyFeaturesInPayload } from '@/cast/bible-looks';
 import {
   computeCharacterSheetHashFromDtoBefore2065,
   assertQueuedWithFace,
-  normalizeQueuedReferencePhoto,
+  assertQueuedWithReferencePhoto,
   characterSheetHashMatchesStored,
   computeCharacterSheetHashFromDto,
   queuedLegacyStyling,
@@ -113,49 +113,40 @@ describe('character-sheet hash', () => {
     expect(movedUrlOnly).toBe(faced);
   });
 
-  it('keeps a pre-reference-photo snapshot on its original no-photo hash', async () => {
+  it('refuses a payload queued before reference photos', () => {
     const { referencePhotoUrl: _photo, ...legacy } = baseInput;
-    const normalized = normalizeQueuedReferencePhoto(legacy);
-    const undefinedPhoto = normalizeQueuedReferencePhoto({
-      ...legacy,
-      referencePhotoUrl: undefined,
-    });
-    const originalHash = await computeCharacterSheetHashFromDto(baseInput);
-
-    expect(normalized.referencePhotoUrl).toBeNull();
-    expect(undefinedPhoto).toEqual(normalized);
-    expect(await computeCharacterSheetHashFromDto(normalized)).toBe(
-      originalHash
+    expect(() => assertQueuedWithReferencePhoto(legacy)).toThrow(
+      'Queued before character reference photos shipped. Run it again.'
     );
+  });
+
+  it.each([null, '/r2/jack-photo.png'])(
+    'accepts an explicitly snapshotted reference photo %j',
+    (referencePhotoUrl) => {
+      const input = { ...baseInput, referencePhotoUrl };
+      expect(() => assertQueuedWithReferencePhoto(input)).not.toThrow();
+      expect(input.referencePhotoUrl).toBe(referencePhotoUrl);
+    }
+  );
+
+  it('hashes the snapshotted reference photo without changing its URL', async () => {
+    const plain = await computeCharacterSheetHashFromDto(baseInput);
+    const photographed = {
+      ...baseInput,
+      referencePhotoUrl: '/r2/jack-photo.png',
+    };
+    const hash = await computeCharacterSheetHashFromDto(photographed);
+    expect(hash).not.toBe(plain);
+    expect(photographed.referencePhotoUrl).toBe('/r2/jack-photo.png');
     expect(
       await characterSheetHashMatchesStored(
-        originalHash,
-        normalized,
-        queuedLegacyStyling(normalized),
+        hash,
+        photographed,
+        queuedLegacyStyling(photographed),
         null
       )
     ).toBe(true);
-    expect(
-      await characterSheetHashMatchesStored(
-        originalHash,
-        { ...normalized, referencePhotoUrl: '/r2/jack-photo.png' },
-        queuedLegacyStyling(normalized),
-        null
-      )
-    ).toBe(false);
   });
-
-  it.each([42, true, {}, []])(
-    'refuses an invalid queued photo value %j',
-    (photo) => {
-      expect(() =>
-        normalizeQueuedReferencePhoto({
-          ...baseInput,
-          referencePhotoUrl: photo,
-        })
-      ).toThrow('referencePhotoUrl must be a string or null');
-    }
-  );
 
   it('4e: a sheet run queued before #2065 folds at the payload seam and still passes its own snapshot check', async () => {
     // As queued: the features on the bible entry, the look's own styling

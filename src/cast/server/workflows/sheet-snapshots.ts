@@ -105,15 +105,13 @@ export function assertQueuedWithFace(input: object): void {
   }
 }
 
-/** A pre-reference-photo run keeps the no-photo snapshot it was queued with. */
-export function normalizeQueuedReferencePhoto<T extends object>(input: T) {
-  const photo = 'referencePhotoUrl' in input ? input.referencePhotoUrl : null;
-  if (photo != null && typeof photo !== 'string') {
+/** A sheet payload queued before reference photos (#2254). */
+export function assertQueuedWithReferencePhoto(input: object): void {
+  if (!('referencePhotoUrl' in input)) {
     throw new WorkflowValidationError(
-      'referencePhotoUrl must be a string or null'
+      'Queued before character reference photos shipped. Run it again.'
     );
   }
-  return { ...input, referencePhotoUrl: photo ?? null };
 }
 
 /**

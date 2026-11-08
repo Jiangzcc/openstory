@@ -39,7 +39,7 @@ import {
   queuedLegacyStyling,
   assertQueuedWithFace,
   assertQueuedWithRendering,
-  normalizeQueuedReferencePhoto,
+  assertQueuedWithReferencePhoto,
   assertQueuedWithLooks,
 } from './sheet-snapshots';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
@@ -111,11 +111,12 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
     step: WorkflowStep,
     scopedDb: WorkflowScopedDb
   ): Promise<CharacterSheetWorkflowResult> {
-    const input = normalizeQueuedReferencePhoto(event.payload);
+    const input = event.payload;
     const workflowRunId = event.instanceId;
     assertQueuedWithLooks(input);
     assertQueuedWithFace(input);
     assertQueuedWithRendering(input);
+    assertQueuedWithReferencePhoto(input);
 
     // Validate the snapshot hash inside the workflow body: a tampered
     // payload must halt the run from inside a step, not silently.

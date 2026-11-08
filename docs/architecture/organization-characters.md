@@ -221,12 +221,11 @@ What follows from one character in two sequences:
     edit, both for a direct regeneration and the frozen generation plan. A
     non-default look still uses only its default sheet as its face; these are
     alternatives, so a sheet request has at most one reference image.
-  - A sheet run queued before `referencePhotoUrl` existed keeps its no-photo
-    snapshot: missing or undefined normalizes to null at the payload seam,
-    without reading the current character. The original hash, claim and named
-    steps remain intact, including a cached `generate-sheet-image` result.
-    Explicit non-string/non-null values are refused. Older looks, face and
-    rendering guards still apply.
+  - A sheet run queued before `referencePhotoUrl` existed fails at the top,
+    before any step or cached generation is read
+    (`assertQueuedWithReferencePhoto`), matching upstream. Current triggers
+    explicitly snapshot the photo URL or null. Model and prompt-locale
+    snapshots, hashes, claims and named steps keep their existing contracts.
 - **Shot count** is on that page only. A shot is matched to a character by
   scene tags in memory, one sequence at a time
   (`getOrganizationCharacterShotCountsFn`).
