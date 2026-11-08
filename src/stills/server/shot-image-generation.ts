@@ -39,6 +39,7 @@ import type {
 import { dbSceneId } from '@/shots/scene-id';
 import { recordTriggerFailure } from '@/sequences/server/db/sequence-events';
 import { rescanContinuityFromPrompt } from '@/shots/server/rescan-continuity-from-prompt';
+import { shouldRecordUserEdit } from '@/shots/server/workflows/user-edit-predicate';
 import {
   getSceneLocationReferenceImages,
   prepareShotImageWorkflowInput,
@@ -69,13 +70,21 @@ export async function generateShotImage(
   if (data.prompt !== undefined) {
     requireGenerationPrompt(data.prompt, undefined);
   }
+  const storedVisualPrompt =
+    (await context.scopedDb.framePromptVersions.getSelected(frame.id))?.text ??
+    null;
 
   // Auto-link any element/cast/location tags the user mentioned in their
   // edited prompt before computing reference attachment, so a freshly-
   // mentioned LOGO gets its reference image attached to THIS regeneration.
   // updateShotFn does the same rescan, but the UI never calls it — the
   // regenerate buttons are the only persistence path for prompts today.
-  const userEditedPrompt = data.prompt !== undefined;
+  // The button sends the prompt it shows: unchanged is no edit (#2290).
+  const userEditedPrompt = shouldRecordUserEdit({
+    userEditedPrompt: data.prompt !== undefined,
+    prompt: data.prompt,
+    currentPrompt: storedVisualPrompt,
+  });
   let sceneForInput = resolvedScene;
   const baseContinuity = resolvedScene?.continuity;
   if (userEditedPrompt && data.prompt && resolvedScene && baseContinuity) {
