@@ -1307,6 +1307,7 @@ const areEqual = (
     prevProps.loadError !== nextProps.loadError ||
     prevProps.segmentsError !== nextProps.segmentsError ||
     prevProps.aspectRatio !== nextProps.aspectRatio ||
+    prevProps.resolution !== nextProps.resolution ||
     prevProps.musicPromptsReady !== nextProps.musicPromptsReady ||
     prevProps.hideBatchButton !== nextProps.hideBatchButton ||
     prevProps.nextStage !== nextProps.nextStage ||
@@ -1345,7 +1346,8 @@ const areEqual = (
     prevProps.onPlaySequence !== nextProps.onPlaySequence ||
     prevProps.onCollapse !== nextProps.onCollapse ||
     prevProps.onLeftoverGrokChange !== nextProps.onLeftoverGrokChange ||
-    prevProps.onVideoModelChange !== nextProps.onVideoModelChange
+    prevProps.onVideoModelChange !== nextProps.onVideoModelChange ||
+    prevProps.onResolutionChange !== nextProps.onResolutionChange
   ) {
     return false;
   }
