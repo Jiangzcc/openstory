@@ -6,7 +6,7 @@
 
 最新首期规划与变更记录见 [首期规则确认单](confirmation.md)。2026-11-06 用户取消“每用户独立人民币余额”和新增卡密商业改造，沿用现有组织钱包及项目自带兑换卡。2026-11-07 另取消“管理员默认不浏览用户作品”的二开规划，管理员作品访问沿用实际合入的上游权限机制。继续保留上游组织邀请、切换、共享及角色权限；人民币模型销售单价、成本核算和全面禁止 BYOK 等其余商业规划仍未实施，售价与现有钱包的衔接尚待设计。D13 继续采用公网部署并允许使用 Cloudflare 部分能力。
 
-已有二开包含管理员默认模型配置、管理员文本渠道、内置/自定义文本模型绑定和只读模型候选发现，原有渠道继续保留。新增协议支持 OpenAI Chat Completions 与 Responses，凭证在 D1 加密保存、管理接口只写不回显；路由与凭证引用进入工作流快照。[文本渠道实施记录](text-channels.md) 保留当轮的本地自动化、Mock、浏览器和构建成绩；当时真实网关仅做只读探测，未付费生成、未验证 Cloudflare 网络。此前组织接口适配见 [2026-11-05 合入记录](upstream-merge-implementation-20261105.md)，本轮兼容处理和验证见 [2026-11-08 逐项合入记录](upstream-merge-implementation-20261108.md)，不沿用历史成绩宣称本轮验收通过。
+已有二开包含管理员默认模型配置、管理员文本渠道、内置/自定义文本模型绑定和只读模型候选发现，原有渠道继续保留。新增协议支持 OpenAI Chat Completions 与 Responses，凭证在 D1 加密保存、管理接口只写不回显；路由与凭证引用进入工作流快照。[文本渠道实施记录](text-channels.md) 保留当轮的本地自动化、Mock、浏览器和构建成绩；当时真实网关仅做只读探测，未付费生成、未验证 Cloudflare 网络。此前组织接口适配见 [2026-11-05 合入记录](upstream-merge-implementation-20261105.md)，同日第一批兼容处理见 [2026-11-08 第一批逐项合入记录](upstream-merge-implementation-20261108.md)，本次新增 7 个主线节点的兼容与验证见 [第二批逐项合入记录](upstream-merge-implementation-20261108-round2.md)，不沿用历史成绩宣称本轮验收通过。
 
 ## 文档导航
 
@@ -18,7 +18,8 @@
 - [文本渠道实施记录](text-channels.md)：管理员渠道、文本模型绑定、候选发现、凭证轮换、路由快照及本次组织接口适配；历史验证与本次合入验证分开记录。
 - [助手工具 Schema 修复](assistant-tool-schema-fix-20261107.md)：DeepSeek 角色创建请求的 400 原因、最小桥接修复及真实调用验证边界。
 - [助手作品卡片国际化](assistant-mcp-localization-20261107.md)：复用上游 MCP Apps 卡片，补齐语言传递、状态与计数文案、内置模板名称翻译及外部宿主兼容边界。
-- [本轮上游逐项合入记录](upstream-merge-implementation-20261108.md)：16 个主线节点分别合并至 `develop`，记录模型、依赖、组织权限、即时估价及二开兼容验证。
+- [本轮上游逐项合入记录](upstream-merge-implementation-20261108-round2.md)：新增 7 个主线节点、38 个历史提交合入 `develop`，记录静帧、地点、实时订阅、预览 D1 及本轮兼容验证。
+- [同日第一批逐项合入记录](upstream-merge-implementation-20261108.md)：此前 16 个主线节点的模型、依赖、组织权限、即时估价及二开兼容验证。
 - [此前上游合入记录](upstream-merge-implementation-20261107.md)：云端 `main` 更新、工作流与图片报价兼容、国际化及当轮验证边界。
 - [上游逐提交评估](upstream-merge-assessment-20261107.md)：固定评估到 `d2e36d736`，覆盖 14 个主线节点及 34 个历史提交；保留评估时点，现已按本轮实施记录逐项合入。
 - [新增两项依赖更新评估](upstream-merge-assessment-20261108.md)：补充评估到 `9fa05fcfc`，累计 16 个主线节点及 36 个提交；保留评估时点，现已按本轮实施记录逐项合入。
@@ -56,17 +57,17 @@
 
 ## 2. 上游基线与来源标记
 
-| 项目                 | 已核对状态                                                                                                 |
-| -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| 上游                 | `https://github.com/openstory-so/openstory.git`，remote 为 `upstream`                                      |
-| 本项目               | `https://github.com/Jiangzcc/openstory.git`，remote 为 `origin`                                            |
-| 二开分支             | `develop`                                                                                                  |
-| 当前上游合入基线     | `9fa05fcfc7e33af354cf2c22b0e1bb45507e4ff8`                                                                 |
-| 最初上游基线（历史） | `1999cb15816bd9f3317b5d7ae2121685ef338663`                                                                 |
-| 初次基线核对（历史） | 初次 fetch 时 develop/main/origin/main/upstream/main 均指向最初基线；后续二开以 Git 日志为准               |
-| 初次二开差异（历史） | 最初基线核查时为 0；当时 `git rev-list --left-right --count upstream/main...develop` 返回 `0 0`            |
-| 已有二开             | 工作约定、全站中英界面、管理员默认模型配置、文本及图片渠道；人民币商业闭环未实施                           |
-| 本次合入与验证       | 见 [本轮上游合入记录](upstream-merge-implementation-20261108.md)；基线号本身不表示测试、迁移或部署已经通过 |
+| 项目                 | 已核对状态                                                                                                        |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 上游                 | `https://github.com/openstory-so/openstory.git`，remote 为 `upstream`                                             |
+| 本项目               | `https://github.com/Jiangzcc/openstory.git`，remote 为 `origin`                                                   |
+| 二开分支             | `develop`                                                                                                         |
+| 当前上游合入基线     | `2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0`                                                                        |
+| 最初上游基线（历史） | `1999cb15816bd9f3317b5d7ae2121685ef338663`                                                                        |
+| 初次基线核对（历史） | 初次 fetch 时 develop/main/origin/main/upstream/main 均指向最初基线；后续二开以 Git 日志为准                      |
+| 初次二开差异（历史） | 最初基线核查时为 0；当时 `git rev-list --left-right --count upstream/main...develop` 返回 `0 0`                   |
+| 已有二开             | 工作约定、全站中英界面、管理员默认模型配置、文本及图片渠道；人民币商业闭环未实施                                  |
+| 本次合入与验证       | 见 [本轮上游合入记录](upstream-merge-implementation-20261108-round2.md)；基线号本身不表示测试、迁移或部署已经通过 |
 
 来源与状态分开记录：
 
