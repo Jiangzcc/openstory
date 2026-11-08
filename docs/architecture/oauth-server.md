@@ -16,6 +16,21 @@ OpenStory is an OAuth 2.1 authorization server, built on Better Auth's `jwt()` +
 
 The consent page and authorized-app list translate the eight known scope descriptions at render time. Scope IDs, consent decisions, tokens, client names and unknown descriptions keep their source values.
 
+## Public docs browser-session snapshot (secondary development, 2026-11-08)
+
+The public `/docs` layout awaits `sessionQueryOptions` in `beforeLoad`, just as
+the app and authentication layouts do. An anonymous `null` session is valid and
+does not redirect. Its sidebar footer then renders the same identity from the
+server cache and the dehydrated client cache. Without this snapshot, the server
+can render a loading button while a client session query resolves before footer
+hydration and renders a sign-in link instead. The gap also exists in the upstream
+baseline; this is a local correction, not a missed upstream merge.
+
+`src/ui/docs/docs-session.test.tsx` covers anonymous and signed-in snapshots,
+deferred session resolution and the unseeded SSR branch, using the real route
+boundary, query cache and footer with auth I/O replaced. Full browser hydration
+acceptance remains a separate check.
+
 ## MCP session classification (secondary development, 2026-11-08)
 
 MCP can also resolve a signed browser session through Better Auth. It is

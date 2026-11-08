@@ -1,3 +1,4 @@
+import { sessionQueryOptions } from '@/platform/ui/auth/session-query';
 import { LanguageSwitcher } from '@/ui/i18n/language-switcher';
 import { DocsAppSidebar } from '@/ui/docs/docs-app-sidebar';
 import {
@@ -9,6 +10,9 @@ import { TooltipProvider } from '@/ui/shadcn/tooltip';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/docs')({
+  beforeLoad: async ({ context: { queryClient } }) => {
+    await queryClient.ensureQueryData(sessionQueryOptions);
+  },
   component: DocsLayout,
 });
 
