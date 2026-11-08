@@ -377,7 +377,8 @@ const SequencePosterCell: React.FC<SequencePosterCellProps> = ({
       className={`${baseClass} border-dashed text-xs text-muted-foreground`}
       style={style}
     >
-      {t('No preview yet{{value1}}', { value1: modelBadge })}
+      {t('No preview yet')}
+      {modelBadge}
     </Link>
   );
 };
