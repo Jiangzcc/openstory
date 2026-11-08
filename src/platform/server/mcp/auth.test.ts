@@ -103,6 +103,19 @@ describe('authenticateMcpRequest', () => {
     expect(verifyOAuthAccessToken).not.toHaveBeenCalled();
   });
 
+  it('accepts an x-api-key as an API-key identity', async () => {
+    getSession.mockResolvedValueOnce({ user, session: { id: 'key_1' } });
+    const ctx = await authenticateMcpRequest(
+      new Request('https://openstory.test/mcp', {
+        headers: { 'x-api-key': 'osk_headerXXXX' },
+      })
+    );
+    expect(ctx).not.toBeInstanceOf(Response);
+    if (ctx instanceof Response) return;
+    expect(ctx.kind).toBe('api_key');
+    expect(getApiKeyOrganizationId).toHaveBeenCalledWith('key_1');
+  });
+
   it('verifies a JWT against the MCP audience and uses organization_id', async () => {
     verifyOAuthAccessToken.mockResolvedValueOnce(oauth);
     getUserById.mockResolvedValueOnce(user);

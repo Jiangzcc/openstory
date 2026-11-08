@@ -23,7 +23,10 @@ import {
   mcpResourceIdentifierForRequest,
   resolveOAuthIssuer,
 } from '@/platform/server/auth/oauth-provider';
-import { PUBLIC_API_KEY_PREFIX } from '@/platform/server/auth/public-api-key';
+import {
+  PUBLIC_API_KEY_PREFIX,
+  readPublicApiKeyFromHeaders,
+} from '@/platform/server/auth/public-api-key';
 import { restrictionNotice } from '@/platform/server/compliance/enforcement';
 import { loadComplianceState } from '@/platform/server/compliance/generation-gate';
 import {
@@ -37,7 +40,7 @@ import { mcpJsonRpcError, mcpUnauthorized } from './json-rpc';
 
 const logger = getLogger(['openstory', 'mcp', 'auth']);
 
-type McpAuthKind = 'oauth' | 'api_key';
+type McpAuthKind = 'oauth' | 'api_key' | 'session';
 
 /** Identity tools (whoami) need; extra on AuthInfo carries this, not secrets. */
 export type McpCallerIdentity = {
@@ -175,11 +178,19 @@ export async function authenticateMcpRequest(
       await sessionOrganizationId(session, request.headers)
     );
     if (ctx instanceof Response) return ctx;
+    const key = readPublicApiKeyFromHeaders(request.headers);
+    const kind: McpAuthKind = key ? 'api_key' : 'session';
     const presented =
       bearer?.startsWith(PUBLIC_API_KEY_PREFIX) === true
         ? keyHintForApiKey(bearer)
         : ctx.keyHint;
-    return { ...ctx, session, keyHint: presented };
+    return {
+      ...ctx,
+      session,
+      kind,
+      clientId: kind,
+      keyHint: key ? presented : 'session',
+    };
   } catch (error) {
     if (error instanceof APIError && error.statusCode === 429) {
       const tryAgainInMs = error.body?.details?.tryAgainIn;
