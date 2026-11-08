@@ -19,7 +19,6 @@ import {
 import type { ResolvedLlmKey } from './db/api-keys';
 import { llmCallStream } from './llm-call-stream';
 import { llmtrCompatibleApi } from '@/models/llmtr';
-import { resolveTextModelRoute } from '@/models/text-channels';
 import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
 import {
   assertConfiguredTextCapabilities,
@@ -43,6 +42,7 @@ import {
   resolveVisionModel,
 } from '@/models/models.config';
 import { withRegionFallback } from '@/models/region-policy';
+import { isGoogleRegionBlockedHere } from '@/models/google-region';
 import { extractStreamingStringField } from '@/platform/server/ai/stream-extract';
 import type { Microdollars } from '@/billing/money';
 import { deductWorkflowCredits } from '@/billing/server/workflow-deduction';
@@ -337,13 +337,22 @@ async function withCallRoute<T>(
   context: DurableLLMCallContext,
   run: (model: TextModel, key: ResolvedLlmKey) => Promise<T>
 ): Promise<T> {
-  const models = context.scopedDb?.models;
-  const routing = models?.textModelRouting ?? [];
-  const attempt = async (attemptModel: TextModel) =>
-    run(attemptModel, await resolveCallKey(context, attemptModel));
-  return resolveTextModelRoute(routing, model)
-    ? attempt(model)
-    : withRegionFallback(model, attempt);
+  // Capture before key resolution can yield to another call's Google refusal.
+  const googleBlockedAtStart = isGoogleRegionBlockedHere();
+  const key = await resolveCallKey(context, model);
+  if (key.via === 'compatible') return run(model, key);
+  let firstAttempt = true;
+  return withRegionFallback(
+    model,
+    async (attemptModel) => {
+      const attemptKey = firstAttempt
+        ? key
+        : await resolveCallKey(context, attemptModel);
+      firstAttempt = false;
+      return run(attemptModel, attemptKey);
+    },
+    googleBlockedAtStart
+  );
 }
 
 export async function durableLLMCallCf<TSchema extends z.ZodType>(

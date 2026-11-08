@@ -159,4 +159,34 @@ describe('withRegionFallback', () => {
     ).rejects.toThrow('User location');
     expect(run).toHaveBeenCalledTimes(1);
   });
+
+  it('uses the initial Google snapshot when another call marked the isolate during key resolution', async () => {
+    const blockedAtStart = isGoogleRegionBlockedHere();
+    markGoogleRegionBlocked('mock concurrent call', new Error('refused'));
+    const run = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error('User location is not supported for the API use.')
+      )
+      .mockResolvedValueOnce('ok');
+    await expect(
+      withRegionFallback('google/gemini-3.8-flash', run, blockedAtStart)
+    ).resolves.toBe('ok');
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry a refusal already blocked at credential selection time', async () => {
+    markGoogleRegionBlocked('earlier', new Error('refused'));
+    const blockedAtStart = isGoogleRegionBlockedHere();
+    resetGoogleRegionBlock();
+    const run = vi
+      .fn()
+      .mockRejectedValue(
+        new Error('User location is not supported for the API use.')
+      );
+    await expect(
+      withRegionFallback('google/gemini-3.8-flash', run, blockedAtStart)
+    ).rejects.toThrow('User location');
+    expect(run).toHaveBeenCalledTimes(1);
+  });
 });

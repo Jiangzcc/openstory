@@ -124,9 +124,9 @@ export function isRegionBlockedModel(
  */
 export async function withRegionFallback<T>(
   model: TextModel,
-  run: (model: TextModel) => Promise<T>
+  run: (model: TextModel) => Promise<T>,
+  googleBlockedAtStart = isGoogleRegionBlockedHere()
 ): Promise<T> {
-  const googleBlockedAtStart = isGoogleRegionBlockedHere();
   try {
     return await run(model);
   } catch (error) {
