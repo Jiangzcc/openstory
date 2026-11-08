@@ -51,6 +51,15 @@ test.describe('Organization membership', () => {
       const inviteePage = await context.newPage();
       try {
         await authenticateUser(inviteePage, invitee.email);
+        let invitationListRequests = 0;
+        inviteePage.on('request', (request) => {
+          if (
+            new URL(request.url()).pathname ===
+            '/api/auth/organization/list-invitations'
+          ) {
+            invitationListRequests += 1;
+          }
+        });
         await inviteePage.goto(
           `/organization/accept-invitation?id=${invitation.id}`
         );
@@ -64,13 +73,27 @@ test.describe('Organization membership', () => {
 
         // Joined and switched: the owner is now in the member list.
         await expect(inviteePage).toHaveURL(/\/settings\/organization/);
+        await expect(
+          inviteePage.getByText('Members', { exact: true })
+        ).toBeVisible();
         await expect(inviteePage.getByText(testUser.email)).toBeVisible();
+        await expect(
+          inviteePage.getByRole('button', { name: 'Send invitation' })
+        ).toHaveCount(0);
+        await expect(
+          inviteePage.getByText('Pending invitations', { exact: true })
+        ).toHaveCount(0);
+        expect(invitationListRequests).toBe(0);
         // A member cannot see or reach API keys.
         await expect(
           inviteePage.getByRole('tab', { name: 'API Keys' })
         ).toHaveCount(0);
         await inviteePage.goto('/settings/api-keys');
         await expect(inviteePage).toHaveURL(/\/settings\/organization/);
+        await expect(
+          inviteePage.getByText('Members', { exact: true })
+        ).toBeVisible();
+        expect(invitationListRequests).toBe(0);
       } finally {
         await context.close();
       }
