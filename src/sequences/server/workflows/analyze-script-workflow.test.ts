@@ -1,132 +1,479 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
-import type { WorkflowEvent } from 'cloudflare:workers';
-import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
-import type { AnalyzeScriptWorkflowInput } from '@/platform/server/workflow/types';
-import { asStub } from '@/test/as-stub';
-import { withLlmAuthFailureSource } from '@/platform/server/workflow/llm-auth-failure-source';
-import { sanitizeFailResponse } from '@/platform/server/workflow/sanitize-fail-response';
+/**
+ * A fresh `AnalyzeScriptWorkflow` run (#1408, #1818): which children each
+ * stop-at spawns, and that the split lands before an automatic style's
+ * failure fails the run — so a continue can pick up from the scenes and shots
+ * it left in D1. A continue never comes here: it runs the generation plan's
+ * units through the Update-all executor.
+ */
 
-const { emit } = vi.hoisted(() => ({ emit: vi.fn(async () => undefined) }));
-vi.mock('@/platform/realtime', () => ({
-  getGenerationChannel: () => ({ emit }),
+import { afterAll, beforeEach, describe, expect, test, vi } from 'vitest';
+import { migrateStyleConfigV1ToV2 } from '@/look/style-config';
+import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '@/models/models';
+import { DEFAULT_ANALYSIS_MODEL } from '@/models/models.config';
+import {
+  hashVisualPromptInput,
+  hashMotionPromptInput,
+  sha256Hex,
+} from '@/shots/input-hash';
+import { narrowShotPromptContext } from '@/shots/server/prompt-context';
+import { shotSpecForItem, shotWorkItems } from '@/shots/server/shot-work-items';
+import { storedShotSpec } from '@/shots/shot-list.schema';
+import type { CharacterBibleEntry, Scene } from '@/shots/scene-analysis.schema';
+import type {
+  WorkflowEvent,
+  WorkflowStep,
+  WorkflowStepConfig,
+} from 'cloudflare:workers';
+import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
+import type {
+  AnalyzeScriptWorkflowInput,
+  SceneSplitWorkflowResult,
+} from '@/platform/server/workflow/types';
+import * as realCastRecords from '@/cast/server/workflows/cast-records';
+import { asStub } from '@/test/as-stub';
+
+vi.doMock('@/platform/server/db/scoped', () => ({ createScopedDb: vi.fn() }));
+vi.doMock('@/models/server/fal-config', () => ({
+  configureFalProxyFromEnv: vi.fn(),
+}));
+// The render gate prices the remaining work; an empty map keeps it DB-free.
+vi.doMock('@/billing/server/fal-pricing-live', () => ({
+  getEffectiveFalPricing: vi.fn(async () => ({})),
 }));
 
+const createCastRecords = vi.fn(async () => ({ elements: [], lookIds: {} }));
+vi.doMock('@/cast/server/workflows/cast-records', () => ({
+  ...realCastRecords,
+  createCastRecords,
+}));
+
+const emit = vi.fn(async () => undefined);
+vi.doMock('@/platform/realtime', () => ({
+  getGenerationChannel: vi.fn(() => ({ emit })),
+}));
+
+vi.doMock('@/cast/server/workflows/wait-for-sheets', () => ({
+  waitForElementVision: vi.fn(async () => ({
+    ready: true,
+    pendingIds: [],
+    rows: [],
+  })),
+}));
+
+const SPLIT: SceneSplitWorkflowResult = {
+  scenes: [],
+  title: 'Derived',
+  shotMapping: [{ analysisSceneId: 'as_1', shotId: 'sh_1', frameId: 'fr_1' }],
+  characterBible: [],
+  sceneLooks: {},
+  locationBible: [],
+  elementBible: [],
+  dialogueVersionIdByShotId: {},
+};
+/** The analysed bible, which is also what the cast row stores. */
+const RAW_ADA: CharacterBibleEntry = {
+  characterId: 'c1',
+  name: 'Ada',
+  age: '20s',
+  gender: 'female',
+  ethnicity: 'unspecified',
+  physicalDescription: 'as written in the script',
+  standardClothing: 'lab coat',
+  looks: [],
+  personality: '',
+  movement: '',
+  voiceDescription: '',
+  voiceOnly: false,
+  isPerson: true,
+  rendering: 'Photoreal live action',
+  consistencyTag: '',
+};
+const LOCATION_MATCH = {
+  locationId: 'l1',
+  libraryLocationId: 'lib_1',
+  libraryLocationName: 'Hallway',
+  referenceImageUrl: '/r2/hall.png',
+};
+/** One plausible result per child, keyed by its spawn step. */
+const CHILD_RESULTS: Record<string, unknown> = {
+  'spawn-scene-split': SPLIT,
+  'spawn-location-matching': { matches: [LOCATION_MATCH] },
+};
+const defaultSpawn = async (
+  _step: WorkflowStep,
+  args: { spawnStepName: string; childPayload: unknown }
+) => {
+  const result = CHILD_RESULTS[args.spawnStepName];
+  if (result === undefined) {
+    throw new Error(`unexpected child ${args.spawnStepName}`);
+  }
+  return result;
+};
+const spawnAndAwaitChild = vi.fn(defaultSpawn);
+vi.doMock('@/platform/server/workflow/await-child', () => ({
+  spawnAndAwaitChild,
+}));
+
+const spawned = () =>
+  spawnAndAwaitChild.mock.calls.map(([, args]) => args.spawnStepName);
+const childPayload = (spawnStepName: string) =>
+  spawnAndAwaitChild.mock.calls.find(
+    ([, args]) => args.spawnStepName === spawnStepName
+  )?.[1].childPayload;
+const STYLE_FAILURE = new Error('style: structured-output-parse-failed');
+const deriveAutoStyle = vi.fn(() => Promise.reject(STYLE_FAILURE));
+vi.doMock('@/look/server/workflows/auto-style-step', () => ({
+  deriveAutoStyle,
+}));
+
+// Dynamic import so the mocks above apply (vi.doMock is not hoisted).
 const { AnalyzeScriptWorkflow } = await import('./analyze-script-workflow');
 
-class Probe extends AnalyzeScriptWorkflow {
-  failed(error: string, scopedDb: WorkflowScopedDb) {
-    const payload = asStub<AnalyzeScriptWorkflowInput>({
-      sequenceId: 'mock-sequence',
-      reservationId: 'mock-reservation',
-      analysisModelId: 'anthropic/claude-sonnet-5.5',
-    });
-    const event = asStub<Readonly<WorkflowEvent<AnalyzeScriptWorkflowInput>>>({
-      payload,
-    });
-    return this.onFailure({ event, error, scopedDb });
+/** Widens the protected hook so the test can drive one run directly. */
+class TestableAnalyzeScriptWorkflow extends AnalyzeScriptWorkflow {
+  invokeRunImpl(
+    event: Readonly<WorkflowEvent<AnalyzeScriptWorkflowInput>>,
+    step: WorkflowStep,
+    scopedDb: WorkflowScopedDb
+  ) {
+    return this.runImpl(event, step, scopedDb);
   }
 }
 
-function makeWorkflow() {
-  type Ctor = ConstructorParameters<typeof Probe>;
-  return new Probe(asStub<Ctor[0]>(undefined), asStub<Ctor[1]>({}));
-}
-
-function makeDb() {
-  const updateStatus = vi.fn(async () => undefined);
-  const markKeyInvalid = vi.fn(async () => undefined);
-  const zeroReservation = vi.fn(async () => undefined);
-  const resolveLlmKey = vi.fn(async () => ({
-    source: 'organization',
-    via: 'openrouter',
-    key: 'mock-team-key',
-  }));
-  const scopedDb = asStub<WorkflowScopedDb>({
-    sequence: () => ({ updateStatus }),
-    apiKeys: { markKeyInvalid },
-    billing: { zeroReservation },
-    credentials: { resolveLlmKey },
-  });
-  return {
-    scopedDb,
-    updateStatus,
-    markKeyInvalid,
-    zeroReservation,
-    resolveLlmKey,
+/**
+ * Runs every `step.do` body inline — durability is CF's job, not the test's.
+ *
+ * `do` is overloaded as `(name, callback)` and `(name, config, callback)`, so
+ * the body is always the last argument. Typing `rest` as the union lets
+ * `typeof` narrow to the callback with no assertion.
+ */
+function makeStep(): WorkflowStep {
+  const run = (
+    _name: string,
+    ...rest: Array<WorkflowStepConfig | (() => Promise<unknown>)>
+  ) => {
+    const body = rest.at(-1);
+    return typeof body === 'function'
+      ? body()
+      : Promise.reject(new Error('step.do called without a callback'));
   };
+  // only `do` is exercised
+  return asStub<WorkflowStep>({ do: run });
 }
 
-function childFailure(error: unknown) {
-  if (!(error instanceof Error))
-    throw new Error('Expected mocked child failure');
-  const wire: { name: string; message: string } = JSON.parse(
-    JSON.stringify({ name: error.name, message: error.message })
-  );
-  return sanitizeFailResponse(
-    'Child workflow mock-child failed: ' + wire.name + ': ' + wire.message
-  );
+type SequenceUpdate = Record<string, unknown>;
+type UpdateMock = ReturnType<
+  typeof vi.fn<(args: SequenceUpdate) => Promise<void>>
+>;
+
+const writeVisualPrompt = vi.fn(
+  async (input: { frameId: string; inputHash?: string; text?: string }) => ({
+    id: `fpv-${input.frameId}`,
+  })
+);
+
+const writeSpec = vi.fn(async (input: { shotId: string }) => ({
+  id: `spec-${input.shotId}`,
+}));
+
+const writeMotionPrompt = vi.fn(
+  async (_input: {
+    shotId: string;
+    source: string;
+    inputHash?: string;
+    text?: string;
+  }) => ({ id: 'mpv-derived' })
+);
+
+function makeScopedDb(update: UpdateMock): WorkflowScopedDb {
+  // minimal stub: the run stops at the script stage
+  return asStub<WorkflowScopedDb>({
+    sequences: {
+      update,
+      updateAnalysisDurationMs: vi.fn(async () => undefined),
+    },
+    liveRead: { sequenceElements: { listByIds: vi.fn(async () => []) } },
+    shotSpecVersions: { write: writeSpec },
+    framePromptVersions: { write: writeVisualPrompt },
+    shotPromptVersions: { write: writeMotionPrompt },
+  });
 }
 
-describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', () => {
-  beforeEach(() => emit.mockClear());
+function makeEvent(
+  extras: Partial<AnalyzeScriptWorkflowInput> = {}
+): Readonly<WorkflowEvent<AnalyzeScriptWorkflowInput>> {
+  const payload: AnalyzeScriptWorkflowInput = {
+    promptLocale: 'en',
+    userId: 'u1',
+    organizationId: 't1',
+    includeMusic: true,
+    sequenceId: 'seq_1',
+    script: 'INT. HALLWAY — NIGHT',
+    aspectRatio: '16:9',
+    styleConfig: migrateStyleConfigV1ToV2({
+      mood: 'tense and hopeful',
+      artStyle: 'photoreal cinematic',
+      lighting: 'hard key, deep shadows',
+      colorPalette: ['#101020', '#e0d0b0'],
+      cameraWork: 'handheld, tight lenses',
+      referenceFilms: ['Children of Men'],
+      colorGrading: 'cool shadows, warm highlights',
+    }),
+    analysisModelId: DEFAULT_ANALYSIS_MODEL,
+    imageModel: DEFAULT_IMAGE_MODEL,
+    videoModel: DEFAULT_VIDEO_MODEL,
+    elementIds: [],
+    cast: [],
+    musicPromptSource: 'ai-generated',
+    referenceOnly: false,
+    // An automatic style whose recipe this run is meant to derive (#1213).
+    pendingAutoStyleId: 'sty_1',
+    stopAt: 'script',
+    ...extras,
+  };
+  // minimal WorkflowEvent stub
+  return asStub<Readonly<WorkflowEvent<AnalyzeScriptWorkflowInput>>>({
+    payload,
+    instanceId: 'analyze_run_A',
+  });
+}
 
-  test('uses a child split credential rather than the parent analysis model', async () => {
-    const {
-      scopedDb,
-      updateStatus,
-      markKeyInvalid,
-      zeroReservation,
-      resolveLlmKey,
-    } = makeDb();
-    const error = withLlmAuthFailureSource(new Error('401 Unauthorized'), {
-      model: 'google/gemini-3-flash-preview',
-      source: 'organization',
-      via: 'google',
-    });
-    await makeWorkflow().failed(childFailure(error), scopedDb);
-    const message = 'Your Google API key is invalid — update it in Settings.';
-    expect(markKeyInvalid).toHaveBeenCalledExactlyOnceWith(
-      'google',
-      '401 Unauthorized'
+function makeWorkflow(): TestableAnalyzeScriptWorkflow {
+  type Ctor = ConstructorParameters<typeof TestableAnalyzeScriptWorkflow>;
+  // the run never reads ctx or bindings
+  const ctx = asStub<Ctor[0]>(undefined);
+  // child spawns are mocked, so no binding is dereferenced
+  const env = asStub<Ctor[1]>({});
+  return new TestableAnalyzeScriptWorkflow(ctx, env);
+}
+afterAll(() => vi.unstubAllGlobals());
+
+describe('AnalyzeScriptWorkflow (a fresh run)', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.reject(new Error('Unexpected network in workflow test'))
+      )
     );
-    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('failed', message);
-    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      message,
-    });
-    expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('mock-reservation');
-    expect(resolveLlmKey).not.toHaveBeenCalled();
+    deriveAutoStyle.mockClear();
+    spawnAndAwaitChild.mockClear();
+    createCastRecords.mockClear();
+    writeVisualPrompt.mockClear();
+    writeMotionPrompt.mockClear();
   });
 
-  test('does not reinterpret an untagged platform child 401 as the parent team key', async () => {
-    const { scopedDb, updateStatus, markKeyInvalid, resolveLlmKey } = makeDb();
-    await makeWorkflow().failed(
-      childFailure(new Error('401 Unauthorized')),
-      scopedDb
-    );
-    expect(markKeyInvalid).not.toHaveBeenCalled();
-    expect(resolveLlmKey).not.toHaveBeenCalled();
-    expect(updateStatus).toHaveBeenCalledExactlyOnceWith(
-      'failed',
-      '401 Unauthorized'
-    );
+  test('the split lands before a style failure fails the run (#1818)', async () => {
+    const update: UpdateMock = vi.fn(async () => undefined);
+
+    await expect(
+      makeWorkflow().invokeRunImpl(
+        makeEvent(),
+        makeStep(),
+        makeScopedDb(update)
+      )
+    ).rejects.toThrow(STYLE_FAILURE);
+
+    expect(spawned()).toContain('spawn-scene-split');
   });
 
-  test('removes platform source metadata from the existing failure message', async () => {
-    const { scopedDb, updateStatus, markKeyInvalid, resolveLlmKey } = makeDb();
-    const error = withLlmAuthFailureSource(new Error('401 Unauthorized'), {
-      model: 'custom:platform-helper',
-      source: 'platform',
-      via: 'compatible',
-    });
-    await makeWorkflow().failed(childFailure(error), scopedDb);
-    expect(markKeyInvalid).not.toHaveBeenCalled();
-    expect(resolveLlmKey).not.toHaveBeenCalled();
-    expect(updateStatus).toHaveBeenCalledExactlyOnceWith(
-      'failed',
-      '401 Unauthorized'
+  // The runs below have no automatic style, so a stage's own work is what
+  // ends them — not the style rejection the test above leans on.
+  const noStyle = { pendingAutoStyleId: undefined } as const;
+
+  test('stopAt script: casts, spawns nothing further', async () => {
+    const update: UpdateMock = vi.fn(async () => undefined);
+
+    await makeWorkflow().invokeRunImpl(
+      makeEvent({ ...noStyle, stopAt: 'script', userCountry: 'AU' }),
+      makeStep(),
+      makeScopedDb(update)
     );
-    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      message: '401 Unauthorized',
+
+    expect(spawned()).toEqual(['spawn-scene-split', 'spawn-location-matching']);
+    expect(childPayload('spawn-scene-split')).toMatchObject({
+      userCountry: 'AU',
     });
+    expect(createCastRecords).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(['references', 'images', 'dialogue', 'motion', 'music'] as const)(
+    'stopAt %s: analysis leaves every generation unit to the executor',
+    async (stopAt) => {
+      await makeWorkflow().invokeRunImpl(
+        makeEvent({ ...noStyle, stopAt }),
+        makeStep(),
+        makeScopedDb(vi.fn())
+      );
+      expect(spawned()).toEqual([
+        'spawn-scene-split',
+        'spawn-location-matching',
+      ]);
+      expect(createCastRecords).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  test('derived prompts record their spec and stamp the verify hash, not the text', async () => {
+    const twoShot: Scene = {
+      sceneId: 'as_1',
+      sceneNumber: 1,
+      originalScript: { extract: 'a beat', dialogue: [] },
+      metadata: {
+        title: 'Hallway',
+        durationSeconds: 13,
+        location: '',
+        timeOfDay: '',
+        storyBeat: '',
+      },
+      continuity: {
+        characterTags: ['Ada'],
+        environmentTag: '',
+        colorPalette: '',
+        lightingSetup: '',
+        styleTag: '',
+      },
+      shots: [
+        {
+          shotNumber: 1,
+          framing: {
+            shotSize: 'wide',
+            angle: 'eye level',
+            composition: 'ADA in the doorway',
+            subjectStartState: '',
+          },
+          action: 'opens the door',
+          cameraMovement: { move: 'static', pacing: 'slow' },
+          direction: '',
+          soundCue: '',
+          dialogue: [],
+          durationSeconds: 7,
+        },
+        {
+          shotNumber: 2,
+          framing: {
+            shotSize: 'medium',
+            angle: 'eye level',
+            composition: '',
+            subjectStartState: 'ADA mid-stride',
+          },
+          action: 'cut to the hallway',
+          cameraMovement: { move: 'truck', pacing: 'smooth' },
+          direction: '',
+          soundCue: '',
+          dialogue: [],
+          durationSeconds: 6,
+        },
+      ],
+    };
+    const shotMapping = [
+      {
+        analysisSceneId: 'as_1',
+        shotId: 'sh-1',
+        frameId: 'fr-1',
+        shotNumber: 1,
+      },
+      {
+        analysisSceneId: 'as_1',
+        shotId: 'sh-2',
+        frameId: 'fr-2',
+        shotNumber: 2,
+      },
+    ];
+    const event = makeEvent({ ...noStyle, stopAt: 'images' });
+    spawnAndAwaitChild.mockImplementation(async (_step, args) => {
+      if (args.spawnStepName === 'spawn-scene-split') {
+        return {
+          ...SPLIT,
+          characterBible: [RAW_ADA],
+          scenes: [twoShot],
+          shotMapping,
+        };
+      }
+      return defaultSpawn(_step, args);
+    });
+
+    await makeWorkflow().invokeRunImpl(
+      event,
+      makeStep(),
+      makeScopedDb(vi.fn())
+    );
+
+    const items = shotWorkItems([twoShot], shotMapping);
+    expect(writeVisualPrompt).toHaveBeenCalledTimes(2);
+    expect(writeMotionPrompt).toHaveBeenCalledTimes(2);
+    for (const [index, call] of writeVisualPrompt.mock.calls.entries()) {
+      const item = items[index];
+      const written = call[0];
+      if (!item) {
+        throw new Error(`missing derived visual write at ${index}`);
+      }
+      const spec = shotSpecForItem(item);
+      if (!spec) throw new Error(`missing spec at ${index}`);
+      expect(written.frameId).toBe(item.mapping.frameId);
+      // Verify reads the cast row out of D1. The analysed bible is that row
+      // (#867). The digest narrows its bibles by the text it was written
+      // with (#2012).
+      const hashWith = (characterBible: CharacterBibleEntry[]) =>
+        hashVisualPromptInput(
+          narrowShotPromptContext(
+            {
+              scene: item.scene,
+              styleConfig: event.payload.styleConfig,
+              characterBible,
+              locationBible: SPLIT.locationBible,
+              elementBible: SPLIT.elementBible,
+              aspectRatio: event.payload.aspectRatio,
+              analysisModel: event.payload.analysisModelId,
+              // The spec is in the digest (#1923).
+              spec: storedShotSpec(spec),
+            },
+            { channel: 'visual', prompt: written.text ?? null }
+          )
+        );
+      const verifyHash = await hashWith([RAW_ADA]);
+      const textDigest = await sha256Hex({
+        kind: 'derived-shot-visual',
+        shotId: item.mapping.shotId,
+        text: written.text,
+      });
+      expect(written.inputHash).toBe(verifyHash);
+      expect(written.inputHash).not.toBe(textDigest);
+      expect(written).toMatchObject({
+        source: 'derived',
+        specVersionId: `spec-${item.mapping.shotId}`,
+      });
+      const motionWritten = writeMotionPrompt.mock.calls[index]?.[0];
+      if (!motionWritten) {
+        throw new Error(`missing derived motion write at ${index}`);
+      }
+      expect(motionWritten).toMatchObject({
+        shotId: item.mapping.shotId,
+        source: 'derived',
+        specVersionId: `spec-${item.mapping.shotId}`,
+        inputHash: await hashMotionPromptInput(
+          narrowShotPromptContext(
+            {
+              scene: item.scene,
+              styleConfig: event.payload.styleConfig,
+              characterBible: [RAW_ADA],
+              locationBible: SPLIT.locationBible,
+              elementBible: SPLIT.elementBible,
+              aspectRatio: event.payload.aspectRatio,
+              analysisModel: event.payload.analysisModelId,
+              startingFrameImageUrl: null,
+              referenceOnly: false,
+              dialogue: { presence: false, lines: [] },
+              spec: storedShotSpec(spec),
+            },
+            {
+              channel: 'motion',
+              prompt: motionWritten.text ?? null,
+              referenceOnly: false,
+            }
+          )
+        ),
+      });
+    }
+    spawnAndAwaitChild.mockImplementation(defaultSpawn);
   });
 });
