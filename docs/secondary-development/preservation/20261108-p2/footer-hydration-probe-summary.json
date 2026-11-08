@@ -1,0 +1,64 @@
+{
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "currentSourceAtP2Start": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "method": "Actual B/current UserSidebarFooter, actual useUser/session-query, React Query, Radix/Sidebar, React SSR and hydrateRoot in isolated Chromium. Only router hooks/Link and auth/server-function I/O replaced. No app server or remote requests.",
+  "precondition": "On an unseeded docs-style SSR, another consumer resolves the actual anonymous-session query before the footer hydrates. Positive control seeds the same query before SSR.",
+  "classification": "inherited-upstream-defect; local P2 correction; not a missed upstream merge",
+  "controls": [
+    {
+      "version": "baseline",
+      "seededBeforeSSR": false,
+      "serverSkeleton": true,
+      "serverSignIn": false,
+      "serverSessionCalls": 0,
+      "clientSessionCalls": 1,
+      "recoverableErrors": 1,
+      "clientSignIn": true
+    },
+    {
+      "version": "baseline",
+      "seededBeforeSSR": true,
+      "serverSkeleton": false,
+      "serverSignIn": true,
+      "serverSessionCalls": 1,
+      "clientSessionCalls": 0,
+      "recoverableErrors": 0,
+      "clientSignIn": true
+    },
+    {
+      "version": "current",
+      "seededBeforeSSR": false,
+      "serverSkeleton": true,
+      "serverSignIn": false,
+      "serverSessionCalls": 0,
+      "clientSessionCalls": 1,
+      "recoverableErrors": 1,
+      "clientSignIn": true
+    },
+    {
+      "version": "current",
+      "seededBeforeSSR": true,
+      "serverSkeleton": false,
+      "serverSignIn": true,
+      "serverSessionCalls": 1,
+      "clientSessionCalls": 0,
+      "recoverableErrors": 0,
+      "clientSignIn": true
+    }
+  ],
+  "originalEvidence": [
+    "footer-hydration-probe.json",
+    "probe-footer-hydration.cjs"
+  ],
+  "fixEvidence": [
+    "SSR-footer-tests.json",
+    "SSR-footer-quality.json",
+    "supplemental-F-AEG.json"
+  ],
+  "limits": [
+    "The timing is deliberately forced in an isolated real-browser hydration probe.",
+    "This is not a full baseline-app browser reproduction.",
+    "It does not independently identify the exact scheduler of the parent desktop pageerror.",
+    "SSR/cache regression tests and parent full-app browser hydration acceptance are separate evidence."
+  ]
+}

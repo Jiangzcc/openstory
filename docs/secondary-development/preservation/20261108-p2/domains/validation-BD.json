@@ -1,0 +1,89 @@
+{
+  "owner": "BD",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "reviewCounts": {
+    "reviewed-static": 104,
+    "reviewed-tested": 205
+  },
+  "pathCount": 309,
+  "testFiles": 121,
+  "tests": {
+    "total": 1473,
+    "passed": 1473,
+    "failed": 0,
+    "pending": 0,
+    "success": true,
+    "evidence": "BD-tests-result.json"
+  },
+  "additionalUnchangedCoreTests": {
+    "files": 7,
+    "total": 81,
+    "passed": 81,
+    "failed": 0,
+    "success": true,
+    "evidence": "BD-core-tests-result.json"
+  },
+  "historicalOnlyPaths": 3,
+  "mergePathPairs": 65,
+  "confirmedNewDefects": [],
+  "decisions": [
+    {
+      "id": "BD-10",
+      "status": "closed-restored-upstream",
+      "scope": "referencePhotoUrl missing-field historical-task normalization only",
+      "implementedBy": "3b203b3b6c644ab29014ba3860c2667f53cd00da",
+      "notInferredFrom": "promptLocale historical-task waiver",
+      "authorization": "Explicit user instruction on 2026-11-08 to restore missing-referencePhotoUrl refusal and reduce maintenance delta",
+      "currentImplementation": "assertQueuedWithReferencePhoto exactly matches B; workflow calls it before validate-snapshot or cached steps",
+      "evidence": ["BD-10-before-result.json", "BD-10-after-result.json"]
+    }
+  ],
+  "verificationLevels": [
+    "static production diff/caller/remerge review",
+    "real production modules with local supplier/runtime mocks",
+    "real isolated SQLite D1 adapter and persisted state via existing createTestDb tests"
+  ],
+  "notRun": [
+    "paid providers",
+    "remote database",
+    "real Cloudflare Workflows restart",
+    "browser UI by this owner",
+    "production deploy"
+  ],
+  "limits": [
+    "All 121 assigned current test files executed; tests do not prove every real provider behavior.",
+    "24 resource files checked structurally for source preservation; not a complete Chinese linguistic certification."
+  ],
+  "artifacts": [
+    "review-BD.jsonl",
+    "behaviors-BD.md",
+    "merge-review-BD.jsonl",
+    "history-review-BD.jsonl",
+    "BD-resources-validation.json",
+    "BD-core-blob-equality.json",
+    "BD-test-review-index.json",
+    "BD-10-before-result.json",
+    "BD-10-before.log",
+    "BD-10-after-result.json",
+    "BD-10-after.log"
+  ],
+  "postDecisionValidation": {
+    "files": 2,
+    "tests": 34,
+    "passed": 34,
+    "failed": 0,
+    "success": true,
+    "before": {
+      "tests": 10,
+      "passed": 9,
+      "failed": 1,
+      "message": "Expected rejection, promise resolved before repair",
+      "evidence": "BD-10-before-result.json"
+    },
+    "afterEvidence": "BD-10-after-result.json",
+    "format": "5 edited files passed oxfmt --check",
+    "lint": "4 edited TypeScript files passed oxlint",
+    "diffCheck": "passed"
+  }
+}

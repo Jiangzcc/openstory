@@ -1,0 +1,48 @@
+{
+  "owner": "F-C",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "pathCount": 74,
+  "reviewCounts": {
+    "reviewed-static": 55,
+    "reviewed-tested": 19
+  },
+  "mergeGroups": 1,
+  "historicalOnlyPaths": 0,
+  "sharedFreshTestEvidence": {
+    "evidence": "F-tests-result.json",
+    "files": 47,
+    "tests": 635,
+    "passed": 635,
+    "failed": 0,
+    "success": true
+  },
+  "assignedTestEvidence": {
+    "files": 19,
+    "tests": 402,
+    "passed": 402,
+    "failed": 0
+  },
+  "confirmedNewDefects": [],
+  "productionChanges": [],
+  "verificationLevels": [
+    "source/diff and call registration review",
+    "real pure modules and React Query with synthetic supplier/upload/auth",
+    "SSR markup; portals/data hooks mocked when noted",
+    "historical remerge review"
+  ],
+  "notRun": [
+    "paid supplier calls",
+    "actual Stripe payment",
+    "remote DB writes",
+    "deployment",
+    "browser by F-C owner"
+  ],
+  "limits": [
+    "shared F test totals must not be added to assigned subset",
+    "UI keyboard/mobile/overflow/browser proof belongs to root acceptance evidence",
+    "Video.js locale inheritance checked against installed package documentation",
+    "No claim that currency localization implements RMB pricing or BYOK prohibition"
+  ],
+  "artifacts": ["review-F-C.jsonl", "behaviors-F-C.md", "F-tests-result.json"]
+}

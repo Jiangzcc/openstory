@@ -1,0 +1,34 @@
+{
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "netPaths": 1128,
+  "byOwner": {
+    "AEG": 259,
+    "BD": 309,
+    "C": 171,
+    "F-AEG": 86,
+    "F-BD": 148,
+    "F-C": 74,
+    "F-root": 81
+  },
+  "reviewCounts": {
+    "reviewed-static": 691,
+    "reviewed-tested": 437
+  },
+  "unreviewed": 0,
+  "needsDecision": 0,
+  "needsFix": 0,
+  "historicalOnly": 7,
+  "firstParentMerges": 26,
+  "mergesWithResolution": 15,
+  "mergePathPairs": 277,
+  "unitTests": {
+    "files": 329,
+    "total": 4588,
+    "passed": 4588,
+    "failed": 0,
+    "skipped": 0
+  },
+  "requirements": "Coverage completion is distinct from verification closure; browser acceptance and environment limits are recorded in the implementation report.",
+  "evidenceNote": "Raw .tmp unit logs remain local diagnostics; unit-verification.json ships their portable per-file cases/results and source hashes. Selected commit-hook logs, browser check/config source, screenshots and the isolated footer-probe source are archived under quality/ and browser/. Bare diagnostic filenames in domain records refer to their original local run."
+}

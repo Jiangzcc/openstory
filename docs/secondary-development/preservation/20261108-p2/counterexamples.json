@@ -1,0 +1,71 @@
+[
+  {
+    "source": "BD-10-before-result.json",
+    "sha256": "884f74c3948c48b440cc4a62baa1ae536aa02be46cd6822ba168c2a24ff59096",
+    "total": 10,
+    "passed": 9,
+    "failed": 1,
+    "failures": [
+      {
+        "path": "src/cast/server/workflows/character-sheet-workflow.test.ts",
+        "name": "CharacterSheetWorkflow looks refuses a pre-reference-photo run before any step or cached generation",
+        "failureMessages": [
+          "Error: promise resolved \"{ …(5) }\" instead of rejecting\n    at Assertion.__VITEST_REJECTS__ (file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2178:33)\n    at Assertion.propertyGetter (file:///D:/workspace/git/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/workspace/git/openstory/node_modules/chai/index.js:1696:22)\n    at D:/workspace/git/openstory/src/cast/server/workflows/character-sheet-workflow.test.ts:233:6\n    at async file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        ]
+      }
+    ]
+  },
+  {
+    "source": "C-logs/reference-photo-red.json",
+    "sha256": "8e20e2358d3e45181bfdf3927e6005e86fd903b9f3eb5d7e2551c01e88025f18",
+    "total": 6,
+    "passed": 3,
+    "failed": 3,
+    "failures": [
+      {
+        "path": "src/cast/ui/talent/character-sheet-cost.test.ts",
+        "name": "character sheet price hints follow the generated references quotes the default look reference photo as an edit with an existing sheet=false",
+        "failureMessages": [
+          "AssertionError: expected { estimate: 100000, issue: null } to deeply equal { estimate: 200000, issue: null }\n    at D:/workspace/git/openstory/src/cast/ui/talent/character-sheet-cost.test.ts:125:25\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        ]
+      },
+      {
+        "path": "src/cast/ui/talent/character-sheet-cost.test.ts",
+        "name": "character sheet price hints follow the generated references quotes the default look reference photo as an edit with an existing sheet=true",
+        "failureMessages": [
+          "AssertionError: expected { estimate: 100000, issue: null } to deeply equal { estimate: 200000, issue: null }\n    at D:/workspace/git/openstory/src/cast/ui/talent/character-sheet-cost.test.ts:125:25\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        ]
+      },
+      {
+        "path": "src/cast/ui/talent/character-sheet-cost.test.ts",
+        "name": "character sheet price hints follow the generated references keeps an edit-only model available for a photographed default look",
+        "failureMessages": [
+          "AssertionError: expected { estimate: null, …(1) } to deeply equal { estimate: 200000, issue: null }\n    at D:/workspace/git/openstory/src/cast/ui/talent/character-sheet-cost.test.ts:139:23\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        ]
+      }
+    ]
+  },
+  {
+    "source": "mobile-valid-counterexample/before-result.json",
+    "sha256": "47c78022948e8eb4228aacf02e73bec1cfb4579a5b8ed55b09f3c3b47ec858b2",
+    "total": 4,
+    "passed": 2,
+    "failed": 2,
+    "failures": [
+      {
+        "path": ".tmp/upstream-preservation-p2-20261108/mobile-valid-counterexample/mobile-valid-before.test.tsx",
+        "name": "mobile reel poster keeps the model badge as an element without a preview in en",
+        "failureMessages": [
+          "AssertionError: expected '<div class=\"flex-1 overflow-y-auto\"><…' to match /<span[^>]*>Claude Sonnet 5.5<\\/s…/span>\n    at D:/workspace/git/openstory/.tmp/upstream-preservation-p2-20261108/mobile-valid-counterexample/mobile-valid-before.test.tsx:76:20\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2885:79\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3276:10)"
+        ]
+      },
+      {
+        "path": ".tmp/upstream-preservation-p2-20261108/mobile-valid-counterexample/mobile-valid-before.test.tsx",
+        "name": "mobile reel poster keeps the model badge as an element without a preview in zh-CN",
+        "failureMessages": [
+          "AssertionError: expected '<div class=\"flex-1 overflow-y-auto\"><…' to match /<span[^>]*>Claude Sonnet 5.5<\\/s…/span>\n    at D:/workspace/git/openstory/.tmp/upstream-preservation-p2-20261108/mobile-valid-counterexample/mobile-valid-before.test.tsx:76:20\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2885:79\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///D:/workspace/git/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3276:10)"
+        ]
+      }
+    ]
+  }
+]

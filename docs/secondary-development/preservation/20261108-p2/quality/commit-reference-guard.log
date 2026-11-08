@@ -1,0 +1,46 @@
+╭──────────────────────────────────────╮
+│ lefthook  v2.2.2   hook:  pre-commit │
+╰──────────────────────────────────────╯
+$ vitest run src/platform/client-server-boundary.test.ts
+┃  client-server-boundary ❯
+
+ RUN  v5.1.0 D:/workspace/git/openstory
+
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  21:08:01
+   Duration  2.54s (tests 66%, import 14%, transform 10%, setup 10%)
+
+
+$ bun knip
+Configuration hints (6)
+cloudflare        knip.config.ts  Remove from ignoreDependencies
+printf            knip.config.ts  Remove from ignoreBinaries
+open              knip.config.ts  Remove from ignoreBinaries
+src/router.tsx    knip.config.ts  Remove redundant entry pattern
+.mdx              knip.config.ts  Compiled extension excluded by project (imports not followed)
+.css              knip.config.ts  Compiled extension excluded by project (imports not followed)
+┃  dead-code ❯
+
+┃  format ❯
+Finished in 6ms on 5 files using 16 threads.
+
+┃  lint ❯
+src/cast/server/workflows/character-sheet-workflow.test.ts:237:17: error typescript(unbound-method): Avoid referencing unbound methods which may cause unintentional scoping of `this`. help: If your function does not access `this`, you can annotate it with `this: void`, or consider using an arrow function instead.
+
+exit status 1
+│  migration-safety (skip) no files for inspection
+┃  typecheck ❯
+src/sequences/ui/eval/eval-sequences-mobile.test.tsx(56,9): error TS2820: Type '"image"' is not assignable to type 'ViewMode'. Did you mean '"images"'?
+
+exit status 1
+│  typegen-regen (skip) no matching staged files
+│  workflow-trigger-safety (skip) no files for inspection
+  ────────────────────────────────────
+summary: (done in 39.58 seconds)
+✓ client-server-boundary (3.47 seconds)
+✓ dead-code (6.82 seconds)
+✓ format (0.53 seconds)
+✗ lint (9.79 seconds)
+✗ typecheck (18.90 seconds)

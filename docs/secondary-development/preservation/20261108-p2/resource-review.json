@@ -1,0 +1,259 @@
+{
+  "namespaces": [
+    {
+      "name": "admin.json",
+      "englishKeys": 278,
+      "chineseKeys": 278,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "assistant.json",
+      "englishKeys": 401,
+      "chineseKeys": 401,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "audio.json",
+      "englishKeys": 28,
+      "chineseKeys": 28,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "billing.json",
+      "englishKeys": 105,
+      "chineseKeys": 105,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "cast.json",
+      "englishKeys": 411,
+      "chineseKeys": 411,
+      "englishSourceOverrides": [
+        {
+          "key": "{{count}} takes_one",
+          "value": "{{count}} take"
+        },
+        {
+          "key": "{{count}} takes_other",
+          "value": "{{count}} takes"
+        }
+      ],
+      "keysAligned": true
+    },
+    {
+      "name": "documentation.json",
+      "englishKeys": 5,
+      "chineseKeys": 5,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "guide.json",
+      "englishKeys": 583,
+      "chineseKeys": 583,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "history.json",
+      "englishKeys": 108,
+      "chineseKeys": 108,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "image-channels.json",
+      "englishKeys": 200,
+      "chineseKeys": 200,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "interface.json",
+      "englishKeys": 387,
+      "chineseKeys": 387,
+      "englishSourceOverrides": [
+        {
+          "key": "{{value1}} renders at a fixed size_one",
+          "value": "{{value1}} renders at a fixed size"
+        },
+        {
+          "key": "{{value1}} renders at a fixed size_other",
+          "value": "{{value1}} render at a fixed size"
+        },
+        {
+          "key": "{{value1}} renders below {{value2}}_one",
+          "value": "{{value1}} renders below {{value2}}"
+        },
+        {
+          "key": "{{value1}} renders below {{value2}}_other",
+          "value": "{{value1}} render below {{value2}}"
+        },
+        {
+          "key": "{{value1}} renders above {{value2}}_one",
+          "value": "{{value1}} renders above {{value2}}"
+        },
+        {
+          "key": "{{value1}} renders above {{value2}}_other",
+          "value": "{{value1}} render above {{value2}}"
+        }
+      ],
+      "keysAligned": true
+    },
+    {
+      "name": "labels.json",
+      "englishKeys": 626,
+      "chineseKeys": 626,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "legal.json",
+      "englishKeys": 293,
+      "chineseKeys": 293,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "look.json",
+      "englishKeys": 57,
+      "chineseKeys": 57,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "models.json",
+      "englishKeys": 81,
+      "chineseKeys": 81,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "motion.json",
+      "englishKeys": 49,
+      "chineseKeys": 49,
+      "englishSourceOverrides": [
+        {
+          "key": " · {{count}} day left_other",
+          "value": " · {{count}} days left"
+        }
+      ],
+      "keysAligned": true
+    },
+    {
+      "name": "pages.json",
+      "englishKeys": 262,
+      "chineseKeys": 262,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "platform.json",
+      "englishKeys": 38,
+      "chineseKeys": 38,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "presets.json",
+      "englishKeys": 164,
+      "chineseKeys": 164,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "sequences.json",
+      "englishKeys": 338,
+      "chineseKeys": 338,
+      "englishSourceOverrides": [
+        {
+          "key": "{{count}} reference_other",
+          "value": "{{count}} references"
+        },
+        {
+          "key": "{{count}} voice_other",
+          "value": "{{count}} voices"
+        },
+        {
+          "key": "{{count}} shot rewrite_other",
+          "value": "{{count}} shot rewrites"
+        },
+        {
+          "key": "{{count}} prompt_other",
+          "value": "{{count}} prompts"
+        },
+        {
+          "key": "{{count}} image_other",
+          "value": "{{count}} images"
+        },
+        {
+          "key": "{{count}} recording_other",
+          "value": "{{count}} recordings"
+        },
+        {
+          "key": "{{count}} video_other",
+          "value": "{{count}} videos"
+        },
+        {
+          "key": "{{count}} music track_other",
+          "value": "{{count}} music tracks"
+        }
+      ],
+      "keysAligned": true
+    },
+    {
+      "name": "shots.json",
+      "englishKeys": 635,
+      "chineseKeys": 635,
+      "englishSourceOverrides": [
+        {
+          "key": "One take · {{count}} shots_one",
+          "value": "One take · {{count}} shot"
+        },
+        {
+          "key": "One take · {{count}} shots_other",
+          "value": "One take · {{count}} shots"
+        },
+        {
+          "key": "Older take · {{count}} shots_one",
+          "value": "Older take · {{count}} shot"
+        },
+        {
+          "key": "Older take · {{count}} shots_other",
+          "value": "Older take · {{count}} shots"
+        },
+        {
+          "key": "Newer take · {{count}} shots_one",
+          "value": "Newer take · {{count}} shot"
+        },
+        {
+          "key": "Newer take · {{count}} shots_other",
+          "value": "Newer take · {{count}} shots"
+        }
+      ],
+      "keysAligned": true
+    },
+    {
+      "name": "stitches.json",
+      "englishKeys": 1,
+      "chineseKeys": 1,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    },
+    {
+      "name": "studio.json",
+      "englishKeys": 236,
+      "chineseKeys": 236,
+      "englishSourceOverrides": [],
+      "keysAligned": true
+    }
+  ],
+  "namespaceCount": 22,
+  "totalEnglishKeys": 5286,
+  "reviewedPolicyStrings": 177,
+  "codeFragmentDifferences": "9 prose cases: reflow, display label translation or equivalent explanatory paraphrase; none modifies fenced provider/API protocol."
+}

@@ -1,0 +1,19 @@
+import { resolve } from 'node:path';
+import { defineConfig, devices } from 'playwright/test';
+
+export default defineConfig({
+  testDir: resolve('.tmp/upstream-preservation-p2-20261108'),
+  testMatch: 'preservation-browser-final.spec.ts',
+  timeout: 180_000,
+  expect: { timeout: 45_000 },
+  workers: 1,
+  retries: 0,
+  use: {
+    ...devices['Desktop Chrome'],
+    baseURL: 'http://localhost:3000',
+    locale: 'en-US',
+    storageState: { cookies: [], origins: [] },
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+});

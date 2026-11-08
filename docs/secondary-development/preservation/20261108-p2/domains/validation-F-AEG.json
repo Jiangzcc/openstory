@@ -1,0 +1,148 @@
+{
+  "owner": "F-AEG",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "pathCount": 86,
+  "reviewCounts": {
+    "reviewed-static": 78,
+    "reviewed-tested": 8,
+    "needs-fix": 0,
+    "needs-decision": 0,
+    "unreviewed": 0
+  },
+  "historicalOnlyPaths": 0,
+  "mergeGroups": [
+    {
+      "sha": "a13eca1d28b23ce398f5ba1765de2a58c7fcd7b1",
+      "resolutionPaths": [
+        "src/routes/_app/admin/moderation.tsx",
+        "src/routes/_app/admin/usage.tsx",
+        "src/routes/_app/characters/$id.tsx",
+        "src/routes/_app/characters/index.tsx",
+        "src/routes/_app/device.tsx",
+        "src/routes/_app/locations/$locationId.tsx",
+        "src/routes/_app/locations/index.tsx",
+        "src/routes/_app/oauth/consent.tsx",
+        "src/routes/_app/organization/accept-invitation.tsx",
+        "src/routes/_app/settings/organization.tsx",
+        "src/ui/device-login.i18n.test.tsx",
+        "src/ui/layout/user-sidebar-footer.tsx",
+        "src/ui/settings/api-key-settings.tsx",
+        "src/ui/settings/billing-settings.tsx",
+        "src/ui/settings/gift-code-settings.tsx",
+        "src/ui/settings/organization-settings.tsx"
+      ],
+      "evidence": "F-AEG-remerge-a13eca1.diff",
+      "conclusion": "Retains real organization fields/APIs and selectors instead of obsolete team names, while applying existing translations."
+    },
+    {
+      "sha": "3b203b3b6c644ab29014ba3860c2667f53cd00da",
+      "resolutionPaths": ["src/routes/_app/locations/index.tsx"],
+      "evidence": "F-AEG-remerge-3b203b3.diff",
+      "conclusion": "Keeps both locale import and upstream PHOTOREAL_RENDERING."
+    },
+    {
+      "sha": "4969bfcf2917cfb77eeac27f07808850de8b783d",
+      "resolutionPaths": ["src/ui/settings/organization-settings.tsx"],
+      "evidence": "F-AEG-remerge-4969bfc.diff",
+      "conclusion": "Keeps upstream permission-gated PendingInvitations subtree so a member does not request forbidden invitation data; translates inside the retained subtree."
+    }
+  ],
+  "parentSharedTests": {
+    "files": 47,
+    "total": 635,
+    "passed": 635,
+    "failed": 0,
+    "evidence": "F-tests-result.json",
+    "scope": "Parent-owned F suite is shared evidence, not 635 extra tests by this owner. The two directly assigned test files have 6 device SSR and 3 fallback SSR assertions."
+  },
+  "additionalExecution": {
+    "method": "2 actual React SSR source comparisons, actual application i18n/resources; only route registration/Link adapter mocked for isolated render",
+    "evidence": "F-AEG-legal-render.json",
+    "paths": ["src/routes/_app/privacy.tsx", "src/routes/_app/terms.tsx"],
+    "englishTextTagsLinksEqual": true,
+    "chineseHrefsEqual": true,
+    "chineseUnresolvedTokens": false
+  },
+  "confirmedNewDefects": [],
+  "scopeExclusions": [
+    {
+      "path": "src/routes/_auth/route.tsx",
+      "description": "Latest user explicitly does not require a language switch on login. Proposed switch patch was completely reverted; git status for the path is clean. Do not report as defect/pending repair.",
+      "history": "Reachable Git history has no LanguageSwitcher change under src/routes/_auth; first all-site i18n commit 190bbf555 adds labels/title only."
+    }
+  ],
+  "verificationLevels": [
+    "actual static source/diff/request/auth/form-state and merge review",
+    "parent F module/render/helper tests with mocked external I/O",
+    "actual React SSR equality of privacy/terms English text, tags and links; Chinese link/placeholder validation",
+    "actual B/current isolated Chromium SSR/hydrateRoot comparison with forced session-settlement timing",
+    "4 actual docs beforeLoad/router/query/footer SSR and serialized-cache regression tests"
+  ],
+  "notRun": [
+    "full app browser by this owner; root owns app/browser acceptance services",
+    "real login/OTP/invitation/email",
+    "real provider credential save or paid generation",
+    "real Stripe or gift redemption",
+    "remote/user database",
+    "push/deploy"
+  ],
+  "limits": [
+    "The 86 paths are not all dynamically exercised by the shared 635-test suite.",
+    "Privacy/terms SSR equality certifies English content retention and link structure, not legal correctness or complete Chinese linguistic certification.",
+    "Parent browser acceptance is separate and must state its routes/actions and remaining limits.",
+    "No standalone login language-switch requirement remains after latest user correction."
+  ],
+  "artifacts": [
+    "review-F-AEG.jsonl",
+    "behaviors-F-AEG.md",
+    "validation-F-AEG.json",
+    "F-AEG-legal-render.json",
+    "supplemental-F-AEG.json",
+    "SSR-footer-tests.json",
+    "SSR-footer-quality.json",
+    "footer-hydration-probe.json",
+    "probe-footer-hydration.cjs"
+  ],
+  "inheritedFindings": [
+    {
+      "findingId": "P2-public-docs-session-snapshot",
+      "classification": "inherited-upstream-defect",
+      "status": "fixed-locally-in-P2",
+      "missedUpstreamMerge": false,
+      "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+      "description": "The public docs route did not await the session before SSR. Under the reproduced timing precondition, a server loading button hydrates as a client anonymous sign-in link.",
+      "attribution": "Actual B/current footer, useUser/session-query, React Query and Radix execute in an isolated Chromium SSR/hydrateRoot probe. Both unseeded variants reproduce the mismatch; both preseeded positive controls have no recoverable errors. The B footer has no localization hook.",
+      "attributionLimit": "The probe deliberately resolves the anonymous session before footer hydration. It is not a full baseline-app browser reproduction and does not independently identify the exact scheduler of the parent desktop failure.",
+      "correction": "The docs route awaits the existing sessionQueryOptions through ensureQueryData. null remains a public anonymous session; no redirect, footer/loading style, auth/cache redesign, or new auth mechanism.",
+      "paths": [
+        "src/routes/docs.tsx",
+        "src/ui/docs/docs-session.test.tsx",
+        "docs/architecture/oauth-server.md"
+      ],
+      "newPaths": ["src/ui/docs/docs-session.test.tsx"],
+      "originalManifestReviewedPaths": [
+        "src/routes/docs.tsx",
+        "src/ui/layout/user-sidebar-footer.tsx"
+      ],
+      "evidence": [
+        "SSR-footer-tests.json",
+        "SSR-footer-quality.json",
+        "footer-hydration-probe.json",
+        "probe-footer-hydration.cjs",
+        "F-browser-desktop-retry-result.json",
+        "F-browser-desktop-retry-run.log"
+      ],
+      "unitScope": "4 tests use the actual docs beforeLoad, real router, QueryClient, session query, footer/hooks and Radix; auth/server I/O and generated content data are mocked. Anonymous and signed-in SSR/serialized client initial renders agree, delayed sessions block route completion, and the unseeded negative control produces different branches. These are SSR/cache tests, not DOM hydration tests.",
+      "appBrowserAcceptance": "Parent-owned post-fix desktop/mobile browser run is separate; do not infer it from these SSR tests."
+    }
+  ],
+  "supplementalTestExecution": {
+    "files": 1,
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "evidence": "SSR-footer-tests.json",
+    "notIncludedInParentShared635": true
+  }
+}

@@ -236,7 +236,7 @@ continuous tokens. The three-input, 40-character scalar summary stays intact.
 ## The web
 
 Web search is the provider's, not a tool of ours: on the OpenRouter via the
-chat sends `plugins: [{ id: "web" }]` (`webSearchFor` in
+chat sends `plugins: [{ id: "web" }]` (`modelOptionsFor` in
 `assistant-chat.ts`), and OpenRouter searches and reads pages server-side
 for whatever model is picked, so results land in the model's context and
 nothing leaves the Worker but the query. The system prompt says so only

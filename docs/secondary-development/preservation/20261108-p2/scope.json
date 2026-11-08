@@ -1,0 +1,121 @@
+{
+  "recordedAt": "2026-11-08T12:30:39.647Z",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "branch": "develop",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "p0Start": "a1dd140dabd381a35366a0d6404b3b4c55cdf700",
+  "observedUpstream": "6a9dcadb33d915fbedf80720a844968a6a8bea62",
+  "status": "M vite.config.ts\n?? docs/secondary-development/windows-dev-startup-20261108.md",
+  "indexEmpty": true,
+  "pendingOperations": [],
+  "preservedFiles": [
+    {
+      "path": "vite.config.ts",
+      "bytes": 13975,
+      "sha256": "46b07b708607adae81be9ccab036c87ef8eadff90143aa656e4c4ec338f69081"
+    },
+    {
+      "path": "docs/secondary-development/windows-dev-startup-20261108.md",
+      "bytes": 2661,
+      "sha256": "4e41e95195bc243da8e3bcd5d12e91d82b7e309ad93ba90ceb9a527a605fe082"
+    }
+  ],
+  "supplement": {
+    "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+    "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+    "p0Start": "a1dd140dabd381a35366a0d6404b3b4c55cdf700",
+    "netCount": 1128,
+    "deltaSinceP0": [
+      {
+        "change": "M",
+        "path": "docs/architecture/media-vias.md"
+      },
+      {
+        "change": "M",
+        "path": "docs/architecture/model-configuration.md"
+      },
+      {
+        "change": "M",
+        "path": "docs/secondary-development/README.md"
+      },
+      {
+        "change": "A",
+        "path": "docs/secondary-development/preservation/20261108-p0/README.md"
+      },
+      {
+        "change": "A",
+        "path": "docs/secondary-development/preservation/20261108-p0/candidates.jsonl"
+      },
+      {
+        "change": "A",
+        "path": "docs/secondary-development/preservation/20261108-p0/direct-import-candidates.jsonl"
+      },
+      {
+        "change": "A",
+        "path": "docs/secondary-development/preservation/20261108-p0/history.json"
+      },
+      {
+        "change": "A",
+        "path": "docs/secondary-development/preservation/20261108-p0/scope.json"
+      },
+      {
+        "change": "A",
+        "path": "docs/secondary-development/upstream-preservation-p0-p1-20261108.md"
+      },
+      {
+        "change": "A",
+        "path": "docs/secondary-development/upstream-preservation-p0-p1-verification-20261108.json"
+      },
+      {
+        "change": "M",
+        "path": "docs/secondary-development/upstream-preservation-plan.md"
+      },
+      {
+        "change": "M",
+        "path": "src/models/region-policy.test.ts"
+      },
+      {
+        "change": "M",
+        "path": "src/models/region-policy.ts"
+      },
+      {
+        "change": "A",
+        "path": "src/models/server/llm-call-helper-region.test.ts"
+      },
+      {
+        "change": "M",
+        "path": "src/models/server/llm-call-helper.ts"
+      },
+      {
+        "change": "A",
+        "path": "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts"
+      },
+      {
+        "change": "M",
+        "path": "src/sequences/server/workflows/analyze-script-workflow.test.ts"
+      }
+    ],
+    "groups": {
+      "AEG": 259,
+      "BD": 309,
+      "F": 389,
+      "C": 171
+    },
+    "newNetPaths": [
+      "docs/secondary-development/preservation/20261108-p0/README.md",
+      "docs/secondary-development/preservation/20261108-p0/candidates.jsonl",
+      "docs/secondary-development/preservation/20261108-p0/direct-import-candidates.jsonl",
+      "docs/secondary-development/preservation/20261108-p0/history.json",
+      "docs/secondary-development/preservation/20261108-p0/scope.json",
+      "docs/secondary-development/upstream-preservation-p0-p1-20261108.md",
+      "docs/secondary-development/upstream-preservation-p0-p1-verification-20261108.json",
+      "src/models/region-policy.test.ts",
+      "src/models/region-policy.ts",
+      "src/models/server/llm-call-helper-region.test.ts",
+      "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts"
+    ]
+  },
+  "p0InventoryUnchanged": true,
+  "scopeNote": "All counts describe the fixed P2 starting tree; new P2 fixes and records are tracked separately. This run did not fetch or merge new upstream.",
+  "deliveryHeadBeforeDocumentationCommit": "411ccd66a339e757a8e32aadbcd08f064362b982"
+}

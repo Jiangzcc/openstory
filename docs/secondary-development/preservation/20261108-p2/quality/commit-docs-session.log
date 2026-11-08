@@ -1,0 +1,45 @@
+╭──────────────────────────────────────╮
+│ lefthook  v2.2.2   hook:  pre-commit │
+╰──────────────────────────────────────╯
+$ vitest run src/platform/client-server-boundary.test.ts
+┃  client-server-boundary ❯
+
+ RUN  v5.1.0 D:/workspace/git/openstory
+
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  21:29:55
+   Duration  2.49s (tests 68%, import 13%, transform 10%, setup 9%)
+
+
+$ bun knip
+Configuration hints (6)
+cloudflare        knip.config.ts  Remove from ignoreDependencies
+printf            knip.config.ts  Remove from ignoreBinaries
+open              knip.config.ts  Remove from ignoreBinaries
+src/router.tsx    knip.config.ts  Remove redundant entry pattern
+.mdx              knip.config.ts  Compiled extension excluded by project (imports not followed)
+.css              knip.config.ts  Compiled extension excluded by project (imports not followed)
+┃  dead-code ❯
+
+┃  format ❯
+Finished in 5ms on 3 files using 16 threads.
+
+┃  lint ❯
+
+│  migration-safety (skip) no files for inspection
+┃  typecheck ❯
+
+│  typegen-regen (skip) no matching staged files
+│  workflow-trigger-safety (skip) no files for inspection
+  ────────────────────────────────────
+summary: (done in 35.69 seconds)
+✓ client-server-boundary (3.44 seconds)
+✓ dead-code (6.08 seconds)
+✓ format (0.48 seconds)
+✓ lint (8.65 seconds)
+✓ typecheck (16.97 seconds)
+[develop 411ccd66a] fix(docs): 在公开帮助页预取会话快照
+ 3 files changed, 239 insertions(+)
+ create mode 100644 src/ui/docs/docs-session.test.tsx

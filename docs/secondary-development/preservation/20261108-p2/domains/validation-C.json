@@ -1,0 +1,45 @@
+{
+  "owner": "C",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "pathCount": 171,
+  "reviewCounts": {
+    "reviewed-static": 111,
+    "reviewed-tested": 60
+  },
+  "historicalOnlyPaths": 0,
+  "mergeGroups": 5,
+  "testFiles": 99,
+  "tests": {
+    "total": 1551,
+    "passed": 1551,
+    "failed": 0,
+    "pending": 0,
+    "success": true,
+    "evidence": "C-logs/domain-tests.json"
+  },
+  "confirmedNewDefects": [],
+  "productionChanges": [],
+  "followups": [
+    {
+      "id": "C-i18n-01",
+      "severity": "nonblocking",
+      "area": "src/models/ui/use-text-model-catalog.ts + pickers/model-selector.tsx",
+      "finding": "Dynamic English capability errors can render raw error.message; localization follow-up, no confirmed upstream capability loss."
+    }
+  ],
+  "verificationLevels": [
+    "static production diff/caller/remerge review",
+    "real modules/SDK with mocked external I/O",
+    "isolated SQLite persistence through createTestDb",
+    "local replica-lag model only"
+  ],
+  "limits": [
+    "No real supplier call or production pricing validation",
+    "No actual Workflows restart/replay acceptance",
+    "No browser acceptance by C owner",
+    "Snapshot/admission size checks are not empirical production isolate heap proof",
+    "No production D1 replica behavior proof"
+  ],
+  "artifacts": ["review-C.jsonl", "behaviors-C.md", "C-logs/domain-tests.json"]
+}

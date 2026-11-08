@@ -1,0 +1,12 @@
+{
+  "baseline": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "oldSourcePath": "src/sequences/ui/eval/eval-sequences-mobile.tsx",
+  "oldSourceGitBlob": "b146bb834c167c8f3cc31a5cb662de74bf27d019",
+  "changesToSourceCopy": "Only relative imports rebased to original module aliases; old React/i18next interpolation unchanged.",
+  "testSource": "Current production regression test, copied into ignored directory; valid viewMode=images; imports rebased.",
+  "translations": {
+    "en": "No preview yet{{value1}}",
+    "zh-CN": "暂无预览{{value1}}"
+  },
+  "changesToProductionFiles": false
+}

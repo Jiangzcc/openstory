@@ -1,0 +1,38 @@
+{
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "manifestPreserved": true,
+  "supplements": [
+    {
+      "findingId": "P2-public-docs-session-snapshot",
+      "classification": "inherited-upstream-defect",
+      "status": "fixed-locally-in-P2",
+      "missedUpstreamMerge": false,
+      "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+      "description": "The public docs route did not await the session before SSR. Under the reproduced timing precondition, a server loading button hydrates as a client anonymous sign-in link.",
+      "attribution": "Actual B/current footer, useUser/session-query, React Query and Radix execute in an isolated Chromium SSR/hydrateRoot probe. Both unseeded variants reproduce the mismatch; both preseeded positive controls have no recoverable errors. The B footer has no localization hook.",
+      "attributionLimit": "The probe deliberately resolves the anonymous session before footer hydration. It is not a full baseline-app browser reproduction and does not independently identify the exact scheduler of the parent desktop failure.",
+      "correction": "The docs route awaits the existing sessionQueryOptions through ensureQueryData. null remains a public anonymous session; no redirect, footer/loading style, auth/cache redesign, or new auth mechanism.",
+      "paths": [
+        "src/routes/docs.tsx",
+        "src/ui/docs/docs-session.test.tsx",
+        "docs/architecture/oauth-server.md"
+      ],
+      "newPaths": ["src/ui/docs/docs-session.test.tsx"],
+      "originalManifestReviewedPaths": [
+        "src/routes/docs.tsx",
+        "src/ui/layout/user-sidebar-footer.tsx"
+      ],
+      "evidence": [
+        "SSR-footer-tests.json",
+        "SSR-footer-quality.json",
+        "footer-hydration-probe.json",
+        "probe-footer-hydration.cjs",
+        "F-browser-desktop-retry-result.json",
+        "F-browser-desktop-retry-run.log"
+      ],
+      "unitScope": "4 tests use the actual docs beforeLoad, real router, QueryClient, session query, footer/hooks and Radix; auth/server I/O and generated content data are mocked. Anonymous and signed-in SSR/serialized client initial renders agree, delayed sessions block route completion, and the unseeded negative control produces different branches. These are SSR/cache tests, not DOM hydration tests.",
+      "appBrowserAcceptance": "Parent-owned post-fix desktop/mobile browser run is separate; do not infer it from these SSR tests."
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "phase": "After four code commits, before documentation commit; final post-commit check is reported in the task delivery.",
+  "head": "411ccd66a339e757a8e32aadbcd08f064362b982",
+  "branch": "develop",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "upstreamFetchOrMerge": false,
+  "codeCommits": [
+    {
+      "sha": "ba918e6aa41881d1c7f05f9836d06d767f474ff8",
+      "subject": "fix(cast): 恢复上游旧设定图任务校验",
+      "paths": [
+        "docs/architecture/organization-characters.md",
+        "src/cast/server/workflows/character-sheet-workflow.test.ts",
+        "src/cast/server/workflows/character-sheet-workflow.ts",
+        "src/cast/server/workflows/sheet-snapshots.test.ts",
+        "src/cast/server/workflows/sheet-snapshots.ts"
+      ]
+    },
+    {
+      "sha": "39823da6d32256faf0a7c7b2ae8b355a1596725d",
+      "subject": "fix(cast): 按实际参考照片计算设定图报价",
+      "paths": [
+        "docs/architecture/character-looks.md",
+        "src/cast/ui/talent/character-detail-view.tsx",
+        "src/cast/ui/talent/character-sheet-cost.test.ts",
+        "src/cast/ui/talent/character-sheet-cost.ts"
+      ]
+    },
+    {
+      "sha": "1d9a699e4eff952827764d67684550f6bfcb7334",
+      "subject": "fix(sequences): 保留手机评审列表的模型徽标",
+      "paths": [
+        "src/sequences/ui/eval/eval-sequences-mobile.test.tsx",
+        "src/sequences/ui/eval/eval-sequences-mobile.tsx",
+        "src/ui/i18n/locales/en/sequences.json",
+        "src/ui/i18n/locales/zh-CN/sequences.json"
+      ]
+    },
+    {
+      "sha": "411ccd66a339e757a8e32aadbcd08f064362b982",
+      "subject": "fix(docs): 在公开帮助页预取会话快照",
+      "paths": [
+        "docs/architecture/oauth-server.md",
+        "src/routes/docs.tsx",
+        "src/ui/docs/docs-session.test.tsx"
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "path": "quality/commit-reference-guard.log",
+      "source": "commit-reference-guard.log",
+      "sourceSha256": "34678e5da23f178cfb56bb2eb39f5e134c8076489018b4b50f8ef4b6e0e4d2e8",
+      "archivedNormalizedSha256": "3e12f7d51b59baa41b0d2d5a802eade2be323559e8cf06a1b3366dca6804c4a4",
+      "normalization": "LF line endings and trailing whitespace removed; diagnostic content retained. Normalize line endings before checking the archived hash on a Windows checkout.",
+      "result": "Initial rejected commit: unbound method and mobile test viewMode type errors; no bypass."
+    },
+    {
+      "path": "quality/commit-reference-guard-retry.log",
+      "source": "commit-reference-guard-retry.log",
+      "sourceSha256": "e27e18b7ed77722f85b14e7efc2aa62cf683ff545d60e7193f98fff9f9fc68aa",
+      "archivedNormalizedSha256": "51142a0c2b517943b62fb7fd8b380d60c4a24bd1fe0ebf9ef89a020b706c6cf9",
+      "normalization": "LF line endings and trailing whitespace removed; diagnostic content retained. Normalize line endings before checking the archived hash on a Windows checkout.",
+      "result": "Passed normal hooks; ba918e6aa."
+    },
+    {
+      "path": "quality/commit-character-photo-price.log",
+      "source": "commit-character-photo-price.log",
+      "sourceSha256": "51af5cb6add9fcb0a438c265e3d626badba578a3ef10fbdf4e97e2b88bf00359",
+      "archivedNormalizedSha256": "2699bbc612d6507357000e48d34717cd145f1433c0ca035fb65a4f6ae1e792b8",
+      "normalization": "LF line endings and trailing whitespace removed; diagnostic content retained. Normalize line endings before checking the archived hash on a Windows checkout.",
+      "result": "Passed normal hooks; 39823da6d."
+    },
+    {
+      "path": "quality/commit-mobile-badge.log",
+      "source": "commit-mobile-badge.log",
+      "sourceSha256": "a6f7b5156a81f1ff6e4b96681f936ee3e76cebe9d4121c472ddfd7b55449b5e7",
+      "archivedNormalizedSha256": "4975f863d0516bd33d7e1b9ddd0d0bb64d440dec86a8d9a4b167813151c2f95f",
+      "normalization": "LF line endings and trailing whitespace removed; diagnostic content retained. Normalize line endings before checking the archived hash on a Windows checkout.",
+      "result": "Passed normal hooks; 1d9a699e4."
+    },
+    {
+      "path": "quality/commit-docs-session.log",
+      "source": "commit-docs-session.log",
+      "sourceSha256": "e01b270e7dc46eb45b8e27c68a958d854ea37c5455a4bdb6f24d70e8daa2cfbf",
+      "archivedNormalizedSha256": "b572a0548dbe8b2caf08cea201450aa52d426b0085bbc52cbd27a7bdedee645b",
+      "normalization": "LF line endings and trailing whitespace removed; diagnostic content retained. Normalize line endings before checking the archived hash on a Windows checkout.",
+      "result": "Passed normal hooks; 411ccd66a."
+    }
+  ],
+  "preservedFiles": [
+    {
+      "path": "vite.config.ts",
+      "bytes": 13975,
+      "sha256": "46b07b708607adae81be9ccab036c87ef8eadff90143aa656e4c4ec338f69081",
+      "actualSha256": "46b07b708607adae81be9ccab036c87ef8eadff90143aa656e4c4ec338f69081"
+    },
+    {
+      "path": "docs/secondary-development/windows-dev-startup-20261108.md",
+      "bytes": 2661,
+      "sha256": "4e41e95195bc243da8e3bcd5d12e91d82b7e309ad93ba90ceb9a527a605fe082",
+      "actualSha256": "4e41e95195bc243da8e3bcd5d12e91d82b7e309ad93ba90ceb9a527a605fe082"
+    }
+  ],
+  "indexEmpty": true,
+  "pendingOperations": [],
+  "loginRouteChangedSinceP2Start": false,
+  "worktreeBeforeDocumentationStage": "M docs/architecture/assistant.md\n M docs/architecture/model-configuration.md\n M docs/secondary-development/README.md\n M docs/secondary-development/localization-plan.md\n M docs/secondary-development/upstream-preservation-plan.md\n M vite.config.ts\n?? docs/secondary-development/preservation/20261108-p2/\n?? docs/secondary-development/upstream-preservation-p2-20261108.md\n?? docs/secondary-development/windows-dev-startup-20261108.md",
+  "pushed": false,
+  "deployed": false,
+  "evidence": "Independent guard/mobile review and photo-cost review passed; all four code commits ran normal hooks with typecheck/lint/format/knip and 17-case client/server boundary check. Six existing knip configuration hints remain."
+}

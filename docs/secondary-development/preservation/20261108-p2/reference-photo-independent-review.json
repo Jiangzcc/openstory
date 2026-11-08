@@ -1,0 +1,77 @@
+{
+  "commit": "39823da6d32256faf0a7c7b2ae8b355a1596725d",
+  "reviewer": "F-BD discovery owner; not repair implementer",
+  "scope": "Read-only review of all four committed files, real draft/prompt/workflow/reference selection, price hint and UI disable gates; no repeated C test execution",
+  "result": "No confirmed defect or blocker found",
+  "contracts": [
+    {
+      "case": "Default look, reference photo exists, with or without an old selected sheet",
+      "ui": "Boolean(referencePhotoUrl) yields one reference regardless of faceState or old sheet",
+      "actual": "buildCharacterSheetDraft sets liveFace=null and referencePhotoUrl from character; buildCharacterSheetPrompt selects photo only",
+      "evidence": [
+        "src/cast/server/sheets/character-sheet-trigger.ts:109",
+        "src/cast/character-prompt.ts:182",
+        "src/cast/ui/talent/character-sheet-cost.test.ts:115"
+      ]
+    },
+    {
+      "case": "Default look without photo, even with an old selected sheet",
+      "ui": "Zero references quotes generation",
+      "actual": "Default draft does not use its old sheet; prompt receives neither face nor photo",
+      "evidence": [
+        "src/cast/ui/talent/character-sheet-cost.ts:10",
+        "src/cast/ui/talent/character-sheet-cost.test.ts:143"
+      ]
+    },
+    {
+      "case": "Non-default look with a selected default sheet",
+      "ui": "faceState=ready yields one reference and ignores original photo",
+      "actual": "defaultLookFace and defaultLookFaceState use the same populatedDefaultSheet URL predicate; draft sets photo=null; prompt selects only default face sheet",
+      "evidence": [
+        "src/cast/look-sheet-face.ts:48",
+        "src/cast/server/sheets/character-sheet-trigger.ts:86",
+        "src/cast/ui/talent/character-sheet-cost.test.ts:150"
+      ]
+    },
+    {
+      "case": "Non-default look when default sheet is missing or generating",
+      "ui": "Original faceBlocked condition still disables regeneration; helper preserves previous zero-reference behavior for these blocked states",
+      "actual": "lookSheetFaceRefusal rejects starting generation while no selected default face exists",
+      "evidence": [
+        "src/cast/ui/talent/character-detail-view.tsx:122",
+        "src/cast/ui/talent/character-detail-view.tsx:672",
+        "src/cast/look-sheet-face.ts:61"
+      ]
+    },
+    {
+      "case": "Unloaded look",
+      "ui": "undefined reference count keeps estimate pending",
+      "actual": "imageCostHint explicitly returns estimate undefined before operation pricing for undefined count",
+      "evidence": [
+        "src/cast/ui/talent/character-sheet-cost.ts:9",
+        "src/billing/image-cost-hint.ts:124"
+      ]
+    },
+    {
+      "case": "Edit-only configured model and photographed default look",
+      "ui": "One reference selects verified edit binding; issue=null and UI generation button is no longer disabled by mistaken generate-operation error",
+      "actual": "Workflow passes prompt referenceUrls into generation; configuredOperationAvailable and configuredImageCost both select edit from count>0",
+      "evidence": [
+        "src/cast/ui/talent/character-sheet-cost.test.ts:130",
+        "src/billing/image-cost-hint.ts:34",
+        "src/cast/server/workflows/character-sheet-workflow.ts:169"
+      ]
+    }
+  ],
+  "testAssessment": {
+    "valid": true,
+    "reason": "UI helper count is compared to independently constructed real draft plus prompt referenceUrls.length, followed by the production hint resolver. Explicit 100000/200000 micros assertions prevent equality-only tautology. Original helper reproduces the three photo/edit-only failures.",
+    "cases": "Six new cases: photo with/without selected sheet, edit-only photo, no-photo old sheet, non-default face sheet, unloaded look",
+    "scope": "Real production draft/prompt/hint modules with synthetic rows and price cards; no DB, provider, browser or persisted charge assertion",
+    "existingGreenEvidence": "C-logs/reference-photo-green.json: five files, 37/37 passed; not repeated in this review"
+  },
+  "limitations": [
+    "Static UI wiring confirms helper and disable conditions; no interactive browser exercise by this reviewer.",
+    "The helper does not change wallet capture, preflight or provider execution. No incorrect persisted charge was demonstrated before or after repair."
+  ]
+}

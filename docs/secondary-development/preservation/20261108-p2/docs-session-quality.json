@@ -1,0 +1,45 @@
+{
+  "scope": "P2 inherited public docs SSR session-snapshot repair",
+  "paths": [
+    "src/routes/docs.tsx",
+    "src/ui/docs/docs-session.test.tsx",
+    "docs/architecture/oauth-server.md"
+  ],
+  "sha256": {
+    "src/routes/docs.tsx": "20864a7f7b0b6580546acf75ff4d97a841d81200e04629a14e438695e27e9f03",
+    "src/ui/docs/docs-session.test.tsx": "ab3416bffffcaf51eda713b21f513a6fcd4f28154ad3b0b5a1cefa383d74117f",
+    "docs/architecture/oauth-server.md": "10298da18f10f4e8c1f84bcc411c54d3b2966a4a27bbedbe8754a1a6a3e5179a"
+  },
+  "tests": {
+    "files": 1,
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "exitCode": 0,
+    "report": "SSR-footer-tests.json",
+    "log": "SSR-footer-tests.log"
+  },
+  "typecheck": {
+    "command": "bun run typecheck",
+    "scope": "whole repository",
+    "exitCode": 0,
+    "log": "SSR-footer-typecheck.log"
+  },
+  "lint": {
+    "command": "node_modules/.bin/oxlint.exe --type-aware src/routes/docs.tsx src/ui/docs/docs-session.test.tsx",
+    "exitCode": 0,
+    "log": "SSR-footer-lint.log"
+  },
+  "formatting": {
+    "command": "node_modules/.bin/oxfmt.exe --check src/routes/docs.tsx src/ui/docs/docs-session.test.tsx docs/architecture/oauth-server.md",
+    "exitCode": 0,
+    "log": "SSR-footer-format.log"
+  },
+  "trackedDiffCheck": {
+    "command": "git diff --check -- src/routes/docs.tsx docs/architecture/oauth-server.md",
+    "exitCode": 0,
+    "output": "Only existing LF-to-CRLF conversion notices; no whitespace errors."
+  },
+  "fullAppBrowser": "Parent-owned desktop/mobile rerun; not certified by this file.",
+  "noProductionOrLedgerEditsAfterThisQualitySnapshot": true
+}

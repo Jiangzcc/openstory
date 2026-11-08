@@ -1,0 +1,30 @@
+const fs=require('fs'),cp=require('child_process'),path=require('path'),Module=require('module'),esbuild=require('esbuild');
+const {chromium}=require('playwright');
+const d='.tmp/upstream-preservation-p2-20261108/',B='2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0';
+const common=`import React from 'react';
+import {QueryClient, QueryClientProvider, dehydrate, hydrate} from '@tanstack/react-query';
+import {I18nextProvider} from 'react-i18next';
+import {createApplicationI18n} from '@/ui/i18n/runtime';
+import {UserSidebarFooter} from 'probe-footer';
+import {SidebarProvider} from '@/ui/shadcn/sidebar';
+import {TooltipProvider} from '@/ui/shadcn/tooltip';
+import {sessionQueryOptions} from '@/platform/ui/auth/session-query';
+const makeClient=()=>new QueryClient({defaultOptions:{queries:{staleTime:Infinity,retry:false,gcTime:Infinity}}});
+function App({client}){return <I18nextProvider i18n={createApplicationI18n('en')}><QueryClientProvider client={client}><TooltipProvider><SidebarProvider><ul><UserSidebarFooter/></ul></SidebarProvider></TooltipProvider></QueryClientProvider></I18nextProvider>}
+`;
+function plugins(source){return [{name:'isolated-io',setup(b){
+ const map={
+  'probe-footer':source,
+  '@/platform/session.fn':`export async function getSessionFn(){globalThis.__probeSessionCalls=(globalThis.__probeSessionCalls??0)+1;return globalThis.__probeSession??null}`,
+  '@/platform/ui/auth/client':`export const authClient={signOut:async()=>({}),organization:{list:async()=>[],setActive:async()=>({})}};export const authData=x=>x;`,
+  '@/billing/ui/system-admin-status':`export const systemAdminStatusQueryOptions={queryKey:['admin'],queryFn:async()=>({isAdmin:false})};`,
+  '@tanstack/react-router':`import React from 'react';export function Link({to,children,search,params,activeProps,activeOptions,...p}){return <a {...p} href={to}>{children}</a>}export const useNavigate=()=>()=>{};export const useRouterState=({select})=>select({location:{pathname:'/docs',searchStr:''}});`,
+ };
+ b.onResolve({filter:/.*/},args=>map[args.path]!==undefined?{path:args.path,namespace:'probe'}:undefined);
+ b.onLoad({filter:/.*/,namespace:'probe'},args=>({contents:map[args.path],resolveDir:process.cwd(),loader:'tsx'}));
+}}]}
+async function build(source,browser){const entry=common+(browser?`import {hydrateRoot} from 'react-dom/client';export async function run(snapshot){const client=makeClient();hydrate(client,snapshot);await client.ensureQueryData(sessionQueryOptions);const before=client.getQueryState(sessionQueryOptions.queryKey);const errors=[];hydrateRoot(document.getElementById('root'),<App client={client}/>,{onRecoverableError:e=>errors.push(e.message)});await new Promise(r=>setTimeout(r,120));return {errors,clientStatus:before?.status,clientData:before?.data,sessionCalls:globalThis.__probeSessionCalls??0,after:document.getElementById('root').innerHTML};}`:`import {renderToString} from 'react-dom/server';export async function render(seeded){const client=makeClient();if(seeded)await client.ensureQueryData(sessionQueryOptions);const html=renderToString(<App client={client}/>);return {html,snapshot:dehydrate(client),serverStatus:client.getQueryState(sessionQueryOptions.queryKey)?.status,sessionCalls:globalThis.__probeSessionCalls??0};}`);
+ const r=await esbuild.build({stdin:{contents:entry,sourcefile:'probe-entry.tsx',resolveDir:process.cwd(),loader:'tsx'},bundle:true,write:false,platform:browser?'browser':'node',format:browser?'iife':'cjs',...(browser?{globalName:'FooterProbe'}:{external:['react','react/jsx-runtime','react-dom/server','react-i18next','i18next','@tanstack/react-query']}),jsx:'automatic',tsconfig:'tsconfig.json',define:{'import.meta.env':'{}','process.env.NODE_ENV':'"development"'},plugins:plugins(source)});return r.outputFiles[0].text;
+}
+function load(src,name){const fn=path.resolve(d+name+'.cjs'),m=new Module(fn,module);m.filename=fn;m.paths=module.paths;m._compile(src,fn);return m.exports;}
+(async()=>{const local=fs.readFileSync('src/ui/layout/user-sidebar-footer.tsx','utf8'),base=cp.execFileSync('git',['show',B+':src/ui/layout/user-sidebar-footer.tsx'],{encoding:'utf8'}),results=[];const browser=await chromium.launch({headless:true});try{for(const [version,source]of [['baseline',base],['current',local]]){const ssr=load(await build(source,false),version+'-ssr');const js=await build(source,true);for(const seeded of [false,true]){globalThis.__probeSessionCalls=0;const initial=await ssr.render(seeded);const page=await browser.newPage({viewport:{width:1440,height:900}});await page.setContent('<div id="root">'+initial.html+'</div>');await page.addScriptTag({content:js});const result=await page.evaluate(snapshot=>FooterProbe.run(snapshot),initial.snapshot);results.push({version,sessionSeededBeforeServerRender:seeded,serverStatus:initial.serverStatus,serverSessionCalls:initial.sessionCalls,serverSkeleton:initial.html.includes('animate-pulse'),serverSignIn:initial.html.includes('href="/login"'),clientStatus:result.clientStatus,clientData:result.clientData,clientSessionCalls:result.sessionCalls,recoverableErrors:result.errors,clientSignIn:result.after.includes('href="/login"')});await page.close();}}}finally{await browser.close();}fs.writeFileSync(d+'footer-hydration-probe.json',JSON.stringify({method:'Actual B/current UserSidebarFooter, actual useUser/session-query, React Query, Radix/Sidebar, React SSR and hydrateRoot in isolated Chromium. Only router hooks/Link and auth/server-function I/O replaced. No app server or remote requests.',precondition:'On an unseeded docs-style SSR, another consumer resolves the actual anonymous-session query before the footer hydrates. Positive control seeds the same query before SSR.',results},null,2)+'\n');console.log(JSON.stringify(results,null,2));})().catch(e=>{console.error(e);process.exitCode=1});

@@ -1,0 +1,46 @@
+╭──────────────────────────────────────╮
+│ lefthook  v2.2.2   hook:  pre-commit │
+╰──────────────────────────────────────╯
+$ vitest run src/platform/client-server-boundary.test.ts
+┃  client-server-boundary ❯
+
+ RUN  v5.1.0 D:/workspace/git/openstory
+
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  21:13:21
+   Duration  2.82s (tests 62%, import 17%, transform 11%, setup 10%)
+
+
+$ bun knip
+Configuration hints (6)
+cloudflare        knip.config.ts  Remove from ignoreDependencies
+printf            knip.config.ts  Remove from ignoreBinaries
+open              knip.config.ts  Remove from ignoreBinaries
+src/router.tsx    knip.config.ts  Remove redundant entry pattern
+.mdx              knip.config.ts  Compiled extension excluded by project (imports not followed)
+.css              knip.config.ts  Compiled extension excluded by project (imports not followed)
+┃  dead-code ❯
+
+┃  format ❯
+Finished in 6ms on 4 files using 16 threads.
+
+┃  lint ❯
+
+│  migration-safety (skip) no files for inspection
+┃  typecheck ❯
+
+│  typegen-regen (skip) no matching staged files
+│  workflow-trigger-safety (skip) no files for inspection
+  ────────────────────────────────────
+summary: (done in 34.00 seconds)
+✓ client-server-boundary (3.86 seconds)
+✓ dead-code (6.10 seconds)
+✓ format (0.54 seconds)
+✓ lint (9.03 seconds)
+✓ typecheck (14.42 seconds)
+[develop 39823da6d] fix(cast): 按实际参考照片计算设定图报价
+ 4 files changed, 193 insertions(+), 3 deletions(-)
+ create mode 100644 src/cast/ui/talent/character-sheet-cost.test.ts
+ create mode 100644 src/cast/ui/talent/character-sheet-cost.ts

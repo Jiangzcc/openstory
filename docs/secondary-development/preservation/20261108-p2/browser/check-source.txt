@@ -1,0 +1,105 @@
+import { expect, test } from 'playwright/test';
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`saved locale, original input, SSR and help anchors at ${viewport.width}px`, async ({
+    page,
+    context,
+  }, info) => {
+    await page.setViewportSize(viewport);
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    const response = await page.goto('/login');
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
+    const input = 'preservation+P2@example.invalid';
+    const email = page.locator('input[type=email]');
+    await email.fill(input);
+    await expect(email).toHaveValue(input);
+    await page.screenshot({
+      path: info.outputPath('login-zh.png'),
+      fullPage: true,
+    });
+    const loginOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth
+    );
+    expect(loginOverflow).toBeLessThanOrEqual(1);
+
+    const docs = await context.newPage();
+    await docs.setViewportSize(viewport);
+    docs.on('pageerror', (error) => errors.push(error.message));
+    await docs.goto('/docs/deployment/cloudflare#logs');
+    await expect(
+      docs.getByRole('heading', { name: '日志', exact: true })
+    ).toBeVisible();
+    expect(await docs.locator('#logs').count()).toBe(1);
+    const blocks = await docs.locator('pre code').allTextContents();
+    const language = docs.getByRole('button', { name: '语言 / Language' });
+    await expect(language).toBeEnabled({ timeout: 90_000 });
+    await language.click();
+    await docs.getByRole('menuitemradio', { name: 'English' }).click();
+    await expect(
+      docs.getByRole('heading', { name: 'Logs', exact: true })
+    ).toBeVisible();
+    expect(await docs.locator('#logs').count()).toBe(1);
+    expect(await docs.locator('pre code').allTextContents()).toEqual(blocks);
+    expect(docs.url()).toContain('#logs');
+    expect(
+      (await context.cookies()).find((c) => c.name === 'openstory_locale')
+        ?.value
+    ).toBe('en');
+    await docs.screenshot({
+      path: info.outputPath('help-en.png'),
+      fullPage: true,
+    });
+    await docs.reload();
+    await expect(
+      docs.getByRole('heading', { name: 'Logs', exact: true })
+    ).toBeVisible();
+    const helpOverflow = await docs.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth
+    );
+    expect(helpOverflow).toBeLessThanOrEqual(1);
+
+    await expect(email).toHaveValue(input);
+    await page.goto('/login?email=' + encodeURIComponent(input));
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page).toHaveTitle('Sign in · OpenStory');
+    await expect(email).toHaveValue(input);
+    await page.screenshot({
+      path: info.outputPath('login-en.png'),
+      fullPage: true,
+    });
+    const server = await context.request.get('/login');
+    expect(await server.text()).toMatch(/<html[^>]*lang="en"/);
+    await expect(language).toBeEnabled();
+    await language.click();
+    await docs.getByRole('menuitemradio', { name: '简体中文' }).click();
+    await expect(
+      docs.getByRole('heading', { name: '日志', exact: true })
+    ).toBeVisible();
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
+    await expect(email).toHaveValue(input);
+    expect(
+      errors.filter((message) =>
+        /hydrat|mismatch|Minified React error|Maximum update depth/i.test(
+          message
+        )
+      )
+    ).toEqual([]);
+    await info.attach('browser-runtime-evidence', {
+      body: JSON.stringify({
+        viewport,
+        errors,
+        loginOverflow,
+        helpOverflow,
+        codeBlocks: blocks.length,
+        loginLanguageEntry: 'excluded by user',
+      }),
+      contentType: 'application/json',
+    });
+  });
+}

@@ -1,0 +1,62 @@
+{
+  "method": "Actual B/current UserSidebarFooter, actual useUser/session-query, React Query, Radix/Sidebar, React SSR and hydrateRoot in isolated Chromium. Only router hooks/Link and auth/server-function I/O replaced. No app server or remote requests.",
+  "precondition": "On an unseeded docs-style SSR, another consumer resolves the actual anonymous-session query before the footer hydrates. Positive control seeds the same query before SSR.",
+  "results": [
+    {
+      "version": "baseline",
+      "sessionSeededBeforeServerRender": false,
+      "serverStatus": "pending",
+      "serverSessionCalls": 0,
+      "serverSkeleton": true,
+      "serverSignIn": false,
+      "clientStatus": "success",
+      "clientData": null,
+      "clientSessionCalls": 1,
+      "recoverableErrors": [
+        "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Tooltip data-slot=\"tooltip\">\n      <Popper __scopePopper={{Popper:[...]}}>\n        <PopperProvider scope={{Popper:[...]}} anchor={null} onAnchorChange={function bound dispatchSetState} ...>\n          <TooltipProvider scope={undefined} contentId=\"radix-_R_0_\" setContentId={function bound dispatchSetState} ...>\n            <TooltipTrigger3 asChild={true}>\n              <TooltipTrigger data-slot=\"tooltip-tr...\" asChild={true}>\n                <PopperAnchor asChild={true} __scopePopper={{Popper:[...]}}>\n                  <Primitive.div data-radix-popper-side={undefined} data-radix-popper-align={undefined} asChild={true} ...>\n                    <Primitive.div.Slot data-radix-popper-side={undefined} data-radix-popper-align={undefined} ...>\n                      <Primitive.button aria-describedby={undefined} data-state=\"closed\" data-slot=\"tooltip-tr...\" ...>\n                        <Primitive.button.Slot aria-describedby={undefined} data-state=\"closed\" data-slot=\"tooltip-tr...\" ...>\n                          <Slot.Slot data-slot=\"sidebar-me...\" data-sidebar=\"menu-button\" data-size=\"default\" ...>\n                            <Link to=\"/login\" onClick={function} data-slot=\"sidebar-me...\" data-sidebar=\"menu-button\" ...>\n+                             <a\n+                               onClick={function}\n+                               data-slot=\"sidebar-menu-button\"\n+                               data-sidebar=\"menu-button\"\n+                               data-size=\"default\"\n+                               data-active={false}\n+                               className={\"peer/menu-button group/menu-button flex w-full items-center gap-2 overflo...\"}\n+                               aria-describedby={undefined}\n+                               data-state=\"closed\"\n+                               onPointerMove={function handleEvent}\n+                               onPointerLeave={function handleEvent}\n+                               onPointerDown={function handleEvent}\n+                               onFocus={function handleEvent}\n+                               onBlur={function handleEvent}\n+                               data-radix-popper-side={undefined}\n+                               data-radix-popper-align={undefined}\n+                               ref={function}\n+                               href=\"/login\"\n+                             >\n-                             <button\n-                               data-slot=\"sidebar-menu-button\"\n-                               data-sidebar=\"menu-button\"\n-                               data-size=\"lg\"\n-                               data-active=\"false\"\n-                               className={\"peer/menu-button group/menu-button flex w-full items-center gap-2 overflo...\"}\n-                               disabled=\"\"\n-                             >\n            ...\n"
+      ],
+      "clientSignIn": true
+    },
+    {
+      "version": "baseline",
+      "sessionSeededBeforeServerRender": true,
+      "serverStatus": "success",
+      "serverSessionCalls": 1,
+      "serverSkeleton": false,
+      "serverSignIn": true,
+      "clientStatus": "success",
+      "clientData": null,
+      "clientSessionCalls": 0,
+      "recoverableErrors": [],
+      "clientSignIn": true
+    },
+    {
+      "version": "current",
+      "sessionSeededBeforeServerRender": false,
+      "serverStatus": "pending",
+      "serverSessionCalls": 0,
+      "serverSkeleton": true,
+      "serverSignIn": false,
+      "clientStatus": "success",
+      "clientData": null,
+      "clientSessionCalls": 1,
+      "recoverableErrors": [
+        "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Tooltip data-slot=\"tooltip\">\n      <Popper __scopePopper={{Popper:[...]}}>\n        <PopperProvider scope={{Popper:[...]}} anchor={null} onAnchorChange={function bound dispatchSetState} ...>\n          <TooltipProvider scope={undefined} contentId=\"radix-_R_0_\" setContentId={function bound dispatchSetState} ...>\n            <TooltipTrigger3 asChild={true}>\n              <TooltipTrigger data-slot=\"tooltip-tr...\" asChild={true}>\n                <PopperAnchor asChild={true} __scopePopper={{Popper:[...]}}>\n                  <Primitive.div data-radix-popper-side={undefined} data-radix-popper-align={undefined} asChild={true} ...>\n                    <Primitive.div.Slot data-radix-popper-side={undefined} data-radix-popper-align={undefined} ...>\n                      <Primitive.button aria-describedby={undefined} data-state=\"closed\" data-slot=\"tooltip-tr...\" ...>\n                        <Primitive.button.Slot aria-describedby={undefined} data-state=\"closed\" data-slot=\"tooltip-tr...\" ...>\n                          <Slot.Slot data-slot=\"sidebar-me...\" data-sidebar=\"menu-button\" data-size=\"default\" ...>\n                            <Link to=\"/login\" onClick={function} data-slot=\"sidebar-me...\" data-sidebar=\"menu-button\" ...>\n+                             <a\n+                               onClick={function}\n+                               data-slot=\"sidebar-menu-button\"\n+                               data-sidebar=\"menu-button\"\n+                               data-size=\"default\"\n+                               data-active={false}\n+                               className={\"peer/menu-button group/menu-button flex w-full items-center gap-2 overflo...\"}\n+                               aria-describedby={undefined}\n+                               data-state=\"closed\"\n+                               onPointerMove={function handleEvent}\n+                               onPointerLeave={function handleEvent}\n+                               onPointerDown={function handleEvent}\n+                               onFocus={function handleEvent}\n+                               onBlur={function handleEvent}\n+                               data-radix-popper-side={undefined}\n+                               data-radix-popper-align={undefined}\n+                               ref={function}\n+                               href=\"/login\"\n+                             >\n-                             <button\n-                               data-slot=\"sidebar-menu-button\"\n-                               data-sidebar=\"menu-button\"\n-                               data-size=\"lg\"\n-                               data-active=\"false\"\n-                               className={\"peer/menu-button group/menu-button flex w-full items-center gap-2 overflo...\"}\n-                               disabled=\"\"\n-                             >\n            ...\n"
+      ],
+      "clientSignIn": true
+    },
+    {
+      "version": "current",
+      "sessionSeededBeforeServerRender": true,
+      "serverStatus": "success",
+      "serverSessionCalls": 1,
+      "serverSkeleton": false,
+      "serverSignIn": true,
+      "clientStatus": "success",
+      "clientData": null,
+      "clientSessionCalls": 0,
+      "recoverableErrors": [],
+      "clientSignIn": true
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "owner": "F-BD",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "pathCount": 148,
+  "productionPaths": 128,
+  "testPaths": 20,
+  "reviewCounts": {
+    "reviewed-static": 109,
+    "reviewed-tested": 39
+  },
+  "historicalOnlyPaths": 4,
+  "mergePathPairs": 46,
+  "tests": {
+    "files": 20,
+    "total": 182,
+    "passed": 182,
+    "failed": 0,
+    "pending": 0,
+    "success": true,
+    "evidence": "F-tests-result.json (exact manifest subset; all 20 file assertionResults included per path)",
+    "snapshot": "ce321c885f67e40fec1c8598bb759790d89359c9"
+  },
+  "postRepairValidation": {
+    "mobilePoster": {
+      "files": 1,
+      "passed": 4,
+      "failed": 0,
+      "red": {
+        "passed": 2,
+        "failed": 2,
+        "input": "valid viewMode=images, original source and original translation values in ignored isolated copy"
+      },
+      "evidence": [
+        "mobile-valid-counterexample/before-result.json",
+        "mobile-valid-counterexample/evidence-metadata.json",
+        "F-BD-mobile-after-result.json"
+      ],
+      "historicalRedEvidence": {
+        "file": "F-BD-mobile-before-result.json",
+        "limit": "Initial test used invalid viewMode=image; retained as history only, superseded by valid-input isolated red."
+      },
+      "level": "Real exported React component and i18next runtime rendered to SSR with isolated router/query/virtualizer peripherals; no browser interaction."
+    },
+    "referencePhoto": {
+      "red": {
+        "passed": 3,
+        "failed": 3,
+        "evidence": "C-logs/reference-photo-red.json"
+      },
+      "green": {
+        "files": 5,
+        "passed": 37,
+        "failed": 0,
+        "evidence": "C-logs/reference-photo-green.json"
+      },
+      "commands": [
+        "bun run test src/cast/ui/talent/character-sheet-cost.test.ts src/billing/image-cost-hint.test.ts src/cast/look-sheet-face.test.ts src/cast/character-prompt.test.ts src/cast/server/cast-generation.test.ts --maxWorkers=4",
+        "bunx --no-install oxfmt --check src/cast/ui/talent/character-sheet-cost.ts src/cast/ui/talent/character-sheet-cost.test.ts src/cast/ui/talent/character-detail-view.tsx docs/architecture/character-looks.md",
+        "bunx --no-install oxlint --type-aware src/cast/ui/talent/character-sheet-cost.ts src/cast/ui/talent/character-sheet-cost.test.ts src/cast/ui/talent/character-detail-view.tsx"
+      ],
+      "lint": "exit 0; five existing preserve-manual-memoization warnings on unchanged callbacks in character-detail-view.tsx",
+      "evidenceLevel": "Real trigger draft builder, prompt reference construction and image cost resolver with synthetic rows and price cards. No real database/provider/browser."
+    }
+  },
+  "confirmedNewDefects": [
+    {
+      "id": "P2-character-reference-photo-hint",
+      "severity": "P2",
+      "status": "fixed-and-tested",
+      "path": "src/cast/ui/talent/character-detail-view.tsx",
+      "impact": "Default-look reference photo omitted from UI generate/edit quote and capability gate; no incorrect persisted charge demonstrated.",
+      "evidence": "C-logs/reference-photo-validation.json"
+    },
+    {
+      "id": "P2-mobile-empty-poster-badge",
+      "severity": "P2",
+      "status": "fixed-and-tested",
+      "path": "src/sequences/ui/eval/eval-sequences-mobile.tsx",
+      "impact": "Empty poster lost real model badge and displayed [object Object] in both UI languages.",
+      "evidence": [
+        "mobile-valid-counterexample/before-result.json",
+        "F-BD-mobile-after-result.json"
+      ]
+    }
+  ],
+  "decisions": [],
+  "unreviewedPaths": [],
+  "verificationLevels": [
+    "All production net diff hunks and related contracts reviewed statically",
+    "All 20 test diffs/assertions inspected and exact subset run results verified",
+    "46 merge/path raw remerge resolutions and four complete rename diffs inspected",
+    "Supplemental red/green local synthetic production-chain quote tests and real component SSR"
+  ],
+  "notRun": [
+    "Paid suppliers",
+    "Remote database",
+    "Actual Cloudflare Workflows restart",
+    "Browser acceptance by this owner",
+    "Real social publication",
+    "Real email",
+    "Deploy"
+  ],
+  "limits": [
+    "128 production paths are covered by static review; only explicitly mapped peer/supplemental tests justify reviewed-tested status.",
+    "182 starting-snapshot test cases and 4/37 supplemental cases have different scopes and must not be summed as a current full-suite execution.",
+    "SSR verifies markup and translation runtime but not focus, click navigation, responsive geometry, network downloads or media playback.",
+    "The 7 newly observed upstream mainline commits / 9 historical commits were not merged by P2."
+  ],
+  "artifacts": [
+    "review-F-BD.jsonl",
+    "behaviors-F-BD.md",
+    "merge-review-F-BD.jsonl",
+    "history-review-F-BD.jsonl",
+    "supplemental-F-BD.json",
+    "F-tests-result.json",
+    "mobile-valid-counterexample/before-result.json",
+    "mobile-valid-counterexample/evidence-metadata.json",
+    "F-BD-mobile-after-result.json",
+    "C-logs/reference-photo-validation.json"
+  ]
+}

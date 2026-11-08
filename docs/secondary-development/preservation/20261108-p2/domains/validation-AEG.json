@@ -1,0 +1,234 @@
+{
+  "owner": "AEG",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "p0Start": "a1dd140dabd381a35366a0d6404b3b4c55cdf700",
+  "pathCount": 259,
+  "reviewCounts": {
+    "reviewed-static": 211,
+    "reviewed-tested": 48,
+    "needs-fix": 0,
+    "needs-decision": 0,
+    "unreviewed": 0
+  },
+  "historicalOnlyPaths": 0,
+  "mergeGroups": [
+    {
+      "sha": "a13eca1d28b23ce398f5ba1765de2a58c7fcd7b1",
+      "resolutionPaths": [
+        ".agents/skills/react-patterns/SKILL.md",
+        ".codex/agents/qa-lead-tester.toml",
+        "AGENTS.md",
+        "docs/architecture/media-vias.md",
+        "docs/architecture/model-configuration.md",
+        "docs/architecture/oauth-server.md",
+        "docs/architecture/public-api-internals.md",
+        "docs/secondary-development/README.md",
+        "docs/secondary-development/text-channels.md",
+        "docs/secondary-development/upstream-merge-assessment-20261105.md",
+        "docs/secondary-development/upstream-merge-implementation-20261105.md",
+        "src/assistant/server/assistant-chat.test.ts",
+        "src/assistant/server/assistant-chat.ts",
+        "src/assistant/ui/assistant-panel.tsx",
+        "src/platform/i18n/locales/en/auth.json",
+        "src/platform/i18n/locales/en/mail.json",
+        "src/platform/i18n/locales/zh-CN/auth.json",
+        "src/platform/i18n/locales/zh-CN/mail.json",
+        "src/platform/server/api-v1/create.ts",
+        "src/platform/server/api-v1/input-schema.ts",
+        "src/platform/server/auth/config.ts",
+        "src/platform/server/db/scoped-workflow-models.test.ts",
+        "src/platform/server/db/scoped.ts",
+        "src/platform/server/emails/email-service.tsx",
+        "src/platform/server/emails/organization-invitation-email.tsx",
+        "src/platform/server/emails/organization-invitation-localization.test.tsx",
+        "src/platform/server/workflow/await-child.test.ts",
+        "src/platform/server/workflow/base-workflow.ts",
+        "src/platform/server/workflow/client.test.ts",
+        "src/platform/server/workflow/llm-auth-failure-source.ts",
+        "src/platform/server/workflow/llm-auth-failure.test.ts",
+        "src/platform/server/workflow/llm-auth-failure.ts",
+        "src/platform/ui/organization-select.tsx"
+      ],
+      "evidence": "AEG-remerge-a13eca1.diff",
+      "scope": "Production resolution hunks plus resulting current tests and net contract reviewed; historical assertions not independently re-executed."
+    },
+    {
+      "sha": "3b203b3b6c644ab29014ba3860c2667f53cd00da",
+      "resolutionPaths": [
+        "bun.lock",
+        "docs/architecture/assistant.md",
+        "docs/architecture/generation-plan.md",
+        "docs/architecture/media-vias.md",
+        "docs/architecture/model-configuration.md",
+        "docs/architecture/organization-characters.md",
+        "docs/architecture/scene-editor-cache.md",
+        "docs/secondary-development/README.md",
+        "docs/secondary-development/upstream-merge-implementation-20261107.md",
+        "e2e/fixtures/auth.fixture.ts",
+        "e2e/fixtures/base.ts",
+        "e2e/fixtures/test-utils.ts",
+        "e2e/start-webserver.ts",
+        "e2e/tests/localization.spec.ts",
+        "e2e/tests/manual-pipeline.spec.ts",
+        "e2e/tests/public-api.spec.ts",
+        "e2e/tests/sequence-flow.spec.ts",
+        "lefthook.yml",
+        "packages/stitch/src/cli.test.ts",
+        "playwright.config.ts",
+        "scripts/check-workflow-triggers.test.ts",
+        "scripts/check-workflow-triggers.ts",
+        "src/assistant/ui/assistant-connection.ts",
+        "src/platform/server/compliance/generation-gate.wiring.test.ts",
+        "src/platform/server/test/api-key-window.test.ts",
+        "src/platform/server/test/seed.ts",
+        "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "src/routes/api/test/user.ts",
+        "worker-configuration.d.ts"
+      ],
+      "evidence": "AEG-remerge-3b203b3.diff",
+      "scope": "Production resolution hunks plus resulting current tests and net contract reviewed; historical assertions not independently re-executed."
+    },
+    {
+      "sha": "111cf7dfd473957020147a22d6852e8147f949f3",
+      "resolutionPaths": [
+        "src/platform/log-context.test.ts",
+        "src/platform/middleware.fn.ts"
+      ],
+      "evidence": "AEG-remerge-111cf7d.diff",
+      "scope": "Production resolution hunks plus resulting current tests and net contract reviewed; historical assertions not independently re-executed."
+    },
+    {
+      "sha": "dd0edebb18e998c477ce7b7b50a20c693fb82e4d",
+      "resolutionPaths": [
+        "docs/architecture/oauth-server.md",
+        "src/platform/server/mcp/admin-sequence-access.test.ts",
+        "src/platform/server/mcp/auth-cookie.test.ts",
+        "src/platform/server/mcp/auth.test.ts",
+        "src/platform/server/mcp/auth.ts",
+        "src/platform/server/mcp/tool-context.ts"
+      ],
+      "evidence": "AEG-remerge-dd0edeb.diff",
+      "scope": "Production resolution hunks plus resulting current tests and net contract reviewed; historical assertions not independently re-executed."
+    },
+    {
+      "sha": "6e76621cc267674fe10e182d07f90104b1332cc0",
+      "resolutionPaths": ["docs/architecture/media-vias.md"],
+      "evidence": "AEG-remerge-6e76621.diff",
+      "scope": "Production resolution hunks plus resulting current tests and net contract reviewed; historical assertions not independently re-executed."
+    },
+    {
+      "sha": "a0d34aa9d414397e44b9939c6e1881da8b82de2a",
+      "resolutionPaths": ["AGENTS.md", "bun.lock", "worker-configuration.d.ts"],
+      "evidence": "AEG-remerge-a0d34aa.diff",
+      "scope": "Production resolution hunks plus resulting current tests and net contract reviewed; historical assertions not independently re-executed."
+    },
+    {
+      "sha": "4969bfcf2917cfb77eeac27f07808850de8b783d",
+      "resolutionPaths": [
+        "bun.lock",
+        "e2e/tests/organization.spec.ts",
+        "package.json",
+        "src/platform/server/mcp/auth-cookie.test.ts"
+      ],
+      "evidence": "AEG-remerge-4969bfc.diff",
+      "scope": "Production resolution hunks plus resulting current tests and net contract reviewed; historical assertions not independently re-executed."
+    },
+    {
+      "sha": "4cd5e9506c3b2e0f8d0e0099d35c56a04a6322f1",
+      "resolutionPaths": [
+        "docs/deployment/cloudflare.md",
+        "scripts/preview-db.test.ts",
+        "scripts/preview-db.ts"
+      ],
+      "evidence": "AEG-remerge-4cd5e95.diff",
+      "scope": "Production resolution hunks plus resulting current tests and net contract reviewed; historical assertions not independently re-executed."
+    }
+  ],
+  "tests": {
+    "files": 50,
+    "total": 817,
+    "passed": 817,
+    "failed": 0,
+    "pending": 0,
+    "runs": [
+      {
+        "name": "core-tests",
+        "files": 25,
+        "total": 424,
+        "passed": 424,
+        "failed": 0,
+        "pending": 0,
+        "success": true,
+        "evidence": "AEG-logs/core-tests.json"
+      },
+      {
+        "name": "assistant-engineering-tests",
+        "files": 23,
+        "total": 271,
+        "passed": 271,
+        "failed": 0,
+        "pending": 0,
+        "success": true,
+        "evidence": "AEG-logs/assistant-engineering-tests.json"
+      },
+      {
+        "name": "hooks-tests",
+        "files": 2,
+        "total": 122,
+        "passed": 122,
+        "failed": 0,
+        "pending": 0,
+        "success": true,
+        "evidence": "AEG-logs/hooks-tests.json"
+      }
+    ]
+  },
+  "integrity": {
+    "candidateBlobPairs": 1117,
+    "importCandidateEdges": 4541,
+    "blobMismatches": 0,
+    "unresolvedEdges": 0,
+    "unchangedKeyCoreFiles": 10,
+    "evidence": "AEG-logs/static-integrity.json"
+  },
+  "confirmedNewDefects": [],
+  "repairs": [
+    {
+      "path": "docs/architecture/model-configuration.md",
+      "status": "fixed",
+      "description": "P2 repaired a stale sentence: personal per-user space/wallet plan explicitly cancelled on 2026-11-06; organization wallet remains the reuse baseline, CNY pricing and platform-wide BYOK ban remain unimplemented."
+    },
+    {
+      "path": "docs/architecture/assistant.md",
+      "status": "fixed",
+      "description": "P2 repaired stale helper reference webSearchFor to the actual modelOptionsFor; no runtime edit."
+    }
+  ],
+  "repairChecks": [
+    "git diff --check -- docs/architecture/model-configuration.md docs/architecture/assistant.md: passed",
+    "node_modules/.bin/oxfmt.exe --check docs/architecture/model-configuration.md docs/architecture/assistant.md: passed"
+  ],
+  "verificationLevels": [
+    "static net diff, caller and production remerge inspection",
+    "real production modules/SDK/BetterAuth memory adapter with external I/O mocked",
+    "isolated actual SQLite through createTestDb and preview registry",
+    "local formatter/linter hook fixtures"
+  ],
+  "notRun": [
+    "live paid provider",
+    "remote/user database",
+    "real Cloudflare restart/replay",
+    "browser services by this owner",
+    "real email",
+    "push/deploy"
+  ],
+  "limits": [
+    "The 817 tests prove their exercised contracts, not complete runtime equivalence.",
+    "P0 inventory and direct-import edges are structurally verified candidates, not proof of transitive behavior.",
+    "Public API synthetic E2E burst uses 60 seconds; this is not one-second timing acceptance.",
+    "Historical secondary-development reports retain historical evidence labels and are not treated as fresh executed proof.",
+    "Cross-partition architecture descriptions depend on their owning audits for runtime evidence."
+  ],
+  "artifacts": ["review-AEG.jsonl", "behaviors-AEG.md", "validation-AEG.json"]
+}

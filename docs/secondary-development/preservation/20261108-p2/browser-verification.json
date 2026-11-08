@@ -1,0 +1,235 @@
+{
+  "server": "http://localhost:3000",
+  "serverOwnership": "Existing user service, retained throughout this acceptance run.",
+  "isolation": "Fresh Chromium contexts; no webServer/globalSetup, database seed, login submit, OTP, generation or payment.",
+  "source": "F-browser-after-ssr-result.json",
+  "sourceSha256": "63cea705fe0fb91c94bfe3f402ecfc5db9cf95ad957713fff0cd3a83e4a14fb1",
+  "stats": {
+    "startTime": "2026-11-08T13:28:00.866Z",
+    "duration": 34592.168,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "saved locale, original input, SSR and help anchors at 1440px",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 19595,
+          "errors": [],
+          "runtime": [
+            {
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              },
+              "errors": [],
+              "loginOverflow": 0,
+              "helpOverflow": 0,
+              "codeBlocks": 4,
+              "loginLanguageEntry": "excluded by user"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "saved locale, original input, SSR and help anchors at 390px",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 13193,
+          "errors": [],
+          "runtime": [
+            {
+              "viewport": {
+                "width": 390,
+                "height": 844
+              },
+              "errors": [],
+              "loginOverflow": 0,
+              "helpOverflow": 0,
+              "codeBlocks": 4,
+              "loginLanguageEntry": "excluded by user"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "browser/desktop-help-en.png",
+      "sha256": "c731e6c20b02fff64ef5d7222c131f726bd81147b13affa962feca000cd10cb4",
+      "visuallyInspected": true
+    },
+    {
+      "path": "browser/desktop-login-en.png",
+      "sha256": "2563b6d6a04c36e2d885505a6f9315456df1358a919ff9dbb6618747a69d22fb",
+      "visuallyInspected": true
+    },
+    {
+      "path": "browser/desktop-login-zh.png",
+      "sha256": "d6203b397d38573f76044040489882b5d1dcfcdb5a156c7db6adf50c96f054a3",
+      "visuallyInspected": true
+    },
+    {
+      "path": "browser/mobile-help-en.png",
+      "sha256": "bb2df7f1896411315459ef6f4ff9be267acb1415847ffdd166344ebe64746166",
+      "visuallyInspected": true
+    },
+    {
+      "path": "browser/mobile-login-en.png",
+      "sha256": "633ced7580af49bab8b21993603405741d5bd99127ecd38f62c0a742d1d49618",
+      "visuallyInspected": true
+    },
+    {
+      "path": "browser/mobile-login-zh.png",
+      "sha256": "3515b08f7fc63a3794d8de0c23d3584cb45e93189b8d488799d23cba3a5d6607",
+      "visuallyInspected": true
+    }
+  ],
+  "history": [
+    {
+      "source": "F-browser-result.json",
+      "sha256": "ad3c154eb24906369545cbc24c80106e15a518d897896caeadf26df8b099bf0a",
+      "meaning": "Initial isolated 3020 server startup timeout.",
+      "stats": {
+        "startTime": "2026-11-08T12:40:09.994Z",
+        "duration": 300395.103,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "runnerErrors": [
+        {
+          "message": "Error: Timed out waiting 300000ms from config.webServer.",
+          "stack": "Error: Timed out waiting 300000ms from config.webServer."
+        }
+      ]
+    },
+    {
+      "source": "F-browser-retry-result.json",
+      "sha256": "af2f24c859237c34a4f50be856a7b3b5a00c4240dca173754183598ef053b718",
+      "meaning": "Temporary launcher cwd error, corrected before retry.",
+      "stats": {
+        "startTime": "2026-11-08T12:47:26.545Z",
+        "duration": 95.62500000000006,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "runnerErrors": [
+        {
+          "message": "Error: Process from config.webServer was not able to start. Exit code: 1",
+          "stack": "Error: Process from config.webServer was not able to start. Exit code: 1"
+        }
+      ]
+    },
+    {
+      "source": "F-browser-retry2-result.json",
+      "sha256": "8a646c1ab089b8658736cee66007431e25782a3ce8faf5cad7462ca89235bc92",
+      "meaning": "Local isolated startup ECONNRESET.",
+      "stats": {
+        "startTime": "2026-11-08T12:47:43.462Z",
+        "duration": 154032.78,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "runnerErrors": [
+        {
+          "message": "Error: Process from config.webServer was not able to start. Exit code: 1",
+          "stack": "Error: Process from config.webServer was not able to start. Exit code: 1"
+        }
+      ]
+    },
+    {
+      "source": "F-browser-retry3-result.json",
+      "sha256": "635023657d745fa1e2cdc682c5752d5477eae89b8706f45dd90fdf31d968cab8",
+      "meaning": "Local isolated startup ECONNRESET.",
+      "stats": {
+        "startTime": "2026-11-08T12:53:44.679Z",
+        "duration": 164671.47,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "runnerErrors": [
+        {
+          "message": "Error: Process from config.webServer was not able to start. Exit code: 1",
+          "stack": "Error: Process from config.webServer was not able to start. Exit code: 1"
+        }
+      ]
+    },
+    {
+      "source": "F-existing-browser-result.json",
+      "sha256": "7c71528410f55c8bef39bbe8e859ef9cd99a7f395bd90eba7b03cfdd3735ba90",
+      "meaning": "Test incorrectly expected a login language switch; user excluded this scope. Not a product defect.",
+      "stats": {
+        "startTime": "2026-11-08T12:57:20.989Z",
+        "duration": 185080.29,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "runnerErrors": []
+    },
+    {
+      "source": "F-existing-browser-final-result.json",
+      "sha256": "62a9703ef94782199da73938b95f918d4d6af1f2460251afcaf9f61ed404efaa",
+      "meaning": "Desktop ERR_EMPTY_RESPONSE; mobile workflow passed.",
+      "stats": {
+        "startTime": "2026-11-08T13:05:15.026Z",
+        "duration": 123835.64700000001,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "runnerErrors": []
+    },
+    {
+      "source": "F-browser-desktop-retry-result.json",
+      "sha256": "7e3c8ce588689a931f1d3a00bbd7ad356aa548b7249018efc718e6b449196d6e",
+      "meaning": "Desktop workflow exposed sidebar hydration mismatch before repair.",
+      "stats": {
+        "startTime": "2026-11-08T13:09:35.095Z",
+        "duration": 21001.786999999997,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "runnerErrors": []
+    },
+    {
+      "source": "F-browser-after-ssr-result.json",
+      "sha256": "63cea705fe0fb91c94bfe3f402ecfc5db9cf95ad957713fff0cd3a83e4a14fb1",
+      "meaning": "Post-repair full desktop and mobile workflow passed.",
+      "stats": {
+        "startTime": "2026-11-08T13:28:00.866Z",
+        "duration": 34592.168,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "runnerErrors": []
+    }
+  ],
+  "sourceFiles": ["browser/check-source.txt", "browser/config-source.txt"],
+  "loginLanguageSwitch": "Excluded by user; login keeps default Chinese and existing saved locale.",
+  "scope": "Default locale with English browser preference; form input preservation; docs locale switch/reload; server html lang; source code blocks and #logs anchor; pageerrors and overflow at 1440x900 / 390x844.",
+  "limits": "Anonymous public pages only. No signed-in admin navigation or live creative generation in this browser run. All-page visual certification is not claimed."
+}
