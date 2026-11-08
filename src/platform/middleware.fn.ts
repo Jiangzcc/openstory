@@ -40,7 +40,12 @@ import {
   AuthorizationError,
   NotFoundError,
 } from './errors';
-import { errorHeadline, getLogger, toErrorPayload } from './logger';
+import {
+  errorHeadline,
+  getLogger,
+  toErrorPayload,
+  withContext,
+} from './logger';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
 import type { Sequence } from '@/platform/server/db/schema';
 import { getEnv } from '#env';
@@ -192,6 +197,28 @@ export const loggerMiddleware = createMiddleware({ type: 'function' }).server(
 );
 
 // ============================================================================
+// Log context (#2282)
+// ============================================================================
+
+/** PostHog's tracing headers (posthog-js `tracing_headers`), as log properties PostHog links a log to a person and a session by. */
+export function logContextFromHeaders(
+  headers: Headers
+): Record<string, string> {
+  const context: Record<string, string> = {};
+  const distinctId = headers.get('x-posthog-distinct-id');
+  const sessionId = headers.get('x-posthog-session-id');
+  if (distinctId) context.posthogDistinctId = distinctId;
+  if (sessionId) context.posthogSessionId = sessionId;
+  return context;
+}
+
+/** Request middleware: every record logged inside the request carries the browser's PostHog ids. */
+export const logContextMiddleware = createMiddleware().server(
+  ({ next, request }) =>
+    withContext(logContextFromHeaders(request.headers), () => next())
+);
+
+// ============================================================================
 // D1 read replication (#2233)
 // ============================================================================
 
@@ -337,21 +364,23 @@ export const authWithOrganizationRequestMiddleware = createMiddleware().server(
         );
       }
 
-      return await next({
-        context: {
-          user: principal.user,
-          session: principal.session,
-          oauth: principal.oauth,
-          promptLocale: new URL(request.url).pathname.startsWith('/api/v1')
-            ? EXTERNAL_PROMPT_LOCALE
-            : promptLocaleFromRequest(request),
-          organizationId: organization.organizationId,
-          scopedDb: createScopedDb(
-            organization.organizationId,
-            principal.user.id
-          ),
-        },
-      });
+      return await withContext({ userId: principal.user.id }, () =>
+        next({
+          context: {
+            user: principal.user,
+            session: principal.session,
+            oauth: principal.oauth,
+            promptLocale: new URL(request.url).pathname.startsWith('/api/v1')
+              ? EXTERNAL_PROMPT_LOCALE
+              : promptLocaleFromRequest(request),
+            organizationId: organization.organizationId,
+            scopedDb: createScopedDb(
+              organization.organizationId,
+              principal.user.id
+            ),
+          },
+        })
+      );
     } finally {
       await scheduleFlushAnalytics();
     }
@@ -372,12 +401,14 @@ export const authMiddleware = createMiddleware({ type: 'function' }).server(
       throw new AuthenticationError('Authentication required');
     }
 
-    return next({
-      context: {
-        user: session.user,
-        session,
-      },
-    });
+    return withContext({ userId: session.user.id }, () =>
+      next({
+        context: {
+          user: session.user,
+          session,
+        },
+      })
+    );
   }
 );
 
