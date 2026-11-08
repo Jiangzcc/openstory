@@ -374,7 +374,7 @@
   "Music URL, if included": "Music URL, if included",
   "only a character this prompt names. An unwritten prompt reads the scene continuity tags (#2012)": "only a character this prompt names. An unwritten prompt reads the scene continuity tags (#2012)",
   "the clothing of the look this scene picks for a character the prompt names. Another look of the same character moves nothing (#2015)": "the clothing of the look this scene picks for a character the prompt names. Another look of the same character moves nothing (#2015)",
-  "only a location this prompt names, else the scene slugline. An unwritten prompt also reads the scene extract (#2012)": "only a location this prompt names, else the scene slugline. An unwritten prompt also reads the scene extract (#2012)",
+  "only a location this prompt names among the scene's tagged rooms, else those rooms. An unwritten prompt also reads the scene extract (#2012, #2289)": "only a location this prompt names among the scene's tagged rooms, else those rooms. An unwritten prompt also reads the scene extract (#2012, #2289)",
   "an element this prompt names. A motion prompt with a start frame adds the scene-tagged elements too (#2012)": "an element this prompt names. A motion prompt with a start frame adds the scene-tagged elements too (#2012)",
   "checked against the model that wrote the prompt; a switch applies to the next generation": "checked against the model that wrote the prompt; a switch applies to the next generation",
   "the auto style derives a config from the script at the Script stage": "the auto style derives a config from the script at the Script stage",

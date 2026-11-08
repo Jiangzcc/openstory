@@ -374,7 +374,7 @@
   "Music URL, if included": "包含音乐时的音乐网址",
   "only a character this prompt names. An unwritten prompt reads the scene continuity tags (#2012)": "只读取提示词点名的角色；未编写提示词时读取场景连续性标签（#2012）。",
   "the clothing of the look this scene picks for a character the prompt names. Another look of the same character moves nothing (#2015)": "本场景为提示词所引用角色选定造型的服装；同角色的其他造型变化不影响此处（#2015）。",
-  "only a location this prompt names, else the scene slugline. An unwritten prompt also reads the scene extract (#2012)": "仅提示词点名的地点，否则使用场景标题；未编写提示词时还读取场景摘录（#2012）。",
+  "only a location this prompt names among the scene's tagged rooms, else those rooms. An unwritten prompt also reads the scene extract (#2012, #2289)": "仅使用提示词在场景标记的房间中点名的地点，否则使用这些房间；未编写提示词时还读取场景摘录（#2012、#2289）。",
   "an element this prompt names. A motion prompt with a start frame adds the scene-tagged elements too (#2012)": "提示词点名的元素；动态提示词使用首帧时还包含场景标记的元素（#2012）。",
   "checked against the model that wrote the prompt; a switch applies to the next generation": "与实际编写提示词的模型比较；切换影响下次生成。",
   "the auto style derives a config from the script at the Script stage": "自动风格在剧本阶段从剧本派生配置。",
