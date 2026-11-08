@@ -28,7 +28,7 @@
 - 当前仓库的 Codex 入口、角色、技能和兼容差异见 [.codex/README.md](.codex/README.md)；执行任务时遵守 [.codex/project-rules.md](.codex/project-rules.md)。
 - 迁移内容仅保存在本项目 .codex/ 与 .agents/skills/；原 .claude/ 保持不变，不将项目配置安装到全局目录。
 - 项目智能体位于 .codex/agents/*.toml，继承父会话模型和权限；按明确分工并行，主智能体负责整合与验证。
-- react-patterns、update-model-versions 与既有 sd25-pe 位于 .agents/skills/；按任务加载，不因技能存在自动执行付费或远程操作。
+- react-patterns、update-model-versions、sync-upstream 与既有 sd25-pe 位于 .agents/skills/；按任务加载，不因技能存在自动执行付费或远程操作。上游逐项评估与合入可使用 sync-upstream，每轮从当前差异发现二开功能，保留阶段授权及本轮验证记录。
 - .codex/hooks.json 保留原规则的提醒/拒绝语义，并适配 Codex 的 Bash/apply_patch 事件；须由 Codex 正常发现并信任后生效，文件存在不等于本会话已加载。
 
 AI-powered video sequence platform built with TanStack Start, deployed to Cloudflare Workers.

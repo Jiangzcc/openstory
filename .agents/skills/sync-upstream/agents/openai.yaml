@@ -1,0 +1,4 @@
+interface:
+  display_name: '上游逐项同步'
+  short_description: '逐项评估并合入上游更新，保留二开边界、验证证据和环境恢复记录'
+  default_prompt: '使用 $sync-upstream 评估上游新增提交，并在已有合入授权时逐项实施、验证和记录。'

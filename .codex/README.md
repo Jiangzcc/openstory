@@ -39,8 +39,9 @@
 | react-patterns        | 从 .claude/skills/react-patterns 迁移，核对现行 React 与 TanStack Query 调用                                             |
 | update-model-versions | 从 .claude/skills/update-model-versions 迁移，核对当前路径、脚本与工具能力                                               |
 | sd25-pe               | 原 .claude/skills/sd25-pe 指向 ../../.agents/skills/sd25-pe；目标本来就在 Codex 项目技能目录，直接复用，不重复复制或修改 |
+| sync-upstream         | 动态识别当前二开与三方影响，逐项评估、合入、验证及恢复，提供只读 Git 检查，不固定业务清单或技术栈                        |
 
-可通过 $react-patterns、$update-model-versions、$sd25-pe 明确调用，也允许 Codex 根据技能描述自动选择。技能不会默认运行付费模型探测、提交、推送或远程部署。
+可通过 $react-patterns、$update-model-versions、$sd25-pe、[$sync-upstream](../.agents/skills/sync-upstream/SKILL.md) 明确调用，也允许 Codex 根据技能描述自动选择。上游同步技能支持“先评估”和“开始合入”两个阶段；操作范围仍由当前用户授权决定。技能不会默认运行付费模型探测、提交、推送或远程部署。
 
 ## 规则与 hooks 映射
 
