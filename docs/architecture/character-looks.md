@@ -222,6 +222,12 @@ sheet.
   every sheet claim (`characters.setReferencePhoto`). A payload from before
   the field fails at the top of `CharacterSheetWorkflow`
   (`assertQueuedWithReferencePhoto`).
+- **The panel's price hint** follows those same references: a photographed
+  default look quotes one image edit; an unphotographed default quotes image
+  generation. A non-default look quotes the selected default sheet, never the
+  original photo. The UI bridge is `character-sheet-cost.ts`; its regression
+  tests compare the hint with the real trigger draft and prompt references,
+  including an edit-only configured model.
 - **One run makes every look.** In the plan the default sheet is the look's
   upstream, with the ordinary rules: a default this run makes puts the look
   in the same run (a look that was done goes stale by cascade, since its

@@ -66,6 +66,7 @@ import { useImageCostHint } from '@/billing/ui/use-image-cost-hint';
 import { useSequence } from '@/sequences/ui/use-sequences';
 import type { TextToImageModel } from '@/models/models';
 import { resolveSheetImageModel } from '@/cast/sheet-image-model';
+import { characterSheetReferenceImageCount } from './character-sheet-cost';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Loader2, Mic, RefreshCw, Trash2, User } from 'lucide-react';
@@ -412,9 +413,11 @@ export const CharacterDetailView: React.FC<CharacterDetailViewProps> = ({
     useImageCostHint({
       model: selectedSheetModel,
       aspectRatio: '16:9',
-      referenceImageCount: activeLook
-        ? Number(!activeLook.isDefault && faceState === 'ready')
-        : undefined,
+      referenceImageCount: characterSheetReferenceImageCount(
+        activeLook,
+        character?.referencePhotoUrl,
+        faceState
+      ),
     });
 
   const handleRegenerateSheet = useCallback(() => {
