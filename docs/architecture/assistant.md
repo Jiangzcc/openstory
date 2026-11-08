@@ -66,7 +66,7 @@ stored prompts keep their actual content. See
    request's country the way a sequence's is. It runs on the organization's `resolveLlmKey`.
    `requireCredits` runs first; a platform key bills each model iteration
    as its usage is reported, with `llmCostFromUsage(usage, model,
-llmKey.via)`, under a server-minted key per iteration. An organization key bills
+   llmKey.via)`, under a server-minted key per iteration. An organization key bills
    nothing.
 4. `withPersistence` writes the transcript, the run and any interrupt to
    `assistant_messages` / `assistant_runs` / `assistant_interrupts` through
