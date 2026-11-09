@@ -48,12 +48,9 @@ import {
 import type { ResolvedLlmKey } from './db/api-keys';
 import { aiDebugLogger } from '@/platform/server/ai/ai-debug-logger';
 import { generateId } from '@/platform/id';
-import {
-  createAdapter,
-  resolveNativeGeminiModel,
-  resolveNativeGrokModel,
-  type LlmKeyInfo,
-} from './create-adapter';
+import { createAdapter, type LlmKeyInfo } from './create-adapter';
+import { resolveLlmCallRoute } from './llm-call-route';
+import type { LlmCallRoute } from './llm-call-route';
 import { NonRetryableError } from 'cloudflare:workflows';
 import {
   CONTENT_REJECTION_EVENT,
@@ -698,18 +695,6 @@ function buildModelOptions(params: LLMRequestParams) {
   };
 }
 
-/** Which API a chat call routes to — decided once in {@link baseChatOptions}
- *  so the adapter, options object, and tools always agree. */
-type ChatRoute = 'xai' | 'google' | 'openrouter' | 'llmtr' | 'compatible';
-
-function resolveChatRoute(params: LLMRequestParams): ChatRoute {
-  if (params.apiKey?.via === 'compatible') return 'compatible';
-  if (resolveNativeGrokModel(params.model, params.apiKey)) return 'xai';
-  if (resolveNativeGeminiModel(params.model, params.apiKey)) return 'google';
-  if (params.apiKey?.via === 'llmtr') return 'llmtr';
-  return 'openrouter';
-}
-
 /**
  * Assemble the `tools` array for `chat()`. Currently only the provider's
  * web-search server tool, gated on `params.webSearch`. Returns `undefined`
@@ -720,7 +705,7 @@ function resolveChatRoute(params: LLMRequestParams): ChatRoute {
  * failing the call. LLMTR is OpenAI Chat Completions and does not run
  * OpenRouter server tools (`openrouter:web_search`).
  */
-function buildTools(params: LLMRequestParams, route: ChatRoute) {
+function buildTools(params: LLMRequestParams, route: LlmCallRoute['kind']) {
   if (!params.webSearch) return undefined;
   if (route === 'llmtr' || route === 'compatible') return undefined;
   if (route === 'xai') return [grokWebSearchTool()];
@@ -772,20 +757,20 @@ export function structuredOutputSchemaBytes(schema: z.ZodType): number {
  *  options object, and the tools can't disagree about the route. */
 function baseChatOptions(params: LLMRequestParams) {
   const { systemPrompts, messages } = convertMessages(params.messages);
-  const route = resolveChatRoute(params);
-  const tools = buildTools(params, route);
+  const route = resolveLlmCallRoute(params.model, params.apiKey);
+  const tools = buildTools(params, route.kind);
   const modelOptions =
-    params.apiKey?.via === 'compatible'
-      ? configuredTextModelOptions(params.apiKey.route, params)
-      : route === 'xai'
+    route.kind === 'compatible'
+      ? configuredTextModelOptions(route.route, params)
+      : route.kind === 'xai'
         ? buildGrokModelOptions(params)
-        : route === 'google'
+        : route.kind === 'google'
           ? buildGeminiModelOptions(params)
-          : route === 'llmtr'
+          : route.kind === 'llmtr'
             ? buildLlmtrModelOptions(params)
             : buildModelOptions(params);
   return {
-    route,
+    route: route.kind,
     adapter: createAdapter(params.model, params.apiKey),
     messages,
     systemPrompts,

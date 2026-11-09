@@ -1,0 +1,413 @@
+{
+  "date": "2026-11-09",
+  "sourceHead": "a5f09212113edbfef66d9b5d7182100315a3c72b",
+  "upstreamBaseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": "P3 second candidate, one responsibility: classify actual LLM API shape for ordinary/streamed and durable option builders.",
+  "decision": {
+    "status": "implemented-api-route-classification-only",
+    "metrics": {
+      "classificationRuleSetsBefore": 2,
+      "classificationRuleSetsAfter": 1,
+      "modifiedExecutorFiles": 2,
+      "optionBuildersBefore": 2,
+      "optionBuildersAfter": 2,
+      "newProductionModules": 1
+    },
+    "preserved": "Original executors, native protocols, key/source/via resolution, capability checks, option defaults, usage, billing and recovery. API shape does not replace credential via.",
+    "phaseStatus": "This substep is complete; P3 as a whole is not claimed complete."
+  },
+  "environment": {
+    "runtime": "Local Node/Vitest",
+    "real": [
+      "callLLM/callLLMStream/durableLLMCallCf/durableStreamingLLMCallCf",
+      "API classification, native resolvers, option builders, SDK adapter factories and cost conversion",
+      "Existing configured protocol suite uses real chat, SDK and fragmented SSE parsing over mocked HTTP"
+    ],
+    "mocked": [
+      "SDK execution events in the new matrix",
+      "WorkflowStep executes callbacks inline, without checkpoints",
+      "Workflow credentials, billing deduction, prompt lookup, observability and realtime",
+      "Synthetic keys and .invalid URLs; fetch rejects network in the new matrix"
+    ],
+    "notExecuted": [
+      "Workerd/Cloudflare workflow engine replay",
+      "Real providers, provider bills, remote D1, real emails, deployment",
+      "Browser/E2E or production build for this refactor"
+    ]
+  },
+  "runs": [
+    {
+      "id": "baseline",
+      "command": "bun run test src/models/server/llm-client.test.ts src/models/server/llm-call-helper.test.ts src/models/server/llm-call-helper-region.test.ts src/models/server/llm-call-helper.prompt-locale.test.ts src/models/server/configured-text.test.ts src/models/server/configured-text-call.test.ts src/models/server/configured-text-protocol.test.ts src/models/server/llm-auth-failure-stream.test.ts src/models/server/llm-key-routing.test.ts src/models/server/create-adapter.test.ts src/models/server/db/configured-text-routing.test.ts src/models/google-region.test.ts src/models/region-policy.test.ts \"--pool=threads\" --no-file-parallelism \"--maxWorkers=1\" --no-cache --no-fsModuleCache \"--reporter=json\" \"--outputFile=.tmp/p3-routing-20261109/baseline.json\"",
+      "report": ".tmp/p3-routing-20261109/baseline.json",
+      "reportSha256": "2c1cda1957d1cff8dfef1623dd66c4baf215cff5c26a781543a070177b5c26b5",
+      "sourceBinding": "sourceHead + beforeSources",
+      "success": true,
+      "counts": {
+        "files": 13,
+        "total": 340,
+        "passed": 340,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 76362.05322265625,
+      "failures": []
+    },
+    {
+      "id": "after-existing",
+      "command": "bun run test src/models/server/llm-client.test.ts src/models/server/llm-call-helper.test.ts src/models/server/llm-call-helper-region.test.ts src/models/server/llm-call-helper.prompt-locale.test.ts src/models/server/configured-text.test.ts src/models/server/configured-text-call.test.ts src/models/server/configured-text-protocol.test.ts src/models/server/llm-auth-failure-stream.test.ts src/models/server/llm-key-routing.test.ts src/models/server/create-adapter.test.ts src/models/server/db/configured-text-routing.test.ts src/models/google-region.test.ts src/models/region-policy.test.ts \"--pool=threads\" --no-file-parallelism \"--maxWorkers=1\" --no-cache --no-fsModuleCache \"--reporter=json\" \"--outputFile=.tmp/p3-routing-20261109/after-existing.json\"",
+      "report": ".tmp/p3-routing-20261109/after-existing.json",
+      "reportSha256": "c5c322203223cf01a9810d57142289e8f4f515999f630ca3bd1d2472cc4b7e68",
+      "sourceBinding": "Intermediate run; final acceptance uses the final integrated report and finalSources.",
+      "success": true,
+      "counts": {
+        "files": 13,
+        "total": 340,
+        "passed": 340,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 75836.15209960938,
+      "failures": []
+    },
+    {
+      "id": "matrix-first",
+      "command": "bun run test src/models/server/llm-call-routing.test.ts \"--pool=threads\" --no-file-parallelism \"--maxWorkers=1\" --no-cache --no-fsModuleCache \"--reporter=json\" \"--outputFile=.tmp/p3-routing-20261109/matrix-first.json\"",
+      "report": ".tmp/p3-routing-20261109/matrix-first.json",
+      "reportSha256": "c7fcadb739329fd010fa639a107f80aa67ca640f0d485d0d6d6faf54d4e47405",
+      "sourceBinding": "Intermediate run; final acceptance uses the final integrated report and finalSources.",
+      "success": true,
+      "counts": {
+        "files": 1,
+        "total": 40,
+        "passed": 40,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 5947.93701171875,
+      "failures": [],
+      "superseded": "All 40 passed; four duplicated dormant-binding cases on client-only entries were removed because those entries do not receive the Workflow models snapshot. Compatible labels were corrected."
+    },
+    {
+      "id": "matrix-final",
+      "command": "bun run test src/models/server/llm-call-routing.test.ts \"--pool=threads\" --no-file-parallelism \"--maxWorkers=1\" --no-cache --no-fsModuleCache \"--reporter=json\" \"--outputFile=.tmp/p3-routing-20261109/matrix-final.json\"",
+      "report": ".tmp/p3-routing-20261109/matrix-final.json",
+      "reportSha256": "68e4be08dcbcf619d0679db5ec2576edd6647a5533254d92fabd1ff705cd5ee7",
+      "sourceBinding": "Intermediate run; final acceptance uses the final integrated report and finalSources.",
+      "success": true,
+      "counts": {
+        "files": 1,
+        "total": 36,
+        "passed": 36,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 9708.664306640625,
+      "failures": []
+    },
+    {
+      "id": "final",
+      "command": "bun run test src/models/server/llm-client.test.ts src/models/server/llm-call-helper.test.ts src/models/server/llm-call-helper-region.test.ts src/models/server/llm-call-helper.prompt-locale.test.ts src/models/server/configured-text.test.ts src/models/server/configured-text-call.test.ts src/models/server/configured-text-protocol.test.ts src/models/server/llm-auth-failure-stream.test.ts src/models/server/llm-key-routing.test.ts src/models/server/create-adapter.test.ts src/models/server/db/configured-text-routing.test.ts src/models/google-region.test.ts src/models/region-policy.test.ts src/models/server/llm-call-routing.test.ts \"--pool=threads\" --no-file-parallelism \"--maxWorkers=1\" --no-cache --no-fsModuleCache \"--reporter=json\" \"--outputFile=.tmp/p3-routing-20261109/final.json\"",
+      "report": ".tmp/p3-routing-20261109/final.json",
+      "reportSha256": "c8b2a85d917999473577abe9cce478ff0d0b2cf129dfde58718dad4449ec5d18",
+      "sourceBinding": "finalSources; frozen before run and verified after run",
+      "success": true,
+      "counts": {
+        "files": 14,
+        "total": 376,
+        "passed": 376,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 73905,
+      "failures": []
+    }
+  ],
+  "finalAcceptance": {
+    "run": "final",
+    "files": 14,
+    "total": 376,
+    "passed": 376,
+    "failed": 0,
+    "pending": 0,
+    "todo": 0,
+    "counting": "One final integrated run, no addition of earlier attempts or P2/P3-context history.",
+    "perFile": [
+      {
+        "file": "src/models/google-region.test.ts",
+        "tests": 15,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/region-policy.test.ts",
+        "tests": 17,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/configured-text-call.test.ts",
+        "tests": 83,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/configured-text-protocol.test.ts",
+        "tests": 20,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/configured-text.test.ts",
+        "tests": 11,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/create-adapter.test.ts",
+        "tests": 33,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/llm-auth-failure-stream.test.ts",
+        "tests": 3,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/llm-call-helper-region.test.ts",
+        "tests": 20,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/llm-call-helper.prompt-locale.test.ts",
+        "tests": 4,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/llm-call-helper.test.ts",
+        "tests": 30,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/llm-call-routing.test.ts",
+        "tests": 36,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/llm-client.test.ts",
+        "tests": 82,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/llm-key-routing.test.ts",
+        "tests": 15,
+        "status": "passed"
+      },
+      {
+        "file": "src/models/server/db/configured-text-routing.test.ts",
+        "tests": 7,
+        "status": "passed"
+      }
+    ],
+    "newCases": [
+      "native Grok / callLLM / no administrator routes",
+      "native Grok / callLLMStream / no administrator routes",
+      "native Grok / durableLLMCallCf / no administrator routes",
+      "native Grok / durableStreamingLLMCallCf / no administrator routes",
+      "native Gemini / callLLM / no administrator routes",
+      "native Gemini / callLLMStream / no administrator routes",
+      "native Gemini / durableLLMCallCf / no administrator routes",
+      "native Gemini / durableStreamingLLMCallCf / no administrator routes",
+      "Grok with organization OpenRouter / callLLM / no administrator routes",
+      "Grok with organization OpenRouter / callLLMStream / no administrator routes",
+      "Grok with organization OpenRouter / durableLLMCallCf / no administrator routes",
+      "Grok with organization OpenRouter / durableLLMCallCf / dormant administrator binding",
+      "Grok with organization OpenRouter / durableStreamingLLMCallCf / no administrator routes",
+      "Grok with organization OpenRouter / durableStreamingLLMCallCf / dormant administrator binding",
+      "Gemini with organization fal / callLLM / no administrator routes",
+      "Gemini with organization fal / callLLMStream / no administrator routes",
+      "Gemini with organization fal / durableLLMCallCf / no administrator routes",
+      "Gemini with organization fal / durableLLMCallCf / dormant administrator binding",
+      "Gemini with organization fal / durableStreamingLLMCallCf / no administrator routes",
+      "Gemini with organization fal / durableStreamingLLMCallCf / dormant administrator binding",
+      "LLMTR Chat Completions / callLLM / no administrator routes",
+      "LLMTR Chat Completions / callLLMStream / no administrator routes",
+      "LLMTR Chat Completions / durableLLMCallCf / no administrator routes",
+      "LLMTR Chat Completions / durableStreamingLLMCallCf / no administrator routes",
+      "LLMTR Responses / callLLM / no administrator routes",
+      "LLMTR Responses / callLLMStream / no administrator routes",
+      "LLMTR Responses / durableLLMCallCf / no administrator routes",
+      "LLMTR Responses / durableStreamingLLMCallCf / no administrator routes",
+      "compatible Grok Chat Completions / callLLM / captured compatible route",
+      "compatible Grok Chat Completions / callLLMStream / captured compatible route",
+      "compatible Grok Chat Completions / durableLLMCallCf / captured compatible route",
+      "compatible Grok Chat Completions / durableStreamingLLMCallCf / captured compatible route",
+      "compatible Gemini Responses / callLLM / captured compatible route",
+      "compatible Gemini Responses / callLLMStream / captured compatible route",
+      "compatible Gemini Responses / durableLLMCallCf / captured compatible route",
+      "compatible Gemini Responses / durableStreamingLLMCallCf / captured compatible route"
+    ]
+  },
+  "beforeSources": {
+    "src/models/server/create-adapter.ts": "d8ea4b1e37feef1b4e4c6dd4131c76a68976778d1900aa25b4aed5dfb63a147b",
+    "src/models/server/llm-client.ts": "44dccb3ac3b2c177eaa5598e7e922a6bf8c99ef87ecef66381f19c33bbf543b2",
+    "src/models/server/llm-call-helper.ts": "34df36c686d1c109d205765579fdaa190d21890627bd5b4fc9c94dafdc352c80",
+    "src/models/google-region.test.ts": "b51e8225158e60083eb47ee8759cdb7961cb792dc1ca3a88ee72c5f98d1bece4",
+    "src/models/region-policy.test.ts": "28643037c1c699b6a155abb5059e0186dbf30cebaff7682bdc62191409fbad98",
+    "src/models/server/configured-text-call.test.ts": "29a534f24602bc1cedce8fcc437b296760f3e055c49395532fb486eebff8fad5",
+    "src/models/server/configured-text-protocol.test.ts": "50d2596a2c5e4b13024acb759e4577a10fdff9f9c0d1b0c0a9f6151d41bbe98c",
+    "src/models/server/configured-text.test.ts": "50d24e4538e45e87f49be8069ac879244609a35eade8f3d02b113a2703b6a8b4",
+    "src/models/server/create-adapter.test.ts": "ba803bbb426c2de4e216ace0ef8081b8d39a2393ede31759b10120d36f8b5da6",
+    "src/models/server/llm-auth-failure-stream.test.ts": "9181eab9334bc1cec86cace518c7b888394464fd122795ba28289ef9c1822a78",
+    "src/models/server/llm-call-helper-region.test.ts": "17fb47edfec730bd053701bcc6d6f7cacd057eb81db236f65493da4f42583d3f",
+    "src/models/server/llm-call-helper.prompt-locale.test.ts": "44a9d8e5d85872bcc224d65512e1942229afbb595160b1b7c84bc299f026cf4c",
+    "src/models/server/llm-call-helper.test.ts": "5025a7ca383be20a2a6226fc3584f1863bdd15a1341da79c7455e4712d547180",
+    "src/models/server/llm-client.test.ts": "481a0813f469dee87eb267a4ab162b85a1efee1a95f9db09011b65761a30c22f",
+    "src/models/server/llm-key-routing.test.ts": "a5a73f8e13438d957d1b619e0e8b7e820cecdd7404d972a803b03c8103ea5c52",
+    "src/models/server/db/configured-text-routing.test.ts": "6ae672f44787e1a50f249f10e5dca3160f42241ff9c70a15c115c595c5d33674"
+  },
+  "finalSources": {
+    "src/models/server/llm-call-route.ts": "c3da3c08ebe70818721e7c2e7bd676abdd791b0f2e24cb65620e007704912cba",
+    "src/models/server/llm-client.ts": "82b25d1b24f4928f39cf99dc67331749dcf361b320650326c05362b437f84d92",
+    "src/models/server/llm-call-helper.ts": "506551229ae7e2d20ba64bbc73ae9e31ff09393a588b705838e8d6cf5d94ac22",
+    "src/models/server/llm-call-routing.test.ts": "db54c8eb26060bbd23a51430347f1b87fea02ba956d72344d45ff65e52409ba9",
+    "src/models/server/create-adapter.ts": "d8ea4b1e37feef1b4e4c6dd4131c76a68976778d1900aa25b4aed5dfb63a147b",
+    "src/models/google-region.test.ts": "b51e8225158e60083eb47ee8759cdb7961cb792dc1ca3a88ee72c5f98d1bece4",
+    "src/models/region-policy.test.ts": "28643037c1c699b6a155abb5059e0186dbf30cebaff7682bdc62191409fbad98",
+    "src/models/server/configured-text-call.test.ts": "29a534f24602bc1cedce8fcc437b296760f3e055c49395532fb486eebff8fad5",
+    "src/models/server/configured-text-protocol.test.ts": "50d2596a2c5e4b13024acb759e4577a10fdff9f9c0d1b0c0a9f6151d41bbe98c",
+    "src/models/server/configured-text.test.ts": "50d24e4538e45e87f49be8069ac879244609a35eade8f3d02b113a2703b6a8b4",
+    "src/models/server/create-adapter.test.ts": "ba803bbb426c2de4e216ace0ef8081b8d39a2393ede31759b10120d36f8b5da6",
+    "src/models/server/llm-auth-failure-stream.test.ts": "9181eab9334bc1cec86cace518c7b888394464fd122795ba28289ef9c1822a78",
+    "src/models/server/llm-call-helper-region.test.ts": "17fb47edfec730bd053701bcc6d6f7cacd057eb81db236f65493da4f42583d3f",
+    "src/models/server/llm-call-helper.prompt-locale.test.ts": "44a9d8e5d85872bcc224d65512e1942229afbb595160b1b7c84bc299f026cf4c",
+    "src/models/server/llm-call-helper.test.ts": "5025a7ca383be20a2a6226fc3584f1863bdd15a1341da79c7455e4712d547180",
+    "src/models/server/llm-client.test.ts": "481a0813f469dee87eb267a4ab162b85a1efee1a95f9db09011b65761a30c22f",
+    "src/models/server/llm-key-routing.test.ts": "a5a73f8e13438d957d1b619e0e8b7e820cecdd7404d972a803b03c8103ea5c52",
+    "src/models/server/db/configured-text-routing.test.ts": "6ae672f44787e1a50f249f10e5dca3160f42241ff9c70a15c115c595c5d33674"
+  },
+  "originalTests": {
+    "files": 13,
+    "cases": 340,
+    "sourceBytesUnchanged": true,
+    "registeredNamesPreserved": true,
+    "beforeInventorySha256": "c492ef8158b6aa76a24ef5fdad3b4b918c2eaeecd96e2da89dccd0ecbe0c2550",
+    "finalOriginalInventorySha256": "c492ef8158b6aa76a24ef5fdad3b4b918c2eaeecd96e2da89dccd0ecbe0c2550"
+  },
+  "productionFunctionPreservation": {
+    "method": "Babel TypeScript AST comparison; locations, formatting and comments omitted.",
+    "files": {
+      "src/models/server/llm-client.ts": {
+        "changed": ["buildTools", "baseChatOptions"],
+        "removed": ["resolveChatRoute"],
+        "unchanged": [
+          "isTokenUsage",
+          "usageHasCost",
+          "preferUsage",
+          "createUsageCapture",
+          "llmCostFromUsage",
+          "missingLlmCost",
+          "modelSupportsStructuredOutputs",
+          "isForcedGlmReasoningModel",
+          "toGlmReasoningEffort",
+          "glmReasoningEffortForCall",
+          "systemContentToString",
+          "convertMessages",
+          "buildGrokModelOptions",
+          "toGrokReasoningEffort",
+          "toGeminiThinkingLevel",
+          "buildGeminiModelOptions",
+          "toLlmtrReasoningEffort",
+          "buildLlmtrModelOptions",
+          "modelAllowsClassicSampling",
+          "openRouterProviderForModel",
+          "buildModelOptions",
+          "validateStructuredOutputSupport",
+          "structuredOutputSchemaBytes",
+          "previewContent",
+          "logOutgoingPrompt",
+          "callLLM",
+          "extractRunError",
+          "extractProviderErrorDetail",
+          "formatRunErrorMessage",
+          "regionRetriesFor",
+          "throwNotedRunError",
+          "payerOf",
+          "callLLMStream",
+          "callLLMStreamOnce"
+        ]
+      },
+      "src/models/server/llm-call-helper.ts": {
+        "changed": ["chatModelOptionsForCall"],
+        "removed": [],
+        "unchanged": [
+          "shouldInlineVisionForVia",
+          "resolveVisionImageSources",
+          "buildChatMessages",
+          "reasoningModelOptions",
+          "assertStructuredOutput",
+          "resolveCallKey",
+          "withCallRoute",
+          "durableLLMCallCf",
+          "durableStreamingLLMCallCf"
+        ]
+      }
+    }
+  },
+  "quality": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed",
+      "exitCode": 0,
+      "log": ".tmp/p3-routing-20261109/typecheck.log",
+      "logSha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+    },
+    "targetedTypeAwareLint": {
+      "command": "bunx --no-install oxlint --type-aware src/models/server/llm-call-route.ts src/models/server/llm-client.ts src/models/server/llm-call-helper.ts src/models/server/llm-call-routing.test.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "log": ".tmp/p3-routing-20261109/lint.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "format": {
+      "command": "bunx --no-install oxfmt --check src/models/server/llm-call-route.ts src/models/server/llm-client.ts src/models/server/llm-call-helper.ts src/models/server/llm-call-routing.test.ts docs/architecture/media-vias.md docs/secondary-development/README.md docs/secondary-development/upstream-preservation-plan.md docs/secondary-development/upstream-preservation-p3-routing-20261109.md docs/secondary-development/preservation/20261109-p3-routing/verification.json",
+      "status": "passed",
+      "exitCode": 0,
+      "log": ".tmp/p3-routing-20261109/format-final.log",
+      "metadataEditDiagnostic": {
+        "command": "bunx --no-install oxfmt --check docs/secondary-development/preservation/20261109-p3-routing/verification.json",
+        "status": "format-mismatch-after-JSON-metadata-write",
+        "correction": "Reformat the evidence JSON, then check the complete nine-file batch. No source or test behavior changed."
+      }
+    },
+    "newProductionFunctionLines": 12,
+    "newProductionFileLines": 25,
+    "newTestFileLines": 631,
+    "newTestMaxFunctionLines": 38,
+    "inheritedLimits": "llm-client.ts was 1293 lines and is 1278; chatModelOptionsForCall grows from 64 to 65 lines for the classifier call. Only the required integration is changed; unrelated legacy splitting is outside this batch."
+  },
+  "independentReview": {
+    "status": "no-findings-static-review",
+    "scope": "Three production files and the original routing/usage/recovery tests",
+    "result": "Same classification order, native resolver semantics and actual compatible route; fal/source/via preserved. New matrix addresses the old native factory/options integration blind spot.",
+    "boundary": "Static review does not stand in for tests, engine execution or real providers."
+  },
+  "preservedRouteTree": {
+    "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+    "unchanged": true
+  },
+  "deferredIssue": "CONTINUE-LLM-SOURCE remains accepted-deferred and unfixed; BYOK/billing changes are outside scope.",
+  "rawReports": "Raw reports and logs remain in the ignored local .tmp directory; this archive contains commands, hashes, counts and final selected cases.",
+  "git": {
+    "push": "not authorized; not pushed",
+    "commit": "Normal hooks remain enabled; the resulting local commit is recorded in Git, not self-referenced here."
+  },
+  "integrity": {
+    "documents": 4,
+    "localLinks": 69,
+    "brokenLinks": 0,
+    "originalTestFilesBytesPreserved": 13,
+    "originalTestCasesRetained": 340,
+    "routeTreeBytesPreserved": true
+  }
+}

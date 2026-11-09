@@ -12,12 +12,11 @@ import type { Locale } from '@/platform/i18n/locale';
 import {
   createAdapter,
   getPlatformLlmKey,
-  resolveNativeGeminiModel,
-  resolveNativeGrokModel,
   type LlmKeyInfo,
 } from './create-adapter';
 import type { ResolvedLlmKey } from './db/api-keys';
 import { llmCallStream } from './llm-call-stream';
+import { resolveLlmCallRoute } from './llm-call-route';
 import { llmtrCompatibleApi } from '@/models/llmtr';
 import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
 import {
@@ -227,12 +226,13 @@ export function chatModelOptionsForCall(
   llmKeyInfo: LlmKeyInfo,
   reasoning: boolean | undefined
 ) {
-  if (llmKeyInfo.via === 'compatible') {
+  const route = resolveLlmCallRoute(modelId, llmKeyInfo);
+  if (route.kind === 'compatible') {
     assertConfiguredTextCapabilities(llmKeyInfo, { structuredOutput: true });
-    return configuredTextModelOptions(llmKeyInfo.route);
+    return configuredTextModelOptions(route.route);
   }
   const maxTokens = getMaxOutputTokens(modelId);
-  if (resolveNativeGrokModel(modelId, llmKeyInfo)) {
+  if (route.kind === 'xai') {
     return {
       ...(reasoning
         ? { reasoning: { effort: PROMPT_REASONING.effort } }
@@ -240,7 +240,7 @@ export function chatModelOptionsForCall(
       max_output_tokens: maxTokens,
     };
   }
-  if (resolveNativeGeminiModel(modelId, llmKeyInfo)) {
+  if (route.kind === 'google') {
     return {
       ...(reasoning
         ? {
@@ -255,7 +255,7 @@ export function chatModelOptionsForCall(
   const glmEffort = isForcedGlmReasoningModel(modelId)
     ? glmReasoningEffortForCall(reasoning)
     : undefined;
-  if (llmKeyInfo.via === 'llmtr') {
+  if (route.kind === 'llmtr') {
     if (llmtrCompatibleApi(modelId) === 'responses') {
       return {
         ...(glmEffort
