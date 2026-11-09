@@ -32,11 +32,19 @@
       "id": "BD-10",
       "status": "closed-restored-upstream",
       "scope": "referencePhotoUrl missing-field historical-task normalization only",
-      "implementedBy": "3b203b3b6c644ab29014ba3860c2667f53cd00da",
+      "implementedBy": "ba918e6aa41881d1c7f05f9836d06d767f474ff8",
       "notInferredFrom": "promptLocale historical-task waiver",
       "authorization": "Explicit user instruction on 2026-11-08 to restore missing-referencePhotoUrl refusal and reduce maintenance delta",
       "currentImplementation": "assertQueuedWithReferencePhoto exactly matches B; workflow calls it before validate-snapshot or cached steps",
-      "evidence": ["BD-10-before-result.json", "BD-10-after-result.json"]
+      "evidence": ["BD-10-before-result.json", "BD-10-after-result.json"],
+      "introducedBy": "3b203b3b6c644ab29014ba3860c2667f53cd00da",
+      "correction": {
+        "date": "2026-11-09",
+        "field": "implementedBy",
+        "previousValue": "3b203b3b6c644ab29014ba3860c2667f53cd00da",
+        "source": "Independent BD source/commit review and the user-authorized audit-document correction on 2026-11-09; see followup-20261109/bd-review.json.",
+        "reason": "3b203b3b6 introduced missing-field normalization; ba918e6aa restored the upstream refusal. This corrects commit attribution, not the historical test execution or its timing."
+      }
     }
   ],
   "verificationLevels": [
@@ -52,7 +60,7 @@
     "production deploy"
   ],
   "limits": [
-    "All 121 assigned current test files executed; tests do not prove every real provider behavior.",
+    "The 2026-11-08 owner snapshot records execution of all 121 assigned test files; these results were not rerun on 2026-11-09 and do not prove every provider behavior.",
     "24 resource files checked structurally for source preservation; not a complete Chinese linguistic certification."
   ],
   "artifacts": [
@@ -85,5 +93,51 @@
     "format": "5 edited files passed oxfmt --check",
     "lint": "4 edited TypeScript files passed oxlint",
     "diffCheck": "passed"
+  },
+  "followup20261109": {
+    "date": "2026-11-09",
+    "kind": "audit-documentation-correction",
+    "source": "User explicitly authorized other P2 audit-document repairs while deferring Continue billing until the future BYOK prohibition.",
+    "snapshotSemantics": "Top-level review counts, path/test counts, confirmedNewDefects and postDecisionValidation retain the original 2026-11-08 owner snapshot; they are not a new 2026-11-09 run or a claim that no later issue was found.",
+    "reviewHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+    "assertionTrace": "followup-20261109/assertion-trace-BD.md",
+    "reviewEvidence": "followup-20261109/bd-review.json",
+    "assertionReview": {
+      "modifiedTestDiffsScreened": 72,
+      "initialPriorityGroups": 5,
+      "inventory": "followup-20261109/assertion-inventory.jsonl",
+      "inventorySummary": "followup-20261109/assertion-inventory-summary.json",
+      "inventoryFilter": "owner=BD && changedOriginalExpressions.length>0",
+      "inventoryFiles": 20,
+      "changedOriginalExpressions": 43,
+      "tracedOriginalExpressions": 43,
+      "uniqueCurrentExpressions": 42,
+      "classifications": {
+        "languageOrExplicitModel": 34,
+        "configurationSnapshot": 3,
+        "strengthenedOrEquivalent": 3,
+        "intentionalContractOrFixtureReplacement": 3
+      },
+      "unmappedChangedOriginalExpressions": 0,
+      "all72AssertionsProved": false,
+      "newTestRuns": 0
+    },
+    "deferredDecisions": [
+      {
+        "id": "CONTINUE-LLM-SOURCE",
+        "reference": "followup-20261109/deferred-decisions.json#CONTINUE-LLM-SOURCE",
+        "status": "deferred-by-user",
+        "decisionDate": "2026-11-09",
+        "fixed": false,
+        "blockingThisFollowup": false,
+        "scope": "Continue does not propagate actual platform LLM sources to its balance gate; handle with the future prohibition of user BYOK.",
+        "triggerCondition": "The reproduced waiver requires a usable organization fal key, platform text work and insufficient platform balance; the organization-key branch remains possible for legacy keys.",
+        "currentOrganizationPremise": "Under the user-provided premise that the current organization has no usable fal key, this reproduced waiver branch is not entered. No database check was performed by this follow-up.",
+        "byokProhibitionImplemented": false
+      }
+    ],
+    "newTestRuns": 0,
+    "productionCodeChanged": false,
+    "newBillingTestsAdded": false
   }
 }

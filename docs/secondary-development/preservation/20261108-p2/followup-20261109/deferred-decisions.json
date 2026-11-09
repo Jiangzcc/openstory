@@ -1,0 +1,61 @@
+{
+  "reviewDate": "2026-11-09",
+  "reviewedHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+  "decisions": [
+    {
+      "id": "CONTINUE-LLM-SOURCE",
+      "status": "accepted-deferred",
+      "fixed": false,
+      "blocksThisFollowup": false,
+      "issue": "Continue 未传实际文本凭证来源；组织存在有效 fal BYOK Key 时，使用平台 custom: 文本模型的任务可能被错误豁免余额检查。",
+      "userDecision": "暂缓该问题，后续禁止用户自行配置供应商凭证时统一处理；本轮修复其它 P2 问题。",
+      "authorizationEvidence": [
+        "用户于本会话明确表示：那暂时不需要管这个问题，因为后续会禁止用户自己配置。",
+        "用户随后授权：P2 其它的问题修改修复。"
+      ],
+      "triggerConditions": [
+        "当前组织存在有效、启用且未标记失效的 fal Key。",
+        "Continue 计划包含收费的平台文本工作，例如使用 custom: 模型的规格重写。",
+        "实际文本来源未传给门禁；未被平台图片来源等其它条件提前要求余额检查。",
+        "组织余额不足以支付正数预估费用。"
+      ],
+      "credentialBoundary": "Key 按组织保存；组织其他成员设置的 Key 也计入。平台 FAL_KEY 和管理员渠道凭证不属于此处组织 BYOK。",
+      "currentImplementation": "不改变 Continue、preflight、凭证解析或扣费生产代码；全面禁止 BYOK 仍未实施。",
+      "observedMockComparison": [
+        {
+          "organizationKeys": [],
+          "balance": "insufficient",
+          "positiveEstimate": true,
+          "allowed": false,
+          "balanceChecks": 1
+        },
+        {
+          "organizationKeys": ["openrouter"],
+          "balance": "insufficient",
+          "positiveEstimate": true,
+          "allowed": false,
+          "balanceChecks": 1
+        },
+        {
+          "organizationKeys": ["fal"],
+          "balance": "insufficient",
+          "positiveEstimate": true,
+          "allowed": true,
+          "balanceChecks": 0
+        }
+      ],
+      "comparisonProvenance": "本会话先前复核加载真实 preflight.ts，Mock 凭证查询、余额和无关导入。结果只证明所列门禁分支；未进行真实供应商消费或远程数据库操作。",
+      "closure": "后续实施禁止 BYOK 时验证服务端不再以组织供应商 Key 为本类平台调用豁免余额；已有组织 Key 的处理也需覆盖。关闭前仍保留此项未修复状态。",
+      "sources": [
+        "src/sequences/sequences.fn.ts#continueGenerationFn",
+        "src/sequences/server/generation-operations.ts#prepareGeneration/checkCredits",
+        "src/sequences/server/continue-plan.ts#CONTINUE_CREDIT_PROVIDERS",
+        "src/billing/server/preflight.ts#hasOwnCoverage/coversProvider",
+        "src/models/server/llm-key-routing.ts#resolveLlmKeyForModel",
+        "src/models/server/db/api-keys.ts#hasUsableKey",
+        "src/shots/server/workflows/shot-spec-rewrite-workflow.ts#runImpl",
+        "src/billing/server/workflow-deduction.ts#deductWorkflowCredits"
+      ]
+    }
+  ]
+}

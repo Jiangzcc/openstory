@@ -193,8 +193,43 @@ describe('status lifecycle', () => {
 
     const current = await methods.getById(row.id);
     expect(current?.status).toBe('failed');
+    expect(current?.provider).toBe('fal');
     expect(current?.error).toBe('Model rejected the input (422)');
     expect(current?.outputs).toBeNull();
+  });
+
+  it('persists compatible provider provenance on completion', async () => {
+    const row = await methods.insert(assetInput());
+    const outputs = [
+      { url: '/r2/mock/compatible-output.png', contentType: 'image/png' },
+    ];
+    expect(row.provider).toBe('fal');
+
+    await methods.markRunning(row.id);
+    await methods.markCompleted(row.id, { outputs, provider: 'compatible' });
+
+    expect(await methods.getById(row.id)).toMatchObject({
+      status: 'completed',
+      provider: 'compatible',
+      outputs,
+      error: null,
+    });
+  });
+
+  it('persists the attempted compatible provider on failure', async () => {
+    const row = await methods.insert(assetInput());
+    const error = 'Mock image channel refused the input';
+    expect(row.provider).toBe('fal');
+
+    await methods.markRunning(row.id);
+    await methods.markFailed(row.id, error, 'compatible');
+
+    expect(await methods.getById(row.id)).toMatchObject({
+      status: 'failed',
+      provider: 'compatible',
+      error,
+      outputs: null,
+    });
   });
 
   it('scopes writes to the organization (a foreign markFailed throws, row untouched)', async () => {

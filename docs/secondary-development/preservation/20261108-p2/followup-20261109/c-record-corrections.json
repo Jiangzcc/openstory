@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-09",
+  "owner": "C",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "executionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "integration": "按 path 匹配，仅精确替换 corrections 内列出的七个字段；candidates.jsonl 由主线串行整合，其余字段及其它路径保留。C-15 定义见更新后的 domains/behaviors-C.md；FC-05 复用既有 F-C 台账。",
+  "verification": {
+    "recordReview": "six path corrections statically checked against frozen Git diff and current sources",
+    "testsExecuted": false,
+    "newTestsStatus": "not-run; awaiting main runner",
+    "requestedTestCommand": "bun run test src/models/server/db/generated-assets.test.ts",
+    "productionFilesChanged": [],
+    "assertionTrace": "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-C.md",
+    "limits": [
+      "未复跑 P1 20/276 或其它共享测试。",
+      "新增 provider 回读断言不证明供应商来源、实际模型请求、扣费或 Workflows 重启。",
+      "历史 99/1551 为 2026-11-08 归档结果，不作本轮新鲜执行或完整等价证明。",
+      "Continue 计费缺陷依用户决定暂缓，本轮未处理。"
+    ],
+    "assertionInventory": "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-inventory.jsonl"
+  },
+  "corrections": [
+    {
+      "path": "src/models/server/db/generated-assets.ts",
+      "behaviorIds": ["C-15"],
+      "upstreamBehavior": "B 的 generated_assets scoped-db 已按 organizationId 限定写入：markCompleted 要求传入实际 provider，保存 completed/outputs/cost、清除 error；markFailed 可选记录已知 provider，未传时不覆盖原标记。原有真实内存 D1 用例直接断言完成时 fal 改为 byteplus。",
+      "currentDifference": "B→P2 仅将 markCompleted.fields.provider 与 markFailed.provider 的类型由 MediaVia 扩为 ImageVia（增加 compatible）；原 UPDATE、组织条件、状态、outputs/error 和缺省行为没有运行时代码变化。该路径不负责 appMetadata registry、credentialId、凭证轮换或 session 一致读。",
+      "requirementSource": [
+        "AGENTS.md:402 — via 表示实际供应商且任务沿用标记。",
+        "docs/architecture/model-configuration.md:71 — 图片 compatible 绑定替代原路由并保留逻辑身份。",
+        "docs/secondary-development/image-channels.md:38 — 复用原有存储与小型结果记录链路。"
+      ],
+      "reviewNotes": "纠正原 C-09 归属和不相干的凭证测试说明，新增独立 C-15 状态持久化行为。保留上游运行时写入语义；本轮不改生产代码。新增 compatible 完成/失败的真实 createTestDb 回读断言，并为未传 provider 的原失败用例补 fal 保留断言；整合阶段已单独复跑该文件，11 项全部通过；初次 DB 初始化超时保留在 verification.json。运行时断言不能区分这次仅类型扩展的 B/P2，也不能证明调用方传入的 provider 与真实供应商一致。",
+      "evidence": [
+        "git diff 2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0 ce321c885f67e40fec1c8598bb759790d89359c9 -- src/models/server/db/generated-assets.ts",
+        "src/models/via.ts:11 — MediaVia；ImageVia 在下一行增加 compatible。",
+        "src/models/server/db/generated-assets.ts:150 — markCompleted 的组织限定 UPDATE。",
+        "src/models/server/db/generated-assets.ts:185 — markFailed 只在传入 provider 时写入该列。",
+        "src/models/server/db/generated-assets.test.ts:162 — 原 byteplus、outputs/status/error 回读断言保留。",
+        "src/models/server/db/generated-assets.test.ts:189 — 原失败断言保留，新增未传 provider 时仍为 fal；未运行。",
+        "src/models/server/db/generated-assets.test.ts:201 — 新增完成分支 compatible/status/outputs/error 回读；未运行。",
+        "src/models/server/db/generated-assets.test.ts:219 — 新增失败分支 compatible/status/error/outputs 回读；未运行。",
+        "src/models/server/db/generated-assets.test.ts:235 — 原跨组织拒绝且原行不变断言。",
+        "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-C.md — 新增 provider 补证及其边界。",
+        "docs/secondary-development/preservation/20261108-p2/followup-20261109/verification.json"
+      ]
+    },
+    {
+      "path": "src/models/generation-mode.ts",
+      "behaviorIds": ["C-01", "FC-05"],
+      "upstreamBehavior": "B 在进入 turbo/quality 时从静态常量设置分析、图片、视频、音乐四类推荐；保持同一模式时保留显式选择并校正视频兼容性。原默认值、目录排序、Turbo 风格推荐过滤继续适用。",
+      "currentDifference": "默认 helper、视频清理及 applyGenerationMode 接受可选管理员配置：切换模式时分别采用八个 turbo/quality 槽位；同模式保留选择，空视频清理采用配置 defaultVideo。新增 availableDefaultVideoModel 按 preferred→fallback→原 DEFAULT_VIDEO_MODEL，经宽高比与 isOfferedVideoModel 检查选择，供 Studio 使用；不涉及视频 polling 或 GPT Image 编辑 endpoint。",
+      "requirementSource": [
+        "docs/architecture/model-configuration.md:7 — 默认/内部模型槽位由模型配置定义。",
+        "docs/architecture/model-configuration.md:9 — 显式存值优先，模式推荐和通用默认槽独立，供应商/宽高比约束继续适用。",
+        "docs/secondary-development/preservation/20261108-p2/domains/behaviors-F-C.md:11 — FC-05：Studio 无显式偏好采用管理员默认；有意替换 B 的 BytePlus 自动建议。"
+      ],
+      "reviewNotes": "原单独 C-06 映射不足以解释四类推荐和 Studio 默认策略，改用 C-01 与 FC-05。直接回链未配置原默认、配置切换、同模式保留、BytePlus 可用性断言。availableDefaultVideoModel 的新增供应商断言实际使用 16:9，不能仅凭测试标题宣称遍历所有比例。未修改或重新运行这些既有测试。 主线整合阶段已运行 generation-mode.test.ts，当前结果见 followup-20261109/verification.json。",
+      "evidence": [
+        "git diff 2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0 ce321c885f67e40fec1c8598bb759790d89359c9 -- src/models/generation-mode.ts",
+        "src/models/generation-mode.ts:137 — 默认 helper 读取可选管理员配置。",
+        "src/models/generation-mode.ts:212 — applyGenerationMode 的同模式保留与四类槽位切换。",
+        "src/models/generation-mode.ts:237 — availableDefaultVideoModel 顺序和可用性判断。",
+        "src/models/generation-mode.test.ts:86 — 固定原 turbo 默认。",
+        "src/models/generation-mode.test.ts:95 — 固定原 quality 默认。",
+        "src/models/generation-mode.test.ts:244 — turbo/quality 四类槽位均断言。",
+        "src/models/generation-mode.test.ts:267 — 同模式选择不被新配置覆盖。",
+        "src/models/generation-mode.test.ts:280 — BytePlus 可用时仍优先配置模型。",
+        "src/models/generation-mode.test.ts:288 — 16:9 下 BytePlus 开/关的回退。",
+        "docs/secondary-development/preservation/20261108-p2/followup-20261109/verification.json"
+      ]
+    },
+    {
+      "path": "src/models/generation-mode.test.ts",
+      "behaviorIds": ["C-01", "C-06", "FC-05"],
+      "upstreamBehavior": "B 断言模式切换的四类静态推荐、同模式选择保留、原默认值、选择器排序和 Turbo 模型/风格过滤。静态 IMAGE_MODELS 索引用 isValidTextToImageModel 收窄。",
+      "currentDifference": "原具体期望保留；两处静态图片注册表检查改用 isBuiltinTextToImageModel，以适应运行时 TextToImageModel 增加自定义身份。新增管理员四类槽位、同模式保留与视频 preferred/fallback 的直接断言。",
+      "requirementSource": [
+        "docs/architecture/model-configuration.md:9 — 独立默认槽、显式选择优先与既有兼容性。",
+        "docs/architecture/model-configuration.md:73 — 静态内置 builder 类型与可执行自定义模型校验分离。",
+        "docs/secondary-development/preservation/20261108-p2/domains/behaviors-F-C.md:11 — FC-05 默认选择有意差异。"
+      ],
+      "reviewNotes": "补 C-01/FC-05，并仅为本文件确有的静态内置 guard 适配保留 C-06；删除 GPT Image endpoint/polling 的通用说明。原 turbo 有效身份断言确实由 isValid 改为 isBuiltin，不冒充逐字相同；原排序结果及其它运行期望保留。本轮只静态追溯，未运行。 主线整合阶段已运行 generation-mode.test.ts，当前结果见 followup-20261109/verification.json。",
+      "evidence": [
+        "git diff 2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0 ce321c885f67e40fec1c8598bb759790d89359c9 -- src/models/generation-mode.test.ts",
+        "src/models/generation-mode.test.ts:112 — qualityRank 索引使用内置 guard，原排序结果保留。",
+        "src/models/generation-mode.test.ts:212 — 图片身份检查换为内置 guard，其它类别/隐藏断言保留。",
+        "src/models/generation-mode.test.ts:231 — 完整新增配置回归分组。",
+        "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-C.md — 第 4 项逐项说明必要替换和覆盖边界。",
+        "docs/secondary-development/preservation/20261108-p2/followup-20261109/verification.json"
+      ]
+    },
+    {
+      "path": "src/models/enhance-duration.ts",
+      "behaviorIds": ["C-13"],
+      "upstreamBehavior": "B 的两个时长提示 builder 只有英文：要求场景时长总和/容差、TOTAL 行、真实动作结尾替代 title card；解析器、纠正阈值、clip-grid 与费用时长估算另有原逻辑。",
+      "currentDifference": "两个 builder 新增必填 promptLocale；zh-CN 返回独立中文指令，保留 Scene N — Xs 与 TOTAL: <sum>s 及原数值变量；en 分支原英文文本保留。B→P2 没有改变默认模型、Google Files、解析算法、纠正阈值或计费时长估算。",
+      "requirementSource": [
+        "docs/secondary-development/system-prompt-localization.md:13 — 必填显式 promptLocale。",
+        "docs/secondary-development/system-prompt-localization.md:33 — 时长纠正属于领域独立双语指令。",
+        "docs/secondary-development/system-prompt-localization.md:43 — 中文保留 Scene/TOTAL 解析协议。"
+      ],
+      "reviewNotes": "移除不相干的 C-01/C-05 和默认目录/Google Files 说明，仅归 C-13。英文分支通过 B→P2 字面差异核对；解析器及其它原算法没有该次净改动。中文协议和数值有直接字符串/解析器断言，真实模型遵循程度仍未验证。未修改生产代码或执行测试。",
+      "evidence": [
+        "git diff 2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0 ce321c885f67e40fec1c8598bb759790d89359c9 -- src/models/enhance-duration.ts",
+        "src/models/enhance-duration.ts:167 — 时长提示 locale 分支。",
+        "src/models/enhance-duration.ts:180 — 纠正提示 locale 分支。",
+        "src/models/enhance-duration.test.ts:144 — 中文 Scene 标签交给真实解析器并删除 TOTAL 行。",
+        "src/models/enhance-duration.test.ts:158 — 原英文总和/TOTAL/title-card/非 clip-grid 断言。",
+        "src/models/enhance-duration.test.ts:172 — 中文实际 sum/target 与 Scene/TOTAL。",
+        "src/models/enhance-duration.test.ts:187 — 原英文纠正约束。"
+      ]
+    },
+    {
+      "path": "src/models/enhance-duration.test.ts",
+      "behaviorIds": ["C-13"],
+      "upstreamBehavior": "B 测试覆盖 Scene 时长标签解析、TOTAL 流式过滤、clip grid、纠正阈值/实际合计、title-card 识别和估算；两个英文提示用例断言总和、协议和输出约束。",
+      "currentDifference": "两个原英文用例仅在 builder 调用补 en 并保留原期望；新增中文时长提示→Scene 解析/TOTAL 删除，以及中文纠正数值/协议断言。其余原测试主体未改。",
+      "requirementSource": [
+        "docs/secondary-development/system-prompt-localization.md:13 — 显式语言参数。",
+        "docs/secondary-development/system-prompt-localization.md:43 — 结构化标记与数值变量保真。"
+      ],
+      "reviewNotes": "移除 C-01/C-05 及其不相干说明，准确记录原英文适配与中文新增保障。该测试不验证管理员默认、Video Files 或真实中文模型输出；本轮不重跑。",
+      "evidence": [
+        "git diff 2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0 ce321c885f67e40fec1c8598bb759790d89359c9 -- src/models/enhance-duration.test.ts",
+        "src/models/enhance-duration.test.ts:143 — 原英文用例与中文解析保障。",
+        "src/models/enhance-duration.test.ts:171 — 原纠正用例与中文数值/协议保障。",
+        "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-C.md — 第 3 项记录 B 与当前对应。"
+      ]
+    },
+    {
+      "path": "src/models/server/auxiliary-prompts.ts",
+      "behaviorIds": ["C-13"],
+      "upstreamBehavior": "B 的精简、场景时长估算、风格推荐与看片系统指令分别内联在 ai.fn.ts 和 server/watch-clip.ts，均为英文；不存在此独立中文资源文件。",
+      "currentDifference": "新增四个中文常量 SHORTEN_PROMPT_SYSTEM_ZH、ESTIMATE_SCENE_DURATION_SYSTEM_ZH、RECOMMEND_STYLES_SYSTEM_ZH、WATCH_CLIP_SYSTEM_ZH；调用端显式按 locale 选择。文件不决定辅助模型槽位、凭证优先级或 Video Files 路由，也不属于注册表 3 text/16 chat key 的新增条目。",
+      "requirementSource": [
+        "docs/secondary-development/system-prompt-localization.md:30 — 精简、时长估算和风格推荐双语。",
+        "docs/secondary-development/system-prompt-localization.md:32 — 共享看片指令双语。",
+        "docs/secondary-development/system-prompt-localization.md:35 — 独立领域指令仍归领域，角色不变。",
+        "docs/secondary-development/system-prompt-localization.md:43 — JSON/变量/用户原文和协议保持。"
+      ],
+      "reviewNotes": "从仅 C-05 改为 C-13，并区分四个独立系统常量与主注册表模板。现有调用测试直接观察三个 helper 的最终 system 语言前缀、源剧本和 durationSeconds，以及看片的 system 语言前缀与完整原问题；并非逐字比较中文全文或验证真实生成质量。C-05 仍负责调用模型/Files 的另一类行为，本文件不复用其通用凭证说明。本轮未运行测试。",
+      "evidence": [
+        "git diff 2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0 ce321c885f67e40fec1c8598bb759790d89359c9 -- src/models/server/auxiliary-prompts.ts",
+        "src/models/server/auxiliary-prompts.ts:1 — 精简中文常量。",
+        "src/models/server/auxiliary-prompts.ts:14 — 时长估算中文常量，durationSeconds 字段保留。",
+        "src/models/server/auxiliary-prompts.ts:28 — 风格推荐中文常量。",
+        "src/models/server/auxiliary-prompts.ts:40 — 看片中文常量。",
+        "src/models/ai.prompt-locale.test.ts:87 — 三个真实 handler 的 Mock stream 输入，system 前缀/原剧本/JSON 字段。",
+        "src/models/server/watch-clip.test.ts:78 — 中英 system 前缀及原问题完整保留。"
+      ]
+    }
+  ],
+  "reviewedHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+  "integrationVerification": {
+    "date": "2026-11-09",
+    "generatedAssetsTests": {
+      "status": "passed-on-isolated-rerun",
+      "file": "src/models/server/db/generated-assets.test.ts",
+      "tests": 11,
+      "passed": 11
+    },
+    "result": "verification.json",
+    "note": "上方条目保留领域编辑完成时的未执行语境；主线整合阶段已实际运行，初次超时不计通过，最新单独复跑结果单列。"
+  }
+}

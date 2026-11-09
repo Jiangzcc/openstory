@@ -1,0 +1,163 @@
+{
+  "date": "2026-11-09",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "reviewedHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+  "correctedCandidatePaths": 18,
+  "fieldScope": [
+    "behaviorIds",
+    "upstreamBehavior",
+    "currentDifference",
+    "requirementSource",
+    "reviewNotes",
+    "evidence"
+  ],
+  "preservedScopeFields": [
+    "path",
+    "change",
+    "owner",
+    "p0Id",
+    "reviewStatus",
+    "reviewedAtStart"
+  ],
+  "additionalCorrection": {
+    "path": "packages/stitch/src/stitched-player-surface.tsx",
+    "field": "classifications",
+    "previous": ["local-tooling"],
+    "current": ["presentation-and-bridge"],
+    "reason": "实际变更为播放器国际化，不是工程工具。"
+  },
+  "applied": [
+    {
+      "path": "src/platform/server/mcp/ui/sequence-card.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-04"],
+      "behaviorIds": ["AEG-09"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/server/mcp/ui/sequence-card.test.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-04"],
+      "behaviorIds": ["AEG-09"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "packages/stitch/src/stitched-player-surface.tsx",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-05"],
+      "behaviorIds": ["AEG-10"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/ui/feedback/feedback-dialog.tsx",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-08"],
+      "behaviorIds": ["AEG-11"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/ui/search/search-dialog.tsx",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-08"],
+      "behaviorIds": ["AEG-12"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/client-server-boundary.test.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-08"],
+      "behaviorIds": ["AEG-13"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/domain-blind.test.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-08"],
+      "behaviorIds": ["AEG-14"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/log-context.test.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-08"],
+      "behaviorIds": ["AEG-15"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/server/db/db-access-allowlist.test.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-08"],
+      "behaviorIds": ["AEG-16"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/server/api-v1/input-schema.test.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-08"],
+      "behaviorIds": ["AEG-17"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/server/api-v1/input-schema.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-08"],
+      "behaviorIds": ["AEG-17"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/platform/server/mcp/tools/structure-edits.ts",
+      "owner": "AEG",
+      "previousBehaviorIds": ["AEG-04"],
+      "behaviorIds": ["AEG-18"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/aeg-record-corrections.json"
+    },
+    {
+      "path": "src/models/server/db/generated-assets.ts",
+      "owner": "C",
+      "previousBehaviorIds": ["C-09"],
+      "behaviorIds": ["C-15"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/c-record-corrections.json"
+    },
+    {
+      "path": "src/models/generation-mode.ts",
+      "owner": "C",
+      "previousBehaviorIds": ["C-06"],
+      "behaviorIds": ["C-01", "FC-05"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/c-record-corrections.json"
+    },
+    {
+      "path": "src/models/generation-mode.test.ts",
+      "owner": "C",
+      "previousBehaviorIds": ["C-06"],
+      "behaviorIds": ["C-01", "C-06", "FC-05"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/c-record-corrections.json"
+    },
+    {
+      "path": "src/models/enhance-duration.ts",
+      "owner": "C",
+      "previousBehaviorIds": ["C-01", "C-05", "C-13"],
+      "behaviorIds": ["C-13"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/c-record-corrections.json"
+    },
+    {
+      "path": "src/models/enhance-duration.test.ts",
+      "owner": "C",
+      "previousBehaviorIds": ["C-01", "C-05", "C-13"],
+      "behaviorIds": ["C-13"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/c-record-corrections.json"
+    },
+    {
+      "path": "src/models/server/auxiliary-prompts.ts",
+      "owner": "C",
+      "previousBehaviorIds": ["C-05"],
+      "behaviorIds": ["C-13"],
+      "source": "docs/secondary-development/preservation/20261108-p2/followup-20261109/c-record-corrections.json"
+    }
+  ],
+  "deferredAnnotatedPaths": [
+    "src/sequences/sequences.fn.ts",
+    "src/sequences/server/generation-operations.ts",
+    "src/billing/server/preflight.ts"
+  ],
+  "bdAttributionCorrection": "domains/validation-BD.json#decisions/BD-10"
+}

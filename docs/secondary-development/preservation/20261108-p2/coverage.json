@@ -30,5 +30,20 @@
     "skipped": 0
   },
   "requirements": "Coverage completion is distinct from verification closure; browser acceptance and environment limits are recorded in the implementation report.",
-  "evidenceNote": "Raw .tmp unit logs remain local diagnostics; unit-verification.json ships their portable per-file cases/results and source hashes. Selected commit-hook logs, browser check/config source, screenshots and the isolated footer-probe source are archived under quality/ and browser/. Bare diagnostic filenames in domain records refer to their original local run."
+  "evidenceNote": "Raw .tmp unit logs remain local diagnostics; unit-verification.json ships their portable per-file cases/results and source hashes. Selected commit-hook logs, browser check/config source, screenshots and the isolated footer-probe source are archived under quality/ and browser/. Bare diagnostic filenames in domain records refer to their original local run.",
+  "snapshotScope": "2026-11-08 冻结起点的原路径状态及历史测试统计；未审/待决/待修为零不表示补充复核没有已知问题。",
+  "followup20261109": {
+    "record": "docs/secondary-development/preservation/20261108-p2/followup-20261109/README.md",
+    "correctedCandidatePaths": 18,
+    "correctionManifest": "docs/secondary-development/preservation/20261108-p2/followup-20261109/record-corrections.json",
+    "assertionTraceIndex": "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-index.json",
+    "acceptedDeferredIssues": 1,
+    "deferredAnnotatedPaths": [
+      "src/sequences/sequences.fn.ts",
+      "src/sequences/server/generation-operations.ts",
+      "src/billing/server/preflight.ts"
+    ],
+    "fullSemanticRecertification": false,
+    "verification": "docs/secondary-development/preservation/20261108-p2/followup-20261109/verification.json"
+  }
 }

@@ -1,0 +1,25 @@
+{
+  "reviewDate": "2026-11-09",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "reviewedHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+  "existingModifiedTestFiles": 126,
+  "parsedFiles": 126,
+  "upstreamExpectCalls": 3866,
+  "currentExpectCalls": 4461,
+  "filesWithChangedOriginalExpressions": 34,
+  "changedOriginalExpressions": 78,
+  "inventory": "assertion-inventory.jsonl",
+  "method": "Multiset comparison of parsed expect(...).matcher(...) expressions, ignoring source positions, comments and literal formatting metadata. Every existing modified test file is parsed from both frozen Git blobs.",
+  "limits": [
+    "AST expression matches do not prove unchanged setup, branch reachability, payload semantics or runtime order.",
+    "Changed expressions are review candidates, not evidence of lost assertions.",
+    "Custom assertions and expect.soft/extend semantics are not comprehensively classified.",
+    "New tests are excluded from the original-upstream denominator."
+  ],
+  "traceDocuments": [
+    "assertion-trace-AEG.md",
+    "assertion-trace-BD.md",
+    "assertion-trace-C.md",
+    "assertion-trace-engineering.md"
+  ]
+}

@@ -1,0 +1,316 @@
+{
+  "date": "2026-11-09",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "reviewedHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+  "changedOriginalTestFiles": 34,
+  "changedOriginalExpressions": 78,
+  "fullSemanticRecertification": false,
+  "records": [
+    {
+      "path": "e2e/tests/editing-scenes.spec.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "666688decb33a004987c72d36a221fd11a3c3a2d",
+      "reviewedBlob": "eae939a6f64ff4a4865db396570e589fec6cc902",
+      "traceDocument": "assertion-trace-engineering.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "e2e/tests/editing-shots.spec.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 2,
+      "upstreamBlob": "85a2bdc64a7ca52ce5f710027d6aab5fe3b35488",
+      "reviewedBlob": "a4b5d57a715041d4fadd0447bfce3260a055085f",
+      "traceDocument": "assertion-trace-engineering.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "e2e/tests/manual-pipeline.spec.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 2,
+      "upstreamBlob": "d38511f26fae215a6fa0ded38c062f6bc08068f0",
+      "reviewedBlob": "3be848a9f7cf2b6c733ee5a76684dc862c873523",
+      "traceDocument": "assertion-trace-engineering.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "e2e/tests/sequence-flow.spec.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "be31a05308077bf0b0bf68c5cc3479b7f213e9fd",
+      "reviewedBlob": "21815db0ae975ca1d8eb155b6e96405bcacc8acf",
+      "traceDocument": "assertion-trace-engineering.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "e2e/tests/sequences.spec.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "ff3b6adaa95d46f7ac7d0a1f2f07ddb9b0a7f31d",
+      "reviewedBlob": "7d7fac7b4ccaf662b4f78683ef8421f84563a25f",
+      "traceDocument": "assertion-trace-engineering.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "packages/stitch/src/cli.test.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 2,
+      "upstreamBlob": "73e4c7286cae2ecc9bb4b226aa1c225935bc6567",
+      "reviewedBlob": "f67c79b720a55bcba85827edc5a8fb297d89dbc0",
+      "traceDocument": "assertion-trace-engineering.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "scripts/preview-db.test.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 10,
+      "upstreamBlob": "7588889b07da4ecb58bb7fa06e523ccd3f1e09ac",
+      "reviewedBlob": "d4bb35dced53815ccf24ac21e25a42726cadb21d",
+      "traceDocument": "assertion-trace-engineering.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/cast/server/describe-upload.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "973df130b976e2401dc082b11d0086501fa76cb8",
+      "reviewedBlob": "1865ed4bfbc44bb3480145d83c91dbd2e276b345",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/cast/server/sequence-elements/attach-element-upload.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "d84fbffd0ff883db4ec33abb3814f902cdc4f7eb",
+      "reviewedBlob": "66d6e2e5f4781e7bab0a90d9416bdd896512513f",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/cast/server/talent-vision-region-fallback.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 2,
+      "upstreamBlob": "610505a6515468357115d7ea2a08853d31a53738",
+      "reviewedBlob": "19b810372314f5d97e9c8196c87c3970a0724d6b",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/cast/server/talent/analyze-talent-media.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "faf65a607e8ea6158584b012dc20fd4acd5a2421",
+      "reviewedBlob": "0256db54f62dfb33b237f298dcd21c7db8c5de0e",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/cast/server/upload-rights.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 11,
+      "upstreamBlob": "2c3295efd4f9c6777351b3004747f74d387c6eda",
+      "reviewedBlob": "ec8c0b429c5cbcef40601f432cb79879dc8c9744",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/cast/server/voice/enqueue-character-voice.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "55b9eba54f46d7deb62d1fb7d89e9329aafd8ef2",
+      "reviewedBlob": "aa8eb07f6fe7349dc6949e613ad6f4864d6da225",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/look/server/workflows/auto-style-step.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 3,
+      "upstreamBlob": "9f6b4a09b52c3724e63a824f14884eceb7fbf0d0",
+      "reviewedBlob": "3e8193916840efbdb454c39a12797e72c8fc70ef",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/models/generation-mode.test.ts",
+      "owner": "C",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "1ccfa77206cafda21b542a2a21756be3e20e5213",
+      "reviewedBlob": "8937d2f7eb449430204c2d2106f49b07918aa070",
+      "traceDocument": "assertion-trace-C.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/models/model-assets.fn.test.ts",
+      "owner": "C",
+      "originalExpressionsReviewed": 4,
+      "upstreamBlob": "a8cc4383b61c694bfa5b6e170920cbb36dc9c033",
+      "reviewedBlob": "8650cf39ac01cbaff6188c777de4f46cfcede425",
+      "traceDocument": "assertion-trace-C.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/models/server/db/api-keys.test.ts",
+      "owner": "C",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "e231cc1db54977e6b079056cc5fcc7cd7f22d924",
+      "reviewedBlob": "14a96ac6699ec818b4ef0d912e7094481246be12",
+      "traceDocument": "assertion-trace-C.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/motion/server/render-at-quality.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 3,
+      "upstreamBlob": "119c84b16a650bc51b88c3daa8ec08d793d55da8",
+      "reviewedBlob": "bd19a055029efe40d38f779aaf7283fa4dee3744",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/platform/server/api-v1/create.test.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 2,
+      "upstreamBlob": "55bc243ab7fe305783c13abaa5694e61d1dae41f",
+      "reviewedBlob": "b400a151b336d7890b9dd55c163856f23f67fe52",
+      "traceDocument": "assertion-trace-AEG.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/platform/server/mcp/ui/sequence-card.test.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 2,
+      "upstreamBlob": "d5957f47d5ed7523a110c6cad16e12920466c396",
+      "reviewedBlob": "500ab1a197b3ce7a45c472e6f0861e5df2ecef82",
+      "traceDocument": "assertion-trace-AEG.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/platform/server/workflow/base-workflow.test.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "c588ff6d358154da85a1640f82d2f65e9b34e670",
+      "reviewedBlob": "61f7b7f6824b358bc3c1466a04726eb5cdc23b3a",
+      "traceDocument": "assertion-trace-AEG.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/platform/server/workflow/client.compliance.test.ts",
+      "owner": "AEG",
+      "originalExpressionsReviewed": 5,
+      "upstreamBlob": "058eae01e8b71f03863fd4552ff3853c5fae2b2b",
+      "reviewedBlob": "d9431da6c6408915176a6e6d47fbcc746faf7aa9",
+      "traceDocument": "assertion-trace-AEG.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/sequences/sequences.fn.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "79b4c291df0a17e0165285d824fa927064a3ecbc",
+      "reviewedBlob": "f9860520552c0ab355718c68595527b90ee967e6",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/sequences/server/export.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "ffa1efa45bccd9bb258bc6e9b5d379380a22f3cc",
+      "reviewedBlob": "e613f63a18bb839c7c998c60c7c45618ef1f0c73",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/sequences/server/freeze-fresh-generation-plan.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "2199ec4aeb9bf668ba89d354f57a0034ba081ede",
+      "reviewedBlob": "cfab3528b11c5469356e49c9da85296e2d1e702f",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/sequences/server/generation-operations.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "1b36abea0217ac7e7a37f5b3279b6c0a224ad931",
+      "reviewedBlob": "f11093540a06bfaef5e6268ab1621b67b35ea64b",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/sequences/server/launchers.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "baff81a5aad0492acc6de128c90318fc22fd81e9",
+      "reviewedBlob": "027fd1032557e3cd7631713035da095ba2ef151b",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/sequences/server/resolve-style-source.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "feef5c291127fe0b6e65915d0fbcb8190483518b",
+      "reviewedBlob": "ba84bb1f99539eb2ddc6418c3eedbd633282070a",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-workflow.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 4,
+      "upstreamBlob": "84478e5e1af02193c21c3b1abdfe55845a95d41f",
+      "reviewedBlob": "912e6f386a04a0c342bf10bdddcba13214f79416",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/sequences/smart-retry.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 3,
+      "upstreamBlob": "82128cd41572a1d6784d76c66cfc1208ec626614",
+      "reviewedBlob": "9feb3c6a8474bd1f68ce2a5ff7451b7a9297aee3",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/shots/server/shot-image-input.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 3,
+      "upstreamBlob": "c150f0eb6e97bfc3ae59ce5fa0ae8abeedeb2cd4",
+      "reviewedBlob": "00d3899ff8e2f2b575919757744443aedc1835cd",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/shots/server/shot-preview.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "76ef5e2191143bce1b77f5819f0446ada4b0b84a",
+      "reviewedBlob": "24817ed02080cede4a731c5375b3ae2e120e0bd3",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/shots/server/update-stale-run.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 2,
+      "upstreamBlob": "a494205a4480a648e9096c2c7e00845857611990",
+      "reviewedBlob": "46bb87c16e787f97bfb007a46a6403eff802ba93",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    },
+    {
+      "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+      "owner": "BD",
+      "originalExpressionsReviewed": 1,
+      "upstreamBlob": "e69c1655cb08bf83f43a19ba9d44855e13c4ed7a",
+      "reviewedBlob": "fc7a3f0b5ecb51a4b2aa9ef9f8c41e47868b8e29",
+      "traceDocument": "assertion-trace-BD.md",
+      "disposition": "See original-to-current mapping and deliberate changes in the linked trace; AST change alone is neither a loss finding nor an equivalence proof."
+    }
+  ]
+}

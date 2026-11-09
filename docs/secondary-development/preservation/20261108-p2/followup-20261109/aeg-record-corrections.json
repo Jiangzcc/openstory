@@ -1,0 +1,181 @@
+[
+  {
+    "path": "src/platform/server/mcp/ui/sequence-card.ts",
+    "behaviorIds": ["AEG-09"],
+    "upstreamBehavior": "The MCP sequence card initializes with the host, renders result text and server diagnostics, polls status only when server tools are available, announces completion once, and opens the sequence through the host.",
+    "currentDifference": "Adds host-locale labels, known status/count labels, mapped template-style names and poster alt text. Host-context changes repaint the current result and error without restarting polling or sending another completion message; user titles, unknown statuses/counts and protocol methods remain data.",
+    "requirementSource": "docs/secondary-development/localization-plan.md; docs/secondary-development/extension-policy.md §4; docs/architecture/assistant.md (MCP App context).",
+    "reviewNotes": "Replaces the unrelated API-key/OAuth summary. Compared the six upstream card behaviors with current assertions, including the bilingual polling replacement. This is static source/assertion tracing plus archived unit evidence, not a new embedded-host browser run.",
+    "evidence": [
+      "src/platform/server/mcp/ui/sequence-card.ts:64 (SEQUENCE_CARD_SCRIPT/applyHost)",
+      "src/platform/server/mcp/ui/sequence-card.ts:132 (announce and watch)",
+      "src/platform/server/mcp/ui/sequence-card.test.ts:221 (initialization, errors and host messages)",
+      "src/platform/server/mcp/ui/sequence-card.test.ts:286 (bilingual single polling loop)",
+      "src/platform/server/mcp/ui/sequence-card.test.ts:407 (no-server-tools and open-link)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-09-mcp-sequence-card"
+    ]
+  },
+  {
+    "path": "src/platform/server/mcp/ui/sequence-card.test.ts",
+    "behaviorIds": ["AEG-09"],
+    "upstreamBehavior": "Six card tests protect initialization/text rendering, error/cancellation, host-request and window isolation, polling/completion-once, no polling without host tools, and host-mediated open-link.",
+    "currentDifference": "Keeps five original cases and expands the polling case into two locale-switch cases. Adds card rendering, custom/unknown data and fixed-error localization checks; the completion fixture title and language-specific text intentionally change while protocol envelope, cadence, stop and once-only assertions remain.",
+    "requirementSource": "docs/secondary-development/localization-plan.md; docs/secondary-development/extension-policy.md §4; docs/secondary-development/upstream-preservation-plan.md §4.1 and §4.4.",
+    "reviewNotes": "Original-to-current assertion mapping is recorded individually in the linked trace. The old English polling message is preserved structurally in the English case with a deliberate Chinese user-title fixture; a separate Chinese expected message is intentional localization. No fresh test run is claimed.",
+    "evidence": [
+      "src/platform/server/mcp/ui/sequence-card.test.ts:221",
+      "src/platform/server/mcp/ui/sequence-card.test.ts:246",
+      "src/platform/server/mcp/ui/sequence-card.test.ts:266",
+      "src/platform/server/mcp/ui/sequence-card.test.ts:286",
+      "src/platform/server/mcp/ui/sequence-card.test.ts:407",
+      "src/platform/server/mcp/ui/sequence-card.test.ts:424",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-09-mcp-sequence-card",
+      "docs/secondary-development/preservation/20261108-p2/unit-verification.json (files[].path = src/platform/server/mcp/ui/sequence-card.test.ts)"
+    ]
+  },
+  {
+    "path": "packages/stitch/src/stitched-player-surface.tsx",
+    "behaviorIds": ["AEG-10"],
+    "upstreamBehavior": "StitchedPlayerSurface composes VideoPlayer, captions and the optional Download control. Playback, download and export-progress accessible labels are fixed English strings.",
+    "currentDifference": "Adds optional playback/download/exporting labels and an I18nProvider around the existing VideoPlayer. Existing English fallback labels, media/cue inputs, download operation and event callbacks remain in the same implementation.",
+    "requirementSource": "docs/secondary-development/localization-plan.md; docs/secondary-development/extension-policy.md §4.",
+    "reviewNotes": "This is a product-player presentation bridge, not tooling or Worker configuration. The complete B-to-P2 surface diff was checked. A dedicated upstream/current rendering assertion was not established for this component in this follow-up; no media playback, export or browser acceptance is inferred.",
+    "evidence": [
+      "packages/stitch/src/stitched-player-surface.tsx:60 (StitchedPlayerSurfaceProps.labels)",
+      "packages/stitch/src/stitched-player-surface.tsx:148 (Download)",
+      "packages/stitch/src/stitched-player-surface.tsx:454 (StitchedPlayerSurface)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-10-stitched-player-surface"
+    ]
+  },
+  {
+    "path": "src/platform/ui/feedback/feedback-dialog.tsx",
+    "behaviorIds": ["AEG-11"],
+    "upstreamBehavior": "FeedbackDialog submits the entered message and optional contact through the existing feedback mutation, preserves pending/success/error states, and resets state when the dialog closes.",
+    "currentDifference": "Translates fixed headings, labels, placeholders, button states and the non-Error failure fallback. The message, contact, mutation payload, actual Error.message and submit/reset handlers are unchanged.",
+    "requirementSource": "docs/secondary-development/localization-plan.md; docs/secondary-development/extension-policy.md §4.",
+    "reviewNotes": "Replaces the unrelated public sequence/upload/publish summary with the feedback form contract. Net-diff inspection supports a presentation-only change; no dedicated upstream/current feedback interaction assertion was established or executed here.",
+    "evidence": [
+      "src/platform/ui/feedback/feedback-dialog.tsx:29 (FeedbackDialog)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-11-feedback-dialog"
+    ]
+  },
+  {
+    "path": "src/platform/ui/search/search-dialog.tsx",
+    "behaviorIds": ["AEG-12"],
+    "upstreamBehavior": "SearchDialog queries organization search by the trimmed term, retains debounce/cancellation and previous data, groups returned hits, and follows the existing hit links.",
+    "currentDifference": "Translates fixed search headings, status/empty messages, group labels and input accessibility text. The raw term remains an interpolation value; query key/function, thresholds, hit data, target URLs and navigation handlers are unchanged.",
+    "requirementSource": "docs/secondary-development/localization-plan.md; docs/secondary-development/extension-policy.md §4.",
+    "reviewNotes": "Replaces the unrelated public create/upload/publish summary with the search presentation contract. The B-to-P2 diff was checked against SearchDialog and hitLink. This does not certify live search, organization isolation or keyboard interaction in a browser.",
+    "evidence": [
+      "src/platform/ui/search/search-dialog.tsx:42 (wait)",
+      "src/platform/ui/search/search-dialog.tsx:52 (hitLink)",
+      "src/platform/ui/search/search-dialog.tsx:97 (SearchDialog)",
+      "src/platform/ui/search/search-dialog.tsx:106 (search query)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-12-search-dialog"
+    ]
+  },
+  {
+    "path": "src/platform/client-server-boundary.test.ts",
+    "behaviorIds": ["AEG-13"],
+    "upstreamBehavior": "The client/server boundary test scans retained client imports, treats server directories/API routes and server-only packages as restricted, and requires no leaked server dependency from client roots.",
+    "currentDifference": "Normalizes project-relative Windows paths, traverses script files rather than JSON resources, and allowlists only the official @tanstack/ai/client browser entry. Root @tanstack/ai, adapters and testing stay server-only; positive/negative classifier and traversal assertions are added.",
+    "requirementSource": "AGENTS.md (client/server boundaries); docs/secondary-development/assistant-approval-fix.md §改动范围; docs/secondary-development/upstream-preservation-plan.md §4.2 G.",
+    "reviewNotes": "This is an architectural guard extension, not a public creation endpoint. Original retained-import and no-leak assertions remain; path formatting in diagnostic trails changes. The new explicit browser-entry, separator and script/resource assertions are located in the trace.",
+    "evidence": [
+      "src/platform/client-server-boundary.test.ts:83 (projectPath)",
+      "src/platform/client-server-boundary.test.ts:109 (resolveLocal)",
+      "src/platform/client-server-boundary.test.ts:308 (client/server import boundary)",
+      "src/platform/client-server-boundary.test.ts:350 (clientRetainedImports tests)",
+      "src/platform/client-server-boundary.test.ts:478 (holes assertion)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-13-client-server-boundary"
+    ]
+  },
+  {
+    "path": "src/platform/domain-blind.test.ts",
+    "behaviorIds": ["AEG-14"],
+    "upstreamBehavior": "The domain-blind guard reads composition roots from oxlint and rejects platform value imports of product domains outside those roots.",
+    "currentDifference": "Normalizes backslashes to forward slashes in resolved import targets and repo-relative file paths. Composition-root selection, domain rules and original nonempty-roots/no-offenders assertions remain.",
+    "requirementSource": "AGENTS.md (src/platform is domain-blind); docs/secondary-development/upstream-preservation-plan.md §4.2 G.",
+    "reviewNotes": "This is Windows portability of the architecture test, not public API behavior. The two changed expressions are path normalization; no baseline expect assertion is removed or replaced.",
+    "evidence": [
+      "src/platform/domain-blind.test.ts:50 (domainOf)",
+      "src/platform/domain-blind.test.ts:64 (src/platform is domain-blind)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-14-platform-domain-blind"
+    ]
+  },
+  {
+    "path": "src/platform/log-context.test.ts",
+    "behaviorIds": ["AEG-15"],
+    "upstreamBehavior": "Log-context tests retain tracing-header extraction, contextLocalStorage configuration and nested context stamping across awaited work.",
+    "currentDifference": "Adds a concurrent-request test with separate request/user/session markers and awaited interleaving. It asserts two records and each record retaining its own user and session identifiers; existing tests and the production log-context module are unchanged by this path.",
+    "requirementSource": "docs/secondary-development/upstream-preservation-plan.md §4.1 and §4.2 G (preserve engineering and request-state contracts).",
+    "reviewNotes": "This is an additive isolation regression, not public sequence creation behavior. Original assertions remain; the new concurrent assertions are explicitly identified. Timing is synthetic test scheduling, not production concurrency acceptance.",
+    "evidence": [
+      "src/platform/log-context.test.ts:14 (logContextFromHeaders)",
+      "src/platform/log-context.test.ts:28 (server entry)",
+      "src/platform/log-context.test.ts:38 (withContext)",
+      "src/platform/log-context.test.ts:62 (concurrent requests)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-15-log-context"
+    ]
+  },
+  {
+    "path": "src/platform/server/db/db-access-allowlist.test.ts",
+    "behaviorIds": ["AEG-16"],
+    "upstreamBehavior": "The DB import guard compares all value-import users of raw DB handles and ScopedDb factories to explicit allowlists.",
+    "currentDifference": "Normalizes Windows separators in resolved raw-DB imports, resolved ScopedDb imports and scanned file paths. The RAW_DB_ALLOWLIST/SCOPED_FACTORY_ALLOWLIST contracts and exact set-equality assertions are unchanged.",
+    "requirementSource": "AGENTS.md (no-raw-db and no-scoped-factory); docs/secondary-development/upstream-preservation-plan.md §4.2 G.",
+    "reviewNotes": "This is portability of the DB access guard, not the public create/upload contract. All three source changes normalize paths; the original allowlist assertions remain intact.",
+    "evidence": [
+      "src/platform/server/db/db-access-allowlist.test.ts:58 (isRawDbSpec)",
+      "src/platform/server/db/db-access-allowlist.test.ts:66 (isScopedFactorySpec)",
+      "src/platform/server/db/db-access-allowlist.test.ts:72 (db access allowlists)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-16-db-access-allowlist"
+    ]
+  },
+  {
+    "path": "src/platform/server/api-v1/input-schema.test.ts",
+    "behaviorIds": ["AEG-17"],
+    "upstreamBehavior": "The fully-specified public create-schema request uses imageModels=[flux-pro] and asserts safeParse success. That schema-level acceptance does not establish that the fixture names a routable generation model.",
+    "currentDifference": "Changes the supplied image-model fixture to flux_2_dev for the intentional shared identity validation. Adds explicit acceptance of custom-image:qwen and rejection of no-such-model and the empty custom-image: identity. The supplied-options success matcher and unrelated input-validation assertions remain.",
+    "requirementSource": "docs/secondary-development/image-channels.md; docs/architecture/model-configuration.md; docs/secondary-development/upstream-preservation-plan.md §4.1 (intentional input-contract and assertion changes).",
+    "reviewNotes": "Replaces the former AEG-08 generic public-create mapping with the same AEG-17 schema contract as input-schema.ts. The old success assertion is retained with an intentionally updated valid-identity fixture; new admission/rejection assertions are distinguished from upstream guarantees. This is source/assertion tracing, not a fresh test execution or provider-binding validation.",
+    "evidence": [
+      "src/platform/server/api-v1/input-schema.test.ts:86 (fully-specified request)",
+      "src/platform/server/api-v1/input-schema.test.ts:95 (flux_2_dev fixture)",
+      "src/platform/server/api-v1/input-schema.test.ts:110 (retained safeParse success assertion)",
+      "src/platform/server/api-v1/input-schema.test.ts:155 (configured image identity validation)",
+      "src/platform/server/api-v1/input-schema.ts:172 (apiCreateSequenceSchema.imageModels)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-17-public-api-image-model-schema"
+    ]
+  },
+  {
+    "path": "src/platform/server/api-v1/input-schema.ts",
+    "behaviorIds": ["AEG-17"],
+    "upstreamBehavior": "apiCreateSequenceSchema accepts a nonempty imageModels array of strings at the public schema boundary; the original supplied-options fixture uses flux-pro. That schema-level acceptance does not establish that an arbitrary name could complete generation.",
+    "currentDifference": "Uses imageModelIdSchema for each image model, admitting built-in and valid custom-image identities while rejecting unknown or empty custom identities. The supplied-options fixture uses flux_2_dev and new tests explicitly cover custom-image:qwen, no-such-model and custom-image:. Model descriptions also identify configured defaults.",
+    "requirementSource": "docs/secondary-development/image-channels.md; docs/architecture/model-configuration.md; docs/secondary-development/upstream-preservation-plan.md §4.1 (intentional input-contract and assertion changes).",
+    "reviewNotes": "Registers the previously omitted public input-validation change separately from locale/default propagation. The fixture replacement is deliberate valid-identity adaptation, not evidence that flux-pro was a routable upstream model. The linked trace distinguishes unchanged supplied-option assertions from new admission/rejection assertions.",
+    "evidence": [
+      "src/platform/server/api-v1/input-schema.ts:172 (apiCreateSequenceSchema.imageModels)",
+      "src/models/image-model-schema.ts (imageModelIdSchema)",
+      "src/platform/server/api-v1/input-schema.test.ts:95 (supplied model fixture)",
+      "src/platform/server/api-v1/input-schema.test.ts:155 (configured image identity validation)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-17-public-api-image-model-schema"
+    ]
+  },
+  {
+    "path": "src/platform/server/mcp/tools/structure-edits.ts",
+    "behaviorIds": ["AEG-18"],
+    "upstreamBehavior": "The regenerate_storyboard MCP input refines analysisModel with the built-in analysis-model validator, then uses the existing organization-scoped shared create path. The module also exposes sequence creation and shot updates.",
+    "currentDifference": "Extends the storyboard analysisModel refinement to recognize custom analysis-model identities. Threads promptLocale into shared sequence creation and shot-edit context. Resource access and downstream creation remain in existing services; namespace acceptance alone does not prove a configured provider binding is available.",
+    "requirementSource": "docs/architecture/model-configuration.md; docs/secondary-development/text-channels.md; docs/secondary-development/system-prompt-localization.md.",
+    "reviewNotes": "Registers the custom-analysis schema branch separately from MCP authentication. The general MCP tools test only gains promptLocale fixtures, preserving original assertions; that is not direct evidence for the new custom-storyboard branch. This follow-up does not claim a dedicated MCP custom-model execution test; the parent should associate applicable C-domain evidence or leave that scenario explicitly unverified.",
+    "evidence": [
+      "src/platform/server/mcp/tools/structure-edits.ts:183 (regenerateStoryboardTool input)",
+      "src/platform/server/mcp/tools/structure-edits.ts:189 (analysisModel refinement)",
+      "src/platform/server/mcp/tools/structure-edits.ts:204 (shared createSequences call)",
+      "src/platform/server/mcp/tools.test.ts:153 (tool context fixture)",
+      "docs/secondary-development/preservation/20261108-p2/followup-20261109/assertion-trace-AEG.md#aeg-18-mcp-storyboard-model-schema"
+    ]
+  }
+]

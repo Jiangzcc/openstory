@@ -1,0 +1,75 @@
+const fs = require('node:fs');
+const cp = require('node:child_process');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const root = 'docs/secondary-development/preservation/20261108-p2/';
+const folder = root + 'followup-20261109/';
+const head = '2b41bbf33b75c66035dc0af08df6eea79e3de929';
+const failures = [];
+const checks = [];
+const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
+const git = (args, extra = {}) => cp.execFileSync('git', args, { encoding: 'utf8', maxBuffer: 24 * 1024 * 1024, ...extra });
+const jsonl = file => fs.readFileSync(file, 'utf8').trimEnd().split(/\r?\n/).map(JSON.parse);
+const check = (name, passed, detail) => {
+  checks.push({ name, passed: !!passed, detail });
+  if (!passed) failures.push(name);
+};
+const rows = jsonl(root + 'candidates.jsonl');
+const original = git(['show', head + ':' + root + 'candidates.jsonl']).trimEnd().split(/\r?\n/).map(JSON.parse);
+const scopeFields = ['path', 'change', 'owner', 'p0Id', 'reviewStatus', 'reviewedAtStart'];
+check('candidate-paths-order-and-identity', rows.length === 1128 && original.length === rows.length && rows.every((row, i) => scopeFields.every(key => JSON.stringify(row[key]) === JSON.stringify(original[i][key]))), { paths: rows.length });
+const patches = ['aeg-record-corrections.json', 'c-record-corrections.json'].flatMap(file => {
+  const value = JSON.parse(fs.readFileSync(folder + file, 'utf8'));
+  return Array.isArray(value) ? value : value.corrections;
+});
+const byPath = new Map(rows.map(row => [row.path, row]));
+const fields = ['behaviorIds', 'upstreamBehavior', 'currentDifference', 'requirementSource', 'reviewNotes', 'evidence'];
+check('18-corrections-applied-exactly', patches.length === 18 && new Set(patches.map(p => p.path)).size === 18 && patches.every(p => fields.every(key => JSON.stringify(p[key]) === JSON.stringify(byPath.get(p.path)[key]))), { paths: patches.length });
+const allowed = new Set([...patches.map(p => p.path), 'src/sequences/sequences.fn.ts', 'src/sequences/server/generation-operations.ts', 'src/billing/server/preflight.ts']);
+check('unrelated-candidate-records-preserved', rows.every((row, i) => allowed.has(row.path) || JSON.stringify(row) === JSON.stringify(original[i])), { allowedChangedRecords: allowed.size });
+const behaviorText = fs.readdirSync(root + 'domains').filter(file => file.startsWith('behaviors-')).map(file => fs.readFileSync(root + 'domains/' + file, 'utf8')).join('\n');
+check('behavior-ids-resolve', patches.every(p => p.behaviorIds.every(id => behaviorText.includes(id))), {});
+const coverage = JSON.parse(fs.readFileSync(root + 'coverage.json', 'utf8'));
+const oldCoverage = JSON.parse(git(['show', head + ':' + root + 'coverage.json']));
+check('original-coverage-counts-preserved', Object.entries(oldCoverage).every(([key, value]) => JSON.stringify(value) === JSON.stringify(coverage[key])), { netPaths: coverage.netPaths, historicalUnitTests: coverage.unitTests });
+const trace = JSON.parse(fs.readFileSync(folder + 'assertion-trace-index.json', 'utf8'));
+const inventory = jsonl(folder + 'assertion-inventory.jsonl');
+const changed = inventory.filter(row => row.changedOriginalExpressions.length);
+check('all-changed-expression-files-linked', trace.records.length === 34 && trace.changedOriginalExpressions === 78 && changed.every(row => {
+  const ref = trace.records.find(item => item.path === row.path);
+  return ref && ref.originalExpressionsReviewed === row.changedOriginalExpressions.length && fs.readFileSync(folder + ref.traceDocument, 'utf8').includes(row.path);
+}), { files: trace.records.length, expressions: trace.changedOriginalExpressions });
+const refs = inventory.flatMap(row => ['2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0:' + row.path, head + ':' + row.path]);
+const objects = git(['cat-file', '--batch-check'], { input: refs.join('\n') + '\n' }).trimEnd().split('\n');
+check('126-paired-original-test-blobs-match', inventory.every((row, i) => objects[2 * i].startsWith(row.upstreamBlob + ' blob ') && objects[2 * i + 1].startsWith(row.reviewedBlob + ' blob ')), { files: inventory.length, gitObjects: objects.length });
+const decision = JSON.parse(fs.readFileSync(folder + 'deferred-decisions.json', 'utf8')).decisions[0];
+check('deferred-issue-not-misreported-fixed', decision.id === 'CONTINUE-LLM-SOURCE' && decision.fixed === false && decision.blocksThisFollowup === false && decision.status === 'accepted-deferred', {});
+const bd = JSON.parse(fs.readFileSync(root + 'domains/validation-BD.json', 'utf8'));
+check('BD-10-repair-attribution', bd.decisions.find(item => item.id === 'BD-10')?.implementedBy === 'ba918e6aa41881d1c7f05f9836d06d767f474ff8', {});
+const oldBd = JSON.parse(git(['show', head + ':' + root + 'domains/validation-BD.json']));
+check('BD-historical-run-stats-preserved-excluding-explanatory-limits', Object.entries(oldBd).filter(([key]) => !['decisions', 'limits'].includes(key)).every(([key, value]) => JSON.stringify(value) === JSON.stringify(bd[key])), {});
+const tests = jsonl(folder + 'test-results.jsonl');
+check('19-current-test-source-fingerprints-match', tests.length === 19 && tests.every(row => hash(fs.readFileSync(row.path)) === row.sourceSha256 && row.status === 'passed' && row.assertions.every(item => item.status === 'passed')), { files: tests.length, cases: tests.reduce((n, file) => n + file.assertions.length, 0) });
+check('existing-routeTree-bytes-preserved', hash(fs.readFileSync('src/routeTree.gen.ts')) === '6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4', {});
+const changedPaths = git(['diff', '--name-only']).trim().split('\n').filter(Boolean);
+check('no-production-source-edit', changedPaths.filter(file => file.startsWith('src/') && !file.endsWith('.test.ts') && file !== 'src/routeTree.gen.ts').length === 0, { sourceChanges: changedPaths.filter(file => file.startsWith('src/')) });
+const markdownFiles = [...changedPaths.filter(file => file.endsWith('.md')), ...fs.readdirSync(folder).filter(file => file.endsWith('.md')).map(file => folder + file)];
+const broken = [];
+let links = 0;
+for (const file of new Set(markdownFiles)) {
+  const text = fs.readFileSync(file, 'utf8');
+  for (const match of text.matchAll(/(?<!!)\[[^\]]+\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g)) {
+    const target = match[1].replace(/^<|>$/g, '');
+    if (/^[a-z]+:/i.test(target) || target.startsWith('#')) continue;
+    links++;
+    const resource = decodeURIComponent(target.split('#')[0]);
+    if (!fs.existsSync(path.resolve(path.dirname(file), resource))) broken.push({ file, target });
+  }
+}
+check('modified-markdown-local-file-links-resolve', broken.length === 0, { checked: links, broken });
+const verification = JSON.parse(fs.readFileSync(folder + 'verification.json', 'utf8'));
+check('test-statistics-do-not-double-count-retry', verification.selectedTotals.files === 19 && verification.selectedTotals.total === 388 && verification.selectedTotals.passed === 388 && verification.selectedTotals.failed === 0 && verification.selectedTotals.pending === 0 && verification.runs.some(run => run.success === false), { selected: verification.selectedTotals });
+const report = { date: '2026-11-09', reviewedHead: head, scope: 'Integrity and scope checks for this follow-up, not a full business-equivalence proof.', checks, failed: failures };
+fs.writeFileSync(folder + 'integrity.json', JSON.stringify(report, null, 2) + '\n');
+console.log(JSON.stringify({ checks: checks.length, passed: checks.filter(item => item.passed).length, failed: failures, brokenLinks: broken }));
+if (failures.length) process.exitCode = 1;

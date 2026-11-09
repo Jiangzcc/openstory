@@ -1,0 +1,580 @@
+{
+  "owner": "BD",
+  "recordDate": "2026-11-09",
+  "recordType": "audit-documentation-followup",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "p2ExecutionStart": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "reviewHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+  "authorization": {
+    "source": "Direct user instruction in this chat on 2026-11-09",
+    "authorizedWrites": [
+      "domains/validation-BD.json",
+      "domains/behaviors-BD.md",
+      "followup-20261109/assertion-trace-BD.md",
+      "followup-20261109/bd-review.json"
+    ],
+    "intentSkillCheck": "Main-line agent reported intent list complete with no matching library skill for this documentation repair.",
+    "excluded": [
+      "billing/Continue production changes",
+      "new tests for the deferred billing issue",
+      "candidates.jsonl",
+      "shared root documents",
+      "commits/pushes",
+      "services, paid providers and remote databases"
+    ]
+  },
+  "snapshotBoundary": {
+    "reference": "README.md:26",
+    "originalOwnerSnapshotDate": "2026-11-08",
+    "countsPreserved": [
+      "reviewCounts",
+      "pathCount",
+      "testFiles",
+      "tests",
+      "additionalUnchangedCoreTests",
+      "historicalOnlyPaths",
+      "mergePathPairs",
+      "confirmedNewDefects",
+      "postDecisionValidation"
+    ],
+    "originalRunTimesRewritten": false,
+    "newTestRuns": 0,
+    "previouslyReportedSessionTests": "The preceding conversation reports 48 related repair tests passing; this follow-up neither reran nor adds them to its own results."
+  },
+  "corrections": [
+    {
+      "id": "BD-10-COMMIT-ATTRIBUTION",
+      "status": "corrected-in-audit-documents",
+      "previousImplementedBy": "3b203b3b6c644ab29014ba3860c2667f53cd00da",
+      "introducedBy": "3b203b3b6c644ab29014ba3860c2667f53cd00da",
+      "implementedBy": "ba918e6aa41881d1c7f05f9836d06d767f474ff8",
+      "reason": "The merge introduced normalization of an absent referencePhotoUrl; the later fix restored the upstream refusal before workflow steps. The earlier Git object is valid; the field attribution was wrong.",
+      "commands": [
+        "git diff 3b203b3b6c644ab29014ba3860c2667f53cd00da^1 3b203b3b6c644ab29014ba3860c2667f53cd00da -- src/cast/server/workflows/sheet-snapshots.ts",
+        "git show ba918e6aa41881d1c7f05f9836d06d767f474ff8 -- src/cast/server/workflows/sheet-snapshots.ts src/cast/server/workflows/character-sheet-workflow.ts"
+      ]
+    },
+    {
+      "id": "BD-01-SCOPE",
+      "status": "wording-narrowed",
+      "reason": "Resolved-source guarantees are limited to the configured-image and reviewed create/full-retry gates; Continue is an explicit deferred exception, not a repaired call site.",
+      "decisionReference": "followup-20261109/deferred-decisions.json#CONTINUE-LLM-SOURCE"
+    },
+    {
+      "id": "BD-12-ASSERTION-TRACE",
+      "status": "portable-bd-inventory-trace-added",
+      "artifact": "followup-20261109/assertion-trace-BD.md",
+      "reason": "Maps all 43 changed original expressions in the 20 owner=BD inventory files to exact frozen current expressions with blob/line identifiers; identifies 3 intentional contract/fixture replacements and the other necessary adaptations or strengthened checks. The earlier 72-file screening is not a full assertion proof."
+    }
+  ],
+  "deferredDecisions": [
+    {
+      "id": "CONTINUE-LLM-SOURCE",
+      "reference": "followup-20261109/deferred-decisions.json#CONTINUE-LLM-SOURCE",
+      "decisionDate": "2026-11-09",
+      "decisionSource": "User explicitly said to defer Continue billing and handle it with the future prohibition of user BYOK.",
+      "status": "deferred-by-user",
+      "fixed": false,
+      "blocksThisFollowup": false,
+      "productionChangeInThisFollowup": false,
+      "newFixTestInThisFollowup": false,
+      "byokProhibitionImplemented": false,
+      "conditions": [
+        "Continue has platform text work such as a paid custom-model spec rewrite",
+        "An organization has a usable fal key so both legacy provider checks are covered",
+        "Platform credit balance cannot cover the quoted work",
+        "No configured-image source in this request independently forces the platform-credit gate"
+      ],
+      "currentOrganizationPremise": {
+        "source": "User-provided current-organization premise",
+        "usableFalKey": false,
+        "verifiedByDatabaseInThisFollowup": false,
+        "conclusion": "Without a usable fal key, the reproduced organization-key waiver branch is not entered. Legacy usable keys remain a condition until the future BYOK prohibition is implemented."
+      },
+      "sourceConclusion": "The caller omits llmSources; a custom text model resolves to a platform route; the durable call has no additional credit preflight and deductWorkflowCredits can report a skipped debit afterward.",
+      "earlierIndependentReviewProbe": {
+        "kind": "In-memory synthetic Mock probe using the real requireCredits module; no database or provider",
+        "executedDuringThisDocumentationFollowup": false,
+        "inputs": {
+          "usableOrganizationFalKey": true,
+          "hasEnoughCreditsResult": false,
+          "quotedMicros": 20000,
+          "providers": ["fal", "openrouter"]
+        },
+        "observedCurrentCaller": {
+          "accepted": true,
+          "balanceChecks": 0
+        },
+        "observedWithExplicitPlatformSource": {
+          "error": "InsufficientCreditsError",
+          "balanceChecks": 1
+        },
+        "limit": "Proves the gate discrepancy with source/caller tracing; not an end-to-end supplier spend or remote-wallet reproduction."
+      }
+    }
+  ],
+  "assertionReview": {
+    "candidateManifest": "candidates.jsonl",
+    "priorScreeningFilter": "owner=BD, change=M, path includes .test.",
+    "modifiedTestDiffsScreened": 72,
+    "initialPriorityGroups": 5,
+    "inventory": "followup-20261109/assertion-inventory.jsonl",
+    "inventorySummary": "followup-20261109/assertion-inventory-summary.json",
+    "inventoryFilter": "owner=BD && changedOriginalExpressions.length>0",
+    "inventoryFiles": 20,
+    "changedOriginalExpressions": 43,
+    "tracedOriginalExpressions": 43,
+    "uniqueCurrentExpressions": 42,
+    "unmappedChangedOriginalExpressions": 0,
+    "classifications": {
+      "languageOrExplicitModel": 34,
+      "configurationSnapshot": 3,
+      "strengthenedOrEquivalent": 3,
+      "intentionalContractOrFixtureReplacement": 3
+    },
+    "all72AssertionsProved": false,
+    "newTestRuns": 0,
+    "traceArtifact": "followup-20261109/assertion-trace-BD.md",
+    "expressionRepresentation": "Trace tables contain complete AST-printed original/current expressions without formatting or comments. Original raw text is preserved by the shared inventory and each Git blob; arrays below align B/current line numbers by index.",
+    "historicalResults": {
+      "artifact": "unit-verification.json",
+      "lookup": "files[path]",
+      "source": "BD-tests-result.json",
+      "status": "passed for the listed paths in the original owner run",
+      "executedByThisFollowup": false
+    },
+    "groups": [
+      {
+        "id": "BD-A01",
+        "path": "src/cast/server/describe-upload.test.ts",
+        "inventoryLine": 13,
+        "baselineBlob": "973df130b976e2401dc082b11d0086501fa76cb8",
+        "currentBlob": "1865ed4bfbc44bb3480145d83c91dbd2e276b345",
+        "originalLines": [28],
+        "currentLines": [124],
+        "classification": "language-or-explicit-model",
+        "boundary": "31–57 行 scoped-db/配置/凭证/余额为 stub；15–22 行 LLM 和媒体源转换为 Mock。无 createTestDb。",
+        "archivedCases": 7
+      },
+      {
+        "id": "BD-A02",
+        "path": "src/cast/server/sequence-elements/attach-element-upload.test.ts",
+        "inventoryLine": 14,
+        "baselineBlob": "d84fbffd0ff883db4ec33abb3814f902cdc4f7eb",
+        "currentBlob": "66d6e2e5f4781e7bab0a90d9416bdd896512513f",
+        "originalLines": [180],
+        "currentLines": [181],
+        "classification": "language-or-explicit-model",
+        "boundary": "13–19 行 trigger/storage/rights 为 Mock；31–41 行 sequenceElements 为 scoped-db stub，无真实持久化。",
+        "archivedCases": 13
+      },
+      {
+        "id": "BD-A03",
+        "path": "src/cast/server/talent-vision-region-fallback.test.ts",
+        "inventoryLine": 16,
+        "baselineBlob": "610505a6515468357115d7ea2a08853d31a53738",
+        "currentBlob": "19b810372314f5d97e9c8196c87c3970a0724d6b",
+        "originalLines": [149, 160],
+        "currentLines": [159, 174],
+        "classification": "language-or-explicit-model",
+        "boundary": "30–85 行 env、媒体 URL、createAdapter 和 chat 流为 Mock；执行真实 helper/流处理，无供应商或 D1。",
+        "archivedCases": 5
+      },
+      {
+        "id": "BD-A04",
+        "path": "src/cast/server/talent/analyze-talent-media.test.ts",
+        "inventoryLine": 18,
+        "baselineBlob": "faf65a607e8ea6158584b012dc20fd4acd5a2421",
+        "currentBlob": "0256db54f62dfb33b237f298dcd21c7db8c5de0e",
+        "originalLines": [32],
+        "currentLines": [39],
+        "classification": "intentional-contract-or-fixture-replacement",
+        "boundary": "12–20 行 Gemini Files/人才模型调用为 Mock；32–37、68–82 行 scoped-db/余额/扣费为 stub，无 D1。",
+        "archivedCases": 4
+      },
+      {
+        "id": "BD-A05",
+        "legacyPriorityGroup": "BD-ASSERT-UPLOAD-RIGHTS",
+        "path": "src/cast/server/upload-rights.test.ts",
+        "inventoryLine": 20,
+        "baselineBlob": "2c3295efd4f9c6777351b3004747f74d387c6eda",
+        "currentBlob": "ec8c0b429c5cbcef40601f432cb79879dc8c9744",
+        "originalLines": [
+          133, 142, 155, 195, 208, 219, 246, 277, 315, 331, 340
+        ],
+        "currentLines": [135, 150, 169, 216, 235, 252, 285, 322, 366, 388, 398],
+        "classification": "language-or-explicit-model",
+        "boundary": "16、38、66–67 行为真实 createTestDb 和 #db-client 本地 D1 替换；39–41 行图像/clip 分类器为 Mock。此组有隔离持久化，无真实供应商或远程 D1。",
+        "archivedCases": 15
+      },
+      {
+        "id": "BD-A06",
+        "path": "src/cast/server/voice/enqueue-character-voice.test.ts",
+        "inventoryLine": 21,
+        "baselineBlob": "55b9eba54f46d7deb62d1fb7d89e9329aafd8ef2",
+        "currentBlob": "aa8eb07f6fe7349dc6949e613ad6f4864d6da225",
+        "originalLines": [172],
+        "currentLines": [175],
+        "classification": "language-or-explicit-model",
+        "boundary": "62–95 行 voice claim 方法为 Mock/stub；trigger 为函数替身，无 provider 或 D1。",
+        "archivedCases": 7
+      },
+      {
+        "id": "BD-A07",
+        "path": "src/look/server/workflows/auto-style-step.test.ts",
+        "inventoryLine": 29,
+        "baselineBlob": "9f6b4a09b52c3724e63a824f14884eceb7fbf0d0",
+        "currentBlob": "3e8193916840efbdb454c39a12797e72c8fc70ef",
+        "originalLines": [151, 163, 190],
+        "currentLines": [211, 227, 262],
+        "classification": "language-or-explicit-model",
+        "boundary": "14–26 行 durable LLM、realtime 与 step 为 Mock/stub；47–55 行写方法为 stub。响应 schema 在替身中真实 parse，无 D1/Workflows replay。",
+        "archivedCases": 8
+      },
+      {
+        "id": "BD-A08",
+        "path": "src/motion/server/render-at-quality.test.ts",
+        "inventoryLine": 51,
+        "baselineBlob": "119c84b16a650bc51b88c3daa8ec08d793d55da8",
+        "currentBlob": "bd19a055029efe40d38f779aaf7283fa4dee3744",
+        "originalLines": [131, 238, 275],
+        "currentLines": [131, 241, 280],
+        "classification": "language-or-explicit-model",
+        "boundary": "15–35 行 reserve/trigger/时长读取为 Mock；81–92 行 billing.zeroReservation 为 stub，无真实 D1 预占释放。",
+        "archivedCases": 7
+      },
+      {
+        "id": "BD-A09",
+        "path": "src/sequences/sequences.fn.test.ts",
+        "inventoryLine": 75,
+        "baselineBlob": "79b4c291df0a17e0165285d824fa927064a3ecbc",
+        "currentBlob": "f9860520552c0ab355718c68595527b90ee967e6",
+        "originalLines": [261],
+        "currentLines": [266],
+        "classification": "language-or-explicit-model",
+        "boundary": "纯决策函数与合成 shot/sequence 数据；不执行 server-fn 鉴权、中间件、D1 或真实音乐生成。",
+        "archivedCases": 21
+      },
+      {
+        "id": "BD-A10",
+        "path": "src/sequences/server/export.test.ts",
+        "inventoryLine": 78,
+        "baselineBlob": "ffa1efa45bccd9bb258bc6e9b5d379380a22f3cc",
+        "currentBlob": "e613f63a18bb839c7c998c60c7c45618ef1f0c73",
+        "originalLines": [165],
+        "currentLines": [167],
+        "classification": "language-or-explicit-model",
+        "boundary": "8、49–51、110 行为真实隔离 createTestDb/scopedDb；37–38 行工作流 trigger 为 Mock。验证导出行/剪辑查询，未启动渲染容器。",
+        "archivedCases": 5
+      },
+      {
+        "id": "BD-A11",
+        "legacyPriorityGroup": "BD-ASSERT-FREEZE-PLAN",
+        "path": "src/sequences/server/freeze-fresh-generation-plan.test.ts",
+        "inventoryLine": 79,
+        "baselineBlob": "2199ec4aeb9bf668ba89d354f57a0034ba081ede",
+        "currentBlob": "cfab3528b11c5469356e49c9da85296e2d1e702f",
+        "originalLines": [96],
+        "currentLines": [197],
+        "classification": "language-or-explicit-model",
+        "boundary": "规划器、shots 读取和 fal pricing 为 Mock/stub；配置价卡配合真实纯计价函数，无 createTestDb。",
+        "archivedCases": 7
+      },
+      {
+        "id": "BD-A12",
+        "path": "src/sequences/server/generation-operations.test.ts",
+        "inventoryLine": 81,
+        "baselineBlob": "1b36abea0217ac7e7a37f5b3279b6c0a224ad931",
+        "currentBlob": "f11093540a06bfaef5e6268ab1621b67b35ea64b",
+        "originalLines": [605],
+        "currentLines": [632],
+        "classification": "configuration-snapshot",
+        "boundary": "10、191–193、258 行为真实 createTestDb/scopedDb 组织数据；规划、报价、requireCredits、launchers 和 executeSmartRetry 为 Mock。这里验证计划/执行适配，非真实钱包或 Continue 计费。",
+        "archivedCases": 19
+      },
+      {
+        "id": "BD-A13",
+        "path": "src/sequences/server/launchers.test.ts",
+        "inventoryLine": 82,
+        "baselineBlob": "baff81a5aad0492acc6de128c90318fc22fd81e9",
+        "currentBlob": "027fd1032557e3cd7631713035da095ba2ef151b",
+        "originalLines": [227],
+        "currentLines": [256],
+        "classification": "intentional-contract-or-fixture-replacement",
+        "boundary": "工作流触发/run-state 为 Mock，93–170 行 scoped-db 为 stub；无 D1 并发锁或真实 Workflows 启动。",
+        "archivedCases": 36
+      },
+      {
+        "id": "BD-A14",
+        "path": "src/sequences/server/resolve-style-source.test.ts",
+        "inventoryLine": 85,
+        "baselineBlob": "feef5c291127fe0b6e65915d0fbcb8190483518b",
+        "currentBlob": "ba84bb1f99539eb2ddc6418c3eedbd633282070a",
+        "originalLines": [108],
+        "currentLines": [123],
+        "classification": "intentional-contract-or-fixture-replacement",
+        "boundary": "7、35–37、59–63 行使用真实 createTestDb 及真实组织 scoped-db 方法，无供应商调用。模板本地化及风格历史读写在隔离 D1 上发生。",
+        "archivedCases": 10
+      },
+      {
+        "id": "BD-A15",
+        "legacyPriorityGroup": "BD-ASSERT-SCENE-SPLIT",
+        "path": "src/sequences/server/workflows/scene-split-workflow.test.ts",
+        "inventoryLine": 89,
+        "baselineBlob": "84478e5e1af02193c21c3b1abdfe55845a95d41f",
+        "currentBlob": "912e6f386a04a0c342bf10bdddcba13214f79416",
+        "originalLines": [536, 548, 591, 796],
+        "currentLines": [580, 593, 637, 843],
+        "classification": "language-or-explicit-model",
+        "boundary": "37–52、90 行 trigger/prompt/realtime/deduction/LLM 为 Mock；239–317 行 scoped-db stub，335–344 行 step stub。无真实 D1/供应商/持久回放。",
+        "archivedCases": 36
+      },
+      {
+        "id": "BD-A16",
+        "legacyPriorityGroup": "BD-ASSERT-SMART-RETRY",
+        "path": "src/sequences/smart-retry.test.ts",
+        "inventoryLine": 91,
+        "baselineBlob": "82128cd41572a1d6784d76c66cfc1208ec626614",
+        "currentBlob": "9feb3c6a8474bd1f68ce2a5ff7451b7a9297aee3",
+        "originalLines": [589, 590, 591],
+        "currentLines": [628, 641, 628],
+        "classification": "strengthened-or-equivalent",
+        "boundary": "74、608 行载入真实 reserveRunCredits；keys/billing/reservation/launcher 为 Mock（如 402、410–411 行），无 createTestDb。",
+        "archivedCases": 27
+      },
+      {
+        "id": "BD-A17",
+        "path": "src/shots/server/shot-image-input.test.ts",
+        "inventoryLine": 98,
+        "baselineBlob": "c150f0eb6e97bfc3ae59ce5fa0ae8abeedeb2cd4",
+        "currentBlob": "00d3899ff8e2f2b575919757744443aedc1835cd",
+        "originalLines": [215, 293, 306],
+        "currentLines": [236, 489, 503],
+        "classification": "language-or-explicit-model",
+        "boundary": "29–44 行 price/preflight/配置加载为 Mock，scoped-db 为 stub；无 createTestDb。",
+        "archivedCases": 18
+      },
+      {
+        "id": "BD-A18",
+        "path": "src/shots/server/shot-preview.test.ts",
+        "inventoryLine": 99,
+        "baselineBlob": "76ef5e2191143bce1b77f5819f0446ada4b0b84a",
+        "currentBlob": "24817ed02080cede4a731c5375b3ae2e120e0bd3",
+        "originalLines": [53],
+        "currentLines": [77],
+        "classification": "configuration-snapshot",
+        "boundary": "12–26 行配置、trigger、价源为 Mock；context scoped-db 和 liveRead 为 stub。estimateImageCost 使用真实函数/spy，但无 D1 或真实生成。",
+        "archivedCases": 10
+      },
+      {
+        "id": "BD-A19",
+        "path": "src/shots/server/update-stale-run.test.ts",
+        "inventoryLine": 104,
+        "baselineBlob": "a494205a4480a648e9096c2c7e00845857611990",
+        "currentBlob": "46bb87c16e787f97bfb007a46a6403eff802ba93",
+        "originalLines": [37, 54],
+        "currentLines": [37, 55],
+        "classification": "language-or-explicit-model",
+        "boundary": "5–17 行 trigger/realtime/history/run-outcome 为 Mock；合成 UpdateStalePlan，无 D1/DO 或真实 Workflows。",
+        "archivedCases": 4
+      },
+      {
+        "id": "BD-A20",
+        "legacyPriorityGroup": "BD-ASSERT-UPDATE-STALE",
+        "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+        "inventoryLine": 106,
+        "baselineBlob": "e69c1655cb08bf83f43a19ba9d44855e13c4ed7a",
+        "currentBlob": "fc7a3f0b5ecb51a4b2aa9ef9f8c41e47868b8e29",
+        "originalLines": [1166],
+        "currentLines": [1181],
+        "classification": "configuration-snapshot",
+        "boundary": "36–42、72–89、143–145 行 claim/preflight/prepare/spawn 为 Mock；183–190 行 scoped-db stub。验证引用传播，非 SQL 晋升或真实预占捕获。",
+        "archivedCases": 25
+      }
+    ]
+  },
+  "sourceEvidence": [
+    {
+      "path": "src/billing/server/preflight.ts",
+      "headBlob": "25e0be1c444f5bb30375d4268952ab6df7a2e4b9",
+      "ranges": [
+        [49, 79],
+        [82, 93],
+        [108, 127]
+      ]
+    },
+    {
+      "path": "src/sequences/sequences.fn.ts",
+      "headBlob": "518c54f61ab85220dae78e2738da47200b8ec112",
+      "ranges": [[233, 272]]
+    },
+    {
+      "path": "src/sequences/server/continue-plan.ts",
+      "headBlob": "fb122906c984927bfa80613a49f4e1b96af92cfa",
+      "ranges": [
+        [98, 142],
+        [181, 217],
+        [296, 297]
+      ]
+    },
+    {
+      "path": "src/sequences/server/generation-operations.ts",
+      "headBlob": "08ff1d28ebe846eec31e30c5a4f5afb382149e0f",
+      "ranges": [
+        [355, 399],
+        [503, 511]
+      ]
+    },
+    {
+      "path": "src/models/server/llm-key-routing.ts",
+      "headBlob": "472c25e89aec96e5d9b7991cb15e3c13878a37e9",
+      "ranges": [[60, 80]]
+    },
+    {
+      "path": "src/shots/server/workflows/shot-spec-rewrite-workflow.ts",
+      "headBlob": "210453c98229415374a4b96c29c103897920a7fd",
+      "ranges": [[39, 79]]
+    },
+    {
+      "path": "src/models/server/llm-call-helper.ts",
+      "headBlob": "84e2d02c6f2eaae0e364d7ebe8eb33acadffdba0",
+      "ranges": [
+        [334, 355],
+        [397, 405],
+        [527, 545]
+      ]
+    },
+    {
+      "path": "src/billing/server/workflow-deduction.ts",
+      "headBlob": "98d66caa2225795b7d29fa5ecfec935fc3e53ace",
+      "ranges": [[92, 141]]
+    },
+    {
+      "path": "src/cast/server/workflows/sheet-snapshots.ts",
+      "headBlob": "e47f6464dc1c69c9e5875318af8a11ec595cbeb7",
+      "ranges": [[108, 115]]
+    },
+    {
+      "path": "src/cast/server/workflows/character-sheet-workflow.ts",
+      "headBlob": "286d811a962ca15deb2da286c9b5cdc99ecc6caf",
+      "ranges": [[109, 123]]
+    },
+    {
+      "path": "src/cast/ui/talent/character-sheet-cost.ts",
+      "headBlob": "0239754f020838c87418d0fa571187860a41d526",
+      "ranges": [[4, 12]]
+    },
+    {
+      "path": "src/cast/server/cast-generation.ts",
+      "headBlob": "0324342d585990382bb56354466c03ce8c726e38",
+      "ranges": [[87, 106]]
+    },
+    {
+      "path": "src/cast/character-prompt.ts",
+      "headBlob": "43632056fa72f044e0c410d4e93153769802ca04",
+      "ranges": [[182, 196]]
+    },
+    {
+      "path": "src/billing/money.ts",
+      "headBlob": "06950eb14362c6a382da626625982603c25ccd0d",
+      "ranges": []
+    },
+    {
+      "path": "src/billing/server/db/billing.ts",
+      "headBlob": "1fa3fa40b1fa29fb2ac10760318ae168161182b2",
+      "ranges": [
+        [238, 245],
+        [780, 799],
+        [888, 902]
+      ]
+    },
+    {
+      "path": "src/sequences/server/create-sequences.ts",
+      "headBlob": "187e93d9e1950374a1f65c0cc1fa61dd4ab13d48",
+      "ranges": [[76, 104]]
+    },
+    {
+      "path": "src/sequences/server/launchers.ts",
+      "headBlob": "78b17df17aaadd57740706e56eee081b398e72de",
+      "ranges": [
+        [337, 350],
+        [378, 387]
+      ]
+    },
+    {
+      "path": "src/cast/server/talent/analyze-talent-media.ts",
+      "headBlob": "d6f3e15094b858e828c883b9874ed38905940527",
+      "ranges": [[88, 108]]
+    },
+    {
+      "path": "src/shots/server/shot-preview.ts",
+      "headBlob": "37ee9bfa61c437820a825394f80ed9d0eac93d5c",
+      "ranges": [
+        [49, 79],
+        [130, 152],
+        [185, 201]
+      ]
+    }
+  ],
+  "unchangedCoreEvidence": [
+    {
+      "path": "src/billing/money.ts",
+      "baselineBlob": "06950eb14362c6a382da626625982603c25ccd0d",
+      "currentBlob": "06950eb14362c6a382da626625982603c25ccd0d",
+      "identical": true
+    },
+    {
+      "path": "src/billing/server/db/billing.ts",
+      "baselineBlob": "1fa3fa40b1fa29fb2ac10760318ae168161182b2",
+      "currentBlob": "1fa3fa40b1fa29fb2ac10760318ae168161182b2",
+      "identical": true
+    },
+    {
+      "path": "src/billing/server/workflow-deduction.ts",
+      "baselineBlob": "98d66caa2225795b7d29fa5ecfec935fc3e53ace",
+      "currentBlob": "98d66caa2225795b7d29fa5ecfec935fc3e53ace",
+      "identical": true
+    }
+  ],
+  "relatedApprovedRepair": {
+    "referencePhotoQuoteCommit": "39823da6d32256faf0a7c7b2ae8b355a1596725d",
+    "sources": [
+      "src/cast/ui/talent/character-sheet-cost.ts:4-12",
+      "src/cast/server/cast-generation.ts:87-106",
+      "src/cast/character-prompt.ts:182-196"
+    ],
+    "conclusion": "The default-look photo count agrees with the trigger payload and prompt reference list; no production change or rerun in this documentation follow-up."
+  },
+  "uncovered": [
+    "All original assertions outside the shared inventory owner=BD changed-expression subset, including AST-unchanged expressions whose setup or reachability may differ",
+    "The 72-file text-diff screening was not a line-by-line proof of every assertion; 49 added BD test files were not wholly re-proved here",
+    "Every execution state of all 309 candidate paths",
+    "Real providers, supplier bills, remote D1 or production propagation",
+    "Actual Cloudflare Workflows restart and production isolate heap",
+    "Browser organization/creation/payment flows"
+  ],
+  "scopeControl": {
+    "unrelatedInitialChange": "src/routeTree.gen.ts",
+    "action": "Preserve all other authors' changes; write only the four authorized documentation paths.",
+    "candidatesChanged": false,
+    "sharedRootDocumentsChanged": false,
+    "productionCodeChanged": false,
+    "testCodeChanged": false,
+    "servicesStarted": false,
+    "commitsCreated": false,
+    "pushesPerformed": false,
+    "newTestRuns": 0,
+    "deferredBillingFixTestsAdded": false
+  },
+  "sourceEvidenceBasis": "Prior independent BD source/commit review, with four additional frozen source reads for assertion-contract adaptations; test blobs and aligned original/current lines are listed under assertionReview.groups.",
+  "documentationValidation": {
+    "date": "2026-11-09",
+    "jsonParse": "passed for both owned JSON documents",
+    "inventoryCoverage": "20 BD paths and 43 original expressions mapped exactly once; 42 distinct current expressions",
+    "testBlobIdentities": "all 40 upstream/current blob IDs matched the frozen Git revisions",
+    "historicalSnapshot": "all listed snapshot count/result fields preserved",
+    "formatCheck": "oxfmt --check passed for the four owned documents",
+    "trackedDiffWhitespace": "git diff --check passed for the owned paths; no staging or test run",
+    "testSuitesExecuted": 0
+  }
+}

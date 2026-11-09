@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-09",
+  "reviewedHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+  "baseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": "Known P2 audit-record corrections, assertion tracing and a compatible-image provider persistence regression; no production behavior change.",
+  "counting": "Latest actual result per file across this follow-up only. Historical 329 files / 4588 cases remain in ../unit-verification.json and are not added.",
+  "runs": [
+    {
+      "id": "unit-run-01",
+      "source": ".tmp/p2-followup-20261109/unit-run-01.json",
+      "sourceSha256": "1f4718179fef4158c06655ac7fd805b78e1008790fafe46e4f1d0d3bad5d1682",
+      "success": false,
+      "total": 227,
+      "passed": 216,
+      "failed": 0,
+      "pending": 11,
+      "files": 11,
+      "failedFiles": [
+        {
+          "path": "src/models/server/db/generated-assets.test.ts",
+          "message": "Hook timed out in 10000ms.\nIf this is a long-running hook, pass a timeout value as the last argument or configure it globally with \"hookTimeout\".",
+          "pending": 11
+        }
+      ],
+      "testFiles": [
+        "src/models/generation-mode.test.ts",
+        "src/models/model-assets.fn.test.ts",
+        "src/sequences/smart-retry.test.ts",
+        "src/cast/server/upload-rights.test.ts",
+        "src/sequences/server/freeze-fresh-generation-plan.test.ts",
+        "src/shots/server/update-stale-run.test.ts",
+        "src/models/server/db/api-keys.test.ts",
+        "src/models/server/db/generated-assets.test.ts",
+        "src/platform/server/workflow/base-workflow.test.ts",
+        "src/platform/server/workflow/client.compliance.test.ts",
+        "src/sequences/server/workflows/scene-split-workflow.test.ts"
+      ],
+      "commandPrefix": "bun run test",
+      "options": [
+        "--pool=threads",
+        "--no-file-parallelism",
+        "--maxWorkers=1",
+        "--no-cache",
+        "--no-fsModuleCache",
+        "--reporter=json",
+        "--outputFile=.tmp/p2-followup-20261109/unit-run-01.json"
+      ]
+    },
+    {
+      "id": "unit-run-02",
+      "source": ".tmp/p2-followup-20261109/unit-run-02.json",
+      "sourceSha256": "9b30ee6ed5042d5dc92a8fde5e8df885deaba206391758ea455517847164ae43",
+      "success": true,
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "pending": 0,
+      "files": 1,
+      "failedFiles": [],
+      "testFiles": ["src/models/server/db/generated-assets.test.ts"],
+      "commandPrefix": "bun run test",
+      "options": [
+        "--pool=threads",
+        "--no-file-parallelism",
+        "--maxWorkers=1",
+        "--no-cache",
+        "--no-fsModuleCache",
+        "--reporter=json",
+        "--outputFile=.tmp/p2-followup-20261109/unit-run-02.json"
+      ]
+    },
+    {
+      "id": "unit-run-03",
+      "source": ".tmp/p2-followup-20261109/unit-run-03.json",
+      "sourceSha256": "503ad30adac872cdceb56893d8c9ea89628d245c406c795377056388dc100c55",
+      "success": true,
+      "total": 161,
+      "passed": 161,
+      "failed": 0,
+      "pending": 0,
+      "files": 8,
+      "failedFiles": [],
+      "testFiles": [
+        "scripts/preview-db.test.ts",
+        "src/assistant/server/assistant-tool-schema.test.ts",
+        "src/assistant/server/assistant-tools.test.ts",
+        "packages/stitch/src/cli.test.ts",
+        "src/assistant/ui/assistant-approvals.test.ts",
+        "src/platform/server/api-v1/input-schema.test.ts",
+        "src/shots/server/db/shot-dialogue.test.ts",
+        "src/platform/server/mcp/ui/sequence-card.test.ts"
+      ],
+      "commandPrefix": "bun run test",
+      "options": [
+        "--pool=threads",
+        "--no-file-parallelism",
+        "--maxWorkers=1",
+        "--no-cache",
+        "--no-fsModuleCache",
+        "--reporter=json",
+        "--outputFile=.tmp/p2-followup-20261109/unit-run-03.json"
+      ]
+    }
+  ],
+  "selectedTotals": {
+    "files": 19,
+    "total": 388,
+    "passed": 388,
+    "failed": 0,
+    "pending": 0
+  },
+  "resultArchive": "test-results.jsonl",
+  "retryReason": "unit-run-01 generated-assets.test.ts beforeAll createTestDb hook exceeded its existing 10000ms limit; 11 cases did not execute. No timeout or production-code change. Isolated unit-run-02 passed all 11, replacing that file only.",
+  "rawLogBoundary": "Source JSON reports are local diagnostic paths; source hashes and portable per-file assertions/results are archived here.",
+  "excluded": [
+    "Paid provider/model calls",
+    "Remote database access",
+    "Browser or E2E replay in this follow-up",
+    "Deployment/push",
+    "Repair of the accepted-deferred Continue billing issue"
+  ],
+  "quality": {
+    "typecheck": {
+      "status": "passed",
+      "command": "bun typecheck",
+      "exitCode": 0
+    },
+    "targetedTypeAwareLint": {
+      "status": "passed",
+      "command": "bunx --no-install oxlint --type-aware src/models/server/db/generated-assets.test.ts",
+      "exitCode": 0
+    },
+    "format": {
+      "status": "passed",
+      "files": 24,
+      "command": "bunx --no-install oxfmt --check <24 modified documentation/JSON/test files>",
+      "jsonl": "candidates, assertion inventory and test result JSONL parsed separately"
+    },
+    "integrity": {
+      "status": "passed",
+      "checks": 15,
+      "source": "integrity-check-source.txt",
+      "result": "integrity.json"
+    }
+  },
+  "acceptedDeferredIssue": "deferred-decisions.json#CONTINUE-LLM-SOURCE",
+  "productionFilesModified": 0,
+  "independentReview": {
+    "status": "integrated",
+    "scope": "Scope/authorization wording and six C-record mappings",
+    "findings": [
+      "Removed two remaining unconditional P2 completion claims from the plan.",
+      "Qualified the implementation report summary as historical coverage plus actual follow-up evidence."
+    ],
+    "productionScope": "Continue billing remains accepted-deferred; no production behavior patch."
+  }
+}

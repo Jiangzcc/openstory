@@ -1,0 +1,120 @@
+{
+  "date": "2026-11-09",
+  "reviewedHead": "2b41bbf33b75c66035dc0af08df6eea79e3de929",
+  "scope": "Integrity and scope checks for this follow-up, not a full business-equivalence proof.",
+  "checks": [
+    {
+      "name": "candidate-paths-order-and-identity",
+      "passed": true,
+      "detail": {
+        "paths": 1128
+      }
+    },
+    {
+      "name": "18-corrections-applied-exactly",
+      "passed": true,
+      "detail": {
+        "paths": 18
+      }
+    },
+    {
+      "name": "unrelated-candidate-records-preserved",
+      "passed": true,
+      "detail": {
+        "allowedChangedRecords": 21
+      }
+    },
+    {
+      "name": "behavior-ids-resolve",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "original-coverage-counts-preserved",
+      "passed": true,
+      "detail": {
+        "netPaths": 1128,
+        "historicalUnitTests": {
+          "files": 329,
+          "total": 4588,
+          "passed": 4588,
+          "failed": 0,
+          "skipped": 0
+        }
+      }
+    },
+    {
+      "name": "all-changed-expression-files-linked",
+      "passed": true,
+      "detail": {
+        "files": 34,
+        "expressions": 78
+      }
+    },
+    {
+      "name": "126-paired-original-test-blobs-match",
+      "passed": true,
+      "detail": {
+        "files": 126,
+        "gitObjects": 252
+      }
+    },
+    {
+      "name": "deferred-issue-not-misreported-fixed",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "BD-10-repair-attribution",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "BD-historical-run-stats-preserved-excluding-explanatory-limits",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "19-current-test-source-fingerprints-match",
+      "passed": true,
+      "detail": {
+        "files": 19,
+        "cases": 388
+      }
+    },
+    {
+      "name": "existing-routeTree-bytes-preserved",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "no-production-source-edit",
+      "passed": true,
+      "detail": {
+        "sourceChanges": ["src/models/server/db/generated-assets.test.ts"]
+      }
+    },
+    {
+      "name": "modified-markdown-local-file-links-resolve",
+      "passed": true,
+      "detail": {
+        "checked": 227,
+        "broken": []
+      }
+    },
+    {
+      "name": "test-statistics-do-not-double-count-retry",
+      "passed": true,
+      "detail": {
+        "selected": {
+          "files": 19,
+          "total": 388,
+          "passed": 388,
+          "failed": 0,
+          "pending": 0
+        }
+      }
+    }
+  ],
+  "failed": []
+}
