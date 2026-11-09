@@ -198,6 +198,10 @@ Photos are input to the sheet (`listPhotos`, `addPhotos`, `removePhoto`).
   (`referencePhotoUrls`, sorted). The sheet prompt takes them
   (`buildLocationSheetPrompt(entry, referencePhotoUrls)`).
 - The set of photos is in the sheet hash. Order is not.
+- Direct regeneration and plan billing share `locationSheetImageRequest` in
+  `src/cast/sheet-image-request.ts`: the resolved model, a wide sheet and
+  the snapshotted array's full length. It neither filters nor deduplicates
+  photos; execution and the snapshot/hash contract stay with their owners.
 - Adding or removing a photo clears the sheet claim, so a run in flight
   parks its result instead of landing it.
 - Adding or removing a photo does not start a sheet run.

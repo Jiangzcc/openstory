@@ -4,7 +4,7 @@ import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import type { PlanReferences } from '@/shots/server/update-stale-references';
 import { asStub } from '@/test/as-stub';
 import { TEST_FAL_PRICING } from './fal-pricing-fixture';
-import { IMAGE_MODELS } from '@/models/models';
+import { DEFAULT_IMAGE_MODEL, IMAGE_MODELS } from '@/models/models';
 import type { TextToImageModel } from '@/models/models';
 import { micros } from './money';
 import {
@@ -328,6 +328,46 @@ describe('configured element sheet billing', () => {
       ['16:9', 2],
       ['1:1', 0],
       ['1:1', 0],
+    ]);
+  });
+  it('preserves per-sheet models, default fallback and one face across a mixed plan', () => {
+    const references = asStub<PlanReferences>({
+      characterSheets: [
+        { imageModel: MODEL, face: null, referencePhotoUrl: null },
+        {
+          imageModel: 'flux_2_max',
+          face: {
+            url: 'https://mock.invalid/face.png',
+            versionId: 'mock-face',
+          },
+          referencePhotoUrl: 'https://mock.invalid/photo.png',
+        },
+        { face: null, referencePhotoUrl: 'https://mock.invalid/photo.png' },
+      ],
+      lookSheetsAfterDefault: [{ imageModel: 'flux_2_max' }],
+      locationSheets: [
+        {
+          imageModel: 'custom-image:mock-location',
+          referencePhotoUrls: ['mock-photo-1', 'mock-photo-2'],
+        },
+      ],
+      elementSheets: { imageModel: 'custom-image:mock-element', entries: [{}] },
+    });
+    expect(
+      referenceSheetImageRequests(references).map(
+        ({ model, aspectRatio, referenceImageCount }) => [
+          model,
+          aspectRatio,
+          referenceImageCount,
+        ]
+      )
+    ).toEqual([
+      [MODEL, '16:9', 0],
+      ['flux_2_max', '16:9', 1],
+      [DEFAULT_IMAGE_MODEL, '16:9', 1],
+      ['flux_2_max', '16:9', 1],
+      ['custom-image:mock-location', '16:9', 2],
+      ['custom-image:mock-element', '1:1', 0],
     ]);
   });
 });

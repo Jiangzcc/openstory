@@ -8,6 +8,10 @@ import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
 import { DEFAULT_IMAGE_MODEL, safeTextToImageModel } from '@/models/models';
 import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
 import {
+  characterSheetImageRequest,
+  locationSheetImageRequest,
+} from '@/cast/sheet-image-request';
+import {
   requireCredits,
   reserveRunCredits,
   releaseReservationOnThrow,
@@ -97,10 +101,8 @@ export async function regenerateCharacterSheet(
   const modelConfiguration = await loadModelRuntimeConfiguration();
   const imageBilling = await prepareConfiguredImageBilling({
     modelConfiguration,
-    model: payload.imageModel ?? DEFAULT_IMAGE_MODEL,
-    aspectRatio: '16:9',
+    ...characterSheetImageRequest(payload),
     imageCount: 1,
-    referenceImageCount: payload.face || payload.referencePhotoUrl ? 1 : 0,
   });
   if (imageBilling)
     await requireCredits(scopedDb, imageBilling.costMicros, imageBilling);
@@ -287,10 +289,8 @@ export async function regenerateLocationSheet(
   const modelConfiguration = await loadModelRuntimeConfiguration();
   const imageBilling = await prepareConfiguredImageBilling({
     modelConfiguration,
-    model: payload.imageModel ?? DEFAULT_IMAGE_MODEL,
-    aspectRatio: '16:9',
+    ...locationSheetImageRequest(payload),
     imageCount: 1,
-    referenceImageCount: payload.referencePhotoUrls.length,
   });
   if (imageBilling)
     await requireCredits(scopedDb, imageBilling.costMicros, imageBilling);

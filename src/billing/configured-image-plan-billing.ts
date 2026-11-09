@@ -10,7 +10,12 @@ import {
 import type { AspectRatio } from '@/models/aspect-ratios';
 import type { Resolution } from '@/models/resolutions';
 import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
-import { DEFAULT_IMAGE_MODEL } from '@/models/models';
+import {
+  characterSheetImageRequest,
+  lookSheetAfterDefaultImageRequest,
+  locationSheetImageRequest,
+  elementSheetImageRequest,
+} from '@/cast/sheet-image-request';
 import type { TextToImageModel } from '@/models/models';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import type { PlanReferences } from '@/shots/server/update-stale-references';
@@ -73,27 +78,13 @@ function planImageRequests(
 export function referenceSheetImageRequests(
   references: ReferenceSheetPlan
 ): PlanImageRequest[] {
-  const request = (
-    model: TextToImageModel | undefined,
-    referenceImageCount: number,
-    aspectRatio: AspectRatio = '16:9'
-  ): PlanImageRequest => ({
-    model: model ?? DEFAULT_IMAGE_MODEL,
-    aspectRatio,
-    referenceImageCount,
-  });
+  const { elementSheets } = references;
   return [
-    ...references.characterSheets.map((sheet) =>
-      request(sheet.imageModel, sheet.face || sheet.referencePhotoUrl ? 1 : 0)
-    ),
-    ...references.lookSheetsAfterDefault.map((sheet) =>
-      request(sheet.imageModel, 1)
-    ),
-    ...references.locationSheets.map((sheet) =>
-      request(sheet.imageModel, sheet.referencePhotoUrls.length)
-    ),
-    ...(references.elementSheets?.entries.map(() =>
-      request(references.elementSheets?.imageModel, 0, '1:1')
+    ...references.characterSheets.map(characterSheetImageRequest),
+    ...references.lookSheetsAfterDefault.map(lookSheetAfterDefaultImageRequest),
+    ...references.locationSheets.map(locationSheetImageRequest),
+    ...(elementSheets?.entries.map(() =>
+      elementSheetImageRequest(elementSheets)
     ) ?? []),
   ];
 }

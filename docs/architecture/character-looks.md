@@ -228,6 +228,12 @@ sheet.
   original photo. The UI bridge is `character-sheet-cost.ts`; its regression
   tests compare the hint with the real trigger draft and prompt references,
   including an edit-only configured model.
+- **The server's price input** comes from the resolved sheet DTO through
+  `src/cast/sheet-image-request.ts`, shared by direct regeneration and plan
+  billing. It preserves the model, wide ratio and one face-or-photo reference.
+  A deferred look has one future face even while its draft has none; the
+  existing second wave still supplies that face before dispatch. UI readiness
+  stays on its separate hint contract.
 - **One run makes every look.** In the plan the default sheet is the look's
   upstream, with the ordinary rules: a default this run makes puts the look
   in the same run (a look that was done goes stale by cascade, since its
