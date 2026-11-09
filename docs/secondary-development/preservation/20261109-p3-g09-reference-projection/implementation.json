@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-09",
+  "batchId": "G09-reference-projection",
+  "responsibilityId": "GC-09",
+  "status": "completed",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "b85e8c2728259b7902dad6e1cc9aa3757dfb3b6e",
+  "sourceAfter": "456046a25269371dd42729f0a2f9343e07942c4d",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "designFilesModified": false,
+    "semanticApproval": false
+  },
+  "newSourcePaths": [
+    "src/cast/sheet-image-request.ts",
+    "src/cast/sheet-image-request.test.ts"
+  ],
+  "productionFiles": [
+    "src/cast/sheet-image-request.ts",
+    "src/cast/server/cast-generation.ts",
+    "src/billing/configured-image-plan-billing.ts"
+  ],
+  "changedFiles": [
+    {
+      "path": "src/cast/sheet-image-request.ts",
+      "sha256Normalized": "67ad68fe1b5f5316bd55b3effdef51ecfe0050d026765559b9894fa5f28f3286"
+    },
+    {
+      "path": "src/cast/sheet-image-request.test.ts",
+      "sha256Normalized": "e50c95faf43597b7353fab4bd590dd4265a62ea30fa6d10fa7cfd4c44c0bf811"
+    },
+    {
+      "path": "src/cast/server/cast-generation.ts",
+      "sha256Normalized": "43023cb7b3c64ba24796981d748b983933e8fa7166f845998de2f21e671ba884"
+    },
+    {
+      "path": "src/cast/server/cast-generation.test.ts",
+      "sha256Normalized": "0dd32975825a5367e3382fc960bcbc87506072af9af952f91714b3b111a973d5"
+    },
+    {
+      "path": "src/billing/configured-image-plan-billing.ts",
+      "sha256Normalized": "eac936c2bac665c206a24d46d3aaf994d5e142e482676dbc7d78c76b6bbaae2b"
+    },
+    {
+      "path": "src/billing/configured-image-plan-billing.test.ts",
+      "sha256Normalized": "90f249dd76eec97df828b9a81b73abc3f99c76489586510794e36235d2ddb67e"
+    },
+    {
+      "path": "docs/architecture/character-looks.md",
+      "sha256Normalized": "0f89bd8c2e86ed3947b74a31eade5efd03fbedd66d17a72b4f9a4235da975a17"
+    },
+    {
+      "path": "docs/architecture/model-configuration.md",
+      "sha256Normalized": "e1966db444ed4487136fddbcbe88dddf044459cc384c2ce2ee4ff5a39b242531"
+    },
+    {
+      "path": "docs/architecture/organization-locations.md",
+      "sha256Normalized": "4a1330bf907d973aa9f4b0de4987a1ed9ef9eb2f352535d45073e54b1314cd21"
+    }
+  ],
+  "fingerprintEncoding": "SHA-256 after CRLF-to-LF normalization; protected working files use raw byte hashes.",
+  "removedDuplication": [
+    {
+      "decision": "billing request model fallback",
+      "beforeOwners": 3,
+      "afterOwners": 1
+    },
+    {
+      "decision": "character billing reference count",
+      "beforeOwners": 2,
+      "afterOwners": 1
+    },
+    {
+      "decision": "location billing reference count",
+      "beforeOwners": 2,
+      "afterOwners": 1
+    }
+  ],
+  "remainingBridges": [
+    {
+      "path": "src/cast/server/cast-generation.ts",
+      "reason": "Actor, scoped ownership, payload construction, frozen model configuration, credit gate, claim, reservation and dispatch stay at the existing direct boundary."
+    },
+    {
+      "path": "src/billing/configured-image-plan-billing.ts",
+      "reason": "Plan collection preserves request order, per-sheet models, deferred looks, element multiplicity and existing cost/source rules."
+    },
+    {
+      "path": "src/cast/server/workflows/character-sheet-workflow.ts",
+      "reason": "Upstream execution, storage, retry, final cost and claim lifecycle stay unchanged."
+    },
+    {
+      "path": "src/cast/server/workflows/location-sheet-workflow.ts",
+      "reason": "Upstream execution, storage, retry, final cost and claim lifecycle stay unchanged."
+    },
+    {
+      "path": "src/cast/ui/talent/character-sheet-cost.ts",
+      "reason": "UI readiness can be unloaded or not ready; it is not the final deferred-look request."
+    }
+  ],
+  "sourceScopeProof": {
+    "directProductionChangesLimitedToProjection": true,
+    "unchangedBoundaries": [
+      {
+        "file": "src/cast/server/sheets/character-sheet-trigger.ts",
+        "unchanged": true,
+        "sha256Normalized": "bfcb3677a49486df96acda4bded56e0ccceaeeabca1bc80298b40824238ad3a7"
+      },
+      {
+        "file": "src/cast/server/sheets/location-sheet-trigger.ts",
+        "unchanged": true,
+        "sha256Normalized": "a17ba0ef104def171a495634a8948999748500b4f0aa21f2935dd1f57c474c6c"
+      },
+      {
+        "file": "src/cast/server/workflows/sheet-snapshots.ts",
+        "unchanged": true,
+        "sha256Normalized": "0f2ec8b48e087b0d3ec94f3fdccfef470220398914f8bcdabd31a76981c94592"
+      },
+      {
+        "file": "src/cast/server/workflows/character-sheet-workflow.ts",
+        "unchanged": true,
+        "sha256Normalized": "d8ec2b38b146fe442283a4c6e3444bb5735b5be42d127f871e9b7407a54284df"
+      },
+      {
+        "file": "src/cast/server/workflows/location-sheet-workflow.ts",
+        "unchanged": true,
+        "sha256Normalized": "c3c5db18cef5fd6e838a1b84b6218b267f7d513e2c6f47be27707b1fd4324cb8"
+      },
+      {
+        "file": "src/cast/server/workflows/element-sheet-workflow.ts",
+        "unchanged": true,
+        "sha256Normalized": "87b7f2ff8d9cfa63d77af1a6dcd1564d317d84f7c35587c23f92572946c8a826"
+      },
+      {
+        "file": "src/cast/ui/talent/character-sheet-cost.ts",
+        "unchanged": true,
+        "sha256Normalized": "337c3d24e1a23b5c542175deb5325ee86322c0624bc11b57d0392502a4656b7d"
+      }
+    ]
+  },
+  "quality": {
+    "newProjection": {
+      "file": "src/cast/sheet-image-request.ts",
+      "lines": 70,
+      "method": "Babel AST function span; count conditionals and all logical expressions conservatively",
+      "functions": [
+        {
+          "name": "sheetImageRequest",
+          "lines": 11,
+          "cyclomaticUpperBound": 2
+        },
+        {
+          "name": "characterSheetImageRequest",
+          "lines": 12,
+          "cyclomaticUpperBound": 3
+        },
+        {
+          "name": "lookSheetAfterDefaultImageRequest",
+          "lines": 9,
+          "cyclomaticUpperBound": 1
+        },
+        {
+          "name": "locationSheetImageRequest",
+          "lines": 9,
+          "cyclomaticUpperBound": 1
+        },
+        {
+          "name": "elementSheetImageRequest",
+          "lines": 5,
+          "cyclomaticUpperBound": 1
+        }
+      ]
+    },
+    "existingDirectFunctions": [
+      {
+        "name": "regenerateCharacterSheet",
+        "beforeLines": 120,
+        "afterLines": 118
+      },
+      {
+        "name": "regenerateLocationSheet",
+        "beforeLines": 107,
+        "afterLines": 105
+      }
+    ],
+    "existingDirectFunctionLimit": "Both existing direct functions still exceed 50 lines. No long function was added; each shrank by two lines. Their remaining flow is outside this projection extraction."
+  },
+  "assertionTrace": [
+    {
+      "before": "cast-generation.test.ts: checks/reserves edit price and same routing snapshot",
+      "after": "cast sheet direct entry and configured plan quote agreement: five payload cases, literal prices and complete trigger payloads"
+    },
+    {
+      "before": "cast-generation.test.ts: insufficient credits before claim/workflow",
+      "after": "cast sheet credit rejection before claim, reserve and trigger: five payload cases"
+    },
+    {
+      "before": "cast-generation.test.ts: generate-only route refuses photographed character",
+      "after": "cast sheet unsupported operation rejection before side effects: five payload cases"
+    },
+    {
+      "before": "configured-image-plan-billing.test.ts: all original assertions",
+      "after": "Retained; added one independent mixed-plan model/aspect/reference matrix"
+    },
+    {
+      "before": "character workflow, sheet snapshot, look face and UI hint assertions",
+      "after": "Unchanged tests rerun in the integrated suite"
+    }
+  ],
+  "verification": [
+    {
+      "check": "baseline unit tests",
+      "source": "b85e8c2728259b7902dad6e1cc9aa3757dfb3b6e",
+      "files": 7,
+      "passed": 81,
+      "failed": 0
+    },
+    {
+      "check": "integrated unit tests and architecture boundaries",
+      "command": "bun run test src/cast/sheet-image-request.test.ts src/cast/server/cast-generation.test.ts src/billing/configured-image-plan-billing.test.ts src/billing/configured-image-plan-billing-balance.test.ts src/cast/server/workflows/character-sheet-workflow.test.ts src/cast/server/workflows/element-sheet-workflow.test.ts src/cast/server/workflows/sheet-snapshots.test.ts src/cast/look-sheet-face.test.ts src/cast/ui/talent/character-sheet-cost.test.ts src/cast/character-prompt.test.ts src/cast/location-prompt.test.ts src/shots/server/workflows/update-stale-plan-run.test.ts src/platform/client-server-boundary.test.ts src/platform/domain-blind.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/claim-discipline.test.ts",
+      "files": 16,
+      "passed": 258,
+      "failed": 0,
+      "note": "Run before the final test-only invocation-order type correction; production code did not change afterward."
+    },
+    {
+      "check": "direct-entry tests after strict-index correction",
+      "command": "bun run test src/cast/server/cast-generation.test.ts",
+      "files": 1,
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "check": "typecheck after correction",
+      "command": "bun typecheck",
+      "exitCode": 0
+    },
+    {
+      "check": "whole repository lint",
+      "command": "bun lint",
+      "exitCode": 0,
+      "batchWarnings": 0,
+      "note": "Warnings in other existing files remain."
+    },
+    {
+      "check": "dead code",
+      "command": "bun dead-code",
+      "exitCode": 0,
+      "configurationHints": 6
+    },
+    {
+      "check": "build",
+      "command": "bun run build",
+      "exitCode": 0,
+      "note": "Bundler directive and plugin timing warnings remain; no deployment."
+    },
+    {
+      "check": "batch formatting",
+      "command": "bun format:check src/cast/sheet-image-request.ts src/cast/sheet-image-request.test.ts src/cast/server/cast-generation.ts src/cast/server/cast-generation.test.ts src/billing/configured-image-plan-billing.ts src/billing/configured-image-plan-billing.test.ts docs/architecture/character-looks.md docs/architecture/model-configuration.md docs/architecture/organization-locations.md",
+      "exitCode": 0
+    },
+    {
+      "check": "whole repository formatting",
+      "command": "bun format:check",
+      "exitCode": 1,
+      "flaggedPaths": 2215,
+      "flaggedBatchPaths": 0,
+      "note": "Flagged paths are outside this batch; no whole-repository formatting was performed."
+    },
+    {
+      "check": "normal code commit hooks",
+      "exitCode": 0,
+      "passed": [
+        "client-server-boundary",
+        "dead-code",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "initialFailure": "Five TS2345 errors in new test invocation-order assertions were corrected; normal hooks then passed."
+    }
+  ],
+  "protectedWorkingFiles": {
+    "src/routeTree.gen.ts": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+    ".codex/project-rules.md": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3"
+  },
+  "notValidated": [
+    "Real suppliers or paid calls",
+    "Cloudflare Workflows engine replay or remote database behavior",
+    "Browser or device end-to-end acceptance",
+    "All GC-09 ownership and shared-entity entrypoints; G09-ownership-verify is separate"
+  ],
+  "notClosed": [
+    "G09-ownership-verify",
+    "GC-09 as a whole",
+    "Other global P3 actions and original diff-block dispositions"
+  ],
+  "deferredBusinessIssues": ["CONTINUE-LLM-SOURCE"],
+  "nextImplementation": ["G07-partition", "G07-callers"],
+  "noRemoteWrites": true,
+  "pushed": false,
+  "upgradeReviewTriggers": [
+    "Changes to face/referencePhotoUrl semantics or deferred-look completion",
+    "Changes to location referencePhotoUrls or sheet aspect ratios",
+    "Changes to element imageSize or entry multiplicity",
+    "Changes to model fallback, selected per-sheet models or configured-image quote size/reference rules"
+  ]
+}
