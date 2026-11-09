@@ -44,7 +44,8 @@ vi.doMock('@/platform/server/db/scoped', () => ({
 }));
 
 // Dynamic import so the mocks above apply (vi.doMock is not hoisted).
-const { prepareShotImageWorkflowInput } = await import('./shot-image-input');
+const { prepareShotImageWorkflowInput, prepareShotImageGeneration } =
+  await import('./shot-image-input');
 const { NO_STILL_PROMPT_MESSAGE } = await import('./still-prompt');
 
 const FRAME_ID = 'frm_1';
@@ -509,4 +510,86 @@ describe('prepareShotImageWorkflowInput never prompts a still with the script (#
       })
     ).rejects.toThrow(NO_STILL_PROMPT_MESSAGE);
   });
+});
+
+// Synthetic routes exercise the server-only bundle and the unchanged workflow facade.
+describe('prepared shot image generation contract', () => {
+  beforeEach(() => {
+    requireCredits.mockClear();
+    loadConfiguration
+      .mockReset()
+      .mockResolvedValue(DEFAULT_MODEL_CONFIGURATION);
+  });
+
+  const cases = [
+    { modelId: 'custom-image:qwen', configured: true },
+    { modelId: 'gpt_image_2', configured: true },
+    { modelId: DEFAULT_IMAGE_MODEL, configured: false },
+  ] as const;
+
+  it.each(cases)(
+    'keeps the captured configuration and preflight quote for $modelId',
+    async ({ modelId, configured }) => {
+      const configuration = configured
+        ? configuredModels(modelId)
+        : DEFAULT_MODEL_CONFIGURATION;
+      const { scopedDb } = makeScopedDb();
+      const prepared = await prepareShotImageGeneration({
+        ...baseArgs(scopedDb),
+        promptLocale: 'en',
+        modelOverride: modelId,
+        modelConfiguration: configuration,
+      });
+      expect(prepared.modelConfiguration).toBe(configuration);
+      expect(
+        unpackModelRuntimeConfiguration(
+          prepared.workflowInput.modelConfiguration ??
+            DEFAULT_MODEL_CONFIGURATION
+        )
+      ).toEqual(configuration);
+      expect(prepared.workflowInput).toMatchObject({
+        model: modelId,
+        aspectRatio: '16:9',
+        resolution: '720p',
+        numImages: 1,
+        referenceImages: [],
+      });
+      if (configured) {
+        expect(prepared.imageBilling).toMatchObject({
+          costMicros: 100000,
+          imageSource: 'platform',
+          parameters: { size: '1024x576' },
+          modelConfiguration: configuration,
+        });
+        expect(requireCredits).toHaveBeenCalledWith(
+          scopedDb,
+          prepared.imageBilling?.costMicros,
+          expect.objectContaining({ imageSource: 'platform' })
+        );
+      } else {
+        expect(prepared.imageBilling).toBeUndefined();
+      }
+      expect(loadConfiguration).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(cases)(
+    'returns only the existing workflow payload through the $modelId facade',
+    async ({ modelId, configured }) => {
+      const { scopedDb } = makeScopedDb();
+      const args = {
+        ...baseArgs(scopedDb),
+        promptLocale: 'en' as const,
+        modelOverride: modelId,
+        modelConfiguration: configured
+          ? configuredModels(modelId)
+          : DEFAULT_MODEL_CONFIGURATION,
+      };
+      const prepared = await prepareShotImageGeneration(args);
+      const workflowInput = await prepareShotImageWorkflowInput(args);
+      expect(workflowInput).toEqual(prepared.workflowInput);
+      expect(workflowInput).not.toHaveProperty('workflowInput');
+      expect(workflowInput).not.toHaveProperty('imageBilling');
+    }
+  );
 });

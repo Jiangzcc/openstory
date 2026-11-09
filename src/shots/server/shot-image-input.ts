@@ -93,7 +93,13 @@ export function getSceneLocationReferenceImages(
  * Throws when the shot has no prompt and no spec to derive one from, and rethrows the credits
  * preflight's `InsufficientCreditsError`.
  */
-export async function prepareShotImageWorkflowInput(args: {
+type PreparedShotImageGeneration = {
+  workflowInput: ImageWorkflowInput;
+  modelConfiguration: ModelRuntimeConfiguration;
+  imageBilling: Awaited<ReturnType<typeof prepareConfiguredImageBilling>>;
+};
+
+export async function prepareShotImageGeneration(args: {
   promptLocale: Locale;
   scopedDb: ScopedDb;
   /** Trusted server snapshot supplied by workflow callers. */
@@ -143,7 +149,7 @@ export async function prepareShotImageWorkflowInput(args: {
    * against the same cast/locations/elements.
    */
   refs?: ShotImageRefs;
-}): Promise<ImageWorkflowInput> {
+}): Promise<PreparedShotImageGeneration> {
   const {
     scopedDb,
     sequence,
@@ -339,7 +345,7 @@ export async function prepareShotImageWorkflowInput(args: {
     sequence.aspectRatio
   );
 
-  return {
+  const workflowInput: ImageWorkflowInput = {
     promptLocale: args.promptLocale,
     userId,
     modelConfiguration: packModelRuntimeConfiguration(modelConfiguration),
@@ -370,4 +376,11 @@ export async function prepareShotImageWorkflowInput(args: {
       ...elementReferences,
     ],
   };
+  return { workflowInput, modelConfiguration, imageBilling };
+}
+
+export async function prepareShotImageWorkflowInput(
+  args: Parameters<typeof prepareShotImageGeneration>[0]
+): Promise<ImageWorkflowInput> {
+  return (await prepareShotImageGeneration(args)).workflowInput;
 }

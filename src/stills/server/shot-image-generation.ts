@@ -25,7 +25,6 @@ import {
   releaseReservationOnThrow,
 } from '@/billing/server/preflight';
 import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
-import { unpackModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import {
   getVariantGridConfig,
   resolveVariantImageSize,
@@ -42,7 +41,7 @@ import { rescanContinuityFromPrompt } from '@/shots/server/rescan-continuity-fro
 import { shouldRecordUserEdit } from '@/shots/server/workflows/user-edit-predicate';
 import {
   getSceneLocationReferenceImages,
-  prepareShotImageWorkflowInput,
+  prepareShotImageGeneration,
 } from '@/shots/server/shot-image-input';
 import type { ShotEditContext } from '@/shots/server/shot-context';
 import { triggerWorkflow } from '@/platform/server/workflow/client';
@@ -104,21 +103,22 @@ export async function generateShotImage(
     }
   }
 
-  const workflowInput = await prepareShotImageWorkflowInput({
-    promptLocale: context.promptLocale,
-    scopedDb: context.scopedDb,
-    sequence: shotPromptSequence(sequence, shot),
-    shot,
-    scene: sceneForInput,
-    frame,
-    scriptExtract:
-      script?.extract ?? resolvedScene?.originalScript.extract ?? '',
-    userId: user.id,
-    promptOverride: data.prompt,
-    modelOverride: data.model,
-    userEditedPrompt,
-    deriveMissingPrompt: true,
-  });
+  const { workflowInput, modelConfiguration, imageBilling } =
+    await prepareShotImageGeneration({
+      promptLocale: context.promptLocale,
+      scopedDb: context.scopedDb,
+      sequence: shotPromptSequence(sequence, shot),
+      shot,
+      scene: sceneForInput,
+      frame,
+      scriptExtract:
+        script?.extract ?? resolvedScene?.originalScript.extract ?? '',
+      userId: user.id,
+      promptOverride: data.prompt,
+      modelOverride: data.model,
+      userEditedPrompt,
+      deriveMissingPrompt: true,
+    });
 
   // Server-side dedup (#1085): a live claim for exactly this snapshot hash
   // means a run is already producing this render — a second click, second
@@ -166,17 +166,6 @@ export async function generateShotImage(
 
   let workflowRunId: string;
   try {
-    const modelConfiguration = workflowInput.modelConfiguration
-      ? unpackModelRuntimeConfiguration(workflowInput.modelConfiguration)
-      : await loadModelRuntimeConfiguration();
-    const imageBilling = await prepareConfiguredImageBilling({
-      model: workflowInput.model ?? DEFAULT_IMAGE_MODEL,
-      aspectRatio: sequence.aspectRatio,
-      resolution: workflowInput.resolution,
-      imageCount: workflowInput.numImages ?? 1,
-      referenceImageCount: workflowInput.referenceImages?.length ?? 0,
-      modelConfiguration,
-    });
     const reservationId = imageBilling
       ? await reserveRunCredits(context.scopedDb, imageBilling.costMicros, {
           imageSource: imageBilling.imageSource,

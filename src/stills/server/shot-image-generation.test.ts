@@ -9,7 +9,7 @@ vi.doMock('@/shots/server/rescan-continuity-from-prompt', () => ({
   rescanContinuityFromPrompt: rescan,
 }));
 vi.doMock('@/shots/server/shot-image-input', () => ({
-  prepareShotImageWorkflowInput: prepare,
+  prepareShotImageGeneration: prepare,
   getSceneLocationReferenceImages: vi.fn(),
 }));
 vi.doMock('@/platform/server/workflow/client', () => ({
@@ -58,10 +58,14 @@ describe('generateShotImage continuity rescan (#2290)', () => {
       changed: true,
     });
     prepare.mockReset().mockResolvedValue({
-      snapshotInputHash: 'h',
-      model: DEFAULT_IMAGE_MODEL,
-      resolution: '720p',
+      workflowInput: {
+        snapshotInputHash: 'h',
+        model: DEFAULT_IMAGE_MODEL,
+        resolution: '720p',
+        modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
+      },
       modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
+      imageBilling: undefined,
     });
   });
 

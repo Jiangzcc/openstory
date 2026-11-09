@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import {
   afterAll,
   afterEach,
@@ -518,3 +519,142 @@ describe.each(ENTRYPOINTS)(
     });
   }
 );
+
+const configuredImageBilling =
+  await import('@/billing/server/configured-image-billing');
+const { loadModelRuntimeConfiguration } =
+  await import('@/platform/server/db/scoped');
+const MOCK_REPRICED_CARD_ID = 'generate-1920x1080';
+const MOCK_REPRICED_RATE = MOCK_RATES.generate['1080p'] * FUNDED_REQUESTS;
+
+function dispatchedImageConfiguration() {
+  const configuration = dispatch.mock.calls[0]?.[1].modelConfiguration;
+  if (!configuration) throw new Error('Dispatched image has no packed config.');
+  return unpackModelRuntimeConfiguration(configuration);
+}
+
+async function writeMockImageChannels(value: string) {
+  await fixture.db
+    .update(appMetadata)
+    .set({ value })
+    .where(eq(appMetadata.key, IMAGE_CHANNELS_KEY));
+}
+
+async function repriceMockChannelAfterClaim(context: ShotEditContext) {
+  const [stored] = await fixture.db
+    .select({ value: appMetadata.value })
+    .from(appMetadata)
+    .where(eq(appMetadata.key, IMAGE_CHANNELS_KEY));
+  if (!stored) throw new Error('Missing mock image channel configuration.');
+  const next = imageChannelsConfigurationSchema.parse(JSON.parse(stored.value));
+  const card = next.models
+    .flatMap(({ priceCards }) => priceCards)
+    .find(({ id }) => id === MOCK_REPRICED_CARD_ID);
+  if (!card) throw new Error('Missing mock image price card.');
+  card.unitPriceUsd = MOCK_REPRICED_RATE;
+  const createClaim = context.scopedDb.frameVariants.createPendingClaim;
+  // Inject a price change only after the real D1 claim has been inserted.
+  const claim = vi
+    .spyOn(context.scopedDb.frameVariants, 'createPendingClaim')
+    .mockImplementationOnce(async (input) => {
+      const created = await createClaim(input);
+      await writeMockImageChannels(JSON.stringify(next));
+      return created;
+    });
+  return {
+    claim,
+    restore: async () => {
+      claim.mockRestore();
+      await writeMockImageChannels(stored.value);
+    },
+  };
+}
+
+describe('single-shot prepared billing against real D1', () => {
+  it.each([
+    ['720p', '1280x720'],
+    ['1080p', '1920x1080'],
+  ] as const)(
+    'quotes once for %s preflight, reservation and queued execution',
+    async (resolution, size) => {
+      const cost = usdToMicros(MOCK_RATES.generate[resolution]);
+      const account = await fundedSequence(cost, resolution);
+      const context = await shotContext(account);
+      const { billing } = account.scopedDb;
+      const quote = vi.spyOn(
+        configuredImageBilling,
+        'prepareConfiguredImageBilling'
+      );
+      const preflight = vi.spyOn(billing, 'hasEnoughCredits');
+      try {
+        await generateShotImage(context, {});
+        expect(quote).toHaveBeenCalledTimes(1);
+        const prepared = await quote.mock.results[0]?.value;
+        if (!prepared) throw new Error('Missing configured image quote.');
+        const { modelConfiguration, ...expectedQuote } = prepared;
+        const queued = dispatchedQuote();
+        expect(dispatch).toHaveBeenCalledTimes(1);
+        expect(queued.path).toBe('/image');
+        expect(preflight.mock.calls).toEqual([[cost, undefined]]);
+        expect(expectedQuote.costMicros).toBe(cost);
+        expect(expectedQuote.parameters.size).toBe(size);
+        expect(queued.input.resolution).toBe(resolution);
+        expect(queued.quote).toEqual(expectedQuote);
+        expect(dispatchedImageConfiguration()).toEqual(modelConfiguration);
+        expect(dispatch.mock.calls[0]?.[2]?.modelConfiguration).toEqual(
+          modelConfiguration
+        );
+        expect(await billing.hasEnoughCredits(cost, queued.reservationId)).toBe(
+          true
+        );
+        expect(await billing.getAvailable()).toMatchObject({
+          balance: cost,
+          reserved: cost,
+          available: 0,
+        });
+      } finally {
+        quote.mockRestore();
+        preflight.mockRestore();
+      }
+    }
+  );
+});
+
+describe('single-shot claim price drift against real D1', () => {
+  it('keeps the captured quote when the D1 price card changes after the claim', async () => {
+    const cost = usdToMicros(MOCK_RATES.generate['1080p']);
+    const account = await fundedSequence(cost);
+    const context = await shotContext(account);
+    const configuration = await loadModelRuntimeConfiguration();
+    const mutation = await repriceMockChannelAfterClaim(context);
+    try {
+      await generateShotImage(context, {});
+      expect(mutation.claim).toHaveBeenCalledTimes(1);
+      const claim = await mutation.claim.mock.results[0]?.value;
+      const queued = dispatchedQuote();
+      expect(queued.input).toMatchObject({
+        targetVariantId: claim?.id,
+        resolution: '1080p',
+      });
+      expect(dispatchedImageConfiguration()).toEqual(configuration);
+      expect(dispatch.mock.calls[0]?.[2]?.modelConfiguration).toEqual(
+        configuration
+      );
+      expect(queued.quote.costMicros).toBe(cost);
+      expect(queued.quote.parameters.size).toBe('1920x1080');
+      const latest = await loadModelRuntimeConfiguration();
+      const latestQuote = configuredImageGenerationQuote(
+        dispatchedParameters(queued.input, latest.imageModelRouting),
+        latest.imageModelRouting
+      );
+      expect(latestQuote.costMicros).toBe(usdToMicros(MOCK_REPRICED_RATE));
+      expect(await account.scopedDb.billing.getAvailable()).toMatchObject({
+        balance: cost,
+        reserved: cost,
+        available: 0,
+      });
+    } finally {
+      await mutation.restore();
+    }
+  });
+});

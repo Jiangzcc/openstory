@@ -1,0 +1,627 @@
+{
+  "date": "2026-11-09",
+  "sourceHead": "e09e4a225e4b134a787b1b61aac4e1e81a1dbab5",
+  "upstreamBaseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": "P3 third candidate: reuse the existing single-shot still preparation configuration and quote; retain the payload-only facade.",
+  "decision": {
+    "status": "implemented-single-shot-prepared-result-only",
+    "metrics": {
+      "singleShotRequestQuoteCallsBefore": 2,
+      "singleShotRequestQuoteCallsAfter": 1,
+      "modifiedCoreFiles": 2,
+      "newProductionModules": 0
+    },
+    "preserved": "Payload, preparation rules, preflight/dedup/claim/reserve/dispatch/release order, keys and failure events. Workflows reconstruct execution pricing from the captured payload; variants/upscale remain unchanged.",
+    "phaseStatus": "This substep is complete; translation maintenance and further separately justified P3 work remain open."
+  },
+  "environment": {
+    "runtime": "Local Node/Vitest with threads, one worker, no file parallelism or module caches.",
+    "real": [
+      "Single-shot service and shot-image input preparation",
+      "Configured pricing, runtime configuration codecs and credit preflight/reservation/release helpers",
+      "createTestDb in-process SQLite with the D1 API for funded requests, real pending claims and post-claim price drift"
+    ],
+    "mocked": [
+      "Workflow dispatch; no provider request is sent",
+      "ScopedDb and prepared result in the new lifecycle suite; the real D1 suite separately checks amounts and configuration",
+      "Existing workflow tests run step callbacks through their mock contexts rather than the durable engine",
+      "Synthetic image routes and credentials; fetch rejects unexpected network in new lifecycle and D1 suites"
+    ],
+    "notExecuted": [
+      "Real providers or supplier bills",
+      "Workerd/Cloudflare workflow engine replay",
+      "Browser/E2E and production build",
+      "Remote D1, real emails and deployment"
+    ]
+  },
+  "runs": [
+    {
+      "id": "baseline",
+      "command": "$ vitest run src/shots/server/shot-image-input.test.ts src/stills/server/shot-image-generation.test.ts src/stills/server/shot-image-generation-billing.test.ts src/billing/server/configured-image-billing.test.ts src/billing/configured-image-billing.test.ts src/billing/configured-image-resolution-paths.test.ts src/stills/server/configured-image-generation.test.ts src/stills/server/workflows/configured-image-step.test.ts src/stills/server/workflows/configured-image-interruption.test.ts src/stills/server/workflows/image-workflow-snapshot.test.ts src/stills/server/workflows/image-workflow-failure.test.ts src/stills/server/workflows/image-workflow-preview-failure.test.ts src/billing/server/preflight.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/compliance/generation-gate.wiring.test.ts \"--pool=threads\" --no-file-parallelism \"--maxWorkers=1\" --no-cache --no-fsModuleCache \"--reporter=json\" \"--outputFile=.tmp/p3-generation-20261109/baseline.json\"",
+      "report": ".tmp/p3-generation-20261109/baseline.json",
+      "reportSha256": "46d64c0c475a95291fcde3a480f1f036ceb627566e162695536f7ec46adf589d",
+      "log": ".tmp/p3-generation-20261109/baseline.log",
+      "logSha256": "14795c52d4b41b164cedfaa6de8eddfe8f774ec172c6b02e096eb87ba8cbfe19",
+      "success": true,
+      "counts": {
+        "files": 16,
+        "total": 232,
+        "passed": 232,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 101433.2890625,
+      "failures": []
+    },
+    {
+      "id": "focused-1",
+      "command": "bun run test src/shots/server/shot-image-input.test.ts src/stills/server/shot-image-generation.test.ts src/stills/server/shot-image-generation-lifecycle.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-generation-20261109/focused-1.json",
+      "report": ".tmp/p3-generation-20261109/focused-1.json",
+      "reportSha256": "e06184fa61be4677adcfa2934068a0f47e8af6b4aaeefda75ea0089d6a700a4d",
+      "log": ".tmp/p3-generation-20261109/focused-1.log",
+      "logSha256": "76b52d62210db7e2953ce9d2d117633d2a1ba605ebf8f628f7fa294ccd54937a",
+      "success": true,
+      "counts": {
+        "files": 3,
+        "total": 34,
+        "passed": 34,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 24479.005859375,
+      "failures": []
+    },
+    {
+      "id": "integrated-1",
+      "command": "bun run test src/billing/configured-image-billing.test.ts src/billing/configured-image-resolution-paths.test.ts src/billing/server/configured-image-billing.test.ts src/billing/server/preflight.test.ts src/stills/server/configured-image-generation.test.ts src/stills/server/shot-image-generation-billing.test.ts src/stills/server/shot-image-generation.test.ts src/shots/server/shot-image-input.test.ts src/platform/server/compliance/generation-gate.wiring.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/stills/server/workflows/configured-image-interruption.test.ts src/stills/server/workflows/configured-image-step.test.ts src/stills/server/workflows/image-workflow-failure.test.ts src/stills/server/workflows/image-workflow-preview-failure.test.ts src/stills/server/workflows/image-workflow-snapshot.test.ts src/stills/server/shot-image-generation-lifecycle.test.ts src/shots/server/workflows/update-stale-plan-run.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-generation-20261109/integrated-1.json",
+      "report": ".tmp/p3-generation-20261109/integrated-1.json",
+      "reportSha256": "b20c0680b5825c31ac42dd0c572eb7c670c5a456851ae0b137c369bd04439c71",
+      "log": ".tmp/p3-generation-20261109/integrated-1.log",
+      "logSha256": "f979e99827f71689a53daaa95dc3891d28e518130e24f7d8bfdbb0c47f62e579",
+      "success": true,
+      "counts": {
+        "files": 18,
+        "total": 274,
+        "passed": 274,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 195329.28540039062,
+      "failures": []
+    }
+  ],
+  "finalAcceptance": {
+    "report": ".tmp/p3-generation-20261109/integrated-1.json",
+    "counts": {
+      "files": 18,
+      "total": 274,
+      "passed": 274,
+      "failed": 0,
+      "pending": 0,
+      "todo": 0
+    },
+    "inventory": {
+      "src/billing/configured-image-billing.test.ts": [
+        "configured image billing uses USD per image prices at wallet microdollar precision",
+        "configured image billing validates the operation, final reference count and mask before quoting",
+        "configured image billing rejects inactive identity and unsupported parameters instead of falling back",
+        "configured image billing refuses missing or ambiguous configured prices",
+        "configured image billing rejects unverified operations and accidental zero from sub-micro prices",
+        "configured image billing uses configured rates for estimates of more images than one provider call",
+        "configured image billing retains the original text preflight estimate",
+        "built-in configured image billing requires a frozen route to classify built-in platform spend",
+        "built-in configured image billing uses the bound price card and verified parameters before fal prices",
+        "built-in configured image billing keeps the original fal estimate for unbound built-in models",
+        "built-in configured image billing rejects invalid bound parameters and missing prices even when fal has a price",
+        "built-in configured image billing rejects unverified operations and invalid reference counts on a bound built-in",
+        "configured image unit precision refuses a two-image request priced at 3e-7 USD per image",
+        "configured image unit precision refuses a two-image request priced at 0.0000015 USD per image",
+        "configured image unit precision keeps a partial output billable at the smallest positive unit price"
+      ],
+      "src/billing/configured-image-resolution-paths.test.ts": [
+        "configured resolution through billing entrypoints uses the 720p rate for a multi-image estimate and the public hint",
+        "configured resolution through billing entrypoints uses the 1080p rate for a multi-image estimate and the public hint",
+        "configured resolution through billing entrypoints preserves the sequence tier in both the credit floor and full plan estimate",
+        "configured resolution through billing entrypoints keeps reference sheets on their own size while pricing a 1080p shot",
+        "configured resolution through billing entrypoints prices previews using 0 actual images instead of dependency IDs",
+        "configured resolution through billing entrypoints prices previews using 1 actual images instead of dependency IDs"
+      ],
+      "src/billing/server/configured-image-billing.test.ts": [
+        "configured image trigger quote keeps built-in model execution on its existing path",
+        "configured image trigger quote quotes the same verified wide size the execution parser will use",
+        "configured image trigger quote freezes the size and rate for the requested 720p tier",
+        "configured image trigger quote freezes the size and rate for the requested 1080p tier",
+        "configured image trigger quote honors the passed frozen snapshot instead of rereading current rates",
+        "configured image trigger quote quotes edits using the final assembled reference count",
+        "configured image trigger quote rejects disabled history and unsupported aspect ratios before reserving",
+        "built-in configured image trigger quote loads the binding for a built-in model before deciding its billing route",
+        "built-in configured image trigger quote retains the trusted snapshot instead of reloading live bindings or prices",
+        "built-in configured image trigger quote loads one snapshot for mixed models and finds a later built-in binding",
+        "built-in configured image trigger quote keeps an unbound trusted built-in on its original path",
+        "built-in configured image trigger quote rejects a bound request without a valid price or parameters",
+        "built-in configured image trigger quote requires platform credits and a reservation despite an unrelated fal key"
+      ],
+      "src/billing/server/preflight.test.ts": [
+        "requireCredits BYOK coverage requires credits for platform-only work even with a usable fal key",
+        "requireCredits BYOK coverage passes with only a fal key when openrouter is required (routes via fal)",
+        "requireCredits BYOK coverage still requires credits when only an openrouter key exists but fal is required",
+        "requireCredits BYOK coverage passes with both keys",
+        "requireCredits BYOK coverage falls through to the credit check (and passes) when affordable",
+        "requireCredits BYOK coverage throws the custom message when no keys and no credits",
+        "requireCredits BYOK coverage does not let an invalid fal key bypass the credit check",
+        "requireCredits BYOK coverage passes with only a fal key for an LLM-only preflight",
+        "requireCredits BYOK coverage passes with only an LLMTR key when the required model is carried",
+        "requireCredits BYOK coverage still requires credits when LLMTR does not carry the model",
+        "requireCredits BYOK coverage still requires credits for fal work when only an LLMTR key exists",
+        "requireCredits BYOK coverage does not let an invalid LLMTR key bypass the credit check",
+        "requireCredits BYOK coverage defaults to requiring a fal key when providers is omitted",
+        "reserveRunCredits rejects unfunded platform-only work even with a usable fal key",
+        "reserveRunCredits reserves credits for platform-only work even with a usable fal key",
+        "reserveRunCredits returns undefined for BYOK fal keys",
+        "reserveRunCredits does not hold funds or resolve credentials for a free run (funded: false)",
+        "reserveRunCredits does not hold funds or resolve credentials for a free run (funded: true)",
+        "reserveRunCredits does not treat negative reservation amounts as a free run",
+        "reserveRunCredits creates an envelope when the organization can pay",
+        "reserveRunCredits throws when available funds cannot cover the estimate",
+        "releaseReservationOnThrow zeros the hold when the wrapped work throws",
+        "releaseReservationOnThrow leaves the hold when the wrapped work succeeds",
+        "releaseReservationOnThrow still throws when there is no hold to release",
+        "actual LLM credential coverage rejects zero-balance platform text spend despite a usable media key: \"platform\"",
+        "actual LLM credential coverage rejects zero-balance platform text spend despite a usable media key: \"organization\"",
+        "actual LLM credential coverage reserves the existing estimate when any actual LLM key is platform-owned",
+        "actual LLM credential coverage uses actual team text credentials instead of assuming an OpenRouter key is needed",
+        "actual LLM credential coverage resolves every distinct model against the supplied run routing snapshot",
+        "actual image credential coverage requires platform balance despite unrelated organization keys",
+        "actual image credential coverage holds platform image credits with a stable logical task key",
+        "actual image credential coverage accepts the actual organization image source without a fal-specific key",
+        "actual image credential coverage still checks other platform work when only the image is organization-owned"
+      ],
+      "src/stills/server/configured-image-generation.test.ts": [
+        "configured image execution uses the exact frozen platform binding and price for custom-image:qwen without organization keys",
+        "configured image execution uses the exact frozen platform binding and price for gpt_image_2 without organization keys",
+        "configured image execution refuses an unavailable reference combination before invoking the supplier",
+        "configured image execution charges the actual stored output count for a partial native response",
+        "configured image execution rejects a promised parameter mismatch without a second generation",
+        "executes a captured built-in edit after its live upstream, price and channel are changed or disabled",
+        "uses verified legacy seed and format for the quote, request and returned metadata",
+        "records explicit channel parameter overrides rather than legacy values",
+        "never sends legacy parameters declared unverified",
+        "never sends legacy parameters declared unsupported",
+        "does not inherit generate-only legacy parameters on edit",
+        "refuses a fixed size outside the budget before references, credentials or supplier spend",
+        "uses the selected resolution for both the generate request and its price",
+        "uses the selected resolution for both the edit request and its price",
+        "refuses a fractional-micro unit price before resolving credentials or submitting a batch",
+        "bills one delivered image at one microdollar when a two-image request is partial"
+      ],
+      "src/stills/server/shot-image-generation-billing.test.ts": [
+        "single-shot prompt derivation against real D1 queues a en spec-derived prompt without a stored prompt",
+        "single-shot prompt derivation against real D1 queues a zh-CN spec-derived prompt without a stored prompt",
+        "single-shot prompt derivation against real D1 refuses an explicit blank override \"\" before reserving",
+        "single-shot prompt derivation against real D1 refuses an explicit blank override \"   \" before reserving",
+        "regenerate image billing against real D1 reserves the 720p specification frozen onto the actual workflow",
+        "regenerate image billing against real D1 reserves the 1080p specification frozen onto the actual workflow",
+        "variants image billing against real D1 reserves the 720p specification frozen onto the actual workflow",
+        "variants image billing against real D1 reserves the 1080p specification frozen onto the actual workflow",
+        "upscale image billing against real D1 reserves the 720p specification frozen onto the actual workflow",
+        "upscale image billing against real D1 reserves the 1080p specification frozen onto the actual workflow",
+        "regenerate image credit reservations against real D1 rejects a second 1080p task before dispatch when only one can be funded",
+        "regenerate image credit reservations against real D1 funds both 1080p tasks fully so concurrent captures have no unpaid remainder",
+        "variants image credit reservations against real D1 rejects a second 1080p task before dispatch when only one can be funded",
+        "variants image credit reservations against real D1 funds both 1080p tasks fully so concurrent captures have no unpaid remainder",
+        "upscale image credit reservations against real D1 rejects a second 1080p task before dispatch when only one can be funded",
+        "upscale image credit reservations against real D1 funds both 1080p tasks fully so concurrent captures have no unpaid remainder",
+        "single-shot prepared billing against real D1 quotes once for 720p preflight, reservation and queued execution",
+        "single-shot prepared billing against real D1 quotes once for 1080p preflight, reservation and queued execution",
+        "single-shot claim price drift against real D1 keeps the captured quote when the D1 price card changes after the claim"
+      ],
+      "src/stills/server/shot-image-generation-lifecycle.test.ts": [
+        "single-shot image claim and reservation lifecycle returns an existing same-input claim without reserving or dispatching",
+        "single-shot image claim and reservation lifecycle returns the racing claim when inserting the pending claim loses",
+        "single-shot image claim and reservation lifecycle preserves a claim insertion error when there is no racing claim",
+        "single-shot image claim and reservation lifecycle stops a preparation credit failure before creating a claim",
+        "single-shot image claim and reservation lifecycle fails the claim when reservation cannot cover the captured quote",
+        "single-shot image claim and reservation lifecycle zeros a reservation and fails the claim after dispatch rejects",
+        "single-shot image claim and reservation lifecycle dispatches the captured payload with its claim and run envelope",
+        "single-shot image claim and reservation lifecycle keeps an unbound native model on its existing payload without a hold"
+      ],
+      "src/stills/server/shot-image-generation.test.ts": [
+        "generateShotImage continuity rescan (#2290) leaves scene continuity alone when the prompt is the stored one",
+        "generateShotImage continuity rescan (#2290) links tags from an edited prompt into scene continuity"
+      ],
+      "src/shots/server/shot-image-input.test.ts": [
+        "prepareShotImageWorkflowInput skips reads nothing consumes a fully-overridden chained render reads neither the prompt nor the variants",
+        "prepareShotImageWorkflowInput skips reads nothing consumes an explicit null version override still skips the prompt read",
+        "prepareShotImageWorkflowInput still reads what it does consume no overrides at all → both reads run and feed the payload",
+        "prepareShotImageWorkflowInput still reads what it does consume a prompt override WITHOUT a version override still reads the selection",
+        "prepareShotImageWorkflowInput still reads what it does consume a claimed user edit reads the selection to check it is not a no-op edit",
+        "prepareShotImageWorkflowInput still reads what it does consume an override naming a retired model still falls through to the variant reads",
+        "prepareShotImageWorkflowInput refuses a blank prompt before credits throws on a whitespace-only override without reserving credits",
+        "configured shot image billing snapshots keeps the custom-image:qwen workflow snapshot after the live channel is disabled",
+        "configured shot image billing snapshots keeps the custom-image:qwen workflow snapshot after the live channel is repriced",
+        "configured shot image billing snapshots keeps the gpt_image_2 workflow snapshot after the live channel is disabled",
+        "configured shot image billing snapshots keeps the gpt_image_2 workflow snapshot after the live channel is repriced",
+        "configured shot image billing snapshots gates the exact sequence resolution frozen onto the image workflow",
+        "configured shot image billing snapshots loads current prices for a request without a trusted workflow snapshot",
+        "configured shot image billing snapshots refuses a request whose configured model is currently disabled",
+        "prepareShotImageWorkflowInput never prompts a still with the script (#2291) derives a en prompt without the spoken line",
+        "prepareShotImageWorkflowInput never prompts a still with the script (#2291) derives a zh-CN prompt without the spoken line",
+        "prepareShotImageWorkflowInput never prompts a still with the script (#2291) a workflow step never reads the spec pointer mid-run",
+        "prepareShotImageWorkflowInput never prompts a still with the script (#2291) refuses a shot with no prompt and no spec",
+        "prepared shot image generation contract keeps the captured configuration and preflight quote for custom-image:qwen",
+        "prepared shot image generation contract keeps the captured configuration and preflight quote for gpt_image_2",
+        "prepared shot image generation contract keeps the captured configuration and preflight quote for gpt_image_2",
+        "prepared shot image generation contract returns only the existing workflow payload through the custom-image:qwen facade",
+        "prepared shot image generation contract returns only the existing workflow payload through the gpt_image_2 facade",
+        "prepared shot image generation contract returns only the existing workflow payload through the gpt_image_2 facade"
+      ],
+      "src/platform/server/compliance/generation-gate.wiring.test.ts": [
+        "generation-gate wiring triggerWorkflow runs the generation gate",
+        "generation-gate wiring request-path API middleware applies enforcement",
+        "generation-gate wiring every request-path requireCredits call has a gate or triggerWorkflow"
+      ],
+      "src/platform/server/workflow/claim-discipline.test.ts": [
+        "claim discipline (#1130) every generated table is owned by a claim domain or excepted",
+        "claim discipline (#1130) no table is both claimed and excepted, and no entry is stale",
+        "claim discipline (#1130) every claim domain exposes claim, clear and promote",
+        "claim discipline (#1130) no workflow promotes through a user selector",
+        "claim discipline (#1130) every unclaimed pointer write from a workflow is pinned"
+      ],
+      "src/platform/server/workflow/no-mid-run-reads.test.ts": [
+        "workflows read no unsanctioned mutable DB state mid-run WorkflowScopedDb strips reads, keeps writes, and liveRead is narrow",
+        "workflows read no unsanctioned mutable DB state mid-run the workflows directory is actually being scanned",
+        "workflows read no unsanctioned mutable DB state mid-run analyze-script-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run asset-generation-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run auto-style-step.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run cast-records.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run character-bible-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run character-sheet-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run character-voice-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run configured-image-step.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run content-soften.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run dialogue-audio-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run dialogue-take-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run dialogue-upload-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run element-sheet-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run element-vision-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run extract-continuity-from-prompt.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run generate-dialogue-speech.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run image-workflow-snapshot.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run image-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run lipsync-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run llm-call-helper.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run location-bible-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run location-matching-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run location-sheet-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run motion-batch-jobs.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run motion-batch-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run motion-music-prompts-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run motion-workflow-persist.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run motion-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run music-prompt-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run music-scene-summaries.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run music-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run recast-location-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run recast-snapshot.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run regenerate-shots-snapshot.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run regenerate-shots-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run replace-element-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run scene-split-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run sequence-export-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run sheet-divergence.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run sheet-portrait-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run sheet-snapshots.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run shot-images-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run shot-spec-rewrite-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run shot-variant-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run soften-image-prompt.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run storyboard-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run studio-generation-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run update-stale-shots-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run upload-check-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run upscale-shot-variant-workflow.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run user-edit-predicate.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run wait-for-sheets.ts reads only what its allow-list entry sanctions",
+        "workflows read no unsanctioned mutable DB state mid-run scopedDb.stalenessPlanning has exactly one consumer",
+        "workflows read no unsanctioned mutable DB state mid-run generation planning is restricted to the storyboard handoff",
+        "workflows read no unsanctioned mutable DB state mid-run each read comes through the hatch its bucket requires",
+        "workflows read no unsanctioned mutable DB state mid-run every sanctioned read names a bucket and says why",
+        "workflows read no unsanctioned mutable DB state mid-run the provisional buckets have exactly the members recorded here",
+        "workflows read no unsanctioned mutable DB state mid-run no allow-list entry outlives the read it sanctions"
+      ],
+      "src/stills/server/workflows/configured-image-interruption.test.ts": [
+        "preserves generation interruption and refuses automatic resubmission on replay",
+        "preserves interruption while storing generated image bytes",
+        "replays only metadata persistence after its engine interruption",
+        "preserves interruption while recording the uncertain attempt"
+      ],
+      "src/stills/server/workflows/configured-image-step.test.ts": [
+        "checks the frozen quote before one paid call and stores before returning metadata",
+        "recovers stored output without checking the now-unavailable balance or resolving keys",
+        "allows a stored replay to reach the existing idempotent charge with no new generation",
+        "never resubmits a submitted attempt",
+        "never resubmits a unknown attempt",
+        "rejects a concurrent replay while the first supplier request is still pending",
+        "blocks insufficient funds before resolving the key, generating or storing",
+        "does not let organization keys \"fal\" bypass a platform-channel balance check",
+        "does not let organization keys \"openrouter\" bypass a platform-channel balance check",
+        "does not let organization keys \"fal\" bypass a platform-channel balance check",
+        "passes an absent parent reservation through to the live balance guard",
+        "rejects an operation exceeding its output capacity before claiming or paying",
+        "requires a complete quote before spending or making an attempt",
+        "prechecks all requested outputs and charges only a partial result actually stored",
+        "keeps a failed store unknown and never pays for an automatic second generation",
+        "logs a timed-out supplier safely and refuses resubmission (HTTP undefined)",
+        "logs a timed-out supplier safely and refuses resubmission (HTTP 200)",
+        "recovers a checkpointed R2 result when recording the stored attempt fails",
+        "refuses a partial store and never checkpoints unpersisted supplier output",
+        "only checkpoints storage references and validated billing metadata, never image bytes or keys",
+        "rejects extra image bytes or keys added to a storage record",
+        "recovers a stored result through the single-image wrapper without a provider call",
+        "leaves insufficient-balance requests unsubmitted and permits replay after top-up",
+        "still refuses a repeat when recording unknown also fails",
+        "refuses inline image bytes disguised as a stored URL before checkpointing",
+        "does not expose image bytes or a supplier key through a failed step message",
+        "preflights and charges a bound built-in as platform spend despite organization keys",
+        "rejects a bound built-in with unverified operation before claiming, checking balance or invoking any provider",
+        "rejects a bound built-in with missing operation before claiming, checking balance or invoking any provider",
+        "rejects a bound built-in with missing price before claiming, checking balance or invoking any provider",
+        "keeps a built-in task on its captured binding and price after live disable and rebinding"
+      ],
+      "src/stills/server/workflows/image-workflow-failure.test.ts": [
+        "ImageWorkflow onFailure (#1942) records a failed primary row, sorted at the click, for a rowless run",
+        "ImageWorkflow onFailure (#1942) records a rowless added-model failure outside the race",
+        "ImageWorkflow onFailure (#1942) records nothing when the run already opened a row",
+        "ImageWorkflow onFailure (#1942) fails the trigger claim by id and records nothing else"
+      ],
+      "src/stills/server/workflows/image-workflow-preview-failure.test.ts": [
+        "ImageWorkflow onFailure skipStorage emits generation.image:progress failed for a preview"
+      ],
+      "src/stills/server/workflows/image-workflow-snapshot.test.ts": [
+        "computeImageWorkflowHashFromDto returns the inlined hash sentinel when no snapshot is opted in",
+        "computeImageWorkflowHashFromDto produces a deterministic hash for identical snapshots",
+        "computeImageWorkflowHashFromDto changes the hash when the model changes",
+        "computeImageWorkflowHashFromDto changes the hash when a character sheet hash changes",
+        "computeImageWorkflowHashFromDto — aspectRatio guard throws when sceneSnapshot is present but aspectRatio is missing"
+      ],
+      "src/shots/server/workflows/update-stale-plan-run.test.ts": [
+        "UpdateStaleShotsWorkflow — a continue (#1818) spawns only the owed references, each behind its claim",
+        "UpdateStaleShotsWorkflow — a continue (#1818) claims and spawns each look on its own, from the snapshot it was built from (#2015)",
+        "UpdateStaleShotsWorkflow — a continue (#1818) draws a look after its default sheet lands, from that sheet, in the same run (#2015)",
+        "UpdateStaleShotsWorkflow — a continue (#1818) fails a look whose default sheet did not land, and holds what wears it",
+        "UpdateStaleShotsWorkflow — a continue (#1818) a failed sheet holds the stills made from it, and nothing else",
+        "executor packed clips deduplicates stale siblings into one generation using frozen membership and model",
+        "executor packed clips submits manual-equivalent packed prompts through the shared executor (freshRun=true)",
+        "executor packed clips submits manual-equivalent packed prompts through the shared executor (freshRun=false)",
+        "executor packed clips uses click-time reference URLs instead of reloading selection pointers",
+        "executor packed clips holds the entire persisted clip when one sibling cannot render",
+        "fresh executor parity (#1891) rebuilds each shot from its spec without a prompt model",
+        "fresh executor parity (#1891) gates simultaneous sheet and platform voice spend together against the parent envelope",
+        "fresh executor parity (#1891) renders each image model once with one selectable primary and shared reservation",
+        "fresh executor parity (#1891) does not start fresh enrichment grids during Continue",
+        "fresh executor parity (#1891) does not start a grid when the still produces no artifact ({\"cancelled\":true,\"imageUrl\":\"\"})",
+        "fresh executor parity (#1891) does not start a grid when the still produces no artifact ({\"imageUrl\":\"\"})",
+        "fresh executor parity (#1891) renders video alternatives without overriding a leftover Grok choice",
+        "fresh executor parity (#1891) renders all alternatives when Grok is the first model",
+        "fresh executor parity (#1891) keeps prompt-only music work in the fresh Images phase",
+        "fresh executor parity (#1891) keeps the saved draft switch on motion payloads",
+        "fresh executor parity (#1891) freezes track-only music text and shares the reservation with music",
+        "fresh executor parity (#1891) makes neither prompt nor track while another run holds the music claim",
+        "fresh executor parity (#1891) hands the track claim to the prompt child so a failed prompt fails it",
+        "fresh executor parity (#1891) announces every fresh phase in order and completes each",
+        "overlays first generated sheets onto the pending bible rows before a fresh still"
+      ]
+    },
+    "newCases": 17,
+    "additionalUnchangedStaleUpdateCases": 25,
+    "counting": "274 is the final integrated run only: 232 original baseline cases + 17 new cases + 25 existing stale-update cases. Do not sum reruns."
+  },
+  "beforeSources": {
+    "src/shots/server/shot-image-input.ts": "61634f15cb31b2c95c291cafcc728b5128cff17b67ea2a0b188c8b7a904b4e57",
+    "src/stills/server/shot-image-generation.ts": "59941d8fe897080b039c1ba9cc925740bfd4d4add1e33f83f96bec63f113146e",
+    "src/billing/configured-image-billing.test.ts": "e20bcb5ccdb49afee66d3f0565d9b99c66fd870f65031d97ce2f0c0422d9e2e1",
+    "src/billing/configured-image-resolution-paths.test.ts": "6ff268fa32a35cf8280639be100d7e099672d5130a16c1368cca638105c0ed6b",
+    "src/billing/server/configured-image-billing.test.ts": "3fdff239d5e3cb9b8f3a9395afa1751f49e0719a1e59939ae36221bd21c76359",
+    "src/billing/server/preflight.test.ts": "70fa10715afb1ed76ed6c44944d0e010004527dfdc4e7eb3afafb3c0049f6a50",
+    "src/stills/server/configured-image-generation.test.ts": "2299fbcdeb487580bd970e7ea7529fe9552ee3ae045ac4e501cd940711340ed7",
+    "src/stills/server/shot-image-generation-billing.test.ts": "39ab29616a7a30dda3302a75c8f960b0b3ab4726ce07a2bac736a37fc4c1087f",
+    "src/stills/server/shot-image-generation.test.ts": "2d5e9176b6c5db8e29b23a270c06252ef16795cb076838eb518406f04dda8122",
+    "src/shots/server/shot-image-input.test.ts": "923ca05a3d9cb429ab3885ad29725012fd0dd61244e15dbbc5979cad4db8b645",
+    "src/platform/server/compliance/generation-gate.wiring.test.ts": "e2d5aa7bf5c49c3767af0ffb5dedd6b66aeaafeab21e56337e36258a9cf04afe",
+    "src/platform/server/workflow/claim-discipline.test.ts": "55d498390e14fd4782b34094ddd549dc6803eb796529cc0f5779b4c185bc80b7",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts": "df131f1d34e6675ba04c23a4b7dd308f87be46c2c8154d666ae0535f3b59a3ab",
+    "src/stills/server/workflows/configured-image-interruption.test.ts": "3d82ed453dfff7b19635cb47476d994bcd146e7e934ca7448b6cad219e73457f",
+    "src/stills/server/workflows/configured-image-step.test.ts": "34de7c453008fe72cda7d0334ad99efb0fb388556f5050057cba07fd8ab13cdb",
+    "src/stills/server/workflows/image-workflow-failure.test.ts": "57754702339d874cbdb322dbe245529044c861b62ca2ad79dfacf27d18070e81",
+    "src/stills/server/workflows/image-workflow-preview-failure.test.ts": "5ba919c956550ca4a6d74306e2bb3b157b909e68cf0ca2a7281ee4d0743315df",
+    "src/stills/server/workflows/image-workflow-snapshot.test.ts": "ddd11ca86eecc00caa7af1976ddf2bf59d2b7da0f29443a59ce8e366b6c48068"
+  },
+  "finalSources": {
+    "src/shots/server/shot-image-input.ts": "ea558d496f331fd4ca74a8f36392d24e1e72bf2382ff2246a59dc04a971df906",
+    "src/stills/server/shot-image-generation.ts": "9b4f89dc8192b690886a59456604f72765d06cf972109856e576217e9bd87031",
+    "src/billing/configured-image-billing.test.ts": "e20bcb5ccdb49afee66d3f0565d9b99c66fd870f65031d97ce2f0c0422d9e2e1",
+    "src/billing/configured-image-resolution-paths.test.ts": "6ff268fa32a35cf8280639be100d7e099672d5130a16c1368cca638105c0ed6b",
+    "src/billing/server/configured-image-billing.test.ts": "3fdff239d5e3cb9b8f3a9395afa1751f49e0719a1e59939ae36221bd21c76359",
+    "src/billing/server/preflight.test.ts": "70fa10715afb1ed76ed6c44944d0e010004527dfdc4e7eb3afafb3c0049f6a50",
+    "src/stills/server/configured-image-generation.test.ts": "2299fbcdeb487580bd970e7ea7529fe9552ee3ae045ac4e501cd940711340ed7",
+    "src/stills/server/shot-image-generation-billing.test.ts": "eb6a2e5cdca748adab0f5da723ee65d63c63ef71239bb86068b8c5f66c93e9aa",
+    "src/stills/server/shot-image-generation.test.ts": "983eedd49c92596703400b58ef5370a312f1ad7d711c04b06d1e46b64fad1d23",
+    "src/shots/server/shot-image-input.test.ts": "9d189e290c63dabc1bece4efb3af7f7fa8ae88d756f2143f00a7d6d08fab1420",
+    "src/platform/server/compliance/generation-gate.wiring.test.ts": "e2d5aa7bf5c49c3767af0ffb5dedd6b66aeaafeab21e56337e36258a9cf04afe",
+    "src/platform/server/workflow/claim-discipline.test.ts": "55d498390e14fd4782b34094ddd549dc6803eb796529cc0f5779b4c185bc80b7",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts": "df131f1d34e6675ba04c23a4b7dd308f87be46c2c8154d666ae0535f3b59a3ab",
+    "src/stills/server/workflows/configured-image-interruption.test.ts": "3d82ed453dfff7b19635cb47476d994bcd146e7e934ca7448b6cad219e73457f",
+    "src/stills/server/workflows/configured-image-step.test.ts": "34de7c453008fe72cda7d0334ad99efb0fb388556f5050057cba07fd8ab13cdb",
+    "src/stills/server/workflows/image-workflow-failure.test.ts": "57754702339d874cbdb322dbe245529044c861b62ca2ad79dfacf27d18070e81",
+    "src/stills/server/workflows/image-workflow-preview-failure.test.ts": "5ba919c956550ca4a6d74306e2bb3b157b909e68cf0ca2a7281ee4d0743315df",
+    "src/stills/server/workflows/image-workflow-snapshot.test.ts": "ddd11ca86eecc00caa7af1976ddf2bf59d2b7da0f29443a59ce8e366b6c48068",
+    "src/stills/server/shot-image-generation-lifecycle.test.ts": "02a30f21efed44a49d5b5f62441b49ecaf5cb090a087068684da3b3810ca4085",
+    "src/shots/server/workflows/update-stale-plan-run.test.ts": "f71ba12277a97e7debd55c50d456fcf906da94da9a1ce75e114f35a13173ceb1"
+  },
+  "originalTests": {
+    "files": 16,
+    "cases": 232,
+    "byteUnchangedFiles": [
+      "src/billing/configured-image-billing.test.ts",
+      "src/billing/configured-image-resolution-paths.test.ts",
+      "src/billing/server/configured-image-billing.test.ts",
+      "src/billing/server/preflight.test.ts",
+      "src/stills/server/configured-image-generation.test.ts",
+      "src/platform/server/compliance/generation-gate.wiring.test.ts",
+      "src/platform/server/workflow/claim-discipline.test.ts",
+      "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "src/stills/server/workflows/configured-image-interruption.test.ts",
+      "src/stills/server/workflows/configured-image-step.test.ts",
+      "src/stills/server/workflows/image-workflow-failure.test.ts",
+      "src/stills/server/workflows/image-workflow-preview-failure.test.ts",
+      "src/stills/server/workflows/image-workflow-snapshot.test.ts"
+    ],
+    "modifiedFiles": [
+      {
+        "file": "src/shots/server/shot-image-input.test.ts",
+        "originalRegistrations": 14,
+        "originalRegistrationsRetained": 14,
+        "allOriginalBodiesAndAssertionsUnchanged": true,
+        "originalRegistrationAstSha256": "2990258d9ac0ca76597038a56005ec368ac6739b845c5530e0319a36b11a5d7e",
+        "retainedRegistrationAstSha256": "2990258d9ac0ca76597038a56005ec368ac6739b845c5530e0319a36b11a5d7e"
+      },
+      {
+        "file": "src/stills/server/shot-image-generation.test.ts",
+        "originalRegistrations": 2,
+        "originalRegistrationsRetained": 2,
+        "allOriginalBodiesAndAssertionsUnchanged": true,
+        "originalRegistrationAstSha256": "4bd64859743c6bacf55818a51919bc062736d5f175237987da02dde9ea8700be",
+        "retainedRegistrationAstSha256": "4bd64859743c6bacf55818a51919bc062736d5f175237987da02dde9ea8700be"
+      },
+      {
+        "file": "src/stills/server/shot-image-generation-billing.test.ts",
+        "originalRegistrations": 5,
+        "originalRegistrationsRetained": 5,
+        "allOriginalBodiesAndAssertionsUnchanged": true,
+        "originalRegistrationAstSha256": "289cb86589ef4d43f7913d4eca2f0367834767ef0143e19778d8833607b6cc25",
+        "retainedRegistrationAstSha256": "289cb86589ef4d43f7913d4eca2f0367834767ef0143e19778d8833607b6cc25"
+      }
+    ],
+    "registeredNamesPreserved": true,
+    "missingOriginalCases": [],
+    "beforeInventorySha256": "c99809b39e390f96063357d0cdfde836fc680f7b6554d9e625d177675ef7ae35",
+    "method": "Babel TypeScript AST compares full original it/it.each registration statements including test bodies/assertions, omitting comments and formatting. New tests are additions; the continuity mock adapts to the bundle."
+  },
+  "productionFunctionPreservation": {
+    "method": "Babel TypeScript AST. Preparation statements and payload expression compare directly; service comparison replaces only the preparation binding/callee and removes the two duplicate quote/config declarations.",
+    "builder": {
+      "preparationStatementsPreserved": true,
+      "payloadExpressionPreserved": true,
+      "inheritedFunctionLinesBefore": 278,
+      "inheritedFunctionLinesAfter": 279
+    },
+    "service": {
+      "lifecyclePreservedAfterReplacingPreparationAndRemovingDuplicateQuote": true,
+      "inheritedFunctionLinesBefore": 163,
+      "inheritedFunctionLinesAfter": 153
+    },
+    "otherServiceFunctions": [
+      {
+        "name": "generateShotImageVariants",
+        "astUnchanged": true
+      },
+      {
+        "name": "indexToRowCol",
+        "astUnchanged": true
+      },
+      {
+        "name": "selectShotImageVariant",
+        "astUnchanged": true
+      }
+    ]
+  },
+  "quality": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed",
+      "exitCode": 0,
+      "log": ".tmp/p3-generation-20261109/typecheck-1.log",
+      "logSha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+    },
+    "targetedTypeAwareLint": {
+      "command": "bunx --no-install oxlint --type-aware src/shots/server/shot-image-input.ts src/stills/server/shot-image-generation.ts src/stills/server/shot-image-generation.test.ts src/shots/server/shot-image-input.test.ts src/stills/server/shot-image-generation-lifecycle.test.ts src/stills/server/shot-image-generation-billing.test.ts",
+      "status": "passed-with-one-inherited-warning",
+      "exitCode": 0,
+      "log": ".tmp/p3-generation-20261109/lint-1.log",
+      "logSha256": "f928cef3e4eb60cf4fc2b8708f75226f59a02819edceca66f0449af0bcde4525",
+      "inheritedDiagnostic": {
+        "file": "src/shots/server/shot-image-input.ts",
+        "beforeLine": 245,
+        "afterLine": 251,
+        "rule": "typescript/no-unnecessary-condition",
+        "unchangedStatement": "scene?.originalScript?.extract"
+      }
+    },
+    "format": {
+      "command": "bunx --no-install oxfmt --check src/shots/server/shot-image-input.ts src/stills/server/shot-image-generation.ts src/shots/server/shot-image-input.test.ts src/stills/server/shot-image-generation.test.ts src/stills/server/shot-image-generation-lifecycle.test.ts src/stills/server/shot-image-generation-billing.test.ts docs/architecture/model-configuration.md docs/secondary-development/README.md docs/secondary-development/upstream-preservation-plan.md docs/secondary-development/upstream-preservation-p3-generation-20261109.md docs/secondary-development/preservation/20261109-p3-generation/verification.json",
+      "status": "passed",
+      "log": ".tmp/p3-generation-20261109/format-final.log"
+    },
+    "newFacadeFunctionLines": 5,
+    "newExecutableTestFunctionMaxLines": 42,
+    "testSuiteRegistrationContainersExcludedFromFunctionMetric": true,
+    "inheritedLimits": "The existing preparer changes from 278 to 279 lines, and generateShotImage from 163 to 153. Source files remain at 386 and 580 lines. No unrelated decomposition of legacy functions is included."
+  },
+  "independentReview": {
+    "status": "no-findings-static-review",
+    "scope": "Two production diffs, direct pricing/configuration codecs/trigger/release logic and facade consumers.",
+    "result": "No reproducible external-behavior regression found; payload, final reference count, captured configuration and preflight/dedup/claim/reserve/dispatch/release sequence match the old implementation. Variants/upscale bodies unchanged.",
+    "boundary": "Read-only review; does not substitute for the recorded tests or real durable-engine/provider acceptance."
+  },
+  "preservedRouteTree": {
+    "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+    "unchanged": true
+  },
+  "deferredIssue": "CONTINUE-LLM-SOURCE remains accepted-deferred and unfixed. BYOK prohibition, CNY pricing/currency policy and organization wallet behavior are outside scope.",
+  "rawReports": "Raw reports and logs stay in ignored .tmp; this archive records commands, hashes, counts, selected cases and source preservation checks.",
+  "git": {
+    "push": "not authorized; not pushed",
+    "commit": "Normal hooks remain enabled. The resulting local commit is recorded by Git rather than self-referenced here."
+  },
+  "integrity": {
+    "documents": 4,
+    "localLinks": 74,
+    "brokenLinks": 0,
+    "originalTestCasesRetained": 232,
+    "changedSourcesAfterIntegratedRun": [
+      {
+        "file": "src/stills/server/shot-image-generation-billing.test.ts",
+        "beforeSha256": "aa872ccec51cbe5e573742d33c795d26a479163fd8a1c7dc6e87ee821ed573f0",
+        "finalSha256": "eb6a2e5cdca748adab0f5da723ee65d63c63ef71239bb86068b8c5f66c93e9aa",
+        "lineEndingsOnly": true
+      }
+    ],
+    "routeTreeBytesPreserved": true,
+    "postRunChangeBoundary": "Only formatter line-ending normalization; reconstructing CRLF bytes reproduces the executed source hash. No AST or test body changed."
+  },
+  "executedSources": {
+    "src/shots/server/shot-image-input.ts": "ea558d496f331fd4ca74a8f36392d24e1e72bf2382ff2246a59dc04a971df906",
+    "src/stills/server/shot-image-generation.ts": "9b4f89dc8192b690886a59456604f72765d06cf972109856e576217e9bd87031",
+    "src/billing/configured-image-billing.test.ts": "e20bcb5ccdb49afee66d3f0565d9b99c66fd870f65031d97ce2f0c0422d9e2e1",
+    "src/billing/configured-image-resolution-paths.test.ts": "6ff268fa32a35cf8280639be100d7e099672d5130a16c1368cca638105c0ed6b",
+    "src/billing/server/configured-image-billing.test.ts": "3fdff239d5e3cb9b8f3a9395afa1751f49e0719a1e59939ae36221bd21c76359",
+    "src/billing/server/preflight.test.ts": "70fa10715afb1ed76ed6c44944d0e010004527dfdc4e7eb3afafb3c0049f6a50",
+    "src/stills/server/configured-image-generation.test.ts": "2299fbcdeb487580bd970e7ea7529fe9552ee3ae045ac4e501cd940711340ed7",
+    "src/stills/server/shot-image-generation-billing.test.ts": "aa872ccec51cbe5e573742d33c795d26a479163fd8a1c7dc6e87ee821ed573f0",
+    "src/stills/server/shot-image-generation.test.ts": "983eedd49c92596703400b58ef5370a312f1ad7d711c04b06d1e46b64fad1d23",
+    "src/shots/server/shot-image-input.test.ts": "9d189e290c63dabc1bece4efb3af7f7fa8ae88d756f2143f00a7d6d08fab1420",
+    "src/platform/server/compliance/generation-gate.wiring.test.ts": "e2d5aa7bf5c49c3767af0ffb5dedd6b66aeaafeab21e56337e36258a9cf04afe",
+    "src/platform/server/workflow/claim-discipline.test.ts": "55d498390e14fd4782b34094ddd549dc6803eb796529cc0f5779b4c185bc80b7",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts": "df131f1d34e6675ba04c23a4b7dd308f87be46c2c8154d666ae0535f3b59a3ab",
+    "src/stills/server/workflows/configured-image-interruption.test.ts": "3d82ed453dfff7b19635cb47476d994bcd146e7e934ca7448b6cad219e73457f",
+    "src/stills/server/workflows/configured-image-step.test.ts": "34de7c453008fe72cda7d0334ad99efb0fb388556f5050057cba07fd8ab13cdb",
+    "src/stills/server/workflows/image-workflow-failure.test.ts": "57754702339d874cbdb322dbe245529044c861b62ca2ad79dfacf27d18070e81",
+    "src/stills/server/workflows/image-workflow-preview-failure.test.ts": "5ba919c956550ca4a6d74306e2bb3b157b909e68cf0ca2a7281ee4d0743315df",
+    "src/stills/server/workflows/image-workflow-snapshot.test.ts": "ddd11ca86eecc00caa7af1976ddf2bf59d2b7da0f29443a59ce8e366b6c48068",
+    "src/stills/server/shot-image-generation-lifecycle.test.ts": "02a30f21efed44a49d5b5f62441b49ecaf5cb090a087068684da3b3810ca4085",
+    "src/shots/server/workflows/update-stale-plan-run.test.ts": "f71ba12277a97e7debd55c50d456fcf906da94da9a1ce75e114f35a13173ceb1"
+  }
+}
