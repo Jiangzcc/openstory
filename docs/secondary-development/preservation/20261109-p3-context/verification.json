@@ -1,0 +1,515 @@
+{
+  "date": "2026-11-09",
+  "sourceHead": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+  "upstreamBaseline": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": "P3 first candidate: AnalyzeScript scene-split and location-matching context propagation. Existing production structure retained.",
+  "decision": {
+    "status": "retain-existing-thin-calls",
+    "reason": "Both call sites explicitly select parent fields; the shared bridge already owns snapshot packing and overriding. A wrapper for two calls adds an API without demonstrated structural benefit.",
+    "productionSourceFilesModified": 0,
+    "metrics": {
+      "reviewedChildCallSites": 2,
+      "explicitIdentityLocaleAndModelAssignmentsBefore": 8,
+      "explicitIdentityLocaleAndModelAssignmentsAfter": 8,
+      "removedCoreIntegrationPoints": 0
+    },
+    "phaseStatus": "This candidate is evaluated and retained; P3 structural convergence is not claimed complete."
+  },
+  "environment": {
+    "runtime": "Node/Vitest, real AnalyzeScript runImpl, real spawnAndAwaitChild and runtime/wire codecs",
+    "mocked": [
+      "Distinct mock Cloudflare Workflow.create bindings plus a combined creation trace, and mock step.waitForEvent",
+      "step.do callbacks run inline without durable checkpoints",
+      "ScopedDb writes, cast persistence and realtime notifications",
+      "Synthetic text and image routes; network fetch is refused"
+    ],
+    "notExecuted": [
+      "Cloudflare Workflows engine/checkpoint restart or real instance reuse",
+      "D1 persistence acceptance for this parent/child chain",
+      "Paid providers, provider bills, remote database, deployment",
+      "Browser or full-pipeline E2E",
+      "Real child workflow execution and consumption of the created payload; event correlation on the Cloudflare engine"
+    ]
+  },
+  "runs": [
+    {
+      "id": "baseline",
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow.test.ts src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/platform/server/workflow/client.test.ts src/platform/server/workflow/client.compliance.test.ts src/platform/server/workflow/await-child.test.ts src/models/workflow-text-model-routing.test.ts src/models/workflow-image-model-routing.test.ts src/platform/server/db/scoped-workflow-models.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/claim-discipline.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-context-20261109/baseline.json",
+      "report": ".tmp/p3-context-20261109/baseline.json",
+      "reportSha256": "21a7b6c3b076a6b8d693257cccf0ca892a430e5b715162108b760bd9c2365dd7",
+      "sourceHead": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+      "changedTestSourceSha256": "ee3793fd4f819d658e349385bc33d80477772eb9b796885e3796a03b69df4b79",
+      "success": true,
+      "counts": {
+        "files": 11,
+        "total": 180,
+        "passed": 180,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 86004.5546875,
+      "failures": []
+    },
+    {
+      "id": "initial-bridge-expectation",
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-context-20261109/child-bridge-first.json",
+      "report": ".tmp/p3-context-20261109/child-bridge-first.json",
+      "reportSha256": "9268ca001708659e040384516a641cebcc3006fb2ae1324e33f250675210821c",
+      "sourceHead": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+      "changedTestSourceSha256": null,
+      "success": false,
+      "counts": {
+        "files": 1,
+        "total": 14,
+        "passed": 11,
+        "failed": 3,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 6399.17724609375,
+      "failures": [
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits en and configured routes at both child create boundaries",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at expectInheritedChildContext (D:/code/github/openstory/src/sequences/server/workflows/analyze-script-workflow.test.ts:606:72)\n    at D:/code/github/openstory/src/sequences/server/workflows/analyze-script-workflow.test.ts:662:7\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits zh-CN and configured routes at both child create boundaries",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at expectInheritedChildContext (D:/code/github/openstory/src/sequences/server/workflows/analyze-script-workflow.test.ts:606:72)\n    at D:/code/github/openstory/src/sequences/server/workflows/analyze-script-workflow.test.ts:662:7\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) keeps concurrent language and model contexts on their own runs",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at expectInheritedChildContext (D:/code/github/openstory/src/sequences/server/workflows/analyze-script-workflow.test.ts:606:72)\n    at D:/code/github/openstory/src/sequences/server/workflows/analyze-script-workflow.test.ts:684:7\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "full-context-regression",
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow.test.ts src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/platform/server/workflow/client.test.ts src/platform/server/workflow/client.compliance.test.ts src/platform/server/workflow/await-child.test.ts src/models/workflow-text-model-routing.test.ts src/models/workflow-image-model-routing.test.ts src/platform/server/db/scoped-workflow-models.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/claim-discipline.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-context-20261109/child-bridge-final.json",
+      "report": ".tmp/p3-context-20261109/child-bridge-final.json",
+      "reportSha256": "f4b89b7be735a756fe08462988c95ab9fa06de5f11f2ede2d3223b9486ac5f38",
+      "sourceHead": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+      "changedTestSourceSha256": "cb4394e4c53f95b7285e04de349170896e3bb99695113824f2a41029a1cc2dae",
+      "success": true,
+      "counts": {
+        "files": 11,
+        "total": 188,
+        "passed": 188,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 71275.84790039062,
+      "failures": []
+    },
+    {
+      "id": "after-lint-harness-fix",
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-context-20261109/child-bridge-after-lint.json",
+      "report": ".tmp/p3-context-20261109/child-bridge-after-lint.json",
+      "reportSha256": "fede699f8f7edac96515b503fccd9d39d6feb70031872d804b4d689a9e2da2e9",
+      "sourceHead": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+      "changedTestSourceSha256": "69f6b5eed13220425448be289e98f3eb017b8b9b8a3c8c09798183d880526ad5",
+      "success": true,
+      "counts": {
+        "files": 1,
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 24129.479736328125,
+      "failures": []
+    },
+    {
+      "id": "test-functions-factored",
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-context-20261109/child-bridge-accepted.json",
+      "report": ".tmp/p3-context-20261109/child-bridge-accepted.json",
+      "reportSha256": "7abec3d12d71cd3ca1a506656a69b3cde4fcf5a9f6f1195ef857a26cfca85449",
+      "sourceHead": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+      "changedTestSourceSha256": "c2943d687954d092c6e4d5c8122c0abdf5fc7e5fc78da13d586c9d8fd3f1ccf2",
+      "success": true,
+      "counts": {
+        "files": 1,
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 22191.28662109375,
+      "failures": []
+    },
+    {
+      "id": "distinct-binding-spy-draft",
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-context-20261109/child-bridge-binding-accepted.json",
+      "report": ".tmp/p3-context-20261109/child-bridge-binding-accepted.json",
+      "reportSha256": "2023a118111e79a217118a13a0446ce8c2aa8d034aeb3d9b3c696475633053bc",
+      "sourceHead": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+      "changedTestSourceSha256": "9ce5073e13697ef918660441b12c48c8e8e8f7aaab0ed8644f62165c6668e9b0",
+      "success": false,
+      "counts": {
+        "files": 1,
+        "total": 16,
+        "passed": 8,
+        "failed": 8,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 23174.72900390625,
+      "failures": [
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits en and default routes at both child create boundaries",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits zh-CN and default routes at both child create boundaries",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits en and empty routes at both child create boundaries",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits zh-CN and empty routes at both child create boundaries",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits en and configured routes at both child create boundaries",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits zh-CN and configured routes at both child create boundaries",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) keeps concurrent language and model contexts on their own runs",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) a failed split stops before creating location matching",
+          "message": "AssertionError: expected \"vi.fn()\" to not be called at all, but actually been called 1 times"
+        }
+      ]
+    },
+    {
+      "id": "accepted-distinct-binding-source",
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow.test.ts --pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json --outputFile=.tmp/p3-context-20261109/child-bridge-distinct-bindings.json",
+      "report": ".tmp/p3-context-20261109/child-bridge-distinct-bindings.json",
+      "reportSha256": "0d9cdd488cda8607277fee4bad4861ace6b4ff0bd1c209b257daaab31120c606",
+      "sourceHead": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+      "changedTestSourceSha256": "92f518d863d77e830595926aca80105b65371e2038f263ed9e454c872e77678b",
+      "success": true,
+      "counts": {
+        "files": 1,
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "pending": 0,
+        "todo": 0
+      },
+      "durationMs": 7256.63671875,
+      "failures": []
+    }
+  ],
+  "diagnosticBoundary": {
+    "firstDraft": "The initial bridge draft expected catalog description/vendor to survive encoding. Existing wire code and prior tests deliberately omit those two text catalog fields. Only that expectation was corrected; all execution fields remain compared exactly.",
+    "firstDraftSourceFingerprint": "The first draft was not frozen before correction; its failed report is diagnostic evidence only and is not counted as current verification.",
+    "lint": "The first targeted lint rejected spreading a WorkflowStep-typed mock as a class instance. The harness now passes waitForEvent explicitly. All later checks use the accepted source.",
+    "functionLength": "The new describe callback was factored into named test functions so new functions stay within 50 lines. The file was rerun after subsequent binding-specific assertions and mock bookkeeping fixes.",
+    "bindingSpies": "The first binding-specific draft used vi.fn(existingSpy), which reused the same mock function and made all eight new cases fail their binding-count checks. Independent callback wrappers now keep per-binding spies distinct; all sixteen cases passed afterward. Production code was unchanged."
+  },
+  "selectedTotals": {
+    "files": 11,
+    "total": 188,
+    "passed": 188,
+    "failed": 0,
+    "pending": 0
+  },
+  "selectedFiles": [
+    {
+      "path": "src/models/workflow-image-model-routing.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "49e89430702c64091fb7b44bc7c5b71969d542e4711beeb89c37831dd4379882",
+      "status": "passed",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/models/workflow-text-model-routing.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "1e73efc831f7c4b95adee6773bcd1a96f973d448d5b97275d7bcc99f98c9ddd0",
+      "status": "passed",
+      "total": 12,
+      "passed": 12,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/platform/server/db/scoped-workflow-models.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "48e6cf3774cd392f752e59c987483c5815646cabc45a11eaca728dc61d0cbff8",
+      "status": "passed",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/platform/server/workflow/await-child.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "00a7bece0005868eade66e68086825bfd1b4a7c04625c0ce850a3783182d9e09",
+      "status": "passed",
+      "total": 32,
+      "passed": 32,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/platform/server/workflow/base-workflow.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "012fe8b40d87d2ed4472890f1df16765e3183810165e9858569ab6bb641cb4e2",
+      "status": "passed",
+      "total": 36,
+      "passed": 36,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/platform/server/workflow/claim-discipline.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "55d498390e14fd4782b34094ddd549dc6803eb796529cc0f5779b4c185bc80b7",
+      "status": "passed",
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/platform/server/workflow/client.compliance.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "ad701561c63380d59a1e421027fafde193080dfc98e4d98d6c55256faa96ad12",
+      "status": "passed",
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/platform/server/workflow/client.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "7dba3ad6231facefbea53812c235b783df45d328fd1b0b7c7845e9d5dc7eb0c6",
+      "status": "passed",
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "df131f1d34e6675ba04c23a4b7dd308f87be46c2c8154d666ae0535f3b59a3ab",
+      "status": "passed",
+      "total": 60,
+      "passed": 60,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+      "run": "full-context-regression",
+      "sourceSha256": "f30051d786c9b131027eac6892f964de008c6d88da7cb59cfe84544cfeb31f63",
+      "status": "passed",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+      "run": "accepted-distinct-binding-source",
+      "sourceSha256": "92f518d863d77e830595926aca80105b65371e2038f263ed9e454c872e77678b",
+      "status": "passed",
+      "total": 16,
+      "passed": 16,
+      "failed": 0,
+      "pending": 0
+    }
+  ],
+  "counting": "Latest result for the changed test file plus the other ten unchanged files from the full context run. Baseline, failed draft, intermediate single-file runs and P2 results are not added.",
+  "originalTestPreservation": {
+    "baselineRuntimeCases": 8,
+    "finalRuntimeCases": 16,
+    "method": "Babel TypeScript AST hashes of all four original test registrations including bodies/each inputs; locations, raw formatting and comments omitted.",
+    "originalTests": [
+      {
+        "name": "the split lands before a style failure fails the run (#1818)",
+        "digest": "d8108e008582d9f2c6b3370b9ba5d1489880fc4dcd080cdee90ee23e548b016e",
+        "unchanged": true
+      },
+      {
+        "name": "stopAt script: casts, spawns nothing further",
+        "digest": "b6648959836645796584d1fa88edfc878b65b0216e15cb2acbd72c4c379d8308",
+        "unchanged": true
+      },
+      {
+        "name": "stopAt %s: analysis leaves every generation unit to the executor",
+        "digest": "1e4092df530836e67a6e6e0a2c84f72c0ca1c1049b8953c3177eb79745be4e04",
+        "unchanged": true
+      },
+      {
+        "name": "derived prompts record their spec and stamp the verify hash, not the text",
+        "digest": "9058c213e25935c71d17c81064d659b170d7340087138ce092f487a036d5f01e",
+        "unchanged": true
+      }
+    ]
+  },
+  "newBridgeCases": [
+    {
+      "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits en and default routes at both child create boundaries",
+      "status": "passed"
+    },
+    {
+      "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits zh-CN and default routes at both child create boundaries",
+      "status": "passed"
+    },
+    {
+      "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits en and empty routes at both child create boundaries",
+      "status": "passed"
+    },
+    {
+      "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits zh-CN and empty routes at both child create boundaries",
+      "status": "passed"
+    },
+    {
+      "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits en and configured routes at both child create boundaries",
+      "status": "passed"
+    },
+    {
+      "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) inherits zh-CN and configured routes at both child create boundaries",
+      "status": "passed"
+    },
+    {
+      "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) keeps concurrent language and model contexts on their own runs",
+      "status": "passed"
+    },
+    {
+      "name": "AnalyzeScriptWorkflow child context through the real bridge (local mocks) a failed split stops before creating location matching",
+      "status": "passed"
+    }
+  ],
+  "normalization": "Only text route description/vendor catalog metadata is removed from expected runtime values, exactly as the existing wire contract. Model IDs, channel IDs, credentials, endpoints, protocol, capabilities, limits, prices and image route data are compared.",
+  "productionFingerprints": [
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow.ts",
+      "sha256Before": "3d723ce2885f8cc9bf3bf13097c28130789f3388dba9e8d1fa8b6678440f20f2",
+      "sha256After": "3d723ce2885f8cc9bf3bf13097c28130789f3388dba9e8d1fa8b6678440f20f2",
+      "unchanged": true
+    },
+    {
+      "path": "src/platform/server/workflow/client.ts",
+      "sha256Before": "7a2bb6fc2b857a797adaaed4792629d20d2445b2d169240b0ba300469284b6db",
+      "sha256After": "7a2bb6fc2b857a797adaaed4792629d20d2445b2d169240b0ba300469284b6db",
+      "unchanged": true
+    },
+    {
+      "path": "src/platform/server/workflow/await-child.ts",
+      "sha256Before": "3de961213c4f25c4bb818c579ea49ed3498c501d615f42c4770d8edbe734b80e",
+      "sha256After": "3de961213c4f25c4bb818c579ea49ed3498c501d615f42c4770d8edbe734b80e",
+      "unchanged": true
+    }
+  ],
+  "quality": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed",
+      "exitCode": 0,
+      "sourceSha256": "92f518d863d77e830595926aca80105b65371e2038f263ed9e454c872e77678b"
+    },
+    "targetedTypeAwareLint": {
+      "command": "bunx --no-install oxlint --type-aware src/sequences/server/workflows/analyze-script-workflow.test.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "sourceSha256": "92f518d863d77e830595926aca80105b65371e2038f263ed9e454c872e77678b"
+    },
+    "testFormat": {
+      "command": "bunx --no-install oxfmt --check src/sequences/server/workflows/analyze-script-workflow.test.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "sourceSha256": "92f518d863d77e830595926aca80105b65371e2038f263ed9e454c872e77678b"
+    },
+    "newFunctionSizes": [
+      {
+        "name": "resetWorkflowMocks",
+        "lines": 16
+      },
+      {
+        "name": "mockRuntimeConfiguration",
+        "lines": 28
+      },
+      {
+        "name": "childBridgeHarness",
+        "lines": 20
+      },
+      {
+        "name": "childContextEvent",
+        "lines": 17
+      },
+      {
+        "name": "executionConfiguration",
+        "lines": 13
+      },
+      {
+        "name": "expectInheritedChildContext",
+        "lines": 30
+      },
+      {
+        "name": "expectChildBusinessPayloads",
+        "lines": 25
+      },
+      {
+        "name": "verifyInheritedContext",
+        "lines": 26
+      },
+      {
+        "name": "verifyConcurrentContext",
+        "lines": 21
+      },
+      {
+        "name": "verifyFailedSplit",
+        "lines": 22
+      }
+    ],
+    "testFileLines": 768
+  },
+  "preservedRouteTree": {
+    "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+    "unchanged": true
+  },
+  "deferredIssue": "CONTINUE-LLM-SOURCE remains accepted-deferred and unfixed; no billing/BYOK change.",
+  "independentReview": {
+    "status": "passed-static-review-with-explicit-boundaries",
+    "scope": "Original eight cases, exact execution-field normalization, real bridge delegation, language/ownership checks",
+    "result": "No weakened original test bodies or broad normalization found. The reviewer identified shared create spies as unable to prove binding selection; distinct wrappers and assertions were added and actually rerun.",
+    "boundary": "Review was static before the final per-binding wrapper refinement. The parent runImpl, bridge and codec are real; Cloudflare, storage and notifications remain mocked."
+  },
+  "fixtureMismatch": "The configured cases deliberately give the parent payload a default modelConfiguration and the supplied WorkflowScopedDb a configured snapshot. This is a synthetic seam check that calls use scopedDb.models; it does not execute the base entrypoint or imply a real user can create that mismatch.",
+  "integrity": {
+    "status": "passed",
+    "documents": 4,
+    "localLinks": 83,
+    "selectedTestFingerprints": 11,
+    "preservedProductionFingerprints": 3,
+    "originalTestRegistrationDigests": 4,
+    "routeTreeBytesPreserved": true,
+    "unexpectedChanges": 0
+  }
+}

@@ -10,6 +10,17 @@ import { afterAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { migrateStyleConfigV1ToV2 } from '@/look/style-config';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '@/models/models';
 import { DEFAULT_ANALYSIS_MODEL } from '@/models/models.config';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import {
+  packModelRuntimeConfiguration,
+  unpackModelRuntimeConfiguration,
+} from '@/models/model-runtime-configuration';
+import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
+import { createImageModelRoutingSnapshot } from '@/models/image-channels';
+import * as realChildWorkflow from '@/platform/server/workflow/await-child';
+import type { ParentNotifyHint } from '@/platform/server/workflow/await-child';
+import type { Locale } from '@/platform/i18n/locale';
 import {
   hashVisualPromptInput,
   hashMotionPromptInput,
@@ -23,16 +34,25 @@ import type {
   WorkflowEvent,
   WorkflowStep,
   WorkflowStepConfig,
+  WorkflowSleepDuration,
 } from 'cloudflare:workers';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type {
   AnalyzeScriptWorkflowInput,
+  CloudflareEnv,
+  LocationMatchingWorkflowInput,
+  SceneSplitWorkflowInput,
   SceneSplitWorkflowResult,
 } from '@/platform/server/workflow/types';
 import * as realCastRecords from '@/cast/server/workflows/cast-records';
 import { asStub } from '@/test/as-stub';
 
-vi.doMock('@/platform/server/db/scoped', () => ({ createScopedDb: vi.fn() }));
+const loadModelRuntimeConfiguration =
+  vi.fn<() => Promise<ModelRuntimeConfiguration>>();
+vi.doMock('@/platform/server/db/scoped', () => ({
+  createScopedDb: vi.fn(),
+  loadModelRuntimeConfiguration,
+}));
 vi.doMock('@/models/server/fal-config', () => ({
   configureFalProxyFromEnv: vi.fn(),
 }));
@@ -101,7 +121,7 @@ const CHILD_RESULTS: Record<string, unknown> = {
 };
 const defaultSpawn = async (
   _step: WorkflowStep,
-  args: { spawnStepName: string; childPayload: unknown }
+  args: Parameters<typeof realChildWorkflow.spawnAndAwaitChild>[1]
 ) => {
   const result = CHILD_RESULTS[args.spawnStepName];
   if (result === undefined) {
@@ -147,7 +167,7 @@ class TestableAnalyzeScriptWorkflow extends AnalyzeScriptWorkflow {
  * the body is always the last argument. Typing `rest` as the union lets
  * `typeof` narrow to the callback with no assertion.
  */
-function makeStep(): WorkflowStep {
+function makeStep(waitForEvent?: MockWaitForEvent): WorkflowStep {
   const run = (
     _name: string,
     ...rest: Array<WorkflowStepConfig | (() => Promise<unknown>)>
@@ -158,7 +178,7 @@ function makeStep(): WorkflowStep {
       : Promise.reject(new Error('step.do called without a callback'));
   };
   // only `do` is exercised
-  return asStub<WorkflowStep>({ do: run });
+  return asStub<WorkflowStep>({ do: run, waitForEvent });
 }
 
 type SequenceUpdate = Record<string, unknown>;
@@ -200,7 +220,8 @@ function makeScopedDb(update: UpdateMock): WorkflowScopedDb {
 }
 
 function makeEvent(
-  extras: Partial<AnalyzeScriptWorkflowInput> = {}
+  extras: Partial<AnalyzeScriptWorkflowInput> = {},
+  instanceId = 'analyze_run_A'
 ): Readonly<WorkflowEvent<AnalyzeScriptWorkflowInput>> {
   const payload: AnalyzeScriptWorkflowInput = {
     promptLocale: 'en',
@@ -234,34 +255,41 @@ function makeEvent(
   // minimal WorkflowEvent stub
   return asStub<Readonly<WorkflowEvent<AnalyzeScriptWorkflowInput>>>({
     payload,
-    instanceId: 'analyze_run_A',
+    instanceId,
   });
 }
 
-function makeWorkflow(): TestableAnalyzeScriptWorkflow {
+function makeWorkflow(
+  bindings: Partial<CloudflareEnv> = {}
+): TestableAnalyzeScriptWorkflow {
   type Ctor = ConstructorParameters<typeof TestableAnalyzeScriptWorkflow>;
   // the run never reads ctx or bindings
   const ctx = asStub<Ctor[0]>(undefined);
-  // child spawns are mocked, so no binding is dereferenced
-  const env = asStub<Ctor[1]>({});
+  // Mock bindings implement only the exercised Cloudflare boundary.
+  const env = asStub<Ctor[1]>(bindings);
   return new TestableAnalyzeScriptWorkflow(ctx, env);
 }
 afterAll(() => vi.unstubAllGlobals());
 
+function resetWorkflowMocks() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() =>
+      Promise.reject(new Error('Unexpected network in workflow test'))
+    )
+  );
+  deriveAutoStyle.mockClear();
+  spawnAndAwaitChild.mockReset();
+  spawnAndAwaitChild.mockImplementation(defaultSpawn);
+  loadModelRuntimeConfiguration.mockReset();
+  loadModelRuntimeConfiguration.mockResolvedValue(DEFAULT_MODEL_CONFIGURATION);
+  createCastRecords.mockClear();
+  writeVisualPrompt.mockClear();
+  writeMotionPrompt.mockClear();
+}
+
 describe('AnalyzeScriptWorkflow (a fresh run)', () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() =>
-        Promise.reject(new Error('Unexpected network in workflow test'))
-      )
-    );
-    deriveAutoStyle.mockClear();
-    spawnAndAwaitChild.mockClear();
-    createCastRecords.mockClear();
-    writeVisualPrompt.mockClear();
-    writeMotionPrompt.mockClear();
-  });
+  beforeEach(resetWorkflowMocks);
 
   test('the split lands before a style failure fails the run (#1818)', async () => {
     const update: UpdateMock = vi.fn(async () => undefined);
@@ -476,4 +504,264 @@ describe('AnalyzeScriptWorkflow (a fresh run)', () => {
     }
     spawnAndAwaitChild.mockImplementation(defaultSpawn);
   });
+});
+
+// Synthetic routes and bindings; no provider or Cloudflare engine is contacted.
+function mockRuntimeConfiguration(): ModelRuntimeConfiguration {
+  return {
+    ...DEFAULT_MODEL_CONFIGURATION,
+    textModelRouting: [
+      {
+        modelId: 'custom:mock-analysis',
+        name: 'Mock analysis',
+        channelId: 'mock-text-channel',
+        upstreamModel: 'mock-upstream',
+        credentialId: 'mock-frozen-credential',
+        protocol: 'openai-responses',
+        baseUrl: 'https://mock.invalid/v1',
+        vision: true,
+        structuredOutput: true,
+        tools: false,
+        contextWindow: 8000,
+        maxOutputTokens: 2000,
+        inputPricePerMillion: 1,
+        outputPricePerMillion: 2,
+        description: 'Mock catalog description',
+        vendor: 'Mock vendor',
+      },
+    ],
+    imageModelRouting: createImageModelRoutingSnapshot(
+      imageConfigurationFixture()
+    ),
+  };
+}
+
+type CreatedChild = {
+  id: string;
+  params: (SceneSplitWorkflowInput | LocationMatchingWorkflowInput) & {
+    _parent: ParentNotifyHint;
+  };
+};
+
+type MockChildOutcome =
+  | { status: 'ok'; output: unknown }
+  | { status: 'failed'; error: string };
+
+type MockWaitForEvent = (
+  name: string,
+  options: { type: string; timeout: WorkflowSleepDuration }
+) => Promise<{ payload: MockChildOutcome }>;
+
+function childBridgeHarness() {
+  const create = vi.fn(async (options: CreatedChild) => ({ id: options.id }));
+  const createSplit = vi.fn((options: CreatedChild) => create(options));
+  const createLocation = vi.fn((options: CreatedChild) => create(options));
+  const waitForEvent = vi.fn<MockWaitForEvent>(async (name, _options) => {
+    const output = CHILD_RESULTS[name.replace('await-', 'spawn-')];
+    if (output === undefined) throw new Error('Unexpected child wait: ' + name);
+    return { payload: { status: 'ok', output } };
+  });
+  const workflow = makeWorkflow({
+    SCENE_SPLIT_WORKFLOW: asStub<CloudflareEnv['SCENE_SPLIT_WORKFLOW']>({
+      create: createSplit,
+    }),
+    LOCATION_MATCHING_WORKFLOW: asStub<
+      CloudflareEnv['LOCATION_MATCHING_WORKFLOW']
+    >({ create: createLocation }),
+  });
+  const step = makeStep(waitForEvent);
+  return { create, createSplit, createLocation, waitForEvent, workflow, step };
+}
+
+function childContextEvent(promptLocale: Locale) {
+  return makeEvent(
+    {
+      promptLocale,
+      userId: 'mock-user-' + promptLocale,
+      organizationId: 'mock-organization-' + promptLocale,
+      pendingAutoStyleId: undefined,
+      reservationId: 'mock-shared-reservation',
+      ownsReservation: true,
+      userCountry: 'AU',
+      modelConfiguration: packModelRuntimeConfiguration(
+        DEFAULT_MODEL_CONFIGURATION
+      ),
+    },
+    'mock-analyze-' + promptLocale
+  );
+}
+
+// The existing wire contract omits only these text-catalog labels.
+function executionConfiguration(models: ModelRuntimeConfiguration) {
+  return {
+    ...models,
+    ...(models.textModelRouting === undefined
+      ? {}
+      : {
+          textModelRouting: models.textModelRouting.map(
+            ({ description: _description, vendor: _vendor, ...execution }) =>
+              execution
+          ),
+        }),
+  };
+}
+
+function expectInheritedChildContext(
+  harness: ReturnType<typeof childBridgeHarness>,
+  event: ReturnType<typeof childContextEvent>,
+  expectedModels: ModelRuntimeConfiguration
+) {
+  expect(harness.create).toHaveBeenCalledTimes(2);
+  expect(harness.createSplit).toHaveBeenCalledTimes(1);
+  expect(harness.createLocation).toHaveBeenCalledTimes(1);
+  for (const [{ params }] of harness.create.mock.calls) {
+    expect(params).toMatchObject({
+      promptLocale: event.payload.promptLocale,
+      userId: event.payload.userId,
+      organizationId: event.payload.organizationId,
+      sequenceId: event.payload.sequenceId,
+      reservationId: event.payload.reservationId,
+      _parent: {
+        bindingName: 'ANALYZE_SCRIPT_WORKFLOW',
+        parentInstanceId: event.instanceId,
+      },
+    });
+    expect(params).not.toHaveProperty('ownsReservation');
+    if (!params.modelConfiguration)
+      throw new Error('Missing child model snapshot');
+    expect(unpackModelRuntimeConfiguration(params.modelConfiguration)).toEqual(
+      executionConfiguration(expectedModels)
+    );
+  }
+  expectChildBusinessPayloads(harness, event);
+  expect(loadModelRuntimeConfiguration).not.toHaveBeenCalled();
+}
+
+function expectChildBusinessPayloads(
+  harness: ReturnType<typeof childBridgeHarness>,
+  event: ReturnType<typeof childContextEvent>
+) {
+  expect(harness.create.mock.calls[0]?.[0].params).toMatchObject({
+    promptName: 'phase/scene-splitting-boundaries-chat',
+    userCountry: 'AU',
+    modelId: event.payload.analysisModelId,
+    script: event.payload.script,
+    cast: event.payload.cast,
+  });
+  expect(harness.create.mock.calls[1]?.[0].params).toMatchObject({
+    analysisModelId: event.payload.analysisModelId,
+    locationBible: SPLIT.locationBible,
+  });
+  expect(
+    harness.waitForEvent.mock.calls.map(([name, options]) => ({
+      name,
+      timeout: options.timeout,
+    }))
+  ).toEqual([
+    { name: 'await-scene-split', timeout: '45 minutes' },
+    { name: 'await-location-matching', timeout: '45 minutes' },
+  ]);
+}
+
+type MockRoutes = 'default' | 'empty' | 'configured';
+
+async function verifyInheritedContext(
+  promptLocale: Locale,
+  routes: MockRoutes
+) {
+  const models = {
+    default: DEFAULT_MODEL_CONFIGURATION,
+    empty: {
+      ...DEFAULT_MODEL_CONFIGURATION,
+      textModelRouting: [],
+      imageModelRouting: [],
+    },
+    configured: mockRuntimeConfiguration(),
+  }[routes];
+  const expectedModels = structuredClone(models);
+  const event = childContextEvent(promptLocale);
+  const harness = childBridgeHarness();
+  loadModelRuntimeConfiguration.mockResolvedValue({
+    ...DEFAULT_MODEL_CONFIGURATION,
+    sceneSplit: 'z-ai/glm-5.3-flash',
+  });
+  await harness.workflow.invokeRunImpl(event, harness.step, {
+    ...makeScopedDb(vi.fn()),
+    models,
+  });
+  expectInheritedChildContext(harness, event, expectedModels);
+}
+
+async function verifyConcurrentContext() {
+  const runs = (['en', 'zh-CN'] as const).map((promptLocale) => ({
+    event: childContextEvent(promptLocale),
+    models:
+      promptLocale === 'en'
+        ? mockRuntimeConfiguration()
+        : DEFAULT_MODEL_CONFIGURATION,
+    harness: childBridgeHarness(),
+  }));
+  await Promise.all(
+    runs.map(({ event, models, harness }) =>
+      harness.workflow.invokeRunImpl(event, harness.step, {
+        ...makeScopedDb(vi.fn()),
+        models,
+      })
+    )
+  );
+  for (const { event, models, harness } of runs) {
+    expectInheritedChildContext(harness, event, models);
+  }
+}
+
+async function verifyFailedSplit() {
+  const harness = childBridgeHarness();
+  harness.waitForEvent.mockResolvedValueOnce({
+    payload: {
+      status: 'failed',
+      error: 'Mock split failure',
+    },
+  });
+  await expect(
+    harness.workflow.invokeRunImpl(childContextEvent('en'), harness.step, {
+      ...makeScopedDb(vi.fn()),
+      models: mockRuntimeConfiguration(),
+    })
+  ).rejects.toThrow('Mock split failure');
+  expect(harness.create).toHaveBeenCalledTimes(1);
+  expect(harness.createSplit).toHaveBeenCalledTimes(1);
+  expect(harness.createLocation).not.toHaveBeenCalled();
+  expect(harness.waitForEvent).toHaveBeenCalledTimes(1);
+  expect(harness.create.mock.calls[0]?.[0].params).toMatchObject({
+    promptName: 'phase/scene-splitting-boundaries-chat',
+  });
+}
+
+describe('AnalyzeScriptWorkflow child context through the real bridge (local mocks)', () => {
+  beforeEach(() => {
+    resetWorkflowMocks();
+    spawnAndAwaitChild.mockImplementation(realChildWorkflow.spawnAndAwaitChild);
+  });
+
+  test.each([
+    ['en', 'default'],
+    ['zh-CN', 'default'],
+    ['en', 'empty'],
+    ['zh-CN', 'empty'],
+    ['en', 'configured'],
+    ['zh-CN', 'configured'],
+  ] as const)(
+    'inherits %s and %s routes at both child create boundaries',
+    verifyInheritedContext
+  );
+
+  test(
+    'keeps concurrent language and model contexts on their own runs',
+    verifyConcurrentContext
+  );
+
+  test(
+    'a failed split stops before creating location matching',
+    verifyFailedSplit
+  );
 });
