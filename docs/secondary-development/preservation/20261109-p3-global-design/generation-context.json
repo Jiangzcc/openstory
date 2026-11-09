@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-09",
+  "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "p2Source": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "branch": "develop",
+  "area": "generation-context-and-workflow-lifecycle",
+  "status": "planned",
+  "semanticApproval": false,
+  "scope": {
+    "globalPaths": 1219,
+    "existingSrcModified": 606,
+    "addedSrc": 411,
+    "p2Paths": 1128,
+    "newToGlobalScope": 91,
+    "p2AreaSeedPaths": 352,
+    "definition": "按P2任一BD-*、AEG-02、C-08/C-13种子，再沿真实请求/工作流边补充；不按18冲突/四试点裁剪。",
+    "registry": "scope.json + inventory-*.jsonl；仅指纹和历史关联，原p3Disposition全部pending；本稿不修改。",
+    "historicalIdRule": "历史总79号含仅历史FR08属主线程全量分母；本组明确覆盖BD-00..12及相关AEG/C号，跨职责可多对多，不声明其余历史号由本组实现。",
+    "newAreaEvidencePaths": [
+      "src/cast/ui/talent/character-sheet-cost.ts",
+      "src/cast/ui/talent/character-sheet-cost.test.ts",
+      "src/stills/server/shot-image-generation-lifecycle.test.ts",
+      "src/models/server/db/generated-assets.test.ts"
+    ],
+    "limit": "完整职责设计不是逐块/逐调用点语义批准；历史reviewed/tested不转成本轮验收。"
+  },
+  "decisions": [
+    "保留上游骨架与domain ownership；仅抽取二开重复准备/投影/固定文案，不复制上游核心，不造万能context/插件框架。",
+    "按整合裁决/MC-13保留loadModelRuntimeConfiguration现有platform composition root，不为约14行组装迁移文件。",
+    "按主线程核对保留assistantRequestModel约19行chat-specific chatModelFor/vision/收费编排，不造通用resolver；本组没有相反源码证据。",
+    "CONTINUE-LLM-SOURCE继续deferred；未来禁止BYOK、人民币钱包/费率/账本不在本轮实施。"
+  ],
+  "existingThinBridges": {
+    "owner": "AnalyzeScript scene-split/location-matching",
+    "callsBefore": 2,
+    "callsAfter": 2,
+    "assignmentsBefore": 8,
+    "assignmentsAfter": 8,
+    "removedCoreIntegrationPoints": 0,
+    "status": "retain-justified",
+    "evidence": "docs/secondary-development/upstream-preservation-p3-context-20261109.md:9-35"
+  },
+  "lifecycleBoundaries": [
+    "storyboard slot：sequences.claimWorkflowSlot，序列互斥。",
+    "selection claim：各artifact DB持有guarded promote/clear；各媒介语义不统一。",
+    "paid image attempt：stills组织限定已提交/已存/未知恢复，不是资金或选择锁。",
+    "wallet reservation：billing reserve/capture/zero；共享/私有owner不同。",
+    "provider capacity/asset lease：现有BytePlusGovernor/voice/provider所有者；生命周期只传播/依原owner回收。"
+  ],
+  "crossGroupInterfaces": [
+    {
+      "id": "MODEL-SNAPSHOT-CONTRACT",
+      "owner": "模型渠道组（MC-13）",
+      "contract": "沿用ModelRuntimeConfiguration/WorkflowModelConfiguration、codec和credentialId；保留既有composition root，策略/协议/凭证/轮换属于模型域。"
+    },
+    {
+      "id": "MODEL-IMAGE-QUOTE-CONTRACT",
+      "owner": "模型渠道组与billing所有者",
+      "contract": "冻结路由+已解析规格产生operation/有效参数/ref/mask/native n/输出数/成本/source；执行仍校验，各via stamp/poll保持，无静默回退。"
+    },
+    {
+      "id": "LOCALIZATION-OWNER-MAP",
+      "owner": "本地化组",
+      "contract": "英文owner/中文资源配对与人工全文语义复核；本组提供最终消息、语言传播和保存边界，指纹不批准语义。"
+    }
+  ],
+  "firstExecutableBatch": {
+    "id": "G09-reference-projection",
+    "status": "planned",
+    "scope": "cast已解析sheet输入→model/aspect/ref-count纯投影，接direct和plan；不改UI readiness/claim/资金/控制流。",
+    "preconditions": [
+      "执行已授权的对应P3批次前固定新的before SHA，核对最新HEAD并分配互不重叠的写入范围。",
+      "与模型组固定当前quote/有效参数契约；协调billing文件写入所有者。"
+    ],
+    "sequence": [
+      "G09-reference-projection",
+      "G07-partition",
+      "G07-callers",
+      "G14-image-prepare",
+      "G06-capture",
+      "G06-auxiliary",
+      "G04-resources"
+    ],
+    "expectedGain": "减少重复决策所有者，不承诺固定调用数/文件数缩减；本轮没有实施或收益验收。",
+    "schedulingNote": "G09/G07 同 billing 文件顺序实施；G07-callers 只复核现有快照，不以 G06-capture 为代码前置。"
+  },
+  "acceptancePolicy": {
+    "static": "本轮读规则/P2/followup/相关architecture和固定S实际代码、git diff及10项blob equality；不逐块批准全部调用点。",
+    "futureCommand": "实施当前已授权的P3职责批次时使用 bun run test <co-located test>；DB 用 createTestDb，供应商明确 Mock。",
+    "futureCoverage": [
+      "保留/解释原断言；核对最终binding.create/模型调用参数，不以数量代替语义。",
+      "locale/模型/路由/规格/ref/费率/来源从请求到孩子一致；管理员变化后任务仍冻结。",
+      "并发claim/hold/capture、partial dispatch、abort/replay、same-step storage和最终版本ID。",
+      "中文逐段约束与英文/协议/用户内容分别核对。"
+    ],
+    "notRun": [
+      "测试/构建/服务",
+      "真实模型/供应商账单",
+      "Workflows引擎重启/跨部署恢复",
+      "Workerd heap/远程D1/生产导出/部署"
+    ],
+    "stop": "若需新增运行中可变配置读、改变组织/权限/钱包/API/MCP、复制核心、改变hash或处理用户暂缓项，停止该结构批次交父任务。"
+  },
+  "blobEqualityEvidence": [
+    {
+      "path": "src/billing/server/workflow-deduction.ts",
+      "baseBlob": "98d66caa2225795b7d29fa5ecfec935fc3e53ace",
+      "headBlob": "98d66caa2225795b7d29fa5ecfec935fc3e53ace",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/billing/server/db/billing.ts",
+      "baseBlob": "1fa3fa40b1fa29fb2ac10760318ae168161182b2",
+      "headBlob": "1fa3fa40b1fa29fb2ac10760318ae168161182b2",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/billing/money.ts",
+      "baseBlob": "06950eb14362c6a382da626625982603c25ccd0d",
+      "headBlob": "06950eb14362c6a382da626625982603c25ccd0d",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/platform/server/workflow/reconcile.ts",
+      "baseBlob": "9acec556a748e36371be9219fedebae6274d93b9",
+      "headBlob": "9acec556a748e36371be9219fedebae6274d93b9",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/stills/server/db/frame-variants.ts",
+      "baseBlob": "8ea23d873f11abcfcdf7b77a76820449e3ddd9db",
+      "headBlob": "8ea23d873f11abcfcdf7b77a76820449e3ddd9db",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/cast/server/db/character-looks.ts",
+      "baseBlob": "09748c35b0863ed7f3f82b6978cdd4657b6f8f2f",
+      "headBlob": "09748c35b0863ed7f3f82b6978cdd4657b6f8f2f",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/cast/server/db/locations.ts",
+      "baseBlob": "9e9c7cb62661d3310b907ca0296de7bf357698c9",
+      "headBlob": "9e9c7cb62661d3310b907ca0296de7bf357698c9",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/cast/server/db/character-sheet-variants.ts",
+      "baseBlob": "48c38b4789c19271b3f26934a161fe9c401c44e9",
+      "headBlob": "48c38b4789c19271b3f26934a161fe9c401c44e9",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/cast/server/db/location-sheet-variants.ts",
+      "baseBlob": "1a093a82eeadb8d33a1f53fdc12089dd94389243",
+      "headBlob": "1a093a82eeadb8d33a1f53fdc12089dd94389243",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    },
+    {
+      "path": "src/look/server/db/styles.ts",
+      "baseBlob": "b22d79c662a0f8d54c84255a9af0c6587ce62099",
+      "headBlob": "b22d79c662a0f8d54c84255a9af0c6587ce62099",
+      "equal": true,
+      "meaning": "静态同源证据，不是运行验收"
+    }
+  ],
+  "responsibilitiesFile": "generation-context-responsibilities.jsonl",
+  "responsibilityIds": [
+    "GC-01",
+    "GC-02",
+    "GC-03",
+    "GC-04",
+    "GC-05",
+    "GC-06",
+    "GC-07",
+    "GC-08",
+    "GC-09",
+    "GC-10",
+    "GC-11",
+    "GC-12",
+    "GC-13",
+    "GC-14"
+  ],
+  "responsibilityCount": 14,
+  "responsibilitiesSha256": "1b1c28a6e2c00ff920a1d38f65d31eb8ff10e38c4bc39d8e26e919e4886f765e",
+  "formatNote": "Full responsibility objects are one JSON object per line in responsibilitiesFile; this is planned design, not an implemented API.",
+  "ownerReferenceNote": "Current owner paths are normalized literal paths; currentOwnerDescriptions preserves original line/symbol/group annotations and wildcard scope descriptions."
+}

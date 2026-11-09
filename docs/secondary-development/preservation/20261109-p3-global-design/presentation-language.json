@@ -1,0 +1,21 @@
+{
+  "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "area": "presentation-language",
+  "responsibilitiesFile": "presentation-language-responsibilities.jsonl",
+  "responsibilityIds": [
+    "PL-01",
+    "PL-02",
+    "PL-03",
+    "PL-04",
+    "PL-05",
+    "PL-06",
+    "PL-07",
+    "PL-08",
+    "PL-09",
+    "PL-10"
+  ],
+  "responsibilityCount": 10,
+  "responsibilitiesSha256": "ca7fce057458365908ccaffd50457a3e86fef437f5670ea01f016317fe31805b",
+  "formatNote": "Full responsibility objects are one JSON object per line in responsibilitiesFile; index metadata and scope are not runtime APIs."
+}

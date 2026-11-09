@@ -1,0 +1,192 @@
+{
+  "date": "2026-11-09",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "p3Status": "in-progress",
+  "designStatus": "catalogued-not-semantically-approved",
+  "implementedInThisDelivery": false,
+  "responsibilityCount": 60,
+  "productResponsibilityCount": 59,
+  "historicalBehaviorCount": 79,
+  "batchCount": 66,
+  "governanceResponsibility": {
+    "id": "GOV-01",
+    "title": "范围、原断言、历史来源与治理文档",
+    "status": "planned",
+    "historicalBehaviorIds": [
+      "AEG-07",
+      "BD-12",
+      "FR-07",
+      "FR-08",
+      "FBD-10",
+      "C-14"
+    ],
+    "currentOwners": [
+      "AGENTS.md",
+      ".codex/README.md",
+      ".codex/project-rules.md",
+      "docs/secondary-development/README.md",
+      "docs/secondary-development/upstream-preservation-plan.md",
+      "docs/secondary-development/preservation/20261108-p2/candidates.jsonl",
+      "docs/secondary-development/preservation/20261108-p2/merge-resolutions.jsonl",
+      "docs/secondary-development/preservation/20261108-p2/historical-only.jsonl"
+    ],
+    "targetOwner": "现有二开说明、各领域架构文档、项目本地规则/技能及按批来源台账；不增加应用运行层。",
+    "action": "按实际实施批次追加源码版本、差异块处置、原断言去向、剩余桥接和验证；历史记录保留原版本语义，当前状态不沿用已纠正的试点收口口径。",
+    "acceptance": [
+      "B/P/S固定且路径集合完整，历史合并与退出/改名去向可追溯",
+      "全部路径的职责提示与最终逐块处置分开；新增文件也解释拥有的职责",
+      "未来配置、规则、技能/CI变更只按已授权范围实施，不假定宿主已加载",
+      "用户暂缓项与未验证边界保留，不将报表、目录、文件移动算作运行结构收益"
+    ]
+  },
+  "files": {
+    "behaviorRoutes": "behavior-responsibilities.jsonl",
+    "scopeAdditions": "scope-additions-responsibilities.jsonl",
+    "batches": "roadmap-batches.jsonl"
+  },
+  "contractGates": [
+    {
+      "id": "X-LOCALE",
+      "type": "existing-contract-review",
+      "responsibilities": ["PL-01", "AB-04"],
+      "meaning": "现有 locale/promptLocale 来源及外部默认；工作流继承契约关联生成设计。"
+    },
+    {
+      "id": "X-MODEL",
+      "type": "existing-contract-review",
+      "responsibilities": [
+        "MC-01",
+        "MC-04",
+        "MC-05",
+        "MC-07",
+        "MC-08",
+        "MC-09",
+        "MC-10",
+        "MC-11",
+        "MC-13"
+      ],
+      "meaning": "复用现有目录、默认、凭证、能力、quote与快照接口；不代表新增通用resolver。"
+    },
+    {
+      "id": "X-WORKFLOW",
+      "type": "existing-contract-review",
+      "responsibilities": [
+        "GC-01",
+        "GC-02",
+        "GC-03",
+        "GC-04",
+        "GC-05",
+        "GC-06",
+        "GC-07",
+        "GC-08",
+        "GC-09",
+        "GC-10",
+        "GC-11",
+        "GC-12",
+        "GC-13",
+        "GC-14"
+      ],
+      "meaning": "原 payload/子任务/claim/预占/存储与读hatch契约；生成设计补入精确职责。"
+    },
+    {
+      "id": "X-VIEW",
+      "type": "existing-contract-review",
+      "responsibilities": [
+        "PL-02",
+        "PL-04",
+        "PL-05",
+        "PL-08",
+        "PL-09",
+        "PL-10"
+      ],
+      "meaning": "仅显示语言和错误标签，保留业务字段、工具协议和用户内容。"
+    },
+    {
+      "id": "X-UPGRADE",
+      "type": "future-triggered-review",
+      "responsibilities": [
+        "AB-14",
+        "AB-15",
+        "AB-16",
+        "AB-17",
+        "AB-18",
+        "AB-19",
+        "AB-20",
+        "AB-21",
+        "AB-22"
+      ],
+      "meaning": "以后相关上游/依赖升级时逐补丁重审；当前P3只需完成当前必要性裁决和相应验证，不等待未知版本。"
+    },
+    {
+      "id": "X-GOVERNANCE",
+      "type": "scope-record-review",
+      "responsibilities": ["GOV-01"],
+      "meaning": "当前来源、原断言、产物和权限边界；不改用户已有工作区内容。"
+    },
+    {
+      "id": "X-FUTURE-CI",
+      "type": "out-of-scope-future-phase",
+      "responsibilities": ["GOV-01", "AB-21"],
+      "meaning": "P4/CI接入未实施，不作为P3行为保持批次的隐含授权或当前代码前置。"
+    },
+    {
+      "id": "MODEL-SNAPSHOT-CONTRACT",
+      "type": "existing-contract-review",
+      "responsibilities": ["MC-13", "GC-02"],
+      "meaning": "现有 ModelRuntimeConfiguration/WorkflowModelConfiguration 与codec/credentialId，保留现有composition root。"
+    },
+    {
+      "id": "MODEL-IMAGE-QUOTE-CONTRACT",
+      "type": "existing-contract-review",
+      "responsibilities": [
+        "MC-09",
+        "MC-10",
+        "MC-11",
+        "GC-07",
+        "GC-09",
+        "GC-10",
+        "GC-14"
+      ],
+      "meaning": "现有冻结路由、有效规格/参数、真实ref/mask、输出数及quote/source/via；不等待新通用接口或所有MC批次完成。"
+    },
+    {
+      "id": "LOCALIZATION-OWNER-MAP",
+      "type": "existing-contract-review",
+      "responsibilities": ["PL-02", "PL-05", "PL-07", "GC-04", "GC-05"],
+      "meaning": "现有英文owner/中文资源配对与具体消息约束，全文语义与代码指纹分开复核。"
+    }
+  ],
+  "dependencyAliases": {
+    "任务/展示组的实时就绪契约": ["X-WORKFLOW", "X-VIEW"],
+    "主线程治理规则 owner": ["X-GOVERNANCE"],
+    "主线程工具/CI阶段": ["X-FUTURE-CI"],
+    "主线程产物追踪政策": ["X-GOVERNANCE"]
+  },
+  "nextImplementation": {
+    "id": "G09-reference-projection",
+    "status": "planned",
+    "reason": "先统一cast实际sheet输入到报价/执行的投影；完整direct/plan入口共同消费，保留组织所有权、原claim/预占和队列校验。",
+    "then": ["G07-partition", "G07-callers"],
+    "parallelIndependentCandidates": ["MC-B01", "MC-B02", "MC-B03"],
+    "rule": "每批一个职责；G09/G07涉及同billing文件必须顺序。候选数、文件数和报告数不作为P3完成证明。",
+    "schedulingNote": "G07-callers 只依赖 G07-partition 与现有 MODEL-SNAPSHOT-CONTRACT 复核，G06-capture 独立推进；现有报告/Storybook 验证属于 AB21-b 当前动作，不依赖 P4。"
+  },
+  "coverage": {
+    "allSourcePaths": 1219,
+    "sourcePathsRouted": 1219,
+    "newToScopePathsRouted": 91,
+    "orphanSourcePaths": 0,
+    "unmappedHistoricalBehaviorIds": 0,
+    "currentPathDispositionsPending": 1219,
+    "semanticApproval": false,
+    "note": "Routing is a review hint derived from actual historical associations and explicit new-path lists. It never approves a path or diff block."
+  },
+  "dependencyValidation": {
+    "uniqueBatchIds": true,
+    "unknownDependencies": [],
+    "cycles": [],
+    "futureGates": "X-UPGRADE is triggered on later upgrades; X-FUTURE-CI remains P4. Current P3 must judge present patches and evidence, not wait for unknown versions or execute CI now."
+  },
+  "closure": "All current diff blocks/new modules require actual dispositions, necessary bridge reasons, retained original assertions and current evidence. No unexplained pending; deferred business issues remain explicit."
+}

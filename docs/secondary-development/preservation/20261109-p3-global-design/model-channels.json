@@ -1,0 +1,24 @@
+{
+  "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "area": "model-channels",
+  "responsibilitiesFile": "model-channels-responsibilities.jsonl",
+  "responsibilityIds": [
+    "MC-01",
+    "MC-02",
+    "MC-03",
+    "MC-04",
+    "MC-05",
+    "MC-06",
+    "MC-07",
+    "MC-08",
+    "MC-09",
+    "MC-10",
+    "MC-11",
+    "MC-12",
+    "MC-13"
+  ],
+  "responsibilityCount": 13,
+  "responsibilitiesSha256": "905cbf68598fdf91c13638aa405689b05effbdbd78a346baf5fbf05076dd852e",
+  "formatNote": "Full responsibility objects are one JSON object per line in responsibilitiesFile; index metadata and scope are not runtime APIs."
+}

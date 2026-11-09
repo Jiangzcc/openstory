@@ -1,0 +1,79 @@
+{
+  "kind": "prior-pilot-counterexample",
+  "source": "Existing local merge-tree and B-to-HEAD comparison captured before this design; not rerun as current implementation acceptance.",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "before": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+  "after": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "target": "a7ad595ec41f717b57cbeace01342aae9d190719",
+  "upstreamMainlineNodes": 16,
+  "upstreamHistoryCommits": 18,
+  "overlappingPaths": 67,
+  "beforeConflicts": [
+    "e2e/tests/editing-dialogue-cast.spec.ts",
+    "e2e/tests/editing-shots.spec.ts",
+    "src/assistant/ui/assistant-conversation.tsx",
+    "src/assistant/ui/scripted-connection.ts",
+    "src/assistant/ui/tool-call-card.tsx",
+    "src/platform/server/test/seed.ts",
+    "src/sequences/sequences.fn.ts",
+    "src/sequences/server/create-sequences.ts",
+    "src/sequences/server/db/sequences.ts",
+    "src/sequences/server/resolve-style-source.test.ts",
+    "src/sequences/ui/script/script-view.tsx",
+    "src/shots/ui/dialogue-lines.tsx",
+    "src/shots/ui/mobile-scene-drawer.tsx",
+    "src/shots/ui/scene-group.tsx",
+    "src/shots/ui/scene-list-item.tsx",
+    "src/shots/ui/scene-list.tsx",
+    "src/studio/ui/studio-gallery.tsx",
+    "vite.config.ts"
+  ],
+  "afterConflicts": [
+    "e2e/tests/editing-dialogue-cast.spec.ts",
+    "e2e/tests/editing-shots.spec.ts",
+    "src/assistant/ui/assistant-conversation.tsx",
+    "src/assistant/ui/scripted-connection.ts",
+    "src/assistant/ui/tool-call-card.tsx",
+    "src/platform/server/test/seed.ts",
+    "src/sequences/sequences.fn.ts",
+    "src/sequences/server/create-sequences.ts",
+    "src/sequences/server/db/sequences.ts",
+    "src/sequences/server/resolve-style-source.test.ts",
+    "src/sequences/ui/script/script-view.tsx",
+    "src/shots/ui/dialogue-lines.tsx",
+    "src/shots/ui/mobile-scene-drawer.tsx",
+    "src/shots/ui/scene-group.tsx",
+    "src/shots/ui/scene-list-item.tsx",
+    "src/shots/ui/scene-list.tsx",
+    "src/studio/ui/studio-gallery.tsx",
+    "vite.config.ts"
+  ],
+  "resolvedByP3": [],
+  "newConflicts": [],
+  "method": "git merge-tree --write-tree --name-only -z; tree objects only, branch/index/worktree untouched; does not prove runtime compatibility",
+  "pathCounts": {
+    "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+    "before": {
+      "all": 1197,
+      "byStatus": {
+        "A": 544,
+        "M": 653
+      },
+      "src": 1014,
+      "existingSrc": 606,
+      "existingTsTsx": 487
+    },
+    "after": {
+      "all": 1219,
+      "byStatus": {
+        "A": 566,
+        "M": 653
+      },
+      "src": 1017,
+      "existingSrc": 606,
+      "existingTsTsx": 487
+    },
+    "existingPathsRestored": [],
+    "newExistingPathsModified": []
+  }
+}

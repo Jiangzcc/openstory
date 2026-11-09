@@ -1,0 +1,87 @@
+{
+  "date": "2026-11-09",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "p2Source": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "branch": "develop",
+  "definition": "All committed B-to-sourceHead paths, --no-renames; independent of pending upstream changes. No path has been marked structurally resolved by inventory generation.",
+  "counts": {
+    "paths": 1219,
+    "byChange": {
+      "A": 566,
+      "M": 653
+    },
+    "src": {
+      "A": 411,
+      "M": 606
+    },
+    "nonSrc": 202,
+    "p2Scope": 1128,
+    "newToScope": 91,
+    "revisedWithinP2": 27,
+    "unchangedSinceP2": 1101,
+    "removedFromP2": 0,
+    "netHistoricalBehaviorIds": 78,
+    "allHistoricalBehaviorIds": 79
+  },
+  "shards": [
+    {
+      "file": "inventory-src-existing-01.jsonl",
+      "paths": 400,
+      "sha256": "0200433309e1d75aee51354453827b74dbfbf4100e64037ad98c8b23a8872288"
+    },
+    {
+      "file": "inventory-src-existing-02.jsonl",
+      "paths": 206,
+      "sha256": "b69c66c3ac7ddf76030f0188e54d834a605666daac144b7fcf8bf43266c8f6d2"
+    },
+    {
+      "file": "inventory-src-added-01.jsonl",
+      "paths": 400,
+      "sha256": "ea08df4afbab6b90fb5c6291cc21b93b56292cf220c4550e25966378d51da145"
+    },
+    {
+      "file": "inventory-src-added-02.jsonl",
+      "paths": 11,
+      "sha256": "f1181344dcbddf97c86624576e87c9f173c88b8e248d9208d58d750b5d3b9e7a"
+    },
+    {
+      "file": "inventory-support-01.jsonl",
+      "paths": 202,
+      "sha256": "fcbe45cf4e127518d801c65619f57e421f6f1d7abb6ae19f07be91d34f43c771"
+    }
+  ],
+  "history": [
+    {
+      "file": "../20261108-p2/candidates.jsonl",
+      "rows": 1128,
+      "sha256": "214f54ae6aef9a089468b02d73eab1c0bc973dfdb28bac4a244ed7f719b7f4bf"
+    },
+    {
+      "file": "../20261108-p2/merge-resolutions.jsonl",
+      "rows": 277,
+      "sha256": "a3f563ac24e3cd6ccaba93848f0cc7299c61e72b85533072677354cc56688f5c"
+    },
+    {
+      "file": "../20261108-p2/historical-only.jsonl",
+      "rows": 7,
+      "sha256": "36a446030200b01ddb2a56bb7fe2d556c1b6c5d9b29b1a2dcc911319b507f19f"
+    }
+  ],
+  "workingTree": {
+    "path": "src/routeTree.gen.ts",
+    "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+    "status": "pre-existing-local-change-preserved",
+    "included": "Only committed sourceHead blob is inventoried; working-tree change is separate."
+  },
+  "validation": {
+    "baseIsAncestor": true,
+    "gitPathSetEqualsInventory": true,
+    "uniquePaths": true,
+    "semanticDispositionComplete": false
+  },
+  "status": "scope-frozen-design-catalogued-not-semantically-approved",
+  "excludedFromSnapshot": "This design and subsequent implementation are delivery deltas after sourceHead and must be appended by batch. This snapshot never claims to describe a later HEAD.",
+  "hashEncoding": "SHA-256 of actual file bytes; Git blobs are object IDs.",
+  "historyOnlyBehaviorIds": ["FR-08"]
+}

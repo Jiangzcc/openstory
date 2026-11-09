@@ -1,0 +1,316 @@
+{
+  "date": "2026-11-09",
+  "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "p2Source": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "git": {
+    "branch": "develop",
+    "baseIsAncestor": true,
+    "indexBeforeStaging": [],
+    "commitPolicy": "Local commit only, normal hooks, no AI/tool signature; do not stage protected working-tree changes or push.",
+    "validatedParent": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "captureMoment": "Verified before the local design commit; fixed source snapshot S is independent of the delivery commit."
+  },
+  "scope": {
+    "paths": 1219,
+    "uniquePaths": 1219,
+    "rawGitPaths": 1219,
+    "rawNumstatAndP2BlobMismatches": 0,
+    "shardHashes": [
+      {
+        "file": "inventory-src-existing-01.jsonl",
+        "valid": true
+      },
+      {
+        "file": "inventory-src-existing-02.jsonl",
+        "valid": true
+      },
+      {
+        "file": "inventory-src-added-01.jsonl",
+        "valid": true
+      },
+      {
+        "file": "inventory-src-added-02.jsonl",
+        "valid": true
+      },
+      {
+        "file": "inventory-support-01.jsonl",
+        "valid": true
+      }
+    ],
+    "historyHashes": [
+      {
+        "file": "../20261108-p2/candidates.jsonl",
+        "valid": true
+      },
+      {
+        "file": "../20261108-p2/merge-resolutions.jsonl",
+        "valid": true
+      },
+      {
+        "file": "../20261108-p2/historical-only.jsonl",
+        "valid": true
+      }
+    ],
+    "pendingDispositions": 1219
+  },
+  "design": {
+    "productResponsibilities": 59,
+    "governanceResponsibilities": 1,
+    "historicalBehaviorIds": 79,
+    "actions": 66,
+    "unmappedHistory": 0,
+    "orphanPaths": 0,
+    "dependencyCycles": 0,
+    "unknownDependencies": 0,
+    "indexChecks": [
+      {
+        "area": "presentation-language",
+        "hashMatches": true,
+        "countMatches": true,
+        "sourceMatches": true
+      },
+      {
+        "area": "model-channels",
+        "hashMatches": true,
+        "countMatches": true,
+        "sourceMatches": true
+      },
+      {
+        "area": "application-boundaries",
+        "hashMatches": true,
+        "countMatches": true,
+        "sourceMatches": true
+      },
+      {
+        "area": "generation-context",
+        "hashMatches": true,
+        "countMatches": true,
+        "sourceMatches": true
+      }
+    ],
+    "currentOwnerReferencesChecked": 417,
+    "currentOwnerReferencesMissing": [],
+    "retainedCoreBlobEvidence": {
+      "paths": 10,
+      "allMatch": true,
+      "meaning": "Git object equality only; not runtime verification."
+    },
+    "integrationCorrections": [
+      {
+        "id": "AB21-b",
+        "status": "corrected",
+        "currentVerification": true,
+        "dependsOn": ["X-VIEW"],
+        "reason": "Current report/Storybook validation does not wait for P4 CI."
+      },
+      {
+        "id": "G07-callers",
+        "status": "corrected",
+        "dependsOn": ["G07-partition", "MODEL-SNAPSHOT-CONTRACT"],
+        "reason": "Existing snapshot contract review replaces unsupported G06 code prerequisite."
+      }
+    ],
+    "batchDetailMirrors": {
+      "actionsCompared": 66,
+      "mismatches": 0,
+      "fields": ["scope", "action", "normalized dependencies", "acceptance"],
+      "source": "Read final index and JSONL files from disk, not cached objects."
+    }
+  },
+  "files": {
+    "count": 29,
+    "json": 8,
+    "jsonl": 12,
+    "markdown": 9,
+    "lineViolations": [],
+    "brokenRelativeFileLinks": []
+  },
+  "preservedWorkingTree": [
+    {
+      "path": "src/routeTree.gen.ts",
+      "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+      "matchesOriginal": true
+    },
+    {
+      "path": ".codex/project-rules.md",
+      "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3",
+      "observed": "Unrelated edit observed during the task; not edited or staged by this delivery."
+    }
+  ],
+  "runtimeCodeChanged": false,
+  "semanticApproval": false,
+  "p3Complete": false,
+  "status": "mechanical-validation-passed",
+  "validationBoundary": "Scope fingerprints, routing, dependencies, file references, structured data and line limits only. No full semantic approval or runtime acceptance.",
+  "quality": {
+    "format": {
+      "command": "bun run format --write <explicit design .md/.json paths>",
+      "result": "passed"
+    },
+    "diffWhitespace": {
+      "command": "git diff --check -- <explicit delivery docs>",
+      "result": "passed"
+    },
+    "normalCommitHooks": "Required for local commit; no bypass authorized or used.",
+    "tests": "Not run: this delivery changes only documentation and structured evidence, no application source."
+  },
+  "independentReview": {
+    "initialScopeReview": "No actionable scope/closure issues; covered initial draft, not runtime or all later domain designs.",
+    "integratedDesignReview": "Completed static review of cross-group scope and dependencies. Two design dependency findings were corrected; focused disk re-read confirmed both closed. No runtime/whole-source semantic approval.",
+    "findings": [
+      {
+        "id": "AB21-b",
+        "status": "closed",
+        "resolution": "Current report/Storybook validation depends on X-VIEW only; CI remains P4."
+      },
+      {
+        "id": "G07-callers",
+        "status": "closed",
+        "resolution": "Existing snapshot contract review replaces unsupported G06 implementation prerequisite."
+      }
+    ]
+  },
+  "deliveryFiles": [
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/application-boundaries-responsibilities.jsonl",
+      "sha256": "481be981ea038e21e7a989208b277c4a18e9777195d35b3eb0829294ed8bfa36",
+      "lines": 23
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/application-boundaries.json",
+      "sha256": "e11b964fa32222da77398bce879aea89308012d09c2d2037cd7548589e8b474b",
+      "lines": 344
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/application-boundaries.md",
+      "sha256": "1c1f7221ebdefcf7525f2f78bc989274b9ed5641c2318281ff5c20563bb4a1e6",
+      "lines": 111
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/behavior-responsibilities.jsonl",
+      "sha256": "f1ca80dbc946579609d383d1b5b81a2c9315c74d2a113600294be01b0096b6fb",
+      "lines": 80
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/generation-context-responsibilities.jsonl",
+      "sha256": "1b1c28a6e2c00ff920a1d38f65d31eb8ff10e38c4bc39d8e26e919e4886f765e",
+      "lines": 15
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/generation-context.json",
+      "sha256": "585e0c81ac2751ec6819508b0c9807babd654c0db2e8b64c16461cd5615e5897",
+      "lines": 200
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/generation-context.md",
+      "sha256": "67f66b56704e6d6cbf9346c43c6e6aa922f729ec16b600ef7f95e9401a412cde",
+      "lines": 214
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-01.jsonl",
+      "sha256": "ea08df4afbab6b90fb5c6291cc21b93b56292cf220c4550e25966378d51da145",
+      "lines": 401
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-02.jsonl",
+      "sha256": "f1181344dcbddf97c86624576e87c9f173c88b8e248d9208d58d750b5d3b9e7a",
+      "lines": 12
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-01.jsonl",
+      "sha256": "0200433309e1d75aee51354453827b74dbfbf4100e64037ad98c8b23a8872288",
+      "lines": 401
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-02.jsonl",
+      "sha256": "b69c66c3ac7ddf76030f0188e54d834a605666daac144b7fcf8bf43266c8f6d2",
+      "lines": 207
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-support-01.jsonl",
+      "sha256": "fcbe45cf4e127518d801c65619f57e421f6f1d7abb6ae19f07be91d34f43c771",
+      "lines": 203
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/model-channels-responsibilities.jsonl",
+      "sha256": "905cbf68598fdf91c13638aa405689b05effbdbd78a346baf5fbf05076dd852e",
+      "lines": 14
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/model-channels.json",
+      "sha256": "cb626442446e66f893fd9e3b156da8fd5cf97e0734dc18c50f3293e51487d609",
+      "lines": 25
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/model-channels.md",
+      "sha256": "493be5f4415e78e9b5f9f620c312f1517df8383bac88e1fdf94a559ea76006cd",
+      "lines": 162
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/presentation-language-responsibilities.jsonl",
+      "sha256": "ca7fce057458365908ccaffd50457a3e86fef437f5670ea01f016317fe31805b",
+      "lines": 11
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/presentation-language.json",
+      "sha256": "db65cc42863a5a46f096972e0c98415656a6e206377b57df43cd24812942cf85",
+      "lines": 22
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/presentation-language.md",
+      "sha256": "0e6fd39d11eafc4b64bc3ca29ebc4d62e89bda8dbd50d470d18c6260f0c1f01a",
+      "lines": 126
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/prior-pilot-comparison.json",
+      "sha256": "cb605084590623c0bfd2357c42c2cc25adb4f8a4b57d36204f1f8d44cc257bce",
+      "lines": 80
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/README.md",
+      "sha256": "4124770ab95d682a78c59033ab29355dfcfc3cd279fbc1c59d52f58fc864c733",
+      "lines": 71
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/roadmap-batches.jsonl",
+      "sha256": "4e67fc3375f7384c63bc7a904d2a5f8e0750cbab6cd6aff88edb343c69de1b96",
+      "lines": 67
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/roadmap.json",
+      "sha256": "b399f01cf02edb0a564dbe075168479e92497085408153412f22424feed96aec",
+      "lines": 193
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/scope-additions-responsibilities.jsonl",
+      "sha256": "0a5dfd02140c0ff4f94072dd46a0defca5a0b0ea483d16c3a709008ff55cf817",
+      "lines": 92
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261109-p3-global-design/scope.json",
+      "sha256": "883afc4ed2373bd6fe4a684ae5c01a05db0dabf703a5a327d720db7d2dfddadc",
+      "lines": 88
+    },
+    {
+      "path": "docs/secondary-development/upstream-preservation-p3-global-design-20261109.md",
+      "sha256": "d80c3fe9cb171df346a93ecc0b37ee76ceceaeb3a95280f62798bd76c57e211f",
+      "lines": 116
+    },
+    {
+      "path": "docs/secondary-development/README.md",
+      "sha256": "741f53a6b5eadfcdbce965883ed9c2a81f164a8a599e1146257d4b8a685389f0",
+      "lines": 214
+    },
+    {
+      "path": "docs/secondary-development/upstream-preservation-plan.md",
+      "sha256": "5b23663aaaa95644439466244b88c11b11e98f5c700c25628ff43ae69d863205",
+      "lines": 249
+    },
+    {
+      "path": "docs/secondary-development/upstream-preservation-p3-localization-20261109.md",
+      "sha256": "4855cdf33b5ca6371f4a6744b1f1b7220f29bba7855f47e94251ee5b4a5f2864",
+      "lines": 85
+    }
+  ]
+}

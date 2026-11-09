@@ -1,0 +1,343 @@
+{
+  "date": "2026-11-09",
+  "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "p2Source": "ce321c885f67e40fec1c8598bb759790d89359c9",
+  "branch": "develop",
+  "area": "认证、助手、公共入口与运行边界",
+  "status": "planned",
+  "scope": {
+    "registry": "scope.json + inventory-support-01.jsonl（主线程）",
+    "allCommittedPaths": 1219,
+    "nonSrcPaths": 202,
+    "nonSrcScopeDeltas": {
+      "unchangedSinceP2": 109,
+      "revisedWithinP2": 10,
+      "newToScope": 83
+    },
+    "registryDisposition": "所有路径 p3Disposition 保持 pending；本设计不修改 registry，不逐行批准每个差异。",
+    "responsibilityStatusMeaning": "planned=待实施/待语义复核；retain-justified=静态事实支持暂留且须逐次升级重审，不等于本轮整改或永久批准。",
+    "onlyWrites": ["application-boundaries.md", "application-boundaries.json"],
+    "unrelatedWorkspaceChange": "src/routeTree.gen.ts 起始已修改，保持不动。"
+  },
+  "constraints": [
+    "不改应用源码/主计划/其它设计，不提交/推送/远程操作，不运行测试/构建/服务/付费调用/真实邮件。",
+    "不复制上游核心到扩展目录，不造泛插件框架；保持现有 TanStack Start/Workerd/D1/Drizzle/R2/Workflows。",
+    "个人钱包/卡密商业重做/管理员不可浏览已取消；全面 BYOK 禁用、人民币定价、默认私有均不在实施范围。",
+    "CONTINUE-LLM-SOURCE 按用户决定暂缓，未修复，不由入口收口绕过或提前实施 BYOK 禁用。"
+  ],
+  "evidencePolicy": {
+    "performed": [
+      "读取 AGENTS.md、.codex/project-rules.md、相关 architecture/secondary 文档",
+      "复用 P2 candidates/behavior 与 followup 补正，再用本地 B→sourceHead diff 和当前符号定向核实",
+      "202 non-src 全量归属分组；只是职责覆盖，不是 202 路径逐行语义通过",
+      "仅对本交付做 JSON/行数/引用结构检查"
+    ],
+    "notPerformed": [
+      "应用测试、typecheck、build、服务/浏览器、远程 Git/数据库/部署、供应商/邮件调用"
+    ],
+    "historicalOnly": "P2 reviewed/tested、followup Mock/D1/SSR 和四试点结果只作历史线索；不冒充本轮实施或验收。",
+    "evidenceAliases": {
+      "P2": "docs/secondary-development/preservation/20261108-p2/",
+      "registry": "docs/secondary-development/preservation/20261109-p3-global-design/"
+    },
+    "semanticReviewLimit": "对未决输入分支/外部宿主/运行环境保留明确待验证；不为设计阶段穷举源码而阻塞首批。"
+  },
+  "sharedContracts": [
+    {
+      "id": "X-LOCALE",
+      "owners": ["本组公共入口", "展示/提示词组", "工作流组"],
+      "contract": "Locale/promptLocale 必填；内部 cookie→zh-CN/en，外部 v1/MCP→en。无公开 locale 字段；任务、子任务/重试取冻结值；hostContext.locale 仅显示。"
+    },
+    {
+      "id": "X-MODEL",
+      "owners": ["模型策略/协议组", "本组入口"],
+      "contract": "使用真实 model id/显式选择/省略默认、目录能力、可用性、实际 LlmKeyInfo.source/via/route、报价与错误；不暴露 secret，不猜 resolver，不静默跨供应商回退。模型组决定具体最小接口，本组只消费。"
+    },
+    {
+      "id": "X-WORKFLOW",
+      "owners": ["工作流/媒体组", "模型组", "本组 ScopedDb 接线"],
+      "contract": "新任务冻结配置/locale/credential refs；原 instance 不覆盖载荷；SQL 留 db；三读取 hatch、claim、生成 step 内存媒体和小 checkpoint 保持。原 model wire 兼容与缺 locale 不兼容分别执行。"
+    },
+    {
+      "id": "X-VIEW",
+      "owners": ["展示组", "本组助手/公共入口"],
+      "contract": "显示标签/已知状态可翻译；用户内容/字段/资源 id/tool args/result/HTTP error code/MCP envelope 不变。iframe host 协议及只读 allowlist 不扩大。"
+    },
+    {
+      "id": "X-UPGRADE",
+      "owners": ["主线程工程/验证", "本组提供退出条件"],
+      "contract": "每次升级逐项比较实际上游等价保障；先隔离恢复单个 patch 并复核原行为。新运行证据合格才删，不能以历史测试或依赖版本号永久保留/自动删除。"
+    }
+  ],
+  "firstBatch": [
+    {
+      "order": 1,
+      "changeIds": ["AB04-a"],
+      "purpose": "一次只收口助手语言读取，两个 Caller 构造点同步；保持外部行为。",
+      "dependsOn": ["X-LOCALE"],
+      "reviewGate": "主线程确认原/new flow；后续实施才跑助手上下文/语言/共享工具回归。"
+    },
+    {
+      "order": 2,
+      "changeIds": ["AB04-b"],
+      "purpose": "独立规范外部 en 常量/传递，保持 storage 原认证和任务载荷。",
+      "dependsOn": ["AB04-a", "X-LOCALE"]
+    },
+    {
+      "order": 3,
+      "changeIds": ["AB07-a"],
+      "purpose": "模型组给出最小配置推荐 owner 后，让 API/Enhance 只做薄消费。",
+      "dependsOn": ["X-MODEL"]
+    },
+    {
+      "order": 6,
+      "changeIds": ["AB22-a"],
+      "purpose": "独立清理确认仅机器路径的生成注释噪声；非运行修复。",
+      "dependsOn": []
+    }
+  ],
+  "nonSrcCoverage": [
+    {
+      "id": "NS-GOV",
+      "selector": "docs/** + AGENTS.md + GLOSSARY.md",
+      "owner": "主线程治理/历史文档；各架构功能 owner 供事实修订建议",
+      "responsibilityIds": [],
+      "count": 128,
+      "registrySelector": "docs/** + AGENTS.md + GLOSSARY.md"
+    },
+    {
+      "id": "NS-AGENT-DOC",
+      "selector": "项目 agent/skill 配置正文与声明",
+      "paths": [
+        ".agents/skills/react-patterns/SKILL.md",
+        ".agents/skills/sync-upstream/SKILL.md",
+        ".agents/skills/sync-upstream/agents/openai.yaml",
+        ".agents/skills/sync-upstream/references/compatibility.md",
+        ".agents/skills/sync-upstream/references/verification.md",
+        ".agents/skills/update-model-versions/SKILL.md",
+        ".codex/README.md",
+        ".codex/agents/backend-engineer.toml",
+        ".codex/agents/backend-tech-lead.toml",
+        ".codex/agents/engineering-lead.toml",
+        ".codex/agents/frontend-architect.toml",
+        ".codex/agents/frontend-react-engineer.toml",
+        ".codex/agents/product-lead.toml",
+        ".codex/agents/qa-lead-tester.toml",
+        ".codex/config.toml",
+        ".codex/project-rules.md",
+        ".codex/rules/project.rules"
+      ],
+      "owner": "主线程治理",
+      "responsibilityIds": ["AB-20"],
+      "count": 17
+    },
+    {
+      "id": "NS-AGENT-EXEC",
+      "selector": "项目 hook/skill 可执行适配",
+      "paths": [
+        ".agents/skills/sync-upstream/scripts/inspect-range.mjs",
+        ".codex/hooks.json",
+        ".codex/hooks/command-policy.mjs",
+        ".codex/hooks/format-files.mjs",
+        ".codex/hooks/hook-utils.mjs",
+        ".codex/hooks/hooks.test.mjs",
+        ".codex/hooks/operational-regressions.test.mjs",
+        ".codex/hooks/policies.mjs",
+        ".codex/hooks/post-tool-use.mjs",
+        ".codex/hooks/pre-tool-use.mjs",
+        ".codex/hooks/shell-commands.mjs",
+        ".codex/hooks/vitest.config.mjs"
+      ],
+      "owner": "工程边界；规则正文仍归主线程",
+      "responsibilityIds": ["AB-20"],
+      "count": 12
+    },
+    {
+      "id": "NS-E2E",
+      "selector": "e2e/** + playwright.config.ts",
+      "paths": [
+        "e2e/fixtures/auth.fixture.ts",
+        "e2e/fixtures/base.ts",
+        "e2e/fixtures/test-utils.ts",
+        "e2e/recording-mode.ts",
+        "e2e/start-webserver.ts",
+        "e2e/tests/editing-dialogue-cast.spec.ts",
+        "e2e/tests/editing-scenes.spec.ts",
+        "e2e/tests/editing-shots.spec.ts",
+        "e2e/tests/localization.spec.ts",
+        "e2e/tests/manual-pipeline.spec.ts",
+        "e2e/tests/organization.spec.ts",
+        "e2e/tests/public-api.spec.ts",
+        "e2e/tests/sequence-flow.spec.ts",
+        "e2e/tests/sequences.spec.ts",
+        "playwright.config.ts"
+      ],
+      "owner": "工程/测试；业务契约交对应领域",
+      "responsibilityIds": ["AB-15", "AB-17", "AB-18"],
+      "count": 15
+    },
+    {
+      "id": "NS-LOCALE-TOOLS",
+      "selector": ".storybook/preview.tsx + scripts/*localization* + scripts/localization/**",
+      "paths": [
+        ".storybook/preview.tsx",
+        "scripts/check-localization-changes.test.ts",
+        "scripts/check-localization-changes.ts",
+        "scripts/localization/ast.ts",
+        "scripts/localization/git-snapshot.ts",
+        "scripts/localization/report.test.ts",
+        "scripts/localization/report.ts",
+        "scripts/localization/resource-copy.ts",
+        "scripts/localization/system-prompts.ts",
+        "scripts/localization/ui-copy.test.ts",
+        "scripts/localization/ui-copy.ts"
+      ],
+      "owner": "展示组语义；本组 CLI/Git/path/运行边界",
+      "responsibilityIds": ["AB-21"],
+      "count": 11
+    },
+    {
+      "id": "NS-CLI",
+      "selector": "分析/增强 eval 与模型样例脚本",
+      "paths": [
+        "scripts/analyze-script.ts",
+        "scripts/eval-analysis-speed-quality.ts",
+        "scripts/eval-enhance-creativity.ts",
+        "scripts/eval-enhance-duration.ts",
+        "scripts/generate-style-sample-videos.ts"
+      ],
+      "owner": "本组入口契约；模型/提示词领域提供实际能力",
+      "responsibilityIds": ["AB-04", "AB-07"],
+      "count": 5
+    },
+    {
+      "id": "NS-PREVIEW",
+      "selector": "scripts/preview-db*",
+      "paths": ["scripts/preview-db.test.ts", "scripts/preview-db.ts"],
+      "owner": "工程运行安全",
+      "responsibilityIds": ["AB-19"],
+      "count": 2
+    },
+    {
+      "id": "NS-PORTABLE",
+      "selector": "content-collections.ts + lefthook.yml + scripts/check-workflow-triggers* + stitch CLI test",
+      "paths": [
+        "content-collections.ts",
+        "lefthook.yml",
+        "packages/stitch/src/cli.test.ts",
+        "scripts/check-workflow-triggers.test.ts",
+        "scripts/check-workflow-triggers.ts"
+      ],
+      "owner": "工程跨平台与质量退出",
+      "responsibilityIds": ["AB-15"],
+      "count": 5
+    },
+    {
+      "id": "NS-INSPECTOR",
+      "selector": "vite.config.ts",
+      "paths": ["vite.config.ts"],
+      "owner": "工程临时兼容",
+      "responsibilityIds": ["AB-16", "AB-21"],
+      "count": 1
+    },
+    {
+      "id": "NS-DEPS",
+      "selector": "package.json + bun.lock",
+      "paths": ["bun.lock", "package.json"],
+      "owner": "工程集成；模型/展示组解释必要 importer",
+      "responsibilityIds": ["AB-21"],
+      "count": 2
+    },
+    {
+      "id": "NS-ARTIFACT",
+      "selector": ".gitignore + worker-configuration.d.ts",
+      "paths": [".gitignore", "worker-configuration.d.ts"],
+      "owner": "工程/主线程产物政策",
+      "responsibilityIds": ["AB-22"],
+      "count": 2
+    },
+    {
+      "id": "NS-STITCH-VIEW",
+      "selector": "packages/stitch/src/stitched-player-surface.tsx + packages/stitch/README.md",
+      "paths": [
+        "packages/stitch/README.md",
+        "packages/stitch/src/stitched-player-surface.tsx"
+      ],
+      "owner": "展示组公共组件标签契约；README 由该 owner 供事实并由主线程整合",
+      "responsibilityIds": ["AB-12", "AB-21"],
+      "count": 2
+    }
+  ],
+  "upgradeReview": {
+    "eachTime": [
+      "在主线程许可的后续隔离环境，记录升级前后依赖版本与本补丁触发条件。",
+      "单补丁对照恢复上游；先保持原输入/输出/权限/错误/断言，再取得所需双平台或隔离运行证据。",
+      "满足每个 responsibility 的 acceptance 和 exit 条件后采用上游、删本地重复；条件未满足则暂留并登记新事实。",
+      "回退只回退该批，保留原安全修复、其它人改动和未完成 preview 删除预约；不得靠删测试回退。"
+    ],
+    "exitCriteriaByResponsibility": [
+      "AB-02: 上游等价覆盖当前身份与全局/领域迟到回调，才删本地 cache guard。",
+      "AB-03: 上游 docs 等价 session SSR 快照已生效，才删 await 桥。",
+      "AB-05: 上游区分实际 session/key 且限制 admin capability，才替换分类修复。",
+      "AB-09/10/11: SDK 原生覆盖 schema object/绑定身份/HTTP error/replay，才分项删兼容。",
+      "AB-14/15: Windows/POSIX 同样识别违规、传 argv/exit、生成 slug 与保留断言，才删对应路径/命令 patch。",
+      "AB-16: Windows 实际 inspector 握手和 dev/preview 正常、无原 ECONNRESET，才恢复默认。",
+      "AB-17: 上游 replay 完全隔离真实 key/endpoint，测试写双 guard/owner 校验等价，才删重复。",
+      "AB-18: 上游有可观测 readiness、单次 POST 与完整响应，并在相同断言下可靠，才删通知/等待适配。",
+      "AB-19: 原子 promote/delete、失败 tombstone、fork 仓库显式选择全部等价且旧状态可读，才恢复。",
+      "AB-20/21/22: 按实际宿主/依赖 importer/生成主体重新判定；不能批准所有历史工程改动。"
+    ]
+  },
+  "unresolvedForIntegration": [
+    "助手注释 session-only 与现有 osk_ 可解析面不一致；保留真实行为并登记，限制 principal 另需明确行为任务。",
+    "X-* 在总设计的跨组契约与 roadmap 中明确 owner；均沿用既有接口，接口变更须重新核对，不各建 resolver/context。",
+    "modelConfiguration 多次读取不等于原子快照；无本轮多管理员协调需求。",
+    "AEG-17/18 为有意输入差异，custom schema 接纳不等于可运行；专门 MCP custom-storyboard 验证仍欠。",
+    "generated-assets provider 的 ImageVia 类型扩展归模型/媒体组；stitch player 标签、报告工具语义归展示组。",
+    "CONTINUE-LLM-SOURCE 继续 deferred；原组织 BYOK 当前仍存在，禁止声称全面禁用已实现。",
+    "治理 docs/agent 文本交主线程；registry1219 和本文件 non-src202 覆盖均非语义审批。"
+  ],
+  "integrationDecisions": [
+    {
+      "responsibilities": ["AB-06", "AB-13"],
+      "action": "retain-current-composition",
+      "runtimeImplemented": false,
+      "reason": "现有薄组合没有证明重复；不新造通用解析器或搬 composition root。"
+    },
+    {
+      "responsibilities": ["AB-07"],
+      "action": "audit-before-extraction",
+      "runtimeImplemented": false,
+      "reason": "网页与API默认上下文不等价；只提取经证实相同的规则。"
+    }
+  ],
+  "responsibilitiesFile": "application-boundaries-responsibilities.jsonl",
+  "responsibilityIds": [
+    "AB-01",
+    "AB-02",
+    "AB-03",
+    "AB-04",
+    "AB-05",
+    "AB-06",
+    "AB-07",
+    "AB-08",
+    "AB-09",
+    "AB-10",
+    "AB-11",
+    "AB-12",
+    "AB-13",
+    "AB-14",
+    "AB-15",
+    "AB-16",
+    "AB-17",
+    "AB-18",
+    "AB-19",
+    "AB-20",
+    "AB-21",
+    "AB-22"
+  ],
+  "responsibilityCount": 22,
+  "responsibilitiesSha256": "481be981ea038e21e7a989208b277c4a18e9777195d35b3eb0829294ed8bfa36",
+  "formatNote": "Full responsibility objects are one JSON object per line in responsibilitiesFile; index metadata and scope are not runtime APIs."
+}
