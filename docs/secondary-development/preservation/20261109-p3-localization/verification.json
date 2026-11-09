@@ -1,0 +1,585 @@
+{
+  "date": "2026-11-09",
+  "sourceHead": "2c7853d88ccad1219217c2d2a43d5b154f69c851",
+  "scope": "P3 batch 4: read-only localization version-diff report",
+  "decision": "Four P3 pilots have recorded outcomes; this pilot batch is closed. P4 and further phases have not run.",
+  "environment": {
+    "runtime": "Local Node / Vitest",
+    "fixture": "Temporary isolated local Git repositories; existing provider calls remain mocked",
+    "intentSkills": "List was run before edits; no matching local skill loaded",
+    "notExecuted": [
+      "real providers",
+      "Workerd workflow engine",
+      "browser/E2E",
+      "production build",
+      "remote database",
+      "email",
+      "deployment"
+    ]
+  },
+  "runs": [
+    {
+      "report": ".tmp/p3-localization-20261109/baseline.json",
+      "sha256": "c0931bbf8d32594e9b86856d2d90e4a03a37005757b5c510454725e429c3d9a0",
+      "startedAt": "2026-11-09T06:35:27.317Z",
+      "fileCount": 4,
+      "total": 47,
+      "passed": 47,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "files": {
+        "src/platform/i18n/prompt-locale.test.ts": 10,
+        "src/platform/i18n/runtime.test.ts": 14,
+        "src/ui/i18n/markdown.test.ts": 20,
+        "src/ui/i18n/resources.test.ts": 3
+      }
+    },
+    {
+      "report": ".tmp/p3-localization-20261109/baseline-prompts.json",
+      "sha256": "07d51eb40a302c863ec68c00f96306d9b1c5b796f89596b55d8ac1c1810145e4",
+      "startedAt": "2026-11-09T06:42:23.008Z",
+      "fileCount": 5,
+      "total": 77,
+      "passed": 77,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "files": {
+        "src/models/enhance-duration.test.ts": 20,
+        "src/cast/server/talent-vision.test.ts": 15,
+        "src/models/server/llm-call-helper.prompt-locale.test.ts": 4,
+        "src/platform/server/ai/workflow-prompts.test.ts": 12,
+        "src/platform/server/ai/prompts/catalog.test.ts": 26
+      }
+    },
+    {
+      "report": ".tmp/p3-localization-20261109/focused-1.json",
+      "sha256": "02aa32efa4615c59de72ff7d9f9b08d35317244091362bb9f31973c89fea06c2",
+      "startedAt": "2026-11-09T06:47:47.372Z",
+      "fileCount": 3,
+      "total": 86,
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "files": {
+        "scripts/check-localization-changes.test.ts": 8,
+        "scripts/localization/report.test.ts": 24,
+        "scripts/localization/ui-copy.test.ts": 54
+      }
+    },
+    {
+      "report": ".tmp/p3-localization-20261109/integrated-1.json",
+      "sha256": "d0365c426ef68d27aa69e3c3193be0f21a1441e92184a37e937c291a8b3bedb7",
+      "startedAt": "2026-11-09T06:52:12.525Z",
+      "fileCount": 12,
+      "total": 213,
+      "passed": 213,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "files": {
+        "scripts/check-localization-changes.test.ts": 8,
+        "src/models/enhance-duration.test.ts": 20,
+        "src/cast/server/talent-vision.test.ts": 15,
+        "scripts/localization/report.test.ts": 27,
+        "scripts/localization/ui-copy.test.ts": 54,
+        "src/platform/i18n/prompt-locale.test.ts": 10,
+        "src/platform/i18n/runtime.test.ts": 14,
+        "src/models/server/llm-call-helper.prompt-locale.test.ts": 4,
+        "src/ui/i18n/markdown.test.ts": 20,
+        "src/ui/i18n/resources.test.ts": 3,
+        "src/platform/server/ai/workflow-prompts.test.ts": 12,
+        "src/platform/server/ai/prompts/catalog.test.ts": 26
+      }
+    },
+    {
+      "report": ".tmp/p3-localization-20261109/integrated-final.json",
+      "sha256": "a84124c1664b1fe5acbb7c11cea105042d235229eb074d6144c91f6db9e4a0a8",
+      "startedAt": "2026-11-09T07:01:15.210Z",
+      "fileCount": 12,
+      "total": 220,
+      "passed": 219,
+      "failed": 1,
+      "skipped": 0,
+      "failures": [
+        {
+          "name": "report output ownership refuses to overwrite inspected source files and preserves their contents",
+          "message": "AssertionError: expected [Function] to throw an error"
+        }
+      ],
+      "files": {
+        "scripts/check-localization-changes.test.ts": 9,
+        "src/models/enhance-duration.test.ts": 20,
+        "src/cast/server/talent-vision.test.ts": 15,
+        "scripts/localization/report.test.ts": 33,
+        "scripts/localization/ui-copy.test.ts": 54,
+        "src/platform/i18n/prompt-locale.test.ts": 10,
+        "src/platform/i18n/runtime.test.ts": 14,
+        "src/models/server/llm-call-helper.prompt-locale.test.ts": 4,
+        "src/ui/i18n/markdown.test.ts": 20,
+        "src/ui/i18n/resources.test.ts": 3,
+        "src/platform/server/ai/workflow-prompts.test.ts": 12,
+        "src/platform/server/ai/prompts/catalog.test.ts": 26
+      }
+    },
+    {
+      "report": ".tmp/p3-localization-20261109/cli-path-fix.json",
+      "sha256": "93df25aaa55cf1f4a2a4504b329d1a92868653a9915115a1996ddfed1fd04f4d",
+      "startedAt": "2026-11-09T07:12:48.592Z",
+      "fileCount": 1,
+      "total": 11,
+      "passed": 8,
+      "failed": 3,
+      "skipped": 0,
+      "failures": [
+        {
+          "name": "report output ownership refuses to overwrite inspected source files and preserves their contents",
+          "message": "AssertionError: expected [Function] to throw an error"
+        },
+        {
+          "name": "report output ownership refuses absolute output over current or deleted sources: src/example/ui/中文 page.tsx",
+          "message": "AssertionError: expected [Function] to throw error including 'Report output would overwrite an insp…' but got 'Missing semicolon. (2:17)'"
+        },
+        {
+          "name": "report output ownership refuses absolute output over current or deleted sources: src/example/ui/removed.tsx",
+          "message": "AssertionError: expected [Function] to throw error including 'Report output would overwrite an insp…' but got 'Missing semicolon. (2:17)'"
+        }
+      ],
+      "files": {
+        "scripts/check-localization-changes.test.ts": 11
+      }
+    },
+    {
+      "report": ".tmp/p3-localization-20261109/cli-path-fix-2.json",
+      "sha256": "6e7abc3e1884558e110ee86a4963b1b634a6cdde38e8e28fb796e2fa37786c98",
+      "startedAt": "2026-11-09T07:16:40.521Z",
+      "fileCount": 1,
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "files": {
+        "scripts/check-localization-changes.test.ts": 11
+      }
+    },
+    {
+      "report": ".tmp/p3-localization-20261109/integrated-final-2.json",
+      "sha256": "77bdf9c597db4cefb8ce9fd1e688dd85126a1e9709a5d8a183f5313fa9ec7dc4",
+      "startedAt": "2026-11-09T07:18:58.609Z",
+      "fileCount": 12,
+      "total": 222,
+      "passed": 222,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "files": {
+        "scripts/check-localization-changes.test.ts": 11,
+        "src/models/enhance-duration.test.ts": 20,
+        "src/cast/server/talent-vision.test.ts": 15,
+        "scripts/localization/report.test.ts": 33,
+        "scripts/localization/ui-copy.test.ts": 54,
+        "src/platform/i18n/prompt-locale.test.ts": 10,
+        "src/platform/i18n/runtime.test.ts": 14,
+        "src/models/server/llm-call-helper.prompt-locale.test.ts": 4,
+        "src/ui/i18n/markdown.test.ts": 20,
+        "src/ui/i18n/resources.test.ts": 3,
+        "src/platform/server/ai/workflow-prompts.test.ts": 12,
+        "src/platform/server/ai/prompts/catalog.test.ts": 26
+      }
+    },
+    {
+      "report": ".tmp/p3-localization-20261109/integrated-final-3.json",
+      "sha256": "d37c5e2a74c1a22d4e9b38e07aa9b7aeac78f60b5a309930fefd5ebc18408716",
+      "startedAt": "2026-11-09T07:37:27.871Z",
+      "fileCount": 12,
+      "total": 222,
+      "passed": 222,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "files": {
+        "scripts/check-localization-changes.test.ts": 11,
+        "src/models/enhance-duration.test.ts": 20,
+        "src/cast/server/talent-vision.test.ts": 15,
+        "scripts/localization/report.test.ts": 33,
+        "scripts/localization/ui-copy.test.ts": 54,
+        "src/platform/i18n/prompt-locale.test.ts": 10,
+        "src/platform/i18n/runtime.test.ts": 14,
+        "src/models/server/llm-call-helper.prompt-locale.test.ts": 4,
+        "src/ui/i18n/markdown.test.ts": 20,
+        "src/ui/i18n/resources.test.ts": 3,
+        "src/platform/server/ai/workflow-prompts.test.ts": 12,
+        "src/platform/server/ai/prompts/catalog.test.ts": 26
+      }
+    }
+  ],
+  "diagnostic": {
+    "log": ".tmp/p3-localization-20261109/cli-path-diagnostic.log",
+    "sha256": "a243ab41ce465e018ae5472f471b38777002b0250a91e0ed4c372f106d66170c",
+    "failed": 1,
+    "skipped": 10,
+    "rootCause": "Windows TEMP uses an 8.3 path while Git returns the long path. Lexical relative/case normalization fails to identify the same file. Ordinary realpathSync also preserved the short path in the test process.",
+    "fix": "Canonicalize existing files or nearest existing parent with realpathSync.native, then compare physical paths with Windows case normalization.",
+    "cascadeFailure": "The first CLI protection test overwrote only its isolated fixture. The next two protection cases then saw invalid TSX (report JSON); all three passed after the native-path fix.",
+    "temporaryLoggingRemoved": true,
+    "userSourceOverwritten": false
+  },
+  "finalAcceptance": {
+    "report": ".tmp/p3-localization-20261109/integrated-final-3.json",
+    "files": 12,
+    "total": 222,
+    "passed": 222,
+    "failed": 0,
+    "originalFiles": 9,
+    "originalTests": 124,
+    "newFiles": 3,
+    "newTests": 98,
+    "countsAreNotCumulative": true,
+    "arguments": "--pool=threads --no-file-parallelism --maxWorkers=1 --no-cache --no-fsModuleCache --reporter=json"
+  },
+  "originalTests": [
+    {
+      "file": "src/ui/i18n/resources.test.ts",
+      "before": "d9416fb1ac179ec67b04362b1fb037dafed1362e31f78b702912a2a702e9ff56",
+      "after": "d9416fb1ac179ec67b04362b1fb037dafed1362e31f78b702912a2a702e9ff56",
+      "byteUnchanged": true,
+      "count": 3,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "ef3ab7bc52b0604192895672549ef3fd024dd01f92c946102e944d76a90d9e81",
+      "finalResultDigest": "ef3ab7bc52b0604192895672549ef3fd024dd01f92c946102e944d76a90d9e81"
+    },
+    {
+      "file": "src/ui/i18n/markdown.test.ts",
+      "before": "f57d8904a4abc66869654cc54c477425db0679bc94f702c2feb4f7de4caea854",
+      "after": "f57d8904a4abc66869654cc54c477425db0679bc94f702c2feb4f7de4caea854",
+      "byteUnchanged": true,
+      "count": 20,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "d172870ad7f83f3e450002b193f14b9bfc269335895625314eb88797b12fa8d3",
+      "finalResultDigest": "d172870ad7f83f3e450002b193f14b9bfc269335895625314eb88797b12fa8d3"
+    },
+    {
+      "file": "src/platform/i18n/runtime.test.ts",
+      "before": "b7feacfb0496aacc525126823349c76ed7b676d8ac62541792b3d74e9f6aedec",
+      "after": "b7feacfb0496aacc525126823349c76ed7b676d8ac62541792b3d74e9f6aedec",
+      "byteUnchanged": true,
+      "count": 14,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "9f2f1e713a578d0b3933898a1b74cdb99a0383c7855e79ab3fbe07c6659b54dc",
+      "finalResultDigest": "9f2f1e713a578d0b3933898a1b74cdb99a0383c7855e79ab3fbe07c6659b54dc"
+    },
+    {
+      "file": "src/platform/i18n/prompt-locale.test.ts",
+      "before": "3018063d5115f4eda1bd0dfb0cbfc86fd44209c9bc669f5069a4c888855ded0f",
+      "after": "3018063d5115f4eda1bd0dfb0cbfc86fd44209c9bc669f5069a4c888855ded0f",
+      "byteUnchanged": true,
+      "count": 10,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "92ad978512c94d079f10c27889b819e3dbb59c54726d0216de0f562e8b655f08",
+      "finalResultDigest": "92ad978512c94d079f10c27889b819e3dbb59c54726d0216de0f562e8b655f08"
+    },
+    {
+      "file": "src/platform/server/ai/prompts/catalog.test.ts",
+      "before": "526934ec2896dc1b2db5ab28da88cea777ed3d605395ca9ed30615ab3fbf82fb",
+      "after": "526934ec2896dc1b2db5ab28da88cea777ed3d605395ca9ed30615ab3fbf82fb",
+      "byteUnchanged": true,
+      "count": 26,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "e9ed90e5609f30799cd717044d65cf9b08a313d97766852f7316fc0a0c9faf8e",
+      "finalResultDigest": "e9ed90e5609f30799cd717044d65cf9b08a313d97766852f7316fc0a0c9faf8e"
+    },
+    {
+      "file": "src/platform/server/ai/workflow-prompts.test.ts",
+      "before": "3ec77ee49310891b40a4fdec86360a57c12d36771c90f478b0bd54fe1fb50095",
+      "after": "3ec77ee49310891b40a4fdec86360a57c12d36771c90f478b0bd54fe1fb50095",
+      "byteUnchanged": true,
+      "count": 12,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "49cc66aa7d929c05f78e0aa46e58f5ff48df4b9573d2fec039f6ee8e3e311fc0",
+      "finalResultDigest": "49cc66aa7d929c05f78e0aa46e58f5ff48df4b9573d2fec039f6ee8e3e311fc0"
+    },
+    {
+      "file": "src/models/enhance-duration.test.ts",
+      "before": "0619cd47cc9691538bf7bbabdc02185314f44a24168e90ccd9d5807223a8f397",
+      "after": "0619cd47cc9691538bf7bbabdc02185314f44a24168e90ccd9d5807223a8f397",
+      "byteUnchanged": true,
+      "count": 20,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "9ba0317b2e634bae2de60554dac7041a21fe071733dd615266865299ff4a9c06",
+      "finalResultDigest": "9ba0317b2e634bae2de60554dac7041a21fe071733dd615266865299ff4a9c06"
+    },
+    {
+      "file": "src/cast/server/talent-vision.test.ts",
+      "before": "84b29687b51bd3f4f0b4ff72cff1d8375599ca03914490231e3c76d1d1294a8e",
+      "after": "84b29687b51bd3f4f0b4ff72cff1d8375599ca03914490231e3c76d1d1294a8e",
+      "byteUnchanged": true,
+      "count": 15,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "b847a5f233b7a771cc70969fdb493aab964e5761a92b7ee220f701d1db5c096f",
+      "finalResultDigest": "b847a5f233b7a771cc70969fdb493aab964e5761a92b7ee220f701d1db5c096f"
+    },
+    {
+      "file": "src/models/server/llm-call-helper.prompt-locale.test.ts",
+      "before": "44a9d8e5d85872bcc224d65512e1942229afbb595160b1b7c84bc299f026cf4c",
+      "after": "44a9d8e5d85872bcc224d65512e1942229afbb595160b1b7c84bc299f026cf4c",
+      "byteUnchanged": true,
+      "count": 4,
+      "unchangedNamesAndPassedResults": true,
+      "baselineResultDigest": "29643c514f0eeab1d64c78ef796eefc845ae6d59df928d38f4173fd5be13f679",
+      "finalResultDigest": "29643c514f0eeab1d64c78ef796eefc845ae6d59df928d38f4173fd5be13f679"
+    }
+  ],
+  "finalSources": [
+    {
+      "file": "scripts/check-localization-changes.ts",
+      "sha256": "2d8b32234d0d9e6555aa0e22e6735d8b82348f5fc5284783cd35f4aff5563b4a",
+      "lines": 102,
+      "maxFunctionLines": 25
+    },
+    {
+      "file": "scripts/check-localization-changes.test.ts",
+      "sha256": "e863edd42361c72728710f2f812f5c8a11f6a8908f3ac3bf8f2b65f604fae300",
+      "lines": 169,
+      "maxFunctionLines": 41
+    },
+    {
+      "file": "scripts/localization/ast.ts",
+      "sha256": "d8b0f8b32b729f25ed194bc65d53cec6d200015f72888500fb2827b72665595d",
+      "lines": 59,
+      "maxFunctionLines": 10
+    },
+    {
+      "file": "scripts/localization/git-snapshot.ts",
+      "sha256": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "lines": 97,
+      "maxFunctionLines": 26
+    },
+    {
+      "file": "scripts/localization/resource-copy.ts",
+      "sha256": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "lines": 60,
+      "maxFunctionLines": 35
+    },
+    {
+      "file": "scripts/localization/report.ts",
+      "sha256": "a433ed4e8425009c6f6837118a3cc637008fb28e83a785d69f02db66d97d5dbe",
+      "lines": 154,
+      "maxFunctionLines": 41
+    },
+    {
+      "file": "scripts/localization/report.test.ts",
+      "sha256": "3d92eff554a218a2645d61cf2286f7b160a20c93197195a32ddae4ab9b177d4a",
+      "lines": 392,
+      "maxFunctionLines": 50
+    },
+    {
+      "file": "scripts/localization/system-prompts.ts",
+      "sha256": "faad65c9a5cf404070312c4bca4fc4d6b11ee910526c096429e573c8d9894bbf",
+      "lines": 120,
+      "maxFunctionLines": 31
+    },
+    {
+      "file": "scripts/localization/ui-copy.ts",
+      "sha256": "9451155f23eee568b292df482ad6b2c7ac7a1f9512e9ecc06e34467c9fcb3891",
+      "lines": 259,
+      "maxFunctionLines": 25
+    },
+    {
+      "file": "scripts/localization/ui-copy.test.ts",
+      "sha256": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05",
+      "lines": 504,
+      "maxFunctionLines": 38
+    }
+  ],
+  "executedSources": {
+    "focused-1": {
+      "scripts/check-localization-changes.ts": "5fee77f40a9616a9749215f7cf84637c1ebe256aa0570a181b62ce42ec245191",
+      "scripts/check-localization-changes.test.ts": "6ea040bde04453bb3b54fd7cc75fc282cbb230feb3726d274a81c6e8d34e9a61",
+      "scripts/localization/ast.ts": "ba1ac6dfc23e218d58072be0fd978fd0dc1738cf371fb1350f9d9d21385cdfa9",
+      "scripts/localization/git-snapshot.ts": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "scripts/localization/resource-copy.ts": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "scripts/localization/report.ts": "6a42f64ef2866657b9fa0875c5b91ff85d684189ec815c7517485c3644d2d2c4",
+      "scripts/localization/report.test.ts": "7c6a36e428e85049a7e02e70d1375a5e532a6e6d82ab6e12e9b986ac14fc3b49",
+      "scripts/localization/system-prompts.ts": "67b9e586aeac5afa9c09730b87b9d2c736babf27d06e60cea999afbe74ee55a3",
+      "scripts/localization/ui-copy.ts": "8f7b6af273d0d8aecc5467fe27d3b8893d2cd982a814be0b9b6ab36d8a98ae13",
+      "scripts/localization/ui-copy.test.ts": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05"
+    },
+    "integrated-1": {
+      "scripts/check-localization-changes.ts": "5fee77f40a9616a9749215f7cf84637c1ebe256aa0570a181b62ce42ec245191",
+      "scripts/check-localization-changes.test.ts": "6ea040bde04453bb3b54fd7cc75fc282cbb230feb3726d274a81c6e8d34e9a61",
+      "scripts/localization/ast.ts": "a8ecddded0c3dea14dad66821e1e85b4450eaf4ec7fb78d0915c6b087a95b449",
+      "scripts/localization/git-snapshot.ts": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "scripts/localization/resource-copy.ts": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "scripts/localization/report.ts": "f542424b55bcea0dd6251e1b180e8ed5156973ccdc21f40044ef39fc439a767b",
+      "scripts/localization/report.test.ts": "1ef5aa749c3353bb01c090ce3eedc2d6e26102a2bb09bfb6c71bc37887d1cd1a",
+      "scripts/localization/system-prompts.ts": "e92ff4c92103261116ee35ad535d4fd69775ee7f65405e0b15717554fde21677",
+      "scripts/localization/ui-copy.ts": "8f7b6af273d0d8aecc5467fe27d3b8893d2cd982a814be0b9b6ab36d8a98ae13",
+      "scripts/localization/ui-copy.test.ts": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05"
+    },
+    "integrated-final": {
+      "scripts/check-localization-changes.ts": "35149a5d85cdb127a457e031a546569e9d6565a3ee0f9cd5572a6aab605b9c79",
+      "scripts/check-localization-changes.test.ts": "4ed67c418e77a2142c92235f0f319ef37b42cec2d4f0e04b4af4c0cba5e5edad",
+      "scripts/localization/ast.ts": "a8ecddded0c3dea14dad66821e1e85b4450eaf4ec7fb78d0915c6b087a95b449",
+      "scripts/localization/git-snapshot.ts": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "scripts/localization/resource-copy.ts": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "scripts/localization/report.ts": "a433ed4e8425009c6f6837118a3cc637008fb28e83a785d69f02db66d97d5dbe",
+      "scripts/localization/report.test.ts": "6584a578d0f8256c3c5b0dd4f2832bf516fee48993140b78cd841980dff5ef97",
+      "scripts/localization/system-prompts.ts": "faad65c9a5cf404070312c4bca4fc4d6b11ee910526c096429e573c8d9894bbf",
+      "scripts/localization/ui-copy.ts": "8f7b6af273d0d8aecc5467fe27d3b8893d2cd982a814be0b9b6ab36d8a98ae13",
+      "scripts/localization/ui-copy.test.ts": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05"
+    },
+    "cli-path-fix": {
+      "scripts/check-localization-changes.ts": "70d58686022a985422c07741869dc27120ea166589c928f96705203a79de3598",
+      "scripts/check-localization-changes.test.ts": "e863edd42361c72728710f2f812f5c8a11f6a8908f3ac3bf8f2b65f604fae300",
+      "scripts/localization/ast.ts": "a8ecddded0c3dea14dad66821e1e85b4450eaf4ec7fb78d0915c6b087a95b449",
+      "scripts/localization/git-snapshot.ts": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "scripts/localization/resource-copy.ts": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "scripts/localization/report.ts": "a433ed4e8425009c6f6837118a3cc637008fb28e83a785d69f02db66d97d5dbe",
+      "scripts/localization/report.test.ts": "3d92eff554a218a2645d61cf2286f7b160a20c93197195a32ddae4ab9b177d4a",
+      "scripts/localization/system-prompts.ts": "faad65c9a5cf404070312c4bca4fc4d6b11ee910526c096429e573c8d9894bbf",
+      "scripts/localization/ui-copy.ts": "8f7b6af273d0d8aecc5467fe27d3b8893d2cd982a814be0b9b6ab36d8a98ae13",
+      "scripts/localization/ui-copy.test.ts": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05"
+    },
+    "cli-path-fix-2": {
+      "scripts/check-localization-changes.ts": "2d8b32234d0d9e6555aa0e22e6735d8b82348f5fc5284783cd35f4aff5563b4a",
+      "scripts/check-localization-changes.test.ts": "e863edd42361c72728710f2f812f5c8a11f6a8908f3ac3bf8f2b65f604fae300",
+      "scripts/localization/ast.ts": "a8ecddded0c3dea14dad66821e1e85b4450eaf4ec7fb78d0915c6b087a95b449",
+      "scripts/localization/git-snapshot.ts": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "scripts/localization/resource-copy.ts": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "scripts/localization/report.ts": "a433ed4e8425009c6f6837118a3cc637008fb28e83a785d69f02db66d97d5dbe",
+      "scripts/localization/report.test.ts": "3d92eff554a218a2645d61cf2286f7b160a20c93197195a32ddae4ab9b177d4a",
+      "scripts/localization/system-prompts.ts": "faad65c9a5cf404070312c4bca4fc4d6b11ee910526c096429e573c8d9894bbf",
+      "scripts/localization/ui-copy.ts": "8f7b6af273d0d8aecc5467fe27d3b8893d2cd982a814be0b9b6ab36d8a98ae13",
+      "scripts/localization/ui-copy.test.ts": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05"
+    },
+    "integrated-final-2": {
+      "scripts/check-localization-changes.ts": "2d8b32234d0d9e6555aa0e22e6735d8b82348f5fc5284783cd35f4aff5563b4a",
+      "scripts/check-localization-changes.test.ts": "e863edd42361c72728710f2f812f5c8a11f6a8908f3ac3bf8f2b65f604fae300",
+      "scripts/localization/ast.ts": "a8ecddded0c3dea14dad66821e1e85b4450eaf4ec7fb78d0915c6b087a95b449",
+      "scripts/localization/git-snapshot.ts": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "scripts/localization/resource-copy.ts": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "scripts/localization/report.ts": "a433ed4e8425009c6f6837118a3cc637008fb28e83a785d69f02db66d97d5dbe",
+      "scripts/localization/report.test.ts": "3d92eff554a218a2645d61cf2286f7b160a20c93197195a32ddae4ab9b177d4a",
+      "scripts/localization/system-prompts.ts": "faad65c9a5cf404070312c4bca4fc4d6b11ee910526c096429e573c8d9894bbf",
+      "scripts/localization/ui-copy.ts": "8f7b6af273d0d8aecc5467fe27d3b8893d2cd982a814be0b9b6ab36d8a98ae13",
+      "scripts/localization/ui-copy.test.ts": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05"
+    },
+    "commit-1": {
+      "scripts/check-localization-changes.ts": "2d8b32234d0d9e6555aa0e22e6735d8b82348f5fc5284783cd35f4aff5563b4a",
+      "scripts/check-localization-changes.test.ts": "e863edd42361c72728710f2f812f5c8a11f6a8908f3ac3bf8f2b65f604fae300",
+      "scripts/localization/ast.ts": "a8ecddded0c3dea14dad66821e1e85b4450eaf4ec7fb78d0915c6b087a95b449",
+      "scripts/localization/git-snapshot.ts": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "scripts/localization/resource-copy.ts": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "scripts/localization/report.ts": "a433ed4e8425009c6f6837118a3cc637008fb28e83a785d69f02db66d97d5dbe",
+      "scripts/localization/report.test.ts": "3d92eff554a218a2645d61cf2286f7b160a20c93197195a32ddae4ab9b177d4a",
+      "scripts/localization/system-prompts.ts": "faad65c9a5cf404070312c4bca4fc4d6b11ee910526c096429e573c8d9894bbf",
+      "scripts/localization/ui-copy.ts": "8f7b6af273d0d8aecc5467fe27d3b8893d2cd982a814be0b9b6ab36d8a98ae13",
+      "scripts/localization/ui-copy.test.ts": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05"
+    },
+    "integrated-final-3": {
+      "scripts/check-localization-changes.ts": "2d8b32234d0d9e6555aa0e22e6735d8b82348f5fc5284783cd35f4aff5563b4a",
+      "scripts/check-localization-changes.test.ts": "e863edd42361c72728710f2f812f5c8a11f6a8908f3ac3bf8f2b65f604fae300",
+      "scripts/localization/ast.ts": "d8b0f8b32b729f25ed194bc65d53cec6d200015f72888500fb2827b72665595d",
+      "scripts/localization/git-snapshot.ts": "15c287afe1f48ec4dc3cc68ad2667600fb742995f3958c8fec54f1560b2be2d9",
+      "scripts/localization/resource-copy.ts": "868dde8dbd0fb828af3a28abdc3b0ed10b81ce7613029b802439f62e436de542",
+      "scripts/localization/report.ts": "a433ed4e8425009c6f6837118a3cc637008fb28e83a785d69f02db66d97d5dbe",
+      "scripts/localization/report.test.ts": "3d92eff554a218a2645d61cf2286f7b160a20c93197195a32ddae4ab9b177d4a",
+      "scripts/localization/system-prompts.ts": "faad65c9a5cf404070312c4bca4fc4d6b11ee910526c096429e573c8d9894bbf",
+      "scripts/localization/ui-copy.ts": "9451155f23eee568b292df482ad6b2c7ac7a1f9512e9ecc06e34467c9fcb3891",
+      "scripts/localization/ui-copy.test.ts": "49e4b2df71ef2326b0235aa4eaefe4960ccb2ecdc95bb34993e65ea3cb4bbe05"
+    }
+  },
+  "quality": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "exitCode": 0,
+      "log": ".tmp/p3-localization-20261109/typecheck-final-4.log"
+    },
+    "lint": {
+      "command": "bun x --no-install oxlint --type-aware <10 new source/test files>",
+      "exitCode": 0,
+      "log": ".tmp/p3-localization-20261109/lint-final-4.log",
+      "errors": 0,
+      "warnings": 0
+    },
+    "format": "oxfmt for this batch only; normal pre-commit also formats staged paths",
+    "diff": "git diff --check and staged diff --check; original routeTree excluded",
+    "maximumFileLines": 504,
+    "maximumExecutionFunctionLines": 41,
+    "maximumSuiteCallbackLines": 50,
+    "lineCountConvention": "Counts newline-terminated source lines; does not add an empty record after the final newline.",
+    "deadCode": {
+      "command": "bun dead-code",
+      "exitCode": 0,
+      "configurationHints": 6,
+      "log": ".tmp/p3-localization-20261109/dead-code-fix.log"
+    }
+  },
+  "independentReview": {
+    "scope": "Read-only review of report UI path filtering and module-role semantics",
+    "findings": [
+      "Root src/ui/*.ts was missed",
+      "Generated and src/test support files were not excluded",
+      "Module role should not be named sourceLanguage"
+    ],
+    "resolution": "All specified corrections re-reviewed with no remaining concrete issue in that limited scope; path-protection fix was verified by the primary agent regression tests.",
+    "reviewerRanTests": false
+  },
+  "actualCli": {
+    "report": ".tmp/p3-localization-20261109/working-copy-report-final-5.json",
+    "sha256": "f350109642d4d66f57838fd1268a9d4cfc9bb374fd13c34f2dfd95152ba981d0",
+    "base": "2c7853d88ccad1219217c2d2a43d5b154f69c851",
+    "head": "working-tree",
+    "status": "report-only",
+    "counts": {
+      "uiCopy": 0,
+      "resources": 0,
+      "systemPrompts": 0,
+      "helpMarkdown": 0,
+      "unclassifiedUiFiles": 0,
+      "sources": 5
+    },
+    "meaning": "No application copy changes in this batch; zero candidates do not certify translation completeness or semantics."
+  },
+  "preservedRouteTree": {
+    "file": "src/routeTree.gen.ts",
+    "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+    "includedInCommit": false
+  },
+  "deferredIssue": {
+    "id": "CONTINUE-LLM-SOURCE",
+    "status": "deferred by user; not fixed"
+  },
+  "git": {
+    "branch": "develop",
+    "commit": "Use Git history for the containing commit",
+    "hooks": "Normal hooks required and enabled; no bypass",
+    "pushed": false
+  },
+  "rawReports": {
+    "directory": ".tmp/p3-localization-20261109/",
+    "tracked": false,
+    "availability": "Local raw JSON reports/logs and source freezes remain in the ignored evidence directory; this file preserves counts, failure summary, report hashes and source bindings."
+  },
+  "failedCommitAttempt": {
+    "log": ".tmp/p3-localization-20261109/commit.log",
+    "sha256": "3dcfa1d5a24eb205fabfc11da7200d05842ba3c37e9bdcff165ae27e855f1dfc",
+    "commitCreated": false,
+    "hooksBypassed": false,
+    "passed": [
+      "client-server-boundary: 17 tests",
+      "format",
+      "lint",
+      "typecheck"
+    ],
+    "failed": "dead-code: unlisted @babel/types dependency in two type-only imports",
+    "fix": "Derive real AST Node type from the generateFromAst public signature of the existing direct @tanstack/router-utils dependency; use Extract for specific node variants. No dependency or lockfile changes.",
+    "functionAstPreserved": [
+      "scripts/localization/ast.ts",
+      "scripts/localization/ui-copy.ts"
+    ]
+  }
+}
