@@ -18,6 +18,7 @@ import {
 } from '@/cast/sheet-image-request';
 import type { TextToImageModel } from '@/models/models';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
+import type { PlanUnitKind } from '@/sequences/generation-plan';
 import type { PlanReferences } from '@/shots/server/update-stale-references';
 import { ZERO_MICROS, addMicros, micros } from './money';
 import type { Microdollars } from './money';
@@ -42,6 +43,9 @@ type PlanImageSelection = Pick<
   UpdateStalePlan,
   'targets' | 'references' | 'renderOptions'
 >;
+
+type PlanImageEstimateInput = PlanImageSelection &
+  Pick<UpdateStalePlan, 'aspectRatio' | 'sequence'>;
 
 function targetImageModels(
   plan: Pick<UpdateStalePlan, 'renderOptions'>,
@@ -193,10 +197,7 @@ export function planUsesConfiguredImages(
 }
 
 export function estimatePlanImageCost(
-  plan: Pick<
-    UpdateStalePlan,
-    'targets' | 'references' | 'aspectRatio' | 'sequence' | 'renderOptions'
-  >,
+  plan: PlanImageEstimateInput,
   imageModelRouting: ImageModelRoutingSnapshot | undefined,
   pricing: Record<string, EffectiveFalPricing>
 ) {
@@ -230,5 +231,32 @@ export function estimatePlanImageCost(
     ...configured,
     costMicros,
     priced: estimates.every((estimate) => estimate.cost !== null),
+  };
+}
+
+// Separately quoted images leave no image units for the count-based estimator.
+export function partitionPlanImageEstimate(args: {
+  plan: PlanImageEstimateInput;
+  counts: Record<PlanUnitKind, number>;
+  imageModelRouting?: ImageModelRoutingSnapshot;
+  pricing: Record<string, EffectiveFalPricing>;
+}) {
+  const { plan, counts, imageModelRouting, pricing } = args;
+  const quote = planUsesConfiguredImages(plan, imageModelRouting)
+    ? estimatePlanImageCost(plan, imageModelRouting, pricing)
+    : undefined;
+  return {
+    counts: quote
+      ? {
+          ...counts,
+          still: 0,
+          'sheet:character': 0,
+          'sheet:location': 0,
+          'ref:element': 0,
+        }
+      : counts,
+    costMicros: quote?.costMicros ?? ZERO_MICROS,
+    priced: quote?.priced,
+    imageSource: quote?.imageSource,
   };
 }

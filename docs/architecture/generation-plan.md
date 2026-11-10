@@ -167,6 +167,18 @@ generateVoices, draftMotion }` — no `startFrom`.
 Scenes and shots edited, added or deleted during a stop reach the continue:
 every unit is materialised per shot from D1 at the click.
 
+The local configured-image extension uses `partitionPlanImageEstimate` in
+`src/billing/configured-image-plan-billing.ts` for Continue and the fresh
+analysis handoff. If any frozen image request uses a configured channel, its
+subtotal includes every configured and built-in image in that plan. The four
+image unit counts (stills, character sheets, location sheets and element
+references) then leave the count-based estimator; the other units keep their
+counts. A zero-priced image quote still owns those counts. Without a configured
+image request, all counts stay on the existing estimator, including its fanout
+and unknown-price floors. Continue retains its existing display-price check
+for that path. Unknown mixed-image prices keep `priced: false` and a floored
+numeric subtotal for the credit gate; they never become a free estimate.
+
 ## Shot specs and prompts (#1923, #1929)
 
 A shot's still and motion prompts are built from its selected spec. The plan

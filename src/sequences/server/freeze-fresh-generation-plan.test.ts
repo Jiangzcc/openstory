@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScopedDb } from '@/platform/server/db/scoped';
+import type { Shot } from '@/platform/server/db/schema';
 import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
 import type { StyleConfig } from '@/look/style-config';
 import { asStub } from '@/test/as-stub';
@@ -39,6 +40,14 @@ const computePlan = vi.fn(async () =>
 );
 const mockBuiltinImagePrice = usdToMicros(0.03);
 const mockPricing = {
+  'bytedance/seedance-2.5/image-to-video': {
+    unitPrice: usdToMicros(0.001),
+    unit: '1000 tokens',
+  },
+  'bytedance/seedance-2.5/reference-to-video': {
+    unitPrice: usdToMicros(0.002),
+    unit: '1000 tokens',
+  },
   'fal-ai/nano-banana-2': {
     unitPrice: mockBuiltinImagePrice,
     unit: 'images',
@@ -172,14 +181,78 @@ function imagePlanUnits(): PlanUnit[] {
   }));
 }
 
-describe('fresh planning checkpoint', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
-      new Error('Planning regression tests must not call paid or network APIs.')
-    );
+function renderQuotePlan(referenceOnly: boolean): UpdateStalePlan {
+  const plan = imagePlan(BUILTIN_IMAGE_MODEL);
+  plan.targets = plan.targets
+    .slice(0, 1)
+    .map((target) => ({ ...target, regenImage: !referenceOnly }));
+  plan.renderOptions = {
+    imageModels: [CONFIGURED_IMAGE_MODEL, BUILTIN_IMAGE_MODEL],
+  };
+  plan.references = referenceOnly
+    ? asStub<NonNullable<UpdateStalePlan['references']>>({
+        characterSheets: [],
+        lookSheetsAfterDefault: [],
+        elementSheets: null,
+        locationSheets: [
+          {
+            imageModel: CONFIGURED_IMAGE_MODEL,
+            referencePhotoUrls: ['mock-photo'],
+          },
+        ],
+      })
+    : null;
+  return plan;
+}
+
+async function freezeRenderQuote(
+  options: Required<
+    Pick<
+      StoryboardWorkflowInput,
+      'referenceOnly' | 'draftMotion' | 'resolution'
+    >
+  >
+) {
+  const kinds: PlanUnitKind[] = [
+    options.referenceOnly ? 'sheet:location' : 'still',
+    'clip',
+  ];
+  computeGenerationPlan.mockResolvedValueOnce({
+    units: kinds.map((kind) => ({
+      kind,
+      id: 'mock-' + kind,
+      state: 'missing',
+      requires: [],
+      cascaded: false,
+    })),
+    speakerConflicts: [],
   });
-  afterEach(() => vi.restoreAllMocks());
+  const plan = renderQuotePlan(options.referenceOnly);
+  plan.sequence.resolution = options.resolution;
+  computePlan.mockResolvedValueOnce(plan);
+  vi.spyOn(db.shots, 'listBySequence').mockResolvedValueOnce([
+    asStub<Shot>({ durationMs: 5000 }),
+  ]);
+  estimatePlanCost.mockImplementationOnce(realCostEstimation.estimatePlanCost);
+  return freezeFreshGenerationPlan(db, {
+    ...input,
+    ...options,
+    stopAt: 'motion',
+    imageModels: [CONFIGURED_IMAGE_MODEL, BUILTIN_IMAGE_MODEL],
+    videoModels: ['seedance_v2_5'],
+    modelConfiguration: mockModelConfiguration,
+  });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+    new Error('Planning regression tests must not call paid or network APIs.')
+  );
+});
+afterEach(() => vi.restoreAllMocks());
+
+describe('fresh planning checkpoint', () => {
   it('caps the work and freezes click language, switches, style and models', async () => {
     await freezeFreshGenerationPlan(db, { ...input, promptLocale: 'zh-CN' });
     expect(computeGenerationPlan).toHaveBeenCalledWith(
@@ -344,3 +417,101 @@ describe('fresh planning checkpoint', () => {
     }
   );
 });
+
+// Existing render estimates conservatively use the reference route at every 5s tier.
+it.each([
+  {
+    resolution: '720p',
+    draftMotion: false,
+    referenceOnly: false,
+    expectedVideoMicros: 226800,
+  },
+  {
+    resolution: '1080p',
+    draftMotion: false,
+    referenceOnly: false,
+    expectedVideoMicros: 510300,
+  },
+  {
+    resolution: '1080p',
+    draftMotion: true,
+    referenceOnly: false,
+    expectedVideoMicros: 100879,
+  },
+  {
+    resolution: '720p',
+    draftMotion: false,
+    referenceOnly: true,
+    expectedVideoMicros: 226800,
+  },
+  {
+    resolution: '1080p',
+    draftMotion: true,
+    referenceOnly: true,
+    expectedVideoMicros: 100879,
+  },
+] as const)(
+  'keeps real render pricing at $resolution with draft=$draftMotion and reference-only=$referenceOnly',
+  async ({ expectedVideoMicros, ...options }) => {
+    const result = await freezeRenderQuote(options);
+    const expectedImageMicros = usdToMicros(options.referenceOnly ? 0.2 : 0.13);
+    expect(result.remainingCost).toBe(
+      expectedImageMicros + expectedVideoMicros
+    );
+    expect(estimatePlanCost).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        ...options,
+        counts: expect.objectContaining({
+          still: 0,
+          'sheet:character': 0,
+          'sheet:location': 0,
+          'ref:element': 0,
+          clip: 1,
+        }),
+        imageModelCount: 2,
+        videoModels: ['seedance_v2_5'],
+        videoDurationSeconds: 5,
+        imageModelRouting: mockImageRouting,
+      })
+    );
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  }
+);
+
+it.each([
+  { imageModel: BUILTIN_IMAGE_MODEL, expectedUsd: 0.06 },
+  { imageModel: 'grok_imagine_image', expectedUsd: 0.2 },
+] as const)(
+  'retains the legacy fanout estimate or floor for unbound $imageModel',
+  async ({ imageModel, expectedUsd }) => {
+    const imageModels = [imageModel, 'flux_2_max'] satisfies TextToImageModel[];
+    const plan = renderQuotePlan(false);
+    plan.targets = plan.targets.map((target) => ({ ...target, imageModel }));
+    plan.renderOptions = { imageModels };
+    computePlan.mockResolvedValueOnce(plan);
+    computeGenerationPlan.mockResolvedValueOnce({
+      units: imagePlanUnits()
+        .filter((unit) => unit.kind === 'still')
+        .slice(0, 1),
+      speakerConflicts: [],
+    });
+    estimatePlanCost.mockImplementationOnce(
+      realCostEstimation.estimatePlanCost
+    );
+    const result = await freezeFreshGenerationPlan(db, {
+      ...input,
+      imageModel,
+      imageModels,
+      stopAt: 'images',
+      modelConfiguration: mockModelConfiguration,
+    });
+    expect(result.remainingCost).toBe(usdToMicros(expectedUsd));
+    expect(estimatePlanCost).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        counts: expect.objectContaining({ still: 1 }),
+        imageModelCount: 2,
+      })
+    );
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  }
+);

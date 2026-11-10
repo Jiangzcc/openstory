@@ -1,11 +1,8 @@
-import {
-  estimatePlanImageCost,
-  planUsesConfiguredImages,
-} from '@/billing/configured-image-plan-billing';
+import { partitionPlanImageEstimate } from '@/billing/configured-image-plan-billing';
 import { computePlan } from '@/shots/server/update-stale-plan';
 import type { Locale } from '@/platform/i18n/locale';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
-import { addMicros, ZERO_MICROS } from '@/billing/money';
+import { addMicros } from '@/billing/money';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { loadStoryboardModelConfiguration } from './launchers';
 import { configuredImageSource } from '@/billing/configured-image-billing';
@@ -105,17 +102,20 @@ function continueImageEstimate(
   );
   const routing = args.modelConfiguration.imageModelRouting;
   const counts = planCounts(args.work);
-  const quote = planUsesConfiguredImages(args.imagePlan, routing)
-    ? estimatePlanImageCost(args.imagePlan, routing, pricing)
-    : undefined;
-  const priced = quote
-    ? quote.priced
-    : counts.still === 0 ||
+  const image = partitionPlanImageEstimate({
+    plan: args.imagePlan,
+    counts,
+    imageModelRouting: routing,
+    pricing,
+  });
+  const priced =
+    image.priced ??
+    (counts.still === 0 ||
       estimateImageCost(model, args.sequence.aspectRatio, 1, {
         pricing,
         imageModelRouting: routing,
         resolution: args.sequence.resolution,
-      }) !== null;
+      }) !== null);
   const hasImages =
     counts.still +
       counts['sheet:character'] +
@@ -126,18 +126,10 @@ function continueImageEstimate(
     imageModel: model,
     imageModelRouting: routing,
     priced,
-    counts: quote
-      ? {
-          ...counts,
-          still: 0,
-          'sheet:character': 0,
-          'sheet:location': 0,
-          'ref:element': 0,
-        }
-      : counts,
-    costMicros: quote?.costMicros ?? ZERO_MICROS,
+    counts: image.counts,
+    costMicros: image.costMicros,
     imageSource:
-      quote?.imageSource ??
+      image.imageSource ??
       (hasImages ? configuredImageSource(model, routing) : undefined),
   };
 }

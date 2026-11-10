@@ -5,11 +5,8 @@ import { planCounts, planWork } from '@/sequences/generation-plan';
 import { computePlan } from '@/shots/server/update-stale-plan';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import { unpackModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
-import {
-  estimatePlanImageCost,
-  planUsesConfiguredImages,
-} from '@/billing/configured-image-plan-billing';
-import { addMicros, ZERO_MICROS } from '@/billing/money';
+import { partitionPlanImageEstimate } from '@/billing/configured-image-plan-billing';
+import { addMicros } from '@/billing/money';
 import { estimatePlanCost } from '@/billing/cost-estimation';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { resolveImageModels } from '@/models/resolve-image-models';
@@ -90,19 +87,14 @@ async function remainingPlanCost(
     getEffectiveFalPricing(),
   ]);
   const imageModelRouting = frozenImageRouting(input);
-  const imageQuote = planUsesConfiguredImages(plan, imageModelRouting)
-    ? estimatePlanImageCost(plan, imageModelRouting, pricing)
-    : undefined;
+  const image = partitionPlanImageEstimate({
+    plan,
+    counts,
+    imageModelRouting,
+    pricing,
+  });
   const remaining = estimatePlanCost({
-    counts: imageQuote
-      ? {
-          ...counts,
-          still: 0,
-          'sheet:character': 0,
-          'sheet:location': 0,
-          'ref:element': 0,
-        }
-      : counts,
+    counts: image.counts,
     imageModel: input.imageModel,
     imageModelCount: models.imageModels.length,
     imageModelRouting,
@@ -119,7 +111,7 @@ async function remainingPlanCost(
     audioDurationSeconds: musicRequestDurationSeconds(shots),
     pricing,
   });
-  return addMicros(remaining, imageQuote?.costMicros ?? ZERO_MICROS);
+  return addMicros(remaining, image.costMicros);
 }
 
 function frozenImageRouting(input: StoryboardWorkflowInput) {
