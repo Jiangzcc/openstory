@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "sourceBefore": "9ee843cbb5128704c577c3e4690640aeb3ca3f31",
+  "sourceAfter": "d5dfe869d15942567495253348ea0aa61e480d13",
+  "reviewKind": "static source only; no browser acceptance",
+  "groups": [
+    {
+      "id": "ui-pending",
+      "contract": "Existing undefined-reference loading and issue-based button readiness; no React page changes.",
+      "evidence": "independent static source review; tests are recorded separately",
+      "files": [
+        {
+          "path": "src/billing/ui/use-image-cost-hint.ts",
+          "sha256Normalized": "04e13e4f5f6034af521e9d97ca34d5b62196083c37dd88cd55db37744b89c161",
+          "unchanged": true
+        },
+        {
+          "path": "src/cast/ui/talent/character-detail-view.tsx",
+          "sha256Normalized": "7d9fb90aba6fd423113b17757c3553ca632ba20cd21ceb1425c58442190a0e30",
+          "unchanged": true
+        },
+        {
+          "path": "src/cast/ui/locations/location-detail-view.tsx",
+          "sha256Normalized": "e4cf04ee9ec2897557a63b575cb5f5cc717292e7b5d924294ff56d3ae821d4fe",
+          "unchanged": true
+        },
+        {
+          "path": "src/shots/ui/scene-script-prompts.tsx",
+          "sha256Normalized": "7cbcfc820424ff657538904473c8d1b5b7d4809090d313e1a4c4717b1e54bfff",
+          "unchanged": true
+        },
+        {
+          "path": "src/cast/ui/talent/character-sheet-cost.ts",
+          "sha256Normalized": "337c3d24e1a23b5c542175deb5325ee86322c0624bc11b57d0392502a4656b7d",
+          "unchanged": true
+        },
+        {
+          "path": "src/shots/image-reference-count.ts",
+          "sha256Normalized": "ef0b4ed02aa10776bdeb2ec5b4b5e19db6e0a63daea6b79ed30bf13cbb0ec288",
+          "unchanged": true
+        },
+        {
+          "path": "src/billing/ui/action-cost.tsx",
+          "sha256Normalized": "f342069e8cb5f824e310bee39369b0a0eb70792e1a1de3b0e44ecf8c663a1c63",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "id": "catalog-studio",
+      "contract": "Catalog probing may omit reference count; Studio keeps edit-only guidance, mask URL checks and issue priority.",
+      "evidence": "independent static source review; tests are recorded separately",
+      "files": [
+        {
+          "path": "src/models/image-model-catalog.ts",
+          "sha256Normalized": "bcab5a9a78e616bbb10fad0ec4bbb1141acfb4ff0a8fc3ca674f83bd6faa0810",
+          "unchanged": true
+        },
+        {
+          "path": "src/models/image-channels.ts",
+          "sha256Normalized": "6779a9cf54afd1abe24beb3245796a272cf0eaf91a36ef143c45bfc0e137ca35",
+          "unchanged": true
+        },
+        {
+          "path": "src/studio/ui/configured-image-settings.ts",
+          "sha256Normalized": "a162133918ff7d942f1e68d51be6271d7d4871a76fa2d07762626385a5e08d32",
+          "unchanged": true
+        },
+        {
+          "path": "src/studio/ui/use-configured-image-controls.ts",
+          "sha256Normalized": "62133e4ad5ba297dae9381e57e18c1a0bbf4d8dc9f2e9ebd3916cb0d9f88b136",
+          "unchanged": true
+        },
+        {
+          "path": "src/studio/server/studio-image-capabilities.ts",
+          "sha256Normalized": "e63ed47e4febc8daa1f9f36196c939b2905ee1f074cf55329cfa8744c9d4c04d",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "id": "server-quote",
+      "contract": "Explicit operation, actual references, parameter ordering, USD prices and existing reservation/dispatch wrappers retained.",
+      "evidence": "independent static source review; tests are recorded separately",
+      "files": [
+        {
+          "path": "src/billing/server/configured-image-billing.ts",
+          "sha256Normalized": "6da2490c2b691b37ffbb86c039e3e2723f9b71236db3ebd074509189a145e628",
+          "unchanged": true
+        },
+        {
+          "path": "src/billing/cost-estimation.ts",
+          "sha256Normalized": "169cc0f27aa3acf1da7a8e23d19c91c579902c355db827d6077ab22486b425d1",
+          "unchanged": true
+        },
+        {
+          "path": "src/billing/configured-image-plan-billing.ts",
+          "sha256Normalized": "5a10e1722fb8d44b47723272bd857428bdfcc2816294441276b7d004da8b122d",
+          "unchanged": true
+        },
+        {
+          "path": "src/stills/server/configured-image-generation.ts",
+          "sha256Normalized": "5a7097bf53a58b9602c997226948b8236ba35918d29ffa749f532c6e0099d315",
+          "unchanged": true
+        },
+        {
+          "path": "src/cast/server/cast-generation.ts",
+          "sha256Normalized": "43023cb7b3c64ba24796981d748b983933e8fa7166f845998de2f21e671ba884",
+          "unchanged": true
+        },
+        {
+          "path": "src/studio/server/create-studio-asset.ts",
+          "sha256Normalized": "3a943801990b4477f3e06aa1bde88056604fa99a391397465cf3dfac37d914af",
+          "unchanged": true
+        },
+        {
+          "path": "src/shots/server/shot-image-input.ts",
+          "sha256Normalized": "ea558d496f331fd4ca74a8f36392d24e1e72bf2382ff2246a59dc04a971df906",
+          "unchanged": true
+        },
+        {
+          "path": "src/stills/server/shot-image-generation.ts",
+          "sha256Normalized": "9b4f89dc8192b690886a59456604f72765d06cf972109856e576217e9bd87031",
+          "unchanged": true
+        },
+        {
+          "path": "src/sequences/server/sequence-models.ts",
+          "sha256Normalized": "f28a97f8c7b0bcec2c6168d395fe6a9d0d9d7f0c5bd23ea13c1bb259a59f6c56",
+          "unchanged": true
+        },
+        {
+          "path": "src/sequences/server/smart-retry.ts",
+          "sha256Normalized": "ad11b8e009d924c7b3106959f756ad7b831a039cc464e7605583d29ad4cd2745",
+          "unchanged": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "MC-B01",
+  "responsibilityId": "MC-09",
+  "status": "completed",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "9ee843cbb5128704c577c3e4690640aeb3ca3f31",
+  "sourceAfter": "d5dfe869d15942567495253348ea0aa61e480d13",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": {
+    "production": [
+      "src/models/image-operation-capabilities.ts",
+      "src/billing/configured-image-billing.ts",
+      "src/billing/image-cost-hint.ts"
+    ],
+    "tests": ["src/models/image-operation-capabilities.test.ts"],
+    "documentation": ["docs/architecture/model-configuration.md"],
+    "newSourcePaths": [
+      "src/models/image-operation-capabilities.ts",
+      "src/models/image-operation-capabilities.test.ts"
+    ],
+    "existingUpstreamPathsChanged": []
+  },
+  "structuralResult": {
+    "completeAcceptancePredicatesBefore": 2,
+    "completeAcceptancePredicatesAfter": 1,
+    "consumerWrappersRetained": 2,
+    "upstreamModifiedPathReduction": 0,
+    "conflictReductionClaim": false,
+    "note": "The touched billing modules are secondary-development additions at upstreamBase. This batch consolidates ownership; it does not prove fewer merge conflicts."
+  },
+  "inputContract": {
+    "binding": "status/minReferenceImages/maxReferenceImages/mask; upstreamModel, secret, identity, parameters and price not required",
+    "referenceCount": "required number in the helper; wrappers keep their previous ?? 0 and UI pending behavior",
+    "operation": "supplied by the caller; helper never infers it",
+    "failurePriority": ["operation", "references", "mask"]
+  },
+  "preservation": {
+    "preservedFunctions": [
+      {
+        "path": "src/billing/configured-image-billing.ts",
+        "name": "requireReferenceCapability",
+        "unchanged": false
+      },
+      {
+        "path": "src/billing/configured-image-billing.ts",
+        "name": "checkedImageMicros",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/configured-image-billing.ts",
+        "name": "quoteConfiguredImageRequest",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/configured-image-billing.ts",
+        "name": "estimateConfiguredImageCost",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/configured-image-billing.ts",
+        "name": "configuredImageSource",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/image-cost-hint.ts",
+        "name": "configuredOperationAvailable",
+        "unchanged": false
+      },
+      {
+        "path": "src/billing/image-cost-hint.ts",
+        "name": "configuredImageCost",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/image-cost-hint.ts",
+        "name": "quotedImageMicros",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/image-cost-hint.ts",
+        "name": "configuredImageHint",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/image-cost-hint.ts",
+        "name": "imageCostHint",
+        "unchanged": true
+      }
+    ],
+    "assertionTrace": [
+      {
+        "path": "src/billing/configured-image-billing.test.ts",
+        "assertions": 36,
+        "matcherDigest": "694567840815649d59c0150c29148c9352820b78a76de6bb94c70f06831d0166",
+        "afterAssertions": 36,
+        "afterMatcherDigest": "694567840815649d59c0150c29148c9352820b78a76de6bb94c70f06831d0166",
+        "unchanged": true,
+        "fileUnchanged": true
+      },
+      {
+        "path": "src/billing/image-cost-hint.test.ts",
+        "assertions": 29,
+        "matcherDigest": "3bd7ddfc35258c45800a6d57fa53bb4ded2810d25ece80422e1c1b4de03717e8",
+        "afterAssertions": 29,
+        "afterMatcherDigest": "3bd7ddfc35258c45800a6d57fa53bb4ded2810d25ece80422e1c1b4de03717e8",
+        "unchanged": true,
+        "fileUnchanged": true
+      }
+    ]
+  },
+  "quality": [
+    {
+      "path": "src/models/image-operation-capabilities.ts",
+      "lines": 40,
+      "functions": [
+        {
+          "name": "imageOperationIssue",
+          "line": 14,
+          "lines": 27,
+          "cyclomaticComplexity": 9,
+          "maxControlNesting": 1
+        }
+      ]
+    },
+    {
+      "path": "src/models/image-operation-capabilities.test.ts",
+      "lines": 218,
+      "functions": [
+        {
+          "name": "snapshotFor",
+          "line": 153,
+          "lines": 13,
+          "cyclomaticComplexity": 6,
+          "maxControlNesting": 3
+        },
+        {
+          "name": "callback",
+          "line": 167,
+          "lines": 31,
+          "cyclomaticComplexity": 1,
+          "maxControlNesting": 0
+        },
+        {
+          "name": "callback",
+          "line": 168,
+          "lines": 29,
+          "cyclomaticComplexity": 3,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "callback",
+          "line": 178,
+          "lines": 6,
+          "cyclomaticComplexity": 2,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "callback",
+          "line": 199,
+          "lines": 20,
+          "cyclomaticComplexity": 2,
+          "maxControlNesting": 1
+        }
+      ]
+    },
+    {
+      "path": "src/billing/configured-image-billing.ts",
+      "lines": 128,
+      "functions": [
+        {
+          "name": "requireReferenceCapability",
+          "line": 42,
+          "lines": 12,
+          "cyclomaticComplexity": 3,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "checkedImageMicros",
+          "line": 55,
+          "lines": 8,
+          "cyclomaticComplexity": 5,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "quoteConfiguredImageRequest",
+          "line": 64,
+          "lines": 36,
+          "cyclomaticComplexity": 6,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "estimateConfiguredImageCost",
+          "line": 101,
+          "lines": 19,
+          "cyclomaticComplexity": 4,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "configuredImageSource",
+          "line": 121,
+          "lines": 8,
+          "cyclomaticComplexity": 2,
+          "maxControlNesting": 1
+        }
+      ]
+    },
+    {
+      "path": "src/billing/image-cost-hint.ts",
+      "lines": 145,
+      "functions": [
+        {
+          "name": "configuredOperationAvailable",
+          "line": 35,
+          "lines": 15,
+          "cyclomaticComplexity": 3,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "configuredImageCost",
+          "line": 51,
+          "lines": 32,
+          "cyclomaticComplexity": 9,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "quotedImageMicros",
+          "line": 84,
+          "lines": 6,
+          "cyclomaticComplexity": 5,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "configuredImageHint",
+          "line": 91,
+          "lines": 18,
+          "cyclomaticComplexity": 3,
+          "maxControlNesting": 1
+        },
+        {
+          "name": "imageCostHint",
+          "line": 110,
+          "lines": 36,
+          "cyclomaticComplexity": 9,
+          "maxControlNesting": 2
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "before": {
+      "files": 3,
+      "tests": 51,
+      "includesNewCharacterization": true
+    },
+    "integration": {
+      "files": 15,
+      "tests": 200,
+      "primary": {
+        "files": 10,
+        "tests": 144
+      },
+      "consumers": {
+        "files": 5,
+        "tests": 56
+      }
+    },
+    "finalTestGroupingRerun": {
+      "files": 1,
+      "tests": 26,
+      "assertionsUnchanged": true
+    },
+    "typecheck": "passed",
+    "lint": {
+      "status": "passed",
+      "warnings": 146,
+      "warningsInBatch": 0
+    },
+    "format": {
+      "status": "passed",
+      "files": 5,
+      "fullRepository": false
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed",
+      "deployment": false
+    },
+    "commitHooks": {
+      "status": "passed",
+      "elapsedSeconds": 102.12,
+      "checks": [
+        "client-server-boundary: 17 tests",
+        "dead-code",
+        "format: 5 files",
+        "lint",
+        "typecheck"
+      ],
+      "bypassed": []
+    },
+    "independentReview": "read-only downstream source review; no blocking contract issue"
+  },
+  "consumerContracts": "consumer-contracts.json",
+  "temporaryLogHashes": {
+    "before-tests.log": "4fd41abbc341583f0c28f8eff12f70e5c4b4834c2baa5055d52e943371e82056",
+    "integration-tests.log": "062761232d681aec61e79f2d96ea0cb21e6d684c807548ae70ebdcee2a8c3138",
+    "consumer-tests.log": "e4e1f642548d842e433a38bbc734f7a3b3efc7828fb311b90fc7d37b06291422",
+    "final-boundary-tests.log": "394dec84b31708d8332bd81d7f6bddf6dd3a16f24d1e359704f0568419704668",
+    "typecheck.log": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3",
+    "lint.log": "8dbc978ad4b486281ba395cd797f04435f2af1a080535a0785da8ba2ad59d5ed",
+    "build.log": "03ba6daf2973cc005103f6214d60423ea0830fd8688b9ffd58f1411da51c5c48",
+    "code-commit.log": "1dd53e4bc85f5123e6a98272b5180ebd4bd60fe3435020b2a091bf6986296bbe"
+  },
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "modified": false,
+    "originalInventoryApproved": false
+  },
+  "protectedWorkingFiles": [
+    {
+      "path": ".codex/project-rules.md",
+      "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4"
+    }
+  ],
+  "notValidated": [
+    "browser/end-to-end acceptance",
+    "real supplier calls",
+    "Cloudflare Workflows engine replay",
+    "remote databases or deployment",
+    "arbitrary future upstream merge conflicts"
+  ],
+  "openItems": [
+    "MC-09 whole responsibility is not semantically closed by this structural batch.",
+    "G07-callers inherited risks and incomplete orchestration tests remain open.",
+    "G09-ownership-verify still depends on G03-verify.",
+    "CONTINUE-LLM-SOURCE remains deferred by the user."
+  ],
+  "nextImplementation": ["MC-B02"],
+  "noRemoteWrites": true,
+  "pushed": false
+}
