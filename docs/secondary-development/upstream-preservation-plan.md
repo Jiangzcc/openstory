@@ -1,6 +1,6 @@
 # 上游业务保留与二开长期维护计划
 
-版本日期：2026-11-10。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
+版本日期：2026-11-10。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成，G07-callers 已复核并记录开放风险；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
 
 本计划覆盖已经发生的二开、历史合入、当前缺口，以及后续新功能和上游更新。目标是尽可能保留上游业务逻辑和实现，在可解释、可验证的少量接入点上二开，降低持续升级成本。
 
@@ -153,7 +153,9 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-10 完成 `G07-partition`：before 为 `4b6788db7da445abfca26d413ddec47a36be4e0b`，代码提交为 `ecd0a77f787f4d0b38ab3d25da85a7ea86173882`。[批次记录](preservation/20261110-p3-g07-partition/README.md) 和 [机器证据](preservation/20261110-p3-g07-partition/implementation.json) 固定本批范围。Continue/fresh 的图片小计选择与四类 counts 排除从两处收敛到既有 billing 模块一处，原配置快照、生成和资金控制流保持。原 6 文件的 159 处 matcher 断言全部保留；最终集成 12 文件、135 项通过，typecheck、lint、dead-code、构建及正常提交钩子通过。本批 7 文件格式通过，全仓格式没有在本轮重跑。新增测试的类型、金额预期和网络 spy 作用域问题及修复后的复跑关系写入记录。
 
-**P3 整体仍进行中。** `G07-callers` 与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责均未关闭；1,219 项冻结 inventory 不作整文件或目录的批量语义批准。本批两个新增测试路径归入 GC-07，G09 的新增路径仍归 GC-09。用户暂缓项保持，P4 未开始。下一批按既定依赖执行 `G07-callers`，复核各入口、digest/partial/hold 及现有父子模型快照契约。
+同日完成 `G07-callers` 的 18 项入口矩阵复核与本轮补测，状态为 `reviewed-with-open-risks`，尚不标全面验收完成。before 为 `02b57a441646d2c165251c1d602fd129967aa2f6`，测试及功能文档提交为 `f23d1b320c7d32def4d0fb21bcfb4278dd9e08e6`。相关生产源码没有改动；原 66 处 matcher 断言全部保留并增加 3 处，跨入口 18 文件、249 项通过，正常提交钩子通过。[批次记录](preservation/20261110-p3-g07-callers/README.md)、[入口矩阵](preservation/20261110-p3-g07-callers/caller-matrix.json) 逐行标明真实内存 D1、mock、helper 与源码证据。三类原上游继承风险——音乐 claim 异常的新 hold 清理、motion 时长估价、引用路由估价——有 B/当前 AST 对照，仍未修复，详见 [开放风险](preservation/20261110-p3-g07-callers/inherited-risks.json)。
+
+**P3 整体仍进行中。** `G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责均未关闭；1,219 项冻结 inventory 不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。独立后续实施候选为 `MC-B01`；G09-ownership-verify 仍按其 G03 前置推进。
 
 ## 6. 未来新增二开的接入流程
 

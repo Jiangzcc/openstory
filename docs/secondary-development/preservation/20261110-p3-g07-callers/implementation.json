@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "G07-callers",
+  "responsibilityId": "GC-07",
+  "status": "reviewed-with-open-risks",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "02b57a441646d2c165251c1d602fd129967aa2f6",
+  "sourceAfter": "f23d1b320c7d32def4d0fb21bcfb4278dd9e08e6",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "dependencyReview": {
+    "G07Partition": "ecd0a77f787f4d0b38ab3d25da85a7ea86173882",
+    "modelSnapshot": "existing trigger/client/base/codec/parent-child contract reviewed; G06 request-wide capture was not introduced"
+  },
+  "newSourcePaths": [],
+  "productionFilesChanged": [],
+  "productionFilesReviewed": [
+    {
+      "path": "src/billing/configured-image-plan-billing.ts",
+      "sha256Normalized": "5a10e1722fb8d44b47723272bd857428bdfcc2816294441276b7d004da8b122d",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/shots/server/update-stale-preview.ts",
+      "sha256Normalized": "c43fc2971bdd297bfc6ae01de10080ffab28a6f34eed8518e9e596bc6d1604d4",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/shots/server/update-stale-run.ts",
+      "sha256Normalized": "f42955827c8a3c99dd975858b92ddb3b4bb1f6e2ee1d35a2ac7ed8fde633d49f",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/shots/shots.fn.ts",
+      "sha256Normalized": "18cf9f52e254f7036d5ab185d4d956af682b94fa27362a814da0dad63c85e220",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/sequences/server/continue-plan.ts",
+      "sha256Normalized": "0240de97f2f2044bb16c4a59f7e2687fd1fccfe0ee3fe2490e0a0425365a86dd",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/sequences/server/freeze-fresh-generation-plan.ts",
+      "sha256Normalized": "e51f6122b73b763e9d4b5fbe722654b16981811997aa5e1676146ae28c74c099",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/sequences/server/generation-operations.ts",
+      "sha256Normalized": "e020c83a871540eff56f1cc0017dd84d3a35a3d596bd23acba20455bfc724a3a",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/sequences/server/smart-retry.ts",
+      "sha256Normalized": "ad11b8e009d924c7b3106959f756ad7b831a039cc464e7605583d29ad4cd2745",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/sequences/server/sequence-models.ts",
+      "sha256Normalized": "f28a97f8c7b0bcec2c6168d395fe6a9d0d9d7f0c5bd23ea13c1bb259a59f6c56",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/sequences/sequences.fn.ts",
+      "sha256Normalized": "a5fc69236bb6def5a7518c50bc6f693d942831630cb7ec893986487d34ec1bf4",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/sequences/server/launchers.ts",
+      "sha256Normalized": "e2cf8319514b040d01fc4b4009f97b82d65f6edba68bac24e0d106d21c12f43e",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-workflow.ts",
+      "sha256Normalized": "1f2d61c04ea961ab68a5314ea699effaac3b96828dd1ad05bfafa1b34d2bbc3a",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/shots/server/workflows/update-stale-shots-workflow.ts",
+      "sha256Normalized": "e2386c9ef63d2877ec0093e3ced38b0a7f68899c953cdad02fba43ca715b8cc7",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/platform/server/workflow/client.ts",
+      "sha256Normalized": "106b01eeaabe332ce9b03ae3f8eb50d437451c2337001e9d8daf57c793871ce3",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/platform/server/workflow/base-workflow.ts",
+      "sha256Normalized": "cb1cbeddb9ac83b5374f191ad12dfdb6ae7e9de3b012663c1ece2b64169cba56",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/models/model-runtime-configuration.ts",
+      "sha256Normalized": "1de799436fcc3bda9b34b7db1d818c8ee0e801878c8116f63793d4042795d12a",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/models/workflow-image-model-routing.ts",
+      "sha256Normalized": "6ceea532e475b56775525f815ff4cfc7a93995d4dd281b419b6d38a1ae56444d",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/billing/server/preflight.ts",
+      "sha256Normalized": "880dc5496c3d6f19d3d0422e83bae30fc54cdbed5866fa821024ae317f60a863",
+      "unchangedFromBefore": true
+    },
+    {
+      "path": "src/billing/server/db/billing.ts",
+      "sha256Normalized": "9256b156d23d680684145d69ba77c20333a2113d38f7ad30cf551c260d1f5392",
+      "unchangedFromBefore": true
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "docs/architecture/generation-plan.md",
+      "sha256Normalized": "1e96ca60a0680428feab81251d8dcb55d31d69ae586504fb6fcb89b0b0e917ce"
+    },
+    {
+      "path": "src/sequences/server/generation-operations.test.ts",
+      "sha256Normalized": "66ae3bd40c86e79ce362dfa726b202d5d2d791cbe9e2a4adfb30e48eef69b02e"
+    }
+  ],
+  "changes": [
+    "Strengthened an existing Continue plan/execute case with unknown display price, numeric platform gate and two balance checks.",
+    "Corrected two outdated generation-plan documentation statements about the Update all start floor and stable-replay hold ownership."
+  ],
+  "callerMatrix": "caller-matrix.json",
+  "inheritedRisks": "inherited-risks.json",
+  "assertionTrace": {
+    "path": "src/sequences/server/generation-operations.test.ts",
+    "beforeAssertions": 66,
+    "afterAssertions": 69,
+    "missingOriginalAssertions": 0,
+    "method": "Babel matcher-call AST multiset without source positions/comments",
+    "beforeMatcherDigest": "8062dee173587703704a5560fcc30e17d8848e73c18032ac577a8895544f4143",
+    "afterMatcherDigest": "2e78ee8d10fdbb3b56aea6fa517712f60a73a959e962fedafe37f16c890746c9",
+    "ordinaryContinueScenario": "Other switch/launch cases retain the default priced estimate; this case also preserves the original launch and mutex assertions."
+  },
+  "quality": {
+    "testFileLines": 781,
+    "modifiedTestCallbackLines": 36,
+    "noNewProductionFunctions": true,
+    "noNewProductionImports": true
+  },
+  "verification": {
+    "core": {
+      "files": 4,
+      "tests": 36,
+      "status": "passed"
+    },
+    "integration": {
+      "files": 18,
+      "tests": 249,
+      "status": "passed",
+      "command": "vitest run src/sequences/server/generation-operations.test.ts src/shots/server/update-stale-run.test.ts src/shots/server/update-stale-preview.test.ts src/billing/configured-image-resolution-paths.test.ts src/sequences/server/smart-retry-billing.test.ts src/sequences/smart-retry.test.ts src/sequences/server/add-image-model.test.ts src/sequences/add-audio-model.test.ts src/sequences/sequences.fn.test.ts src/audio/server/db/sequence-variants.test.ts src/shots/server/workflows/update-stale-plan-run.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts src/platform/server/workflow/client.test.ts src/platform/server/workflow/base-workflow.test.ts src/models/workflow-image-model-routing.test.ts src/sequences/server/launchers.test.ts src/billing/server/preflight-routing.test.ts src/sequences/server/continue-plan-estimate.test.ts"
+    },
+    "diagnostic": {
+      "files": 1,
+      "tests": 4,
+      "status": "passed",
+      "kind": "isolated inherited-state characterization; not desired-behavior regression coverage"
+    },
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "format": {
+      "files": 2,
+      "status": "passed"
+    },
+    "commitHooks": {
+      "status": "passed",
+      "elapsedSeconds": 173.39,
+      "checks": [
+        "client-server-boundary: 17 tests",
+        "dead-code",
+        "format: 2 files",
+        "lint: staged test",
+        "typecheck"
+      ],
+      "bypassed": []
+    },
+    "build": {
+      "freshRun": false,
+      "reusedEvidence": "G07-partition production build passed. This batch changes only a test and documentation; runtime source fingerprints and protected worktree hashes remain unchanged."
+    },
+    "independentReview": "smart-retry and sequence-models were independently source-reviewed; main reviewed Update all, plan/execute/status and snapshot boundaries"
+  },
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "modified": false,
+    "originalInventoryApproved": false
+  },
+  "protectedWorkingFiles": [
+    {
+      "path": ".codex/project-rules.md",
+      "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4"
+    }
+  ],
+  "openItems": [
+    "Three inherited risks remain unremediated; their correction would change upstream behavior.",
+    "Add-video pricing/reserve/dispatch was source-reviewed with helper tests, not an orchestration integration test.",
+    "Set image/video were source-reviewed only.",
+    "CONTINUE-LLM-SOURCE remains deferred.",
+    "G07-callers and GC-07 are not marked fully accepted or closed."
+  ],
+  "notValidated": [
+    "real providers or paid calls",
+    "Cloudflare Workflows engine replay",
+    "browser/end-to-end acceptance",
+    "real-D1 claim-rejection failure injection",
+    "remote databases or deployment"
+  ],
+  "nextImplementation": ["MC-B01"],
+  "noRemoteWrites": true,
+  "pushed": false
+}

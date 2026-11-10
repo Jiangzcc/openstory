@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "G07-callers",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "sourceBefore": "02b57a441646d2c165251c1d602fd129967aa2f6",
+  "status": "inherited-open-not-remediated",
+  "scopeRule": "The current task preserves behavior during structural work; changing these inherited behaviors requires a separate corrective change. They are not classified as regressions introduced by G07-partition.",
+  "sourceComparison": {
+    "method": "SHA-256 of Babel call AST without source positions/comments, plus enclosing try-statement count; caller control flow and dispatch fields were inspected separately.",
+    "results": [
+      {
+        "path": "src/sequences/server/smart-retry.ts",
+        "operation": "claimMusic",
+        "upstream": [
+          {
+            "line": 715,
+            "endLine": 724,
+            "astHash": "a5ef780671d663395de97377592b7b41ef5eee226ee9f6a2660d323db02ae46b",
+            "enclosingTryCount": 0
+          }
+        ],
+        "current": [
+          {
+            "line": 806,
+            "endLine": 815,
+            "astHash": "a5ef780671d663395de97377592b7b41ef5eee226ee9f6a2660d323db02ae46b",
+            "enclosingTryCount": 0
+          }
+        ],
+        "expressionsUnchanged": true
+      },
+      {
+        "path": "src/sequences/server/smart-retry.ts",
+        "operation": "estimateVideoCost",
+        "upstream": [
+          {
+            "line": 608,
+            "endLine": 612,
+            "astHash": "1091dad48be2933cac94d95040952dfb83465ef4caee150d07d1425911102ee1",
+            "enclosingTryCount": 0
+          }
+        ],
+        "current": [
+          {
+            "line": 694,
+            "endLine": 698,
+            "astHash": "1091dad48be2933cac94d95040952dfb83465ef4caee150d07d1425911102ee1",
+            "enclosingTryCount": 0
+          }
+        ],
+        "expressionsUnchanged": true
+      },
+      {
+        "path": "src/sequences/server/sequence-models.ts",
+        "operation": "claimMusic",
+        "upstream": [
+          {
+            "line": 228,
+            "endLine": 236,
+            "astHash": "cb533860c40e80a4d8f2db72699d44d7042149f296632000e8f5ebd9c0367506",
+            "enclosingTryCount": 0
+          }
+        ],
+        "current": [
+          {
+            "line": 242,
+            "endLine": 250,
+            "astHash": "cb533860c40e80a4d8f2db72699d44d7042149f296632000e8f5ebd9c0367506",
+            "enclosingTryCount": 0
+          }
+        ],
+        "expressionsUnchanged": true
+      },
+      {
+        "path": "src/sequences/server/sequence-models.ts",
+        "operation": "estimateVideoCost",
+        "upstream": [
+          {
+            "line": 521,
+            "endLine": 531,
+            "astHash": "0f5ca7d440bc9e873affe0e596fb72480fb7f49c9b1bb6f663ba145b3667dbd9",
+            "enclosingTryCount": 0
+          }
+        ],
+        "current": [
+          {
+            "line": 540,
+            "endLine": 550,
+            "astHash": "0f5ca7d440bc9e873affe0e596fb72480fb7f49c9b1bb6f663ba145b3667dbd9",
+            "enclosingTryCount": 0
+          }
+        ],
+        "expressionsUnchanged": true
+      }
+    ]
+  },
+  "risks": [
+    {
+      "id": "INHERITED-MUSIC-CLAIM-CLEANUP",
+      "priority": 2,
+      "status": "source-confirmed-open",
+      "paths": [
+        "src/sequences/server/sequence-models.ts:223-251",
+        "src/sequences/server/smart-retry.ts:793-815"
+      ],
+      "upstreamPaths": [
+        "src/sequences/server/sequence-models.ts:210-237",
+        "src/sequences/server/smart-retry.ts:699-724"
+      ],
+      "trigger": "A positive reservation succeeds and claimMusic rejects before a workflow starts. Add-audio also throws on a null claim outside the cleanup wrapper.",
+      "observedContract": "Both claim calls are outside the later trigger cleanup; the created hold has no explicit cleanup on this exceptional path.",
+      "validation": "Source and AST comparison only. Existing tests cover a null primary CAS result and trigger failures; a real-D1 claim-rejection reproduction was not added or run.",
+      "impact": "The new hold may remain reserved after the caller fails. Eventual expiration/reconciliation behavior was not verified; no claim of permanent balance loss.",
+      "proposedSeparateFix": "Guard the new-hold interval from claim through dispatch, cleaning only a hold this call owns. Keep callbacks after successful dispatch outside pre-dispatch cleanup; test rejection, null claim and already-started cases."
+    },
+    {
+      "id": "INHERITED-MOTION-DURATION-ESTIMATE",
+      "priority": 2,
+      "status": "source-confirmed-with-isolated-price-probe",
+      "paths": [
+        "src/sequences/server/smart-retry.ts:694-698",
+        "src/sequences/server/smart-retry.ts:724",
+        "src/sequences/server/sequence-models.ts:518-550",
+        "src/motion/server/motion-generation.ts:1060"
+      ],
+      "upstreamPaths": [
+        "src/sequences/server/smart-retry.ts:608-612",
+        "src/sequences/server/sequence-models.ts:521-531"
+      ],
+      "trigger": "A long shot exceeds the default/minimum quoted duration and no longer seedance edit duration raises the quote.",
+      "observedContract": "Smart estimates a model-default duration; add-video estimates 5 seconds. Payloads retain shot duration, and motion execution snaps that duration.",
+      "syntheticProbe": {
+        "model": "seedance_v2_5",
+        "resolution": "720p",
+        "unitPriceMicrosPer1000Tokens": 1000,
+        "smartDefaultSeconds": 4,
+        "addVideoEstimateSeconds": 5,
+        "shotSeconds": 10,
+        "smartEstimatedMicros": 90720,
+        "addVideoEstimatedMicros": 113400,
+        "sameRouteTenSecondEstimateMicros": 226800
+      },
+      "validation": "Four isolated pure-estimator probes cover the duration and reference cases. This does not execute the two orchestration functions or an actual supplier bill.",
+      "proposedSeparateFix": "Compare the same resolved/snap duration used by dispatch, including edit lower bounds, draft semantics and dialogue costs; keep per-item and batch hold ownership unchanged."
+    },
+    {
+      "id": "INHERITED-MOTION-REFERENCE-ROUTE",
+      "priority": 2,
+      "status": "source-confirmed-with-isolated-price-probe",
+      "paths": [
+        "src/sequences/server/smart-retry.ts:694-698",
+        "src/sequences/server/sequence-models.ts:466-480",
+        "src/sequences/server/sequence-models.ts:540-550"
+      ],
+      "upstreamPaths": [
+        "src/sequences/server/smart-retry.ts:608-612",
+        "src/sequences/server/sequence-models.ts:521-531"
+      ],
+      "trigger": "A start-frame smart retry includes real references, or add-video has a location-only reference-only shot.",
+      "observedContract": "Smart omits hasReferenceImages; add-video derives it from characters/elements but not location references. Dispatched request references can select a different endpoint.",
+      "syntheticProbe": {
+        "model": "seedance_v2_5",
+        "resolution": "720p",
+        "seconds": 5,
+        "assumedNoReferenceMicros": 113400,
+        "actualReferenceRouteMicros": 226800,
+        "rates": "Synthetic i2v/t2v 1000 versus r2v 2000 microdollars per 1000 tokens."
+      },
+      "validation": "Pure estimateVideoCost probes with referenceOnly=false and true; no provider calls or claim that every provider routes or prices the same way.",
+      "proposedSeparateFix": "Project endpoint-affecting references from the actual per-shot motion request before pricing, while retaining route refusals, snapshot shape, claims and reservation boundaries."
+    }
+  ],
+  "diagnostic": {
+    "initialRun": "3 cases, 1 failed: the probe assumed a 5s smart default; the actual Seedance 2.5 duration grid starts at 4s. Corrected the diagnostic oracle from snap-duration/model-capability definitions; production code unchanged.",
+    "finalRun": {
+      "command": "bun run test --config .tmp/p3-plan-callers-20261110/inherited-risk.vitest.config.ts",
+      "files": 1,
+      "tests": 4,
+      "status": "passed",
+      "configWarning": "The temporary config import omits the .ts extension; a future Vite native-loader warning was emitted."
+    },
+    "source": "import { expect, it } from 'vitest';\nimport { estimateVideoCost } from '@/billing/cost-estimation';\nimport { micros } from '@/billing/money';\nimport { snapDuration } from '@/motion/snap-duration';\n\n// Synthetic rates characterize inherited pricing differences without any provider or database calls.\nconst model = 'seedance_v2_5';\nconst pricing = {\n  'bytedance/seedance-2.5/image-to-video': { unitPrice: micros(1000), unit: '1000 tokens' },\n  'bytedance/seedance-2.5/text-to-video': { unitPrice: micros(1000), unit: '1000 tokens' },\n  'bytedance/seedance-2.5/reference-to-video': { unitPrice: micros(2000), unit: '1000 tokens' },\n};\nit.each([\n  { name: 'smart model minimum', quoteDuration: snapDuration(undefined, model), expectedDuration: 4, expectedCost: 90720 },\n  { name: 'add-video fixed duration', quoteDuration: 5, expectedDuration: 5, expectedCost: 113400 },\n])('characterizes $name versus a 10s-shot', ({ quoteDuration, expectedDuration, expectedCost }) => {\n  const executionDuration = snapDuration(10, model);\n  expect([quoteDuration, executionDuration]).toEqual([expectedDuration, 10]);\n  const opts = { pricing, resolution: '720p', hasReferenceImages: false } as const;\n  expect(estimateVideoCost(model, quoteDuration, opts)).toBe(expectedCost);\n  expect(estimateVideoCost(model, executionDuration, opts)).toBe(226800);\n});\nit.each([false, true])('characterizes omitted references with referenceOnly=%s', (referenceOnly) => {\n  const opts = { pricing, resolution: '720p', referenceOnly } as const;\n  expect(estimateVideoCost(model, 5, { ...opts, hasReferenceImages: false })).toBe(113400);\n  expect(estimateVideoCost(model, 5, { ...opts, hasReferenceImages: true })).toBe(226800);\n});\n",
+    "configuration": "import base from '../../vitest.config';\nexport default { ...base, test: { ...base.test, include: ['.tmp/p3-plan-callers-20261110/inherited-cost-probe.test.ts'] } };\n",
+    "intent": "Characterization evidence only; intentionally separate from desired-behavior production regression tests."
+  },
+  "deferredIssueUnchanged": "CONTINUE-LLM-SOURCE remains deferred by the user; these three inherited risks are separate.",
+  "sourceAfter": "f23d1b320c7d32def4d0fb21bcfb4278dd9e08e6"
+}

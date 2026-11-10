@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "G07-callers",
+  "sourceBefore": "02b57a441646d2c165251c1d602fd129967aa2f6",
+  "coverage": "Every named G07 caller branch is source-reviewed; tests listed per row describe existing evidence, not an end-to-end assertion for every orchestration path.",
+  "sharedResponsibility": "Continue and fresh alone use the whole-plan image count partition. Other callers already share lower-level image quote/estimate primitives, with different nullable-display, start-floor, per-item or batch reservation semantics.",
+  "dryRunCaveat": "No retry reservation, claim, dispatch or state reset in dry run; existing ensureAnchorFrames may still perform an idempotent repair.",
+  "snapshotCaveat": "The existing contract captures image/full preparation configuration where supplied; other direct operations capture at their trigger boundary. This batch does not introduce G06-style capture for the whole request.",
+  "rows": [
+    {
+      "id": "C01",
+      "entry": "Web Update all preview",
+      "owners": [
+        "src/shots/shots.fn.ts#getUpdateStalePreviewFn",
+        "src/shots/server/update-stale-preview.ts#buildUpdateStalePreview"
+      ],
+      "projection": "Nullable, per-depth display estimate; real reference counts and requested resolution.",
+      "configuration": "Loads one preview configuration; routing passed to planning and preview.",
+      "allocation": "No hold or dispatch.",
+      "tests": [
+        "src/shots/server/update-stale-preview.test.ts",
+        "src/billing/configured-image-resolution-paths.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C02",
+      "entry": "Web Update all launch",
+      "owners": [
+        "src/shots/shots.fn.ts#updateStaleShotsFn",
+        "src/shots/server/update-stale-run.ts#prepareUpdateStale",
+        "src/shots/server/update-stale-run.ts#launchUpdateStale"
+      ],
+      "projection": "Start floor is max(legacy sequence-model image floor, configured request max), not the nullable preview total.",
+      "configuration": "The prepared configuration is passed to launchUpdateStale and workflow options.",
+      "allocation": "Balance check only; existing claim/child preflight remains in the workflow.",
+      "tests": [
+        "src/shots/server/update-stale-run.test.ts",
+        "src/sequences/server/generation-operations.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C03",
+      "entry": "MCP stale plan and execute",
+      "owners": [
+        "src/sequences/server/generation-operations.ts#prepareGeneration",
+        "src/sequences/server/generation-operations.ts#executeGeneration"
+      ],
+      "projection": "Reuses Update all preview for display and the editor floor for credits; sequence/scene/shot scopes retained.",
+      "configuration": "Execute re-prepares; its one prepared configuration is passed to its launch.",
+      "allocation": "Digest comparison before credit check/launch; stable run key and no plan-level hold.",
+      "tests": ["src/sequences/server/generation-operations.test.ts"],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C04",
+      "entry": "Web Continue",
+      "owners": [
+        "src/sequences/sequences.fn.ts#continueGenerationFn",
+        "src/sequences/server/continue-plan.ts#prepareContinue"
+      ],
+      "projection": "Uses G07-partition subtotal plus remaining counts; priced=false does not erase the numeric gate.",
+      "configuration": "Captured configuration feeds planning, quote and triggerContinue.",
+      "allocation": "Balance check only; switch rollback on refused trigger retained.",
+      "tests": [
+        "src/sequences/server/continue-plan-estimate.test.ts",
+        "src/sequences/server/continue-plan.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C05",
+      "entry": "MCP missing plan and execute",
+      "owners": [
+        "src/sequences/server/generation-operations.ts#prepareGeneration",
+        "src/sequences/server/generation-operations.ts#executeGeneration"
+      ],
+      "projection": "Display null for unpriced Continue, numeric subtotal for credits; platform source uses providers=[].",
+      "configuration": "The execute-time prepared configuration accompanies triggerContinue.",
+      "allocation": "Mutex/PLAN_CHANGED and switch semantics retained; strengthened test asserts both plan and execute gates.",
+      "tests": [
+        "src/sequences/server/generation-operations.test.ts",
+        "src/sequences/server/continue-plan-billing.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C06",
+      "entry": "Retry full and full dry run",
+      "owners": [
+        "src/sequences/server/smart-retry.ts#executeSmartRetry",
+        "src/sequences/server/generation-operations.ts#prepareRetry"
+      ],
+      "projection": "Full storyboard preflight cost, with actual helper LLM credential sources; smartOnly refusal unchanged.",
+      "configuration": "Uses supplied captured configuration or loads one at this trusted boundary; forwards it to triggerStoryboard.",
+      "allocation": "Dry run holds/dispatches nothing; real full retries have independent holds and CAS storyboard launcher.",
+      "tests": [
+        "src/sequences/smart-retry.test.ts",
+        "src/sequences/server/smart-retry-billing.test.ts",
+        "src/sequences/server/launchers.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C07",
+      "entry": "Retry failed images",
+      "owners": ["src/sequences/server/smart-retry.ts#executeSmartRetry"],
+      "projection": "Per failed shot: configured actual-request quote, otherwise built-in estimate/floor; selected historical model and sequence resolution retained.",
+      "configuration": "Uses the supplied/loaded image configuration for quote and image dispatch.",
+      "allocation": "Each image owns its hold; stable replay or in-flight duplicate keeps the original hold, fresh failing triggers clean only new holds.",
+      "tests": [
+        "src/sequences/server/smart-retry-billing.test.ts",
+        "src/sequences/smart-retry.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C08",
+      "entry": "Retry failed motion",
+      "owners": ["src/sequences/server/smart-retry.ts#executeSmartRetry"],
+      "projection": "Per-shot video estimates plus one scene dialogue liability; legacy duration/reference estimates are separately recorded inherited risks.",
+      "configuration": "Payload snapshots prompts, shot models, duration, resolution, draft and dialogue; this direct trigger captures runtime configuration at the existing client boundary.",
+      "allocation": "One motion-batch hold and ownsReservation; prior launched images survive later failure.",
+      "tests": [
+        "src/sequences/smart-retry.test.ts",
+        "src/sequences/server/generation-operations.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C09",
+      "entry": "Retry failed music",
+      "owners": ["src/sequences/server/smart-retry.ts#executeSmartRetry"],
+      "projection": "One track estimate/floor at total shot duration; native music requires platform coverage.",
+      "configuration": "Prompt, tags, duration and music model on payload; runtime configuration captured by direct workflow client.",
+      "allocation": "Primary CAS claim; null result releases current hold; claim rejection cleanup remains an inherited open risk.",
+      "tests": [
+        "src/sequences/smart-retry.test.ts",
+        "src/audio/server/db/sequence-variants.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C10",
+      "entry": "Retry missing music prompt",
+      "owners": ["src/sequences/server/smart-retry.ts#executeSmartRetry"],
+      "projection": "Existing branch marks musicPrompt without adding an estimate or reserving credits.",
+      "configuration": "Scene summaries, analysis/music model and duration are snapshotted; runtime configuration captured at direct trigger.",
+      "allocation": "No music claim; keyed prompt trigger and normal partial-launch reporting retained.",
+      "tests": [
+        "src/sequences/smart-retry.test.ts",
+        "src/sequences/server/generation-operations.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C11",
+      "entry": "Add image model",
+      "owners": ["src/sequences/server/sequence-models.ts#addModelToSequence"],
+      "projection": "Build actual image inputs first; one configured quote per eligible input, otherwise built-in estimate/floor.",
+      "configuration": "One captured image configuration is reused for quotes and every image dispatch.",
+      "allocation": "Independent per-image holds; later insufficient credits returns partial success; trigger failure cleans only that image.",
+      "tests": [
+        "src/sequences/server/add-image-model.test.ts",
+        "src/sequences/sequences.fn.test.ts"
+      ],
+      "evidenceLevel": "source review and skipped/prompt input dispatch test; partial credit/trigger cleanup branches were source-reviewed, not independently executed"
+    },
+    {
+      "id": "C12",
+      "entry": "Add video model",
+      "owners": ["src/sequences/server/sequence-models.ts#addModelToSequence"],
+      "projection": "Eligible shots plus one TTS subtotal; duration/reference differences are inherited open risks.",
+      "configuration": "Requested model, per-shot prompts/refs/duration and sequence resolution on payload; runtime configuration captured by direct trigger.",
+      "allocation": "One alternate motion-batch hold; variantOnly=true; trigger failure releases that hold, no pre-opened video row.",
+      "tests": ["src/sequences/sequences.fn.test.ts"],
+      "evidenceLevel": "source review and helper-only duplicate/eligibility tests; no add-video pricing/reserve/dispatch integration test was found"
+    },
+    {
+      "id": "C13",
+      "entry": "Add audio model",
+      "owners": ["src/sequences/server/sequence-models.ts#addModelToSequence"],
+      "projection": "One track estimate at musicRequestDurationSeconds, with platform coverage for native music.",
+      "configuration": "Prompt/tags/model/duration on payload; runtime configuration captured by direct trigger.",
+      "allocation": "Alternate music row, isPrimary=false; trigger cleanup and failed-row cleanup retained; claim rejection cleanup is an inherited open risk.",
+      "tests": [
+        "src/sequences/add-audio-model.test.ts",
+        "src/audio/server/db/sequence-variants.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C14",
+      "entry": "Set image model",
+      "owners": ["src/sequences/server/sequence-models.ts#setSequenceModel"],
+      "projection": "No generation estimate; selects completed stored frame variants.",
+      "configuration": "Selects existing model artifacts, no new workflow snapshot.",
+      "allocation": "No reservation or dispatch.",
+      "tests": [],
+      "evidenceLevel": "source-only: no direct setter orchestration test was found in this review"
+    },
+    {
+      "id": "C15",
+      "entry": "Set video model",
+      "owners": ["src/sequences/server/sequence-models.ts#setSequenceModel"],
+      "projection": "No generation estimate; selects completed stored video manifests.",
+      "configuration": "Selects existing variants, preserving per-shot ownership checks.",
+      "allocation": "No reservation/dispatch; only a deleted-shot selection is ignored.",
+      "tests": [],
+      "evidenceLevel": "source-only: no direct setter orchestration test was found in this review"
+    },
+    {
+      "id": "C16",
+      "entry": "Operation partial launch and status",
+      "owners": [
+        "src/sequences/server/generation-operations.ts#executeGeneration",
+        "src/sequences/server/generation-operations.ts#getOperationStatus"
+      ],
+      "projection": "Estimate and digest stay separate from run status.",
+      "configuration": "Every launched run reports its actual id; per-run status does not use a sequence aggregate.",
+      "allocation": "LAUNCH_INCOMPLETE returns started ids; stable retry holds remain owned by started runs.",
+      "tests": [
+        "src/sequences/server/generation-operations.test.ts",
+        "src/sequences/server/smart-retry-billing.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C17",
+      "entry": "Request to queued workflow configuration",
+      "owners": [
+        "src/platform/server/workflow/client.ts#triggerWorkflowRun",
+        "src/platform/server/workflow/base-workflow.ts"
+      ],
+      "projection": "No change to quote or wallet shape.",
+      "configuration": "Supplied server configuration is packed once; otherwise existing client captures at trigger. Queued snapshots decode without reading live configuration.",
+      "allocation": "Existing enforcement, dedup reuse and failure hooks retained.",
+      "tests": [
+        "src/platform/server/workflow/client.test.ts",
+        "src/platform/server/workflow/base-workflow.test.ts",
+        "src/models/workflow-image-model-routing.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    },
+    {
+      "id": "C18",
+      "entry": "Storyboard and Update all parent to children",
+      "owners": [
+        "src/sequences/server/launchers.ts#triggerStoryboard",
+        "src/sequences/server/workflows/storyboard-workflow.ts",
+        "src/shots/server/workflows/update-stale-shots-workflow.ts"
+      ],
+      "projection": "Existing per-child and fresh reservation envelope boundaries remain.",
+      "configuration": "Children receive scopedDb.models; reference-wave results update only their existing snapshot projections.",
+      "allocation": "Original claims, reservations, dialogue batching and branch failures stay in their owners.",
+      "tests": [
+        "src/sequences/server/workflows/storyboard-workflow.test.ts",
+        "src/shots/server/workflows/update-stale-plan-run.test.ts"
+      ],
+      "evidenceLevel": "source review plus the named unit tests; providers/engine are mocked unless the individual test creates createTestDb"
+    }
+  ],
+  "sourceAfter": "f23d1b320c7d32def4d0fb21bcfb4278dd9e08e6"
+}
