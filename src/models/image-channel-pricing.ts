@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { imageUnitPriceFitsWallet } from '@/billing/configured-image-price-policy';
 import {
   IMAGE_PARAMETER_LIMITS,
   imageChannelParameterValuesSchema,
@@ -15,7 +16,6 @@ export const IMAGE_PRICE_LIMITS = {
   maximumUsd: 1_000_000,
   maximumMatchParameters: 16,
   currencyLength: 3,
-  microUsdPerUsd: 1_000_000,
 } as const;
 const priceSchema = z
   .number()
@@ -70,17 +70,6 @@ export const imageChannelPriceCardsSchema = z
     hasUniquePriceMatches,
     'Price cards must not duplicate an operation and parameter match.'
   );
-export function imageUnitPriceFitsWallet(unitPriceUsd: number): boolean {
-  const unitMicros = Math.round(
-    unitPriceUsd * IMAGE_PRICE_LIMITS.microUsdPerUsd
-  );
-  return (
-    Number.isSafeInteger(unitMicros) &&
-    unitMicros >= 0 &&
-    unitMicros / IMAGE_PRICE_LIMITS.microUsdPerUsd === unitPriceUsd
-  );
-}
-
 export type ConfiguredImagePriceQuote = {
   priceCardId: string;
   unitPriceUsd: number;

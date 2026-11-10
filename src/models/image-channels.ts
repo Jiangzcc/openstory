@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { imageUnitPriceFitsWallet } from '@/billing/configured-image-price-policy';
 import { isBuiltinTextToImageModel } from './models';
 import type { BuiltinTextToImageModel } from './models';
 import {
@@ -10,10 +11,7 @@ import {
   IMAGE_PARAMETER_LIMITS,
   matchesImageChannelParameter,
 } from './image-channel-parameters';
-import {
-  imageChannelPriceCardsSchema,
-  imageUnitPriceFitsWallet,
-} from './image-channel-pricing';
+import { imageChannelPriceCardsSchema } from './image-channel-pricing';
 import type {
   ImageChannelParameter,
   ImageOperation,
