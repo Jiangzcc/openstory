@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "MC-B02",
+  "responsibilityId": "MC-06",
+  "status": "completed",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "ef6563cb75180bfc18982ef282ac3f38bdb59734",
+  "sourceAfter": "c4c584a7fa9ded32aa2393e78857baea4851827c",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": {
+    "production": [
+      "src/billing/configured-text-cost.ts",
+      "src/models/server/configured-text.ts",
+      "src/models/server/llm-client.ts"
+    ],
+    "tests": [
+      "src/billing/configured-text-cost.test.ts",
+      "src/models/server/configured-text.test.ts",
+      "src/models/workflow-text-model-routing.test.ts"
+    ],
+    "documentation": ["docs/architecture/model-configuration.md"],
+    "newSourcePaths": [
+      "src/billing/configured-text-cost.ts",
+      "src/billing/configured-text-cost.test.ts"
+    ],
+    "existingUpstreamPathsChanged": ["src/models/server/llm-client.ts"]
+  },
+  "structuralResult": {
+    "costFunctionDefinitionsBefore": 1,
+    "costFunctionDefinitionsAfter": 1,
+    "ownershipBefore": "models/server/configured-text",
+    "ownershipAfter": "billing/configured-text-cost",
+    "duplicateFormulaReduction": 0,
+    "adapterLinesBefore": 107,
+    "adapterLinesAfter": 92,
+    "runtimeImportsInNewPureModule": 0,
+    "upstreamModifiedPathReduction": 0,
+    "conflictReductionClaim": false
+  },
+  "preservation": {
+    "movedFunctionAstIdentical": true,
+    "tokenScaleConstantUnchanged": true,
+    "adapterOnlyChanges": "import plus removal of the moved function and token-scale declaration",
+    "adapterRemainingProgramAstIdentical": true,
+    "llmClientNonImportProgramAstIdentical": true,
+    "originalTests": [
+      {
+        "path": "src/models/server/configured-text.test.ts",
+        "beforeAssertions": 22,
+        "afterAssertions": 22,
+        "matcherDigest": "663ec9adaa8c288ee1316f8a34a1327fc4f38d46779a0c03ab38425b1f54e9b8",
+        "originalAssertionsPreserved": true,
+        "normalizedFileUnchanged": false
+      },
+      {
+        "path": "src/models/workflow-text-model-routing.test.ts",
+        "beforeAssertions": 45,
+        "afterAssertions": 45,
+        "matcherDigest": "0b7fcfdfe36189ee2a01f9ae994247294ae25adb5a5b38e3210217ce4777c1f9",
+        "originalAssertionsPreserved": true,
+        "normalizedFileUnchanged": false
+      },
+      {
+        "path": "src/models/server/llm-client.test.ts",
+        "beforeAssertions": 151,
+        "afterAssertions": 151,
+        "matcherDigest": "2b3f27221c1661320ab1cd7bc35f7927b41b335bdb02c9c041b8281519c1cd73",
+        "originalAssertionsPreserved": true,
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/models/server/llm-call-routing.test.ts",
+        "beforeAssertions": 28,
+        "afterAssertions": 28,
+        "matcherDigest": "7d92228254e139fddbc4b251b1f550c951b0d14297ba2da5e98b698b18cfcf79",
+        "originalAssertionsPreserved": true,
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/models/server/llm-call-helper-region.test.ts",
+        "beforeAssertions": 42,
+        "afterAssertions": 42,
+        "matcherDigest": "32b16e48737c7430cf45bc5c294f5a8431337ef0ee6189c33fd97c59b217a8fc",
+        "originalAssertionsPreserved": true,
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/assistant/server/assistant-chat.test.ts",
+        "beforeAssertions": 40,
+        "afterAssertions": 40,
+        "matcherDigest": "41b13aaa0eca7491ffe8b430d50487595cfc77b0d362d4a32fe3266170640a2b",
+        "originalAssertionsPreserved": true,
+        "normalizedFileUnchanged": true
+      }
+    ],
+    "originalAssertionCount": 328,
+    "characterizationAssertionsUnchanged": true,
+    "runtimeImportsInPureModule": 0,
+    "previousBatchProductionAndTest": [
+      {
+        "path": "src/models/image-operation-capabilities.ts",
+        "sha256Normalized": "c5b47dbfadab4d5da380a023430bfca84613a64a1850ca7fd3644b21fcf93a63",
+        "unchangedFrom": "d5dfe869d15942567495253348ea0aa61e480d13"
+      },
+      {
+        "path": "src/models/image-operation-capabilities.test.ts",
+        "sha256Normalized": "abf762ab90bb38cafbece7cc8aa8c8a5cd6d337747f12a446dcce494bffedaab",
+        "unchangedFrom": "d5dfe869d15942567495253348ea0aa61e480d13"
+      },
+      {
+        "path": "src/billing/configured-image-billing.ts",
+        "sha256Normalized": "f5dc4c061effed2c9f36538a80a555785a73f03722bd885ae32f9281a24bed72",
+        "unchangedFrom": "d5dfe869d15942567495253348ea0aa61e480d13"
+      },
+      {
+        "path": "src/billing/image-cost-hint.ts",
+        "sha256Normalized": "9fe054e8202f534cda9fa7bca3394f59919890c314d6af5079fcced715aa9029",
+        "unchangedFrom": "d5dfe869d15942567495253348ea0aa61e480d13"
+      }
+    ]
+  },
+  "quality": {
+    "metrics": [
+      {
+        "path": "src/billing/configured-text-cost.ts",
+        "lines": 19,
+        "functions": [
+          {
+            "name": "configuredTextCostUsd",
+            "line": 6,
+            "lines": 14,
+            "cyclomaticComplexity": 3,
+            "maxControlNesting": 1
+          },
+          {
+            "name": "callback",
+            "line": 12,
+            "lines": 1,
+            "cyclomaticComplexity": 2,
+            "maxControlNesting": 0
+          }
+        ]
+      },
+      {
+        "path": "src/billing/configured-text-cost.test.ts",
+        "lines": 100,
+        "functions": [
+          {
+            "name": "callback",
+            "line": 31,
+            "lines": 9,
+            "cyclomaticComplexity": 1,
+            "maxControlNesting": 0
+          },
+          {
+            "name": "callback",
+            "line": 41,
+            "lines": 5,
+            "cyclomaticComplexity": 1,
+            "maxControlNesting": 0
+          },
+          {
+            "name": "callback",
+            "line": 49,
+            "lines": 5,
+            "cyclomaticComplexity": 1,
+            "maxControlNesting": 0
+          },
+          {
+            "name": "callback",
+            "line": 58,
+            "lines": 5,
+            "cyclomaticComplexity": 1,
+            "maxControlNesting": 0
+          },
+          {
+            "name": "callback",
+            "line": 65,
+            "lines": 21,
+            "cyclomaticComplexity": 1,
+            "maxControlNesting": 0
+          },
+          {
+            "name": "callback",
+            "line": 87,
+            "lines": 14,
+            "cyclomaticComplexity": 1,
+            "maxControlNesting": 0
+          }
+        ]
+      },
+      {
+        "path": "src/models/server/configured-text.ts",
+        "lines": 92,
+        "functions": [
+          {
+            "name": "assertConfiguredTextTestHost",
+            "line": 11,
+            "lines": 12,
+            "cyclomaticComplexity": 4,
+            "maxControlNesting": 1
+          },
+          {
+            "name": "configuredTextApi",
+            "line": 34,
+            "lines": 5,
+            "cyclomaticComplexity": 2,
+            "maxControlNesting": 1
+          },
+          {
+            "name": "configuredTextModelOptions",
+            "line": 40,
+            "lines": 30,
+            "cyclomaticComplexity": 7,
+            "maxControlNesting": 1
+          },
+          {
+            "name": "assertConfiguredTextCapabilities",
+            "line": 71,
+            "lines": 14,
+            "cyclomaticComplexity": 6,
+            "maxControlNesting": 2
+          },
+          {
+            "name": "configuredTextUsage",
+            "line": 86,
+            "lines": 7,
+            "cyclomaticComplexity": 4,
+            "maxControlNesting": 1
+          }
+        ]
+      }
+    ],
+    "inheritedLimits": [
+      {
+        "path": "src/models/server/llm-client.ts",
+        "linesBefore": 1278,
+        "linesAfter": 1278,
+        "onlyImportsChanged": true,
+        "nonImportProgramAstIdentical": true,
+        "note": "Existing oversized module retained; splitting LLM execution would be a different responsibility."
+      }
+    ],
+    "lint": {
+      "warnings": 146,
+      "batchDiagnostics": []
+    }
+  },
+  "verification": {
+    "before": {
+      "files": 7,
+      "tests": 186,
+      "includesNewCharacterizationTests": 13
+    },
+    "after": {
+      "files": 7,
+      "tests": 186
+    },
+    "testFiles": [
+      "src/billing/configured-text-cost.test.ts",
+      "src/models/server/configured-text.test.ts",
+      "src/models/workflow-text-model-routing.test.ts",
+      "src/models/server/llm-client.test.ts",
+      "src/models/server/llm-call-routing.test.ts",
+      "src/models/server/llm-call-helper-region.test.ts",
+      "src/assistant/server/assistant-chat.test.ts"
+    ],
+    "typecheck": "passed",
+    "lint": {
+      "status": "passed",
+      "warnings": 146,
+      "warningsInBatch": 0
+    },
+    "format": {
+      "status": "passed",
+      "files": 7,
+      "fullRepository": false
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed"
+    },
+    "commitHooks": {
+      "status": "passed",
+      "elapsedSeconds": 102.77,
+      "checks": [
+        "client-server-boundary: 17 tests",
+        "dead-code",
+        "format: 7 files",
+        "lint",
+        "typecheck"
+      ],
+      "bypassed": []
+    },
+    "evidenceBoundary": {
+      "costArithmetic": "real pure-function tests with synthetic USD rates and token usage",
+      "llmRoutes": "mock SDK streams and adapter/route tests; current non-import program AST unchanged",
+      "durable": "mock workflow context with durable and durable-streaming helper tests",
+      "assistant": "mock cost function verifies full key propagation and charge wiring; arithmetic covered separately",
+      "providers": "not called"
+    }
+  },
+  "temporaryLogHashes": {
+    "before-tests.log": "7f743a55fe1d175c66a41ae76931fb640c085bcbe76e7094120cd3cf1b3a2a6d",
+    "integration-tests.log": "6be6d36da313a231d2dd73a8a47010a360c364b8de00242de6485ac83ea732ce",
+    "typecheck.log": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3",
+    "lint.log": "6c97f862c7a0fd266d333d4f60725a874c63a22adfead37d92355cb7dbd7ab6b",
+    "build.log": "f5f53c2f0eb3fcebc2f16e705d094e1c2aa7fbb4c0c044818b0e055030f9585f",
+    "code-commit.log": "61914db53676945c4acd391a5eff32a0d8e2f0e9a2ba1db69adb7c5f1163aec0"
+  },
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "modified": false,
+    "originalInventoryApproved": false
+  },
+  "protectedWorkingFiles": [
+    {
+      "path": ".codex/project-rules.md",
+      "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4"
+    }
+  ],
+  "openItems": [
+    "MC-06 whole responsibility is not semantically closed by this ownership move.",
+    "MC-09 whole responsibility and other P3 items remain open.",
+    "G07-callers inherited risks and test coverage limits remain open.",
+    "G09-ownership-verify still requires G03-verify.",
+    "CONTINUE-LLM-SOURCE remains deferred."
+  ],
+  "notValidated": [
+    "real providers",
+    "real Cloudflare Workflows engine replay",
+    "browser/end-to-end acceptance",
+    "remote databases and deployment",
+    "future arbitrary upstream conflicts"
+  ],
+  "nextImplementation": ["MC-B03"],
+  "noRemoteWrites": true,
+  "pushed": false
+}
