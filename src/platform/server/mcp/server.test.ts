@@ -11,6 +11,7 @@ import {
 import type { User } from '@/platform/server/auth/config';
 import { asStub } from '@/test/as-stub';
 import * as createModule from '@/platform/server/api-v1/create';
+import { LOCALE_COOKIE } from '@/platform/i18n/locale';
 
 const user = {
   id: 'user_1',
@@ -113,10 +114,11 @@ function mcpPost(
 async function rpc(
   method: string,
   params?: Record<string, unknown>,
-  caller: Parameters<typeof serveMcpRequest>[1] = auth
+  caller: Parameters<typeof serveMcpRequest>[1] = auth,
+  headers: Record<string, string> = {}
 ) {
   const res = await serveMcpRequest(
-    mcpPost(method, { params }),
+    mcpPost(method, { params, headers }),
     caller,
     method
   );
@@ -1179,6 +1181,12 @@ describe('tool argument and result shapes', () => {
       expect.objectContaining({ motion: true, targetSeconds: 30 }),
       expect.anything()
     );
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      promptLocale: 'en',
+      user: { id: auth.user.id },
+      organizationId: auth.organizationId,
+      scopedDb: { organizationId: auth.organizationId },
+    });
     expect(body.result).toMatchObject({
       structuredContent: {
         sequences: [{ id: 'S', status: 'processing', workflowRunId: 'W' }],
@@ -1187,3 +1195,144 @@ describe('tool argument and result shapes', () => {
     expect(body.result).not.toHaveProperty('isError');
   });
 });
+
+const EXTERNAL_LOCALE_COOKIES = [
+  ['missing', ''],
+  ['zh-CN', `${LOCALE_COOKIE}=zh-CN`],
+  ['en', `${LOCALE_COOKIE}=en`],
+  ['invalid', `${LOCALE_COOKIE}=not-a-locale`],
+  ['malformed', `${LOCALE_COOKIE}=%E0%A4%A`],
+] as const;
+const EXTERNAL_CREATE_CASES = (['api_key', 'oauth'] as const).flatMap((kind) =>
+  EXTERNAL_LOCALE_COOKIES.map(([label, cookie]) => ({ kind, label, cookie }))
+);
+const FORGED_CREATE_ARGUMENTS = [
+  { promptLocale: 'zh-CN' },
+  { promptLocale: 'not-a-locale' },
+  { locale: 'zh-CN' },
+  { userId: 'forged-user' },
+  { user: { id: 'forged-user' } },
+  { organizationId: 'forged-organization' },
+  { scopedDb: { organizationId: 'forged-organization' } },
+  { context: { promptLocale: 'zh-CN', userId: 'forged-user' } },
+];
+const FORGED_CREATE_CASES = EXTERNAL_CREATE_CASES.flatMap((caller) =>
+  FORGED_CREATE_ARGUMENTS.map((forged) => ({
+    ...caller,
+    forged,
+    field: Object.keys(forged)[0],
+  }))
+);
+const EXTERNAL_CREATE_SCRIPT = 'A lighthouse keeper befriends a whale.';
+
+// Stop only at the shared create service; transport, schema and tool context are real.
+function stubExternalContext(kind: 'api_key' | 'oauth') {
+  const caller = {
+    ...auth,
+    kind,
+    user: { ...user, id: 'verified-user' },
+    organizationId: 'verified-organization',
+    scopes: kind === 'oauth' ? ['generate'] : [],
+  };
+  const scopedDb = asStub<ScopedDb>({ organizationId: caller.organizationId });
+  const createDb = vi
+    .spyOn(dbModule, 'createScopedDb')
+    .mockReturnValue(scopedDb);
+  const create = vi.spyOn(createModule, 'runOneShotCreate').mockResolvedValue(
+    asStub<createModule.OneShotResult>({
+      sequences: [{ id: 'S', status: 'processing', workflowRunId: 'W' }],
+    })
+  );
+  return { caller, scopedDb, createDb, create };
+}
+
+function externalHeaders(cookie: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'cf-connecting-ip': '198.51.100.17',
+    'user-agent': 'mcp-locale-test',
+    'accept-language': 'zh-CN,zh;q=0.9',
+  };
+  if (cookie) headers.cookie = cookie;
+  return headers;
+}
+
+function expectExternalContext(
+  fixture: ReturnType<typeof stubExternalContext>,
+  headers: Record<string, string>
+) {
+  const { caller, scopedDb, createDb, create } = fixture;
+  expect(createDb).toHaveBeenCalledExactlyOnceWith(
+    caller.organizationId,
+    caller.user.id
+  );
+  expect(create).toHaveBeenCalledTimes(1);
+  expect(create.mock.calls[0]?.[0]).toMatchObject({
+    script: EXTERNAL_CREATE_SCRIPT,
+  });
+  expect(create.mock.calls[0]?.[1]).toEqual({
+    promptLocale: 'en',
+    scopedDb,
+    user: { id: caller.user.id },
+    organizationId: caller.organizationId,
+    request: {
+      ipAddress: headers['cf-connecting-ip'],
+      userAgent: headers['user-agent'],
+    },
+  });
+  expect(create.mock.calls[0]?.[1].scopedDb).toBe(scopedDb);
+}
+
+it.each(EXTERNAL_CREATE_CASES)(
+  'external $kind creation keeps en and authenticated identity with $label cookies',
+  async ({ kind, cookie }) => {
+    const fixture = stubExternalContext(kind);
+    const headers = externalHeaders(cookie);
+    const { status, body } = await rpc(
+      'tools/call',
+      {
+        name: 'openstory.create_sequence',
+        arguments: { script: EXTERNAL_CREATE_SCRIPT },
+      },
+      fixture.caller,
+      headers
+    );
+    expect(status).toBe(200);
+    expect(body.error).toBeUndefined();
+    expect(body.result).not.toHaveProperty('isError');
+    expectExternalContext(fixture, headers);
+    expect(body.result).toMatchObject({
+      structuredContent: {
+        sequences: [
+          { id: 'S', appUrl: 'https://openstory.test/sequences/S/script' },
+        ],
+      },
+    });
+  }
+);
+
+it.each(FORGED_CREATE_CASES)(
+  'external $kind creation strips forged $field with $label cookies and keeps its verified context',
+  async ({ kind, cookie, forged }) => {
+    const fixture = stubExternalContext(kind);
+    const headers = externalHeaders(cookie);
+    const { status, body } = await rpc(
+      'tools/call',
+      {
+        name: 'openstory.create_sequence',
+        arguments: { script: EXTERNAL_CREATE_SCRIPT, ...forged },
+      },
+      fixture.caller,
+      headers
+    );
+    expect(status).toBe(200);
+    expect(body.error).toBeUndefined();
+    expect(body.result).not.toHaveProperty('isError');
+    expect(body.result).toMatchObject({
+      structuredContent: { sequences: [{ id: 'S', workflowRunId: 'W' }] },
+    });
+    expectExternalContext(fixture, headers);
+    for (const field of Object.keys(forged)) {
+      expect(fixture.create.mock.calls[0]?.[0]).not.toHaveProperty(field);
+    }
+  }
+);

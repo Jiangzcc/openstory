@@ -100,3 +100,11 @@ JSON 字段、枚举、变量名、引用 token、素材绑定和供应商 marku
 P3 第四批新增只读翻译维护报告。已登记的英文所有者改变时，关联中文资源/聚合模块的整模块 AST 指纹并标记 needs_review；源和配对资源同时变化也不批准中文含义。同文件双语所有者不推断改动语种，sourceKind 只描述模块职责，semanticApproval 始终为 false。局部 guidance 常量改变同样触发；注释、格式及 CRLF 不触发。
 
 工具按显式所有者及 prompt 命名候选发现范围，不执行真实模板，也不替代原 catalog 测试对变量、消息角色、引用标记与格式的检查。新增所有者或间接依赖仍需人工分类。使用命令、验证及失败修正见 [P3 翻译维护记录](upstream-preservation-p3-localization-20261109.md)；真实供应商中文质量与完整浏览器流程仍未因此验收，CI 接入待 P4。
+
+### P3 可信请求入口复核（2026-11-10）
+
+本轮保留现有生产薄桥接，补强网页中间件、单次／分片上传、外部 MCP 创建及共享音频服务的语言与身份测试。网页和上传从原始 Request Cookie 取语言；外部 API／MCP 继续固定英文。MCP 创建工具沿用普通 z.object 剥离额外字段的既有行为，额外的语言、用户或组织字段不替换认证上下文。音频测试夹具补齐必填 promptLocale，并通过真实共享服务与内存 D1 验证语言到达 mock 工作流触发器。
+
+与纯上游基线的 AST 对照覆盖 authRequestMiddleware、两个组织中间件、助手 toolContext、上传与分片 Route、外部 mcpToolContext：前者原样一致，其余在仅移除 promptLocale 对象字段后相同。本轮没有据此改写认证、组织或权限实现。
+
+[本轮入口矩阵、成绩及验证边界](preservation/20261110-p3-g01/README.md) 分开记录真实回调、真实 Better Auth 内存实现、真实 SQLite/D1 API 和 mock 的范围。认证令牌、真实 membership／compliance 与共享创建服务组成的完整 HTTP 链路仍待验证，G01 不标为全面验收完成；系统管理员 API Key 原有的跨组织 sequence 支持入口保持。

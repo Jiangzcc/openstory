@@ -6,6 +6,7 @@
 import { createTestDb } from '@/platform/server/db/test-d1';
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -25,6 +26,8 @@ import type { NewCharacter } from '@/platform/server/db/schema';
 import { generateId } from '@/platform/id';
 import {
   characterBibleVersions,
+  credits,
+  creditReservations,
   frames,
   frameVariants,
   locations,
@@ -49,6 +52,10 @@ import {
 import { PORTRAIT_RIGHTS_V1 } from '@/platform/compliance/attestations';
 import { sha256Hex } from '@/platform/compliance/hash';
 import { USER_UPLOAD_MODEL } from '@/shots/user-upload-model';
+import { SUPPORTED_LOCALES } from '@/platform/i18n/locale';
+import type { Locale } from '@/platform/i18n/locale';
+import type { ReadToolContext } from './tool-context';
+import { SEED_VOICE_DEFAULT_TAKES } from '@/cast/seed-voice';
 
 vi.mock('#db-client', () => ({ getDb: vi.fn() }));
 vi.mock('@/platform/server/workflow/client', () => ({
@@ -56,6 +63,7 @@ vi.mock('@/platform/server/workflow/client', () => ({
 }));
 vi.mock('@/platform/realtime', () => ({
   getGenerationChannel: () => ({ emit: vi.fn(async () => undefined) }),
+  getBillingChannel: () => ({ emit: vi.fn(async () => undefined) }),
 }));
 
 const { castAudioGenerationTools } =
@@ -82,7 +90,21 @@ const castCharacter = (character: NewCharacter) =>
     createdBy: null,
   });
 
-async function call(name: string, args: Record<string, unknown>) {
+function readContext(promptLocale: Locale) {
+  return {
+    promptLocale,
+    scopedDb,
+    origin: 'https://openstory.test',
+    userId: actorId,
+    request: {},
+  } satisfies ReadToolContext;
+}
+
+async function call(
+  name: string,
+  args: Record<string, unknown>,
+  promptLocale: Locale = 'en'
+) {
   const response = await server.handle(
     new Request('https://openstory.test/mcp', {
       method: 'POST',
@@ -113,12 +135,7 @@ async function call(name: string, args: Record<string, unknown>) {
     }),
     {
       context: {
-        scoped: () => ({
-          scopedDb,
-          origin: 'https://openstory.test',
-          userId: actorId,
-          request: {},
-        }),
+        scoped: () => readContext(promptLocale),
       },
     }
   );
@@ -133,8 +150,12 @@ async function call(name: string, args: Record<string, unknown>) {
   return envelope.result;
 }
 
-async function data(name: string, args: Record<string, unknown>) {
-  const result = await call(name, args);
+async function data(
+  name: string,
+  args: Record<string, unknown>,
+  promptLocale: Locale = 'en'
+) {
+  const result = await call(name, args, promptLocale);
   expect(result.isError, JSON.stringify(result)).not.toBe(true);
   return result.structuredContent;
 }
@@ -149,6 +170,7 @@ beforeAll(async () => {
   vi.mocked(getDb).mockReturnValue(db);
 });
 afterAll(() => closeDb());
+afterEach(() => vi.unstubAllEnvs());
 
 beforeEach(async () => {
   vi.mocked(triggerWorkflow).mockClear();
@@ -559,3 +581,181 @@ describe('a character that must be a person is stored as one, on every path (#20
     expect(await isPersonNow(id)).toBe(true);
   });
 });
+
+const TEST_AUDIO_CREDITS_MICROS = 1_000_000;
+const TEST_DIALOGUE_LINE = '你好，世界。 Hello, world.';
+
+async function seedVoicedShot() {
+  await castCharacter({
+    id: generateId(),
+    sequenceId,
+    characterId: 'char_001',
+    name: 'Ada',
+    rendering: 'Photoreal live action',
+    voiceId: 'test-voice',
+    voiceDescription: 'A warm alto',
+    useVoice: true,
+  });
+  await db
+    .insert(credits)
+    .values({ organizationId, balance: TEST_AUDIO_CREDITS_MICROS });
+  return scopedDb.shotDialogue.write(
+    shotId,
+    [{ character: 'Ada', line: TEST_DIALOGUE_LINE, tone: 'calm' }],
+    'user-edit',
+    { createdBy: actorId }
+  );
+}
+
+it.each(SUPPORTED_LOCALES)(
+  'passes %s through real music generation to the claimed workflow',
+  async (promptLocale) => {
+    const result = z
+      .object({ started: z.literal(true), variantId: z.string() })
+      .parse(
+        await data(
+          'generate_music',
+          { sequenceId, prompt: 'Warm strings', tags: 'orchestral' },
+          promptLocale
+        )
+      );
+    expect(triggerWorkflow).toHaveBeenCalledExactlyOnceWith(
+      '/music',
+      expect.objectContaining({
+        promptLocale,
+        userId: actorId,
+        organizationId,
+        sequenceId,
+        prompt: 'Warm strings',
+        tags: 'orchestral',
+        variantId: result.variantId,
+      })
+    );
+    expect(
+      await scopedDb.sequenceVariants.getMusicById(result.variantId)
+    ).toMatchObject({
+      sequenceId,
+      prompt: 'Warm strings',
+      tags: 'orchestral',
+      status: 'pending',
+    });
+  }
+);
+
+it.each(SUPPORTED_LOCALES)(
+  'passes %s through the real music prompt rewrite to its deduplicated workflow',
+  async (promptLocale) => {
+    expect(
+      await data('rewrite_music_prompt', { sequenceId }, promptLocale)
+    ).toEqual({
+      workflowRunId: 'run-1',
+      alreadyUpToDate: false,
+    });
+    expect(triggerWorkflow).toHaveBeenCalledExactlyOnceWith(
+      '/music-prompt',
+      expect.objectContaining({
+        promptLocale,
+        userId: actorId,
+        organizationId,
+        sequenceId,
+      }),
+      {
+        deduplicationId: expect.stringContaining(`music-prompt-${sequenceId}-`),
+      }
+    );
+  }
+);
+
+it.each(SUPPORTED_LOCALES)(
+  'passes %s through real character voice generation to the persisted voice claim',
+  async (promptLocale) => {
+    vi.stubEnv('ELEVENLABS_API_KEY', 'test-elevenlabs-key');
+    vi.stubEnv('ELEVENLABS_BASE_URL', 'https://elevenlabs.test.invalid');
+    vi.stubEnv('SEED_SPEECH_API_KEY', '');
+    const characterId = generateId();
+    await castCharacter({
+      id: characterId,
+      sequenceId,
+      characterId: 'char_001',
+      name: 'Ada',
+      rendering: 'Photoreal live action',
+      voiceDescription: 'A warm alto',
+    });
+    expect(
+      await data(
+        'generate_character_voice',
+        {
+          sequenceId,
+          characterId,
+          takes: SEED_VOICE_DEFAULT_TAKES,
+        },
+        promptLocale
+      )
+    ).toEqual({ characterId, workflowRunId: 'run-1', alreadyInFlight: false });
+    const character = await scopedDb.characters.getById(
+      sequenceId,
+      characterId
+    );
+    expect(character?.pendingPromoteVoiceVersionId).toEqual(expect.any(String));
+    expect(triggerWorkflow).toHaveBeenCalledExactlyOnceWith(
+      '/character-voice',
+      expect.objectContaining({
+        promptLocale,
+        userId: actorId,
+        organizationId,
+        sequenceId,
+        characterDbId: characterId,
+        voiceDescription: 'A warm alto',
+        targetVersionId: character?.pendingPromoteVoiceVersionId,
+        takes: SEED_VOICE_DEFAULT_TAKES,
+      })
+    );
+  }
+);
+
+it.each(SUPPORTED_LOCALES)(
+  'passes %s through real dialogue regeneration with its reservation and unchanged lines',
+  async (promptLocale) => {
+    const dialogue = await seedVoicedShot();
+    expect(
+      await data(
+        'regenerate_shot_dialogue',
+        { sequenceId, shotId, scope: 'shot' },
+        promptLocale
+      )
+    ).toEqual({ workflowRunId: 'run-1' });
+    const reservations = await db
+      .select()
+      .from(creditReservations)
+      .where(eq(creditReservations.organizationId, organizationId));
+    expect(reservations).toHaveLength(1);
+    expect(triggerWorkflow).toHaveBeenCalledExactlyOnceWith(
+      '/dialogue-audio',
+      expect.objectContaining({
+        promptLocale,
+        userId: actorId,
+        organizationId,
+        sequenceId,
+        reservationId: reservations[0]?.id,
+        ownsReservation: true,
+        scenes: [
+          expect.objectContaining({
+            forceAdoptShotIds: [shotId],
+            dialogueVersionIdByShotId: { [shotId]: dialogue?.id },
+            voiced: [
+              expect.objectContaining({
+                shotId,
+                voiceId: 'test-voice',
+                text: TEST_DIALOGUE_LINE,
+              }),
+            ],
+          }),
+        ],
+      })
+    );
+    expect(await scopedDb.shotDialogue.getSelected(shotId)).toMatchObject({
+      id: dialogue?.id,
+      lines: [{ character: 'Ada', line: TEST_DIALOGUE_LINE, tone: 'calm' }],
+    });
+  }
+);
