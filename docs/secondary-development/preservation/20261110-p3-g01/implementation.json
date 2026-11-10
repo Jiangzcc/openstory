@@ -1,0 +1,417 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "G01-verify",
+  "responsibilityId": "GC-01",
+  "status": "reviewed-with-open-risks",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "4a6df66fb27f0bbf39a31ce1a22ea7108e7b2585",
+  "sourceAfter": "822f098cafc426eebd23463e7f1379912c400e7b",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": {
+    "production": [],
+    "tests": [
+      "src/platform/server/auth/middleware-locale.test.ts",
+      "src/platform/server/storage/upload-locale.test.ts",
+      "src/platform/server/mcp/server.test.ts",
+      "src/platform/server/mcp/cast-audio-generation.test.ts"
+    ],
+    "documentation": [
+      "docs/secondary-development/system-prompt-localization.md"
+    ],
+    "newSourcePaths": [
+      "src/platform/server/auth/middleware-locale.test.ts",
+      "src/platform/server/storage/upload-locale.test.ts"
+    ]
+  },
+  "structuralResult": {
+    "productionBridgesRetained": true,
+    "newProductionContextWrapper": false,
+    "productionModifiedPathReduction": 0,
+    "conflictReductionClaim": false
+  },
+  "preservation": {
+    "productionSource": [
+      {
+        "path": "src/platform/middleware.fn.ts",
+        "sha256Normalized": "64798a993429de5770f5d76234db33ab437c420a10f97dbe527ce26504b324b9",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/i18n/prompt-locale.ts",
+        "sha256Normalized": "1a6d786fd6cde62cbad0b80adea62c9e6f2ceae09559df7a4d3930ef98c4de59",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/assistant/server/assistant-chat.ts",
+        "sha256Normalized": "dd81349695966e81693b05ebd6b80adb289bfa18dfb9fa110a160c6c3a225884",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/routes/api/storage/upload.ts",
+        "sha256Normalized": "d0dc70102d30b43d5d8d1f7eea4ec59c883b7bf7d2e88476163a6c75bd87bee6",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/routes/api/storage/multipart.ts",
+        "sha256Normalized": "986bffcdbd87f5131d45db0639c3c85347dc2caf04706f5eee441a23d17fe797",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/mcp/server.ts",
+        "sha256Normalized": "e4894b6b220fa094a06af89c80f67a4e5b536e3164ef856c19133b5f7de13cf2",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/mcp/tool-context.ts",
+        "sha256Normalized": "829e04da3c8f660d80d5a6f48e317066065ef10cb31da95ef758ccb25d8c7d22",
+        "normalizedFileUnchanged": true
+      }
+    ],
+    "upstreamComparison": "upstream-bridge-comparison.json",
+    "comparedNamedDeclarations": 7,
+    "exactAstIdenticalCount": 1,
+    "astIdenticalOutsidePromptLocalePropertiesCount": 7,
+    "originalTests": [
+      {
+        "path": "src/platform/i18n/prompt-locale.test.ts",
+        "beforeMatchers": 3,
+        "afterMatchers": 3,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "274edced7fed9c10f28098e80794ba6a4ffaa58d44df707c00322e7e6ba838e7",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/assistant/server/assistant-chat.test.ts",
+        "beforeMatchers": 40,
+        "afterMatchers": 40,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "41b13aaa0eca7491ffe8b430d50487595cfc77b0d362d4a32fe3266170640a2b",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/studio/server/studio-prompt-locale.test.ts",
+        "beforeMatchers": 5,
+        "afterMatchers": 5,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "cc0dd3787fa929daea40e1b586d989553b140c058a212aa6b05d5c273faed3de",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/storage/upload-target.test.ts",
+        "beforeMatchers": 18,
+        "afterMatchers": 18,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "68f8e41f91c87fe877824376a008bcbca511da5699f9e8658810033b86eabfc0",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/cast/server/upload-check.test.ts",
+        "beforeMatchers": 2,
+        "afterMatchers": 2,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "371e027c125baabd8e4f8a9839a46141107f82f80e078d4d2a2d517cc00d9348",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/auth/request-principal.test.ts",
+        "beforeMatchers": 14,
+        "afterMatchers": 14,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "4d10a70526d23350565fdcd236b9040449d764ee97f9ca990f1e698c8b9f0f75",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/api-v1/oauth-scopes.test.ts",
+        "beforeMatchers": 17,
+        "afterMatchers": 17,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "3e6c540a37c12ed044a78f25e6d5069f9c3c8a2d4c30fd2e2944a4bad8e2a045",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/mcp/auth.test.ts",
+        "beforeMatchers": 28,
+        "afterMatchers": 28,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "8dec0cc2187cdf8f872e166c2c04d525a98579789d944c1d4ef7ce74fb737399",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/mcp/auth-cookie.test.ts",
+        "beforeMatchers": 40,
+        "afterMatchers": 40,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "a132312b2b10cde00c382a707b30937e0d3130269ed750ecd4d600cef7b50e68",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/mcp/admin-sequence-access.test.ts",
+        "beforeMatchers": 27,
+        "afterMatchers": 27,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "73a1dc57d050e8dea921ee90165ce382c2dbffede2a560f3397b67303c1f4239",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/mcp/tool-context.test.ts",
+        "beforeMatchers": 16,
+        "afterMatchers": 16,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "ada9181de198d1258537f43de9fcff8c191348ea5b64a9c1090391429310122c",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/api-v1/create.test.ts",
+        "beforeMatchers": 68,
+        "afterMatchers": 68,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "6643b92b6fe11d83b00546bf193d9d168e9b1cc01380925b407c53a963d396a6",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/api-v1/enhance.test.ts",
+        "beforeMatchers": 19,
+        "afterMatchers": 19,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "64855912dd036970b83167c8b92dce6e138e9202050b3f3e720c73984cba865f",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/stitches/server/stitch-routes.test.ts",
+        "beforeMatchers": 23,
+        "afterMatchers": 23,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "7744c7b9bbde55eaeba7cf7517854bf5883604021d04155105896779679e2945",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/sequences/server/export.test.ts",
+        "beforeMatchers": 21,
+        "afterMatchers": 21,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "1e9a261113181c04c0cb545938f4036583c974630ac01c2a5ed154adc3116414",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/mcp/tools.test.ts",
+        "beforeMatchers": 492,
+        "afterMatchers": 492,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "4c0539d30849598374720e1630a8b9f003cee17119686eef8111d5aa150f9962",
+        "normalizedFileUnchanged": true
+      },
+      {
+        "path": "src/platform/server/mcp/server.test.ts",
+        "beforeMatchers": 82,
+        "afterMatchers": 97,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "a728fb63109ea165300bb140c305eb563318f729a6d4cacece510d3cc30f0526",
+        "normalizedFileUnchanged": false
+      },
+      {
+        "path": "src/platform/server/mcp/cast-audio-generation.test.ts",
+        "beforeMatchers": 35,
+        "afterMatchers": 54,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "4babda3325c5bac6bcf38402ce3c5d4b8a8efe221b629bf170ce1b1c73bc931d",
+        "normalizedFileUnchanged": false
+      },
+      {
+        "path": "src/platform/server/auth/organization-memo.test.ts",
+        "beforeMatchers": 14,
+        "afterMatchers": 14,
+        "originalAssertionsPreserved": true,
+        "beforeMatcherDigest": "3dfbdcd77d79e5e5491a83b4820822a598ec313a77102c99e3775f8abbb5c8d0",
+        "normalizedFileUnchanged": true
+      }
+    ],
+    "originalMatcherCount": 964,
+    "originalMatcherCountInChangedFiles": 117,
+    "allOriginalAssertionsPreserved": true,
+    "newMatcherCount": 83,
+    "originalInventoryApproved": false
+  },
+  "verification": {
+    "testGroups": [
+      {
+        "files": 18,
+        "tests": 272,
+        "log": "main-integration-tests.log"
+      },
+      {
+        "files": 2,
+        "tests": 199,
+        "log": "mcp-integration-tests.log"
+      },
+      {
+        "files": 1,
+        "tests": 6,
+        "log": "membership-tests.log"
+      }
+    ],
+    "testFiles": [
+      "src/platform/server/auth/middleware-locale.test.ts",
+      "src/platform/server/storage/upload-locale.test.ts",
+      "src/platform/i18n/prompt-locale.test.ts",
+      "src/assistant/server/assistant-chat.test.ts",
+      "src/studio/server/studio-prompt-locale.test.ts",
+      "src/platform/server/storage/upload-target.test.ts",
+      "src/cast/server/upload-check.test.ts",
+      "src/platform/server/auth/request-principal.test.ts",
+      "src/platform/server/api-v1/oauth-scopes.test.ts",
+      "src/platform/server/mcp/auth.test.ts",
+      "src/platform/server/mcp/auth-cookie.test.ts",
+      "src/platform/server/mcp/admin-sequence-access.test.ts",
+      "src/platform/server/mcp/tool-context.test.ts",
+      "src/platform/server/api-v1/create.test.ts",
+      "src/platform/server/api-v1/enhance.test.ts",
+      "src/stitches/server/stitch-routes.test.ts",
+      "src/sequences/server/export.test.ts",
+      "src/platform/server/mcp/tools.test.ts",
+      "src/platform/server/mcp/server.test.ts",
+      "src/platform/server/mcp/cast-audio-generation.test.ts",
+      "src/platform/server/auth/organization-memo.test.ts"
+    ],
+    "uniqueTestFiles": 21,
+    "uniqueTests": 477,
+    "newTests": 134,
+    "countsAreDisjointGroups": true,
+    "standaloneInitialTests": {
+      "middleware": 18,
+      "storage": 18,
+      "alreadyIncludedInFinalGroups": true
+    },
+    "typecheck": {
+      "status": "passed",
+      "standalone": "typecheck-final.log",
+      "finalCurrentTree": "normal code-commit hook"
+    },
+    "lint": {
+      "fullRepository": "passed",
+      "warnings": 146,
+      "warningsInBatch": 0,
+      "finalTouchedFiles": "normal code-commit hook passed after the last fixture extraction"
+    },
+    "format": {
+      "status": "passed",
+      "files": 5,
+      "fullRepository": false
+    },
+    "build": {
+      "status": "not-rerun-tests-only",
+      "productionSourceUnchanged": true,
+      "previousProductionBuildSource": "95863667e4b58ac43718bd7a15f244787e97094b",
+      "previousProductionBuild": "MC-B03 bun run build passed"
+    },
+    "commitHooks": {
+      "status": "passed",
+      "elapsedSeconds": 159.04,
+      "checks": [
+        "client-server-boundary: 17 tests",
+        "dead-code",
+        "format: 5 files",
+        "lint",
+        "typecheck"
+      ],
+      "bypassed": []
+    },
+    "evidenceBoundary": {
+      "middleware": "real exported server callbacks, mock principal/membership/DB/next; not the complete framework chain",
+      "upload": "real route callbacks and target validator; mock auth/membership/storage/upload checks; streaming pass-through double",
+      "assistant": "real locale/system-message/toolContext assembly, mock SDK and persistence/billing boundaries",
+      "externalMcp": "real serveMcpRequest, SDK, mcpToolContext and tool callback; injected authenticated caller, mock DB factory and final runOneShotCreate",
+      "audio": "real shared music/voice/dialogue services and migrated in-memory SQLite/D1 repositories; mock workflow trigger/realtime",
+      "auth": "real Better Auth memory-adapter Cookie/Key tests with mocked membership/compliance; separate principal/scope tests",
+      "adminException": "real in-memory D1 tests retain system-admin API Key sequence adoption, with mocked external boundaries",
+      "providers": "not called"
+    }
+  },
+  "callerMatrix": "caller-matrix.json",
+  "quality": {
+    "metricsOnly": true,
+    "hardLimitsApplied": false,
+    "currentInstruction": "The user removed the file/function size, complexity, nesting and mandatory constants/enums rule during this run. These metrics are descriptive only.",
+    "newFiles": [
+      {
+        "path": "src/platform/server/auth/middleware-locale.test.ts",
+        "lines": 253,
+        "maxFunctionLines": 25
+      },
+      {
+        "path": "src/platform/server/storage/upload-locale.test.ts",
+        "lines": 244,
+        "maxFunctionLines": 29
+      }
+    ],
+    "audioCallHelperLines": 49,
+    "audioContextHelperLines": 9,
+    "existingServerTestFile": {
+      "path": "src/platform/server/mcp/server.test.ts",
+      "linesBefore": 1190,
+      "linesAfter": 1339,
+      "acceptanceBlocker": false
+    }
+  },
+  "validationCorrections": [
+    {
+      "stage": "initial typecheck",
+      "issue": "New test harnesses captured optional server callbacks and treated a broad route result as Response.",
+      "fix": "Runtime required-callback and instanceof Response guards; no production changes or type casts as a substitute."
+    },
+    {
+      "stage": "parallel initial test assertions",
+      "issue": "Extra create arguments are stripped by the current z.object schema; music claims start pending.",
+      "fix": "Assertions corrected to the existing contracts; no schema or production behavior change."
+    },
+    {
+      "stage": "final integration review",
+      "issue": "Before the user removed the numeric code-size rule, the added locale fixture made the audio call helper 56 lines.",
+      "fix": "The typed read-context fixture was extracted and both MCP files rerun, 199 passed. The user then removed the rule; no further size-driven changes are required."
+    }
+  ],
+  "temporaryLogHashes": {
+    "middleware-tests.log": "db6715b3d780dc4e9692c837948a79f371ef8a5d8a5757d68571f9c92945d561",
+    "upload-tests.log": "fce661fa7d5a64990c4f05c2a419a7984d1d1c762ad84333338669f5115e5a79",
+    "main-integration-tests.log": "29eb3979a9d0de98ea53f36ec42221a9cfaa64924de4124008f919a19ac74a47",
+    "mcp-integration-tests.log": "d74f2a02ffe638defa1f25eaa3af3fd615203933b68eb21314f9acce79fe7ab4",
+    "membership-tests.log": "16a47b0f1dc1eb8fc81fb20a1ef153b08c4e16d1b9f6c2a9a834094589e029ce",
+    "typecheck-initial.log": "943f45215909e71aa26a73d1af13071108fd9ecdb75d000a6b3e1a1f9fe68297",
+    "typecheck-final.log": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3",
+    "lint.log": "e396ff76d15799c13dba52b405ffa274177c3e6156f7ed525c0e9781c2be6b72",
+    "code-commit.log": "e4a545b553b3afa0099cbb412b33bc3585b50579d7349af29e20f092a14b0b09"
+  },
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "modified": false,
+    "originalInventoryApproved": false
+  },
+  "protectedWorkingFiles": [
+    {
+      "path": ".codex/project-rules.md",
+      "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4"
+    }
+  ],
+  "openVerification": [
+    "Complete HTTP token-authentication + actual membership/compliance + shared service composition is not exercised.",
+    "REST create/enhance and all UI entry combinations are not each executed through the full framework chain.",
+    "Real browser, Workflows engine and provider behavior are outside this evidence."
+  ],
+  "openItems": [
+    "G01-verify is not fully accepted; HTTP authentication/membership/compliance/shared-service composition remains open.",
+    "G07-callers inherited risks and coverage limits remain open.",
+    "G09-ownership-verify still requires G03-verify.",
+    "CONTINUE-LLM-SOURCE remains deferred."
+  ],
+  "nextImplementation": ["G01-verify"],
+  "noRemoteWrites": true,
+  "pushed": false
+}

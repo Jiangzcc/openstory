@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "G01-verify",
+  "responsibilityId": "GC-01",
+  "sourceBefore": "4a6df66fb27f0bbf39a31ce1a22ea7108e7b2585",
+  "status": "reviewed-with-open-risks",
+  "rowCount": 18,
+  "rows": [
+    {
+      "id": "G01-C01",
+      "entry": "Website locale cookie",
+      "owners": ["src/platform/i18n/prompt-locale.ts"],
+      "locale": "Cookie en/zh-CN; missing, invalid or malformed value defaults to zh-CN",
+      "identity": "No identity selection in the locale helper",
+      "tests": ["src/platform/i18n/prompt-locale.test.ts"],
+      "evidence": "real request parsing and concurrency unit tests"
+    },
+    {
+      "id": "G01-C02",
+      "entry": "Website server functions",
+      "owners": ["src/platform/middleware.fn.ts"],
+      "locale": "promptLocaleFromRequest(getRequest())",
+      "identity": "session user and activeOrganizationId; membership/compliance before scoped DB",
+      "tests": [
+        "src/platform/server/auth/middleware-locale.test.ts",
+        "src/platform/server/auth/organization-memo.test.ts"
+      ],
+      "evidence": "real organization middleware callback with mock auth/membership/DB; upstream AST comparison",
+      "limits": [
+        "Not the full Start middleware chain or HTTP authentication flow"
+      ]
+    },
+    {
+      "id": "G01-C03",
+      "entry": "Protected REST API request middleware",
+      "owners": [
+        "src/platform/middleware.fn.ts",
+        "src/platform/server/auth/request-principal.ts",
+        "src/platform/server/api-v1/oauth-scopes.ts"
+      ],
+      "locale": "EXTERNAL_PROMPT_LOCALE=en for /api/v1",
+      "identity": "validated principal; required OAuth scope; membership; canAccess/canWrite; trusted scoped DB factory arguments",
+      "tests": [
+        "src/platform/server/auth/middleware-locale.test.ts",
+        "src/platform/server/auth/request-principal.test.ts",
+        "src/platform/server/api-v1/oauth-scopes.test.ts"
+      ],
+      "evidence": "real middleware callback and separate principal/scope tests; forged body/context cannot select identity",
+      "limits": [
+        "Principal verification and membership are mocked in callback tests"
+      ]
+    },
+    {
+      "id": "G01-C04",
+      "entry": "In-app assistant",
+      "owners": ["src/assistant/server/assistant-chat.ts"],
+      "locale": "Original caller Request selects both system messages and internal tool context",
+      "identity": "session caller and existing scoped DB; session assistant keeps its full scope policy",
+      "tests": ["src/assistant/server/assistant-chat.test.ts"],
+      "evidence": "real assistant assembly and toolContext; mock SDK, persistence and billing dependencies",
+      "limits": ["No browser or real model acceptance"]
+    },
+    {
+      "id": "G01-C05",
+      "entry": "Single upload PUT",
+      "owners": [
+        "src/routes/api/storage/upload.ts",
+        "src/platform/server/storage/upload-target.ts"
+      ],
+      "locale": "Original Request passed to promptLocaleFromRequest before check and after storage",
+      "identity": "authRequestMiddleware user; target owner segment resolved with membership; identical actor at both checks",
+      "tests": [
+        "src/platform/server/storage/upload-locale.test.ts",
+        "src/platform/server/storage/upload-target.test.ts",
+        "src/cast/server/upload-check.test.ts"
+      ],
+      "evidence": "real route callback and target validator; fake auth/membership, storage and upload checks",
+      "limits": [
+        "FixedLengthStream is a pass-through test double, not real workerd/R2 length enforcement"
+      ]
+    },
+    {
+      "id": "G01-C06",
+      "entry": "Multipart create and complete",
+      "owners": [
+        "src/routes/api/storage/multipart.ts",
+        "src/platform/server/storage/upload-target.ts"
+      ],
+      "locale": "Request Cookie at create and complete; JSON language/identity fields do not replace trusted values",
+      "identity": "Same authenticated user and target owner; target/compliance refusal precedes storage",
+      "tests": [
+        "src/platform/server/storage/upload-locale.test.ts",
+        "src/platform/server/storage/upload-target.test.ts",
+        "src/cast/server/upload-check.test.ts"
+      ],
+      "evidence": "real route callback and target validator with mock storage/check dependencies",
+      "limits": ["No real multipart R2 operations or HTTP middleware chain"]
+    },
+    {
+      "id": "G01-C07",
+      "entry": "Domain actor boundaries",
+      "owners": [
+        "src/sequences/sequences.fn.ts",
+        "src/studio/studio-assets.fn.ts",
+        "src/cast/sequence-characters.fn.ts",
+        "src/cast/sequence-locations.fn.ts",
+        "src/stills/shot-image.fn.ts",
+        "src/motion/motion.fn.ts"
+      ],
+      "locale": "Explicit context.promptLocale or required PromptLocaleContext reaches shared service/actor",
+      "identity": "User and organization remain from existing context/scoped DB",
+      "tests": [
+        "src/studio/server/studio-prompt-locale.test.ts",
+        "src/assistant/server/assistant-chat.test.ts"
+      ],
+      "evidence": "source tracing of actor assembly; representative real template/assistant assembly before mocked LLM calls",
+      "limits": [
+        "Representative domain tests do not execute every UI server function"
+      ]
+    },
+    {
+      "id": "G01-C08",
+      "entry": "External MCP gateway",
+      "owners": [
+        "src/platform/server/mcp/auth.ts",
+        "src/platform/server/mcp/server.ts"
+      ],
+      "locale": "mcpToolContext always assigns en, including session-Cookie callers",
+      "identity": "Key/session or OAuth authentication; membership; tool scope before scoped DB",
+      "tests": [
+        "src/platform/server/mcp/auth.test.ts",
+        "src/platform/server/mcp/auth-cookie.test.ts",
+        "src/platform/server/mcp/server.test.ts"
+      ],
+      "evidence": "real MCP gateway callbacks and separate real Better Auth memory-adapter tests",
+      "limits": [
+        "Gateway tests mock auth/DB; real Better Auth tests mock membership/compliance"
+      ]
+    },
+    {
+      "id": "G01-C09",
+      "entry": "MCP scope and system-admin Key exception",
+      "owners": ["src/platform/server/mcp/tool-context.ts"],
+      "locale": "Trusted locale survives sequence DB rebind",
+      "identity": "Only a system-admin API Key may adopt a foreign sequence organization; OAuth/session cannot",
+      "tests": [
+        "src/platform/server/mcp/tool-context.test.ts",
+        "src/platform/server/mcp/admin-sequence-access.test.ts"
+      ],
+      "evidence": "shared tool scope tests and real in-memory D1 sequence adoption tests with mocked external dependencies"
+    },
+    {
+      "id": "G01-C10",
+      "entry": "REST/MCP create sequence",
+      "owners": [
+        "src/routes/api/v1/sequences.ts",
+        "src/platform/server/mcp/tools/structure-edits.ts",
+        "src/platform/server/api-v1/create.ts"
+      ],
+      "locale": "REST explicit external en; MCP trusted tool context; runOneShotCreate passes context to createSequences",
+      "identity": "Business input and trusted user/organization/scoped DB are separate parameters",
+      "tests": [
+        "src/platform/server/mcp/server.test.ts",
+        "src/platform/server/api-v1/create.test.ts"
+      ],
+      "evidence": "MCP gateway context assertions plus separate create orchestration tests with mocked shared services",
+      "limits": [
+        "REST route and shared creation service are not exercised as one HTTP pipeline"
+      ]
+    },
+    {
+      "id": "G01-C11",
+      "entry": "REST script enhancement",
+      "owners": [
+        "src/routes/api/v1/scripts.enhance.ts",
+        "src/platform/server/api-v1/enhance.ts",
+        "src/sequences/server/script-enhancement.ts"
+      ],
+      "locale": "External en passed to streamScriptEnhancement and template selection",
+      "identity": "Authenticated scoped DB and user/organization retained",
+      "tests": ["src/platform/server/api-v1/enhance.test.ts"],
+      "evidence": "source trace for language/identity; existing SSE response tests",
+      "limits": [
+        "SSE tests do not dynamically prove the route language boundary"
+      ]
+    },
+    {
+      "id": "G01-C12",
+      "entry": "REST/MCP export",
+      "owners": [
+        "src/routes/api/v1/sequences.$id.exports.ts",
+        "src/platform/server/mcp/tools/generation.ts",
+        "src/sequences/server/export.ts"
+      ],
+      "locale": "Fixed external/context locale passed to startExport and workflow payload",
+      "identity": "Trusted user and organization from scoped DB",
+      "tests": [
+        "src/sequences/server/export.test.ts",
+        "src/platform/server/mcp/tools.test.ts"
+      ],
+      "evidence": "shared export/tool tests with mocked workflow trigger",
+      "limits": ["No real export container or Workflows engine execution"]
+    },
+    {
+      "id": "G01-C13",
+      "entry": "REST publish/MCP create stitch",
+      "owners": [
+        "src/routes/api/v1/stitches.$id.publish.ts",
+        "src/platform/server/mcp/tools/stitch.ts"
+      ],
+      "locale": "REST explicit en; MCP context.promptLocale",
+      "identity": "Publish/create receive explicit trusted scoped DB and user",
+      "tests": [
+        "src/stitches/server/stitch-routes.test.ts",
+        "src/platform/server/mcp/tools.test.ts"
+      ],
+      "evidence": "source trace and existing route/tool tests; route tests mock middleware and publishing service"
+    },
+    {
+      "id": "G01-C14",
+      "entry": "MCP plan, execute, retry and storyboard",
+      "owners": [
+        "src/platform/server/mcp/tools/generation.ts",
+        "src/platform/server/mcp/tools/structure-edits.ts"
+      ],
+      "locale": "Trusted context locale in actor passed to generation service",
+      "identity": "generate scope and organization from scoped DB",
+      "tests": ["src/platform/server/mcp/tools.test.ts"],
+      "evidence": "real tool/service tests with seeded SQLite/D1 and mocked media/workflow boundaries",
+      "limits": ["Most tool tests inject scoped context directly"]
+    },
+    {
+      "id": "G01-C15",
+      "entry": "MCP shot prompts, images, motion and dialogue",
+      "owners": [
+        "src/platform/server/mcp/tools/shot-content-edits.ts",
+        "src/platform/server/mcp/tools/generation-uploads.ts",
+        "src/platform/server/mcp/tools/cast-audio-generation.ts"
+      ],
+      "locale": "shotEdit/actor retain context.promptLocale",
+      "identity": "Organization and parent-child checks precede shared service call",
+      "tests": [
+        "src/platform/server/mcp/tools.test.ts",
+        "src/platform/server/mcp/cast-audio-generation.test.ts"
+      ],
+      "evidence": "source tracing and real shared domain tests with mock workflow/media boundaries"
+    },
+    {
+      "id": "G01-C16",
+      "entry": "MCP cast, locations, voice and music",
+      "owners": ["src/platform/server/mcp/tools/cast-audio-generation.ts"],
+      "locale": "Required locale in actor; fixture and trigger assertions strengthened in this batch",
+      "identity": "User from trusted context; organization from scoped DB/sequence",
+      "tests": [
+        "src/platform/server/mcp/cast-audio-generation.test.ts",
+        "src/platform/server/mcp/tools.test.ts"
+      ],
+      "evidence": "real domain/tool calls and in-memory D1; workflow trigger mocked",
+      "limits": ["No real provider or workflow execution"]
+    },
+    {
+      "id": "G01-C17",
+      "entry": "MCP store upload and attach/replace element",
+      "owners": ["src/platform/server/mcp/tools/generation-uploads.ts"],
+      "locale": "Trusted locale passed to storeUpload and attach/replace services",
+      "identity": "Trusted scoped DB, user, sequence and request metadata",
+      "tests": ["src/platform/server/mcp/tools.test.ts"],
+      "evidence": "source trace and shared-tool tests with mock storage/workflow boundaries"
+    },
+    {
+      "id": "G01-C18",
+      "entry": "MCP Studio operations",
+      "owners": ["src/platform/server/mcp/tools/studio.ts"],
+      "locale": "Trusted locale supplied after request metadata or as explicit draft/vision argument",
+      "identity": "Existing organization-scoped DB and actor",
+      "tests": [
+        "src/platform/server/mcp/tools.test.ts",
+        "src/studio/server/studio-prompt-locale.test.ts"
+      ],
+      "evidence": "source trace, shared-tool tests and real prompt assembly before mock LLM call"
+    }
+  ],
+  "blanketSemanticApproval": false,
+  "openVerification": [
+    "Complete HTTP token-authentication + actual membership/compliance + shared service composition is not exercised.",
+    "REST create/enhance and all UI entry combinations are not each executed through the full framework chain.",
+    "Real browser, Workflows engine and provider behavior are outside this evidence."
+  ],
+  "sourceAfter": "822f098cafc426eebd23463e7f1379912c400e7b"
+}

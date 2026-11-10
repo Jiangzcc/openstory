@@ -161,7 +161,9 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 同日完成 `MC-B03`：before 为 `a5c8e6261e4d5564f57a7c500ff96aacbec970c0`，代码提交为 `95863667e4b58ac43718bd7a15f244787e97094b`。imageUnitPriceFitsWallet 归入 billing 纯策略，保存与报价直接共用 money 的精确往返换算；价卡匹配、最高售价、历史读取与 supplierCost 约束保持。原三个测试的 103 处 matcher AST 保留；进一步与 before 对照，已选 15 个原测试文件和 664 处 matcher AST 均未改。新增 33 项边界先在旧实现通过，改前 4 文件、93 项，改后扩展至 16 文件、288 项通过，类型检查、lint、构建及正常提交钩子通过。[批次记录](preservation/20261110-p3-mc-b03/README.md) 与 [机器证据](preservation/20261110-p3-mc-b03/implementation.json) 区分真实 schema／内存 D1、mock supplier／workflow 和 React 静态渲染。新增两条 MC-10 源码／测试路径；原单一谓词仍为一份，不宣称减少未来冲突数。
 
-**P3 整体仍进行中。** `G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责均未关闭；1,219 项冻结 inventory 不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。下一独立职责为 `G01-verify`（可信身份与任务语言入口）；G09-ownership-verify 仍按其 G03 前置推进。
+同日推进 `G01-verify`：before 为 `4a6df66fb27f0bbf39a31ce1a22ea7108e7b2585`，测试及功能文档提交为 `822f098cafc426eebd23463e7f1379912c400e7b`，状态保持 `reviewed-with-open-risks`。生产源码未改，新增 middleware／上传入口测试及 MCP 语言、可信身份与共享音频服务回归，18 类入口按证据边界登记。最终互不重叠的 21 文件、477 项通过，其中新增 134 项；19 个原测试文件的 964 处 matcher AST 全部保留，类型检查、lint 及正常提交钩子通过。本批未重跑生产构建，沿用 MC-B03 相同生产源码的构建证据。[批次记录](preservation/20261110-p3-g01/README.md)、[入口矩阵](preservation/20261110-p3-g01/caller-matrix.json) 与 [机器证据](preservation/20261110-p3-g01/implementation.json) 区分真实回调、真实内存实现和 mock。七个具名声明的上游 AST 对照不外推为完整语义批准；完整 HTTP 认证、真实 membership／compliance 与共享服务的组合，以及 REST create／enhance 和全部 UI HTTP 入口仍待验证。用户本轮取消尺寸、复杂度、嵌套及强制常量／枚举规则，归档指标仅描述事实，不作为硬门槛或整改债务。
+
+**P3 整体仍进行中。** `G01-verify` 的组合验收、`G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责均未关闭；1,219 项冻结 inventory 不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。下一步继续 `G01-verify` 的剩余验收；G09-ownership-verify 仍按其 G03 前置推进，不提前认定 G02 前置满足。
 
 ## 6. 未来新增二开的接入流程
 

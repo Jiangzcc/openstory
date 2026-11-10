@@ -1,0 +1,51 @@
+{
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "sourceBefore": "4a6df66fb27f0bbf39a31ce1a22ea7108e7b2585",
+  "method": "Compare named declaration ASTs; strip positions/comments. The second comparison removes only ObjectProperty/ObjectMethod/TSPropertySignature nodes named promptLocale. It is structural evidence, not full semantic approval.",
+  "checks": [
+    {
+      "path": "src/platform/middleware.fn.ts",
+      "declaration": "authRequestMiddleware",
+      "exactAstIdentical": true,
+      "astIdenticalAfterRemovingPromptLocaleProperties": true
+    },
+    {
+      "path": "src/platform/middleware.fn.ts",
+      "declaration": "authWithOrganizationRequestMiddleware",
+      "exactAstIdentical": false,
+      "astIdenticalAfterRemovingPromptLocaleProperties": true
+    },
+    {
+      "path": "src/platform/middleware.fn.ts",
+      "declaration": "authWithOrganizationMiddleware",
+      "exactAstIdentical": false,
+      "astIdenticalAfterRemovingPromptLocaleProperties": true
+    },
+    {
+      "path": "src/assistant/server/assistant-chat.ts",
+      "declaration": "toolContext",
+      "exactAstIdentical": false,
+      "astIdenticalAfterRemovingPromptLocaleProperties": true
+    },
+    {
+      "path": "src/routes/api/storage/upload.ts",
+      "declaration": "Route",
+      "exactAstIdentical": false,
+      "astIdenticalAfterRemovingPromptLocaleProperties": true
+    },
+    {
+      "path": "src/routes/api/storage/multipart.ts",
+      "declaration": "Route",
+      "exactAstIdentical": false,
+      "astIdenticalAfterRemovingPromptLocaleProperties": true
+    },
+    {
+      "path": "src/platform/server/mcp/server.ts",
+      "declaration": "mcpToolContext",
+      "exactAstIdentical": false,
+      "astIdenticalAfterRemovingPromptLocaleProperties": true
+    }
+  ],
+  "semanticApproval": false,
+  "allComparedDeclarationsPreservedOutsidePromptLocaleProperties": true
+}
