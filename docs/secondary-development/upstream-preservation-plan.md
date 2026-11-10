@@ -1,6 +1,6 @@
 # 上游业务保留与二开长期维护计划
 
-版本日期：2026-11-10。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成，G07-callers 已复核并记录开放风险，MC-B01 已完成完整图片请求能力校验收敛，MC-B02 已完成配置文本成本归属迁移；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
+版本日期：2026-11-10。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成，G07-callers 已复核并记录开放风险，MC-B01 已完成完整图片请求能力校验收敛，MC-B02 已完成配置文本成本归属迁移，MC-B03 已完成配置图片价格精度策略归属迁移；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
 
 本计划覆盖已经发生的二开、历史合入、当前缺口，以及后续新功能和上游更新。目标是尽可能保留上游业务逻辑和实现，在可解释、可验证的少量接入点上二开，降低持续升级成本。
 
@@ -159,7 +159,9 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 同日完成 `MC-B02`：before 为 `ef6563cb75180bfc18982ef282ac3f38bdb59734`，代码提交为 `c4c584a7fa9ded32aa2393e78857baea4851827c`。configuredTextCostUsd 及每百万 token 常量原样迁入 billing；函数 AST、适配模块其余声明和 llm-client 非 import AST 完全保留。原 6 文件的 328 处 matcher AST 保留，改前/改后各 7 文件、186 项通过，类型检查、lint、构建及正常提交钩子通过。[批次记录](preservation/20261110-p3-mc-b02/README.md) 与 [机器证据](preservation/20261110-p3-mc-b02/implementation.json) 分开标明 pure、mock SDK、mock workflow 和 assistant 接线的验证。MC-06 新增两条源码/测试路径；本批是职责移动，原有单一算式仍是一份，不宣称减少重复公式或未来冲突数。
 
-**P3 整体仍进行中。** `G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责均未关闭；1,219 项冻结 inventory 不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。独立后续实施候选为 `MC-B03`；G09-ownership-verify 仍按其 G03 前置推进。
+同日完成 `MC-B03`：before 为 `a5c8e6261e4d5564f57a7c500ff96aacbec970c0`，代码提交为 `95863667e4b58ac43718bd7a15f244787e97094b`。imageUnitPriceFitsWallet 归入 billing 纯策略，保存与报价直接共用 money 的精确往返换算；价卡匹配、最高售价、历史读取与 supplierCost 约束保持。原三个测试的 103 处 matcher AST 保留；进一步与 before 对照，已选 15 个原测试文件和 664 处 matcher AST 均未改。新增 33 项边界先在旧实现通过，改前 4 文件、93 项，改后扩展至 16 文件、288 项通过，类型检查、lint、构建及正常提交钩子通过。[批次记录](preservation/20261110-p3-mc-b03/README.md) 与 [机器证据](preservation/20261110-p3-mc-b03/implementation.json) 区分真实 schema／内存 D1、mock supplier／workflow 和 React 静态渲染。新增两条 MC-10 源码／测试路径；原单一谓词仍为一份，不宣称减少未来冲突数。
+
+**P3 整体仍进行中。** `G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责均未关闭；1,219 项冻结 inventory 不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。下一独立职责为 `G01-verify`（可信身份与任务语言入口）；G09-ownership-verify 仍按其 G03 前置推进。
 
 ## 6. 未来新增二开的接入流程
 

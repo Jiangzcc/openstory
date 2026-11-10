@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "MC-B03",
+  "responsibilityId": "MC-10",
+  "status": "completed",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "a5c8e6261e4d5564f57a7c500ff96aacbec970c0",
+  "sourceAfter": "95863667e4b58ac43718bd7a15f244787e97094b",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": {
+    "production": [
+      "src/billing/configured-image-price-policy.ts",
+      "src/models/image-channel-pricing.ts",
+      "src/models/image-channels.ts"
+    ],
+    "tests": ["src/billing/configured-image-price-policy.test.ts"],
+    "documentation": ["docs/architecture/model-configuration.md"],
+    "newSourcePaths": [
+      "src/billing/configured-image-price-policy.ts",
+      "src/billing/configured-image-price-policy.test.ts"
+    ],
+    "existingUpstreamPathsChanged": []
+  },
+  "structuralResult": {
+    "predicateDefinitionsBefore": 1,
+    "predicateDefinitionsAfter": 1,
+    "ownershipBefore": "models/image-channel-pricing",
+    "ownershipAfter": "billing/configured-image-price-policy",
+    "duplicatePredicateReduction": 0,
+    "conversionSource": "billing/money: usdToMicros / microsToUsd / ZERO_MICROS",
+    "removedUnreferencedConversionConstant": "IMAGE_PRICE_LIMITS.microUsdPerUsd",
+    "pricingLinesBefore": 132,
+    "pricingLinesAfter": 122,
+    "newModuleRuntimeImports": ["./money"],
+    "upstreamModifiedPathReduction": 0,
+    "conflictReductionClaim": false
+  },
+  "preservation": {
+    "pricingRemainingProgramAstIdentical": true,
+    "pricingExclusions": [
+      "migrated imageUnitPriceFitsWallet declaration",
+      "unreferenced IMAGE_PRICE_LIMITS.microUsdPerUsd property",
+      "imports"
+    ],
+    "channelsNonImportProgramAstIdentical": true,
+    "moneyNormalizedFileUnchanged": true,
+    "salesPriceMaximumUnchanged": true,
+    "quoteValidationOrderUnchanged": true,
+    "errorStringsAndIssuePathUnchanged": true,
+    "historicalReadSchemaUnchanged": true,
+    "supplierCostSchemaUnchanged": true,
+    "originalTests": [
+      {
+        "path": "src/models/image-channel-pricing.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 16,
+        "matcherDigest": "3577b0c370c51c2bcb2589222e26bb9b3f6195adca527134ceb39d3b107d23a0",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/models/image-channels.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 51,
+        "matcherDigest": "a7ecf78b0543aba8051abd1799ff91f558434cbe1eb4eeff03654eece4bfa4ab",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/billing/configured-image-billing.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 36,
+        "matcherDigest": "694567840815649d59c0150c29148c9352820b78a76de6bb94c70f06831d0166",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/models/image-channel-contract-compatibility.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 19,
+        "matcherDigest": "26bdfe5bb47e6a19f0775d00a16ac9a859ab4581c3fa8bbd0acd206c3d01548f",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/stills/server/configured-image-generation.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 53,
+        "matcherDigest": "fa48a830862eaeea60e1013bfbdca0ef0a0185dae5272c42b0bba30300defbe0",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/stills/server/workflows/configured-image-step.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 157,
+        "matcherDigest": "0a2fa6833ba467a70ee8854ddc33f23f5bf8d1fcb0c5c5a6bcafd2a68b1eb735",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/billing/image-cost-hint.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 29,
+        "matcherDigest": "3bd7ddfc35258c45800a6d57fa53bb4ded2810d25ece80422e1c1b4de03717e8",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/studio/ui/configured-image-settings.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 85,
+        "matcherDigest": "a39a6391b9c8fb21ddcfa12b611ada292a490e068483c6b371fa984b5f6ec1b1",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/studio/ui/configured-image-controls.test.tsx",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 17,
+        "matcherDigest": "f93f1d1480f5799bc55b19eb36cf39518137d77d35cd0a7cbaff63950e8fdb85",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/billing/configured-image-plan-billing.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 57,
+        "matcherDigest": "d67ed9556247fee0156c40dae2fe061feba506256ad9c7075034960d1164c354",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/billing/configured-image-plan-partition.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 16,
+        "matcherDigest": "72f9eb7ece2072d2e688251a0a6cffb9ffc49e2439cba731f875ef1e21930807",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/models/server/db/image-channels.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 49,
+        "matcherDigest": "190792318b82c73c884463720d504b7f116b54657257ff3ac0b0345c68ea5c9c",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/billing/configured-image-plan-billing-balance.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 18,
+        "matcherDigest": "8d42cf1938059130ddde432e1eaf3ba784df38e276ee278086b8b36cd8399b61",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/billing/server/__tests__/money.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 29,
+        "matcherDigest": "fd29fbd61acaa3e3ef163ff321f5d6ec18b69bb17fdee886c7786b61421bc505",
+        "originalAssertionsPreserved": true
+      },
+      {
+        "path": "src/platform/client-server-boundary.test.ts",
+        "normalizedFileUnchanged": true,
+        "matcherCount": 32,
+        "matcherDigest": "2bcd525d7e9f640ad02e68ed9a64d38955b29dac85a017ca18751331ba06ce33",
+        "originalAssertionsPreserved": true
+      }
+    ],
+    "originalMatcherCount": 664,
+    "frozenPrimaryMatcherCount": 103,
+    "newTestsMatcherAstIdentical": true,
+    "newTestsMatcherCount": 17
+  },
+  "verification": {
+    "before": {
+      "files": 4,
+      "tests": 93,
+      "includesNewCharacterizationTests": 33,
+      "implementation": "old models predicate"
+    },
+    "after": {
+      "files": 16,
+      "tests": 288,
+      "includesBeforeSuite": true
+    },
+    "testFiles": [
+      "src/billing/configured-image-price-policy.test.ts",
+      "src/models/image-channel-pricing.test.ts",
+      "src/models/image-channels.test.ts",
+      "src/billing/configured-image-billing.test.ts",
+      "src/models/image-channel-contract-compatibility.test.ts",
+      "src/stills/server/configured-image-generation.test.ts",
+      "src/stills/server/workflows/configured-image-step.test.ts",
+      "src/billing/image-cost-hint.test.ts",
+      "src/studio/ui/configured-image-settings.test.ts",
+      "src/studio/ui/configured-image-controls.test.tsx",
+      "src/billing/configured-image-plan-billing.test.ts",
+      "src/billing/configured-image-plan-partition.test.ts",
+      "src/models/server/db/image-channels.test.ts",
+      "src/billing/configured-image-plan-billing-balance.test.ts",
+      "src/billing/server/__tests__/money.test.ts",
+      "src/platform/client-server-boundary.test.ts"
+    ],
+    "typecheck": "passed",
+    "lint": {
+      "status": "passed",
+      "warnings": 146,
+      "warningsInBatch": 0
+    },
+    "format": {
+      "status": "passed",
+      "files": 5,
+      "fullRepository": false
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed"
+    },
+    "commitHooks": {
+      "status": "passed",
+      "elapsedSeconds": 120.35,
+      "checks": [
+        "client-server-boundary: 17 tests",
+        "dead-code",
+        "format: 5 files",
+        "lint",
+        "typecheck"
+      ],
+      "bypassed": []
+    },
+    "evidenceBoundary": {
+      "precision": "real pure functions with synthetic numeric edge cases; new tests ran before and after migration",
+      "history": "real channel/model schemas cover precision-invalid but otherwise valid history, enabled-save refusal, correction and disabling",
+      "database": "createTestDb in-process SQLite/D1 API tests cover existing channel CRUD/CAS and balance/reservation rules; not a historical-corrupt-row end-to-end scenario",
+      "generation": "mock paid supplier boundary; generation, quote and result-charge paths retain actual-count behavior",
+      "workflow": "mock WorkflowStep and storage/context, no real Workflows replay",
+      "display": "real React renderToStaticMarkup with i18next, no browser hydration/navigation",
+      "providers": "not called"
+    }
+  },
+  "quality": {
+    "metrics": [
+      {
+        "path": "src/billing/configured-image-price-policy.ts",
+        "lines": 11,
+        "maxFunctionLines": 8,
+        "functionsOverLimit": []
+      },
+      {
+        "path": "src/billing/configured-image-price-policy.test.ts",
+        "lines": 151,
+        "maxFunctionLines": 36,
+        "functionsOverLimit": []
+      },
+      {
+        "path": "src/models/image-channel-pricing.ts",
+        "lines": 122,
+        "maxFunctionLines": 42,
+        "functionsOverLimit": []
+      },
+      {
+        "path": "src/models/image-channels.ts",
+        "lines": 476,
+        "maxFunctionLines": 37,
+        "functionsOverLimit": []
+      }
+    ],
+    "newPolicyFunction": {
+      "lines": 8,
+      "cyclomaticComplexity": 3,
+      "controlNesting": 0
+    },
+    "lint": {
+      "warnings": 146,
+      "batchDiagnostics": []
+    }
+  },
+  "temporaryLogHashes": {
+    "before-tests.json": "88e1eded43929d3fa5cdfeb62f5cabf5444c9efa76a380173c1f743472ba096c",
+    "after-tests.log": "bbf1f6dff737cda9a525db40629c0b0b022cb7d9b7951ea332b7375f8a7ed85b",
+    "typecheck.log": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3",
+    "lint.log": "8aec6bb95399bacf6f00bc5aa54a6bdaf611a1ac63118e421734308c8d46d826",
+    "build.log": "396aa025132f962c550a15c2b8622153b6cd7085213b7184c04f4e00029917e4",
+    "code-commit.log": "10eec957759ff1eba19bb6d718628f56c920614eda4c5e9e0663c363775f8725"
+  },
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "modified": false,
+    "originalInventoryApproved": false
+  },
+  "protectedWorkingFiles": [
+    {
+      "path": ".codex/project-rules.md",
+      "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4"
+    }
+  ],
+  "openItems": [
+    "MC-10 whole responsibility is not semantically closed by this ownership move.",
+    "MC-06 and MC-09 whole responsibilities and other P3 items remain open.",
+    "G07-callers inherited risks and coverage limits remain open.",
+    "G09-ownership-verify still requires G03-verify.",
+    "CONTINUE-LLM-SOURCE remains deferred."
+  ],
+  "notValidated": [
+    "real providers",
+    "real Cloudflare Workflows engine replay",
+    "browser/end-to-end acceptance",
+    "historical invalid-precision DB record recovery end-to-end",
+    "remote databases and deployment",
+    "future arbitrary upstream conflicts"
+  ],
+  "nextImplementation": ["G01-verify"],
+  "noRemoteWrites": true,
+  "pushed": false
+}
