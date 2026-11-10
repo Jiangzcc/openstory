@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "batchId": "G07-partition",
+  "responsibilityId": "GC-07",
+  "status": "completed",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "4b6788db7da445abfca26d413ddec47a36be4e0b",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "designFilesModified": false,
+    "semanticApproval": false
+  },
+  "newSourcePaths": [
+    "src/billing/configured-image-plan-partition.test.ts",
+    "src/sequences/server/continue-plan-billing.test.ts"
+  ],
+  "productionFiles": [
+    "src/billing/configured-image-plan-billing.ts",
+    "src/sequences/server/continue-plan.ts",
+    "src/sequences/server/freeze-fresh-generation-plan.ts"
+  ],
+  "changedFiles": [
+    {
+      "path": "docs/architecture/generation-plan.md",
+      "sha256Normalized": "8c1ce710c6e3ad43d82aad52a135f2e4507aecc2e4ea84e25a46978a91533862"
+    },
+    {
+      "path": "src/billing/configured-image-plan-billing.ts",
+      "sha256Normalized": "5a10e1722fb8d44b47723272bd857428bdfcc2816294441276b7d004da8b122d"
+    },
+    {
+      "path": "src/billing/configured-image-plan-partition.test.ts",
+      "sha256Normalized": "14726dd08043b709d5d0a8b48afe06a95aae7efa338ef3e7e0d3364fdd968d39"
+    },
+    {
+      "path": "src/sequences/server/continue-plan-billing.test.ts",
+      "sha256Normalized": "01700ae7a2ecfd9a1184fa57936a2444d884bf5cf1c432615212650d5def301d"
+    },
+    {
+      "path": "src/sequences/server/continue-plan.ts",
+      "sha256Normalized": "0240de97f2f2044bb16c4a59f7e2687fd1fccfe0ee3fe2490e0a0425365a86dd"
+    },
+    {
+      "path": "src/sequences/server/freeze-fresh-generation-plan.test.ts",
+      "sha256Normalized": "09f180998134e569c2a6776bfac1ab9ad347966286afc6b0bbb9a4d8ed511d27"
+    },
+    {
+      "path": "src/sequences/server/freeze-fresh-generation-plan.ts",
+      "sha256Normalized": "e51f6122b73b763e9d4b5fbe722654b16981811997aa5e1676146ae28c74c099"
+    }
+  ],
+  "fingerprintEncoding": "SHA-256 after CRLF-to-LF normalization; protected working files use raw byte hashes.",
+  "removedDuplication": [
+    {
+      "decision": "choose per-request image subtotal when any plan image uses captured configured routing",
+      "beforeOwners": 2,
+      "afterOwners": 1,
+      "owner": "src/billing/configured-image-plan-billing.ts#partitionPlanImageEstimate"
+    },
+    {
+      "decision": "exclude all four image unit counts from the legacy estimator after separately quoting every image",
+      "beforeOwners": 2,
+      "afterOwners": 1,
+      "owner": "src/billing/configured-image-plan-billing.ts#partitionPlanImageEstimate"
+    }
+  ],
+  "remainingBridges": [
+    {
+      "path": "src/sequences/server/continue-plan.ts",
+      "reason": "Continue keeps its safe model, legacy display-price and source fallback, timing, preparation and balance-check contract."
+    },
+    {
+      "path": "src/sequences/server/freeze-fresh-generation-plan.ts",
+      "reason": "Fresh handoff owns its frozen input, models, duration and legacy estimator parameters; no workflow or money control flow moved."
+    }
+  ],
+  "sourceScopeProof": [
+    {
+      "path": "src/billing/configured-image-plan-billing.ts",
+      "lines": 263,
+      "functions": [
+        {
+          "name": "targetImageModels",
+          "line": 50,
+          "lines": 12,
+          "beforeLines": 12,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 2,
+          "maxDecisionNesting": 1
+        },
+        {
+          "name": "planImageRequests",
+          "line": 63,
+          "lines": 18,
+          "beforeLines": 18,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 2,
+          "maxDecisionNesting": 1
+        },
+        {
+          "name": "referenceSheetImageRequests",
+          "line": 82,
+          "lines": 13,
+          "beforeLines": 13,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 2,
+          "maxDecisionNesting": 0
+        },
+        {
+          "name": "quoteConfiguredPlanImages",
+          "line": 96,
+          "lines": 30,
+          "beforeLines": 30,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 2,
+          "maxDecisionNesting": 1
+        },
+        {
+          "name": "estimateMixedReferenceSheets",
+          "line": 127,
+          "lines": 24,
+          "beforeLines": 24,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 1,
+          "maxDecisionNesting": 0
+        },
+        {
+          "name": "estimateReferenceSheetPlanCost",
+          "line": 152,
+          "lines": 25,
+          "beforeLines": 25,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 4,
+          "maxDecisionNesting": 1
+        },
+        {
+          "name": "planUsesConfiguredImages",
+          "line": 178,
+          "lines": 20,
+          "beforeLines": 20,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 3,
+          "maxDecisionNesting": 0
+        },
+        {
+          "name": "estimatePlanImageCost",
+          "line": 199,
+          "lines": 37,
+          "beforeLines": 40,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 1,
+          "maxDecisionNesting": 0
+        },
+        {
+          "name": "partitionPlanImageEstimate",
+          "line": 238,
+          "lines": 25,
+          "beforeLines": null,
+          "bodyUnchanged": null,
+          "complexityUpperBound": 4,
+          "maxDecisionNesting": 1
+        }
+      ]
+    },
+    {
+      "path": "src/sequences/server/continue-plan.ts",
+      "lines": 290,
+      "functions": [
+        {
+          "name": "continueFromPlan",
+          "line": 48,
+          "lines": 28,
+          "beforeLines": 28,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 5,
+          "maxDecisionNesting": 1
+        },
+        {
+          "name": "continueImageEstimate",
+          "line": 95,
+          "lines": 41,
+          "beforeLines": 46,
+          "bodyUnchanged": false,
+          "complexityUpperBound": 5,
+          "maxDecisionNesting": 1
+        },
+        {
+          "name": "estimateContinueCost",
+          "line": 137,
+          "lines": 35,
+          "beforeLines": 35,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 1,
+          "maxDecisionNesting": 0
+        },
+        {
+          "name": "prepareContinueEstimate",
+          "line": 173,
+          "lines": 37,
+          "beforeLines": 37,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 1,
+          "maxDecisionNesting": 0
+        },
+        {
+          "name": "prepareContinue",
+          "line": 218,
+          "lines": 35,
+          "beforeLines": 35,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 4,
+          "maxDecisionNesting": 1
+        },
+        {
+          "name": "withContinueSwitches",
+          "line": 260,
+          "lines": 27,
+          "beforeLines": 27,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 2,
+          "maxDecisionNesting": 1
+        }
+      ]
+    },
+    {
+      "path": "src/sequences/server/freeze-fresh-generation-plan.ts",
+      "lines": 123,
+      "functions": [
+        {
+          "name": "freezeFreshGenerationPlan",
+          "line": 18,
+          "lines": 55,
+          "beforeLines": 55,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 5,
+          "maxDecisionNesting": 1
+        },
+        {
+          "name": "remainingPlanCost",
+          "line": 74,
+          "lines": 42,
+          "beforeLines": 47,
+          "bodyUnchanged": false,
+          "complexityUpperBound": 2,
+          "maxDecisionNesting": 0
+        },
+        {
+          "name": "frozenImageRouting",
+          "line": 117,
+          "lines": 6,
+          "beforeLines": 6,
+          "bodyUnchanged": true,
+          "complexityUpperBound": 2,
+          "maxDecisionNesting": 1
+        }
+      ]
+    }
+  ],
+  "quality": {
+    "changedProductionFunctions": [
+      {
+        "name": "partitionPlanImageEstimate",
+        "lines": 25,
+        "complexityUpperBound": 4,
+        "maxDecisionNesting": 1
+      },
+      {
+        "name": "continueImageEstimate",
+        "beforeLines": 46,
+        "lines": 41,
+        "complexityUpperBound": 5,
+        "maxDecisionNesting": 1
+      },
+      {
+        "name": "remainingPlanCost",
+        "beforeLines": 47,
+        "lines": 42,
+        "complexityUpperBound": 2,
+        "maxDecisionNesting": 0
+      }
+    ],
+    "inheritedLimit": "freezeFreshGenerationPlan remains 55 lines; its body is unchanged.",
+    "newTestFiles": [
+      {
+        "path": "src/billing/configured-image-plan-partition.test.ts",
+        "lines": 279,
+        "maxFunctionLines": 24,
+        "maxComplexityUpperBound": 1,
+        "maxDecisionNesting": 0
+      },
+      {
+        "path": "src/sequences/server/continue-plan-billing.test.ts",
+        "lines": 150,
+        "maxFunctionLines": 26,
+        "maxComplexityUpperBound": 2,
+        "maxDecisionNesting": 1
+      }
+    ],
+    "metricMethod": "Babel TypeScript AST; logical expressions, ternaries and control decisions count toward a conservative cyclomatic upper bound; nested function bodies are measured separately."
+  },
+  "assertionTrace": [
+    {
+      "path": "src/sequences/server/continue-plan.test.ts",
+      "beforeAssertions": 19,
+      "afterAssertions": 19,
+      "missingOriginalAssertions": 0,
+      "hashMethod": "SHA-256 of Babel matcher-call AST without source metadata",
+      "originalFileUnchanged": true
+    },
+    {
+      "path": "src/sequences/server/continue-plan-estimate.test.ts",
+      "beforeAssertions": 27,
+      "afterAssertions": 27,
+      "missingOriginalAssertions": 0,
+      "hashMethod": "SHA-256 of Babel matcher-call AST without source metadata",
+      "originalFileUnchanged": true
+    },
+    {
+      "path": "src/sequences/server/freeze-fresh-generation-plan.test.ts",
+      "beforeAssertions": 11,
+      "afterAssertions": 17,
+      "missingOriginalAssertions": 0,
+      "hashMethod": "SHA-256 of Babel matcher-call AST without source metadata",
+      "originalFileUnchanged": false
+    },
+    {
+      "path": "src/sequences/server/fresh-plan-persistence.test.ts",
+      "beforeAssertions": 27,
+      "afterAssertions": 27,
+      "missingOriginalAssertions": 0,
+      "hashMethod": "SHA-256 of Babel matcher-call AST without source metadata",
+      "originalFileUnchanged": true
+    },
+    {
+      "path": "src/billing/configured-image-plan-billing.test.ts",
+      "beforeAssertions": 57,
+      "afterAssertions": 57,
+      "missingOriginalAssertions": 0,
+      "hashMethod": "SHA-256 of Babel matcher-call AST without source metadata",
+      "originalFileUnchanged": true
+    },
+    {
+      "path": "src/billing/configured-image-plan-billing-balance.test.ts",
+      "beforeAssertions": 18,
+      "afterAssertions": 18,
+      "missingOriginalAssertions": 0,
+      "hashMethod": "SHA-256 of Babel matcher-call AST without source metadata",
+      "originalFileUnchanged": true
+    }
+  ],
+  "verification": {
+    "baseline": {
+      "command": "bun run test src/sequences/server/continue-plan.test.ts src/sequences/server/continue-plan-estimate.test.ts src/sequences/server/freeze-fresh-generation-plan.test.ts src/sequences/server/fresh-plan-persistence.test.ts src/billing/configured-image-plan-billing.test.ts src/billing/configured-image-plan-billing-balance.test.ts",
+      "testFiles": 6,
+      "tests": 57,
+      "status": "passed"
+    },
+    "initialFailures": [
+      {
+        "command": "bun typecheck",
+        "kind": "new-test-fixture-type",
+        "detail": "Optional resolution assigned to required frozen plan field; fixed the test fixture with Required<Pick<...>>."
+      },
+      {
+        "command": "first 12-file integration run",
+        "testFiles": 12,
+        "tests": 133,
+        "failed": 3,
+        "kind": "new-test-oracle",
+        "detail": "Expected i2v prices but the unchanged legacy estimator passes hasReferenceImages:true and routes Seedance to r2v; fixed the independent numeric oracle from the original source, without a production change."
+      },
+      {
+        "command": "first focused rerun after moving new tests out of an oversized describe callback",
+        "testFiles": 3,
+        "tests": 27,
+        "failed": 7,
+        "kind": "new-test-hook-scope",
+        "detail": "Existing network spy hooks did not cover top-level new cases; moved the same hooks to file scope. Cost assertions passed; fetch-spy assertions then passed on rerun."
+      }
+    ],
+    "focusedAfterRepairs": {
+      "testFiles": 3,
+      "tests": 27,
+      "status": "passed"
+    },
+    "finalIntegration": {
+      "command": "bun run test src/sequences/server/continue-plan.test.ts src/sequences/server/continue-plan-estimate.test.ts src/sequences/server/continue-plan-billing.test.ts src/sequences/server/freeze-fresh-generation-plan.test.ts src/sequences/server/fresh-plan-persistence.test.ts src/billing/configured-image-plan-billing.test.ts src/billing/configured-image-plan-billing-balance.test.ts src/billing/configured-image-plan-partition.test.ts src/billing/cost-estimation.test.ts src/billing/server/storyboard-render-gate.test.ts src/platform/client-server-boundary.test.ts src/platform/domain-blind.test.ts",
+      "testFiles": 12,
+      "tests": 135,
+      "status": "passed"
+    },
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningsInOtherFiles": 146,
+      "warningsInChangedFiles": 0
+    },
+    "deadCode": {
+      "command": "bun dead-code",
+      "status": "passed",
+      "configurationHints": 6
+    },
+    "format": {
+      "command": "bunx --no-install oxfmt --check docs/architecture/generation-plan.md src/billing/configured-image-plan-billing.ts src/billing/configured-image-plan-partition.test.ts src/sequences/server/continue-plan-billing.test.ts src/sequences/server/continue-plan.ts src/sequences/server/freeze-fresh-generation-plan.test.ts src/sequences/server/freeze-fresh-generation-plan.ts",
+      "files": 7,
+      "status": "passed",
+      "wholeRepositoryRun": false,
+      "wholeRepositoryNote": "Prior G09 format failures are documented in that batch; no bulk formatting or claim of a fresh whole-repository format pass."
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed",
+      "warnings": "Existing dependency/module-directive and plugin timing warnings remain; no deployment."
+    },
+    "independentReview": {
+      "scope": "production diff and added behavioral tests",
+      "status": "no-unresolved-findings",
+      "execution": "read-only source review; not additional test execution"
+    },
+    "commitHooks": {
+      "command": "git commit -m refactor: 收敛计划图片费用分区",
+      "status": "passed",
+      "elapsedSeconds": 112.42,
+      "checks": [
+        "client-server-boundary: 17 tests",
+        "dead-code",
+        "format: 7 files",
+        "lint: staged paths",
+        "typecheck"
+      ],
+      "bypassed": []
+    }
+  },
+  "protectedWorkingFiles": [
+    {
+      "path": ".codex/project-rules.md",
+      "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4"
+    }
+  ],
+  "notValidated": [
+    "real providers or paid generation",
+    "Cloudflare Workflows engine replay",
+    "browser or end-to-end acceptance",
+    "remote databases or deployment"
+  ],
+  "notClosed": [
+    "GC-07 beyond G07-partition; G07-callers remains pending",
+    "G09-ownership-verify and other GC-09 responsibilities",
+    "remaining global P3 responsibilities and original inventory approvals",
+    "P4 CI enforcement"
+  ],
+  "deferredBusinessIssues": [
+    "CONTINUE-LLM-SOURCE remains deferred by user",
+    "BYOK prohibition and RMB sales/cost policies remain separate authorized scope"
+  ],
+  "nextImplementation": ["G07-callers"],
+  "noRemoteWrites": true,
+  "pushed": false,
+  "upgradeReviewTriggers": [
+    "new image PlanUnitKind values or changes to legacy estimatePlanCost/floor semantics",
+    "frozen plan request fields, picker fanout and resolution contract",
+    "configured image route or price validation; free quotes and unknown mixed prices"
+  ],
+  "sourceAfter": "ecd0a77f787f4d0b38ab3d25da85a7ea86173882"
+}

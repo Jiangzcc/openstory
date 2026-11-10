@@ -1,6 +1,6 @@
 # 上游业务保留与二开长期维护计划
 
-版本日期：2026-11-09。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，首个全量实施批次 G09-reference-projection 已完成；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
+版本日期：2026-11-10。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
 
 本计划覆盖已经发生的二开、历史合入、当前缺口，以及后续新功能和上游更新。目标是尽可能保留上游业务逻辑和实现，在可解释、可验证的少量接入点上二开，降低持续升级成本。
 
@@ -145,13 +145,15 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 此前四批前后，既有修改路径均为 653、既有 src 修改均为 606，恢复到上游的路径为 0；同一待合入上游样本前后均有 18 个冲突文件。[已归档对照](preservation/20261109-p3-global-design/prior-pilot-comparison.json) 用于纠正先前收益口径，不将这 18 个文件当成治理范围。
 
-### 5.5 全量设计后的首批实际实施（2026-11-09）
+### 5.5 全量设计后的实际实施（2026-11-09—2026-11-10）
 
 `G09-reference-projection` 已完成：before 为 `b85e8c2728259b7902dad6e1cc9aa3757dfb3b6e`，代码提交为 `456046a25269371dd42729f0a2f9343e07942c4d`。[批次记录](preservation/20261109-p3-g09-reference-projection/README.md) 列出全部入口、删除的重复决策、必要桥接、原断言去向和本轮验证；机器证据见 [implementation.json](preservation/20261109-p3-g09-reference-projection/implementation.json)，后续实际进展追加到 [实施台账](preservation/p3-implementation-log.jsonl)。冻结设计的 planned 字段保留其原始时间含义，当前实施状态查追加台账。
 
 本批统一 cast sheet 真实 DTO 的模型、比例和引用数投影，供两处直接生成入口和计划报价共同消费。16 文件、258 项通过；最后测试类型修正后受影响的 20 项复跑通过；typecheck、lint、dead-code、构建和正常提交钩子通过。本批格式检查通过，全仓 format:check 的 2,215 个范围外格式问题单列。源码、单元与构建证据不代替真实供应商、Workflows 引擎重放、远程数据库或浏览器端到端验收。
 
-**P3 整体仍进行中。** `G09-ownership-verify` 和 GC-09 其余职责尚未关闭；1,219 项冻结 inventory 不作整文件或目录的批量语义批准。两个新增源码路径在本批归入 GC-09；用户暂缓项保持，P4 未开始。下一批按既定依赖实施 `G07-partition`，再做 `G07-callers`。
+2026-11-10 完成 `G07-partition`：before 为 `4b6788db7da445abfca26d413ddec47a36be4e0b`，代码提交为 `ecd0a77f787f4d0b38ab3d25da85a7ea86173882`。[批次记录](preservation/20261110-p3-g07-partition/README.md) 和 [机器证据](preservation/20261110-p3-g07-partition/implementation.json) 固定本批范围。Continue/fresh 的图片小计选择与四类 counts 排除从两处收敛到既有 billing 模块一处，原配置快照、生成和资金控制流保持。原 6 文件的 159 处 matcher 断言全部保留；最终集成 12 文件、135 项通过，typecheck、lint、dead-code、构建及正常提交钩子通过。本批 7 文件格式通过，全仓格式没有在本轮重跑。新增测试的类型、金额预期和网络 spy 作用域问题及修复后的复跑关系写入记录。
+
+**P3 整体仍进行中。** `G07-callers` 与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责均未关闭；1,219 项冻结 inventory 不作整文件或目录的批量语义批准。本批两个新增测试路径归入 GC-07，G09 的新增路径仍归 GC-09。用户暂缓项保持，P4 未开始。下一批按既定依赖执行 `G07-callers`，复核各入口、digest/partial/hold 及现有父子模型快照契约。
 
 ## 6. 未来新增二开的接入流程
 
