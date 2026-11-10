@@ -35,6 +35,7 @@ import { dbSceneId } from '@/shots/scene-id';
 import { asStub } from '@/test/as-stub';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import { InsufficientCreditsError } from '@/platform/errors';
+import { micros } from '@/billing/money';
 
 vi.mock('#db-client', () => ({ getDb: vi.fn() }));
 
@@ -89,6 +90,9 @@ vi.doMock('@/billing/cost-estimation', () => ({
 // prepareContinue is the lock check, the work list and the estimate.
 const realContinuePlan =
   await vi.importActual<typeof import('./continue-plan')>('./continue-plan');
+let mockContinueEstimate: Awaited<
+  ReturnType<typeof realContinuePlan.prepareContinue>
+>['estimate'] = { micros: micros(1_000_000), priced: true };
 vi.doMock('./continue-plan', () => ({
   CONTINUE_CREDIT_PROVIDERS: ['fal', 'openrouter'],
   withContinueSwitches: realContinuePlan.withContinueSwitches,
@@ -114,7 +118,7 @@ vi.doMock('./continue-plan', () => ({
       return {
         work,
         stopAt,
-        estimate: { micros: 1_000_000, priced: true },
+        estimate: mockContinueEstimate,
         modelConfiguration,
         plan,
       };
@@ -196,6 +200,7 @@ afterAll(() => closeDb());
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  mockContinueEstimate = { micros: micros(1_000_000), priced: true };
   organizationId = generateId();
   userId = generateId();
   sequenceId = generateId();
@@ -451,18 +456,31 @@ describe('execute_generation', () => {
   });
 
   it('runs Continue through the storyboard launcher and gives its mutex refusal a code', async () => {
-    const { planToken } = await planGeneration(
+    mockContinueEstimate = {
+      micros: micros(200_000),
+      priced: false,
+      imageSource: 'platform',
+    };
+    const planned = await planGeneration(
       scoped(),
       actor(),
       sequenceId,
       missing
     );
+    const { planToken } = planned;
+    expect(planned.estimate).toEqual({ micros: null, usd: null });
     expect(await execute(planToken)).toMatchObject({
       workflowRunIds: [storyboardRun],
     });
     expect(triggerContinue).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ stopAt: 'images' })
+    );
+    expect(requireCredits).toHaveBeenCalledTimes(2);
+    expect(requireCredits).toHaveBeenLastCalledWith(
+      expect.anything(),
+      micros(200_000),
+      { providers: [] }
     );
     // A repeat while that run is live: the mutex, as a code the agent reads.
     getSequenceRejectingActiveRun.mockRejectedValueOnce(

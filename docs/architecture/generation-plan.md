@@ -480,9 +480,11 @@ agent hands back, and the launched runs are the operation.
   sequence settings and the estimate. Display fields (the sequence title,
   reference rows) and Dates are left out: a moved selection, model, target
   or price is `PLAN_CHANGED`; a rename or a touched timestamp is not.
-- **Credits.** The balance check never skips: Update all checks the larger
-  of the estimate and the editor's one-image floor, Continue the known part
-  of its estimate (as `continueGenerationFn`), retry its estimate against
+- **Credits.** Update all uses the editor's start floor: the larger of the
+  legacy sequence-model image floor and the most expensive configured image
+  request. Its nullable display estimate is separate. Continue checks its
+  floored numeric estimate even when the display price is unknown; retry
+  checks its estimate against
   the strictest provider set the launch reserves with (`creditProviders`
   from the dry run: `[]` when ElevenLabs music is planned, so a fal key
   cannot pass a plan whose music reservation then fails). These paths hold
@@ -493,8 +495,11 @@ agent hands back, and the launched runs are the operation.
   deduplication id: `launchUpdateStale`'s run key, and `executeSmartRetry`'s
   `runKey`, which keys each image run (`-<hash of the shot id>`, hashed so
   the id fits the instance-id limit without truncation), the motion batch
-  (`-motion`) and the music prompt (`-music-prompt`), and releases this
-  call's credit hold when the trigger reused a run. Continue goes through
+  (`-motion`) and the music prompt (`-music-prompt`). Retry cleanup follows
+  reservation ownership: a replay of a stable image reservation retains that
+  shared hold, including while the first trigger awaits acknowledgement. A
+  reused run releases only a redundant fresh hold; a trigger failure releases
+  a hold newly created by this call. Continue goes through
   `triggerContinue`, whose storyboard mutex is its launch-once guard. **A
   repeat of the same token is safe:** it re-sends the same ids and the
   trigger hands back the live or finished runs (`triggerCfWorkflow`), so it
