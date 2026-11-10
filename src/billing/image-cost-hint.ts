@@ -12,6 +12,7 @@ import type { ImageModelDefinition } from '@/models/image-model-catalog';
 import { getImageModelDefinition } from '@/models/image-model-catalog';
 import { resolveConfiguredImageParameters } from '@/models/configured-image-request';
 import { quoteConfiguredImagePrice } from '@/models/image-channel-pricing';
+import { imageOperationIssue } from '@/models/image-operation-capabilities';
 
 export type ImageCostHintInput = {
   model: TextToImageModel;
@@ -37,13 +38,13 @@ function configuredOperationAvailable(
 ): boolean {
   const references = input.referenceImageCount ?? 0;
   const operation = references > 0 ? 'edit' : 'generate';
-  const binding = configuration.operations[operation];
-  return Boolean(
-    binding?.status === 'verified' &&
-    Number.isSafeInteger(references) &&
-    references >= binding.minReferenceImages &&
-    references <= binding.maxReferenceImages &&
-    (!input.hasMask || (operation === 'edit' && binding.mask === 'verified'))
+  return (
+    imageOperationIssue({
+      binding: configuration.operations[operation],
+      operation,
+      referenceImageCount: references,
+      hasMask: input.hasMask,
+    }) === null
   );
 }
 

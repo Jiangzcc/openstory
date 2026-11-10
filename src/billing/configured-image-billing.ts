@@ -11,6 +11,10 @@ import {
   usesConfiguredImageChannel,
 } from '@/models/image-channels';
 import { quoteConfiguredImagePrice } from '@/models/image-channel-pricing';
+import {
+  IMAGE_OPERATION_ISSUES,
+  imageOperationIssue,
+} from '@/models/image-operation-capabilities';
 import { ValidationError } from '@/platform/errors';
 import { multiplyMicros, usdToMicros } from './money';
 import type { Microdollars } from './money';
@@ -27,29 +31,25 @@ export type ConfiguredImageBillingInput = {
   resolution?: Resolution;
 };
 
+const IMAGE_OPERATION_ERRORS = {
+  [IMAGE_OPERATION_ISSUES.unavailable]: 'This image operation is unavailable.',
+  [IMAGE_OPERATION_ISSUES.references]:
+    'The reference image count is unsupported by this model.',
+  [IMAGE_OPERATION_ISSUES.mask]:
+    'Mask editing is unavailable for this image model.',
+};
+
 function requireReferenceCapability(
   route: NonNullable<ReturnType<typeof resolveImageModelRoute>>,
   input: ConfiguredImageBillingInput
 ): void {
-  const binding = route.operations[input.operation];
-  if (binding?.status !== 'verified')
-    throw new ValidationError('This image operation is unavailable.');
-  const references = input.referenceImageCount ?? 0;
-  if (
-    !Number.isSafeInteger(references) ||
-    references < binding.minReferenceImages ||
-    references > binding.maxReferenceImages
-  )
-    throw new ValidationError(
-      'The reference image count is unsupported by this model.'
-    );
-  if (
-    input.hasMask &&
-    (input.operation !== 'edit' || binding.mask !== 'verified')
-  )
-    throw new ValidationError(
-      'Mask editing is unavailable for this image model.'
-    );
+  const issue = imageOperationIssue({
+    binding: route.operations[input.operation],
+    operation: input.operation,
+    referenceImageCount: input.referenceImageCount ?? 0,
+    hasMask: input.hasMask,
+  });
+  if (issue) throw new ValidationError(IMAGE_OPERATION_ERRORS[issue]);
 }
 
 function checkedImageMicros(usd: number): Microdollars {
