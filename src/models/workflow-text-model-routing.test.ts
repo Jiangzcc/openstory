@@ -1,3 +1,4 @@
+import { configuredTextCostUsd } from '@/billing/configured-text-cost';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MODEL_CONFIGURATION } from './model-configuration';
 import {
@@ -16,10 +17,7 @@ import {
 } from './text-channels';
 import { textModelCatalogFromRouting } from './text-model-catalog';
 import { getMaxOutputTokens, resolveVisionModel } from './models.config';
-import {
-  configuredTextCostUsd,
-  configuredTextModelOptions,
-} from './server/configured-text';
+import { configuredTextModelOptions } from './server/configured-text';
 import {
   packWorkflowTextModelRouting,
   unpackWorkflowTextModelRouting,

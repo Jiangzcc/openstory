@@ -1,4 +1,5 @@
 import type { TokenUsage } from '@tanstack/ai';
+import { configuredTextCostUsd } from '@/billing/configured-text-cost';
 import type { LlmKeyInfo } from './create-adapter';
 import type { TextChannelProtocol, TextModelRoute } from '../text-channels';
 import { TEXT_CHANNEL_PROTOCOLS } from '../text-channels';
@@ -20,7 +21,6 @@ export function assertConfiguredTextTestHost(
   );
 }
 
-const TOKENS_PER_MILLION = 1_000_000;
 const OUTPUT_CONTEXT_FRACTION = 0.5;
 
 type SamplingOptions = {
@@ -81,21 +81,6 @@ export function assertConfiguredTextCapabilities(
       );
     }
   }
-}
-
-export function configuredTextCostUsd(
-  usage: TokenUsage | undefined,
-  route: TextModelRoute
-): number | undefined {
-  if (!usage) return undefined;
-  const counts = [usage.promptTokens, usage.completionTokens];
-  if (counts.some((count) => !Number.isFinite(count) || count < 0))
-    return undefined;
-  return (
-    (usage.promptTokens * route.inputPricePerMillion +
-      usage.completionTokens * route.outputPricePerMillion) /
-    TOKENS_PER_MILLION
-  );
 }
 
 export function configuredTextUsage(

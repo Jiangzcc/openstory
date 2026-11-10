@@ -6,12 +6,12 @@
 import type { TextModel } from '@/models/models';
 import {
   assertConfiguredTextCapabilities,
-  configuredTextCostUsd,
   configuredTextModelOptions,
   configuredTextUsage,
 } from './configured-text';
 import { getMaxOutputTokens } from '@/models/models.config';
 import { reportMissingBillingCost } from '@/billing/billing-observability';
+import { configuredTextCostUsd } from '@/billing/configured-text-cost';
 import { usdToMicros, ZERO_MICROS, type Microdollars } from '@/billing/money';
 import { aiObservabilityMiddleware } from '@/platform/server/observability/ai-otel';
 import type { ChatMessage } from '@/platform/server/ai/prompts-index';

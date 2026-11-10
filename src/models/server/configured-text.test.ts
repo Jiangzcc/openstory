@@ -1,9 +1,9 @@
+import { configuredTextCostUsd } from '@/billing/configured-text-cost';
 import { describe, expect, it } from 'vitest';
 import {
   assertConfiguredTextTestHost,
   configuredTextApi,
   assertConfiguredTextCapabilities,
-  configuredTextCostUsd,
   configuredTextModelOptions,
   configuredTextUsage,
 } from './configured-text';
