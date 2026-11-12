@@ -108,3 +108,13 @@ P3 第四批新增只读翻译维护报告。已登记的英文所有者改变�
 与纯上游基线的 AST 对照覆盖 authRequestMiddleware、两个组织中间件、助手 toolContext、上传与分片 Route、外部 mcpToolContext：前者原样一致，其余在仅移除 promptLocale 对象字段后相同。本轮没有据此改写认证、组织或权限实现。
 
 [本轮入口矩阵、成绩及验证边界](preservation/20261110-p3-g01/README.md) 分开记录真实回调、真实 Better Auth 内存实现、真实 SQLite/D1 API 和 mock 的范围。认证令牌、真实 membership／compliance 与共享创建服务组成的完整 HTTP 链路仍待验证，G01 不标为全面验收完成；系统管理员 API Key 原有的跨组织 sequence 支持入口保持。
+
+### P3 请求组合与网页入口补证（2026-11-12）
+
+本轮把生产认证配置、真实成员／compliance 查询与共享创建服务放进同一组本地请求：MCP 和 REST create 的原文、可信用户／组织及外部固定 en 最终到达 workflow client 的 binding.create 参数。OAuth 测试凭证由真实 signer 签名并通过真实 JWKS 校验，但没有执行授权码／同意流程。REST enhance 另以真实 route、中间件、增强生成器、英文系统指令和 SSE 组装，观察原文及可信身份到 mock LLM 请求；不能把它与独立的真实认证测试拼称完整增强 HTTP 验收。
+
+此前网页 actor 矩阵只列六个文件，本轮追踪到 19 个 .fn.ts 文件、51 个 server function，包含上传、保存、恢复和九宫格选择间接启动生成的入口。逐函数记录的是源码证据，不声称 51 个浏览器流程均已动态执行。[入口清单、组合验证与本轮边界](preservation/20261112-p3-g01-composition/README.md) 单独区分实际 middleware／validator／handler、内存 D1、编译适配与外部替身。
+
+网页组合测试以 describeUploadFn、generateMusicFn、generateShotImageFn、regenerateLocationSheetFn 和 createGeneratedAssetFn 分别覆盖显式 actor、sequence、shot、可空 cast 和 scopedDb 提供身份的形态。生产 session、组织／目标查询、Start 中间件和 Zod 校验真实执行；测试编译适配器仅补提取函数与 metadata，最终共享服务为观察参数的替身。网页管理员 session 的原有跨组织规则独立验证，不能套用 MCP 的 Key 规则。
+
+未修改任务语言、认证、组织、计费或供应商的生产行为；真实浏览器交互、Workerd 传输、Cloudflare 服务和真实供应商质量仍按各自验收范围记录。

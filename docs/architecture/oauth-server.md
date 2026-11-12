@@ -40,3 +40,11 @@ administrator cross-organization sequence capability. OAuth and cookie-only
 sessions do not receive it. A real Better Auth memory-adapter regression in
 `auth-cookie.test.ts` exercises cookie issuance and this boundary without
 external services; API-key validation still runs in Better Auth.
+
+## P3 request composition regression (secondary development, 2026-11-12)
+
+The request-composition test uses the production Better Auth configuration and Drizzle adapter against migrated in-memory SQLite behind the D1 API. Identities, memberships and OTP records are synthetic; login and API Key issuance run through the actual auth HTTP handler. OAuth fixtures use the production signer and local JWKS verifier, without a consent or authorization-code exchange. The actual MCP HTTP handler/SDK and the REST creation middleware/route reach the shared one-shot and creation services, database writes, workflow admission and a no-work binding.create double.
+
+The checks preserve key-over-cookie identity, rejection of invalid/disabled/expired credentials, real membership removal and enforcement, scope/audience/signature validation and the existing system-admin API Key exception for foreign sequences. An administrator's OAuth token or session still cannot use that MCP exception. The website's separate session-admin rule is exercised independently in server-function-composition.test.ts through actual session, organization/sequence/shot/cast middleware and Zod validators; only compiler metadata and the final shared-service observations are supplied by the test harness.
+
+The Node harness drives route dispatch explicitly and uses Start request scope; it does not run the generated Router, Workerd HTTP transport, real JWT rate limiter or Workflows engine. Email, analytics and the workflow binding are test doubles, and external network access is blocked. The complementary REST entry tests exercise real enhancement prompts/SSE with mocked principal/membership, billing and LLM transport. Detailed results and remaining boundaries are in [the G01 composition record](../secondary-development/preservation/20261112-p3-g01-composition/README.md).
