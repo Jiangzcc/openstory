@@ -221,7 +221,8 @@ export async function executeSmartRetry(
             : idempotentReservation
               ? 'image-retry-' + imageRetryKey + '-' + suffix
               : undefined,
-          modelConfiguration: triggerOptions.modelConfiguration,
+          modelConfiguration:
+            triggerOptions.modelConfiguration ?? options.modelConfiguration,
         })
     );
     if (run.reused && reservationId && !idempotentReservation) {
@@ -832,7 +833,12 @@ export async function executeSmartRetry(
           musicRunId = await releaseReservationOnThrow(
             context.scopedDb,
             reservationId,
-            () => triggerWorkflow('/music', musicInput)
+            () =>
+              options.modelConfiguration
+                ? triggerWorkflow('/music', musicInput, {
+                    modelConfiguration: options.modelConfiguration,
+                  })
+                : triggerWorkflow('/music', musicInput)
           );
         } catch (error) {
           await context.scopedDb.sequenceVariants.failMusicClaim(

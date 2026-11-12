@@ -65,6 +65,12 @@ end labels inside the track without truncating them to a single character.
   derived multi-shot prompts. All subsequent work runs through the plan
   executor; failed references hold only their dependent renders.
 
+## Frozen model routing at the fresh handoff (secondary development, 2026-11-12)
+
+The storyboard's planning hatch reads the rows its analysis just materialized. Model routing is a separate input: it comes from the queued runtime configuration. At this workflow boundary, an older payload with no image-routing field is an explicit empty routing decision. Passing undefined into the shared reference planner would let its request-side fallback load current administrator channels and change the old run's reference-sheet estimate. Explicit packed routes continue to supply the plan and remaining-cost calculation. Request-side computePlan calls can still capture current routing when no frozen choice was supplied.
+
+A smart retry that receives options.modelConfiguration carries that trusted snapshot into motion, music and music-prompt roots as well as its existing full/image paths. The image branch's specifically prepared configuration retains precedence. Without a supplied snapshot, the existing root capture remains; claim, reservation, dry-run, deduplication and status ordering are unchanged. Local red/green regressions and their mock boundaries are recorded in the [G02 record](../secondary-development/preservation/20261112-p3-g02/README.md).
+
 ## Units
 
 `{ kind, id, state, requires, cascaded, blockedBy? }`. Kinds, with the stop that caps them

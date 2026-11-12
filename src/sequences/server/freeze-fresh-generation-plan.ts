@@ -116,7 +116,7 @@ async function remainingPlanCost(
 
 function frozenImageRouting(input: StoryboardWorkflowInput) {
   return input.modelConfiguration
-    ? unpackModelRuntimeConfiguration(input.modelConfiguration)
-        .imageModelRouting
-    : undefined;
+    ? (unpackModelRuntimeConfiguration(input.modelConfiguration)
+        .imageModelRouting ?? [])
+    : [];
 }
