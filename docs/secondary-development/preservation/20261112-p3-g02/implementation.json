@@ -1,0 +1,530 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-12",
+  "batchId": "G02-verify",
+  "responsibilityId": "GC-02",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "ce67452ad64c02bda60b6ff867bae238096eaefb",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": {
+    "production": [
+      "src/sequences/server/freeze-fresh-generation-plan.ts",
+      "src/sequences/server/smart-retry.ts"
+    ],
+    "tests": [
+      "src/platform/server/workflow/model-snapshot-composition.test.ts",
+      "src/models/workflow-routing-contract.test.ts",
+      "src/sequences/server/fresh-plan-snapshot.test.ts",
+      "src/sequences/server/smart-retry-snapshot.test.ts"
+    ],
+    "documentation": [
+      "docs/architecture/model-configuration.md",
+      "docs/architecture/generation-plan.md"
+    ],
+    "newSourcePaths": [
+      "src/platform/server/workflow/model-snapshot-composition.test.ts",
+      "src/models/workflow-routing-contract.test.ts",
+      "src/sequences/server/fresh-plan-snapshot.test.ts",
+      "src/sequences/server/smart-retry-snapshot.test.ts"
+    ]
+  },
+  "structuralResult": {
+    "existingProductionPathsModified": 2,
+    "addedProductionPaths": 0,
+    "upstreamProductionPathsRestored": 0,
+    "conflictReductionClaimed": false,
+    "rootCompositionAndCodecOwnershipRetained": true,
+    "reason": "Fix actual snapshot contract breaks at the existing workflow-planning and retry-dispatch boundaries; do not add a context framework or move model strategy into platform"
+  },
+  "preservation": {
+    "selectedOriginalTestFiles": 32,
+    "selectedOriginalFilesNormalizedUnchanged": true,
+    "originalTests": [
+      {
+        "path": "src/platform/server/workflow/client.test.ts",
+        "sha256Normalized": "5c56a66485b5ef96cf056ddb6f9baefbbbff7369c8a7a25201c5552d9034c9a7",
+        "unchanged": true
+      },
+      {
+        "path": "src/platform/server/workflow/client.compliance.test.ts",
+        "sha256Normalized": "14fbd6be0ebca65e581be2eddcf6392dd6b29f1bcedb526d44a6f59053c121a0",
+        "unchanged": true
+      },
+      {
+        "path": "src/platform/server/workflow/trigger-bindings.test.ts",
+        "sha256Normalized": "d6642da17826540cdee72b0f0180a9afb9abb65b9c86cf11bbebbc02ce9048cb",
+        "unchanged": true
+      },
+      {
+        "path": "src/platform/server/workflow/base-workflow.test.ts",
+        "sha256Normalized": "69f9f4f5adbf35fa01c9a22940f20c7ba7a79db3e117b3d09d6bea923f7f3243",
+        "unchanged": true
+      },
+      {
+        "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "sha256Normalized": "e309532ea7bb52e13eff145d2f59691a2645274c71a3304de1baddc5f490d363",
+        "unchanged": true
+      },
+      {
+        "path": "src/platform/server/db/scoped-workflow-models.test.ts",
+        "sha256Normalized": "48e6cf3774cd392f752e59c987483c5815646cabc45a11eaca728dc61d0cbff8",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/workflow-image-model-routing.test.ts",
+        "sha256Normalized": "49e89430702c64091fb7b44bc7c5b71969d542e4711beeb89c37831dd4379882",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/workflow-text-model-routing.test.ts",
+        "sha256Normalized": "f502959f6673a495d2c4966050c6af2cb1b1c093c7683aebd15d624673bf1527",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/model-configuration.test.ts",
+        "sha256Normalized": "7c4f098a531c9fadabde0b6bcd423e1b7ee4a381734a7f673225c2316c0441a4",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/ai-model-configuration.test.ts",
+        "sha256Normalized": "6a0451a056f02a694be25ed9c6f4807d96841cc2033619aac7c09aeef3bed2ed",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/text-channels.test.ts",
+        "sha256Normalized": "3245fe667595869cdf9370340bb445405d5aff3b8f684eca88d6ce7e88c5a992",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/image-channels.test.ts",
+        "sha256Normalized": "52f19dca96df8464fce163536285902d56ed37d9b3cb661e08bff3ed5efc2542",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/server/db/model-configuration.test.ts",
+        "sha256Normalized": "1faef391924bb68748b5fe3a036ae47b9b34be59d1615d3ffbbf55aa801cd67d",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/server/db/configuration-session.test.ts",
+        "sha256Normalized": "a5155b02715d9f3d670a05486e813ca24c48027e4bb82f0b1277e7327183ab7b",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/server/db/text-channels.test.ts",
+        "sha256Normalized": "cbbf85fec32256228d658f9a56d2a8c4c34708343f5b389997179287ce676a2f",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/server/db/image-channels.test.ts",
+        "sha256Normalized": "b68b875073726d5b6f68203980b446415f9fcf945df550fa305d1fcfcdec5541",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/server/db/api-keys.test.ts",
+        "sha256Normalized": "d866c2259e9fed3e7421b1bf014b2031953bdd423235dd032f6d88e12fae033e",
+        "unchanged": true
+      },
+      {
+        "path": "src/models/server/db/configured-text-routing.test.ts",
+        "sha256Normalized": "6ae672f44787e1a50f249f10e5dca3160f42241ff9c70a15c115c595c5d33674",
+        "unchanged": true
+      },
+      {
+        "path": "src/sequences/server/launchers.test.ts",
+        "sha256Normalized": "995655d078edade72ee8b247c3f464a00b57296e57c653419dd687ebf6580323",
+        "unchanged": true
+      },
+      {
+        "path": "src/sequences/server/freeze-fresh-generation-plan.test.ts",
+        "sha256Normalized": "09f180998134e569c2a6776bfac1ab9ad347966286afc6b0bbb9a4d8ed511d27",
+        "unchanged": true
+      },
+      {
+        "path": "src/sequences/server/fresh-plan-persistence.test.ts",
+        "sha256Normalized": "ac2269287db9240c67b055b1cde359573b0c49d6e51ffdbbd3bf5e195d90ca97",
+        "unchanged": true
+      },
+      {
+        "path": "src/sequences/smart-retry.test.ts",
+        "sha256Normalized": "07a0f69326781184defb742e55552f5a3f1b7a40338a49f70c57a4be5ee53311",
+        "unchanged": true
+      },
+      {
+        "path": "src/sequences/server/smart-retry-billing.test.ts",
+        "sha256Normalized": "8fa4b21ff92d7995bf3c5eb0262a89aa4183286c2c41a54d2f14ccf826fca2c1",
+        "unchanged": true
+      },
+      {
+        "path": "src/sequences/server/generation-operations.test.ts",
+        "sha256Normalized": "66ae3bd40c86e79ce362dfa726b202d5d2d791cbe9e2a4adfb30e48eef69b02e",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/configured-image-plan-billing.test.ts",
+        "sha256Normalized": "90f249dd76eec97df828b9a81b73abc3f99c76489586510794e36235d2ddb67e",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/configured-image-plan-billing-balance.test.ts",
+        "sha256Normalized": "880759c83c7ea9dd1c6c4f2188f06d638dd55877b0db86e2bd5ba31d1e7fa508",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/configured-image-plan-partition.test.ts",
+        "sha256Normalized": "14726dd08043b709d5d0a8b48afe06a95aae7efa338ef3e7e0d3364fdd968d39",
+        "unchanged": true
+      },
+      {
+        "path": "src/shots/server/update-stale-plan.test.ts",
+        "sha256Normalized": "27d3e4b49a621595b5f4d2ba119fe61f2670da1e2bfd27a5b0645183d9edce02",
+        "unchanged": true
+      },
+      {
+        "path": "src/shots/server/update-stale-references.test.ts",
+        "sha256Normalized": "65291c66c30413eaaae64a2d5111574a973058935f89191b12d4a090d004a745",
+        "unchanged": true
+      },
+      {
+        "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+        "sha256Normalized": "65200fc07d917b740c224dfc75a1362976ca4c7ff6d7706b36385cf02b5e8416",
+        "unchanged": true
+      },
+      {
+        "path": "src/sequences/server/workflows/storyboard-workflow.test.ts",
+        "sha256Normalized": "d93960f80ad09b4854277de12b5cd7f7de5787f6fd56bb1739302111651a8b86",
+        "unchanged": true
+      },
+      {
+        "path": "src/billing/server/configured-image-billing.test.ts",
+        "sha256Normalized": "3fdff239d5e3cb9b8f3a9395afa1751f49e0719a1e59939ae36221bd21c76359",
+        "unchanged": true
+      }
+    ],
+    "originalInventoryApproved": false
+  },
+  "declaredDependency": {
+    "id": "MODEL-SNAPSHOT-CONTRACT",
+    "owner": "MC-13",
+    "usage": "Verify and retain current snapshot/codec/credential-reference contract; do not mark the entire model-channel responsibility closed"
+  },
+  "verificationBoundary": {
+    "rootComposition": "Production D1 readers/admin writers, encrypted credential rows, root client and trigger bindings, JSON wire, workflow base, scoped DB and credential resolvers are real. Actors/configuration are synthetic. Final binding and step runner are no-work doubles; not authenticated HTTP or a real checkpoint engine.",
+    "codec": "Actual text/image/runtime packers and decoders after JSON; valid parameter fixtures reach exact UTF-8 admission sizes. The image-component limit is not a whole-payload/checkpoint/heap proof.",
+    "freshPlan": "Actual freezeFreshGenerationPlan -> computePlan -> buildPlanReferences -> configuredImageRoutingForModels and billing; synthetic row readers, generation-plan unit loader, current-configuration loader and fal price card. Includes request-side control so current config capture remains available there.",
+    "retry": "Actual retry analysis/pricing/orchestration; mock DB, reservations, launcher/config capture, final trigger and notifications. Snapshot identity observed at the final trigger; not real provider work or a complete retry HTTP transaction.",
+    "callerAudit": "1495 production sources, 32 root/shared-service dispatch points in 29 named functions, 27 preparation/loader symbols with 72 direct caller edges; original source lines/fingerprints identify sourceBefore, remediation is recorded separately.",
+    "globalAtomicity": "The loader still reads multiple D1 records. No globally atomic configuration version is claimed or introduced.",
+    "legacy": "Codec compatibility does not allow missing promptLocale; the workflow base still rejects invalid/missing task language.",
+    "providers": "not called"
+  },
+  "fixes": [
+    {
+      "id": "G02-AUDIT-01",
+      "path": "src/sequences/server/freeze-fresh-generation-plan.ts",
+      "change": "Missing legacy image routing becomes an explicit empty decision at the workflow planning boundary; request-side fallback remains available.",
+      "red": {
+        "log": "fresh-plan-before.log",
+        "tests": 5,
+        "failed": 2,
+        "passed": 3,
+        "observedSyntheticEstimate": {
+          "actualMicros": 100000,
+          "expectedMicros": 30000
+        }
+      },
+      "green": {
+        "log": "fresh-plan-after.log",
+        "files": 2,
+        "tests": 19
+      },
+      "test": "src/sequences/server/fresh-plan-snapshot.test.ts"
+    },
+    {
+      "id": "G02-AUDIT-02",
+      "path": "src/sequences/server/smart-retry.ts",
+      "change": "A supplied trusted retry snapshot reaches motion/music/music-prompt roots; branch-specific image configuration retains precedence and absent options keep root capture.",
+      "red": {
+        "log": "retry-snapshot-red.log",
+        "tests": 15,
+        "failed": 5,
+        "passed": 10
+      },
+      "green": {
+        "log": "retry-focused-green.log",
+        "files": 3,
+        "tests": 52
+      },
+      "test": "src/sequences/server/smart-retry-snapshot.test.ts",
+      "impact": "Correct option propagation; no claim that prior motion/music quote or wallet errors were proved."
+    }
+  ],
+  "validationCorrections": [
+    "The first composition fixture attempted to change an image upstream identity under the same model ID; the existing guard rejected it. The fixture now makes permitted endpoint/credential/price edits.",
+    "A SQL observation helper initially assumed one bound parameter; D1/Drizzle also binds LIMIT. The guard now allows that parameter while requiring immutable-credential keys and excluding current configuration/channel keys.",
+    "Optional image credential resolvers use a runtime guard. A test-only explicit ScopedDb factory import was replaced with the existing API-key DB reader; no allowlist was widened.",
+    "The initial retry fixture lacked a style snapshot; it was repaired before the targeted old-implementation red run."
+  ],
+  "openItems": [
+    "G07-callers: previously recorded music-hold cleanup and motion pricing risks remain unresolved.",
+    "G03-verify is next; G09-ownership-verify still depends on G03.",
+    "CONTINUE-LLM-SOURCE remains deferred by the user.",
+    "Frozen inventory per-file disposition and all remaining P3 responsibilities are not blanket-approved."
+  ],
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "modified": false,
+    "originalInventoryApproved": false
+  },
+  "nextImplementation": ["G03-verify"],
+  "noRemoteWrites": true,
+  "pushed": false,
+  "verification": {
+    "testFiles": [
+      "src/platform/server/workflow/client.test.ts",
+      "src/platform/server/workflow/client.compliance.test.ts",
+      "src/platform/server/workflow/trigger-bindings.test.ts",
+      "src/platform/server/workflow/base-workflow.test.ts",
+      "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "src/platform/server/db/scoped-workflow-models.test.ts",
+      "src/models/workflow-image-model-routing.test.ts",
+      "src/models/workflow-text-model-routing.test.ts",
+      "src/models/model-configuration.test.ts",
+      "src/models/ai-model-configuration.test.ts",
+      "src/models/text-channels.test.ts",
+      "src/models/image-channels.test.ts",
+      "src/models/server/db/model-configuration.test.ts",
+      "src/models/server/db/configuration-session.test.ts",
+      "src/models/server/db/text-channels.test.ts",
+      "src/models/server/db/image-channels.test.ts",
+      "src/models/server/db/api-keys.test.ts",
+      "src/models/server/db/configured-text-routing.test.ts",
+      "src/sequences/server/launchers.test.ts",
+      "src/sequences/server/freeze-fresh-generation-plan.test.ts",
+      "src/sequences/server/fresh-plan-persistence.test.ts",
+      "src/sequences/smart-retry.test.ts",
+      "src/sequences/server/smart-retry-billing.test.ts",
+      "src/sequences/server/generation-operations.test.ts",
+      "src/billing/configured-image-plan-billing.test.ts",
+      "src/billing/configured-image-plan-billing-balance.test.ts",
+      "src/billing/configured-image-plan-partition.test.ts",
+      "src/shots/server/update-stale-plan.test.ts",
+      "src/shots/server/update-stale-references.test.ts",
+      "src/shots/server/workflows/update-stale-plan-run.test.ts",
+      "src/sequences/server/workflows/storyboard-workflow.test.ts",
+      "src/billing/server/configured-image-billing.test.ts",
+      "src/platform/server/workflow/model-snapshot-composition.test.ts",
+      "src/models/workflow-routing-contract.test.ts",
+      "src/sequences/server/fresh-plan-snapshot.test.ts",
+      "src/sequences/server/smart-retry-snapshot.test.ts"
+    ],
+    "uniqueTestFiles": 36,
+    "uniqueTests": 640,
+    "newTests": 42,
+    "newTestsByFile": [
+      {
+        "path": "src/platform/server/workflow/model-snapshot-composition.test.ts",
+        "tests": 11
+      },
+      {
+        "path": "src/models/workflow-routing-contract.test.ts",
+        "tests": 11
+      },
+      {
+        "path": "src/sequences/server/fresh-plan-snapshot.test.ts",
+        "tests": 5
+      },
+      {
+        "path": "src/sequences/server/smart-retry-snapshot.test.ts",
+        "tests": 15
+      }
+    ],
+    "command": "bun run test --maxWorkers=4 src/platform/server/workflow/client.test.ts src/platform/server/workflow/client.compliance.test.ts src/platform/server/workflow/trigger-bindings.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/db/scoped-workflow-models.test.ts src/models/workflow-image-model-routing.test.ts src/models/workflow-text-model-routing.test.ts src/models/model-configuration.test.ts src/models/ai-model-configuration.test.ts src/models/text-channels.test.ts src/models/image-channels.test.ts src/models/server/db/model-configuration.test.ts src/models/server/db/configuration-session.test.ts src/models/server/db/text-channels.test.ts src/models/server/db/image-channels.test.ts src/models/server/db/api-keys.test.ts src/models/server/db/configured-text-routing.test.ts src/sequences/server/launchers.test.ts src/sequences/server/freeze-fresh-generation-plan.test.ts src/sequences/server/fresh-plan-persistence.test.ts src/sequences/smart-retry.test.ts src/sequences/server/smart-retry-billing.test.ts src/sequences/server/generation-operations.test.ts src/billing/configured-image-plan-billing.test.ts src/billing/configured-image-plan-billing-balance.test.ts src/billing/configured-image-plan-partition.test.ts src/shots/server/update-stale-plan.test.ts src/shots/server/update-stale-references.test.ts src/shots/server/workflows/update-stale-plan-run.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts src/billing/server/configured-image-billing.test.ts src/platform/server/workflow/model-snapshot-composition.test.ts src/models/workflow-routing-contract.test.ts src/sequences/server/fresh-plan-snapshot.test.ts src/sequences/server/smart-retry-snapshot.test.ts",
+    "log": "final-expanded-tests.log",
+    "exitCode": 0,
+    "durationSeconds": 407.01,
+    "earlierPartialRunsExcluded": true,
+    "typecheck": {
+      "command": "bun typecheck",
+      "exitCode": 0,
+      "log": "typecheck-final.log"
+    },
+    "lint": {
+      "command": "bun lint",
+      "exitCode": 0,
+      "warnings": 146,
+      "inScopeWarnings": 0,
+      "log": "lint-final.log"
+    },
+    "build": {
+      "command": "bun run build",
+      "exitCode": 0,
+      "log": "build-final.log",
+      "freshAfterProductionFixes": true,
+      "clientAndServerStageSummaries": ["built in 4m", "built in 2m 35s"],
+      "providerCalls": false,
+      "deploy": false,
+      "acceptanceBoundary": "Production build only; no deployment or real Workerd transport/provider acceptance"
+    },
+    "commitHooks": {
+      "log": "code-commit.log",
+      "exitCode": 0,
+      "hookDurationSeconds": 203.14,
+      "commandDurationSeconds": 226.7974263,
+      "checks": [
+        "client-server-boundary",
+        "dead-code",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "bypass": false,
+      "clientServerBoundaryTests": 17,
+      "excludedFromUniqueTests": true
+    },
+    "postHookNormalizedHashesUnchanged": true,
+    "validatedCodeHashes": [
+      {
+        "path": "src/platform/server/workflow/model-snapshot-composition.test.ts",
+        "sha256Normalized": "9b890ae64d483efc6b9acbd9ddf83f95be858e9670e122ee78320f3eee9ca41c",
+        "afterSha256Normalized": "9b890ae64d483efc6b9acbd9ddf83f95be858e9670e122ee78320f3eee9ca41c"
+      },
+      {
+        "path": "src/models/workflow-routing-contract.test.ts",
+        "sha256Normalized": "da16e0621d50c6e3f47e39976662500a1466063b373460e5203e3cedc4b343b0",
+        "afterSha256Normalized": "da16e0621d50c6e3f47e39976662500a1466063b373460e5203e3cedc4b343b0"
+      },
+      {
+        "path": "src/sequences/server/fresh-plan-snapshot.test.ts",
+        "sha256Normalized": "6573f0b5f57b3d1d39eb29fb19fe1c6f5afb5b3ab54e49c9622dce6291ca50e0",
+        "afterSha256Normalized": "6573f0b5f57b3d1d39eb29fb19fe1c6f5afb5b3ab54e49c9622dce6291ca50e0"
+      },
+      {
+        "path": "src/sequences/server/smart-retry-snapshot.test.ts",
+        "sha256Normalized": "1b83318a55f16e0b3e46dd68f6aac98542e1c038405526755b640386c4d687d0",
+        "afterSha256Normalized": "1b83318a55f16e0b3e46dd68f6aac98542e1c038405526755b640386c4d687d0"
+      },
+      {
+        "path": "src/sequences/server/freeze-fresh-generation-plan.ts",
+        "sha256Normalized": "74d909ab35686044725ab5fb33f8bdc107482f02d74c96ec58fa5ff0e148f05e",
+        "afterSha256Normalized": "74d909ab35686044725ab5fb33f8bdc107482f02d74c96ec58fa5ff0e148f05e"
+      },
+      {
+        "path": "src/sequences/server/smart-retry.ts",
+        "sha256Normalized": "8a3bc193fa0c24062a849467ba8f10affa53349f2990026943cf7e135c7635ca",
+        "afterSha256Normalized": "8a3bc193fa0c24062a849467ba8f10affa53349f2990026943cf7e135c7635ca"
+      },
+      {
+        "path": "docs/architecture/model-configuration.md",
+        "sha256Normalized": "993404f5ac078524c6d36b2b95fc5a2d862d57e1155e6fcfddd46f39676c388e",
+        "afterSha256Normalized": "993404f5ac078524c6d36b2b95fc5a2d862d57e1155e6fcfddd46f39676c388e"
+      },
+      {
+        "path": "docs/architecture/generation-plan.md",
+        "sha256Normalized": "c39a42bb014c295b14dfb0643b9ab3b48d018c02ccb62fad23fc87e06d52342a",
+        "afterSha256Normalized": "c39a42bb014c295b14dfb0643b9ab3b48d018c02ccb62fad23fc87e06d52342a"
+      }
+    ],
+    "format": {
+      "command": "normal pre-commit oxfmt on staged eight files",
+      "exitCode": 0,
+      "files": 8,
+      "postHookHashesUnchanged": true,
+      "wholeRepositoryFormatCheckRerun": false
+    }
+  },
+  "status": "completed",
+  "verificationBatchClosed": true,
+  "responsibilityClosed": false,
+  "completedScope": "G02 declared model-configuration capture/serialization/consumption contract with two bounded snapshot propagation fixes; no per-file blanket semantic approval",
+  "callerMatrix": {
+    "path": "caller-matrix.json",
+    "lineScope": "sourceBefore",
+    "sourceFingerprintFiles": 52,
+    "unchangedSources": 50,
+    "changedSources": [
+      "src/sequences/server/freeze-fresh-generation-plan.ts",
+      "src/sequences/server/smart-retry.ts"
+    ],
+    "findings": [
+      {
+        "findingId": "G02-AUDIT-01",
+        "status": "fixed-and-regression-tested",
+        "path": "src/sequences/server/freeze-fresh-generation-plan.ts",
+        "line": 117,
+        "decision": "Missing modelConfiguration or imageModelRouting becomes [] only at the workflow fresh-plan boundary; request-side fallback remains unchanged.",
+        "regression": "src/sequences/server/fresh-plan-snapshot.test.ts",
+        "redLog": "fresh-plan-before.log",
+        "greenLog": "fresh-plan-after.log"
+      },
+      {
+        "findingId": "G02-AUDIT-02",
+        "status": "fixed-and-regression-tested",
+        "path": "src/sequences/server/smart-retry.ts",
+        "line": 225,
+        "additionalLine": 837,
+        "decision": "triggerKeyed forwards the branch snapshot with the trusted outer option as fallback; direct music forwards the outer option when present. Missing options preserve normal root capture.",
+        "regression": "src/sequences/server/smart-retry-snapshot.test.ts",
+        "redLog": "retry-snapshot-red.log",
+        "greenLog": "retry-focused-green.log"
+      }
+    ]
+  },
+  "quality": {
+    "removedSizeComplexityAndForcedConstantRulesEnforced": false,
+    "productionBehaviorChanged": true,
+    "productionChangeScope": "Two snapshot contract fixes only",
+    "unrelatedChangesStaged": false
+  },
+  "sourceAfter": "98346494abc05e7a268e2e2bbbb6f4807d96a3da",
+  "temporaryLogDirectory": ".tmp/p3-g02-20261112",
+  "originalWorkingChanges": {
+    "userAuthorizedSubmission": true,
+    "commit": "41ddf826f597760b59d4d9a0f9dc002cd4f3b988",
+    "normalHooks": {
+      "exitCode": 0,
+      "hookDurationSeconds": 7.39,
+      "commandDurationSeconds": 28.1774006,
+      "checks": ["format"],
+      "otherChecksSkippedByNativeGlobs": true,
+      "bypass": false,
+      "log": "user-commit.log"
+    },
+    "files": [
+      {
+        "path": ".codex/project-rules.md",
+        "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3",
+        "afterSha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3",
+        "disposition": "Committed original one-line deletion; file bytes unchanged"
+      },
+      {
+        "path": "src/routeTree.gen.ts",
+        "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+        "afterSha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4",
+        "disposition": "Exact git add refreshed status; content already equal to HEAD; no content commit created"
+      }
+    ],
+    "generatedRoute": {
+      "workingGitBlob": "a1df6ca62d3554fb1f7218090ee8d7a9c94e4589",
+      "headGitBlob": "a1df6ca62d3554fb1f7218090ee8d7a9c94e4589",
+      "contentDiff": false
+    }
+  },
+  "temporaryLogHashes": {
+    "fresh-plan-before.log": "883d9ac1702de12c2c31de9287e1d1221a930307d681342481dd3e092b5ae066",
+    "fresh-plan-after.log": "7cd48dc21ae154c059d2aac26e2965f5d4324f84ac7afc38dc9c4892448c8ae7",
+    "retry-snapshot-red.log": "f8d79a17914c7f504d0f92449a470d96c974952988bb1526662fcf1b13d2e36c",
+    "retry-focused-green.log": "6d8cd53e8b0ae2f0585911f42da30b190b14d00727b6a4687aac3d7eee1a62ba",
+    "retry-snapshot-fixture-red.log": "d6fd623fd0d5fbb2fb9fe237758d989e3605ce962ca23f90c57a684f3a7b067b",
+    "final-expanded-tests.log": "a00a9d7094cde626f844ed22846ee03067c74877080e802d7616cd5ac6cab984",
+    "typecheck-final.log": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3",
+    "lint-final.log": "fd18f88e51edf7ac729db64e5e6ba9a250b4c77951b8d4a45eec3f18af626030",
+    "build-final.log": "5d71da82acf28f011359dffa02f7e2b7a67144d1e3f74adb485a96b321f4ab2a",
+    "code-commit.log": "4754ae0c366f10e746abf30b0d571a32ba4504d1e08bdfbe5eb7c7093d361033",
+    "user-commit.log": "5c3da6517e6c9789a4090b2c467bb597507f54e318f0c5f462a841270b28b1bb"
+  }
+}

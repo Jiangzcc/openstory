@@ -1,6 +1,6 @@
 # 上游业务保留与二开长期维护计划
 
-版本日期：2026-11-12。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成，G07-callers 已复核并记录开放风险，MC-B01 已完成完整图片请求能力校验收敛，MC-B02 已完成配置文本成本归属迁移，MC-B03 已完成配置图片价格精度策略归属迁移，G01-verify 已完成有限的可信身份与任务语言契约验证；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
+版本日期：2026-11-12。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成，G07-callers 已复核并记录开放风险，MC-B01 已完成完整图片请求能力校验收敛，MC-B02 已完成配置文本成本归属迁移，MC-B03 已完成配置图片价格精度策略归属迁移，G01-verify 已完成有限的可信身份与任务语言契约验证，G02-verify 已完成有限的任务配置快照契约验证并修复两处断链；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
 
 本计划覆盖已经发生的二开、历史合入、当前缺口，以及后续新功能和上游更新。目标是尽可能保留上游业务逻辑和实现，在可解释、可验证的少量接入点上二开，降低持续升级成本。
 
@@ -165,7 +165,9 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-12 完成 `G01-composition`，补齐 `G01-verify` 的两条有限技术契约验证。before 为 `2d98cc8274691fd371c4edcfa19a76ddd6a744c2`，测试及功能文档提交为 `99c6838b73bc782d7f5ce97208d47f7d2aab8e38`。MCP 和 REST create 组合真实生产认证配置、内存 D1 成员／compliance、共享创建服务与 workflow admission，最终在无工作量的 binding.create 替身核对可信身份、原文和外部 en；REST enhance 以真实英文指令／SSE 与替身认证、LLM 单独验证，未拼称完整增强 HTTP。网页源码清单从六文件补到 19 文件、51 个 server function，五种身份／权限形态经真实 session、Start middleware、validator 和 handler 动态验证，末端共享服务为替身。最终互不重叠的 28 文件、686 项通过，其中新增 155 项；25 个原测试归一化源码完全保留，上轮 19 文件的 964 处原 matcher AST 仍保留。类型检查、lint 与正常提交钩子通过，生产源码未改，未重跑构建，不宣称减少未来冲突。[批次记录](preservation/20261112-p3-g01-composition/README.md)、[入口矩阵](preservation/20261112-p3-g01-composition/caller-matrix.json)、[完整网页清单](preservation/20261112-p3-g01-composition/web-callers.json) 与 [机器证据](preservation/20261112-p3-g01-composition/implementation.json) 明列 Node 调度／编译适配、未执行浏览器／Workerd HTTP、OAuth 授权码与真实供应商等边界。G01 有限验证批次完成，GC-01 逐文件处置未批量关闭。
 
-**P3 整体仍进行中。** `G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责仍未关闭；1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。下一步为 `G02-verify` 的任务配置快照验证；G03 仍依赖 G02，G09-ownership-verify 仍按其 G03 前置推进。
+2026-11-12 完成 `G02-verify` 的有限任务配置快照验证。before 为 `ce67452ad64c02bda60b6ff867bae238096eaefb`，代码与功能文档提交为 `98346494abc05e7a268e2e2bbbb6f4807d96a3da`。真实 root/D1/加密凭证/JSON wire/workflow base 组合与 codec 边界测试验证排队后仍用旧配置；调用者审查覆盖 32 个 root/共享服务派发点、29 个具名函数及 27 个准备/loader 符号的 72 条直接调用边。发现并修复两处断链：旧 wire 缺图片路由时 fresh-plan 回读当前配置，以及 smart retry 的 motion/music/music-prompt 分支丢失可信外层配置。两项分别有改前 2/5、5/15 失败及修复后通过证据，未把合成报价或参数传播解释成实际钱包错账。最终 36 文件、640 项通过，其中新增 4 文件、42 项；32 个原测试源码保持。类型检查、lint、生产修复后的新构建和正常提交钩子通过，lint 146 条范围外警告单列。[批次记录](preservation/20261112-p3-g02/README.md)、[调用者矩阵](preservation/20261112-p3-g02/caller-matrix.json) 与 [机器证据](preservation/20261112-p3-g02/implementation.json) 区分原始 sourceBefore 发现与 sourceAfter 修复；52 个审查来源仅上述两处改变。绑定/step runner/外部调用替身、未建立全局原子配置版本及完整 HTTP/Workerd/持久重放未验收均保留边界。G02 有限验证批次完成，GC-02、MC-13 与原 inventory 不批量关闭，也不宣称减少未来冲突。
+
+**P3 整体仍进行中。** `G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责仍未关闭；1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。下一步为 `G03-verify` 的父子任务快照传播验证；其 G02 前置已完成有限技术验证，G09-ownership-verify 仍按其 G03 前置推进。
 
 ## 6. 未来新增二开的接入流程
 
