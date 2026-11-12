@@ -1,0 +1,594 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-12",
+  "sourceBefore": "2d98cc8274691fd371c4edcfa19a76ddd6a744c2",
+  "batchId": "G01-composition",
+  "responsibilityId": "GC-01",
+  "discovery": "Trace server functions that consume promptLocale or pass the required locale-bearing actor/context into helpers; follow indirect generation from selection, upload, save and restore. Pure queries/cancel/unrelated pointer changes excluded.",
+  "accessSources": {
+    "O": "Production authMiddleware + authWithOrganizationMiddleware: request session, membership/compliance, scoped DB and Cookie locale",
+    "S": "O plus sequenceAccessMiddleware/loadSequence; preserves the existing website system-admin session exception",
+    "C": "O plus castAccessMiddleware; sequenceId=null stays at the organization; otherwise S",
+    "H": "S plus shotAccessMiddleware/loadShotTarget; authorized shot/sequence/frame relationship"
+  },
+  "sourceFileCount": 19,
+  "sourceFunctionCount": 51,
+  "previousC07OwnerFileCount": 6,
+  "addedOwnerFiles": 13,
+  "previouslyUnlistedFunctions": 29,
+  "blanketDynamicApproval": false,
+  "files": [
+    {
+      "path": "src/sequences/sequences.fn.ts",
+      "sha256Normalized": "a5fc69236bb6def5a7518c50bc6f693d942831630cb7ec893986487d34ec1bf4",
+      "previousC07Owner": true,
+      "functions": [
+        {
+          "name": "estimateGenerationSliceFn",
+          "line": 133,
+          "access": "S",
+          "downstream": "prepareContinueEstimate",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "createSequenceFn",
+          "line": 193,
+          "access": "O",
+          "downstream": "createSequences",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "continueGenerationFn",
+          "line": 216,
+          "access": "S",
+          "downstream": "prepareContinue / triggerContinue",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "retryStoryboardFn",
+          "line": 404,
+          "access": "S",
+          "downstream": "triggerStoryboard",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "addModelToSequenceFn",
+          "line": 544,
+          "access": "S",
+          "downstream": "addModelToSequence",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "generateMusicFn",
+          "line": 583,
+          "access": "S",
+          "downstream": "generateMusic",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false,
+          "dynamicRepresentative": {
+            "test": "src/platform/server/auth/server-function-composition.test.ts",
+            "middlewareAndValidator": "real installed Start execution",
+            "authAndDb": "production Better Auth and migrated in-memory D1",
+            "observation": "final shared-service double"
+          }
+        }
+      ]
+    },
+    {
+      "path": "src/studio/studio-assets.fn.ts",
+      "sha256Normalized": "acfd96bc6c0a9e0d071e0596c77c90129c43f0e3cd92d44ab963ffd64afc0acd",
+      "previousC07Owner": true,
+      "functions": [
+        {
+          "name": "createStudioAssetsFn",
+          "line": 56,
+          "access": "O",
+          "downstream": "createStudioAssets",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "renderStudioAssetAtQualityFn",
+          "line": 133,
+          "access": "O",
+          "downstream": "renderStudioAssetAtQuality",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "editStudioAssetFn",
+          "line": 144,
+          "access": "O",
+          "downstream": "editStudioAsset",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "draftStudioPromptFn",
+          "line": 192,
+          "access": "O",
+          "downstream": "draftStudioPromptForOrganization",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/cast/sequence-characters.fn.ts",
+      "sha256Normalized": "74b567d2f69c9f3542f21f69f34ce77c0e31ec24e250d666227d8cbfd78eb639",
+      "previousC07Owner": true,
+      "functions": [
+        {
+          "name": "generateCharacterVoiceFn",
+          "line": 238,
+          "access": "C",
+          "downstream": "generateCharacterVoice",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "regenerateCharacterSheetFn",
+          "line": 547,
+          "access": "C",
+          "downstream": "regenerateCharacterSheet",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/cast/sequence-locations.fn.ts",
+      "sha256Normalized": "e5bed0f6e2f4aa294e1ffda58e17a5fc13db8bf4f64f9027979b7bb6c43bc1fe",
+      "previousC07Owner": true,
+      "functions": [
+        {
+          "name": "regenerateLocationSheetFn",
+          "line": 183,
+          "access": "C",
+          "downstream": "regenerateLocationSheet",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false,
+          "dynamicRepresentative": {
+            "test": "src/platform/server/auth/server-function-composition.test.ts",
+            "middlewareAndValidator": "real installed Start execution",
+            "authAndDb": "production Better Auth and migrated in-memory D1",
+            "observation": "final shared-service double"
+          }
+        },
+        {
+          "name": "recastLocationFn",
+          "line": 226,
+          "access": "S",
+          "downstream": "recastLocation",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/stills/shot-image.fn.ts",
+      "sha256Normalized": "1b1af59acf207325c1a3c59f6483f327ef16f7621d35f370a85d82f97da11865",
+      "previousC07Owner": true,
+      "functions": [
+        {
+          "name": "generateShotsFn",
+          "line": 40,
+          "access": "S",
+          "downstream": "triggerStoryboard",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "generateShotImageFn",
+          "line": 119,
+          "access": "H",
+          "downstream": "generateShotImage",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false,
+          "dynamicRepresentative": {
+            "test": "src/platform/server/auth/server-function-composition.test.ts",
+            "middlewareAndValidator": "real installed Start execution",
+            "authAndDb": "production Better Auth and migrated in-memory D1",
+            "observation": "final shared-service double"
+          }
+        },
+        {
+          "name": "generateShotVariantsFn",
+          "line": 129,
+          "access": "H",
+          "downstream": "generateShotImageVariants",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "selectShotVariantFn",
+          "line": 140,
+          "access": "H",
+          "downstream": "selectShotImageVariant",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/motion/motion.fn.ts",
+      "sha256Normalized": "9996a085ad3a5a12c181b872d2878d50e6cacaba515243ad70d71169c765ed91",
+      "previousC07Owner": true,
+      "functions": [
+        {
+          "name": "generateShotMotionFn",
+          "line": 81,
+          "access": "H",
+          "downstream": "generateShotMotion",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "batchGenerateMotionFn",
+          "line": 107,
+          "access": "S",
+          "downstream": "resolveMotionPromptFromVersion / packedSceneFromScene / triggerWorkflow",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "renderShotAtQualityFn",
+          "line": 577,
+          "access": "H",
+          "downstream": "renderShotAtQuality",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "renderSequenceDraftsAtQualityFn",
+          "line": 584,
+          "access": "S",
+          "downstream": "renderSequenceDraftsAtQuality",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/sequences/smart-retry.fn.ts",
+      "sha256Normalized": "00f57aad6cf09556e0ac7b6739944646ae6d24edab470d3d2ceec65de0cefcd5",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "smartRetryFn",
+          "line": 14,
+          "access": "S",
+          "downstream": "executeSmartRetry",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/cast/organization-locations.fn.ts",
+      "sha256Normalized": "45da37a0c1dd8969c6cc26f13a1074edbebd6f2666c7dc879893e1f425ed0777",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "createOrganizationLocationFn",
+          "line": 80,
+          "access": "O",
+          "downstream": "createOrganizationLocation / triggerOrganizationLocationSheet / regenerateLocationSheet",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/cast/sequence-elements.fn.ts",
+      "sha256Normalized": "af7ab82d177c788bc76fd542205726d71f8252d100600372bc162c2c03fd55d9",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "analyzeDraftElementFn",
+          "line": 94,
+          "access": "O",
+          "downstream": "describeElementImage",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "finalizeElementUploadFn",
+          "line": 165,
+          "access": "S",
+          "downstream": "attachElementUpload",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "replaceSequenceElementFn",
+          "line": 342,
+          "access": "S",
+          "downstream": "replaceElementUpload",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/cast/describe-upload.fn.ts",
+      "sha256Normalized": "1493c43ecb197d6c45aa72c5e610bc10e0908a32f84ca94a6ed0b3ea7734e27d",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "describeUploadFn",
+          "line": 9,
+          "access": "O",
+          "downstream": "describeUpload",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false,
+          "dynamicRepresentative": {
+            "test": "src/platform/server/auth/server-function-composition.test.ts",
+            "middlewareAndValidator": "real installed Start execution",
+            "authAndDb": "production Better Auth and migrated in-memory D1",
+            "observation": "final shared-service double"
+          }
+        }
+      ]
+    },
+    {
+      "path": "src/cast/upload-rights.fn.ts",
+      "sha256Normalized": "695c9fd1081dd850375bfe003aaf7e2a151f1f99219b2038c79d5532e388a1af",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "classifyUploadFn",
+          "line": 32,
+          "access": "O",
+          "downstream": "readUploadCheck",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "retryUploadCheckFn",
+          "line": 45,
+          "access": "O",
+          "downstream": "retryUploadCheck",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/models/ai.fn.ts",
+      "sha256Normalized": "b16dd5d10db19e1b46749ac3aea03492778e7bc6e50a59174a18acc849255ff5",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "shortenPromptFn",
+          "line": 112,
+          "access": "O",
+          "downstream": "callLLMStream",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "estimateSceneDurationFn",
+          "line": 214,
+          "access": "H",
+          "downstream": "callLLMStream",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "enhanceScriptStreamFn",
+          "line": 357,
+          "access": "O",
+          "downstream": "streamScriptEnhancement",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "recommendStylesForScriptFn",
+          "line": 499,
+          "access": "O",
+          "downstream": "callLLMStream",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/models/model-assets.fn.ts",
+      "sha256Normalized": "8ec15eb26cbdef53d0bfcc4306bd06bbea021075eaddb5540ec7d47531bc9557",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "createGeneratedAssetFn",
+          "line": 55,
+          "access": "O",
+          "downstream": "createGeneratedAsset",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false,
+          "dynamicRepresentative": {
+            "test": "src/platform/server/auth/server-function-composition.test.ts",
+            "middlewareAndValidator": "real installed Start execution",
+            "authAndDb": "production Better Auth and migrated in-memory D1",
+            "observation": "final shared-service double"
+          }
+        }
+      ]
+    },
+    {
+      "path": "src/shots/prompt-variants.fn.ts",
+      "sha256Normalized": "9c27e36575b4f2442ac2b3b3fbe97ce1d1346944f2896f9f10e4a932d8d91c64",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "restoreShotPromptVariantFn",
+          "line": 160,
+          "access": "H",
+          "downstream": "restoreShotPromptVersion",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "restoreSequenceMusicPromptVariantFn",
+          "line": 172,
+          "access": "S",
+          "downstream": "restoreMusicPromptVersion",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "saveShotPromptFn",
+          "line": 211,
+          "access": "H",
+          "downstream": "saveShotPrompt",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "regenerateShotPromptFn",
+          "line": 249,
+          "access": "H",
+          "downstream": "regenerateShotPrompt",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "saveMusicPromptFn",
+          "line": 282,
+          "access": "S",
+          "downstream": "saveMusicPrompt",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "regenerateMusicPromptFn",
+          "line": 300,
+          "access": "S",
+          "downstream": "rewriteMusicPrompt",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/shots/shot-spec.fn.ts",
+      "sha256Normalized": "2f32cadc02ad26f1b820b97607ce1c4903a717ee81c928dae9ae6712970681af",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "saveShotSpecFn",
+          "line": 21,
+          "access": "H",
+          "downstream": "saveShotSpec / regenerateShotPrompt",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/shots/prompt-preview.fn.ts",
+      "sha256Normalized": "1ac400251040e11a6ce319adf2fed1def527545cd2d6df24ac853c87a301ce13",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "previewShotPromptsFn",
+          "line": 63,
+          "access": "H",
+          "downstream": "loadPackedPreviewMembers / buildShotPromptPreview",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/shots/shot-dialogue.fn.ts",
+      "sha256Normalized": "1a696ba50f3d26ab403dbb17d34f4c1bae331bf9fc5376b589eab65c344689bb",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "regenerateShotDialogueFn",
+          "line": 122,
+          "access": "H",
+          "downstream": "regenerateShotDialogue",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "recordShotDialogueLineFn",
+          "line": 167,
+          "access": "H",
+          "downstream": "triggerWorkflow dialogue-take",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/shots/media-upload.fn.ts",
+      "sha256Normalized": "65a5552bed624d6086a2f7e7d80285918d1c39881498dd26a7e1dec648151a53",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "setCharacterSheetFromUploadFn",
+          "line": 250,
+          "access": "C",
+          "downstream": "setCharacterSheetFromUpload",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "setCharacterReferencePhotoFromUploadFn",
+          "line": 265,
+          "access": "C",
+          "downstream": "setCharacterReferencePhotoFromUpload",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "setLocationSheetFromUploadFn",
+          "line": 318,
+          "access": "C",
+          "downstream": "setLocationSheetFromUpload",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "uploadSceneDialogueFn",
+          "line": 324,
+          "access": "S",
+          "downstream": "uploadSceneDialogue",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    },
+    {
+      "path": "src/shots/shots.fn.ts",
+      "sha256Normalized": "18cf9f52e254f7036d5ab185d4d956af682b94fa27362a814da0dad63c85e220",
+      "previousC07Owner": false,
+      "functions": [
+        {
+          "name": "updateStaleShotsFn",
+          "line": 656,
+          "access": "S",
+          "downstream": "prepareUpdateStale / launchUpdateStale",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        },
+        {
+          "name": "getUpdateStalePreviewFn",
+          "line": 769,
+          "access": "S",
+          "downstream": "planUpdateAll",
+          "evidence": "source-trace",
+          "allCasesDynamicallyExecuted": false
+        }
+      ]
+    }
+  ],
+  "sourceAfter": "99c6838b73bc782d7f5ce97208d47f7d2aab8e38"
+}

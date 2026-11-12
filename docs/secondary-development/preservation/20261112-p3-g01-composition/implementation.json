@@ -1,0 +1,435 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-12",
+  "batchId": "G01-composition",
+  "advancesBatch": "G01-verify",
+  "responsibilityId": "GC-01",
+  "status": "completed",
+  "verificationBatchClosed": true,
+  "responsibilityClosed": false,
+  "completedScope": "The two declared G01 identity/locale acceptance contracts; source trace all discovered entry forms and dynamically verify distinct middleware/actor combinations. No blanket per-file semantic approval.",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "2d98cc8274691fd371c4edcfa19a76ddd6a744c2",
+  "sourceAfter": "99c6838b73bc782d7f5ce97208d47f7d2aab8e38",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "scope": {
+    "production": [],
+    "tests": [
+      "src/platform/server/mcp/request-composition.test.ts",
+      "src/platform/server/api-v1/entry-locale.test.ts",
+      "src/platform/server/auth/server-function-composition.test.ts"
+    ],
+    "documentation": [
+      "docs/architecture/oauth-server.md",
+      "docs/secondary-development/system-prompt-localization.md"
+    ],
+    "newSourcePaths": [
+      "src/platform/server/mcp/request-composition.test.ts",
+      "src/platform/server/api-v1/entry-locale.test.ts",
+      "src/platform/server/auth/server-function-composition.test.ts"
+    ]
+  },
+  "acceptance": [
+    {
+      "contract": "内部zh-CN/en和外部固定en到最终服务参数保持；Cookie缺省/非法值行为保持。",
+      "status": "verified-for-declared-contract",
+      "evidence": [
+        "caller-matrix.json: G01-C01 through G01-C18",
+        "web-callers.json: 19 files / 51 server functions",
+        "src/platform/server/mcp/request-composition.test.ts",
+        "src/platform/server/api-v1/entry-locale.test.ts",
+        "src/platform/server/auth/server-function-composition.test.ts"
+      ]
+    },
+    {
+      "contract": "原认证、组织隔离、scope与生成权限断言逐条保留。",
+      "status": "verified-for-declared-contract",
+      "evidence": [
+        "25 selected original test files unchanged from sourceBefore",
+        "964 original matcher AST calls in the previous G01 19-file subset remain preserved by unchanged source",
+        "src/platform/server/mcp/request-composition.test.ts",
+        "src/platform/server/api-v1/entry-locale.test.ts",
+        "src/platform/server/auth/server-function-composition.test.ts"
+      ]
+    }
+  ],
+  "structuralResult": {
+    "productionFilesChanged": 0,
+    "existingUpstreamProductionPathsRestored": 0,
+    "conflictReductionClaimed": false,
+    "languageIdentityArchitectureUnchanged": true,
+    "reason": "Complete missing local composition evidence before moving to snapshot verification; no additional context wrapper or production behavior change"
+  },
+  "preservation": {
+    "selectedOriginalTestFiles": 25,
+    "selectedOriginalFilesNormalizedUnchanged": true,
+    "originalTests": [
+      {
+        "path": "src/platform/server/auth/middleware-locale.test.ts",
+        "sha256Normalized": "167c3c2424fa2b165496e335de94cfde68ab8af0d0f5c7da950446dc5c59aff0",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "167c3c2424fa2b165496e335de94cfde68ab8af0d0f5c7da950446dc5c59aff0"
+      },
+      {
+        "path": "src/platform/server/storage/upload-locale.test.ts",
+        "sha256Normalized": "8a5954036fa4317dda90c451be1aa4e182421cb23810263d14524db6b7358ad8",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "8a5954036fa4317dda90c451be1aa4e182421cb23810263d14524db6b7358ad8"
+      },
+      {
+        "path": "src/platform/i18n/prompt-locale.test.ts",
+        "sha256Normalized": "3c550ac92bc160dab312b11d0bcf24fd2847820266b227dc7eb735a1fa9e6b44",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "3c550ac92bc160dab312b11d0bcf24fd2847820266b227dc7eb735a1fa9e6b44"
+      },
+      {
+        "path": "src/assistant/server/assistant-chat.test.ts",
+        "sha256Normalized": "7bc93619591e4e5a580b84145357d58e91d563b4d3e092a5c2385a9e0427e728",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "7bc93619591e4e5a580b84145357d58e91d563b4d3e092a5c2385a9e0427e728"
+      },
+      {
+        "path": "src/studio/server/studio-prompt-locale.test.ts",
+        "sha256Normalized": "4af569614ca60df5250a14c8d7cc48a61a76eedeeeec1d58e29406707c4f41ed",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "4af569614ca60df5250a14c8d7cc48a61a76eedeeeec1d58e29406707c4f41ed"
+      },
+      {
+        "path": "src/platform/server/storage/upload-target.test.ts",
+        "sha256Normalized": "46466df2c05febb68da52649eafd0fba31f80e907d1a62566a654f7ecfaf2ed1",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "46466df2c05febb68da52649eafd0fba31f80e907d1a62566a654f7ecfaf2ed1"
+      },
+      {
+        "path": "src/cast/server/upload-check.test.ts",
+        "sha256Normalized": "fa2a2b27298d32eeb2d464c03fdabb9ebc2e477ae13aec52ed9feab8ffe418d3",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "fa2a2b27298d32eeb2d464c03fdabb9ebc2e477ae13aec52ed9feab8ffe418d3"
+      },
+      {
+        "path": "src/platform/server/auth/request-principal.test.ts",
+        "sha256Normalized": "f22d4a2b9f2c35230ae0bb7abd20ffc36e8bc23e68386c44b1c19bd32b2a5419",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "f22d4a2b9f2c35230ae0bb7abd20ffc36e8bc23e68386c44b1c19bd32b2a5419"
+      },
+      {
+        "path": "src/platform/server/api-v1/oauth-scopes.test.ts",
+        "sha256Normalized": "22c8cbec1ac822f9fd6bd8c3cdca658e24eab6cf227b3c403a52dab477f9438e",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "22c8cbec1ac822f9fd6bd8c3cdca658e24eab6cf227b3c403a52dab477f9438e"
+      },
+      {
+        "path": "src/platform/server/mcp/auth.test.ts",
+        "sha256Normalized": "d6c3f9497a7d3e6b18872eaa4bad82b66a610f11224a21916044a5eb24732e1b",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "d6c3f9497a7d3e6b18872eaa4bad82b66a610f11224a21916044a5eb24732e1b"
+      },
+      {
+        "path": "src/platform/server/mcp/auth-cookie.test.ts",
+        "sha256Normalized": "c54dfd5833b53929ce8dd28f2195cc1192c26707e7e1c0c4a349c9c670292816",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "c54dfd5833b53929ce8dd28f2195cc1192c26707e7e1c0c4a349c9c670292816"
+      },
+      {
+        "path": "src/platform/server/mcp/admin-sequence-access.test.ts",
+        "sha256Normalized": "960c3d14656dbf09ca6509236e3c8646877db40c916b08883638e2414f50e2aa",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "960c3d14656dbf09ca6509236e3c8646877db40c916b08883638e2414f50e2aa"
+      },
+      {
+        "path": "src/platform/server/mcp/tool-context.test.ts",
+        "sha256Normalized": "83a96a8f86fda484a1d820421f87b5e06d0d41a7d2f438ec2b46a7d900f3149c",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "83a96a8f86fda484a1d820421f87b5e06d0d41a7d2f438ec2b46a7d900f3149c"
+      },
+      {
+        "path": "src/platform/server/api-v1/create.test.ts",
+        "sha256Normalized": "20e0ac104635623da58f9ab0a63899a6b988e2fedff68f0e8d9db75af1e8fe49",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "20e0ac104635623da58f9ab0a63899a6b988e2fedff68f0e8d9db75af1e8fe49"
+      },
+      {
+        "path": "src/platform/server/api-v1/enhance.test.ts",
+        "sha256Normalized": "49c417a88fd73130b1c018dfcb8d18cf250030ec295cd9bf61d81a7371773367",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "49c417a88fd73130b1c018dfcb8d18cf250030ec295cd9bf61d81a7371773367"
+      },
+      {
+        "path": "src/stitches/server/stitch-routes.test.ts",
+        "sha256Normalized": "e55a13a2473f938758e1080a7a21662eba7601b294048a3321ca323dcdfd0106",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "e55a13a2473f938758e1080a7a21662eba7601b294048a3321ca323dcdfd0106"
+      },
+      {
+        "path": "src/sequences/server/export.test.ts",
+        "sha256Normalized": "9e9e12226b887c427b42658ddf22f57a0708c321822c2832a57842f248283f9a",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "9e9e12226b887c427b42658ddf22f57a0708c321822c2832a57842f248283f9a"
+      },
+      {
+        "path": "src/platform/server/mcp/tools.test.ts",
+        "sha256Normalized": "b41d9c6ce5fbb3eb86199c0fd724448e6e28f7fa65d7df4df77446ff5634a383",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "b41d9c6ce5fbb3eb86199c0fd724448e6e28f7fa65d7df4df77446ff5634a383"
+      },
+      {
+        "path": "src/platform/server/mcp/server.test.ts",
+        "sha256Normalized": "868b2bea3144e989b17f4dabdc0e209a0760366bac7d2508a7a07ca06caf29d4",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "868b2bea3144e989b17f4dabdc0e209a0760366bac7d2508a7a07ca06caf29d4"
+      },
+      {
+        "path": "src/platform/server/mcp/cast-audio-generation.test.ts",
+        "sha256Normalized": "5c7525d94b6f34a1fe38812da7f4c171b4483cdd138d29b79a4cfbb72b51464e",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "5c7525d94b6f34a1fe38812da7f4c171b4483cdd138d29b79a4cfbb72b51464e"
+      },
+      {
+        "path": "src/platform/server/auth/organization-memo.test.ts",
+        "sha256Normalized": "422ef51c9045d9a8f865f890690d0dea21ca3b96f39385baf916eec89bcbcbe0",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "422ef51c9045d9a8f865f890690d0dea21ca3b96f39385baf916eec89bcbcbe0"
+      },
+      {
+        "path": "src/models/ai.prompt-locale.test.ts",
+        "sha256Normalized": "455e4e26244ea72ebd92c3703bfebf64e59d0254eb37946901a4976372b37887",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "455e4e26244ea72ebd92c3703bfebf64e59d0254eb37946901a4976372b37887"
+      },
+      {
+        "path": "src/cast/server/describe-upload.test.ts",
+        "sha256Normalized": "429cb00b35c7ed7316531bcaa9d20d72994eb02907d40dcb65426df9a3bf3e2b",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "429cb00b35c7ed7316531bcaa9d20d72994eb02907d40dcb65426df9a3bf3e2b"
+      },
+      {
+        "path": "src/shots/server/update-stale-plan.test.ts",
+        "sha256Normalized": "27d3e4b49a621595b5f4d2ba119fe61f2670da1e2bfd27a5b0645183d9edce02",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "27d3e4b49a621595b5f4d2ba119fe61f2670da1e2bfd27a5b0645183d9edce02"
+      },
+      {
+        "path": "src/models/model-assets.fn.test.ts",
+        "sha256Normalized": "3ad60845f522f1fc640c6798d9d02e5322e84047324a03df6aae091adbadfc84",
+        "normalizedFileUnchanged": true,
+        "sourceBeforeHash": "3ad60845f522f1fc640c6798d9d02e5322e84047324a03df6aae091adbadfc84"
+      }
+    ],
+    "previousG01OriginalMatcherSubset": {
+      "record": "../20261110-p3-g01/implementation.json",
+      "originalFiles": 19,
+      "originalMatcherCount": 964,
+      "allOriginalAssertionsPreserved": true,
+      "basis": "The selected original files are unchanged; this is not a matcher count for all 25 files"
+    },
+    "originalInventoryApproved": false
+  },
+  "verification": {
+    "testGroups": [
+      {
+        "name": "existing G01 regression",
+        "files": 21,
+        "tests": 477,
+        "elapsedSeconds": 153.95,
+        "log": "g01-existing-integration-tests.log",
+        "command": "bun run test --maxWorkers=4 src/platform/server/auth/middleware-locale.test.ts src/platform/server/storage/upload-locale.test.ts src/platform/i18n/prompt-locale.test.ts src/assistant/server/assistant-chat.test.ts src/studio/server/studio-prompt-locale.test.ts src/platform/server/storage/upload-target.test.ts src/cast/server/upload-check.test.ts src/platform/server/auth/request-principal.test.ts src/platform/server/api-v1/oauth-scopes.test.ts src/platform/server/mcp/auth.test.ts src/platform/server/mcp/auth-cookie.test.ts src/platform/server/mcp/admin-sequence-access.test.ts src/platform/server/mcp/tool-context.test.ts src/platform/server/api-v1/create.test.ts src/platform/server/api-v1/enhance.test.ts src/stitches/server/stitch-routes.test.ts src/sequences/server/export.test.ts src/platform/server/mcp/tools.test.ts src/platform/server/mcp/server.test.ts src/platform/server/mcp/cast-audio-generation.test.ts src/platform/server/auth/organization-memo.test.ts"
+      },
+      {
+        "name": "additional web-domain regression",
+        "files": 4,
+        "tests": 54,
+        "elapsedSeconds": 38.01,
+        "log": "web-domain-existing-tests.log",
+        "command": "bun run test --maxWorkers=4 src/models/ai.prompt-locale.test.ts src/cast/server/describe-upload.test.ts src/shots/server/update-stale-plan.test.ts src/models/model-assets.fn.test.ts"
+      },
+      {
+        "name": "new entry integration after all fixture and lint corrections",
+        "files": 3,
+        "tests": 155,
+        "elapsedSeconds": 64.49,
+        "log": "new-entry-integrated-tests.log",
+        "command": "bun run test --maxWorkers=3 src/platform/server/mcp/request-composition.test.ts src/platform/server/api-v1/entry-locale.test.ts src/platform/server/auth/server-function-composition.test.ts"
+      }
+    ],
+    "testFiles": [
+      "src/platform/server/auth/middleware-locale.test.ts",
+      "src/platform/server/storage/upload-locale.test.ts",
+      "src/platform/i18n/prompt-locale.test.ts",
+      "src/assistant/server/assistant-chat.test.ts",
+      "src/studio/server/studio-prompt-locale.test.ts",
+      "src/platform/server/storage/upload-target.test.ts",
+      "src/cast/server/upload-check.test.ts",
+      "src/platform/server/auth/request-principal.test.ts",
+      "src/platform/server/api-v1/oauth-scopes.test.ts",
+      "src/platform/server/mcp/auth.test.ts",
+      "src/platform/server/mcp/auth-cookie.test.ts",
+      "src/platform/server/mcp/admin-sequence-access.test.ts",
+      "src/platform/server/mcp/tool-context.test.ts",
+      "src/platform/server/api-v1/create.test.ts",
+      "src/platform/server/api-v1/enhance.test.ts",
+      "src/stitches/server/stitch-routes.test.ts",
+      "src/sequences/server/export.test.ts",
+      "src/platform/server/mcp/tools.test.ts",
+      "src/platform/server/mcp/server.test.ts",
+      "src/platform/server/mcp/cast-audio-generation.test.ts",
+      "src/platform/server/auth/organization-memo.test.ts",
+      "src/models/ai.prompt-locale.test.ts",
+      "src/cast/server/describe-upload.test.ts",
+      "src/shots/server/update-stale-plan.test.ts",
+      "src/models/model-assets.fn.test.ts",
+      "src/platform/server/mcp/request-composition.test.ts",
+      "src/platform/server/api-v1/entry-locale.test.ts",
+      "src/platform/server/auth/server-function-composition.test.ts"
+    ],
+    "uniqueTestFiles": 28,
+    "uniqueTests": 686,
+    "newTests": 155,
+    "newTestsByFile": [
+      {
+        "path": "src/platform/server/mcp/request-composition.test.ts",
+        "tests": 69
+      },
+      {
+        "path": "src/platform/server/api-v1/entry-locale.test.ts",
+        "tests": 46
+      },
+      {
+        "path": "src/platform/server/auth/server-function-composition.test.ts",
+        "tests": 40
+      }
+    ],
+    "countsAreDisjointGroups": true,
+    "earlierPartialRunsExcluded": true,
+    "typecheck": {
+      "status": "passed",
+      "log": "typecheck-integrated.log",
+      "command": "bun typecheck"
+    },
+    "lint": {
+      "status": "passed",
+      "log": "lint-final.log",
+      "command": "bun lint",
+      "warnings": 146,
+      "errors": 0,
+      "warningsInBatch": 0
+    },
+    "format": {
+      "status": "passed",
+      "files": 5,
+      "fullRepository": false,
+      "checkedBy": "normal code-commit hook; normalized test source unchanged"
+    },
+    "build": {
+      "status": "not-rerun-tests-only",
+      "productionSourceUnchanged": true,
+      "previousProductionBuildSource": "95863667e4b58ac43718bd7a15f244787e97094b",
+      "previousProductionBuild": "MC-B03 bun run build passed; not counted as a current build"
+    },
+    "commitHooks": {
+      "status": "passed",
+      "elapsedSeconds": 214.76,
+      "log": "code-commit.log",
+      "checks": [
+        "client-server-boundary: 17 tests",
+        "dead-code",
+        "format: 5 files",
+        "lint",
+        "typecheck"
+      ],
+      "bypassed": [],
+      "hookTestsExcludedFromUniqueCount": true
+    },
+    "evidenceBoundary": {
+      "mcpAndRestCreate": "Production Better Auth configuration and Drizzle adapter, synthetic identities/OTP and local D1; actual auth.handler cookie login and API Key issuance; production-signed OAuth JWT fixtures and real JWKS/signature/audience/expiry/scope checks; real MCP HTTP handler/SDK and REST middleware/route callbacks, shared creation, D1 writes, launcher, admission and workflow client to no-work binding.create double",
+      "httpHarness": "Node createServerEntry request scope with explicit route dispatch; no generated Router or Workerd HTTP transport",
+      "webServerFunctions": "Real production session and D1 organization/sequence/shot/cast queries, Start middleware, Zod validators, five handlers and installed __executeServer; test-only compiler adapter supplies extracted metadata/handler to the real builder. Shared services are argument-observation doubles",
+      "restEnhancement": "Real route/middleware callbacks, buildEnhanceGenerator/streamScriptEnhancement, actual English system prompts, original content and SSE; principal/membership/compliance, scoped DB, billing and LLM transport are doubles. Not a complete real-auth enhancement request",
+      "oauth": "Production-signed fixture and real verification; no consent or code exchange",
+      "externalEffects": "Synthetic env, no-op email/analytics, mocked JWT limiter, workflow binding and external transport; network calls blocked and asserted absent",
+      "webCallerInventory": "51 exports / 19 files source-traced; five distinct actor/context forms dynamically exercised, not 51 browser flows",
+      "providers": "not called"
+    }
+  },
+  "callerMatrix": {
+    "path": "caller-matrix.json",
+    "rows": 18,
+    "webInventory": "web-callers.json",
+    "sourceFiles": 19,
+    "serverFunctions": 51,
+    "previousC07Files": 6,
+    "additionalFiles": 13,
+    "additionalFunctions": 29,
+    "blanketDynamicApproval": false
+  },
+  "retainedBehaviorNotes": [
+    "MCP only system-admin API Key may rebind to a foreign sequence; normal Key, OAuth and session do not receive that exception. The actual regeneration binding keeps the authenticated caller, foreign organization and English locale.",
+    "The website has its own existing system-admin session exception; tested separately from MCP rules.",
+    "MCP script-only create may write a failed sequence before admission rejects suspended generation. The regression asserts no workflow binding starts, not zero database writes. REST middleware rejection occurs before creation writes."
+  ],
+  "validationCorrections": [
+    "MCP protocol fixtures were missing _meta and Mcp-Method/Mcp-Name headers; aligned with the existing production request envelope after diagnostic failures.",
+    "Synthetic enforcement reason corrected to the real other enum value.",
+    "REST fixture scope/style/strip-strict expectations corrected to the existing contract without changing production code.",
+    "New-test raw DB annotations, tuple access/non-null assertions and fixture initialization corrected for existing lint/type rules."
+  ],
+  "quality": {
+    "removedSizeComplexityAndForcedConstantRulesEnforced": false,
+    "productionBehaviorChanged": false,
+    "unrelatedChangesStaged": false
+  },
+  "temporaryLogDirectory": ".tmp/p3-g01-composition-20261112",
+  "temporaryLogHashes": {
+    "code-commit.log": "48ff1556aafc994d3db8b473dbea7f335033625c6391ef84cd44ee50f043d908",
+    "composition-rest-final.log": "24895ec920660f318c9624e380a7303d3750c12b5771d0a2181157c38779d0fd",
+    "composition-rest-integrated.log": "ac2fe6d1d885ff6dbd4942058a5dda9bdfc47f7fd91097312e7e053325800187",
+    "composition-tests-base.log": "3dd3826fea40f970cea09f9397588818e2c86e070bec03b95df849650f7a247c",
+    "composition-tests-diagnostic.log": "b8fd56d222ddcb4790b40daa05aa45f49d6f02881824ff597cfea80182f2e8af",
+    "composition-tests-expanded.log": "e211bf911244b348e894c444cbd4e86ef79dff576317da308440b472e0a60f7d",
+    "composition-tests-initial.log": "62c4b62a75763c40771c74995b694ca9a532c8b7ff1886571c742e9434fdb1e6",
+    "composition-tests-protocol.log": "398f6f520d80c503aa745096e2ba153a3d3c62c6c95083141d8fe261d1fb5d1e",
+    "g01-existing-integration-tests.log": "d67b9e477c7238428bab6cefb461075bc464c17c8bac8314150f806903ae58a2",
+    "lint-final.log": "377c7ee7f15ddb11e7de82f67a0ba424fee75980e8f99360d7afb74328f9c419",
+    "lint-initial.log": "ccbe96f6c87b560ae44418e40db5e150341c3f0dc3d918d9dd21ac2e35ee8c08",
+    "lint.log": "ccbe96f6c87b560ae44418e40db5e150341c3f0dc3d918d9dd21ac2e35ee8c08",
+    "new-entry-integrated-tests.log": "bb9930512aedb570da854d281b6253c42566491a711396c29e90b980a11c77f1",
+    "rest-tests.log": "fc409ac4a06e50c62afd277d308c14bb2463a69003f2cac37fe02362d284147f",
+    "typecheck-initial.log": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3",
+    "typecheck-integrated.log": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3",
+    "web-domain-existing-tests.log": "31417aa84b1cd1af762122b62d6550e24608ec86458f3e8b340011670aad948c",
+    "web-function-tests-initial.log": "9a8bfdefe6964170b70afcf61fd15af24064181b521c9d70e1ca384f4d5c4bd1",
+    "web-function-tests.log": "e5d1351bd54f61371f0606e02fd2d4e67f2a2f229df6a346a03e18f6aa50d2ad"
+  },
+  "frozenDesign": {
+    "sourceHead": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "pathCount": 1219,
+    "originalDispositionPendingCount": 1219,
+    "modified": false,
+    "originalInventoryApproved": false
+  },
+  "protectedWorkingFiles": [
+    {
+      "path": ".codex/project-rules.md",
+      "sha256": "c321e362753982bd5024657cc27a702d892a56d587cc8c0a39fa54d64ef263b3"
+    },
+    {
+      "path": "src/routeTree.gen.ts",
+      "sha256": "6118bac3b14307dba3b2960c5288403ce438979f709b884e3e5cd98352933fe4"
+    }
+  ],
+  "openVerification": [
+    "Browser language-switch interaction, generated Router/RPC serialization and Workerd service behavior are outside this Node contract evidence",
+    "OAuth consent/authorization-code exchange, real JWT limiter, Workflows engine and providers are not exercised",
+    "REST enhancement real-auth full composition is not run; its route/prompt/SSE evidence is separate from real-auth creation evidence."
+  ],
+  "openItems": [
+    "G07-callers: music-claim failure cleanup of new holds; motion estimated versus actual duration; motion reference-route pricing remain unresolved.",
+    "G09-ownership-verify depends on G03-verify, which depends on G02-verify.",
+    "CONTINUE-LLM-SOURCE remains deferred by the user.",
+    "GC-01 per-file disposition and all remaining P3 responsibilities are not blanket-approved; frozen inventory remains pending."
+  ],
+  "nextImplementation": ["G02-verify"],
+  "noRemoteWrites": true,
+  "pushed": false
+}
