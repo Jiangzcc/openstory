@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-shot-images-failure",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "4329ee735",
+  "sourceAfter": "75afef60f",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Execute a bounded host-side ShotImagesWorkflow runImpl probe for primary child retry exhaustion.",
+  "productionFilesChanged": [],
+  "testFilesChanged": [
+    "src/shots/server/workflows/variant-child-context.test.ts"
+  ],
+  "newEvidence": [
+    "A lone primary image child is retried once after failure.",
+    "When the retry also fails, ShotImagesWorkflow returns a null primary result with no fabricated frame version."
+  ],
+  "tests": {
+    "files": 1,
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "command": "bun run test src/shots/server/workflows/variant-child-context.test.ts"
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "preCommitHooks": "passed without bypass",
+    "build": "not-run; test-only batch with no production files changed"
+  },
+  "openItems": [
+    "Other parent workflow lifecycle and failure branches remain open.",
+    "Real durable replay, provider, remote D1/R2, browser HTTP and settlement remain unvalidated.",
+    "GC-03 and all 1219 frozen inventory dispositions remain open; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "4329ee735",
+  "codeCommit": "75afef60f",
+  "selectedRegression": {
+    "command": "bun run test src/shots/server/workflows/variant-child-context.test.ts",
+    "files": 1,
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "ShotImagesWorkflow preserves primary failure after its lone retry is exhausted while existing variant root snapshot tests remain green."
+  },
+  "checks": {
+    "typecheck": { "command": "bun typecheck", "status": "passed" },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/shots/server/workflows/variant-child-context.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": { "command": "git diff --check", "status": "passed" },
+    "build": {
+      "command": "bun run build",
+      "status": "not-run",
+      "note": "Test-only batch; no production files changed."
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "75afef60f",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "No production code or image lifecycle behavior was changed.",
+    "Real durable engine, provider, remote storage, browser HTTP and settlement were not run."
+  ]
+}
