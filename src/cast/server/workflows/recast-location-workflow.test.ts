@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -14,6 +14,8 @@ const spawnAndAwaitChild = vi.fn(async () => ({
   divergedShotIds: [],
 }));
 const computeRegenerateShotsBatchHash = vi.fn(async () => 'snapshot-hash');
+const emit = vi.fn(async () => undefined);
+const getGenerationChannel = vi.fn(() => ({ emit }));
 
 vi.doMock('@/platform/server/workflow/await-child', () => ({
   spawnAndAwaitChild,
@@ -21,6 +23,7 @@ vi.doMock('@/platform/server/workflow/await-child', () => ({
 vi.doMock('@/shots/server/workflows/regenerate-shots-snapshot', () => ({
   computeRegenerateShotsBatchHash,
 }));
+vi.doMock('@/platform/realtime', () => ({ getGenerationChannel }));
 
 const { RecastLocationWorkflow } = await import('./recast-location-workflow');
 
@@ -32,6 +35,14 @@ class Probe extends RecastLocationWorkflow {
   ) {
     return this.runImpl(event, step, scopedDb);
   }
+
+  failBody(
+    event: Readonly<WorkflowEvent<RecastLocationWorkflowInput>>,
+    error: string,
+    scopedDb: WorkflowScopedDb
+  ) {
+    return this.onFailure({ event, error, scopedDb });
+  }
 }
 
 function makeStep(): WorkflowStep {
@@ -41,6 +52,11 @@ function makeStep(): WorkflowStep {
 }
 
 describe('RecastLocationWorkflow', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    emit.mockResolvedValue(undefined);
+  });
+
   it('passes the snapshot and model configuration to regenerate-shots', async () => {
     const modelConfiguration: ModelRuntimeConfiguration = {
       ...DEFAULT_MODEL_CONFIGURATION,
@@ -105,5 +121,44 @@ describe('RecastLocationWorkflow', () => {
       })
     );
     expect(result).toEqual({ shotsRegenerated: 1, shotsFailed: 1 });
+  });
+
+  it('lets a regenerate-shots child failure reach the parent failure hook', async () => {
+    const event = asStub<WorkflowEvent<RecastLocationWorkflowInput>>({
+      instanceId: 'recast-parent-1',
+      payload: asStub<RecastLocationWorkflowInput>({
+        sequenceId: 'sequence-1',
+        locationDbId: 'location-1',
+        locationName: 'Rooftop',
+        snapshotInputHash: 'snapshot-hash',
+        shotSnapshots: [asStub({ shotId: 'shot-1' })],
+      }),
+    });
+    const workflow = new Probe(
+      asStub(undefined),
+      asStub({ REGENERATE_SHOTS_WORKFLOW: regenerateBinding })
+    );
+    const childError = new Error('child unavailable');
+    spawnAndAwaitChild.mockRejectedValueOnce(childError);
+
+    await expect(
+      workflow.runBody(
+        event,
+        makeStep(),
+        asStub<WorkflowScopedDb>({ models: {} })
+      )
+    ).rejects.toBe(childError);
+
+    await workflow.failBody(
+      event,
+      childError.message,
+      asStub<WorkflowScopedDb>({})
+    );
+
+    expect(getGenerationChannel).toHaveBeenCalledWith('sequence-1');
+    expect(emit).toHaveBeenCalledWith('generation.recast-location:failed', {
+      locationId: 'location-1',
+      error: 'child unavailable',
+    });
   });
 });
