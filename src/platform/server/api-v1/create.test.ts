@@ -140,6 +140,8 @@ describe('runOneShotCreate', () => {
       modelConfiguration: {
         get: async () => ({ ...DEFAULT_MODEL_CONFIGURATION }),
       },
+      textChannels: { getSnapshot: async () => [] },
+      imageChannels: { getSnapshot: async () => [] },
     }),
   };
 

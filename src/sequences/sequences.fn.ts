@@ -28,8 +28,7 @@ import {
 import { estimateStoryboardPreflightCost } from '@/billing/storyboard-preflight-cost';
 import { VARIANT_TYPES } from '@/platform/server/db/schema/shot-variants';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
-import { parseConfiguredSequenceInput } from '@/sequences/server/configured-sequence-input';
-import { loadModelConfiguration } from '@/platform/server/db/scoped';
+import { prepareSequenceCreation } from '@/sequences/server/prepare-sequence-creation';
 import {
   triggerContinue,
   triggerStoryboard,
@@ -192,11 +191,10 @@ export const estimateGenerationSliceFn = createServerFn({ method: 'GET' })
  */
 export const createSequenceFn = createServerFn({ method: 'POST' })
   .middleware([authWithOrganizationMiddleware])
-  .validator(async (input: unknown) =>
-    parseConfiguredSequenceInput(input, await loadModelConfiguration())
-  )
+  .validator(prepareSequenceCreation)
   .handler(async ({ data, context }) => {
-    const { sequences } = await createSequences(data, {
+    const { sequences } = await createSequences(data.input, {
+      modelConfiguration: data.modelConfiguration,
       promptLocale: context.promptLocale,
       scopedDb: context.scopedDb,
       user: context.user,

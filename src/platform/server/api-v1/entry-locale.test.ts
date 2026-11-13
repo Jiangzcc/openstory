@@ -345,6 +345,7 @@ beforeEach(() => {
     organizationId,
     modelConfiguration: { get: modelConfiguration },
     textChannels: { getSnapshot: vi.fn(async () => []) },
+    imageChannels: { getSnapshot: vi.fn(async () => []) },
     apiKeys: {
       resolveLlmKey,
       resolveOptionalKey: vi.fn(async () => null),

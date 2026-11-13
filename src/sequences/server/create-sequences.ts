@@ -1,4 +1,5 @@
 import type { Locale } from '@/platform/i18n/locale';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { configuredImageSource } from '@/billing/configured-image-billing';
 /**
  * Core sequence-creation logic, shared by the `createSequenceFn` server
@@ -122,6 +123,7 @@ export async function resolveStyleSource(
 }
 
 export type CreateSequencesContext = {
+  modelConfiguration?: ModelRuntimeConfiguration;
   promptLocale: Locale;
   scopedDb: ScopedDb;
   user: { id: string };
@@ -151,9 +153,9 @@ export const createSequences = createServerOnlyFn(
     // every write below is already organization-authorized. (The old `data.organizationId`
     // override was vestigial — writes always went through the scoped db anyway.)
     const organizationId = context.organizationId;
-    const configuration = await loadStoryboardModelConfiguration(
-      context.scopedDb
-    );
+    const configuration =
+      context.modelConfiguration ??
+      (await loadStoryboardModelConfiguration(context.scopedDb));
     const extraModels = textModelCatalogFromRouting(
       configuration.textModelRouting
     );

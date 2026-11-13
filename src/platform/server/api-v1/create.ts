@@ -34,6 +34,7 @@ import { parseStyleConfig } from '@/look/style-config';
 import { getLogger } from '@/platform/logger';
 import { parseConfiguredSequenceInput } from '@/sequences/server/configured-sequence-input';
 import { createSequences } from '@/sequences/server/create-sequences';
+import { loadStoryboardModelConfiguration } from '@/sequences/server/launchers';
 import {
   STORAGE_BUCKETS,
   type StorageBucket,
@@ -252,7 +253,7 @@ export async function runOneShotCreate(
   //    character/location refs) with no DB writes. A black-holing image host
   //    fails the request before any library row or billed sheet exists
   //    (#1372). Style + elements must be ready before enhancement (#855).
-  const configuration = await ctx.scopedDb.modelConfiguration.get();
+  const configuration = await loadStoryboardModelConfiguration(ctx.scopedDb);
   const willEnhance =
     input.enhance === 'always' ||
     (input.enhance === 'auto' && isShortScript(input.script));
@@ -417,6 +418,7 @@ export async function runOneShotCreate(
     // 4. Run the shared create core (credits → fan-out → trigger storyboard).
     const { entries } = await createSequences(parsed, {
       ...ctx,
+      modelConfiguration: configuration,
       notify: false,
     });
 
