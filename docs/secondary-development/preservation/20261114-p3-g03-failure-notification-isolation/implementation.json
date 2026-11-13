@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-failure-notification-isolation",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "27656ccea",
+  "sourceAfter": "57d075870",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Isolate generation failure persistence and cleanup from user-visible failure notifications across recast, image, variant-image and upscale workflows.",
+  "productionFilesChanged": [
+    "src/cast/server/workflows/recast-location-workflow.ts",
+    "src/stills/server/workflows/image-workflow.ts",
+    "src/stills/server/workflows/shot-variant-workflow.ts",
+    "src/stills/server/workflows/upscale-shot-variant-workflow.ts"
+  ],
+  "testFilesChanged": [
+    "src/cast/server/workflows/recast-location-workflow.test.ts",
+    "src/stills/server/workflows/shot-variant-workflow-failure.test.ts",
+    "src/stills/server/workflows/image-workflow-failure.test.ts",
+    "src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts"
+  ],
+  "newEvidence": [
+    "A recast failure notification error does not escape the failure hook.",
+    "An image failed-row persistence error does not suppress generation.image:progress failed.",
+    "A variant failed-row persistence error does not suppress generation.variant-image:progress failed.",
+    "An upscale version persistence error does not suppress the completed progress event carrying upscaleError.",
+    "Upscale still preserves the prior selected image when cleanup or marker maintenance fails."
+  ],
+  "tests": {
+    "selectedRegression": {
+      "command": "bun run test src/cast/server/workflows/recast-location-workflow.test.ts src/stills/server/workflows/shot-variant-workflow-failure.test.ts src/stills/server/workflows/image-workflow-failure.test.ts src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts",
+      "files": 4,
+      "tests": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    "relatedRegression": {
+      "command": "bun run test src/cast/server/workflows/recast-location-workflow.test.ts src/stills/server/workflows/shot-variant-workflow-failure.test.ts src/stills/server/workflows/shot-variant-workflow.test.ts src/stills/server/workflows/image-workflow-failure.test.ts src/stills/server/workflows/image-workflow-preview-failure.test.ts src/stills/server/workflows/image-workflow-snapshot.test.ts src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts src/stills/server/workflows/upscale-shot-variant-workflow-generation.test.ts src/stills/server/workflows/upscale-shot-variant-workflow.test.ts src/cast/server/workflows/location-sheet-workflow.test.ts src/cast/server/workflows/character-sheet-workflow.test.ts src/cast/server/workflows/character-voice-workflow.test.ts src/cast/server/workflows/location-bible-workflow.test.ts src/cast/server/workflows/character-bible-workflow.test.ts src/platform/server/workflow/await-child.test.ts",
+      "files": 15,
+      "tests": 121,
+      "passed": 121,
+      "failed": 0
+    }
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "build": "passed",
+    "preCommitHooks": "passed without bypass"
+  },
+  "normalCodeCommit": "57d075870",
+  "openItems": [
+    "Other parent workflow lifecycle and failure branches remain open.",
+    "Real durable replay, provider, remote D1/R2, browser HTTP and wallet settlement remain unvalidated.",
+    "GC-03 and all 1219 frozen inventory dispositions remain open; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}
