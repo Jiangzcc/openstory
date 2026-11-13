@@ -294,4 +294,26 @@ describe('MotionBatchWorkflow', () => {
     );
     expect(spawnAndAwaitChild).not.toHaveBeenCalled();
   });
+
+  it('settles a failed motion child without poisoning the batch', async () => {
+    const input = makeInput();
+    const event = asStub<WorkflowEvent<BatchMotionMusicWorkflowInput>>({
+      instanceId: 'motion-batch-partial-1',
+      payload: input,
+    });
+    const scopedDb = asStub<WorkflowScopedDb>({
+      models: {},
+      billing: { zeroReservation },
+    });
+    spawnAndAwaitChild.mockRejectedValueOnce(new Error('motion child failed'));
+
+    const result = await new Probe(
+      asStub(undefined),
+      asStub({ MOTION_WORKFLOW: motionBinding, MUSIC_WORKFLOW: musicBinding })
+    ).runBody(event, makeStep(), scopedDb);
+
+    expect(result).toEqual({ sequenceId: 'sequence-1' });
+    expect(spawnAndAwaitChild).toHaveBeenCalledTimes(2);
+    expect(zeroReservation).toHaveBeenCalledWith('reservation-1');
+  });
 });
