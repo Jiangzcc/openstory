@@ -1,6 +1,10 @@
 import { mediaUrlSchema } from '@/platform/schemas/media-url.schemas';
 import { getSignedUploadUrl } from '#storage';
 import { describeElementImage } from '@/cast/server/element-vision';
+import {
+  requireCheckable,
+  requireUploadRights,
+} from '@/cast/server/upload-rights';
 import { reportMissingBillingCost } from '@/billing/billing-observability';
 import { estimateLLMCost } from '@/billing/cost-estimation';
 import { InsufficientCreditsError } from '@/platform/errors';
@@ -103,6 +107,8 @@ export const analyzeDraftElementFn = createServerFn({ method: 'POST' })
   )
   .handler(async ({ context, data }) => {
     const { scopedDb } = context;
+    requireCheckable(data.publicUrl, context.organizationId);
+    await requireUploadRights(scopedDb, [data.publicUrl]);
     const { vision: model } = await scopedDb.modelConfiguration.get();
     const llmKeyInfo = await scopedDb.apiKeys.resolveLlmKey(model);
     if (llmKeyInfo.source !== 'organization') {
@@ -114,7 +120,6 @@ export const analyzeDraftElementFn = createServerFn({ method: 'POST' })
         );
       }
     }
-
     const result = await describeElementImage({
       promptLocale: context.promptLocale,
       model,

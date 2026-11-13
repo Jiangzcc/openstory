@@ -41,6 +41,13 @@ export function createLocationSheetVariantsMethods(
   const ofLocation = (locationId: string) =>
     and(eq(locationSheetVariants.locationId, locationId), ofOrganization);
   const inOrganization = eq(locations.organizationId, organizationId);
+  const requireLocation = async (locationId: string): Promise<void> => {
+    const [location] = await db
+      .select({ id: locations.id })
+      .from(locations)
+      .where(and(eq(locations.id, locationId), inOrganization));
+    if (!location) throw new NotFoundError('Location not found');
+  };
 
   return {
     /** Every attempt (any status), oldest-first; discarded rows on request. */
@@ -344,8 +351,12 @@ export function createLocationSheetVariantsMethods(
      * A location sheet run's completion (#1113). See
      * {@link landLocationReference}.
      */
-    promoteIfPending: (args: Parameters<typeof landLocationReference>[2]) =>
-      landLocationReference(db, organizationId, args),
+    promoteIfPending: async (
+      args: Parameters<typeof landLocationReference>[2]
+    ) => {
+      await requireLocation(args.locationId);
+      return landLocationReference(db, organizationId, args);
+    },
 
     /**
      * Idempotent on (location, model, inputHash) within the divergent partial
@@ -358,13 +369,14 @@ export function createLocationSheetVariantsMethods(
         divergedAt: Date;
       }
     ): Promise<LocationSheetVariant> => {
+      await requireLocation(values.locationId);
       const findExisting = () =>
         db
           .select()
           .from(locationSheetVariants)
           .where(
             and(
-              eq(locationSheetVariants.locationId, values.locationId),
+              ofLocation(values.locationId),
               eq(locationSheetVariants.model, values.model),
               eq(locationSheetVariants.inputHash, values.inputHash),
               sql`${locationSheetVariants.divergedAt} IS NOT NULL`

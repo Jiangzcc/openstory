@@ -535,6 +535,7 @@ export function createLocationsMethods(db: Database, organizationId: string) {
     firstMention: FirstMention
   ): Promise<SequenceLocationWithReference> => {
     await requireCurrent(id);
+    await requireSequence(sequenceId);
     const links = await db
       .select()
       .from(sequenceLocationLinks)

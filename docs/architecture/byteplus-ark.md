@@ -27,3 +27,7 @@ Two vias, one catalog key. `IMAGE_TO_VIDEO_MODELS.seedance_v2` / `seedance_v2_5`
 ## Prompt length
 
 Ark documents **no** prompt limit for Seedance — only a recommendation of "no more than 500 Chinese characters or 1,000 English words". The counter warns above 5,500 characters (about 1,000 English words) so it matches every other model (`measurePrompt`, #1763). Nothing on this via truncates or refuses a prompt for its length; `buildBytePlusVideoRequest` / `buildBytePlusImageRequest` only warn past the catalog recommendation. See `docs/architecture/media-vias.md` → Prompt length (#1754).
+
+## Draft element descriptions (secondary development, 2026-11-13)
+
+The separately authorized [G09 repair](../secondary-development/preservation/20261113-p3-g09-repair/README.md) also gates the pre-sequence draft-description request. After organization authentication, analyzeDraftElementFn calls requireCheckable for stored-object ownership and awaits requireUploadRights for the active organization's ledger before reading model configuration, resolving credentials, checking credits, describing the image or debiting. This matches the existing character/location upload-description boundary. A cleared verdict or signed portrait remains usable; a verdict from another organization does not grant access. Existing model routing, locale propagation and billing rules are retained. Local handler/D1 tests stub authentication context and paid collaborators; they are not HTTP or real-provider acceptance.

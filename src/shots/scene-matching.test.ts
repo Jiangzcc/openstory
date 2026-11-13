@@ -617,3 +617,161 @@ describe('matchElementsToMotion', () => {
     expect(result.map((e) => e.token).sort()).toEqual(['BOTTLE', 'LOGO']);
   });
 });
+
+describe('Chinese location prose fallback', () => {
+  // Synthetic locations retain the production name/id/tag shape.
+  const locations = [
+    { name: '上海车站', locationId: 'loc_station', consistencyTag: null },
+    { name: '北京书店', locationId: 'loc_bookshop', consistencyTag: null },
+  ];
+
+  it.each(['镜头转向：北京书店。', 'Camera pans to北京书店，then stops.'])(
+    'finds a complete Chinese name in %s',
+    (text) => {
+      expect(matchLocationsToScene(locations, '', '', text)).toEqual([
+        locations[1],
+      ]);
+    }
+  );
+
+  it('distinguishes mixed names sharing their English word', () => {
+    const rooms = [
+      { name: 'Set 厨房', locationId: 'set_kitchen', consistencyTag: null },
+      { name: 'Set 卧室', locationId: 'set_bedroom', consistencyTag: null },
+    ];
+    expect(matchLocationsToScene(rooms, '', '', 'Close on Set 卧室。')).toEqual(
+      [rooms[1]]
+    );
+    expect(matchLocationsToScene(rooms, '', '', 'The Set is quiet.')).toEqual(
+      []
+    );
+  });
+
+  it('requires the full Chinese name without joining separate fragments', () => {
+    for (const text of [
+      '镜头转向北京的书店。',
+      '北京，书店在远处。',
+      '她走进书店。',
+      'Nobody names a place.',
+    ]) {
+      expect(matchLocationsToScene(locations, '', '', text)).toEqual([]);
+    }
+    expect(
+      matchLocationsToScene(locations.slice(1), '', '', '镜头转向上海车站。')
+    ).toEqual([]);
+  });
+
+  it('keeps Latin word boundaries on a mixed name', () => {
+    const room = {
+      name: '北京 Studio',
+      locationId: 'studio_room',
+      consistencyTag: null,
+    };
+    expect(matchLocationsToScene([room], '', '', '进入北京 Studio。')).toEqual([
+      room,
+    ]);
+    expect(matchLocationsToScene([room], '', '', '进入北京 Studios。')).toEqual(
+      []
+    );
+    expect(
+      matchLocationsToScene([room], '', '', 'The studio is empty.')
+    ).toEqual([]);
+  });
+
+  it('uses the most specific complete name among several candidates', () => {
+    const shop = { name: '书店', locationId: 'loc_shop', consistencyTag: null };
+    expect(
+      matchLocationsToScene(
+        [shop, ...locations],
+        '',
+        '',
+        '镜头转向：北京书店。'
+      )
+    ).toEqual([locations[1]]);
+    expect(
+      matchLocationsToScene(locations, '', '', '上海车站与北京书店之间切换。')
+    ).toEqual([locations[0]]);
+  });
+
+  it('keeps exact tag and slugline choices ahead of conflicting prose', () => {
+    expect(
+      matchLocationsToScene(locations, '上海车站', '', '镜头转向北京书店。')
+    ).toEqual([locations[0]]);
+    expect(
+      matchLocationsToScene(locations, '', '上海车站', '镜头转向北京书店。')
+    ).toEqual([locations[0]]);
+    expect(
+      matchLocationsToScene(locations, '上海车站', '', null, '北京书店。')
+    ).toEqual([locations[0]]);
+  });
+
+  it('narrows multiple explicit Chinese rooms to the complete prompt name', () => {
+    expect(matchLocationsToScene(locations, '上海车站, 北京书店', '')).toEqual(
+      locations
+    );
+    expect(
+      matchLocationsToScene(
+        locations,
+        '上海车站, 北京书店',
+        '',
+        null,
+        '镜头转向北京书店。'
+      )
+    ).toEqual([locations[1]]);
+    const all = { characters: [], locations, elements: [] };
+    const scene = {
+      environmentTag: '上海车站, 北京书店',
+      sceneLocation: '',
+      characterLooks: undefined,
+    };
+    expect(
+      resolveShotReferences(all, scene, {
+        channel: 'visual',
+        prompt: '北京书店。',
+      }).locations
+    ).toEqual([locations[1]]);
+    expect(
+      resolveShotReferences(all, scene, {
+        channel: 'motion',
+        prompt: '北京书店。',
+        referenceOnly: true,
+      }).locations
+    ).toEqual([locations[1]]);
+  });
+
+  it('preserves ASCII token matching, specificity and negative cases', () => {
+    const places = [
+      { name: 'Garden', locationId: 'loc_garden', consistencyTag: null },
+      {
+        name: 'Rooftop Garden',
+        locationId: 'loc_roof',
+        consistencyTag: 'garden_rooftop',
+      },
+      {
+        name: 'Stitched Felt Meadow',
+        locationId: 'loc_meadow',
+        consistencyTag: null,
+      },
+    ];
+    expect(
+      matchLocationsToScene(places, '', '', 'They enter the ROOFTOP GARDEN.')
+    ).toEqual([places[1]]);
+    expect(
+      matchLocationsToScene(places, '', '', 'The meadow is stitched from felt.')
+    ).toEqual([places[2]]);
+    expect(matchLocationsToScene(places, '', '', 'A gardener works.')).toEqual(
+      []
+    );
+    expect(
+      matchLocationsToScene(places, '', '', 'INT. EXT. DAY NIGHT')
+    ).toEqual([]);
+    expect(
+      matchLocationsToScene(
+        [...places, ...locations],
+        '',
+        '',
+        'ROOFTOP GARDEN and 北京书店。'
+      )
+    ).toEqual([places[1]]);
+  });
+});

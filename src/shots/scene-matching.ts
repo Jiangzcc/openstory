@@ -256,6 +256,35 @@ type LocationMatchInput = Pick<
   'locationId' | 'name' | 'consistencyTag'
 >;
 
+const HAN_LOCATION_TERM = /\p{Script=Han}/u;
+
+// The complete Han name wins by length; ASCII candidates retain precedence.
+function matchHanLocationInText<T extends LocationMatchInput>(
+  allLocations: T[],
+  sceneText: string
+): T[] {
+  const text = normalizeLocationKey(sceneText);
+  let best: { location: T; length: number } | null = null;
+  for (const location of allLocations) {
+    for (const term of [
+      location.name,
+      location.locationId,
+      location.consistencyTag ?? '',
+    ]) {
+      const name = normalizeLocationKey(term);
+      if (!HAN_LOCATION_TERM.test(name)) continue;
+      const prefix = /^[a-z0-9]/.test(name) ? '(?:^|[^a-z0-9])' : '';
+      const suffix = /[a-z0-9]$/.test(name) ? '(?:[^a-z0-9]|$)' : '';
+      const pattern = new RegExp(prefix + escapeForRegex(name) + suffix);
+      if (!pattern.test(text)) continue;
+      if (!best || name.length > best.length) {
+        best = { location, length: name.length };
+      }
+    }
+  }
+  return best ? [best.location] : [];
+}
+
 /**
  * The set named in the scene's own words, for a scene whose tag and slugline
  * name nothing.
@@ -276,7 +305,6 @@ function matchLocationInText<T extends LocationMatchInput>(
   sceneText: string
 ): T[] {
   const textTokens = new Set(tokenize(sceneText));
-  if (textTokens.size === 0) return [];
 
   let best: { location: T; score: number } | null = null;
   for (const loc of allLocations) {
@@ -285,6 +313,7 @@ function matchLocationInText<T extends LocationMatchInput>(
     // `stitched_felt_meadow` and `felt_meadow_stitched` all match the prose
     // "a stitched felt meadow" — the token-subset rule cast names already use.
     for (const term of [loc.name, loc.locationId, loc.consistencyTag ?? '']) {
+      if (HAN_LOCATION_TERM.test(term)) continue;
       const tokens = tokenize(term).filter(
         (t) => t.length >= 3 && !HEADING_NOISE.has(t)
       );
@@ -301,6 +330,9 @@ function matchLocationInText<T extends LocationMatchInput>(
   // A continuation slice that names nowhere is filled at split time instead —
   // see the carry-forward in `reconcileSceneTags`.
   if (best) return [best.location];
+  const named = matchHanLocationInText(allLocations, sceneText);
+  if (named.length > 0) return named;
+  if (textTokens.size === 0) return [];
 
   // The bible can design "Nora's study" for an unspecified remote feed even
   // though the script only names NORA. Preserve that explicit ownership in

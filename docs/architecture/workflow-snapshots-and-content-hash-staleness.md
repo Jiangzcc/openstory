@@ -558,3 +558,9 @@ Rotation appends a new encrypted credential record and points the current channe
 Native Google video Files operations are an explicit boundary: `analyzeTalentClipForTeam` and `watchClipForTeam` read their native-only helper model and resolve credentials with `resolveOptionalKey('google')`, preferring the team's Google key before the platform Google key. Even an active text binding for that same model ID must not capture the Files API path. The configured USD rates are supplier estimates, not a new sales-price snapshot.
 
 Text-channel snapshot/rotation, related automated tests, browser checks and the production build passed locally. Real-gateway probes were read-only, with no paid generation; deployed Cloudflare network behavior is unverified. See the separate [text-channel implementation and verification record](../secondary-development/text-channels.md).
+
+## Unicode location fallback (secondary development, 2026-11-13)
+
+The [G09 repair](../secondary-development/preservation/20261113-p3-g09-repair/README.md) preserves stored consistency tags and the existing nonempty ASCII fallback. Only an otherwise empty canonical tag is derived from Unicode letters/numbers. Complete Han location names can also resolve from prose; explicit tags and scene locations retain precedence, and existing English candidates are evaluated first.
+
+This changes neither the hash algorithm nor the fields it reads. The location-sheet hash excludes consistency tags, and fixed English/single-location prompt digests remain compatible. A Chinese location previously absent from the resolved reference set can now enter it; several tagged locations can also narrow to the one named in the Chinese shot prompt. Those corrected sets can make a stored prompt or its dependent still/clip stale under the existing comparison. Stored hashes/tags, claim promotion, frozen payloads and legacy-hash rules are not migrated or rewritten.

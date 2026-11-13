@@ -25,7 +25,14 @@ export function canonicalBibleTag(entry: {
   name: string;
   consistencyTag: string | null;
 }): string {
-  return entry.consistencyTag || slugifyTag(entry.name);
+  return (
+    entry.consistencyTag ||
+    slugifyTag(entry.name) ||
+    entry.name
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, '_')
+      .replace(/^_+|_+$/g, '')
+  );
 }
 
 /**

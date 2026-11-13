@@ -1048,3 +1048,9 @@ sequence style; the custom migration clears prior analysis palettes. See
 ## Secondary-development localization
 
 The Chinese interface translates graph labels, summaries, field lists and edge notes in the view using the shared language packs. Graph ids, edges, tracking rules, stored hashes and version pointers retain the upstream definitions in `src/ui/docs/dependency-graph.ts`. Language switching does not edit the graph or trigger generation.
+
+### Unicode location membership (secondary development, 2026-11-13)
+
+The [G09 repair](../secondary-development/preservation/20261113-p3-g09-repair/README.md) fills an empty canonical tag from Unicode letters/numbers only after the stored tag and original ASCII slug. Location prose fallback recognizes complete Han names, preserving explicit tag/slugline precedence and English candidate priority. Mixed Han/Latin names require the complete name.
+
+Stamp, verify, causes and rendered reference lists still use the same per-shot, per-channel resolver and the same input fields. No dependency node or edge changes, so the interactive graph retains the same structure. Correcting a previously missing Chinese location or narrowing several tagged locations with Chinese prompt text can change membership and therefore prompt/still/clip digests. Persisted hashes, hash versions and legacy-hash acceptance are not rewritten; existing explicit single-location and English digest fixtures remain unchanged.
