@@ -1,6 +1,6 @@
 # 上游业务保留与二开长期维护计划
 
-版本日期：2026-11-12。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成，G07-callers 已复核并记录开放风险，MC-B01 已完成完整图片请求能力校验收敛，MC-B02 已完成配置文本成本归属迁移，MC-B03 已完成配置图片价格精度策略归属迁移，G01-verify 已完成有限的可信身份与任务语言契约验证，G02-verify 已完成有限的任务配置快照契约验证并修复两处断链；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
+版本日期：2026-11-13。状态：P0、P1 已完成；P2 历史范围覆盖及 4 项代码修复已归档，补充复核发现的问题与整改见 [2026-11-09 补证](preservation/20261108-p2/followup-20261109/README.md)。1 项计费缺口按用户决定暂缓，未计为已修复。P3 已有四批局部成果，但整体尚未完成；现按整个 fork 的职责与全部差异建立[全量收敛设计](upstream-preservation-p3-global-design-20261109.md)，全量实施中的 G09-reference-projection 与 G07-partition 已完成，G07-callers 已复核并记录开放风险，MC-B01 已完成完整图片请求能力校验收敛，MC-B02 已完成配置文本成本归属迁移，MC-B03 已完成配置图片价格精度策略归属迁移，G01-verify 已完成有限的可信身份与任务语言契约验证，G02-verify 已完成有限的任务配置快照契约验证并修复两处断链，G03-verify 已核对父子任务传播并修复 portrait 两条断链，保留基线超时及领域覆盖风险；其余结构实施按设计继续推进，不能以试点收口或某次冲突清单代替全量目标。P4 及后续阶段未执行。
 
 本计划覆盖已经发生的二开、历史合入、当前缺口，以及后续新功能和上游更新。目标是尽可能保留上游业务逻辑和实现，在可解释、可验证的少量接入点上二开，降低持续升级成本。
 
@@ -145,7 +145,7 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 此前四批前后，既有修改路径均为 653、既有 src 修改均为 606，恢复到上游的路径为 0；同一待合入上游样本前后均有 18 个冲突文件。[已归档对照](preservation/20261109-p3-global-design/prior-pilot-comparison.json) 用于纠正先前收益口径，不将这 18 个文件当成治理范围。
 
-### 5.5 全量设计后的实际实施（2026-11-09—2026-11-12）
+### 5.5 全量设计后的实际实施（2026-11-09—2026-11-13）
 
 `G09-reference-projection` 已完成：before 为 `b85e8c2728259b7902dad6e1cc9aa3757dfb3b6e`，代码提交为 `456046a25269371dd42729f0a2f9343e07942c4d`。[批次记录](preservation/20261109-p3-g09-reference-projection/README.md) 列出全部入口、删除的重复决策、必要桥接、原断言去向和本轮验证；机器证据见 [implementation.json](preservation/20261109-p3-g09-reference-projection/implementation.json)，后续实际进展追加到 [实施台账](preservation/p3-implementation-log.jsonl)。冻结设计的 planned 字段保留其原始时间含义，当前实施状态查追加台账。
 
@@ -167,7 +167,9 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-12 完成 `G02-verify` 的有限任务配置快照验证。before 为 `ce67452ad64c02bda60b6ff867bae238096eaefb`，代码与功能文档提交为 `98346494abc05e7a268e2e2bbbb6f4807d96a3da`。真实 root/D1/加密凭证/JSON wire/workflow base 组合与 codec 边界测试验证排队后仍用旧配置；调用者审查覆盖 32 个 root/共享服务派发点、29 个具名函数及 27 个准备/loader 符号的 72 条直接调用边。发现并修复两处断链：旧 wire 缺图片路由时 fresh-plan 回读当前配置，以及 smart retry 的 motion/music/music-prompt 分支丢失可信外层配置。两项分别有改前 2/5、5/15 失败及修复后通过证据，未把合成报价或参数传播解释成实际钱包错账。最终 36 文件、640 项通过，其中新增 4 文件、42 项；32 个原测试源码保持。类型检查、lint、生产修复后的新构建和正常提交钩子通过，lint 146 条范围外警告单列。[批次记录](preservation/20261112-p3-g02/README.md)、[调用者矩阵](preservation/20261112-p3-g02/caller-matrix.json) 与 [机器证据](preservation/20261112-p3-g02/implementation.json) 区分原始 sourceBefore 发现与 sourceAfter 修复；52 个审查来源仅上述两处改变。绑定/step runner/外部调用替身、未建立全局原子配置版本及完整 HTTP/Workerd/持久重放未验收均保留边界。G02 有限验证批次完成，GC-02、MC-13 与原 inventory 不批量关闭，也不宣称减少未来冲突。
 
-**P3 整体仍进行中。** `G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责仍未关闭；1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。下一步为 `G03-verify` 的父子任务快照传播验证；其 G02 前置已完成有限技术验证，G09-ownership-verify 仍按其 G03 前置推进。
+2026-11-12 启动、2026-11-13 收尾 `G03-verify`，状态为 `reviewed-with-open-risks`。before 为 `00cc4625c3823affa92186fbe98b66850e6e755a`，代码及功能文档提交为 `0dd178b3e00c2dc3e8a3a5b0ae711113ae37bf14`。静态解析 1,461 个生产 TS/TSX 文件，核对 16 个父工作流的 35 条领域派发边，修复 character/location sheet 经同一 portrait helper 漏传父配置的两条断链；上传请求独立捕获配置、原 step/去重/保存后派发与独立资金 ownership 保持。新增四文件、31 项在最终整合中全通过；最终互不重复的 33 文件、489 项为 488 通过、1 项原 claim surface 冷导入超过 20 秒。单文件 forks/threads 及 sourceBefore 隔离源码均复现该超时，原断言、限制与测试配置未改，不能宣称整套回归全绿。29 个原测试源码保留；await-child 的 11 个具名函数对照 B，仅归一化新增配置属性后相同；三处修复去掉新增接入后整文件 AST 保持。类型检查、lint、新构建及正常提交钩子通过，146 条范围外 lint 警告单列。[批次记录](preservation/20261112-p3-g03/README.md)、[调用矩阵](preservation/20261112-p3-g03/caller-matrix.json) 与 [机器证据](preservation/20261112-p3-g03/implementation.json) 保留起点发现、修复后状态及替身边界。有限传播契约已有证据，全部父任务分支/生命周期、真实持久引擎与供应商未验收；GC-03、MC-13 及原 inventory 不批量关闭。
+
+**P3 整体仍进行中。** `G03-verify` 的覆盖及基线超时风险、`G07-callers` 的开放项与 GC-07 其余职责、`G09-ownership-verify` 与 GC-09 其余职责仍未关闭；1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准。用户暂缓项保持，P4 未开始。下一步为 `G09-ownership-verify`；其 G09-reference-projection 和 G03 有限传播契约已有证据，G03 开放项继续保留，不随下一批自动关闭。
 
 ## 6. 未来新增二开的接入流程
 
