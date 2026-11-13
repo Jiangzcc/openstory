@@ -203,6 +203,8 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-14 继续执行 `G03-shot-images-failure`：测试提交为 `75afef60f`。新增 ShotImagesWorkflow primary image child 连续失败探针，核对 lone-primary retry 一次后仍失败时返回 imageUrls=[null]、frameVersionIds=[null]；原有直接 variant root 的双语言快照和成功路径保留。1 个测试文件、7 项通过，typecheck、lint、格式、diff 检查和正常 pre-commit hooks 通过；测试-only 批次未重复生产 build。该批只关闭 ShotImagesWorkflow primary 失败收敛的有限动态证据，不关闭 GC-03；其它父工作流生命周期/失败分支和真实 durable replay 仍开放。[批次记录](preservation/20261114-p3-g03-shot-images-failure/README.md)、[实现记录](preservation/20261114-p3-g03-shot-images-failure/implementation.json)和[验证记录](preservation/20261114-p3-g03-shot-images-failure/verification-results.json)记录本批边界。
 
+2026-11-14 继续执行 `G03-location-sheet-failure`：测试提交为 `ddfe55136`。新增 LocationSheetWorkflow 失败归属探针，核对当前 claim 按自身版本清理并广播 failed、无 `referenceVersionId` 的历史任务按 null 清理并使用 location 自有频道，以及 realtime 广播失败不阻断 claim 清理。1 个测试文件、3 项通过，typecheck、lint、格式、diff 检查和正常 pre-commit hooks 通过；测试-only 批次未重复生产 build。该批只关闭 LocationSheetWorkflow 失败归属的有限动态证据，不关闭 GC-03；其它父工作流生命周期/失败分支、真实 durable replay 和运行环境证据仍开放。[批次记录](preservation/20261114-p3-g03-location-sheet-failure/README.md)、[实现记录](preservation/20261114-p3-g03-location-sheet-failure/implementation.json)和[验证记录](preservation/20261114-p3-g03-location-sheet-failure/verification-results.json)记录本批边界。
+
 **P3 整体仍进行中。** G10 有限验证、G14 图片准备及资产入口/来源/草稿修复、G06-capture、G06-auxiliary、G07 音乐预占清理与 motion 时长估价修复及 G03 四个父主体及 lip-sync child dispatch 证据已有边界记录，GC-10/GC-14/GC-06/GC-07/GC-03 不作整职责关闭。GC-06 剩余调用与真实环境验收、GC-14 剩余真环境验收、GC-09 其余职责、G03 其它生命周期/失败分支、G07 native via 与真实计费一致性及其它 P3 工作仍待完成；当前 fal 预占入口的引用路由估价已有边界修复，下一步按最新台账选择依赖已满足且仍有明确代码或验证缺口的职责。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
 
 ## 6. 未来新增二开的接入流程
