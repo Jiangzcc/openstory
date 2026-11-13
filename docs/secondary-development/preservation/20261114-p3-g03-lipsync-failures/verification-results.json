@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "6bca450c9",
+  "codeCommit": "a1171c1e8",
+  "selectedRegression": {
+    "command": "bun run test src/motion/server/workflows/motion-workflow.test.ts",
+    "files": 1,
+    "tests": 44,
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "MotionWorkflow keeps child-owned failure and never-started child failure ownership distinct after a completed motion render."
+  },
+  "checks": {
+    "typecheck": { "command": "bun typecheck", "status": "passed" },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/motion/server/workflows/motion-workflow.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": { "command": "git diff --check", "status": "passed" },
+    "build": {
+      "command": "bun run build",
+      "status": "not-run",
+      "note": "Test-only batch; no production files changed."
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "a1171c1e8",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "No production code or failure ownership behavior was changed.",
+    "The actual LipsyncWorkflow, durable wait/notify, provider request, remote storage and settlement were not run."
+  ]
+}
