@@ -1,0 +1,672 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "637a7521ff56618af342046084078ff2a7d6f91c",
+  "codeCommit": "9c51bfb82a201120ea404f9065ddd4af3ad9001e",
+  "capture": {
+    "at": "2026-11-13T03:07:48.546Z",
+    "initialClean": true,
+    "snapshotSha256": "d49dc93c9921886a7638529d81aaec4876579b3bea5833119e67e1827865f508",
+    "note": "Outside cast/shots, original normalized source is read from the pinned sourceBefore Git tree."
+  },
+  "productionSources": [
+    {
+      "path": "src/cast/bible-field.ts",
+      "beforeSha256Lf": "30447498022856ad4aac856be1d2bc52942f2198ea9d669df38a261800ded25f",
+      "afterSha256Lf": "e6086f07c1c2416af91196c4b1545fae646d6ca0695b0477aa155cc054b89b2f",
+      "changed": true
+    },
+    {
+      "path": "src/cast/cast-channel.ts",
+      "beforeSha256Lf": "1a720ebac55a0c4610a74d1b8715bbd06b3307e0a5055c7461966a523725816e",
+      "afterSha256Lf": "1a720ebac55a0c4610a74d1b8715bbd06b3307e0a5055c7461966a523725816e",
+      "changed": false
+    },
+    {
+      "path": "src/cast/character-looks.fn.ts",
+      "beforeSha256Lf": "04c2c770be5563dab0cc02e979a54ad9e228687abe1010da285901e8523c4b9c",
+      "afterSha256Lf": "04c2c770be5563dab0cc02e979a54ad9e228687abe1010da285901e8523c4b9c",
+      "changed": false
+    },
+    {
+      "path": "src/cast/character-sheet-variants.fn.ts",
+      "beforeSha256Lf": "3fc182a1aca88abb2fce533c1fe0abda253ed77e5bce75d4521097209ce69af6",
+      "afterSha256Lf": "3fc182a1aca88abb2fce533c1fe0abda253ed77e5bce75d4521097209ce69af6",
+      "changed": false
+    },
+    {
+      "path": "src/cast/describe-upload.fn.ts",
+      "beforeSha256Lf": "1493c43ecb197d6c45aa72c5e610bc10e0908a32f84ca94a6ed0b3ea7734e27d",
+      "afterSha256Lf": "1493c43ecb197d6c45aa72c5e610bc10e0908a32f84ca94a6ed0b3ea7734e27d",
+      "changed": false
+    },
+    {
+      "path": "src/cast/location-sheet-variants.fn.ts",
+      "beforeSha256Lf": "5c8943306f301d6953935ca45090b4ef00a04eaa502e784188aa27c28f058524",
+      "afterSha256Lf": "5c8943306f301d6953935ca45090b4ef00a04eaa502e784188aa27c28f058524",
+      "changed": false
+    },
+    {
+      "path": "src/cast/organization-characters.fn.ts",
+      "beforeSha256Lf": "8be4b95a9a8c6b8047214efd1045d9b0d603a8354a44e90446b447612d6891d3",
+      "afterSha256Lf": "8be4b95a9a8c6b8047214efd1045d9b0d603a8354a44e90446b447612d6891d3",
+      "changed": false
+    },
+    {
+      "path": "src/cast/organization-locations.fn.ts",
+      "beforeSha256Lf": "45da37a0c1dd8969c6cc26f13a1074edbebd6f2666c7dc879893e1f425ed0777",
+      "afterSha256Lf": "45da37a0c1dd8969c6cc26f13a1074edbebd6f2666c7dc879893e1f425ed0777",
+      "changed": false
+    },
+    {
+      "path": "src/cast/sequence-characters.fn.ts",
+      "beforeSha256Lf": "74b567d2f69c9f3542f21f69f34ce77c0e31ec24e250d666227d8cbfd78eb639",
+      "afterSha256Lf": "74b567d2f69c9f3542f21f69f34ce77c0e31ec24e250d666227d8cbfd78eb639",
+      "changed": false
+    },
+    {
+      "path": "src/cast/sequence-elements.fn.ts",
+      "beforeSha256Lf": "af7ab82d177c788bc76fd542205726d71f8252d100600372bc162c2c03fd55d9",
+      "afterSha256Lf": "2816b85f5691bd46e37ec51454635e31d4baeb760bc6b6f89a60d2afdc596701",
+      "changed": true
+    },
+    {
+      "path": "src/cast/sequence-locations.fn.ts",
+      "beforeSha256Lf": "e5bed0f6e2f4aa294e1ffda58e17a5fc13db8bf4f64f9027979b7bb6c43bc1fe",
+      "afterSha256Lf": "e5bed0f6e2f4aa294e1ffda58e17a5fc13db8bf4f64f9027979b7bb6c43bc1fe",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/cast-edit.ts",
+      "beforeSha256Lf": "dedb4c2702353d8f2890502e2fdfcd0daa0ea018cb930c98e815288147dc8467",
+      "afterSha256Lf": "dedb4c2702353d8f2890502e2fdfcd0daa0ea018cb930c98e815288147dc8467",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/db/character-looks.ts",
+      "beforeSha256Lf": "b524f1267974a510789240eb7da8ece04e50abb367a35f13803458458a9aa742",
+      "afterSha256Lf": "b524f1267974a510789240eb7da8ece04e50abb367a35f13803458458a9aa742",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/db/character-sheet-variants.ts",
+      "beforeSha256Lf": "3dbcf0223b3da56f89cdc732da2f768ebee12b7a1a7c68174e0e20199a1f48b0",
+      "afterSha256Lf": "3dbcf0223b3da56f89cdc732da2f768ebee12b7a1a7c68174e0e20199a1f48b0",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/db/characters.ts",
+      "beforeSha256Lf": "5f6416af4c43a46f2e484bdf8f71340d6080d0ecaf09c8d172b5a437e33c3f71",
+      "afterSha256Lf": "5f6416af4c43a46f2e484bdf8f71340d6080d0ecaf09c8d172b5a437e33c3f71",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/db/location-sheet-variants.ts",
+      "beforeSha256Lf": "80bf33e0e2a95052de663c72122151980d750812184ba3a8697e0dc527d1af51",
+      "afterSha256Lf": "863c029e170a126b38a8b43516f6bd5098a0c55fd1b592be33fbea1206b6e6cf",
+      "changed": true
+    },
+    {
+      "path": "src/cast/server/db/locations.ts",
+      "beforeSha256Lf": "3750901fe04ff20a98c9f7f06bc4509b7e7971e3463faedbcf6b02728d939ffb",
+      "afterSha256Lf": "bfa57b78aa29b5a4c9ce5202ad5de06a99a0a660e2993e3ccdb6b6d03c5fe4dd",
+      "changed": true
+    },
+    {
+      "path": "src/cast/server/db/sequence-cast.ts",
+      "beforeSha256Lf": "0bf36eacade47f52bbb40f5786593703481cc6d01c5794c80d059a90a76136a7",
+      "afterSha256Lf": "0bf36eacade47f52bbb40f5786593703481cc6d01c5794c80d059a90a76136a7",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/db/sheet-claims.ts",
+      "beforeSha256Lf": "5457a893415e7b0c4e77febd4bc32772ee4183432761aefd5b4a9d60aa80cd4e",
+      "afterSha256Lf": "5457a893415e7b0c4e77febd4bc32772ee4183432761aefd5b4a9d60aa80cd4e",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/describe-upload.ts",
+      "beforeSha256Lf": "a4ed6e3da034ef0650b9293805c3cb6fe8dfc426a9dc120bb8d1b59bcdc8c3ae",
+      "afterSha256Lf": "a4ed6e3da034ef0650b9293805c3cb6fe8dfc426a9dc120bb8d1b59bcdc8c3ae",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/element-vision.ts",
+      "beforeSha256Lf": "32de053af841d6b1a9f66efaa90d46ca2a949dc6939b1d0a3a664944d47d1a16",
+      "afterSha256Lf": "32de053af841d6b1a9f66efaa90d46ca2a949dc6939b1d0a3a664944d47d1a16",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/locations/organization-locations.ts",
+      "beforeSha256Lf": "596289fdb69841da76805494683fc3a59a9b4a029f891c06e9257227d0952333",
+      "afterSha256Lf": "596289fdb69841da76805494683fc3a59a9b4a029f891c06e9257227d0952333",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/sequence-elements/attach-element-upload.ts",
+      "beforeSha256Lf": "7b9d9533bd182cbda0800d87c13ca67a2570d4d36e6172fc3129291d0a956b18",
+      "afterSha256Lf": "7b9d9533bd182cbda0800d87c13ca67a2570d4d36e6172fc3129291d0a956b18",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/sheets/sheet-portrait-trigger.ts",
+      "beforeSha256Lf": "386ddd307ad00546a46d894c11d580dd6bde0b4f0bd62e055d95b753f2a6f77c",
+      "afterSha256Lf": "386ddd307ad00546a46d894c11d580dd6bde0b4f0bd62e055d95b753f2a6f77c",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/upload-check.ts",
+      "beforeSha256Lf": "a86f32dc39a892652c66a6dd8a65387309f64e2e7f88ce6e92f2b4c38ad64451",
+      "afterSha256Lf": "a86f32dc39a892652c66a6dd8a65387309f64e2e7f88ce6e92f2b4c38ad64451",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/workflows/cast-records.ts",
+      "beforeSha256Lf": "12bdb872ef193486433241f65cc12128c444a9fee73788451590a433cec8fd0a",
+      "afterSha256Lf": "12bdb872ef193486433241f65cc12128c444a9fee73788451590a433cec8fd0a",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/workflows/character-sheet-workflow.ts",
+      "beforeSha256Lf": "ace36bcc68e20f4ab2eb41b15d010f8f3e22324f3fadad0ea86e79dadd2102bd",
+      "afterSha256Lf": "ace36bcc68e20f4ab2eb41b15d010f8f3e22324f3fadad0ea86e79dadd2102bd",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/workflows/location-sheet-workflow.ts",
+      "beforeSha256Lf": "b9b6228876d859e788ba03690b89234f52f29b09111316b74299ef2387aeac30",
+      "afterSha256Lf": "b9b6228876d859e788ba03690b89234f52f29b09111316b74299ef2387aeac30",
+      "changed": false
+    },
+    {
+      "path": "src/cast/server/workflows/upload-check-workflow.ts",
+      "beforeSha256Lf": "09280aba46c3fb5d15d284698543754dd6c57a57f80fb04f4afb14c62f75fa9a",
+      "afterSha256Lf": "09280aba46c3fb5d15d284698543754dd6c57a57f80fb04f4afb14c62f75fa9a",
+      "changed": false
+    },
+    {
+      "path": "src/cast/ui/use-sequence-elements.ts",
+      "beforeSha256Lf": "104596a9c09f884175f04e1eb4def6976c73b61a3c2d3340e2b291f42a60845a",
+      "afterSha256Lf": "104596a9c09f884175f04e1eb4def6976c73b61a3c2d3340e2b291f42a60845a",
+      "changed": false
+    },
+    {
+      "path": "src/cast/upload-rights.fn.ts",
+      "beforeSha256Lf": "695c9fd1081dd850375bfe003aaf7e2a151f1f99219b2038c79d5532e388a1af",
+      "afterSha256Lf": "695c9fd1081dd850375bfe003aaf7e2a151f1f99219b2038c79d5532e388a1af",
+      "changed": false
+    },
+    {
+      "path": "src/cast/voice.fn.ts",
+      "beforeSha256Lf": "dbe13c068f303bbace75f99d42ff5d85fd85a1d5a2eaa591ff4a9263cef9ddd9",
+      "afterSha256Lf": "dbe13c068f303bbace75f99d42ff5d85fd85a1d5a2eaa591ff4a9263cef9ddd9",
+      "changed": false
+    },
+    {
+      "path": "src/platform/middleware.fn.ts",
+      "beforeSha256Lf": "64798a993429de5770f5d76234db33ab437c420a10f97dbe527ce26504b324b9",
+      "afterSha256Lf": "64798a993429de5770f5d76234db33ab437c420a10f97dbe527ce26504b324b9",
+      "changed": false
+    },
+    {
+      "path": "src/platform/server/api-v1/create.ts",
+      "beforeSha256Lf": "d0dd7ffcd57a7e11dda155de0a51d626ff887d46383856e8cf8361d8427bd48a",
+      "afterSha256Lf": "d0dd7ffcd57a7e11dda155de0a51d626ff887d46383856e8cf8361d8427bd48a",
+      "changed": false
+    },
+    {
+      "path": "src/platform/server/mcp/tool-context.ts",
+      "beforeSha256Lf": "829e04da3c8f660d80d5a6f48e317066065ef10cb31da95ef758ccb25d8c7d22",
+      "afterSha256Lf": "829e04da3c8f660d80d5a6f48e317066065ef10cb31da95ef758ccb25d8c7d22",
+      "changed": false
+    },
+    {
+      "path": "src/platform/server/mcp/tools/cast-audio-generation.ts",
+      "beforeSha256Lf": "95df37c0254706da261c0d319c2476ed46cf2fade05425013e75fa9458d7679a",
+      "afterSha256Lf": "95df37c0254706da261c0d319c2476ed46cf2fade05425013e75fa9458d7679a",
+      "changed": false
+    },
+    {
+      "path": "src/platform/server/mcp/tools/generation-uploads.ts",
+      "beforeSha256Lf": "abaa0c696d8f3802ba3a41d1a776610fb74135d60bbd05fe11a1a8aaf75756ec",
+      "afterSha256Lf": "abaa0c696d8f3802ba3a41d1a776610fb74135d60bbd05fe11a1a8aaf75756ec",
+      "changed": false
+    },
+    {
+      "path": "src/platform/server/storage/buckets.ts",
+      "beforeSha256Lf": "3cfed4c2cfdcfff0fe3c1eea593a4ecb0fa897d0c1808b274d73cd9a9a6a04aa",
+      "afterSha256Lf": "3cfed4c2cfdcfff0fe3c1eea593a4ecb0fa897d0c1808b274d73cd9a9a6a04aa",
+      "changed": false
+    },
+    {
+      "path": "src/routes/api/storage/multipart.ts",
+      "beforeSha256Lf": "986bffcdbd87f5131d45db0639c3c85347dc2caf04706f5eee441a23d17fe797",
+      "afterSha256Lf": "986bffcdbd87f5131d45db0639c3c85347dc2caf04706f5eee441a23d17fe797",
+      "changed": false
+    },
+    {
+      "path": "src/routes/api/storage/upload.ts",
+      "beforeSha256Lf": "d0dc70102d30b43d5d8d1f7eea4ec59c883b7bf7d2e88476163a6c75bd87bee6",
+      "afterSha256Lf": "d0dc70102d30b43d5d8d1f7eea4ec59c883b7bf7d2e88476163a6c75bd87bee6",
+      "changed": false
+    },
+    {
+      "path": "src/sequences/server/production-access.ts",
+      "beforeSha256Lf": "1a98060009442339c7851670324d4a26deafcba8954c7c39cb527ea0f035bf13",
+      "afterSha256Lf": "1a98060009442339c7851670324d4a26deafcba8954c7c39cb527ea0f035bf13",
+      "changed": false
+    },
+    {
+      "path": "src/shots/media-upload.fn.ts",
+      "beforeSha256Lf": "65a5552bed624d6086a2f7e7d80285918d1c39881498dd26a7e1dec648151a53",
+      "afterSha256Lf": "65a5552bed624d6086a2f7e7d80285918d1c39881498dd26a7e1dec648151a53",
+      "changed": false
+    },
+    {
+      "path": "src/shots/scene-matching.ts",
+      "beforeSha256Lf": "aab6c6605ffa413aff313bf9617d616d0f447395f988ad7c94ee8ac4481fbe06",
+      "afterSha256Lf": "292c0d631fdb5674a41033734a7ecfa7738f7845a60f5fe45f5c00056cb40a76",
+      "changed": true
+    },
+    {
+      "path": "src/shots/server/media-upload.ts",
+      "beforeSha256Lf": "f7d0850ca1a263fb87047d31d6b1c97e368bb52e2735e43537b2ee040f53e70c",
+      "afterSha256Lf": "f7d0850ca1a263fb87047d31d6b1c97e368bb52e2735e43537b2ee040f53e70c",
+      "changed": false
+    }
+  ],
+  "originalTests": [
+    {
+      "path": "src/cast/server/db/sequence-cast-crud.test.ts",
+      "sha256Lf": "53a0013495b5bce9fcedb1d8b34fda76b2053041869b7741e4e08e6db19d5a79",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/sheet-claims.test.ts",
+      "sha256Lf": "e038c4d63653ed322fd7a666578686cecb2b840b5b087e981222dc3be95c81d3",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/sheet-variants.test.ts",
+      "sha256Lf": "ad7d9e96405c05bc96b25c80eda09277f58529eeaa787e9c16c6b6463effa990",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/character-library.test.ts",
+      "sha256Lf": "576012731e04c01372c6d2aff5fb993ae96045073fb4f7bd65db78a8e7019638",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/cast-records.test.ts",
+      "sha256Lf": "595d3dce1fec63edfe5cf925c8a97a941a989ece121d5a77d05ca0b6859ef83c",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/voice/release-voice.test.ts",
+      "sha256Lf": "31a13ff71d5f70256370f4265918943a320a5c06234f00700b0043a2596c1ca8",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/locations.test.ts",
+      "sha256Lf": "d9de70fa3b3736bad6340cfbf71229bd5e3c6054bec6c575e9c1fb7dac013dcc",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/locations-create-bulk.test.ts",
+      "sha256Lf": "4e214c96a2cca9cea0a0a793e71ad234f31e0284d804c3dc7e095300c9429ff4",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/character-replace.test.ts",
+      "sha256Lf": "92c87a8efaf3a8c0eae0e6bed96182a3805d74a28ff6069cbeccc69289ecbbaf",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/person-lock.test.ts",
+      "sha256Lf": "7fadee348ae8276b3223231c116b8a8c7ae7d0ad14f151143479accd565a7193",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/cast-generation.test.ts",
+      "sha256Lf": "0dd32975825a5367e3382fc960bcbc87506072af9af952f91714b3b111a973d5",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/describe-upload.test.ts",
+      "sha256Lf": "429cb00b35c7ed7316531bcaa9d20d72994eb02907d40dcb65426df9a3bf3e2b",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/upload-rights.test.ts",
+      "sha256Lf": "44aad35b5efb1aab297e1845a0f4969f48e2fd7817b301dfd77b25be9d9b9774",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/upload-check.test.ts",
+      "sha256Lf": "fa2a2b27298d32eeb2d464c03fdabb9ebc2e477ae13aec52ed9feab8ffe418d3",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/organization-user-upload.test.ts",
+      "sha256Lf": "273e80a61af4b8e3ec256591ee8554342eb1dc657c74301af34ebc762321014f",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/sequence-elements/attach-element-upload.test.ts",
+      "sha256Lf": "81963345d88d74609857e7656e100f8078dedac62aaf73771d62d82128a531ed",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/element-vision.test.ts",
+      "sha256Lf": "56f483c0632c9c26db9bd3414c2d5f973d57090a803803475d965f25567ee32c",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/talent/analyze-talent-media.test.ts",
+      "sha256Lf": "a53281ccf4f9dffed028b2fab1693f94c47fe96cc24c2116471b66256473e7fd",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/location-bible-workflow.test.ts",
+      "sha256Lf": "833c19fb71f9e91bb23e34beaa9eaa448e5d025b68357f39e678ae66feadb02c",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/character-bible-workflow.test.ts",
+      "sha256Lf": "648b38a92477a4702be4b1d3f8b8ce7b54e8faffde580208f65052da798606db",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/character-sheet-workflow.test.ts",
+      "sha256Lf": "ec3f23873345ed92ded2b5f7b80233dcce930311f3a4474752bec2f5008c094b",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/sheet-portrait-context.test.ts",
+      "sha256Lf": "c641f25e2cbb9e618faca8e11095faea7779027c35b60c9347e5e7c8b1750b8f",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/recast-snapshot.test.ts",
+      "sha256Lf": "b1e1a18e81917d4839c3f99cff4918855b37a6f8e84b6ede844509d646703329",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/replace-element-workflow.test.ts",
+      "sha256Lf": "b0d62276c71d5a6e15a1fc6473b4db0e320af97b42ddbcaf2a3b0c9d093aea30",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/sheets/sheet-portrait-step.test.ts",
+      "sha256Lf": "8db68a9836405354a87ca923c4abcc09f50f566c3750b7896e1ddc536ce4f46e",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/sheets/sheet-portrait.test.ts",
+      "sha256Lf": "c31cca3256894493ec76c5543deb062da2b4b9100b1ed465aefcf273f157c37f",
+      "unchanged": true
+    },
+    {
+      "path": "src/platform/server/mcp/cast-audio-generation.test.ts",
+      "sha256Lf": "5c7525d94b6f34a1fe38812da7f4c171b4483cdd138d29b79a4cfbb72b51464e",
+      "unchanged": true
+    },
+    {
+      "path": "src/platform/server/api-v1/create.test.ts",
+      "sha256Lf": "20e0ac104635623da58f9ab0a63899a6b988e2fedff68f0e8d9db75af1e8fe49",
+      "unchanged": true
+    },
+    {
+      "path": "src/shots/server/media-upload.test.ts",
+      "sha256Lf": "9e8bfd3958067f22a94c14958bb0add6adc622ddc73e5bca3dd13b832aa11f15",
+      "unchanged": true
+    },
+    {
+      "path": "src/platform/server/db/scoped/compliance-attestations.test.ts",
+      "sha256Lf": "23fa6b5246a05f1c3c8fd46b31a72ba25992d4b49b97a2d1c7f3b9056180ee41",
+      "unchanged": true
+    },
+    {
+      "path": "src/platform/server/db/scoped/compliance-enforcement.test.ts",
+      "sha256Lf": "6059e374a437c7a5bd401e5a2f17be460276df96ef4a0175538a5764f20765f7",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/sequence-elements.test.ts",
+      "sha256Lf": "e758a8de13aca585f66daa245d4daea4648db0896da68bf4ad6439161e08e93f",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/sheet-snapshots.test.ts",
+      "sha256Lf": "f50ccbf2612b9106fb2415827f085697896d84b7b6de6059b0d8ff1273db2076",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/sheet-divergence.test.ts",
+      "sha256Lf": "3b82271fb7341011dcffb5589cf59ec1057e28a67a94126f97ee55b0400a45f3",
+      "unchanged": true
+    }
+  ],
+  "existingTestBodies": [
+    {
+      "path": "src/cast/bible-field.test.ts",
+      "originalBodySha256Lf": "9d337635b130c03aa78b54fa2a629f1b2bd801ab39bc9bda30868f1057ca7c60",
+      "retainedVerbatim": true
+    },
+    {
+      "path": "src/shots/scene-matching.test.ts",
+      "originalBodySha256Lf": "604c43d17a19c5a388530afaba40f598a75ca6f5feed91d26762e5c7fce32952",
+      "retainedVerbatim": true
+    }
+  ],
+  "frozenDesign": {
+    "files": [
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/README.md",
+        "sha256": "4124770ab95d682a78c59033ab29355dfcfc3cd279fbc1c59d52f58fc864c733",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/application-boundaries-responsibilities.jsonl",
+        "sha256": "481be981ea038e21e7a989208b277c4a18e9777195d35b3eb0829294ed8bfa36",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/application-boundaries.json",
+        "sha256": "e11b964fa32222da77398bce879aea89308012d09c2d2037cd7548589e8b474b",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/application-boundaries.md",
+        "sha256": "1c1f7221ebdefcf7525f2f78bc989274b9ed5641c2318281ff5c20563bb4a1e6",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/behavior-responsibilities.jsonl",
+        "sha256": "f1ca80dbc946579609d383d1b5b81a2c9315c74d2a113600294be01b0096b6fb",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/generation-context-responsibilities.jsonl",
+        "sha256": "1b1c28a6e2c00ff920a1d38f65d31eb8ff10e38c4bc39d8e26e919e4886f765e",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/generation-context.json",
+        "sha256": "585e0c81ac2751ec6819508b0c9807babd654c0db2e8b64c16461cd5615e5897",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/generation-context.md",
+        "sha256": "67f66b56704e6d6cbf9346c43c6e6aa922f729ec16b600ef7f95e9401a412cde",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-01.jsonl",
+        "sha256": "ea08df4afbab6b90fb5c6291cc21b93b56292cf220c4550e25966378d51da145",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-02.jsonl",
+        "sha256": "f1181344dcbddf97c86624576e87c9f173c88b8e248d9208d58d750b5d3b9e7a",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-01.jsonl",
+        "sha256": "0200433309e1d75aee51354453827b74dbfbf4100e64037ad98c8b23a8872288",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-02.jsonl",
+        "sha256": "b69c66c3ac7ddf76030f0188e54d834a605666daac144b7fcf8bf43266c8f6d2",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-support-01.jsonl",
+        "sha256": "fcbe45cf4e127518d801c65619f57e421f6f1d7abb6ae19f07be91d34f43c771",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/model-channels-responsibilities.jsonl",
+        "sha256": "905cbf68598fdf91c13638aa405689b05effbdbd78a346baf5fbf05076dd852e",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/model-channels.json",
+        "sha256": "cb626442446e66f893fd9e3b156da8fd5cf97e0734dc18c50f3293e51487d609",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/model-channels.md",
+        "sha256": "493be5f4415e78e9b5f9f620c312f1517df8383bac88e1fdf94a559ea76006cd",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/presentation-language-responsibilities.jsonl",
+        "sha256": "ca7fce057458365908ccaffd50457a3e86fef437f5670ea01f016317fe31805b",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/presentation-language.json",
+        "sha256": "db65cc42863a5a46f096972e0c98415656a6e206377b57df43cd24812942cf85",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/presentation-language.md",
+        "sha256": "0e6fd39d11eafc4b64bc3ca29ebc4d62e89bda8dbd50d470d18c6260f0c1f01a",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/prior-pilot-comparison.json",
+        "sha256": "cb605084590623c0bfd2357c42c2cc25adb4f8a4b57d36204f1f8d44cc257bce",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/roadmap-batches.jsonl",
+        "sha256": "4e67fc3375f7384c63bc7a904d2a5f8e0750cbab6cd6aff88edb343c69de1b96",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/roadmap.json",
+        "sha256": "b399f01cf02edb0a564dbe075168479e92497085408153412f22424feed96aec",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/scope-additions-responsibilities.jsonl",
+        "sha256": "0a5dfd02140c0ff4f94072dd46a0defca5a0b0ea483d16c3a709008ff55cf817",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/scope.json",
+        "sha256": "883afc4ed2373bd6fe4a684ae5c01a05db0dabf703a5a327d720db7d2dfddadc",
+        "unchanged": true
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/verification.json",
+        "sha256": "40fdec3d1bfc4510390bef03622ba65a72ee7bf34fe86633bab92bfbe9d4060b",
+        "unchanged": true
+      }
+    ],
+    "inventoryRows": 1219,
+    "allDispositionsStillPending": true
+  },
+  "historicalArchive": [
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/README.md",
+      "sha256": "6b7412fa91b8c994132457d37a4b5873ae506d45ec88ae9c6d8d0dbc8527ea2b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/caller-matrix.json",
+      "sha256": "bd9ded06218489d45df961640c0ca05b7aa995919a0c5c8dedb8093c25c6e2d0",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/character-audit.json",
+      "sha256": "b0769895a9b423478bef048abe8cdbf21574dfae4444edcc112243005cf8971d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/diagnostic-relocation.json",
+      "sha256": "3422a247b666ff8a549b3fedeaef45d88d089382fb89b30430caff83491a7763",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/draft-element-guard-reproduction.json",
+      "sha256": "e1afa35a8f8c9abd326cf58bbc7c70c8dba68337486e5127c0d6ea85c63e6337",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/draft-element-guard-reproduction.mjs",
+      "sha256": "3f0167495e828faa69f76a5567ce7b06308bfad6c53fad79843ad201be7a7d75",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/implementation.json",
+      "sha256": "6fa54c673d74b39a101b74dabae998b0b2ea06d10ebd47ea7fd5bab5ba52d063",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/location-audit.json",
+      "sha256": "bef807144578e8d528fbe8774ab9107ad0e562747eff2e46e617821aef4bbc7b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/location-ownership-contract.test.ts.txt",
+      "sha256": "68ad46088cc4728e689b764153442ec831c4ac0fd370dfa83bacc92be07d638c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/run-location-diagnostic.mjs",
+      "sha256": "1467a74dacc5b11e07b5faff724f4c59665d6f714182f8f04e90e7df601ce695",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/source-preservation.json",
+      "sha256": "b431a670486428f602076e4e684a1554e15977fa5897c9fa433ffcc4779ff945",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/verification-results.json",
+      "sha256": "9c547e9ccf45e5c62bcff2ed1409c1ce53b8b8cb17a0b578e36b7d8505abc497",
+      "unchanged": true
+    },
+    {
+      "path": "docs/secondary-development/preservation/20261113-p3-g09/web-entrypoints.jsonl",
+      "sha256": "a111206b9b6c20f43e4bf5ad2e6d2ac9356c110a167209a5553afa594d40ca3c",
+      "unchanged": true
+    }
+  ],
+  "diagnostic": {
+    "archive": "docs/secondary-development/preservation/20261113-p3-g09/location-ownership-contract.test.ts.txt",
+    "restored": "src/cast/server/db/location-ownership-contract.test.ts",
+    "sha256": "68ad46088cc4728e689b764153442ec831c4ac0fd370dfa83bacc92be07d638c",
+    "sameBytes": true
+  },
+  "ledger": {
+    "previousRows": 11,
+    "previousBytes": 9946,
+    "previousSha256": "f4dd64b6e07b37c094f586b2e076c6b1546522453d510c62668cdf5103b21084",
+    "appendOnly": true,
+    "newRow": 12
+  }
+}

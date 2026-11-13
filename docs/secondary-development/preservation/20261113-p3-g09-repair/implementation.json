@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-13",
+  "batchId": "G09-ownership-repair",
+  "responsibilityId": "GC-09",
+  "status": "repaired-with-bounded-evidence",
+  "sourceBefore": "637a7521ff56618af342046084078ff2a7d6f91c",
+  "sourceAfter": "9c51bfb82a201120ea404f9065ddd4af3ad9001e",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "authorization": "Explicit user approval to fix all six findings and adjust the earlier GC-09 stop boundary for these bounded guards and Unicode fallbacks.",
+  "sixFindingsResolvedLocally": true,
+  "repairMap": [
+    {
+      "id": "G09-LOC-01",
+      "owner": "src/cast/server/db/locations.ts",
+      "change": "bind requires the sequence organization before link reads/writes; createBulk(boundTo) inherits this guard."
+    },
+    {
+      "id": "G09-LOC-02",
+      "owner": "src/cast/server/db/location-sheet-variants.ts",
+      "change": "promoteIfPending checks parent ownership before shared landing can append history."
+    },
+    {
+      "id": "G09-LOC-03",
+      "owner": "src/cast/server/db/location-sheet-variants.ts",
+      "change": "insertDivergent checks parent ownership before lookup/insert and scopes existing-row lookup; unique/race helper stays unchanged."
+    },
+    {
+      "id": "G09-LOC-04",
+      "owner": "src/cast/bible-field.ts",
+      "change": "Stored tag and existing nonempty ASCII slug retain priority; only an empty result uses Unicode letters/numbers."
+    },
+    {
+      "id": "G09-LOC-05",
+      "owner": "src/shots/scene-matching.ts",
+      "change": "Complete Han names match prose after English candidates; exact tag/sceneLocation and one most specific location retain priority."
+    },
+    {
+      "id": "G09-UPSTREAM-GUARD-01",
+      "owner": "src/cast/sequence-elements.fn.ts",
+      "change": "Existing ownership and rights gates run before configuration, credentials, balance, vision or debit."
+    }
+  ],
+  "productionPaths": [
+    "src/cast/server/db/locations.ts",
+    "src/cast/server/db/location-sheet-variants.ts",
+    "src/cast/sequence-elements.fn.ts",
+    "src/cast/bible-field.ts",
+    "src/shots/scene-matching.ts"
+  ],
+  "upstreamCorePathsRestored": 0,
+  "conflictReductionClaimed": false,
+  "tests": {
+    "files": 48,
+    "tests": 857,
+    "passed": 857,
+    "failed": 0,
+    "skipped": 0,
+    "originalFiles": 34,
+    "originalTests": 494,
+    "previousNewTests": 14,
+    "restoredDiagnosticTests": 9,
+    "additionalDbTests": 8,
+    "draftHandlerTests": 11,
+    "canonicalAndMatchingTests": 80,
+    "additionalReferenceAndHashTests": 241
+  },
+  "compatibility": {
+    "sharedLandingAndClaimsUnchanged": true,
+    "storedTagsOrHashesRewritten": false,
+    "hashAlgorithmsOrVersionsChanged": false,
+    "publicInterfacesOrSchemaChanged": false,
+    "englishAndExplicitSingleLocationFixedDigestsPreserved": true,
+    "correctedReferenceMembership": "Previously missed Chinese prose references can enter the set; multiple tagged locations can narrow to the one named by Chinese prompt text. Existing artifacts can therefore read as stale."
+  },
+  "intrusionReason": "Ownership and matching remain with existing entity/link/request/reference owners. Existing checks are reused; a new generic generator would duplicate or relocate these decisions.",
+  "upgradeWatch": [
+    "src/cast/server/db/locations.ts",
+    "src/cast/server/db/location-sheet-variants.ts",
+    "src/cast/sequence-elements.fn.ts",
+    "src/cast/bible-field.ts",
+    "src/shots/scene-matching.ts"
+  ],
+  "acceptanceComplete": false,
+  "responsibilityClosed": false,
+  "p3Status": "in-progress",
+  "originalInventoryApproved": false,
+  "p4Started": false,
+  "remainingActions": [
+    "GC-09 remaining responsibilities and other full P3 work remain open.",
+    "G03 lifecycle domain coverage, original cold-import timeout and real durable replay remain open.",
+    "G07 music hold and motion/reference price risks remain open.",
+    "CONTINUE-LLM-SOURCE remains deferred by the user.",
+    "All 1219 frozen inventory dispositions remain pending; P4 has not started."
+  ],
+  "records": {
+    "verification": "verification-results.json",
+    "preservation": "source-preservation.json",
+    "baseline": "baseline-results.json",
+    "tests": "test-files.txt"
+  },
+  "externalActions": {
+    "pushed": false,
+    "deployed": false,
+    "remoteWrites": false,
+    "realProviderCalls": false
+  }
+}
