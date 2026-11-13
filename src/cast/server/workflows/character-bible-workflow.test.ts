@@ -12,11 +12,18 @@ import type {
 } from '@/platform/server/workflow/types';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { asStub } from '@/test/as-stub';
+import { castChannelId } from '@/cast/cast-channel';
 
 const mockSpawnAndAwaitChild = vi.fn();
+const mockFailSheetClaim = vi.fn(async () => undefined);
+const mockEmit = vi.fn();
+const mockGetGenerationChannel = vi.fn();
 
 vi.doMock('@/platform/server/workflow/await-child', () => ({
   spawnAndAwaitChild: mockSpawnAndAwaitChild,
+}));
+vi.doMock('@/platform/realtime', () => ({
+  getGenerationChannel: mockGetGenerationChannel,
 }));
 
 const { CharacterBibleWorkflow } = await import('./character-bible-workflow');
@@ -97,7 +104,7 @@ function makeScopedDb(): WorkflowScopedDb {
       createPendingVoiceClaim,
       markVoiceClaimTerminal,
     },
-    characterLooks: { claimSheet },
+    characterLooks: { claimSheet, failSheetClaim: mockFailSheetClaim },
   });
 }
 
@@ -162,6 +169,9 @@ beforeEach(() => {
     sheetImageUrl: '/r2/characters/sam.png',
     sheetVersionId: 'ver-sam',
   });
+  mockFailSheetClaim.mockResolvedValue(undefined);
+  mockEmit.mockResolvedValue(undefined);
+  mockGetGenerationChannel.mockReturnValue({ emit: mockEmit });
 });
 
 describe('CharacterBibleWorkflow voice-only characters', () => {
@@ -268,6 +278,88 @@ describe('CharacterBibleWorkflow voice-only characters', () => {
     ]);
   });
 
+  it('clears a held sheet claim and emits failure when the sheet child never starts', async () => {
+    mockSpawnAndAwaitChild.mockRejectedValueOnce(
+      new Error('workflow binding missing')
+    );
+
+    const result = await makeWorkflow().runBody(
+      makeEvent([sam]),
+      makeStep(),
+      makeScopedDb()
+    );
+    const [row] = characterCreate.mock.calls[0] ?? [];
+    if (!row) throw new Error('expected the character row');
+
+    expect(mockFailSheetClaim).toHaveBeenCalledWith(
+      row.id,
+      `ver-${row.id}`,
+      'workflow binding missing'
+    );
+    expect(mockGetGenerationChannel).toHaveBeenCalledWith(
+      castChannelId('seq-1', row.id)
+    );
+    expect(mockEmit).toHaveBeenCalledWith(
+      'generation.character-sheet:progress',
+      {
+        characterId: row.id,
+        lookId: row.id,
+        status: 'failed',
+        error: 'workflow binding missing',
+      }
+    );
+    expect(result[0]).toMatchObject({ sheetStatus: 'failed' });
+  });
+
+  it('does not duplicate a sheet failure already owned by the child', async () => {
+    mockSpawnAndAwaitChild.mockRejectedValueOnce(
+      new Error(
+        'Child workflow character-sheet:sam failed: Error: provider refused'
+      )
+    );
+
+    const result = await makeWorkflow().runBody(
+      makeEvent([sam]),
+      makeStep(),
+      makeScopedDb()
+    );
+
+    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
+    expect(result[0]).toMatchObject({ sheetStatus: 'failed' });
+  });
+
+  it('keeps the sheet failure when its realtime event cannot be emitted', async () => {
+    mockSpawnAndAwaitChild.mockRejectedValueOnce(
+      new Error('workflow binding missing')
+    );
+    mockEmit.mockRejectedValueOnce(new Error('realtime unavailable'));
+
+    const result = await makeWorkflow().runBody(
+      makeEvent([sam]),
+      makeStep(),
+      makeScopedDb()
+    );
+
+    expect(mockFailSheetClaim).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      'workflow binding missing'
+    );
+    expect(result[0]).toMatchObject({ sheetStatus: 'failed' });
+  });
+
+  it('leaves a missed sheet claim to the newer run', async () => {
+    claimSheet.mockResolvedValueOnce({ versionId: 'missed', held: false });
+    mockSpawnAndAwaitChild.mockRejectedValueOnce(
+      new Error('workflow binding missing')
+    );
+
+    await makeWorkflow().runBody(makeEvent([sam]), makeStep(), makeScopedDb());
+
+    expect(mockFailSheetClaim).not.toHaveBeenCalled();
+    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
+  });
+
   it('stamps voice generating before spawning the voice child (#1715)', async () => {
     mockSpawnAndAwaitChild.mockImplementation(
       async (_step: unknown, opts: { childId: string }) =>
@@ -324,6 +416,30 @@ describe('CharacterBibleWorkflow voice-only characters', () => {
       'failed',
       'workflow binding missing'
     );
+  });
+
+  it('does not rewrite a voice husk already failed by the child', async () => {
+    mockSpawnAndAwaitChild.mockImplementation(
+      async (_step: unknown, opts: { childId: string }) => {
+        if (opts.childId.startsWith('character-voice:')) {
+          throw new Error(
+            'Child workflow character-voice:sam failed: Error: provider refused'
+          );
+        }
+        return {
+          sheetImageUrl: '/r2/characters/sam.png',
+          sheetVersionId: 'ver-sam',
+        };
+      }
+    );
+
+    await makeWorkflow().runBody(
+      makeEvent([sam], { generateVoices: true, speakingCharacterIds: ['sam'] }),
+      makeStep(),
+      makeScopedDb()
+    );
+
+    expect(markVoiceClaimTerminal).not.toHaveBeenCalled();
   });
 
   it('skips spawn when a live husk already has a run id (#1715)', async () => {

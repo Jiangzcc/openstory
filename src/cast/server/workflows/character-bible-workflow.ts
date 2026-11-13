@@ -20,7 +20,10 @@ import type { SheetPayload } from './sheet-snapshots';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { contentRejectionSummary } from '@/models/content-rejection';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { WorkflowValidationError } from '@/platform/server/workflow/errors';
+import {
+  isChildFailureError,
+  WorkflowValidationError,
+} from '@/platform/server/workflow/errors';
 import type {
   CharacterBibleWorkflowInput,
   CharacterSheetWorkflowInput,
@@ -32,11 +35,37 @@ import { SEED_VOICE_DEFAULT_TAKES } from '@/cast/seed-voice';
 import { usesVoice } from '@/cast/voice';
 import { newVoiceProvider } from '@/models/server/seed-speech-config';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
+import { castChannelId } from '@/cast/cast-channel';
 import { getLogger } from '@/platform/logger';
+import { getGenerationChannel } from '@/platform/realtime';
 
 const logger = getLogger(['openstory', 'workflow', 'character-bible']);
 
 const PARENT_BINDING_NAME = 'CHARACTER_BIBLE_WORKFLOW';
+
+async function emitCharacterSheetFailure(
+  sequenceId: string,
+  characterDbId: string,
+  lookId: string,
+  error: string
+): Promise<void> {
+  try {
+    await getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
+      'generation.character-sheet:progress',
+      {
+        characterId: characterDbId,
+        lookId,
+        status: 'failed',
+        error,
+      }
+    );
+  } catch (emitError) {
+    logger.error(
+      `[CharacterBibleWorkflow:cf] Failed to emit failure event for character ${characterDbId}:`,
+      { err: emitError }
+    );
+  }
+}
 
 export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<CharacterBibleWorkflowInput> {
   protected override readonly failureLabel = 'Character design';
@@ -213,50 +242,74 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
         snapshotInputHash:
           await computeCharacterSheetHashFromDto(unclaimedFields),
       };
-      const sheetVersionId = await step.do(
-        `claim-character-sheet-${index}`,
-        async () =>
-          (
-            await scopedDb.characterLooks.claimSheet(
+      let sheetClaim: { versionId: string; held: boolean } | null = null;
+      try {
+        sheetClaim = await step.do(`claim-character-sheet-${index}`, async () =>
+          scopedDb.characterLooks.claimSheet(
+            unclaimedFields.lookId,
+            unclaimedFields,
+            {
+              markGenerating: false,
+              activity: {
+                sequenceId: sheetSequenceId,
+                actorId: input.userId,
+                summary: sheetStartedSummary(character.name, imageModel),
+              },
+            }
+          )
+        );
+        const childPayload: CharacterSheetWorkflowInput = {
+          promptLocale: input.promptLocale,
+          ...unclaimed,
+          sheetVersionId: sheetClaim.versionId,
+        };
+
+        const childResult = await spawnAndAwaitChild<
+          CharacterSheetWorkflowInput,
+          CharacterSheetWorkflowResult
+        >(step, {
+          binding: characterSheetBinding,
+          modelConfiguration: scopedDb.models,
+          parentBindingName: PARENT_BINDING_NAME,
+          parentInstanceId: event.instanceId,
+          childId: `character-sheet:${characterDbId}`,
+          childPayload,
+          spawnStepName: `spawn-character-sheet-${index}`,
+          awaitStepName: `await-character-sheet-${index}`,
+          timeout: '30 minutes',
+        });
+
+        return {
+          character,
+          characterDbId,
+          childResult,
+        };
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        if (sheetClaim === null || sheetClaim.held) {
+          try {
+            await scopedDb.characterLooks.failSheetClaim(
               unclaimedFields.lookId,
-              unclaimedFields,
-              {
-                markGenerating: false,
-                activity: {
-                  sequenceId: sheetSequenceId,
-                  actorId: input.userId,
-                  summary: sheetStartedSummary(character.name, imageModel),
-                },
-              }
-            )
-          ).versionId
-      );
-      const childPayload: CharacterSheetWorkflowInput = {
-        promptLocale: input.promptLocale,
-        ...unclaimed,
-        sheetVersionId,
-      };
-
-      const childResult = await spawnAndAwaitChild<
-        CharacterSheetWorkflowInput,
-        CharacterSheetWorkflowResult
-      >(step, {
-        binding: characterSheetBinding,
-        modelConfiguration: scopedDb.models,
-        parentBindingName: PARENT_BINDING_NAME,
-        parentInstanceId: event.instanceId,
-        childId: `character-sheet:${characterDbId}`,
-        childPayload,
-        spawnStepName: `spawn-character-sheet-${index}`,
-        awaitStepName: `await-character-sheet-${index}`,
-        timeout: '30 minutes',
-      });
-
-      return {
-        character,
-        characterDbId,
-        childResult,
-      };
+              sheetClaim?.versionId ?? null,
+              reason
+            );
+          } catch (cleanupError) {
+            logger.error(
+              `[CharacterBibleWorkflow:cf] Failed to clear sheet claim for character ${characterDbId}:`,
+              { err: cleanupError }
+            );
+          }
+          if (!isChildFailureError(error)) {
+            await emitCharacterSheetFailure(
+              sheetSequenceId,
+              characterDbId,
+              unclaimedFields.lookId,
+              reason
+            );
+          }
+        }
+        throw error;
+      }
     });
 
     // Voices (#1553 / #1715) ride alongside the sheets: insert a generating
@@ -341,7 +394,7 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
           );
           // Spawn never started → child onFailure will not run. Fail the
           // husk so the unique live claim does not block Generate.
-          if (huskId) {
+          if (huskId && !isChildFailureError(err)) {
             await scopedDb.characters.markVoiceClaimTerminal(
               huskId,
               'failed',
