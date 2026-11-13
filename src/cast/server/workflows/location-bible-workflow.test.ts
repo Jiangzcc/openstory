@@ -11,15 +11,21 @@ import type { LocationBibleWorkflowInput } from '@/platform/server/workflow/type
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { asStub } from '@/test/as-stub';
 import { PHOTOREAL_RENDERING } from '@/cast/rendering';
+import { locationChannelId } from '@/cast/cast-channel';
 import {
   locationSheetHashMatchesStored,
   NO_LEGACY_LOCATION_SHEET,
 } from './sheet-snapshots';
 
 const mockSpawnAndAwaitChild = vi.fn();
+const mockEmit = vi.fn();
+const mockGetGenerationChannel = vi.fn();
 
 vi.doMock('@/platform/server/workflow/await-child', () => ({
   spawnAndAwaitChild: mockSpawnAndAwaitChild,
+}));
+vi.doMock('@/platform/realtime', () => ({
+  getGenerationChannel: mockGetGenerationChannel,
 }));
 
 const { LocationBibleWorkflow } = await import('./location-bible-workflow');
@@ -144,6 +150,8 @@ beforeEach(() => {
     referenceImageUrl: '/r2/locations/diner.png',
     sheetVersionId: 'guarded',
   });
+  mockEmit.mockResolvedValue(undefined);
+  mockGetGenerationChannel.mockReturnValue({ emit: mockEmit });
 });
 
 describe('LocationBibleWorkflow sheet claim', () => {
@@ -197,10 +205,57 @@ describe('LocationBibleWorkflow sheet claim', () => {
     expect(mockSpawnAndAwaitChild.mock.calls[0]?.[1]).toMatchObject({
       childPayload: { referenceVersionId: 'missed' },
     });
+    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
   });
 
   it('fails the claim when the sheet child never starts', async () => {
     mockSpawnAndAwaitChild.mockRejectedValueOnce(new Error('spawn refused'));
+    const result = await makeWorkflow().runBody(
+      event,
+      step,
+      makeScopedDb('bible-v1')
+    );
+
+    expect(failReferenceClaim).toHaveBeenCalledWith(
+      'loc-db-1',
+      'guarded',
+      'spawn refused'
+    );
+    expect(mockGetGenerationChannel).toHaveBeenCalledWith(
+      locationChannelId('seq-1', 'loc-db-1')
+    );
+    expect(mockEmit).toHaveBeenCalledWith(
+      'generation.location-sheet:progress',
+      {
+        locationId: 'loc-db-1',
+        status: 'failed',
+        error: 'spawn refused',
+      }
+    );
+    expect(result[0]).toMatchObject({ referenceStatus: 'failed' });
+  });
+
+  it('does not duplicate a failed event already owned by the child', async () => {
+    mockSpawnAndAwaitChild.mockRejectedValueOnce(
+      new Error(
+        'Child workflow location-sheet:loc-db-1 failed: Error: provider refused'
+      )
+    );
+
+    const result = await makeWorkflow().runBody(
+      event,
+      step,
+      makeScopedDb('bible-v1')
+    );
+
+    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
+    expect(result[0]).toMatchObject({ referenceStatus: 'failed' });
+  });
+
+  it('keeps the original spawn failure when the failed event cannot be emitted', async () => {
+    mockSpawnAndAwaitChild.mockRejectedValueOnce(new Error('spawn refused'));
+    mockEmit.mockRejectedValueOnce(new Error('realtime unavailable'));
+
     const result = await makeWorkflow().runBody(
       event,
       step,

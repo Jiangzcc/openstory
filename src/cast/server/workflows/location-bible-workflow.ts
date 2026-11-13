@@ -20,7 +20,10 @@ import { computeLocationSheetHashFromDto } from './sheet-snapshots';
 import type { SheetPayload } from './sheet-snapshots';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { WorkflowValidationError } from '@/platform/server/workflow/errors';
+import {
+  isChildFailureError,
+  WorkflowValidationError,
+} from '@/platform/server/workflow/errors';
 import type {
   LibraryLocationMatch,
   LocationBibleWorkflowInput,
@@ -29,9 +32,32 @@ import type {
 } from '@/platform/server/workflow/types';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { NonRetryableError } from 'cloudflare:workflows';
+import { locationChannelId } from '@/cast/cast-channel';
 import { getLogger } from '@/platform/logger';
+import { getGenerationChannel } from '@/platform/realtime';
 
 const logger = getLogger(['openstory', 'workflow', 'location-bible']);
+
+async function emitLocationSheetFailure(
+  sequenceId: string,
+  locationDbId: string,
+  error: string
+): Promise<void> {
+  try {
+    await getGenerationChannel(
+      locationChannelId(sequenceId, locationDbId)
+    ).emit('generation.location-sheet:progress', {
+      locationId: locationDbId,
+      status: 'failed',
+      error,
+    });
+  } catch (emitError) {
+    logger.error(
+      `[LocationBibleWorkflow:cf] Failed to emit failure event for location ${locationDbId}:`,
+      { err: emitError }
+    );
+  }
+}
 
 export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationBibleWorkflowInput> {
   protected override readonly failureLabel = 'Location design';
@@ -237,6 +263,9 @@ export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationB
               claimed?.versionId ?? null,
               reason
             );
+            if (!isChildFailureError(error)) {
+              await emitLocationSheetFailure(sequenceId, locationDbId, reason);
+            }
           }
           throw error;
         }
