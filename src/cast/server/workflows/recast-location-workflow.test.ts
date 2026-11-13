@@ -161,4 +161,24 @@ describe('RecastLocationWorkflow', () => {
       error: 'child unavailable',
     });
   });
+
+  it('does not let a failed notification throw from the failure hook', async () => {
+    const event = asStub<WorkflowEvent<RecastLocationWorkflowInput>>({
+      instanceId: 'recast-parent-1',
+      payload: asStub<RecastLocationWorkflowInput>({
+        sequenceId: 'sequence-1',
+        locationDbId: 'location-1',
+        locationName: 'Rooftop',
+      }),
+    });
+    emit.mockRejectedValueOnce(new Error('channel unavailable'));
+
+    await expect(
+      new Probe(asStub(undefined), asStub({})).failBody(
+        event,
+        'child unavailable',
+        asStub<WorkflowScopedDb>({})
+      )
+    ).resolves.toBeUndefined();
+  });
 });

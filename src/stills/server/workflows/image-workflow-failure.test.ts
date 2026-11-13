@@ -137,4 +137,23 @@ describe('ImageWorkflow onFailure (#1942)', () => {
     );
     expect(frameVariants.appendVersion).not.toHaveBeenCalled();
   });
+
+  it('still emits failure when persistence of the failed row cannot be written', async () => {
+    const { frameVariants, scopedDb } = makeDb(1);
+    frameVariants.markFailedByWorkflowRun.mockRejectedValueOnce(
+      new Error('database down')
+    );
+    emit.mockClear();
+
+    await expect(fail({}, scopedDb)).resolves.toBeUndefined();
+
+    expect(emit).toHaveBeenCalledWith(
+      'generation.image:progress',
+      expect.objectContaining({
+        shotId: 'shot_1',
+        status: 'failed',
+        error: 'boom',
+      })
+    );
+  });
 });

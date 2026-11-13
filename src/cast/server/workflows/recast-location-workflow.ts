@@ -132,13 +132,20 @@ export class RecastLocationWorkflow extends OpenStoryWorkflowEntrypoint<RecastLo
   }): Promise<void> {
     const input = event.payload;
 
-    await getGenerationChannel(input.sequenceId).emit(
-      'generation.recast-location:failed',
-      {
-        locationId: input.locationDbId,
-        error,
-      }
-    );
+    try {
+      await getGenerationChannel(input.sequenceId).emit(
+        'generation.recast-location:failed',
+        {
+          locationId: input.locationDbId,
+          error,
+        }
+      );
+    } catch (emitError) {
+      logger.error(
+        `[RecastLocationWorkflow:cf] Failed to emit failure event for sequence ${input.sequenceId}:`,
+        { err: emitError }
+      );
+    }
 
     logger.error(
       `[RecastLocationWorkflow:cf] Recast failed for ${input.locationName}: ${error}`

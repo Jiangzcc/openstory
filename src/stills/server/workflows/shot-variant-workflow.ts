@@ -349,10 +349,17 @@ export class ShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<ShotVariant
     const input = event.payload;
     if (!input.shotId || !input.organizationId) return;
 
-    await scopedDb.frameVariants.markFailedByWorkflowRun(
-      event.instanceId,
-      error
-    );
+    try {
+      await scopedDb.frameVariants.markFailedByWorkflowRun(
+        event.instanceId,
+        error
+      );
+    } catch (markError) {
+      logger.error(
+        `[ShotVariantWorkflow] Failed to mark variant failure for run ${event.instanceId}:`,
+        { err: markError }
+      );
+    }
 
     if (input.sequenceId) {
       try {
@@ -360,8 +367,11 @@ export class ShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<ShotVariant
           'generation.variant-image:progress',
           { shotId: input.shotId, status: 'failed' }
         );
-      } catch {
-        // Ignore emit errors
+      } catch (emitError) {
+        logger.error(
+          `[ShotVariantWorkflow] Failed to emit variant failure for sequence ${input.sequenceId} shot ${input.shotId}:`,
+          { err: emitError }
+        );
       }
     }
 

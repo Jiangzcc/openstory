@@ -114,4 +114,21 @@ describe('UpscaleShotVariantWorkflow onFailure (#1942)', () => {
       })
     );
   });
+
+  it('still tells the user when marking the version failed cannot be written', async () => {
+    emit.mockClear();
+    const { frameVariants, scopedDb } = makeDb();
+    frameVariants.update.mockRejectedValueOnce(new Error('database down'));
+
+    await expect(fail('ver_1', scopedDb)).resolves.toBeUndefined();
+
+    expect(emit).toHaveBeenCalledWith(
+      'generation.image:progress',
+      expect.objectContaining({
+        shotId: 'shot_1',
+        status: 'completed',
+        upscaleError: 'boom',
+      })
+    );
+  });
 });

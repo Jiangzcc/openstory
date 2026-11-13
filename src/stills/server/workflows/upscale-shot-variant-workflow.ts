@@ -560,56 +560,89 @@ export class UpscaleShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<Upsc
     // the snapshotted version id so a run that dies before `workflowRunId` is
     // stamped still settles.
     if (input.versionId) {
-      const minted = await scopedDb.claims.frameVariants.getById(
-        input.versionId
-      );
-      if (minted?.status === 'generating' || minted?.status === 'pending') {
-        await scopedDb.frameVariants.update(input.versionId, {
-          status: 'failed',
-          isPrimary: false,
-          error,
-        });
+      try {
+        const minted = await scopedDb.claims.frameVariants.getById(
+          input.versionId
+        );
+        if (minted?.status === 'generating' || minted?.status === 'pending') {
+          await scopedDb.frameVariants.update(input.versionId, {
+            status: 'failed',
+            isPrimary: false,
+            error,
+          });
+        }
+      } catch (markError) {
+        logger.error(
+          `[UpscaleShotVariantWorkflow] Failed to mark version ${input.versionId} failed:`,
+          { err: markError }
+        );
       }
     } else {
-      await scopedDb.frameVariants.markFailedByWorkflowRun(
-        event.instanceId,
-        error,
-        { isPrimary: false }
-      );
+      try {
+        await scopedDb.frameVariants.markFailedByWorkflowRun(
+          event.instanceId,
+          error,
+          { isPrimary: false }
+        );
+      } catch (markError) {
+        logger.error(
+          `[UpscaleShotVariantWorkflow] Failed to mark run ${event.instanceId} failed:`,
+          { err: markError }
+        );
+      }
     }
 
     // Drop the auto-promote claim, but only if THIS run still owns it (#1129) —
     // a newer kickoff's claim must survive an older upscale's failure.
-    const frame = await scopedDb.liveRead.frames.getById(input.frameId);
-    if (frame?.pendingPromoteVersionId) {
-      const pending = await scopedDb.claims.frameVariants.getById(
-        frame.pendingPromoteVersionId
-      );
-      if (pending?.workflowRunId === event.instanceId) {
-        await scopedDb.frames.clearPendingPromoteVersionIdIf(
-          frame.id,
-          pending.id
+    try {
+      const frame = await scopedDb.liveRead.frames.getById(input.frameId);
+      if (frame?.pendingPromoteVersionId) {
+        const pending = await scopedDb.claims.frameVariants.getById(
+          frame.pendingPromoteVersionId
         );
+        if (pending?.workflowRunId === event.instanceId) {
+          await scopedDb.frames.clearPendingPromoteVersionIdIf(
+            frame.id,
+            pending.id
+          );
+        }
       }
+    } catch (cleanupError) {
+      logger.error(
+        `[UpscaleShotVariantWorkflow] Failed to clear pending promotion for frame ${input.frameId}:`,
+        { err: cleanupError }
+      );
     }
 
     if (input.sequenceId) {
       // A failed upscale never promoted, so the frame still points at whatever
       // it did before; read that still off the selected version rather than a
       // frame column (#1067).
-      const thumbnailUrl = await getAnchorImageUrl(
-        scopedDb.liveRead,
-        input.shotId
-      );
-      await getGenerationChannel(input.sequenceId).emit(
-        'generation.image:progress',
-        {
-          shotId: input.shotId,
-          status: 'completed',
-          ...(thumbnailUrl ? { thumbnailUrl } : {}),
-          upscaleError: error,
-        }
-      );
+      let thumbnailUrl: string | null = null;
+      try {
+        thumbnailUrl = await getAnchorImageUrl(scopedDb.liveRead, input.shotId);
+      } catch (thumbnailError) {
+        logger.error(
+          `[UpscaleShotVariantWorkflow] Failed to read the existing thumbnail for shot ${input.shotId}:`,
+          { err: thumbnailError }
+        );
+      }
+      try {
+        await getGenerationChannel(input.sequenceId).emit(
+          'generation.image:progress',
+          {
+            shotId: input.shotId,
+            status: 'completed',
+            ...(thumbnailUrl ? { thumbnailUrl } : {}),
+            upscaleError: error,
+          }
+        );
+      } catch (emitError) {
+        logger.error(
+          `[UpscaleShotVariantWorkflow] Failed to emit upscale failure for sequence ${input.sequenceId} shot ${input.shotId}:`,
+          { err: emitError }
+        );
+      }
     }
   }
 }

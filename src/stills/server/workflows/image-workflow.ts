@@ -650,55 +650,60 @@ export class ImageWorkflow extends OpenStoryWorkflowEntrypoint<ImageWorkflowInpu
     if (!input.shotId || !input.organizationId) return;
 
     // The run's rows fail below; a primary one is the frame's failure
-    // (#1942). Variant-only rows never speak for the frame.
-    const anchor = await this.resolveFrame(scopedDb, input);
-    if (!input.variantOnly) {
-      if (anchor) {
+    // (#1942). Variant-only rows never speak for the frame. These writes are
+    // best effort so a persistence outage cannot suppress the failed event.
+    const model = input.model ?? DEFAULT_IMAGE_MODEL;
+    let marked = 0;
+    try {
+      const anchor = await this.resolveFrame(scopedDb, input);
+      if (!input.variantOnly && anchor?.pendingPromoteVersionId) {
         // Drop auto-promote if this run owned it (#1070).
-        if (anchor.pendingPromoteVersionId) {
-          const pending = await scopedDb.claims.frameVariants.getById(
-            anchor.pendingPromoteVersionId
+        const pending = await scopedDb.claims.frameVariants.getById(
+          anchor.pendingPromoteVersionId
+        );
+        if (pending?.workflowRunId === event.instanceId) {
+          await scopedDb.frames.clearPendingPromoteVersionIdIf(
+            anchor.id,
+            pending.id
           );
-          if (pending?.workflowRunId === event.instanceId) {
-            await scopedDb.frames.clearPendingPromoteVersionIdIf(
-              anchor.id,
-              pending.id
-            );
-          }
         }
       }
-    }
-    // A claim row the trigger opened carries no run id (or its parent's)
-    // until this run's first step stamps it, so it is failed by its own id.
-    if (input.targetVariantId) {
-      await scopedDb.frameVariants.markTerminal(
-        input.targetVariantId,
-        'failed',
+      // A claim row the trigger opened carries no run id (or its parent's)
+      // until this run's first step stamps it, so it is failed by its own id.
+      if (input.targetVariantId) {
+        await scopedDb.frameVariants.markTerminal(
+          input.targetVariantId,
+          'failed',
+          error
+        );
+      }
+      marked = await scopedDb.frameVariants.markFailedByWorkflowRun(
+        event.instanceId,
         error
       );
-    }
-    const marked = await scopedDb.frameVariants.markFailedByWorkflowRun(
-      event.instanceId,
-      error
-    );
 
-    const model = input.model ?? DEFAULT_IMAGE_MODEL;
-    if (marked === 0 && !input.targetVariantId && anchor) {
-      // The run died before `set-generating-status` opened its row. Record
-      // the failure as its own terminal row, or the shot reads as if nothing
-      // had happened (#1942). The id sorts at the click: a run clicked since
-      // stays newer, so this failure never masks it.
-      await scopedDb.frameVariants.appendVersion({
-        id: generateIdAt(event.timestamp.getTime()),
-        frameId: anchor.id,
-        sequenceId: anchor.sequenceId,
-        kind: 'model',
-        model,
-        status: 'failed',
-        error,
-        workflowRunId: event.instanceId,
-        isPrimary: !input.variantOnly,
-      });
+      if (marked === 0 && !input.targetVariantId && anchor) {
+        // The run died before `set-generating-status` opened its row. Record
+        // the failure as its own terminal row, or the shot reads as if nothing
+        // had happened (#1942). The id sorts at the click: a run clicked since
+        // stays newer, so this failure never masks it.
+        await scopedDb.frameVariants.appendVersion({
+          id: generateIdAt(event.timestamp.getTime()),
+          frameId: anchor.id,
+          sequenceId: anchor.sequenceId,
+          kind: 'model',
+          model,
+          status: 'failed',
+          error,
+          workflowRunId: event.instanceId,
+          isPrimary: !input.variantOnly,
+        });
+      }
+    } catch (cleanupError) {
+      logger.error(
+        `[ImageWorkflow] Failed to persist failure state for sequence ${input.sequenceId} shot ${input.shotId}:`,
+        { err: cleanupError }
+      );
     }
     if (input.sequenceId) {
       try {
