@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-sequence-failure-notification-isolation",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "8032f16e0",
+  "sourceAfter": "9ece4798a",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Isolate sequence/audio failure persistence and claim cleanup from generation failure notifications across analysis, storyboard and music workflows.",
+  "productionFilesChanged": [
+    "src/audio/server/workflows/music-workflow.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.ts",
+    "src/sequences/server/workflows/storyboard-workflow.ts"
+  ],
+  "testFilesChanged": [
+    "src/audio/server/workflows/music-workflow-failure.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/storyboard-workflow.test.ts"
+  ],
+  "newEvidence": [
+    "AnalyzeScriptWorkflow emits generation.failed when sequence failure status persistence fails.",
+    "StoryboardWorkflow emits generation.failed when sequence failure status persistence fails.",
+    "MusicWorkflow emits generation.audio:progress failed when music claim cleanup fails.",
+    "Existing auth classification, child-owned sequence terminal state, completed sequence protection and music primary semantics remain covered."
+  ],
+  "tests": {
+    "selectedRegression": {
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts src/audio/server/workflows/music-workflow-failure.test.ts",
+      "files": 3,
+      "tests": 24,
+      "passed": 24,
+      "failed": 0
+    },
+    "relatedRegression": {
+      "command": "bun run test src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts src/audio/server/workflows/music-workflow-failure.test.ts src/cast/server/workflows/recast-location-workflow.test.ts src/stills/server/workflows/shot-variant-workflow-failure.test.ts src/stills/server/workflows/shot-variant-workflow.test.ts src/stills/server/workflows/image-workflow-failure.test.ts src/stills/server/workflows/image-workflow-preview-failure.test.ts src/stills/server/workflows/image-workflow-snapshot.test.ts src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts src/stills/server/workflows/upscale-shot-variant-workflow-generation.test.ts src/stills/server/workflows/upscale-shot-variant-workflow.test.ts src/cast/server/workflows/location-sheet-workflow.test.ts src/cast/server/workflows/character-sheet-workflow.test.ts src/cast/server/workflows/character-voice-workflow.test.ts src/cast/server/workflows/location-bible-workflow.test.ts src/cast/server/workflows/character-bible-workflow.test.ts src/platform/server/workflow/await-child.test.ts",
+      "files": 18,
+      "tests": 145,
+      "passed": 145,
+      "failed": 0
+    }
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "build": "passed",
+    "preCommitHooks": "passed without bypass"
+  },
+  "normalCodeCommit": "9ece4798a",
+  "openItems": [
+    "Other parent workflow lifecycle and failure branches remain open.",
+    "Real durable replay, provider, remote D1/R2, browser HTTP and wallet settlement remain unvalidated.",
+    "GC-03 and all 1219 frozen inventory dispositions remain open; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}
