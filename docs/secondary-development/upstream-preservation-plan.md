@@ -199,6 +199,8 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-14 继续执行 `G03-lipsync-failures`：测试提交为 `a1171c1e8`。新增 MotionWorkflow 成片后的两条 lip-sync 失败归属组合探针：子任务已记录自身失败时父任务不重复追加失败版本，子任务未启动时父任务追加失败版本并广播失败事件。1 个测试文件、44 项通过，typecheck、lint、格式、diff 检查和正常 pre-commit hooks 通过；测试-only 批次未重复生产 build。该批只关闭 lip-sync child failure ownership 的有限动态证据，不关闭 GC-03；其它父工作流生命周期/失败分支和真实 durable replay 仍开放。[批次记录](preservation/20261114-p3-g03-lipsync-failures/README.md)、[实现记录](preservation/20261114-p3-g03-lipsync-failures/implementation.json)和[验证记录](preservation/20261114-p3-g03-lipsync-failures/verification-results.json)记录本批边界。
 
+2026-11-14 继续执行 `G03-recast-failures`：测试提交为 `e7877b46f`。新增 RegenerateShotsWorkflow 两条失败生命周期组合探针：图片 child await 失败按 allSettled 收敛到 failedShots 并发送 complete，variant-image 派发失败向上抛出并由父级 onFailure 发送 failed recast 事件；原 resolution 转发断言保留。1 个测试文件、3 项通过，typecheck、lint、格式、diff 检查和正常 pre-commit hooks 通过；测试-only 批次未重复生产 build。该批只关闭 RegenerateShotsWorkflow 失败生命周期的有限动态证据，不关闭 GC-03；其它父工作流生命周期/失败分支和真实 durable replay 仍开放。[批次记录](preservation/20261114-p3-g03-recast-failures/README.md)、[实现记录](preservation/20261114-p3-g03-recast-failures/implementation.json)和[验证记录](preservation/20261114-p3-g03-recast-failures/verification-results.json)记录本批边界。
+
 **P3 整体仍进行中。** G10 有限验证、G14 图片准备及资产入口/来源/草稿修复、G06-capture、G06-auxiliary、G07 音乐预占清理与 motion 时长估价修复及 G03 四个父主体及 lip-sync child dispatch 证据已有边界记录，GC-10/GC-14/GC-06/GC-07/GC-03 不作整职责关闭。GC-06 剩余调用与真实环境验收、GC-14 剩余真环境验收、GC-09 其余职责、G03 其它生命周期/失败分支、G07 native via 与真实计费一致性及其它 P3 工作仍待完成；当前 fal 预占入口的引用路由估价已有边界修复，下一步按最新台账选择依赖已满足且仍有明确代码或验证缺口的职责。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
 
 ## 6. 未来新增二开的接入流程

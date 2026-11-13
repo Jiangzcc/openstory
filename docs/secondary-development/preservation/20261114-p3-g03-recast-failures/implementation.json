@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-recast-failures",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "4ae7988c3",
+  "sourceAfter": "e7877b46f",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Execute bounded host-side RegenerateShotsWorkflow runImpl and onFailure probes for image and variant dispatch failures.",
+  "productionFilesChanged": [],
+  "testFilesChanged": [
+    "src/shots/server/workflows/regenerate-shots-workflow.test.ts"
+  ],
+  "newEvidence": [
+    "An image child failure is retained per shot and the parent emits complete rather than failing the batch.",
+    "A variant trigger failure reaches parent failure handling and emits failed recast state."
+  ],
+  "tests": {
+    "files": 1,
+    "tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "command": "bun run test src/shots/server/workflows/regenerate-shots-workflow.test.ts"
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "preCommitHooks": "passed without bypass",
+    "build": "not-run; test-only batch with no production files changed"
+  },
+  "openItems": [
+    "Other parent workflow lifecycle and failure branches remain open.",
+    "Real durable replay, provider, remote D1/R2, browser HTTP and settlement remain unvalidated.",
+    "GC-03 and all 1219 frozen inventory dispositions remain open; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}
