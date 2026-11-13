@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-13",
+  "batchId": "G07-music-hold",
+  "responsibilityId": "GC-07",
+  "status": "repaired-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "0c02be5153ed9e75afc72540b7759e31f35dfffa",
+  "sourceAfter": "ab6d584f413a552c754234b56a18982c31f90ca0",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "authorization": "继续推进 P3；本批仅处理 G07 中已经源码确认且可独立修复的音乐 claim 预占清理窗口。",
+  "findingResolved": "INHERITED-MUSIC-CLAIM-CLEANUP",
+  "rootCause": "reserveRunCredits 完成后，smart retry 和 add-audio 的 claimMusic 调用位于原 releaseReservationOnThrow 保护之外；claim 抛错或 add-audio 空 claim 时，本次 hold 没有进入显式归零路径。",
+  "productionFilesChanged": [
+    "src/sequences/server/smart-retry.ts",
+    "src/sequences/server/sequence-models.ts"
+  ],
+  "testFilesChanged": [
+    "src/sequences/server/smart-retry-billing.test.ts",
+    "src/sequences/add-audio-model.test.ts"
+  ],
+  "changes": [
+    "smart retry 将 claimMusic 纳入本次 reservation 的 releaseReservationOnThrow 保护；claim 抛错时清理本次 hold。",
+    "add-audio 将 claimMusic 和原有空 claim NotFoundError 纳入同一保护；成功 dispatch 后仍沿用原 trigger cleanup 和 failure claim 流程。",
+    "新增 claim 抛错、claim 空值及 smart retry 局部成功后 claim 抛错的定向回归。"
+  ],
+  "compatibility": {
+    "successfulClaimAndDispatch": "unchanged",
+    "concurrentNullClaimInSmartRetry": "existingExplicitZeroRetained",
+    "reservationOwnership": "onlyNewReservationIsReleased",
+    "claimWorkflowFailureHandling": "unchanged",
+    "publicInterfacesOrSchemaChanged": false,
+    "databaseSchemaChanged": false
+  },
+  "tests": {
+    "files": 2,
+    "tests": 16,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "command": "bun run test src/sequences/add-audio-model.test.ts src/sequences/server/smart-retry-billing.test.ts",
+    "newScenarios": 3
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing warnings",
+    "build": "passed",
+    "format": "passed for 4 modified files",
+    "diffCheck": "passed",
+    "preCommitHooks": "passed without bypass"
+  },
+  "openItems": [
+    "GC-07 motion duration estimate versus actual dispatch duration remains open.",
+    "GC-07 motion reference-route estimate remains open.",
+    "GC-07 whole-responsibility acceptance and all other P3 responsibilities remain open.",
+    "Real durable replay, provider invoices, remote D1/R2, wallet settlement and browser acceptance were not run.",
+    "All 1219 frozen inventory dispositions remain pending; P4 has not started."
+  ],
+  "notValidated": [
+    "Cloudflare Workflows durable replay",
+    "real supplier calls or invoices",
+    "remote D1/R2 writes and wallet settlement",
+    "full repository Vitest and browser RPC/compiler-manifest acceptance"
+  ],
+  "noRemoteWrites": true,
+  "pushed": false
+}
