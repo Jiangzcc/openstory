@@ -23,6 +23,18 @@ export function resolveShotDuration({
   return snapDuration(explicit ?? fromMs, model);
 }
 
+/** Resolve the duration covered by a motion reservation, including edits. */
+export function resolveMotionHoldDuration(input: {
+  durationMs?: number | null;
+  editSeconds?: number | null;
+  model: ImageToVideoModel;
+}): number {
+  return Math.max(
+    resolveShotDuration({ durationMs: input.durationMs, model: input.model }),
+    input.editSeconds ?? 0
+  );
+}
+
 /**
  * Raise a snapped clip length so it covers the dialogue audio bed (#1554).
  * No-op when the audio is no longer than the clip.

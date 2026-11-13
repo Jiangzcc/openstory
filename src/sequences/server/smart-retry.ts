@@ -50,6 +50,7 @@ import {
 } from '@/billing/cost-estimation';
 import { estimateTtsCost } from '@/billing/elevenlabs-pricing';
 import { seedanceEditSeconds } from '@/motion/seedance-edit';
+import { resolveMotionHoldDuration } from '@/motion/resolve-shot-duration';
 import { seedanceRunsOnArk } from '@/motion/server/motion-generation';
 import { withMeasuredDurations } from '@/cast/server/sequence-elements/media-duration';
 import { addMicros, ZERO_MICROS, type Microdollars } from '@/billing/money';
@@ -612,7 +613,6 @@ export async function executeSmartRetry(
   // the same shape Generate all motion / Update Stale already use.
   if (failedMotionShots.length > 0) {
     const styleConfig = await loadSequenceStyle(context.scopedDb, sequence);
-    const { snapDuration } = await import('@/motion/snap-duration');
     // Match normal motion generation: cast and element references also keep
     // identity consistent when animating a start frame. Only location sheets
     // are exclusive to reference-only shots.
@@ -694,7 +694,11 @@ export async function executeSmartRetry(
         gateEstimate(
           estimateVideoCost(
             shotVideoModel,
-            Math.max(snapDuration(undefined, shotVideoModel), editSeconds ?? 0),
+            resolveMotionHoldDuration({
+              durationMs: shot.durationMs,
+              editSeconds,
+              model: shotVideoModel,
+            }),
             { pricing, resolution: sequence.resolution, referenceOnly }
           ),
           { model: shotVideoModel, operation: 'smart-retry:motion' }

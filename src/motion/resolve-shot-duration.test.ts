@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   dialogueExceedsShotDuration,
   raiseShotDurationToCoverAudio,
+  resolveMotionHoldDuration,
   resolveShotDuration,
 } from './resolve-shot-duration';
 
@@ -49,6 +50,24 @@ describe('raiseShotDurationToCoverAudio', () => {
   });
   it('raises onto the next grid step that covers the audio', () => {
     expect(raiseShotDurationToCoverAudio(5, 6.2, 'seedance_v2_5')).toBe(7);
+  });
+});
+
+describe('resolveMotionHoldDuration', () => {
+  it('uses the stored shot duration before applying the edit hold', () => {
+    expect(
+      resolveMotionHoldDuration({
+        durationMs: 10_000,
+        editSeconds: 12,
+        model: 'minimax_h3_max',
+      })
+    ).toBe(12);
+  });
+
+  it('uses the model duration default when the shot has no stored duration', () => {
+    expect(
+      resolveMotionHoldDuration({ model: 'gemini_omni_flash' })
+    ).toBeGreaterThanOrEqual(3);
   });
 });
 

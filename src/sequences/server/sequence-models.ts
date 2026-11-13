@@ -70,6 +70,7 @@ import {
   seedanceRunsOnArk,
 } from '@/motion/server/motion-generation';
 import { seedanceEditSeconds } from '@/motion/seedance-edit';
+import { resolveMotionHoldDuration } from '@/motion/resolve-shot-duration';
 import { withMeasuredDurations } from '@/cast/server/sequence-elements/media-duration';
 import { toWorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import {
@@ -546,7 +547,11 @@ export async function addModelToSequence(
             gateEstimate(
               estimateVideoCost(
                 model,
-                Math.max(5, shots[index]?.seedanceEditSeconds ?? 0),
+                resolveMotionHoldDuration({
+                  durationMs: shot.durationMs,
+                  editSeconds: shots[index]?.seedanceEditSeconds,
+                  model,
+                }),
                 {
                   pricing,
                   resolution: sequence.resolution,

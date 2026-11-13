@@ -35,8 +35,13 @@ import {
   videoVariantFixture,
 } from '@/mocks/frame-fixtures';
 import { toShotView, type ImageStatus, type ShotView } from '@/shots/shot-view';
-import { estimateImageCost, gateEstimate } from '@/billing/cost-estimation';
+import {
+  estimateImageCost,
+  estimateVideoCost,
+  gateEstimate,
+} from '@/billing/cost-estimation';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import { resolveShotDuration } from '@/motion/resolve-shot-duration';
 import { ZERO_MICROS } from '@/billing/money';
 import { asStub } from '@/test/as-stub';
 
@@ -768,6 +773,38 @@ describe('executeSmartRetry — partial retry status reset', () => {
       retriedItems: ['1 motion video(s)'],
     });
     expect(updateStatus).toHaveBeenCalledWith('completed');
+  });
+
+  test('reserves motion cost using the stored shot duration', async () => {
+    resetMocks();
+    const model = 'minimax_h3_max' as const;
+    const shot = makeShot({
+      videoStatus: 'failed',
+      imageStatus: 'completed',
+      durationMs: 10_000,
+    });
+    const { context } = makeContext(makeSequence({ videoModel: model }), [
+      shot,
+    ]);
+
+    await executeSmartRetry(context);
+
+    const duration = resolveShotDuration({ durationMs: 10_000, model });
+    const expectedCost = gateEstimate(
+      estimateVideoCost(model, duration, {
+        pricing: FAL_PRICING,
+        resolution: '720p',
+        referenceOnly: false,
+      }),
+      { model, operation: 'smart-retry:motion' }
+    );
+    expect(reserveRunCreditsMock.mock.calls[0]?.[1]).toEqual(expectedCost);
+    expect(triggerWorkflowMock).toHaveBeenCalledWith(
+      '/motion-batch',
+      expect.objectContaining({
+        shots: [expect.objectContaining({ duration })],
+      })
+    );
   });
 
   test.each([true, false])(
