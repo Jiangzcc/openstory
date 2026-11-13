@@ -23,6 +23,15 @@ const resolveAudioModels = vi.fn(() => ['elevenlabs_music' as const]);
 const zeroReservation = vi.fn(async () => {});
 const emit = vi.fn(async () => undefined);
 const getGenerationChannel = vi.fn(() => ({ emit }));
+const buildMotionJobs = vi.fn(
+  (): Array<{
+    shot: { shotId: string };
+    input: { model: string; shotId: string };
+    model: string;
+  }> => []
+);
+const missingDialogueAudioShotIds = vi.fn((): string[] => []);
+const persistMotionFailure = vi.fn(async () => undefined);
 
 vi.doMock('@/platform/server/workflow/await-child', () => ({
   spawnAndAwaitChild,
@@ -49,11 +58,11 @@ vi.doMock('@/motion/server/motion-generation', () => ({
 vi.doMock('@/platform/realtime', () => ({ getGenerationChannel }));
 vi.doMock('./motion-batch-jobs', () => ({
   attachSpeechClips: (shots: unknown[]) => shots,
-  buildMotionJobs: vi.fn(() => []),
-  missingDialogueAudioShotIds: vi.fn(() => []),
+  buildMotionJobs,
+  missingDialogueAudioShotIds,
 }));
 vi.doMock('./motion-workflow-persist', () => ({
-  persistMotionFailure: vi.fn(async () => {}),
+  persistMotionFailure,
 }));
 
 const { MotionBatchWorkflow } = await import('./motion-batch-workflow');
@@ -121,6 +130,9 @@ describe('MotionBatchWorkflow', () => {
     vi.clearAllMocks();
     zeroReservation.mockResolvedValue(undefined);
     emit.mockResolvedValue(undefined);
+    buildMotionJobs.mockReturnValue([]);
+    missingDialogueAudioShotIds.mockReturnValue([]);
+    persistMotionFailure.mockResolvedValue(undefined);
   });
 
   it('propagates the parent model snapshot to motion and music children', async () => {
@@ -228,5 +240,58 @@ describe('MotionBatchWorkflow', () => {
     expect(emit).toHaveBeenCalledWith('generation.failed', {
       message: 'batch failed',
     });
+  });
+
+  it('records blocked dialogue shots and stops motion fan-out', async () => {
+    const input = makeInput();
+    const shot = input.shots[0];
+    if (!shot) throw new Error('Missing motion batch shot.');
+    missingDialogueAudioShotIds.mockReturnValueOnce(['shot-1']);
+    buildMotionJobs.mockReturnValueOnce([
+      {
+        shot,
+        input: { model: 'kling_v3_pro', shotId: 'shot-1' },
+        model: 'kling_v3_pro',
+      },
+    ]);
+    const ensureForShot = vi.fn(async () => undefined);
+    const getById = vi.fn(async () => ({
+      id: 'shot-1',
+      sceneId: 'scene-1',
+      renderSegmentId: null,
+    }));
+    const inputEvent = asStub<WorkflowEvent<BatchMotionMusicWorkflowInput>>({
+      instanceId: 'motion-batch-dialogue-1',
+      payload: input,
+    });
+    const scopedDb = asStub<WorkflowScopedDb>({
+      models: {},
+      liveRead: { shots: { getById } },
+      renderSegments: { ensureForShot },
+    });
+    const workflow = new Probe(
+      asStub(undefined),
+      asStub({ MOTION_WORKFLOW: motionBinding, MUSIC_WORKFLOW: musicBinding })
+    );
+
+    await expect(
+      workflow.runBody(inputEvent, makeStep(), scopedDb)
+    ).rejects.toThrow('Dialogue audio was not generated for shot shot-1');
+
+    expect(ensureForShot).toHaveBeenCalledWith({
+      id: 'shot-1',
+      sceneId: 'scene-1',
+      sequenceId: 'sequence-1',
+      renderSegmentId: null,
+    });
+    expect(persistMotionFailure).toHaveBeenCalledWith(
+      expect.objectContaining({
+        shotId: 'shot-1',
+        model: 'kling_v3_pro',
+        workflowRunId: 'motion-batch-dialogue-1',
+        error: 'Dialogue audio was not generated: no take matched the lines',
+      })
+    );
+    expect(spawnAndAwaitChild).not.toHaveBeenCalled();
   });
 });
