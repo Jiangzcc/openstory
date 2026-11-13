@@ -42,6 +42,7 @@ const keyedTrigger = vi.fn(
     reused: false,
   })
 );
+const musicTrigger = vi.fn(async () => 'mock-live-music-run');
 const storyboardTrigger = vi.fn(
   async (_db: ScopedDb, _input: StoryboardTriggerInput) => ({
     workflowRunId: 'mock-live-board-run',
@@ -52,7 +53,7 @@ vi.doMock('@/platform/realtime', () => ({
   getBillingChannel: () => ({ emit: async () => {} }),
 }));
 vi.doMock('@/platform/server/workflow/client', () => ({
-  triggerWorkflow: vi.fn(),
+  triggerWorkflow: musicTrigger,
   triggerWorkflowRun: keyedTrigger,
 }));
 vi.doMock('@/platform/server/db/scoped', () => ({
@@ -125,6 +126,7 @@ beforeEach(() => {
   keyedTrigger
     .mockReset()
     .mockResolvedValue({ workflowRunId: 'mock-live-image-run', reused: false });
+  musicTrigger.mockReset().mockResolvedValue('mock-live-music-run');
   storyboardTrigger
     .mockReset()
     .mockResolvedValue({ workflowRunId: 'mock-live-board-run' });
@@ -191,6 +193,7 @@ function mockContext(
   model: TextToImageModel = MOCK_IMAGE_MODEL
 ) {
   const shot = { id: generateId(), sceneId: 'mock-scene' };
+  const claimMusic = vi.fn(async () => 'mock-music-variant');
   const sequence = asStub<Sequence>({
     id: generateId(),
     status: 'completed',
@@ -215,6 +218,7 @@ function mockContext(
       ensureAnchorFrames: async () => {},
     },
     characters: { listWithSheets: async () => [] },
+    sequenceVariants: { claimMusic },
   });
   return {
     promptLocale: 'en' as const,
@@ -222,6 +226,7 @@ function mockContext(
     sequence,
     user: { id: wallet.userId },
     organizationId: wallet.organizationId,
+    claimMusic,
   };
 }
 
@@ -452,6 +457,22 @@ describe('smart image retry reservation ownership with real in-memory D1', () =>
       });
     }
   );
+
+  it('zeros the music hold when music claim throws before dispatch', async () => {
+    const wallet = await billingWithBalance(100000000);
+    const context = mockContext(wallet);
+    context.sequence.musicStatus = 'failed';
+    context.claimMusic.mockRejectedValueOnce(new Error('music claim failed'));
+
+    await expect(executeSmartRetry(context)).rejects.toThrow(
+      'music claim failed'
+    );
+
+    expect(musicTrigger).not.toHaveBeenCalled();
+    expect(await wallet.billing.getAvailable()).toMatchObject({
+      reserved: MOCK_IMAGE_COST,
+    });
+  });
 
   it('gives a non-deduplicated full retry an independent hold and cleans only its failed trigger', async () => {
     const wallet = await billingWithBalance(100000000);

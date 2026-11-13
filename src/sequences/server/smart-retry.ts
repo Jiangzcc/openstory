@@ -804,16 +804,21 @@ export async function executeSmartRetry(
       // Row + claim before the run (#1130), compare-and-swapped on the claim
       // this request saw: a concurrent retry that already claimed wins and this
       // one starts nothing.
-      const variantId = await context.scopedDb.sequenceVariants.claimMusic({
-        sequenceId: sequence.id,
-        model: musicModel,
-        prompt: sequence.musicPrompt,
-        tags: musicTags,
-        durationSeconds: totalDuration,
-        isPrimary: true,
-        workflowRunId: null,
-        ifPendingIs: sequence.pendingPromoteMusicVariantId,
-      });
+      const variantId = await releaseReservationOnThrow(
+        context.scopedDb,
+        reservationId,
+        () =>
+          context.scopedDb.sequenceVariants.claimMusic({
+            sequenceId: sequence.id,
+            model: musicModel,
+            prompt: sequence.musicPrompt,
+            tags: musicTags,
+            durationSeconds: totalDuration,
+            isPrimary: true,
+            workflowRunId: null,
+            ifPendingIs: sequence.pendingPromoteMusicVariantId,
+          })
+      );
       if (variantId) {
         const musicInput: MusicWorkflowInput = {
           promptLocale: context.promptLocale,

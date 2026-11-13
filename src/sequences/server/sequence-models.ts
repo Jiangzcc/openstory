@@ -239,16 +239,23 @@ export async function addModelToSequence(
     // Row before the run (#547, #1130): an added model's track opens its
     // own row — no claim, it never takes the sequence's pointer — so the
     // model shows in the header dropdown immediately.
-    const variantId = await scopedDb.sequenceVariants.claimMusic({
-      sequenceId: sequence.id,
-      model,
-      prompt: musicPrompt,
-      tags: musicTags,
-      durationSeconds: Math.round(totalDuration),
-      isPrimary: false,
-      workflowRunId: null,
-    });
-    if (!variantId) throw new NotFoundError('Sequence not found');
+    const variantId = await releaseReservationOnThrow(
+      scopedDb,
+      reservationId,
+      async () => {
+        const claimedVariantId = await scopedDb.sequenceVariants.claimMusic({
+          sequenceId: sequence.id,
+          model,
+          prompt: musicPrompt,
+          tags: musicTags,
+          durationSeconds: Math.round(totalDuration),
+          isPrimary: false,
+          workflowRunId: null,
+        });
+        if (!claimedVariantId) throw new NotFoundError('Sequence not found');
+        return claimedVariantId;
+      }
+    );
     try {
       return await releaseReservationOnThrow(
         scopedDb,

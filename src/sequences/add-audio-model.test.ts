@@ -41,6 +41,7 @@ function makeContext(canAfford = false) {
       apiKeys: { hasUsableKey: vi.fn(async () => true) },
       billing: {
         hasEnoughCredits: vi.fn(async () => canAfford),
+        zeroReservation: vi.fn(async () => {}),
         createReservation: vi.fn(async () =>
           canAfford
             ? {
@@ -57,7 +58,7 @@ function makeContext(canAfford = false) {
       },
       sequenceVariants: {
         listMusicBySequence: vi.fn(async () => []),
-        claimMusic: vi.fn(async () => 'music_row_1'),
+        claimMusic: vi.fn(async (): Promise<string | null> => 'music_row_1'),
         failMusicClaim: vi.fn(async () => {}),
       },
     },
@@ -120,6 +121,52 @@ describe('add audio model — music credits', () => {
       expect.anything()
     );
   });
+
+  it.each([
+    {
+      name: 'claim throws',
+      configure: (context: ReturnType<typeof makeContext>) => {
+        context.scopedDb.sequenceVariants.claimMusic.mockRejectedValueOnce(
+          new Error('claim failed')
+        );
+      },
+      expected: /claim failed/,
+    },
+    {
+      name: 'claim returns no row',
+      configure: (context: ReturnType<typeof makeContext>) => {
+        context.scopedDb.sequenceVariants.claimMusic.mockResolvedValueOnce(
+          null
+        );
+      },
+      expected: /Sequence not found/,
+    },
+  ])(
+    'zeros the new reservation when $name',
+    async ({ configure, expected }) => {
+      const context = makeContext(true);
+      configure(context);
+
+      await expect(
+        addAudioModel({
+          data: {
+            sequenceId: 'seq_1',
+            variantType: 'audio',
+            model: 'elevenlabs_music',
+          },
+          context,
+        })
+      ).rejects.toThrow(expected);
+
+      expect(context.scopedDb.billing.zeroReservation).toHaveBeenCalledWith(
+        'res_music'
+      );
+      expect(triggerWorkflow).not.toHaveBeenCalled();
+      expect(
+        context.scopedDb.sequenceVariants.failMusicClaim
+      ).not.toHaveBeenCalled();
+    }
+  );
 
   it('keeps fal BYOK for ACE-Step without platform credits', async () => {
     const context = makeContext();
