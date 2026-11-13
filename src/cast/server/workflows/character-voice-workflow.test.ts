@@ -430,6 +430,27 @@ describe('CharacterVoiceWorkflow', () => {
     );
   });
 
+  it('still emits failure when husk cleanup cannot be written', async () => {
+    const { scopedDb, markVoiceClaimTerminal } = makeScopedDb();
+    markVoiceClaimTerminal.mockRejectedValueOnce(new Error('database down'));
+
+    await expect(
+      makeWorkflow().failBody(
+        makeEvent('Warm alto, unhurried.'),
+        'Voice Design returned no previews',
+        scopedDb
+      )
+    ).resolves.toBeUndefined();
+
+    expect(mockEmit).toHaveBeenCalledWith(
+      'generation.character-voice:progress',
+      expect.objectContaining({
+        status: 'failed',
+        error: 'Voice Design returned no previews',
+      })
+    );
+  });
+
   it('drafts a description from the bible when the row has none', async () => {
     const { scopedDb } = makeScopedDb();
     const result = await makeWorkflow().runBody(

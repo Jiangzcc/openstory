@@ -396,29 +396,50 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
     // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: the run `assertQueuedWithLooks` just failed names no look
     if (!input.lookId) {
       // Its claim is found by the claim's own id, never by a guessed look.
-      await scopedDb.characterLooks.failSheetClaimByVersion(
-        input.sheetVersionId,
-        error
-      );
+      try {
+        await scopedDb.characterLooks.failSheetClaimByVersion(
+          input.sheetVersionId,
+          error
+        );
+      } catch (cleanupError) {
+        logger.error(
+          `[CharacterSheetWorkflow:cf] Failed to clear legacy sheet claim for character ${input.characterDbId}:`,
+          { err: cleanupError }
+        );
+      }
       return;
     }
     if (input.characterDbId) {
-      await scopedDb.characterLooks.failSheetClaim(
-        input.lookId,
-        // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
-        input.sheetVersionId ?? null,
-        error
-      );
+      try {
+        await scopedDb.characterLooks.failSheetClaim(
+          input.lookId,
+          // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
+          input.sheetVersionId ?? null,
+          error
+        );
+      } catch (cleanupError) {
+        logger.error(
+          `[CharacterSheetWorkflow:cf] Failed to clear sheet claim for character ${input.characterDbId}:`,
+          { err: cleanupError }
+        );
+      }
 
       // Emit failure event for realtime UI update
-      await getGenerationChannel(
-        castChannelId(input.sequenceId, input.characterDbId)
-      ).emit('generation.character-sheet:progress', {
-        characterId: input.characterDbId,
-        lookId: input.lookId,
-        status: 'failed',
-        error,
-      });
+      try {
+        await getGenerationChannel(
+          castChannelId(input.sequenceId, input.characterDbId)
+        ).emit('generation.character-sheet:progress', {
+          characterId: input.characterDbId,
+          lookId: input.lookId,
+          status: 'failed',
+          error,
+        });
+      } catch (emitError) {
+        logger.error(
+          `[CharacterSheetWorkflow:cf] Failed to emit failure event for character ${input.characterDbId}:`,
+          { err: emitError }
+        );
+      }
 
       if (isContentRejectionError(error)) {
         // Mirror image/motion `onFailure` so "how many sheets failed a content

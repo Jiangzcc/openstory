@@ -119,4 +119,17 @@ describe('LocationSheetWorkflow failure ownership', () => {
       'provider failed'
     );
   });
+
+  it('still emits failure when claim cleanup cannot be written', async () => {
+    mockFailReferenceClaim.mockRejectedValueOnce(new Error('database down'));
+
+    await expect(
+      makeWorkflow().failBody(makeEvent(), 'provider failed', makeScopedDb())
+    ).resolves.toBeUndefined();
+
+    expect(mockEmit).toHaveBeenCalledWith(
+      'generation.location-sheet:progress',
+      expect.objectContaining({ status: 'failed', error: 'provider failed' })
+    );
+  });
 });

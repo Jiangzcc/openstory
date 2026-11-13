@@ -503,15 +503,29 @@ export class CharacterVoiceWorkflow extends OpenStoryWorkflowEntrypoint<Characte
       `[CharacterVoiceWorkflow:cf] Voice design failed for ${characterDbId}: ${error}`
     );
     if (targetVersionId) {
-      await scopedDb.characters.markVoiceClaimTerminal(
-        targetVersionId,
-        'failed',
-        error
+      try {
+        await scopedDb.characters.markVoiceClaimTerminal(
+          targetVersionId,
+          'failed',
+          error
+        );
+      } catch (cleanupError) {
+        logger.error(
+          `[CharacterVoiceWorkflow:cf] Failed to clear voice claim for character ${characterDbId}:`,
+          { err: cleanupError }
+        );
+      }
+    }
+    try {
+      await getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
+        'generation.character-voice:progress',
+        { characterId: characterDbId, status: 'failed', error }
+      );
+    } catch (emitError) {
+      logger.error(
+        `[CharacterVoiceWorkflow:cf] Failed to emit failure event for character ${characterDbId}:`,
+        { err: emitError }
       );
     }
-    await getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
-      'generation.character-voice:progress',
-      { characterId: characterDbId, status: 'failed', error }
-    );
   }
 }

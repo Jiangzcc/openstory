@@ -343,12 +343,19 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
 
     // Mark location reference as failed — through the claim (#1113).
     if (input.locationDbId && input.organizationId) {
-      await scopedDb.locations.failReferenceClaim(
-        input.locationDbId,
-        // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
-        input.referenceVersionId ?? null,
-        error
-      );
+      try {
+        await scopedDb.locations.failReferenceClaim(
+          input.locationDbId,
+          // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
+          input.referenceVersionId ?? null,
+          error
+        );
+      } catch (cleanupError) {
+        logger.error(
+          `[LocationSheetWorkflow:cf] Failed to clear failure claim for location ${input.locationDbId}:`,
+          { err: cleanupError }
+        );
+      }
 
       // Emit failure event for realtime UI update
       {

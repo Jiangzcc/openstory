@@ -320,6 +320,19 @@ describe('CharacterSheetWorkflow sheet claim (#1113)', () => {
     expect(mockUpdateSheetStatus).not.toHaveBeenCalled();
   });
 
+  it('still emits failure when claim cleanup cannot be written', async () => {
+    mockFailSheetClaim.mockRejectedValueOnce(new Error('database down'));
+
+    await expect(
+      makeWorkflow().failBody(await makeEvent(), makeScopedDb())
+    ).resolves.toBeUndefined();
+
+    expect(mockEmit).toHaveBeenCalledWith(
+      'generation.character-sheet:progress',
+      expect.objectContaining({ status: 'failed', error: 'boom' })
+    );
+  });
+
   it('lands on the look the payload names, stamping its version (#2015)', async () => {
     mockPromoteIfPending.mockResolvedValue('promoted');
     const result = await makeWorkflow().runBody(
