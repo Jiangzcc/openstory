@@ -10,6 +10,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IMAGE_TO_VIDEO_MODELS } from '@/models/models';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import { buildMotionRender } from '@/motion/server/build-motion-render';
 import { audioSourceKeyFromVoicedLines } from '@/motion/dialogue-tts';
 import { isSelectedVersionStale } from '@/shots/scene-segments';
@@ -33,7 +34,14 @@ const mockIngestArkAssets = vi.fn(
 );
 const mockRecordMediaGenerationSpan = vi.fn();
 const emit = vi.fn(async () => {});
+const lipsyncBinding = {};
+const mockSpawnAndAwaitChild = vi.fn(async () => ({
+  videoUrl: '/r2/videos/lipsync.mp4',
+}));
 
+vi.doMock('@/platform/server/workflow/await-child', () => ({
+  spawnAndAwaitChild: mockSpawnAndAwaitChild,
+}));
 vi.doMock('@/motion/server/motion-generation', () => ({
   submitMotionJob: mockSubmit,
   pollMotionJob: mockPoll,
@@ -122,7 +130,7 @@ function makeWorkflow(): Probe {
   // runImpl never reads ctx
   const ctx = asStub<Ctor[0]>(undefined);
   // runImpl never reads bindings
-  const env = asStub<Ctor[1]>({});
+  const env = asStub<Ctor[1]>({ LIPSYNC_WORKFLOW: lipsyncBinding });
   return new Probe(ctx, env);
 }
 
@@ -164,6 +172,7 @@ function makeScopedDb(shotAudioClips: unknown[] = []) {
   // stub covering only the surface runImpl touches
   const scopedDb = asStub<WorkflowScopedDb>({
     credentials: { resolveKey: async () => ({ source: 'platform' }) },
+    models: DEFAULT_MODEL_CONFIGURATION,
     liveRead: {
       shots: {
         getById: async () => ({
@@ -1309,6 +1318,79 @@ describe('recording its own dialogue (#1657)', () => {
       )
     ).rejects.toThrow(/Dialogue audio is not ready for shot shot-1/);
     expect(mockSubmit).not.toHaveBeenCalled();
+  });
+});
+
+describe('MotionWorkflow lip-sync child dispatch (#2263)', () => {
+  it('passes the finished clip and pinned dialogue snapshot to the lip-sync child', async () => {
+    const voicedLines = [
+      {
+        index: 0,
+        token: 'DIALOGUE',
+        voiceId: 'voice-sarah',
+        text: 'Run!',
+        tone: '',
+        ttsModel: 'eleven_v3',
+        character: 'Sarah',
+      },
+    ];
+    const audioClip = {
+      id: 'section-1',
+      url: '/r2/audio/section-1.wav',
+      token: 'DIALOGUE',
+      durationSeconds: 2,
+      sourceKey: audioSourceKeyFromVoicedLines(voicedLines) ?? '',
+    };
+    const { scopedDb } = makeScopedDb();
+    const result = await makeWorkflow().runBody(
+      makeEvent({
+        model: GROK,
+        sequenceTitle: 'Sequence',
+        sceneTitle: 'Scene',
+        voicedLines,
+        audioClips: [audioClip],
+      }),
+      makeStep(),
+      scopedDb
+    );
+
+    expect(result).toEqual({ videoUrl: '/r2/videos/a.mp4', duration: 5 });
+    expect(mockSpawnAndAwaitChild).toHaveBeenCalledTimes(1);
+    expect(mockSpawnAndAwaitChild).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        binding: lipsyncBinding,
+        modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
+        parentBindingName: 'MOTION_WORKFLOW',
+        parentInstanceId: 'run-1',
+        childId: 'lipsync:seq-1:shot-1',
+        childPayload: expect.objectContaining({
+          promptLocale: 'en',
+          sequenceId: 'seq-1',
+          shotId: 'shot-1',
+          sceneId: 'live-scene-ulid',
+          renderSegmentId: 'seg-1',
+          videoUrl: '/r2/videos/a.mp4',
+          audioUrl: audioClip.url,
+          durationSeconds: 5,
+          resolution: null,
+          videoModel: GROK,
+          sequenceTitle: 'Sequence',
+          sceneTitle: 'Scene',
+          reservationId: 'res-1',
+          manifest: [
+            expect.objectContaining({
+              shotId: 'shot-1',
+              audioClipIds: ['section-1'],
+              audioSourceKey: audioClip.sourceKey,
+            }),
+          ],
+        }),
+        spawnStepName: 'spawn-lipsync',
+        awaitStepName: 'await-lipsync',
+        timeout: '30 minutes',
+      })
+    );
   });
 });
 
