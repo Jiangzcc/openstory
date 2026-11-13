@@ -217,6 +217,8 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-14 继续执行 `G03-motion-partial-failure`：测试提交为 `be1e2117b`。在 MotionBatchWorkflow 真实 runImpl 中令 motion child 失败而 sibling music child 继续收敛，核对 allSettled、reservation 清零和 `{ sequenceId }` 结果保持。1 个测试文件、5 项通过，typecheck、lint、格式、diff 检查和正常 pre-commit hooks 通过；测试-only 批次未重复生产 build。该批只关闭 MotionBatchWorkflow 部分 child 失败仍完成 batch 的有限动态证据，不关闭 GC-03；其它父工作流生命周期/失败分支、真实 durable replay 和运行环境证据仍开放。[批次记录](preservation/20261114-p3-g03-motion-partial-failure/README.md)、[实现记录](preservation/20261114-p3-g03-motion-partial-failure/implementation.json)和[验证记录](preservation/20261114-p3-g03-motion-partial-failure/verification-results.json)记录本批边界。
 
+2026-11-14 继续执行 `G03-shot-rewrite-cleanup-failure`：测试提交为 `c455a52d2`。新增 ShotSpecRewriteWorkflow 清理异常隔离探针，令 spec claim 清理抛出数据库错误，核对 visual/motion 两类 streaming failed 事件仍然发送。1 个测试文件、3 项通过，typecheck、lint、格式、diff 检查和正常 pre-commit hooks 通过；测试-only 批次未重复生产 build。该批只关闭 ShotSpecRewriteWorkflow 清理异常不阻断 failed streaming 通知的有限动态证据，不关闭 GC-03；其它父工作流生命周期/失败分支、真实 durable replay 和运行环境证据仍开放。[批次记录](preservation/20261114-p3-g03-shot-rewrite-cleanup-failure/README.md)、[实现记录](preservation/20261114-p3-g03-shot-rewrite-cleanup-failure/implementation.json)和[验证记录](preservation/20261114-p3-g03-shot-rewrite-cleanup-failure/verification-results.json)记录本批边界。
+
 **P3 整体仍进行中。** G10 有限验证、G14 图片准备及资产入口/来源/草稿修复、G06-capture、G06-auxiliary、G07 音乐预占清理与 motion 时长估价修复及 G03 四个父主体及 lip-sync child dispatch 证据已有边界记录，GC-10/GC-14/GC-06/GC-07/GC-03 不作整职责关闭。GC-06 剩余调用与真实环境验收、GC-14 剩余真环境验收、GC-09 其余职责、G03 其它生命周期/失败分支、G07 native via 与真实计费一致性及其它 P3 工作仍待完成；当前 fal 预占入口的引用路由估价已有边界修复，下一步按最新台账选择依赖已满足且仍有明确代码或验证缺口的职责。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
 
 ## 6. 未来新增二开的接入流程
