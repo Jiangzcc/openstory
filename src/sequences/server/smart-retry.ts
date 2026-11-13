@@ -86,7 +86,10 @@ import {
   resolveMotionPromptFromVersion,
 } from '@/motion/server/resolve-motion-prompt';
 import { toShotView } from '@/shots/shot-view';
-import { buildMotionReferenceImages } from '@/motion/server/build-motion-references';
+import {
+  buildMotionReferenceImages,
+  hasBindableMotionReferences,
+} from '@/motion/server/build-motion-references';
 import { buildCharacterReferenceImages } from '@/cast/character-prompt';
 import {
   triggerWorkflow,
@@ -699,7 +702,16 @@ export async function executeSmartRetry(
               editSeconds,
               model: shotVideoModel,
             }),
-            { pricing, resolution: sequence.resolution, referenceOnly }
+            {
+              pricing,
+              resolution: sequence.resolution,
+              referenceOnly,
+              hasReferenceImages: hasBindableMotionReferences(
+                shotVideoModel,
+                referenceImages,
+                Boolean(imageUrl)
+              ),
+            }
           ),
           { model: shotVideoModel, operation: 'smart-retry:motion' }
         )

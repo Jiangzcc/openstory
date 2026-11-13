@@ -27,7 +27,10 @@ import { musicRequestDurationSeconds } from '@/audio/server/music-staleness';
 import { recordTriggerFailure } from '@/sequences/server/db/sequence-events';
 import { estimateTtsCost } from '@/billing/elevenlabs-pricing';
 import { addMicros } from '@/billing/money';
-import { buildMotionReferenceImages } from '@/motion/server/build-motion-references';
+import {
+  buildMotionReferenceImages,
+  hasBindableMotionReferences,
+} from '@/motion/server/build-motion-references';
 import {
   releaseReservationOnThrow,
   reserveRunCredits,
@@ -556,8 +559,11 @@ export async function addModelToSequence(
                   pricing,
                   resolution: sequence.resolution,
                   referenceOnly: shotIsReferenceOnly(shot),
-                  hasReferenceImages:
-                    characters.length > 0 || elements.length > 0,
+                  hasReferenceImages: hasBindableMotionReferences(
+                    model,
+                    shots[index]?.referenceImages ?? [],
+                    Boolean(shots[index]?.imageUrl)
+                  ),
                 }
               ),
               { model, operation: 'add-video-model' }

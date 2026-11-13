@@ -820,7 +820,10 @@ describe('executeSmartRetry — partial retry status reset', () => {
           audio: null,
         },
       });
-      const { context, listWithSheets } = makeContext(makeSequence(), [shot]);
+      const { context, listWithSheets } = makeContext(
+        makeSequence({ videoModel: 'kling_v3_pro' }),
+        [shot]
+      );
       listWithSheets.mockResolvedValue([
         {
           id: 'char-sarah',
@@ -843,6 +846,20 @@ describe('executeSmartRetry — partial retry status reset', () => {
 
       await executeSmartRetry(context);
 
+      const duration = resolveShotDuration({
+        durationMs: shot.durationMs,
+        model: 'kling_v3_pro',
+      });
+      const expectedCost = gateEstimate(
+        estimateVideoCost('kling_v3_pro', duration, {
+          pricing: FAL_PRICING,
+          resolution: '720p',
+          hasReferenceImages: true,
+          referenceOnly: !useStartFrame,
+        }),
+        { model: 'kling_v3_pro', operation: 'smart-retry:motion' }
+      );
+      expect(reserveRunCreditsMock.mock.calls[0]?.[1]).toEqual(expectedCost);
       expect(triggerWorkflowMock).toHaveBeenCalledWith(
         '/motion-batch',
         expect.objectContaining({

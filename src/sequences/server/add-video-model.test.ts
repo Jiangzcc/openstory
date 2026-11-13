@@ -3,10 +3,20 @@ import { TEST_FAL_PRICING } from '@/billing/fal-pricing-fixture';
 import { estimateVideoCost, gateEstimate } from '@/billing/cost-estimation';
 import { ZERO_MICROS } from '@/billing/money';
 import { resolveShotDuration } from '@/motion/resolve-shot-duration';
+import type { ReferenceImageDescription } from '@/stills/reference-image-prompt';
 import { asStub } from '@/test/as-stub';
 
 const triggerWorkflow = vi.fn(async () => 'wf_video');
+const buildMotionReferenceImagesMock = vi.fn(
+  (): ReferenceImageDescription[] => []
+);
 vi.doMock('@/platform/server/workflow/client', () => ({ triggerWorkflow }));
+vi.doMock('@/motion/server/build-motion-references', async () => ({
+  ...(await vi.importActual<
+    typeof import('@/motion/server/build-motion-references')
+  >('@/motion/server/build-motion-references')),
+  buildMotionReferenceImages: buildMotionReferenceImagesMock,
+}));
 vi.doMock('@/billing/server/fal-pricing-live', () => ({
   getEffectiveFalPricing: async () => TEST_FAL_PRICING,
 }));
@@ -125,6 +135,17 @@ describe('add video model duration pricing', () => {
     });
 
     const model = 'kling_v3_pro' as const;
+    const references: ReferenceImageDescription[] = [
+      {
+        referenceImageUrl: 'https://cdn/sarah.png',
+        provenanceKey: 'character:char-sarah:sheet-1',
+        description: 'Sarah - Short dark hair',
+        role: 'character',
+        token: 'Sarah',
+        isPerson: true,
+      },
+    ];
+    buildMotionReferenceImagesMock.mockReturnValue(references);
     const result = await addModelToSequence(context, {
       variantType: 'video',
       model,
@@ -138,7 +159,7 @@ describe('add video model duration pricing', () => {
       estimateVideoCost(model, duration, {
         pricing: TEST_FAL_PRICING,
         resolution: '720p',
-        hasReferenceImages: false,
+        hasReferenceImages: true,
         referenceOnly: false,
       }),
       { model, operation: 'add-video-model' }
@@ -151,7 +172,13 @@ describe('add video model duration pricing', () => {
     expect(triggerWorkflow).toHaveBeenCalledWith(
       '/motion-batch',
       expect.objectContaining({
-        shots: [expect.objectContaining({ shotId: shot.id, duration })],
+        shots: [
+          expect.objectContaining({
+            shotId: shot.id,
+            duration,
+            referenceImages: references,
+          }),
+        ],
       }),
       expect.anything()
     );

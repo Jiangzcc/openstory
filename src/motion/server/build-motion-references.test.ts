@@ -7,6 +7,7 @@ import type {
 import {
   buildMotionReferenceImages,
   buildShotImageReferenceImages,
+  hasBindableMotionReferences,
 } from './build-motion-references';
 
 const character = (
@@ -225,6 +226,38 @@ describe('buildMotionReferenceImages — reference-only', () => {
     });
 
     expect(refs.map((r) => r.role)).toEqual(['character']);
+  });
+
+  it('counts a location-only reference when pricing reference-only motion', () => {
+    const refs = buildMotionReferenceImages({
+      motionPrompt: null,
+      scene: {
+        continuity: { environmentTag: 'Rooftop' },
+        metadata: { location: 'Rooftop' },
+      },
+      characters: [],
+      elements: [],
+      referenceOnly: true,
+      locations,
+    });
+
+    expect(refs.map((ref) => ref.role)).toEqual(['location']);
+    expect(hasBindableMotionReferences('seedance_v2_5', refs)).toBe(true);
+  });
+
+  it('does not count media that the endpoint cannot bind', () => {
+    const audioOnly = [
+      {
+        referenceImageUrl: 'https://example.com/line.wav',
+        provenanceKey: 'audio:line',
+        description: 'Dialogue line',
+        kind: 'audio' as const,
+        durationSeconds: 3,
+        token: 'DIALOGUE',
+      },
+    ];
+
+    expect(hasBindableMotionReferences('seedance_v2_5', audioOnly)).toBe(false);
   });
 });
 

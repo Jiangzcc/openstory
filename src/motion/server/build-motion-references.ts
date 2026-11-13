@@ -25,6 +25,10 @@ import type {
   SequenceElementMinimal,
   SequenceLocationMinimal,
 } from '@/platform/server/db/schema';
+import {
+  getMotionReferenceEndpoint,
+  type ImageToVideoModel,
+} from '@/models/models';
 import { buildCharacterReferenceImages } from '@/cast/character-prompt';
 import {
   buildElementReferenceImages,
@@ -32,6 +36,7 @@ import {
 } from '@/cast/element-prompt';
 import { buildLocationReferenceImages } from '@/cast/location-prompt';
 import type { ReferenceImageDescription } from '@/stills/reference-image-prompt';
+import { bindableReferences } from './build-reference-video-prompt';
 import {
   matchCharactersToShotImage,
   matchElementsToShotImage,
@@ -118,6 +123,21 @@ export function buildMotionReferenceImages(params: {
     ...buildCharacterReferenceImages(matched.characters),
     ...buildElementReferenceImages(matched.elements),
   ];
+}
+
+/** Whether this model will carry any resolved references on its wire route. */
+export function hasBindableMotionReferences(
+  model: ImageToVideoModel,
+  references: ReferenceImageDescription[],
+  hasStartFrame = false
+): boolean {
+  return (
+    bindableReferences(
+      getMotionReferenceEndpoint(model),
+      references,
+      hasStartFrame
+    ).length > 0
+  );
 }
 
 /**
