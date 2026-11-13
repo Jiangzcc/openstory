@@ -20,12 +20,19 @@ const spawnAndAwaitChild =
       args: { childId: string; childPayload: ImageWorkflowInput }
     ) => Promise<unknown>
   >();
+const triggerWorkflow = vi.fn(async () => 'wf_variant');
+const emitRecastEvent = vi.fn(async () => {});
 vi.doMock('@/platform/server/workflow/await-child', () => ({
   spawnAndAwaitChild,
 }));
 
 vi.doMock('@/platform/server/workflow/client', () => ({
-  triggerWorkflow: vi.fn(async () => 'wf_variant'),
+  triggerWorkflow,
+}));
+
+vi.doMock('./regenerate-shots-snapshot', () => ({
+  computeRegenerateShotsBatchHash: vi.fn(async () => ''),
+  emitRecastEvent,
 }));
 
 vi.doMock('@/platform/realtime', () => ({
@@ -41,6 +48,13 @@ class Probe extends RegenerateShotsWorkflow {
     scopedDb: WorkflowScopedDb
   ) {
     return this.runImpl(event, step, scopedDb);
+  }
+  fail(
+    event: Readonly<WorkflowEvent<RegenerateShotsWorkflowInput>>,
+    scopedDb: WorkflowScopedDb,
+    error: string
+  ) {
+    return this.onFailure({ event, error, scopedDb });
   }
 }
 
@@ -107,6 +121,9 @@ describe('RegenerateShotsWorkflow resolution forwarding (#1570)', () => {
     spawnAndAwaitChild.mockResolvedValue({
       imageUrl: 'https://cdn/shot-1.jpg',
     });
+    triggerWorkflow.mockReset();
+    triggerWorkflow.mockResolvedValue('wf_variant');
+    emitRecastEvent.mockReset();
   });
 
   it('forwards the selected resolution onto each image child payload', async () => {
@@ -116,6 +133,56 @@ describe('RegenerateShotsWorkflow resolution forwarding (#1570)', () => {
     expect(spawnAndAwaitChild.mock.calls[0]?.[1].childPayload).toMatchObject({
       shotId: 'shot-1',
       resolution: '1080p',
+    });
+  });
+
+  it('keeps child failures in per-shot results and emits complete', async () => {
+    spawnAndAwaitChild.mockRejectedValueOnce(new Error('child rejected'));
+
+    const result = await makeWorkflow().runBody(
+      makeEvent(),
+      makeStep(),
+      SCOPED_DB
+    );
+
+    expect(result).toEqual({
+      totalShots: 1,
+      successCount: 0,
+      failedShots: ['shot-1'],
+      divergedShotIds: [],
+    });
+    expect(emitRecastEvent).toHaveBeenNthCalledWith(1, {
+      kind: 'character',
+      event: 'start',
+      sequenceId: 'seq_1',
+      triggerId: 'char-1',
+      shotCount: 1,
+    });
+    expect(emitRecastEvent).toHaveBeenLastCalledWith({
+      kind: 'character',
+      event: 'complete',
+      sequenceId: 'seq_1',
+      triggerId: 'char-1',
+      successCount: 0,
+      failedCount: 1,
+    });
+  });
+
+  it('emits failed recast when variant regeneration does not start', async () => {
+    triggerWorkflow.mockRejectedValueOnce(new Error('variant unavailable'));
+    const event = makeEvent();
+
+    await expect(
+      makeWorkflow().runBody(event, makeStep(), SCOPED_DB)
+    ).rejects.toThrow('variant unavailable');
+    await makeWorkflow().fail(event, SCOPED_DB, 'variant unavailable');
+
+    expect(emitRecastEvent).toHaveBeenLastCalledWith({
+      kind: 'character',
+      event: 'failed',
+      sequenceId: 'seq_1',
+      triggerId: 'char-1',
+      error: 'variant unavailable',
     });
   });
 });
