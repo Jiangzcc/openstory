@@ -500,3 +500,7 @@ provider. `20261018090611` then drops the talent tables. `talent_id` on
 face, sheet and voice live on the character. A sheet hash still includes `talentSheetHash`
 (null when uncast). Sheets stamped while cast to a talent read stale after
 the drop; the image stays until Update redraws it.
+
+## Secondary-development verification (2026-11-13)
+
+The G09 review retains the organization/link/claim owners. Two added tests run the character-sheet body against the real local D1 test adapter: a run from no sequence promotes on the character channel, while an edit from the independent page parks the old result without moving the selected sheet. Provider, storage, billing, realtime transport and portrait dispatch are stubs; durable replay is not covered. The [G09 record](../secondary-development/preservation/20261113-p3-g09/README.md) separates this evidence from the location and draft-vision findings that remain open.

@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "batchId": "G09-ownership-verify",
+  "sourceBefore": "315081f74472c72ad02e9523d86019193327e68f",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "method": "Static declaration and service-call tracing, supplemented by named local tests. Declaration counts are not dynamic authorization coverage.",
+  "web": {
+    "fileCount": 12,
+    "entryCount": 94,
+    "castRootEntries": 87,
+    "relevantSharedUploadEntries": 7,
+    "middlewareAttached": 93,
+    "publicAvailabilityOnly": ["getVoiceDesignAvailableFn"],
+    "entriesFile": "web-entrypoints.jsonl"
+  },
+  "flows": [
+    {
+      "id": "G09-AUTH",
+      "sources": [
+        "src/platform/middleware.fn.ts",
+        "src/sequences/server/production-access.ts",
+        "src/platform/server/mcp/tool-context.ts"
+      ],
+      "finding": "Request identity and organization derive from server context. A castAccess null sequence means organization scope; non-null sequence is loaded. System-admin sequence rebinding is an explicit existing capability, not a bypass to remove.",
+      "evidence": "static; G01 finite identity evidence remains separate",
+      "status": "retained"
+    },
+    {
+      "id": "G09-CHARACTER",
+      "sources": [
+        "src/cast/organization-characters.fn.ts",
+        "src/cast/character-looks.fn.ts",
+        "src/cast/sequence-characters.fn.ts",
+        "src/cast/server/cast-edit.ts"
+      ],
+      "finding": "Organization character/bible/look and sequence-link operations remain with their scoped owners. No ownership or claim moved to the image projection.",
+      "evidence": "character-audit.json",
+      "status": "finite-local-contract"
+    },
+    {
+      "id": "G09-LOCATION",
+      "sources": [
+        "src/cast/organization-locations.fn.ts",
+        "src/cast/sequence-locations.fn.ts",
+        "src/cast/server/db/locations.ts"
+      ],
+      "finding": "Photos, current bible and sheet belong to the organization entity; sequence attach/remove/recast operates through links.",
+      "evidence": "location-audit.json",
+      "status": "reviewed-with-open-risks",
+      "riskIds": [
+        "G09-LOC-01",
+        "G09-LOC-02",
+        "G09-LOC-03",
+        "G09-LOC-04",
+        "G09-LOC-05"
+      ]
+    },
+    {
+      "id": "G09-LOCATION-PHOTOS",
+      "sources": [
+        "src/cast/server/locations/organization-locations.ts:27",
+        "src/cast/organization-locations.fn.ts:171"
+      ],
+      "finding": "requireUploadRights precedes every storage attachability check, then createForOrganization/addPhotos; optional sheet dispatch is downstream. Null sequence is retained.",
+      "evidence": "upload-ownership-contract.test.ts plus originals",
+      "status": "finite-local-contract"
+    },
+    {
+      "id": "G09-UPLOAD-DESCRIPTION",
+      "sources": ["src/cast/server/describe-upload.ts:38"],
+      "finding": "requireCheckable and requireUploadRights precede configuration, credential, balance, vision and debit collaborators.",
+      "evidence": "upload-ownership-contract.test.ts with real D1 ledger and collaborator stubs",
+      "status": "finite-local-contract"
+    },
+    {
+      "id": "G09-CHARACTER-PHOTO-SHEET",
+      "sources": [
+        "src/shots/media-upload.fn.ts:250",
+        "src/shots/media-upload.fn.ts:265",
+        "src/shots/server/media-upload.ts:554",
+        "src/shots/server/media-upload.ts:696"
+      ],
+      "finding": "Stored-path organization and ledger gates precede bible/reference writes or generation. Non-default generated looks require a default face; uploaded sheets retain their distinct allowed behavior.",
+      "evidence": "media-upload.test.ts, sheet-snapshots.test.ts and cast-generation.test.ts",
+      "status": "finite-local-contract"
+    },
+    {
+      "id": "G09-ELEMENT-ATTACH-REPLACE",
+      "sources": [
+        "src/cast/sequence-elements.fn.ts:165",
+        "src/cast/server/sequence-elements/attach-element-upload.ts:59"
+      ],
+      "finding": "Path ownership, storage existence, kind agreement and likeness ledger gates precede create/update and optional vision workflow; audio preserves its existing no-likeness-check behavior.",
+      "evidence": "attach-element-upload.test.ts and sequence-elements.test.ts; original mocked storage/ledger coverage, not the new real-ledger composition",
+      "status": "finite-local-contract"
+    },
+    {
+      "id": "G09-DRAFT-VISION",
+      "sources": [
+        "src/cast/sequence-elements.fn.ts:94",
+        "src/cast/server/element-vision.ts:122",
+        "src/cast/ui/use-sequence-elements.ts:200"
+      ],
+      "finding": "An authenticated handler accepts mediaUrlSchema and reaches credential/balance/vision/debit collaborators without checking URL owner or rights. The normal UI waits for its upload rights gate; that does not constrain a direct server-function call.",
+      "evidence": "draft-element-guard-reproduction.mjs and .json; extracted real source, supplied trusted context and all external collaborators stubbed",
+      "status": "open-inherited-risk",
+      "riskId": "G09-UPSTREAM-GUARD-01"
+    },
+    {
+      "id": "G09-UPLOAD-CHECK",
+      "sources": [
+        "src/routes/api/storage/upload.ts",
+        "src/routes/api/storage/multipart.ts",
+        "src/cast/server/upload-check.ts",
+        "src/cast/server/workflows/upload-check-workflow.ts"
+      ],
+      "finding": "Upload-target resolution and generation restriction occur before bytes; the classifier workflow starts after storage. read/retry validate checkability and reuse ledger/run state; likeness classification itself is an existing billed operation.",
+      "evidence": "upload-check.test.ts, upload-rights.test.ts and analyze-talent-media.test.ts; route orchestration statically traced",
+      "status": "finite-local-contract"
+    },
+    {
+      "id": "G09-API-CREATE",
+      "sources": [
+        "src/platform/server/api-v1/create.ts:169",
+        "src/platform/server/api-v1/create.ts:314"
+      ],
+      "finding": "Ingested references are classified and human attestations recorded before library rows. Inline organization locations use triggerSheet:false; billed sheets enqueue only after sequence creation. Existing API/MCP remain supported.",
+      "evidence": "api-v1/create.test.ts; source tracing",
+      "status": "finite-local-contract"
+    },
+    {
+      "id": "G09-MCP",
+      "sources": [
+        "src/platform/server/mcp/tools/cast-audio-generation.ts",
+        "src/platform/server/mcp/tools/generation-uploads.ts",
+        "src/sequences/server/production-access.ts"
+      ],
+      "finding": "OAuth scope/trusted tool context and productionAccess parent chain precede shared sheet/recast/upload/element services; tools retain server-derived organization. Admin API-key foreign-sequence access remains explicitly limited by tool-context.",
+      "evidence": "mcp/cast-audio-generation.test.ts; generation upload adapters statically traced, not all dynamically exercised",
+      "status": "finite-local-contract"
+    },
+    {
+      "id": "G09-PORTRAIT",
+      "sources": [
+        "src/cast/server/sheets/sheet-portrait-trigger.ts",
+        "src/cast/server/workflows/character-sheet-workflow.ts",
+        "src/cast/server/workflows/location-sheet-workflow.ts",
+        "src/shots/server/media-upload.ts"
+      ],
+      "finding": "Portrait starts after a saved sheet version, deduplicated by versionId. G03 parent runtime configuration propagation is retained; request uploads capture independently. Its optional failure behavior is unchanged.",
+      "evidence": "sheet-portrait-context.test.ts, sheet-portrait-step.test.ts and sheet-portrait.test.ts; G03 full lifecycle/engine limits carry forward",
+      "status": "finite-local-contract"
+    }
+  ],
+  "limits": [
+    "No HTTP/Workerd or anonymous RPC exercise of all 94 declarations.",
+    "No browser, real R2, remote D1, actual credit debit, provider call or durable Cloudflare replay.",
+    "The inherited draft-vision guard path remains open; no acceptance of all G09 guards is claimed.",
+    "Location direct-DB/Unicode diagnostic: four passes and five failures. The unchanged diagnostic source is archived as text and explicitly run by run-location-diagnostic.mjs."
+  ]
+}

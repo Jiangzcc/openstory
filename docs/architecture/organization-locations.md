@@ -374,3 +374,7 @@ before the change fails once at the top of the run
   of its own, so it sends `referencePhotoUrls: []`. It arises when a
   location analysis made is given photos and the script is analysed again:
   the sheet is redrawn without them and reads stale.
+
+## Secondary-development verification (2026-11-13)
+
+The G09 review found gaps against the intended organization contract in matched analysis binding and two sheet-history writes, plus empty canonical tags and failed prose matching for Chinese-only names. Nine explicit local D1/matching diagnostic cases give four passes and five failures; the relevant implementations are inherited from the fixed upstream baseline. These findings do not establish an HTTP/API exploit. The [G09 record](../secondary-development/preservation/20261113-p3-g09/README.md) preserves the red assertions and reproduction command; guard and tag/hash repairs require a separate bounded change.

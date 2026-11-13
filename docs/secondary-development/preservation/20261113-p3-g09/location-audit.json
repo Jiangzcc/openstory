@@ -1,0 +1,461 @@
+{
+  "schemaVersion": 1,
+  "batch": "G09-ownership-verify",
+  "area": "organization-locations",
+  "status": "reviewed-with-open-risks",
+  "date": "2026-11-13",
+  "timezone": "Asia/Shanghai",
+  "workspace": "D:/code/github/openstory",
+  "branch": "develop",
+  "sourceBefore": "315081f74472c72ad02e9523d86019193327e68f",
+  "headAtFreeze": "315081f74472c72ad02e9523d86019193327e68f",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "productionDefectsConfirmed": true,
+  "scope": {
+    "authorizedWrites": [
+      "src/cast/server/db/location-ownership-contract.test.ts",
+      ".tmp/p3-g09-20261113/location-audit.json",
+      ".tmp/p3-g09-20261113/location-* logs"
+    ],
+    "productionFilesChanged": [],
+    "docsChanged": [],
+    "stageCommitPushPerformed": false,
+    "worktreeOperationsPerformed": false,
+    "newAgentsDispatched": false,
+    "remoteDatabaseOperations": false,
+    "realProviderCalls": false,
+    "excluded": "rights/web/API/MCP belong to the primary audit"
+  },
+  "handoff": {
+    "testSourceFrozen": true,
+    "testSourceSha256": "68ad46088cc4728e689b764153442ec831c4ac0fd370dfa83bacc92be07d638c",
+    "tests": 9,
+    "passed": 4,
+    "failed": 5,
+    "skipped": 0,
+    "expectedFailuresAnnotated": false,
+    "remaining": "主线程按冻结 stop 决定五项开放风险的处置，并执行统一最终回归。本子任务已完成，不再修改地点测试。"
+  },
+  "validation": {
+    "inheritedInitialLog": {
+      "path": ".tmp/p3-g09-20261113/location-contract-initial.log",
+      "status": "incomplete",
+      "observation": "仅 RUN，没有结果，不能推断退出码或完成状态。"
+    },
+    "firstCompletedRun": {
+      "command": "bun run test src/cast/server/db/location-ownership-contract.test.ts",
+      "log": ".tmp/p3-g09-20261113/location-contract-resume-01.log",
+      "exitCode": 1,
+      "tests": 7,
+      "passed": 2,
+      "failed": 5,
+      "durationSeconds": 5.74
+    },
+    "finalRun": {
+      "command": "bun run test src/cast/server/db/location-ownership-contract.test.ts --reporter=verbose",
+      "log": ".tmp/p3-g09-20261113/location-contract-resume-02.log",
+      "exitCode": 1,
+      "tests": 9,
+      "passed": 4,
+      "failed": 5,
+      "durationSeconds": 6.15,
+      "passedNames": [
+        "keeps an obsolete run in history after a no-sequence user pick shared by two sequences",
+        "keeps the Unicode script tag after matching and recast while preserving each own bible tag",
+        "lands an unattached organization location sheet without a sequence link or event",
+        "matches a Unicode location name carried by the scene location field"
+      ],
+      "failedNames": [
+        "refuses a matched binding into another organization sequence before writing a link",
+        "refuses a foreign organization sheet completion without appending a history row",
+        "refuses a foreign organization divergent insert without leaking or appending a version",
+        "keeps nonempty distinct canonical tags for attached Unicode names without stored tags",
+        "matches the named Unicode location in prose when neither tag nor slugline is present"
+      ]
+    },
+    "lint": {
+      "command": "node_modules/.bin/oxlint.exe --type-aware src/cast/server/db/location-ownership-contract.test.ts",
+      "log": ".tmp/p3-g09-20261113/location-test-lint.log",
+      "exitCode": 0,
+      "output": "empty; recorded from successful exec result"
+    },
+    "format": {
+      "command": "node_modules/.bin/oxfmt.exe --check src/cast/server/db/location-ownership-contract.test.ts",
+      "log": ".tmp/p3-g09-20261113/location-test-format.log",
+      "exitCode": 0
+    },
+    "structure": {
+      "log": ".tmp/p3-g09-20261113/location-test-structure.log",
+      "lineCount": 308,
+      "maxFunctionLines": 31,
+      "allFunctionsUnder50Lines": true
+    },
+    "originalSuitesRerun": false,
+    "fullTypecheckRun": false,
+    "buildRun": false,
+    "why": "按主线程要求只跑地点新增测试和定向 lint/format；原套件留给统一最终回归。"
+  },
+  "testAdjustments": [
+    {
+      "change": "去掉单个过长 describe 回调，保留顶层具名 it；合成摘要长度使用 HASH_LENGTH 常量。",
+      "reason": "新函数均小于 50 行，不改历史无关测试。"
+    },
+    {
+      "change": "补充独立组织地点从 conditional claim 到完成落库的正向对照。",
+      "reason": "断言无 sequence link/event；channel 仅验证纯函数，不把它解释为工作流实时发送验收。"
+    },
+    {
+      "change": "补充中文名称直接通过 sceneLocation 匹配的对照。",
+      "reason": "区分正常的 Unicode 精确匹配与失败的 canonical/prose 回退。"
+    },
+    {
+      "change": "保留 5 项失败断言。",
+      "reason": "已定位生产实现缺口，无需以假设修正来弱化契约；未增加 skip/it.fails，未改超时、生产 guard/hash。"
+    }
+  ],
+  "boundaries": {
+    "real": [
+      "实际 createLocationsMethods/createLocationSheetVariantsMethods、sheet landing 与 Unicode 匹配函数",
+      "createTestDb 的 fully migrated in-memory node:sqlite + drizzle-orm/d1；外键开启、batch 原子性",
+      "locationChannelId 纯函数"
+    ],
+    "substitutes": [
+      "合成组织/用户/ULID/序列/模型/摘要/存储 URL，无真实媒体",
+      "Vitest setup 加载仓库 MSW server 和英文 i18n；本测试未用 vi mock 替换数据库、方法或匹配器",
+      "Vitest 对 Cloudflare 虚拟模块有仓库 stub；本测试不执行真实 Workflow 引擎"
+    ],
+    "notValidated": [
+      "网页/API/MCP/认证链可利用性",
+      "真实 Cloudflare D1/Workerd durable replay/R2/供应商",
+      "LocationSheetWorkflow 实时 channel 发信",
+      "本顺序单测之外的并发交错",
+      "固定上游 B 的动态运行；B 比较仅为静态源码证据"
+    ]
+  },
+  "logs": [
+    {
+      "path": ".tmp/p3-g09-20261113/location-contract-initial.log",
+      "bytes": 112,
+      "sha256": "b2df7c6ba4c8afcad001f954aacf5e9b3dcbfaf3bbd1b3d304f24dc6d9df13a2"
+    },
+    {
+      "path": ".tmp/p3-g09-20261113/location-contract-resume-01.log",
+      "bytes": 7505,
+      "sha256": "0cf5efa864387057fb713e9fa208e7347b2dddb2e57d0542c8522bac58e72cce"
+    },
+    {
+      "path": ".tmp/p3-g09-20261113/location-contract-resume-02.log",
+      "bytes": 8332,
+      "sha256": "74a48fa0a32a6dc8ab211bd6b672a3d329ed049bd93ae7c215e7dffad3e86c19"
+    },
+    {
+      "path": ".tmp/p3-g09-20261113/location-test-lint.log",
+      "bytes": 303,
+      "sha256": "e3f45912196543be31542a45bbf126f52dcfcfcc2f31b5e6dde045d630bc9268"
+    },
+    {
+      "path": ".tmp/p3-g09-20261113/location-test-format.log",
+      "bytes": 116,
+      "sha256": "da33c788a9872f0b6a0ed2f4bd370e1f8ffac593f5ceb0076b65889b1d1cfbe0"
+    },
+    {
+      "path": ".tmp/p3-g09-20261113/location-test-structure.log",
+      "bytes": 4095,
+      "sha256": "2e75e70cfffac01abfb6db4de78d8e5e3ef0d0019679e1794e225b5f7dc63a16"
+    }
+  ],
+  "sourceIntegrity": [
+    {
+      "path": "src/cast/server/db/locations.ts",
+      "sha256": "3750901fe04ff20a98c9f7f06bc4509b7e7971e3463faedbcf6b02728d939ffb",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/location-sheet-variants.ts",
+      "sha256": "80bf33e0e2a95052de663c72122151980d750812184ba3a8697e0dc527d1af51",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/sheet-claims.ts",
+      "sha256": "5457a893415e7b0c4e77febd4bc32772ee4183432761aefd5b4a9d60aa80cd4e",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/bible-field.ts",
+      "sha256": "81f543c5743d1681a5eb369791d10e2d18da21d95936ed3c432a161fc6ebad71",
+      "unchanged": true
+    },
+    {
+      "path": "src/shots/scene-matching.ts",
+      "sha256": "a4a989ab82d0b615c26ab0e8fe49ec14a90168d7dd051a169ea796cdb3bc3957",
+      "unchanged": true
+    },
+    {
+      "path": "docs/architecture/organization-locations.md",
+      "sha256": "4a1330bf907d973aa9f4b0de4987a1ed9ef9eb2f352535d45073e54b1314cd21",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/locations.test.ts",
+      "sha256": "d9de70fa3b3736bad6340cfbf71229bd5e3c6054bec6c575e9c1fb7dac013dcc",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/locations-create-bulk.test.ts",
+      "sha256": "4e214c96a2cca9cea0a0a793e71ad234f31e0284d804c3dc7e095300c9429ff4",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/db/sheet-claims.test.ts",
+      "sha256": "e038c4d63653ed322fd7a666578686cecb2b840b5b087e981222dc3be95c81d3",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/location-bible-workflow.test.ts",
+      "sha256": "b01ad500b5ee63bae01b07acfaa401c6d351649e8a3afc818820a0e59b5c9501",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/location-sheet-workflow.ts",
+      "sha256": "b9b6228876d859e788ba03690b89234f52f29b09111316b74299ef2387aeac30",
+      "unchanged": true
+    },
+    {
+      "path": "src/cast/server/workflows/sheet-divergence.test.ts",
+      "sha256": "aacad894598c0d277779f555a578c01b773514089c92004e7c89d9299b56f7c0",
+      "unchanged": true
+    },
+    {
+      "path": "src/platform/server/db/test-d1.ts",
+      "sha256": "3a7a7610cfec7daa9414092d1261010fddf6ae3c275679cf44961509c66c3a4b",
+      "unchanged": true
+    }
+  ],
+  "coverage": [
+    {
+      "contract": "attached/shared 防分析覆盖，包含 removed link 与 archived sequence",
+      "status": "existing-test-inspected-not-rerun",
+      "evidence": [
+        "src/cast/server/db/locations-create-bulk.test.ts:259-366",
+        "src/cast/server/workflows/location-bible-workflow.test.ts 的 matched/held/attached 测试"
+      ],
+      "gap": "未重复补测，交由主线程最终集运行。"
+    },
+    {
+      "contract": "组织隔离的普通读写",
+      "status": "existing-test-inspected-not-rerun",
+      "evidence": ["src/cast/server/db/locations.test.ts:220-332"],
+      "gap": "新增测试暴露三处未被原断言覆盖的写入缺口 LOC-01/02/03。"
+    },
+    {
+      "contract": "无 sequence 的独立组织地点 sheet 落库，无 sequence link/event",
+      "status": "new-real-D1-test-passed",
+      "test": {
+        "name": "lands an unattached organization location sheet without a sequence link or event",
+        "line": 281
+      },
+      "evidence": [
+        "src/cast/server/workflows/location-sheet-workflow.ts:116-126",
+        "src/platform/server/storage/buckets.ts 的 castStorageDir"
+      ],
+      "gap": "存储路径仅源码核对，没有 R2 PUT。"
+    },
+    {
+      "contract": "无 sequence 使用地点自身 channel",
+      "status": "pure-helper-passed-and-existing-mock-test-inspected",
+      "evidence": [
+        "src/cast/cast-channel.ts:18-22",
+        "src/cast/server/workflows/sheet-divergence.test.ts:67-88"
+      ],
+      "gap": "旧 mock 发信测试只读未跑，不宣称真实工作流 channel 发送通过。"
+    },
+    {
+      "contract": "soft link removal 与组织实体删除分离；仍被 live/archived 序列使用时拒绝删除",
+      "status": "existing-test-inspected-not-rerun",
+      "evidence": ["src/cast/server/db/locations.test.ts:594-660"],
+      "gap": "不重复原测试。"
+    },
+    {
+      "contract": "无 sequence 的人工选图使旧 claim 仅入历史，并在两个共享序列保持人工选择",
+      "status": "new-real-D1-test-passed",
+      "test": {
+        "name": "keeps an obsolete run in history after a no-sequence user pick shared by two sequences",
+        "line": 195
+      }
+    },
+    {
+      "contract": "匹配及 recast 保留中文 script tag，两个组织 bible tag 均不被反写",
+      "status": "new-real-D1-test-passed",
+      "test": {
+        "name": "keeps the Unicode script tag after matching and recast while preserving each own bible tag",
+        "line": 227
+      }
+    },
+    {
+      "contract": "sceneLocation 携带中文地点名的精确匹配",
+      "status": "new-real-D1-test-passed",
+      "test": {
+        "name": "matches a Unicode location name carried by the scene location field",
+        "line": 302
+      }
+    },
+    {
+      "contract": "中文 canonical tag 与中文正文回退匹配",
+      "status": "new-tests-failed",
+      "findings": ["LOC-04", "LOC-05"]
+    }
+  ],
+  "findings": [
+    {
+      "id": "LOC-01",
+      "priority": 2,
+      "title": "分析 boundTo 分支允许把本组织地点链接到外组织序列",
+      "kind": "scoped-db-write-isolation-gap",
+      "test": {
+        "name": "refuses a matched binding into another organization sequence before writing a link",
+        "line": 153
+      },
+      "rootCause": "createBulk 的 boundTo 分支进入 bind；bind 只有 requireCurrent(location) 而未像 upsertOne/attach 一样在读写 link 前执行 requireSequence。",
+      "evidence": [
+        "src/cast/server/db/locations.ts:376-388",
+        "src/cast/server/db/locations.ts:530-583",
+        "src/cast/server/db/locations.ts:1094-1118"
+      ],
+      "reproduction": "在 A/B 两组织各有序列、A 有独立地点时，以 A scoped factory 调 createBulk，传 B.sequenceId 与 A.locationId 的 boundTo；期望 Sequence not found，实际返回 attached/held 链接并已插入。",
+      "minimalSuggestion": "在 matched bind 的任何 link 读写前复用现有 requireSequence；保持原绑定、claim 语义。",
+      "baseline": "locations.ts 与 B 完全相同。",
+      "reachability": "直接 ScopedDb 契约复现；未证明 web/API/MCP 可利用。",
+      "disposition": "开放风险；生产 guard 由主线程处理。"
+    },
+    {
+      "id": "LOC-02",
+      "priority": 2,
+      "title": "外组织 sheet completion 抛 not found 之前已写入分歧历史",
+      "kind": "scoped-db-write-isolation-gap",
+      "test": {
+        "name": "refuses a foreign organization sheet completion without appending a history row",
+        "line": 164
+      },
+      "rootCause": "landSheetVersion 的 insertVersion 不带 parent 组织条件；promote/settle/read 虽有 spec.isParent，batch 已提交 insert/park 后，才因 results[4] 无行在 batch 外抛错。",
+      "evidence": [
+        "src/cast/server/db/sheet-claims.ts:128-170",
+        "src/cast/server/db/sheet-claims.ts:203-206",
+        "src/cast/server/db/sheet-claims.ts:283-319"
+      ],
+      "reproduction": "A 地点持有 claim，以 B variants factory 调 promoteIfPending(A.location,A.claim,activity:null)；调用拒绝，但真实表中出现 completed/divergent 版本。",
+      "observed": "错误未回滚该历史写入；本组织 pointer 未被推进。",
+      "minimalSuggestion": "在任何版本 insert/park 前使用与 parent 相同的组织条件限制写入，保持既有 claim 条件和 batch 语义。",
+      "baseline": "location-sheet-variants.ts 与 sheet-claims.ts 都与 B 相同。",
+      "reachability": "直接 ScopedDb；未运行浏览器/API/MCP 利用路径。",
+      "disposition": "开放风险；不在子任务中修改共享 landing guard。"
+    },
+    {
+      "id": "LOC-03",
+      "priority": 2,
+      "title": "insertDivergent 缺少地点归属限制",
+      "kind": "scoped-db-write-isolation-gap",
+      "test": {
+        "name": "refuses a foreign organization divergent insert without leaking or appending a version",
+        "line": 178
+      },
+      "rootCause": "insertDivergent 的 findExisting 只以 location/model/hash 查询，insert 直接使用 values，没有组织 parent guard。",
+      "evidence": ["src/cast/server/db/location-sheet-variants.ts:355-378"],
+      "reproduction": "创建 A 地点，调用 B variants factory 的 insertDivergent 并传 A.locationId；实际插入并返回版本，期望拒绝且无新行。",
+      "minimalSuggestion": "在幂等已有行查找和插入处都应用现有 parent 组织归属条件。",
+      "baseline": "location-sheet-variants.ts 与 B 相同。",
+      "reachability": "动态验证的是插入缺口；existing-row 命中缺 scope 是静态发现，未单独运行泄漏路径。",
+      "disposition": "开放风险；不改生产 guard。"
+    },
+    {
+      "id": "LOC-04",
+      "priority": 2,
+      "title": "无 stored tag 的纯中文地点 canonical tag 为空",
+      "kind": "inherited-unicode-fallback-gap",
+      "test": {
+        "name": "keeps nonempty distinct canonical tags for attached Unicode names without stored tags",
+        "line": 258
+      },
+      "rootCause": "canonicalBibleTag 回退 slugifyTag；后者的 /[^a-z0-9]+/ 删除全部中文。",
+      "evidence": ["src/cast/bible-field.ts:13-29"],
+      "reproduction": "真实 D1 创建/attach 上海车站、北京书店，consistencyTag:null；map(canonicalBibleTag) 得到两个空字符串而非非空唯一 tag。",
+      "minimalSuggestion": "先设计保留 Unicode 的 canonical fallback 并核对 scene tag/hash；避免顺带改变共享 identityToken 及已存摘要。",
+      "baseline": "bible-field.ts 与 B 相同，不是 normalizeLocationKey 的现有 Unicode 修正所引入。",
+      "disposition": "开放风险；涉及 tag/hash 行为，交主线程按冻结 stop 处理。"
+    },
+    {
+      "id": "LOC-05",
+      "priority": 2,
+      "title": "中文 prose fallback 无法匹配正文点名的地点",
+      "kind": "inherited-unicode-fallback-gap",
+      "test": {
+        "name": "matches the named Unicode location in prose when neither tag nor slugline is present",
+        "line": 272
+      },
+      "rootCause": "matchLocationInText 依赖 tokenize；tokenize 以 /[^a-z0-9]+/ 分割，纯中文 sceneText 得到空 tokens，提前返回。",
+      "evidence": [
+        "src/shots/scene-matching.ts:55-59",
+        "src/shots/scene-matching.ts:274-290",
+        "src/shots/scene-matching.ts:329-351"
+      ],
+      "reproduction": "附加两中文地点，matchLocationsToScene(linked,\"\",\"\",\"镜头转向：北京书店。\") 返回 []；sceneLocation=\"北京书店\" 的对照通过。",
+      "minimalSuggestion": "审查 Unicode/CJK 无空格名称正文匹配，保持现有精确 tag 优先及不凭空猜地点的契约。",
+      "baseline": "tokenize、matchLocationInText 与 B 相同；normalizeLocationKey 已有 Unicode 定制但不覆盖这条回退。",
+      "disposition": "开放风险；不改生产匹配或 hash。"
+    }
+  ],
+  "baselineEvidence": {
+    "comparison": "B 对比本轮 sourceBefore/current；未 fetch、未 merge、未在 B 动态跑测试。",
+    "files": [
+      {
+        "path": "src/cast/server/db/locations.ts",
+        "identicalAfterLineEndingNormalization": true,
+        "baseNormalizedSha256": "3750901fe04ff20a98c9f7f06bc4509b7e7971e3463faedbcf6b02728d939ffb",
+        "currentNormalizedSha256": "3750901fe04ff20a98c9f7f06bc4509b7e7971e3463faedbcf6b02728d939ffb"
+      },
+      {
+        "path": "src/cast/server/db/location-sheet-variants.ts",
+        "identicalAfterLineEndingNormalization": true,
+        "baseNormalizedSha256": "80bf33e0e2a95052de663c72122151980d750812184ba3a8697e0dc527d1af51",
+        "currentNormalizedSha256": "80bf33e0e2a95052de663c72122151980d750812184ba3a8697e0dc527d1af51"
+      },
+      {
+        "path": "src/cast/server/db/sheet-claims.ts",
+        "identicalAfterLineEndingNormalization": true,
+        "baseNormalizedSha256": "5457a893415e7b0c4e77febd4bc32772ee4183432761aefd5b4a9d60aa80cd4e",
+        "currentNormalizedSha256": "5457a893415e7b0c4e77febd4bc32772ee4183432761aefd5b4a9d60aa80cd4e"
+      },
+      {
+        "path": "src/cast/bible-field.ts",
+        "identicalAfterLineEndingNormalization": true,
+        "baseNormalizedSha256": "30447498022856ad4aac856be1d2bc52942f2198ea9d669df38a261800ded25f",
+        "currentNormalizedSha256": "30447498022856ad4aac856be1d2bc52942f2198ea9d669df38a261800ded25f"
+      },
+      {
+        "path": "src/shots/scene-matching.ts",
+        "identicalAfterLineEndingNormalization": false,
+        "baseNormalizedSha256": "d18f4d2c3dc07506591d64ad5d033d7b682ee6d4ad5609c1995747efee2497d9",
+        "currentNormalizedSha256": "aab6c6605ffa413aff313bf9617d616d0f447395f988ad7c94ee8ac4481fbe06"
+      }
+    ],
+    "matcherFunctions": [
+      {
+        "name": "tokenize",
+        "identical": true,
+        "baseSha256": "478e661477cd928d74b29ea9edf73d754418352ff697acc3e22d89effe979d19",
+        "currentSha256": "478e661477cd928d74b29ea9edf73d754418352ff697acc3e22d89effe979d19"
+      },
+      {
+        "name": "matchLocationInText",
+        "identical": true,
+        "baseSha256": "e5b667fcaa5643be1240ee4e3ec2cd3a34131c504bf996056a55f0af883112ef",
+        "currentSha256": "e5b667fcaa5643be1240ee4e3ec2cd3a34131c504bf996056a55f0af883112ef"
+      },
+      {
+        "name": "normalizeLocationKey",
+        "identical": false,
+        "baseSha256": "56a5c7303020e49419075409d950ca0b50e1367ef5a7220bd169f8ded3180520",
+        "currentSha256": "01d8719e2f36d040215bdcbe851cb1e9137bb4685d21073bcab69194803c3737"
+      }
+    ]
+  }
+}
