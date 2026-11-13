@@ -198,7 +198,7 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
         assetKind: 'location_sheet',
         assetId: locationDbId,
         storageKey: storageResult.path,
-        provider: 'fal',
+        provider: generation.via,
         model: generationParams.model,
         providerRequestId: falUsage.requestId ?? null,
         workflowRunId,

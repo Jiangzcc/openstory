@@ -272,7 +272,7 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
         assetKind: 'character_sheet',
         assetId: characterDbId,
         storageKey: storageResult.path,
-        provider: 'fal',
+        provider: generation.via,
         model: generationParams.model,
         providerRequestId: falUsage.requestId ?? null,
         workflowRunId,

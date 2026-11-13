@@ -223,7 +223,7 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
             assetKind: 'element_sheet',
             assetId: entry.elementId,
             storageKey: storageResult.path,
-            provider: 'fal',
+            provider: generation.via,
             model: generationParams.model,
             providerRequestId: falUsage.requestId ?? null,
             workflowRunId: event.instanceId,
