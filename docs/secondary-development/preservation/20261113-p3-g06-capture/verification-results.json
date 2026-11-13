@@ -34,9 +34,7 @@
       "failed": 3,
       "skipped": 0,
       "success": false,
-      "scope": "whole repository; failures are outside G06 changed paths",
-      "archivedReport": "full-test.json",
-      "archivedLog": "full-test.log"
+      "scope": "whole repository; failures are outside G06 changed paths"
     }
   ],
   "files": [
@@ -424,7 +422,8 @@
           "passed": 18,
           "failed": 1
         }
-      ]
+      ],
+      "archivedReport": "omitted-after-format-size-review; full-test.log and structured summary remain"
     },
     "archivedLogs": [
       "typecheck-recheck.log",
