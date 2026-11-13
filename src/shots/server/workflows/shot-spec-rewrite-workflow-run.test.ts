@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -29,6 +29,8 @@ const promoteIfPending = vi.fn(async () => ({
   spec,
 }));
 const channelEmit = vi.fn(async () => {});
+const getGenerationChannel = vi.fn(() => ({ emit: channelEmit }));
+const getShotPromptChannel = vi.fn(() => ({ emit: channelEmit }));
 
 vi.doMock('@/models/server/llm-call-helper', () => ({
   durableLLMCallCf,
@@ -37,8 +39,8 @@ vi.doMock('@/shots/server/rebuild-shot-prompts', () => ({
   completeDerivedPrompts,
 }));
 vi.doMock('@/platform/realtime', () => ({
-  getGenerationChannel: () => ({ emit: channelEmit }),
-  getShotPromptChannel: () => ({ emit: channelEmit }),
+  getGenerationChannel,
+  getShotPromptChannel,
 }));
 
 const { ShotSpecRewriteWorkflow } =
@@ -52,6 +54,14 @@ class Probe extends ShotSpecRewriteWorkflow {
   ) {
     return this.runImpl(event, step, scopedDb);
   }
+
+  failBody(
+    event: Readonly<WorkflowEvent<ShotSpecRewriteWorkflowInput>>,
+    error: string,
+    scopedDb: WorkflowScopedDb
+  ) {
+    return this.onFailure({ event, error, scopedDb });
+  }
 }
 
 function makeStep(): WorkflowStep {
@@ -61,6 +71,11 @@ function makeStep(): WorkflowStep {
 }
 
 describe('ShotSpecRewriteWorkflow', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    channelEmit.mockResolvedValue(undefined);
+  });
+
   it('promotes the rewritten spec and rebuilds derived prompts from the snapshot', async () => {
     const modelConfiguration: ModelRuntimeConfiguration = {
       ...DEFAULT_MODEL_CONFIGURATION,
@@ -150,6 +165,55 @@ describe('ShotSpecRewriteWorkflow', () => {
       specVersionId: 'spec-1',
       visualVersionId: 'visual-1',
       motionVersionId: 'motion-1',
+    });
+  });
+
+  it('clears all rewrite claims and reports streaming prompt failures', async () => {
+    const event = asStub<WorkflowEvent<ShotSpecRewriteWorkflowInput>>({
+      instanceId: 'rewrite-parent-1',
+      payload: asStub<ShotSpecRewriteWorkflowInput>({
+        shotId: 'shot-1',
+        claimId: 'claim-1',
+        visualClaimId: 'visual-claim-1',
+        motionClaimId: 'motion-claim-1',
+        emitStreaming: true,
+      }),
+    });
+    const clearClaimIf = vi.fn(async () => undefined);
+    const markVisualTerminal = vi.fn(async () => undefined);
+    const cancelByDependency = vi.fn(async () => undefined);
+    const markMotionTerminal = vi.fn(async () => undefined);
+    const scopedDb = asStub<WorkflowScopedDb>({
+      shotSpecVersions: { clearClaimIf },
+      framePromptVersions: { markTerminal: markVisualTerminal },
+      frameVariants: { cancelByDependency },
+      shotPromptVersions: { markTerminal: markMotionTerminal },
+    });
+
+    await new Probe(asStub(undefined), asStub({})).failBody(
+      event,
+      'provider unavailable',
+      scopedDb
+    );
+
+    expect(clearClaimIf).toHaveBeenCalledWith({
+      shotId: 'shot-1',
+      claimId: 'claim-1',
+    });
+    expect(markVisualTerminal).toHaveBeenCalledWith('visual-claim-1', 'failed');
+    expect(cancelByDependency).toHaveBeenCalledWith(
+      'visual-claim-1',
+      'Upstream shot rewrite failed'
+    );
+    expect(markMotionTerminal).toHaveBeenCalledWith('motion-claim-1', 'failed');
+    expect(getShotPromptChannel).toHaveBeenCalledWith('shot-1');
+    expect(channelEmit).toHaveBeenCalledWith('shotPrompt.failed', {
+      promptType: 'visual',
+      error: 'Rewrite failed',
+    });
+    expect(channelEmit).toHaveBeenCalledWith('shotPrompt.failed', {
+      promptType: 'motion',
+      error: 'Rewrite failed',
     });
   });
 });
