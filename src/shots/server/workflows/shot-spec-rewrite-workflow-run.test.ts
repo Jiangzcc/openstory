@@ -216,4 +216,38 @@ describe('ShotSpecRewriteWorkflow', () => {
       error: 'Rewrite failed',
     });
   });
+
+  it('still reports streaming failure when claim cleanup throws', async () => {
+    const event = asStub<WorkflowEvent<ShotSpecRewriteWorkflowInput>>({
+      instanceId: 'rewrite-parent-db-failure',
+      payload: asStub<ShotSpecRewriteWorkflowInput>({
+        shotId: 'shot-1',
+        claimId: 'claim-1',
+        visualClaimId: 'visual-claim-1',
+        motionClaimId: 'motion-claim-1',
+        emitStreaming: true,
+      }),
+    });
+    const clearClaimIf = vi.fn(async () => {
+      throw new Error('database unavailable');
+    });
+    const scopedDb = asStub<WorkflowScopedDb>({
+      shotSpecVersions: { clearClaimIf },
+    });
+
+    await new Probe(asStub(undefined), asStub({})).failBody(
+      event,
+      'provider unavailable',
+      scopedDb
+    );
+
+    expect(channelEmit).toHaveBeenCalledWith('shotPrompt.failed', {
+      promptType: 'visual',
+      error: 'Rewrite failed',
+    });
+    expect(channelEmit).toHaveBeenCalledWith('shotPrompt.failed', {
+      promptType: 'motion',
+      error: 'Rewrite failed',
+    });
+  });
 });
