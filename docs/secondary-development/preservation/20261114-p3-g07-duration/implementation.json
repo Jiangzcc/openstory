@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G07-duration",
+  "responsibilityId": "GC-07",
+  "status": "repaired-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "2da80dae4",
+  "sourceAfter": "7e92f76e2",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "authorization": "继续推进 P3；本批修复 G07 motion 时长估价缺口。",
+  "scope": "Align smart-retry and add-video-model motion reservation estimates with the snapped per-shot duration while preserving payload and reservation ownership semantics.",
+  "productionFilesChanged": [
+    "src/motion/resolve-shot-duration.ts",
+    "src/sequences/server/sequence-models.ts",
+    "src/sequences/server/smart-retry.ts"
+  ],
+  "testFilesChanged": [
+    "src/motion/resolve-shot-duration.test.ts",
+    "src/sequences/smart-retry.test.ts",
+    "src/sequences/server/add-video-model.test.ts"
+  ],
+  "newEvidence": [
+    "A shared pure rule resolves stored shot duration, model snapping and Seedance edit hold length.",
+    "Smart retry reserves the long-shot estimate using that rule.",
+    "Add-video-model reserves the long-shot estimate using that rule.",
+    "The original payload duration shape remains unchanged to preserve batch packing behavior."
+  ],
+  "tests": {
+    "files": 3,
+    "tests": 38,
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0,
+    "command": "bun run test src/motion/resolve-shot-duration.test.ts src/sequences/smart-retry.test.ts src/sequences/server/add-video-model.test.ts"
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "preCommitHooks": "passed without bypass",
+    "build": "passed"
+  },
+  "openItems": [
+    "INHERITED-MOTION-REFERENCE-ROUTE remains open and requires a separate per-shot bindable-reference pricing fix.",
+    "Native via changes, durable replay, real provider billing, remote D1/R2, browser HTTP and settlement remain unvalidated.",
+    "All 1219 frozen inventory dispositions remain pending; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}

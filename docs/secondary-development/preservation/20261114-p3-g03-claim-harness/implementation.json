@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-claim-harness",
+  "responsibilityId": "GC-03",
+  "status": "repaired-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "60c9c45bb",
+  "sourceAfter": "2da80dae4",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "authorization": "继续推进 P3；本批修复 G03 claim-discipline 测试 harness 的冷导入 timeout。",
+  "scope": "Move the existing ScopedDb mock/import preparation out of the claim-discipline test body.",
+  "productionFilesChanged": [],
+  "testFilesChanged": ["src/platform/server/workflow/claim-discipline.test.ts"],
+  "newEvidence": [
+    "The complete claim discipline surface test executes all five assertions without changing its explicit timeout.",
+    "The module-level db-client mock and ScopedDb import are prepared before the test starts."
+  ],
+  "tests": {
+    "files": 1,
+    "tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "command": "bun run test src/platform/server/workflow/claim-discipline.test.ts"
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "preCommitHooks": "passed without bypass",
+    "build": "passed in the same working batch before this documentation commit"
+  },
+  "openItems": [
+    "G03 dynamic body/branch/lifecycle coverage for remaining parent workflows remains open.",
+    "MotionWorkflow lip-sync child dispatch remains open.",
+    "Real durable replay, provider calls, remote D1/R2, settlement and browser HTTP remain unvalidated.",
+    "All 1219 frozen inventory dispositions remain pending; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}

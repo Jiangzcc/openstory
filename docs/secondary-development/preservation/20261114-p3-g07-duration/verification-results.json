@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "2da80dae4",
+  "codeCommit": "7e92f76e2",
+  "selectedRegression": {
+    "command": "bun run test src/motion/resolve-shot-duration.test.ts src/sequences/smart-retry.test.ts src/sequences/server/add-video-model.test.ts",
+    "files": 3,
+    "tests": 38,
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "Both production callers reserve long-shot motion cost using the snapped shot duration while keeping the existing workflow payload shape."
+  },
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed"
+    },
+    "format": {
+      "command": "bunx oxfmt --check on changed files",
+      "status": "passed"
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "7e92f76e2",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "No claim, reservation ownership, workflow dispatch or final provider charge semantics were changed.",
+    "No Cloudflare durable replay, provider call, remote D1/R2 write, browser HTTP or settlement was run."
+  ]
+}

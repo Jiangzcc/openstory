@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "60c9c45bb",
+  "codeCommit": "2da80dae4",
+  "selectedRegression": {
+    "command": "bun run test src/platform/server/workflow/claim-discipline.test.ts",
+    "files": 1,
+    "tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "The original claim discipline assertions complete without the previous cold-import timeout."
+  },
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/platform/server/workflow/claim-discipline.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed"
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "2da80dae4",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "This batch changes only test import timing; no production workflow or claim implementation changed.",
+    "No Cloudflare durable engine replay, provider call, remote D1/R2 write, browser HTTP or settlement was run."
+  ]
+}
