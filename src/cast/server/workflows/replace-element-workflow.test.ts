@@ -18,6 +18,13 @@ import {
 } from './replace-element-workflow';
 import { asStub } from '@/test/as-stub';
 
+const { channelEmit, getGenerationChannel } = vi.hoisted(() => ({
+  channelEmit: vi.fn(async () => undefined),
+  getGenerationChannel: vi.fn(() => ({ emit: channelEmit })),
+}));
+
+vi.mock('@/platform/realtime', () => ({ getGenerationChannel }));
+
 const snapshot = (
   overrides: Partial<ReplaceElementShotSnapshot> = {}
 ): ReplaceElementShotSnapshot => ({
@@ -277,5 +284,54 @@ describe('ReplaceElementWorkflow onFailure (#1942)', () => {
       scopedDb
     );
     expect(markFailedByWorkflowRun).toHaveBeenCalledWith('run_1', 'boom');
+    expect(channelEmit).toHaveBeenCalledWith(
+      'generation.replace-element:failed',
+      { elementId: 'el_1', error: 'boom' }
+    );
+  });
+
+  it('downgrades an in-flight vision status before reporting failure', async () => {
+    const updateVisionStatus = vi.fn(() => Promise.resolve());
+    const markFailedByWorkflowRun = vi.fn(() => Promise.resolve(1));
+    const scopedDb = asStub<WorkflowScopedDb>({
+      frameVariants: { markFailedByWorkflowRun },
+      sequenceElements: { updateVisionStatus },
+      liveRead: {
+        sequenceElements: {
+          getById: vi.fn(() => Promise.resolve({ visionStatus: 'analyzing' })),
+        },
+      },
+    });
+    const payload = asStub<ReplaceElementWorkflowInput>({
+      sequenceId: 'seq_1',
+      elementId: 'el_1',
+      token: 'LOGO',
+    });
+    const event = asStub<WorkflowEvent<ReplaceElementWorkflowInput>>({
+      payload,
+      instanceId: 'run_2',
+    });
+    type Ctor = ConstructorParameters<typeof ReplaceElementWorkflow>;
+
+    class Probe extends ReplaceElementWorkflow {
+      failBody(
+        body: Readonly<WorkflowEvent<ReplaceElementWorkflowInput>>,
+        scope: WorkflowScopedDb
+      ) {
+        return this.onFailure({ event: body, error: 'boom', scopedDb: scope });
+      }
+    }
+
+    await new Probe(asStub<Ctor[0]>(undefined), asStub<Ctor[1]>({})).failBody(
+      event,
+      scopedDb
+    );
+
+    expect(updateVisionStatus).toHaveBeenCalledWith('el_1', 'failed', 'boom');
+    expect(markFailedByWorkflowRun).toHaveBeenCalledWith('run_2', 'boom');
+    expect(channelEmit).toHaveBeenCalledWith(
+      'generation.replace-element:failed',
+      { elementId: 'el_1', error: 'boom' }
+    );
   });
 });
