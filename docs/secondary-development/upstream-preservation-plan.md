@@ -179,7 +179,9 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-13 执行 `G06-capture`，起点为 `9d14dd318035a0b62b3675673a0675a623835c89`，代码提交为 `657dc9fe1662f99de1caf2f1cf81dc342f57e767`。在网页可信 validator、API 原配置读取点及共享 create core 之间传递同次完整运行配置，保留公开 schema、认证/组织/语言、权利/增强/inline/失败清理时序及 core 原 loader 回退。固定 37 文件、841 项回归全过；类型、lint、生产 build 和正常提交 hooks 通过。全仓 2,763 suites/10,192 项有 3 项在未修改的 ElevenLabs/agent discovery 测试失败，已单独复现并保留为范围外风险。[本批记录](preservation/20261113-p3-g06-capture/README.md)、[实现记录](preservation/20261113-p3-g06-capture/implementation.json)、[调用矩阵](preservation/20261113-p3-g06-capture/caller-matrix.json)和[验证记录](preservation/20261113-p3-g06-capture/verification-results.json)区分真实本地 D1/服务编排与外部替身，未关闭 GC-06 整职责。
 
-**P3 整体仍进行中。** G10 有限验证、G14 图片准备及本批资产入口/来源/草稿修复、G06-capture 已有边界证据，GC-10/GC-14/GC-06 不作整职责关闭。G06-auxiliary、GC-14 剩余真环境验收、GC-09 其余职责、G03 领域覆盖和基线超时、G07 开放项及其它 P3 工作仍待完成；后续按依赖继续 G06-auxiliary。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
+2026-11-13 继续执行 `G06-auxiliary`，起点为 `6ab8599f9`，代码提交为 `eab55944f`。将已捕获的 ModelRuntimeConfiguration 从 createSequences 传入草稿元素挂载和复制元素根，使 pending element-vision 使用同次配置；独立 upload-check 仍由 workflow client 自己捕获，element-sheet child 已有父快照因此保持不变。保留权利检查、元素创建、失败清理、storyboard 前顺序、locale 和 ownsReservation 边界。固定 12 个受影响测试文件、98 项全通过；类型、lint、生产 build、格式和正常提交 hooks 通过。本批仅关闭有限辅助传播证据，不关闭 GC-06；未运行真实供应商、远程 D1/R2 或 durable replay。[本批记录](preservation/20261113-p3-g06-auxiliary/README.md)、[实现记录](preservation/20261113-p3-g06-auxiliary/implementation.json)、[调用矩阵](preservation/20261113-p3-g06-auxiliary/caller-matrix.json)和[验证记录](preservation/20261113-p3-g06-auxiliary/verification-results.json)区分已修改入口与复核后保留的根任务。
+
+**P3 整体仍进行中。** G10 有限验证、G14 图片准备及资产入口/来源/草稿修复、G06-capture 与 G06-auxiliary 已有边界证据，GC-10/GC-14/GC-06 不作整职责关闭。GC-06 剩余调用与真实环境验收、GC-14 剩余真环境验收、GC-09 其余职责、G03 领域覆盖和基线超时、G07 开放项及其它 P3 工作仍待完成；下一步按依赖继续 GC-06 剩余入口。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
 
 ## 6. 未来新增二开的接入流程
 

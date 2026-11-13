@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-13",
+  "batchId": "G06-auxiliary",
+  "responsibilityId": "GC-06",
+  "status": "implemented-with-bounded-evidence",
+  "sourceBefore": "6ab8599f9",
+  "sourceAfter": "eab55944f",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "problem": "同一次序列创建中，元素草稿挂载和复制触发 element-vision 时没有复用 G06-capture 已捕获的运行配置，triggerWorkflow 会在派发点重新读取当前配置。",
+  "changes": [
+    {
+      "id": "draft-element-vision-snapshot",
+      "owners": [
+        "src/sequences/server/create-sequences.ts",
+        "src/cast/server/sequence-elements/attach-element-upload.ts"
+      ],
+      "before": "createSequences 调用 attachDraftElementUploads 时没有传内部配置；视觉触发使用 triggerWorkflow 的无选项回退。",
+      "after": "createSequences 将同次准备的 modelConfiguration 传入，attachElementUpload 只在收到可信快照时将其交给 element-vision trigger。",
+      "preserved": [
+        "外部 schema、组织边界和 promptLocale 不变",
+        "权利检查、R2 存在检查、元素创建、失败状态和 storyboard 前的顺序不变",
+        "带 inline description/consistencyTag 的草稿不重复付费视觉分析"
+      ]
+    },
+    {
+      "id": "copied-element-vision-snapshot",
+      "owners": [
+        "src/sequences/server/create-sequences.ts",
+        "src/cast/server/sequence-elements/copy-sequence-elements.ts"
+      ],
+      "before": "复制元素的 pending image 触发 element-vision 时没有同次创建快照。",
+      "after": "复制服务接收可选可信快照，并在需要视觉分析时复用该快照；无快照调用仍保持原两参数形状。",
+      "preserved": [
+        "R2 copy、既有 upload-rights ledger carry、元素行写入和 pending/complete 状态不变",
+        "clip/audio 不触发视觉分析；ownsReservation 未新增或转移"
+      ]
+    },
+    {
+      "id": "independent-root-boundaries",
+      "owners": [
+        "src/cast/server/upload-check.ts",
+        "src/routes/api/storage/upload.ts",
+        "src/routes/api/storage/multipart.ts",
+        "src/shots/server/workflows/update-stale-shots-workflow.ts"
+      ],
+      "before": "upload-check 独立根依赖 workflow client fallback；element-sheet child 已由父 workflow 传 scopedDb.models。",
+      "after": "本批完成定向源码与测试复核，没有增加重复 loader 或修改已满足快照契约的根任务。",
+      "preserved": [
+        "upload-check 仍在字节落盘成功后启动，requireUploadCheckAllowed 仍在写入前执行",
+        "element-sheet child 的 promptLocale、modelConfiguration、reservationId 和父通知协议不变"
+      ]
+    }
+  ],
+  "callers": [
+    {
+      "path": "src/sequences/server/create-sequences.ts",
+      "status": "modified",
+      "note": "同次创建将 configuration 传给草稿元素挂载和 sourceSequence 元素复制；assertDraftElementUploadsAttachable 仍在预占和写行之前。"
+    },
+    {
+      "path": "src/cast/server/sequence-elements/attach-element-upload.ts",
+      "status": "modified-with-fallback",
+      "note": "可信快照存在时传 trigger option；独立 finalize/replace 没有快照时保留原两参数触发。"
+    },
+    {
+      "path": "src/cast/server/sequence-elements/copy-sequence-elements.ts",
+      "status": "modified-with-fallback",
+      "note": "可信快照存在时传 trigger option；其它独立复制调用仍由 client fallback 自己捕获一次。"
+    },
+    {
+      "path": "src/cast/server/upload-check.ts",
+      "status": "unchanged-after-review",
+      "note": "startUploadCheck 只触发一次 workflow；无 modelConfiguration option 时由 workflow client 捕获一次独立快照。"
+    },
+    {
+      "path": "src/shots/server/workflows/update-stale-shots-workflow.ts",
+      "status": "unchanged-already-snapshotted",
+      "note": "element-sheet 通过 spawnAndAwaitChild 传 scopedDb.models，已满足父子配置契约。"
+    }
+  ],
+  "verification": {
+    "record": "verification-results.json",
+    "callerMatrix": "caller-matrix.json",
+    "totals": {
+      "files": 12,
+      "tests": 98,
+      "passed": 98,
+      "failed": 0,
+      "skipped": 0,
+      "modifiedTestFiles": 3,
+      "modifiedTestCount": 28
+    },
+    "productionChecks": {
+      "typecheck": "passed",
+      "lint": "passed",
+      "build": "passed",
+      "scopedFormat": "passed",
+      "preCommitHooks": "passed"
+    },
+    "fullRepositoryTest": {
+      "status": "not-rerun-in-this-batch",
+      "reason": "G06-capture 已记录全仓 2,763 suites/10,192 项中的 3 个未修改文件失败；本批使用受影响调用链的固定定向集合，未重写那份范围外证据。"
+    }
+  },
+  "preservation": {
+    "record": "source-preservation.json",
+    "trackedFilesBefore": 3721,
+    "trackedFilesAfter": 3721,
+    "typescriptTestsBefore": 807,
+    "typescriptTestsAfter": 807,
+    "newSourcePaths": [],
+    "modifiedSourcePaths": [
+      "src/cast/server/sequence-elements/attach-element-upload.ts",
+      "src/cast/server/sequence-elements/attach-element-upload.test.ts",
+      "src/cast/server/sequence-elements/copy-sequence-elements.ts",
+      "src/cast/server/sequence-elements/copy-sequence-elements.test.ts",
+      "src/sequences/server/create-sequences.ts",
+      "src/sequences/server/create-sequences.test.ts"
+    ],
+    "frozenInventoryRows": 1219,
+    "originalInventoryApproved": false
+  },
+  "modifiedSourcePaths": [
+    "src/cast/server/sequence-elements/attach-element-upload.ts",
+    "src/cast/server/sequence-elements/attach-element-upload.test.ts",
+    "src/cast/server/sequence-elements/copy-sequence-elements.ts",
+    "src/cast/server/sequence-elements/copy-sequence-elements.test.ts",
+    "src/sequences/server/create-sequences.ts",
+    "src/sequences/server/create-sequences.test.ts"
+  ],
+  "newSourcePaths": [],
+  "openActions": [
+    "GC-06 remains open beyond this auxiliary propagation batch; full retry/create responsibility and all caller acceptance are not closed by this record.",
+    "Real Workerd durable replay, provider calls/invoices, remote D1/R2, wallet settlement, browser/RPC and compiled manifest acceptance remain open.",
+    "Independent upload root and existing element-sheet child have static/local evidence only; no new real provider or durable replay evidence was claimed.",
+    "G03 lifecycle/cold-import/replay, G07 pricing/hold risks, GC-09 and GC-14 remaining scope remain open.",
+    "All 1219 frozen inventory dispositions remain pending; CONTINUE-LLM-SOURCE remains deferred; P4 has not started."
+  ],
+  "authorization": "Continued user authorization for P3 implementation, local verification, parallel work and normal local commits.",
+  "remote": {
+    "fetched": false,
+    "merged": false,
+    "pushed": false,
+    "deployed": false,
+    "remoteDatabaseWrites": false,
+    "paidProviderCalls": false
+  }
+}

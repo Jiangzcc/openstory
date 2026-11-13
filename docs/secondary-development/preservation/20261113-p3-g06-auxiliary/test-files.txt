@@ -1,0 +1,12 @@
+src/cast/server/sequence-elements/attach-element-upload.test.ts
+src/cast/server/sequence-elements/copy-sequence-elements.test.ts
+src/cast/server/element-vision.test.ts
+src/cast/server/upload-check.test.ts
+src/cast/server/workflows/element-sheet-workflow.test.ts
+src/cast/server/workflows/sheet-portrait-context.test.ts
+src/cast/server/db/sequence-elements.test.ts
+src/platform/server/workflow/client.test.ts
+src/platform/server/api-v1/sequence-creation-capture.test.ts
+src/sequences/server/sequence-creation-capture.test.ts
+src/sequences/server/create-sequences.test.ts
+src/shots/server/workflows/update-stale-shots-workflow.test.ts
