@@ -24,6 +24,9 @@ import { describe, expect, test, vi } from 'vitest';
 import * as schema from '@/platform/server/db/schema';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 
+vi.doMock('#db-client', () => ({ getDb: () => ({}) }));
+const { createScopedDb } = await import('@/platform/server/db/scoped');
+
 /** `domain.method` on `ScopedDb`, so a rename is also a type error. */
 type ScopedMethod = {
   [D in keyof ScopedDb]: `${D}.${keyof ScopedDb[D] & string}`;
@@ -271,8 +274,6 @@ describe('claim discipline (#1130)', () => {
   });
 
   test('every claim domain exposes claim, clear and promote', async () => {
-    vi.doMock('#db-client', () => ({ getDb: () => ({}) }));
-    const { createScopedDb } = await import('@/platform/server/db/scoped');
     const scopedDb = createScopedDb('organization', 'user');
 
     const missing: string[] = [];
