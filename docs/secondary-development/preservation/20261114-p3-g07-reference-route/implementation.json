@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G07-reference-route",
+  "responsibilityId": "GC-07",
+  "status": "repaired-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "7e92f76e2",
+  "sourceAfter": "9ce107f28",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Project per-shot motion references through the same bindable-reference rules used by submission before pricing smart retry and add-video-model.",
+  "productionFilesChanged": [
+    "src/motion/server/build-motion-references.ts",
+    "src/sequences/server/sequence-models.ts",
+    "src/sequences/server/smart-retry.ts"
+  ],
+  "testFilesChanged": [
+    "src/motion/server/build-motion-references.test.ts",
+    "src/sequences/server/add-video-model.test.ts",
+    "src/sequences/smart-retry.test.ts"
+  ],
+  "tests": {
+    "files": 3,
+    "tests": 45,
+    "passed": 45,
+    "failed": 0,
+    "command": "bun run test src/motion/server/build-motion-references.test.ts src/sequences/smart-retry.test.ts src/sequences/server/add-video-model.test.ts"
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "build": "passed"
+  },
+  "openItems": [
+    "Native xAI/Google/BytePlus route and final cost attribution remain unvalidated.",
+    "Real provider pricing/billing, Cloudflare durable replay, remote D1/R2, browser HTTP and settlement remain unvalidated.",
+    "GC-07 and all 1219 frozen inventory dispositions remain open; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}
