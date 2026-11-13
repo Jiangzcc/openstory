@@ -33,6 +33,8 @@ only assistant-side work per tool happens in
 Scope checks, the likeness gate and billing are the tool's own and are the
 same on both paths. Do not add an assistant-only tool; add an MCP tool.
 
+The Studio draft tool checks `requireGenerationAllowed` with the trusted scoped user and organization before calling its shared draft service. A generation suspension can still permit account access and ordinary writes, so those middleware checks alone do not admit this paid text call. The web draft server function uses the same gate. The external MCP adapter and both assistant locales are covered by the local [G14 asset contracts](../secondary-development/preservation/20261113-p3-g14-assets/README.md); this does not establish a blanket admission audit of every paid tool.
+
 Tool input schemas must serialize to an explicit root object, including after
 lazy discovery. The local assistant bridge uses `safeExtend({})` on Zod object
 inputs with a metadata id to retain validation and defaults without the root

@@ -120,7 +120,18 @@ async function resolveStudioDraftKey(
       'The Studio draft model is unavailable or lacks vision support.'
     );
   }
-  return scopedDb.apiKeys.resolveLlmKey(selected, snapshot);
+  const llmKey = await scopedDb.apiKeys.resolveLlmKey(selected, snapshot);
+  if (llmKey.source !== 'organization') {
+    const canAfford = await scopedDb.billing.hasEnoughCredits(
+      estimateLLMCost(1)
+    );
+    if (!canAfford) {
+      throw new InsufficientCreditsError(
+        'Insufficient credits to draft a prompt'
+      );
+    }
+  }
+  return llmKey;
 }
 
 /**
@@ -142,16 +153,6 @@ export async function draftStudioPromptForOrganization(
   const resolveLlmKey = (selected: TextModel) =>
     resolveStudioDraftKey(scopedDb, selected, snapshot, hasImages);
   const llmKey = await resolveLlmKey(model);
-  if (llmKey.source !== 'organization') {
-    const canAfford = await scopedDb.billing.hasEnoughCredits(
-      estimateLLMCost(1)
-    );
-    if (!canAfford) {
-      throw new InsufficientCreditsError(
-        'Insufficient credits to draft a prompt'
-      );
-    }
-  }
 
   const result = await draftStudioPrompt({
     ...data,

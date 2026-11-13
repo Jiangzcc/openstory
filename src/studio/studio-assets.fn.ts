@@ -43,6 +43,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { z } from 'zod';
 import { authWithOrganizationMiddleware } from '@/platform/middleware.fn';
+import { requireGenerationAllowed } from '@/platform/server/compliance/generation-gate';
 
 /** Who asked, for an upload a create has to check itself (#2192). */
 function likenessRequest() {
@@ -193,6 +194,10 @@ export const draftStudioPromptFn = createServerFn({ method: 'POST' })
   .middleware([authWithOrganizationMiddleware])
   .validator(zodValidator(studioPromptDraftInputSchema))
   .handler(async ({ context, data }) => {
+    await requireGenerationAllowed({
+      userId: context.user.id,
+      organizationId: context.organizationId,
+    });
     return draftStudioPromptForOrganization(
       context.scopedDb,
       data,

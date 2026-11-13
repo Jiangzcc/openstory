@@ -204,7 +204,9 @@ export async function draftStudioPrompt(
   let text = '';
   let usage;
   let model = input.model;
-  let via = input.llmKey?.via;
+  let llmKey = input.llmKey;
+  let via = llmKey?.via;
+  const resolveLlmKey = input.resolveLlmKey;
   for await (const chunk of callLLMStream({
     model: input.model,
     messages: [
@@ -219,7 +221,12 @@ export async function draftStudioPrompt(
     ],
     temperature: 0.7,
     apiKey: input.llmKey,
-    resolveApiKey: input.resolveLlmKey,
+    resolveApiKey: resolveLlmKey
+      ? async (selected) => {
+          llmKey = await resolveLlmKey(selected);
+          return llmKey;
+        }
+      : undefined,
     observationName: 'studio-prompt-draft',
     tags: ['vision', 'studio'],
     ...input.observability,
@@ -245,8 +252,8 @@ export async function draftStudioPrompt(
     costMicros: llmCostFromUsage(
       usage,
       model,
-      model === input.model && via === input.llmKey?.via ? input.llmKey : via
+      via === llmKey?.via ? llmKey : via
     ),
-    usedOwnKey: input.llmKey?.source === 'organization',
+    usedOwnKey: llmKey?.source === 'organization',
   };
 }

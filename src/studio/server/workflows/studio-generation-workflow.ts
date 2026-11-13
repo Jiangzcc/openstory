@@ -52,7 +52,11 @@ import { videoUrlFitsWorkflowCheckpoint } from '@/motion/server/video-storage';
 import { captureStudioGenerationCompleted } from '@/platform/server/observability/content-feed';
 import { recordMediaGenerationSpan } from '@/platform/server/observability/ai-otel';
 import { getLogger } from '@/platform/logger';
-import { toCdnUrl } from '@/platform/server/storage/buckets';
+import {
+  buildR2Key,
+  STORAGE_BUCKETS,
+  toCdnUrl,
+} from '@/platform/server/storage/buckets';
 import { isEngineAbortError } from '@/platform/server/workflow/errors';
 import type { StudioRunInput } from '@/studio/schema';
 import {
@@ -237,7 +241,7 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
           userId,
           assetKind: 'generated_asset',
           assetId,
-          storageKey: upload.path,
+          storageKey: buildR2Key(STORAGE_BUCKETS.THUMBNAILS, upload.path),
           provider: generated.via,
           model: imageMetadata.endpointId,
           providerRequestId: imageMetadata.requestId,
@@ -630,7 +634,7 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
         userId,
         assetKind: 'generated_asset',
         assetId,
-        storageKey: videoUpload.path,
+        storageKey: buildR2Key(STORAGE_BUCKETS.VIDEOS, videoUpload.path),
         provider: job.via,
         model: billing.endpointId,
         providerRequestId: job.jobId,

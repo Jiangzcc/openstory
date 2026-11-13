@@ -11,6 +11,7 @@ import { ValidationError } from '@/platform/errors';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
 import { fromShareableUrl } from '@/platform/server/storage/buckets';
 import { watchClipForOrganization } from '@/models/server/watch-clip';
+import { requireGenerationAllowed } from '@/platform/server/compliance/generation-gate';
 import {
   studioActivitySchema,
   studioCreateInputSchema,
@@ -224,23 +225,29 @@ const draftStudioPromptTool = openstoryTool({
     endImageUrl: mediaRef.optional(),
   }),
   outputSchema: z.object({ prompt: z.string() }),
-  run: async (input, { scopedDb, promptLocale }) => ({
-    data: await draftStudioPromptForOrganization(
-      scopedDb,
-      studioPromptDraftInputSchema.parse({
-        ...input,
-        references: input.references.map((ref) => ({
-          ...ref,
-          url: fromShareableUrl(ref.url),
-        })),
-        startImageUrl:
-          input.startImageUrl && fromShareableUrl(input.startImageUrl),
-        endImageUrl: input.endImageUrl && fromShareableUrl(input.endImageUrl),
-      }),
-      promptLocale
-    ),
-    summary: 'Drafted a prompt.',
-  }),
+  run: async (input, { scopedDb, promptLocale }) => {
+    await requireGenerationAllowed({
+      userId: scopedDb.userId,
+      organizationId: scopedDb.organizationId,
+    });
+    return {
+      data: await draftStudioPromptForOrganization(
+        scopedDb,
+        studioPromptDraftInputSchema.parse({
+          ...input,
+          references: input.references.map((ref) => ({
+            ...ref,
+            url: fromShareableUrl(ref.url),
+          })),
+          startImageUrl:
+            input.startImageUrl && fromShareableUrl(input.startImageUrl),
+          endImageUrl: input.endImageUrl && fromShareableUrl(input.endImageUrl),
+        }),
+        promptLocale
+      ),
+      summary: 'Drafted a prompt.',
+    };
+  },
 });
 
 const watchClipTool = openstoryTool({
