@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "ac5f0edb9",
+  "codeCommit": "579a6b83e",
+  "selectedRegression": {
+    "command": "bun run test src/shots/server/workflows/shot-spec-rewrite-workflow-run.test.ts",
+    "files": 1,
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "ShotSpecRewriteWorkflow clears all affected claims and reports visual/motion streaming failures."
+  },
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/shots/server/workflows/shot-spec-rewrite-workflow-run.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "not-run",
+      "note": "Test-only batch; no production files changed."
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "579a6b83e",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "No production code or claim or event behavior was changed.",
+    "Real durable engine, provider, remote storage, browser HTTP and settlement were not run."
+  ]
+}
