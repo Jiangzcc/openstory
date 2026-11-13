@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "6c505211e",
+  "codeCommit": "bdca367c7",
+  "selectedRegression": {
+    "command": "bun run test src/cast/server/workflows/replace-element-workflow.test.ts",
+    "files": 1,
+    "tests": 25,
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "ReplaceElementWorkflow preserves vision failure state, open claim cleanup and parent failure notification."
+  },
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/cast/server/workflows/replace-element-workflow.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "not-run",
+      "note": "Test-only batch; no production files changed."
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "bdca367c7",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "No production code or failure behavior was changed.",
+    "Real durable engine, provider, remote storage, browser HTTP and settlement were not run."
+  ]
+}
