@@ -1322,6 +1322,33 @@ describe('recording its own dialogue (#1657)', () => {
 });
 
 describe('MotionWorkflow lip-sync child dispatch (#2263)', () => {
+  const makeLipsyncEvent = () => {
+    const voicedLines = [
+      {
+        index: 0,
+        token: 'DIALOGUE',
+        voiceId: 'voice-sarah',
+        text: 'Run!',
+        tone: '',
+        ttsModel: 'eleven_v3',
+        character: 'Sarah',
+      },
+    ];
+    const audioClip = {
+      id: 'section-1',
+      url: '/r2/audio/section-1.wav',
+      token: 'DIALOGUE',
+      durationSeconds: 2,
+      sourceKey: audioSourceKeyFromVoicedLines(voicedLines) ?? '',
+    };
+    return makeEvent({
+      model: GROK,
+      sequenceTitle: 'Sequence',
+      sceneTitle: 'Scene',
+      voicedLines,
+      audioClips: [audioClip],
+    });
+  };
   it('passes the finished clip and pinned dialogue snapshot to the lip-sync child', async () => {
     const voicedLines = [
       {
@@ -1389,6 +1416,49 @@ describe('MotionWorkflow lip-sync child dispatch (#2263)', () => {
         spawnStepName: 'spawn-lipsync',
         awaitStepName: 'await-lipsync',
         timeout: '30 minutes',
+      })
+    );
+  });
+
+  it('does not append a second failure when the child already recorded its failure', async () => {
+    mockSpawnAndAwaitChild.mockRejectedValueOnce(
+      new Error('Child workflow lipsync:seq-1:shot-1 failed: provider rejected')
+    );
+    const { scopedDb, videoVariants } = makeScopedDb();
+
+    await makeWorkflow().runBody(makeLipsyncEvent(), makeStep(), scopedDb);
+
+    expect(videoVariants.appendVersion).not.toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'lipsync', status: 'failed' })
+    );
+  });
+
+  it('records and emits a failure when the child never starts', async () => {
+    mockSpawnAndAwaitChild.mockRejectedValueOnce(new Error('binding missing'));
+    const { scopedDb, videoVariants } = makeScopedDb();
+
+    await makeWorkflow().runBody(makeLipsyncEvent(), makeStep(), scopedDb);
+
+    expect(videoVariants.appendVersion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        renderSegmentId: 'seg-1',
+        sequenceId: 'seq-1',
+        model: GROK,
+        source: 'lipsync',
+        manifest: [],
+        status: 'failed',
+        error: 'Lip-sync did not start: binding missing',
+        workflowRunId: 'run-1',
+        isPrimary: true,
+      })
+    );
+    expect(emit).toHaveBeenCalledWith(
+      'generation.video:progress',
+      expect.objectContaining({
+        shotId: 'shot-1',
+        status: 'failed',
+        model: GROK,
+        error: 'Lip-sync did not start: binding missing',
       })
     );
   });
