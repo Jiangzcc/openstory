@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-character-bible-failure",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "58f7b1014",
+  "sourceAfter": "97beb16a8",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Fix CharacterBibleWorkflow sheet and voice child failure ownership while preserving held-claim concurrency semantics.",
+  "productionFilesChanged": [
+    "src/cast/server/workflows/character-bible-workflow.ts"
+  ],
+  "testFilesChanged": [
+    "src/cast/server/workflows/character-bible-workflow.test.ts"
+  ],
+  "newEvidence": [
+    "A sheet child that never starts causes the parent to clear its held claim and emit generation.character-sheet:progress failed.",
+    "A child-owned sheet failure does not receive a duplicate parent failure event.",
+    "A missed sheet claim is left to the newer run.",
+    "A child-owned voice failure does not rewrite the voice husk a second time."
+  ],
+  "tests": {
+    "selectedRegression": {
+      "command": "bun run test src/cast/server/workflows/character-bible-workflow.test.ts",
+      "files": 1,
+      "tests": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    "relatedRegression": {
+      "command": "bun run test src/cast/server/workflows/character-bible-workflow.test.ts src/cast/server/workflows/character-sheet-workflow.test.ts src/platform/server/workflow/await-child.test.ts",
+      "files": 3,
+      "tests": 55,
+      "passed": 55,
+      "failed": 0
+    }
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "build": "passed",
+    "preCommitHooks": "passed without bypass"
+  },
+  "normalCodeCommit": "97beb16a8",
+  "openItems": [
+    "Other parent workflow lifecycle and failure branches remain open.",
+    "Real durable replay, provider, remote D1/R2, browser HTTP and wallet settlement remain unvalidated.",
+    "GC-03 and all 1219 frozen inventory dispositions remain open; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}
