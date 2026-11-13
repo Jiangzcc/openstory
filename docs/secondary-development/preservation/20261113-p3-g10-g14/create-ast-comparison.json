@@ -1,0 +1,104 @@
+{
+  "functionsCompared": 14,
+  "functions": [
+    {
+      "name": "estimateStudioCost",
+      "before": "b1c85e5837c342ab6ad01f27188084d06ed13269a3e808e02cee8587830f6129",
+      "after": "b1c85e5837c342ab6ad01f27188084d06ed13269a3e808e02cee8587830f6129",
+      "equal": true
+    },
+    {
+      "name": "storedReferenceClip",
+      "before": "8be711f4d4d44d538ca1bf948bef64c2c6b8cd979148a742c8480764ca62572d",
+      "after": "8be711f4d4d44d538ca1bf948bef64c2c6b8cd979148a742c8480764ca62572d",
+      "equal": true
+    },
+    {
+      "name": "snapshotInput",
+      "before": "c808fb5b1b4f9755ad00ecf1289bbfd8d24d6a91f7988a6420df29c45c63b13b",
+      "after": "c808fb5b1b4f9755ad00ecf1289bbfd8d24d6a91f7988a6420df29c45c63b13b",
+      "equal": true
+    },
+    {
+      "name": "zeroUnusedReservations",
+      "before": "2314c087d5431148ac7394c4ecb5e2a091d86d988e696884d186cab80a673f25",
+      "after": "2314c087d5431148ac7394c4ecb5e2a091d86d988e696884d186cab80a673f25",
+      "equal": true
+    },
+    {
+      "name": "requireOwnEditSource",
+      "before": "88c3795d6ef39fc257cd9e1272ca435eba06e3614de256a1b342091072c34dfc",
+      "after": "88c3795d6ef39fc257cd9e1272ca435eba06e3614de256a1b342091072c34dfc",
+      "equal": true
+    },
+    {
+      "name": "stringList",
+      "before": "43f702bebfe294eea322fae74c3d1fd6c8a428e447bf4ca7d1f0c18ae317f382",
+      "after": "43f702bebfe294eea322fae74c3d1fd6c8a428e447bf4ca7d1f0c18ae317f382",
+      "equal": true
+    },
+    {
+      "name": "refuseTraversableReferenceUrl",
+      "before": "886a4fc21ca151f36b2c7f9cf164443100a8f936ce1ea81486d5f6f9972447f0",
+      "after": "886a4fc21ca151f36b2c7f9cf164443100a8f936ce1ea81486d5f6f9972447f0",
+      "equal": true
+    },
+    {
+      "name": "storedClipLink",
+      "before": "04dc954721f3beae74d4c7650ad8ccf387ac53d6adaa8118115d2f220669dbb7",
+      "after": "04dc954721f3beae74d4c7650ad8ccf387ac53d6adaa8118115d2f220669dbb7",
+      "equal": true
+    },
+    {
+      "name": "clipLinksFromStored",
+      "before": "a973b4f7997d78fcee79b6b54085cad9529652ab4bf23162138ac7c971ce8dda",
+      "after": "a973b4f7997d78fcee79b6b54085cad9529652ab4bf23162138ac7c971ce8dda",
+      "equal": true
+    },
+    {
+      "name": "resolveReferenceClip",
+      "before": "fa11a5c234d7f2b681922fc27a041f10f018a5a7ef7dcd2ebad705899cd4fddd",
+      "after": "fa11a5c234d7f2b681922fc27a041f10f018a5a7ef7dcd2ebad705899cd4fddd",
+      "equal": true
+    },
+    {
+      "name": "requireStudioClipChain",
+      "before": "97d12d49b3467eae5ca38524c68235d438235c3ef29ba82cc34a7d69ca2e3c2f",
+      "after": "97d12d49b3467eae5ca38524c68235d438235c3ef29ba82cc34a7d69ca2e3c2f",
+      "equal": true
+    },
+    {
+      "name": "createStudioAssets",
+      "before": "01f9d27345c2a4e9af471c79a5e77c5ec98e002c6c64f95d79eefcd927661627",
+      "after": "01f9d27345c2a4e9af471c79a5e77c5ec98e002c6c64f95d79eefcd927661627",
+      "equal": true
+    },
+    {
+      "name": "renderStudioAssetAtQuality",
+      "before": "3ed39a7e8db61782709a1706d69605f385a9252218793901f757f81cdbe3b333",
+      "after": "3ed39a7e8db61782709a1706d69605f385a9252218793901f757f81cdbe3b333",
+      "equal": true
+    },
+    {
+      "name": "editStudioAsset",
+      "before": "821af5b7177c7d309b73fc9a75adfeadf74f83a838987056e1630113480c696a",
+      "after": "821af5b7177c7d309b73fc9a75adfeadf74f83a838987056e1630113480c696a",
+      "equal": true
+    }
+  ],
+  "normalization": {
+    "commentsAndLocations": "removed",
+    "omitPreparationVariableStatements": [
+      "modelConfiguration",
+      "configuredImage",
+      "configuredRoute",
+      "imageOperation",
+      "endpointId",
+      "modelName",
+      "runInput",
+      "imagePreparation"
+    ],
+    "omitCapturedConfigurationSpread": "Only the original/new configuration spread in triggerWorkflow options; identities, rights, holds, row, dispatch/catch and run-id failure behavior remain.",
+    "omitMovedCapabilityCall": "The original requireStudioImageCapabilities expression is moved into preparation and checked by before/after cross-layer tests."
+  }
+}

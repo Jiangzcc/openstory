@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-13",
+  "batchId": "G10-G14-image-preparation",
+  "responsibilityIds": ["GC-10", "GC-14"],
+  "status": "implemented-with-bounded-evidence",
+  "sourceBefore": "58c9a69b6f4bc3f453d66bdbe610f052b5838ebd",
+  "sourceAfter": "1d2cf3d44aed64d29ab7778d9fd1247df363c9ce",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "codeCommits": [
+    {
+      "commit": "7aab7bb9052554512b62c6c178579ca34ef8921e",
+      "purpose": "Studio image preparation owner and G10/Studio contract tests",
+      "paths": [
+        "src/studio/server/create-studio-asset.ts",
+        "src/studio/server/prepare-studio-image.ts",
+        "src/studio/server/prepare-studio-image.test.ts",
+        "src/studio/server/configured-studio-create.test.ts",
+        "src/stills/server/workflows/configured-image-contract.test.ts"
+      ]
+    },
+    {
+      "commit": "1d2cf3d44aed64d29ab7778d9fd1247df363c9ce",
+      "purpose": "Three sheet provenance provider repairs and owner-level D1 regression",
+      "paths": [
+        "src/cast/server/workflows/character-sheet-workflow.ts",
+        "src/cast/server/workflows/location-sheet-workflow.ts",
+        "src/cast/server/workflows/element-sheet-workflow.ts",
+        "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+        "docs/architecture/media-vias.md"
+      ]
+    }
+  ],
+  "authorization": "Continue the full approved P3 implementation, verification and normal local commits. The discovered provider-label defect is repaired at its three existing owners within the provider-fact review; no further permission was requested.",
+  "plannedWork": [
+    {
+      "id": "G10-attempt-verify",
+      "status": "locally-verified-with-open-environment-and-lifecycle-coverage",
+      "productionExecutionPreserved": true,
+      "directBridgesStaticallyInspected": 6,
+      "parentWorkflowsStaticallyInspected": 9,
+      "wholeResponsibilityClosed": false
+    },
+    {
+      "id": "G14-image-prepare",
+      "status": "implemented-with-bounded-evidence",
+      "owner": "src/studio/server/prepare-studio-image.ts",
+      "beforeAfterStudioCases": 19,
+      "createRemainderAndOtherFunctionsCompared": 14,
+      "wholeResponsibilityClosed": false
+    }
+  ],
+  "repair": {
+    "id": "G10-PROVENANCE-VIA-01",
+    "status": "repaired-and-locally-verified",
+    "owners": [
+      "src/cast/server/workflows/character-sheet-workflow.ts",
+      "src/cast/server/workflows/location-sheet-workflow.ts",
+      "src/cast/server/workflows/element-sheet-workflow.ts"
+    ],
+    "change": "Three provider fal literals become the required generation.via, following the existing image/portrait contract.",
+    "baseline": {
+      "tests": 9,
+      "passed": 3,
+      "failed": 6
+    },
+    "after": {
+      "tests": 9,
+      "passed": 9,
+      "failed": 0
+    },
+    "originalFindingPreservedIn": "caller-matrix-before.json",
+    "repairEvidence": "provenance-repair.json",
+    "scopeAdjustment": "A concrete provider fact defect found during the planned G10 audit. Repair only the original parent facts; do not move generation, storage, billing, claims or schema."
+  },
+  "productionPaths": [
+    "src/studio/server/create-studio-asset.ts",
+    "src/studio/server/prepare-studio-image.ts",
+    "src/cast/server/workflows/character-sheet-workflow.ts",
+    "src/cast/server/workflows/location-sheet-workflow.ts",
+    "src/cast/server/workflows/element-sheet-workflow.ts"
+  ],
+  "newSourcePaths": [
+    "src/studio/server/prepare-studio-image.ts",
+    "src/studio/server/prepare-studio-image.test.ts",
+    "src/studio/server/configured-studio-create.test.ts",
+    "src/stills/server/workflows/configured-image-contract.test.ts",
+    "src/cast/server/workflows/sheet-provenance-contract.test.ts"
+  ],
+  "tests": {
+    "files": 52,
+    "tests": 714,
+    "passed": 714,
+    "failed": 0,
+    "skipped": 0,
+    "originalFiles": 48,
+    "originalTests": 664,
+    "newFiles": 4,
+    "newTests": 50,
+    "countPolicy": "Deduplicate by final path. Later final G10/Studio/parent results supersede overlapping initial integrated results. Baselines, aliases, worker reruns and hooks are excluded."
+  },
+  "compatibility": {
+    "rightsReserveInsertDispatchOrderPreserved": true,
+    "outerCountAndNativeCountSemanticsPreserved": true,
+    "builtinAndVideoPathPreserved": true,
+    "attemptIdentityOrSchemaChanged": false,
+    "durableStepNamesChanged": false,
+    "oldStudioUploadCheckpointConsumptionPreserved": true,
+    "walletOrBillingRulesChanged": false,
+    "storedTagsOrHashesRewritten": false,
+    "originalTestsModified": false
+  },
+  "upstreamCorePathsRestored": 0,
+  "conflictReductionClaimed": false,
+  "acceptanceComplete": false,
+  "responsibilityClosed": false,
+  "p3Status": "in-progress",
+  "originalInventoryApproved": false,
+  "p4Started": false,
+  "remainingActions": [
+    "G14-asset-verify remaining generated-asset, action/upload/draft/MCP lifecycle and provider-fact coverage remains open.",
+    "Full configured parent workflow lifecycle coverage, real Cloudflare durable replay, provider invoices, remote D1 contention, R2 durability, wallet settlement and heap acceptance remain open.",
+    "Unknown paid responses and partial storage can require operator recovery; refusing another supplier submission does not recover lost outputs.",
+    "G03 lifecycle domain coverage and the unchanged cold-import timeout remain open.",
+    "G07 music hold and motion/reference price risks remain open.",
+    "CONTINUE-LLM-SOURCE remains deferred by the user.",
+    "All 1219 frozen inventory dispositions remain pending; other P3 responsibilities and P4 remain open."
+  ],
+  "records": {
+    "verification": "verification-results.json",
+    "baseline": "baseline-results.json",
+    "beforeCallerMatrix": "caller-matrix-before.json",
+    "provenanceRepair": "provenance-repair.json",
+    "createAst": "create-ast-comparison.json",
+    "preservation": "source-preservation.json",
+    "tests": "test-files.txt"
+  },
+  "externalActions": {
+    "pushed": false,
+    "deployed": false,
+    "remoteWrites": false,
+    "realProviderCalls": false
+  }
+}

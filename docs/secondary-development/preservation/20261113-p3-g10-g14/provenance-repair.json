@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-13",
+  "createdAt": "2026-11-13T06:56:46.185Z",
+  "worker": "G10-attempt-verify / independent GC14 sheet provenance repair",
+  "root": "D:/code/github/openstory",
+  "branch": "develop",
+  "before": "58c9a69b6f4bc3f453d66bdbe610f052b5838ebd",
+  "headAtDelivery": "58c9a69b6f4bc3f453d66bdbe610f052b5838ebd",
+  "status": "implemented-and-locally-verified; main-thread global validation and commit separate",
+  "authorization": {
+    "productionScope": "Only recordProvenance.provider in character/location/element sheet parents",
+    "testScope": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+    "evidenceScope": ".tmp/p3-g10-g14-20261113",
+    "stageOrCommit": false,
+    "paidOrRemoteOperations": false
+  },
+  "originalFinding": {
+    "id": "G10-PROVENANCE-VIA-01",
+    "auditPath": ".tmp/p3-g10-g14-20261113/g10-audit.json",
+    "auditSha256": "93c445971cc54dd38016ec7effb604722c9efad86926159515a7b9c0e0bf9ac7",
+    "bytePreserved": true,
+    "statusInOriginalAudit": "open-source-confirmed",
+    "note": "Historical before finding is deliberately unchanged. This independent repair audit supplies subsequent dynamic evidence."
+  },
+  "rootCause": "All three sheet parents discarded the required via returned by generation and passed a literal fal to recordProvenance. The real provenance helper and scoped insert faithfully persisted the incorrect parent fact. This mislabels compatible and native google generation; it does not itself establish a billing, attempt identity or claim defect.",
+  "fix": {
+    "providerBefore": "fal literal",
+    "providerAfter": "generation.via (required, no fallback)",
+    "production": [
+      {
+        "path": "src/cast/server/workflows/character-sheet-workflow.ts",
+        "line": 275,
+        "beforeSha256": "ace36bcc68e20f4ab2eb41b15d010f8f3e22324f3fadad0ea86e79dadd2102bd",
+        "afterSha256": "a0829801ef9db5fe96ee97d1b2949d56aa5dc978d34f3e46a1312e199bf1120b",
+        "semanticDiff": "Exactly one replacement: provider fal literal -> required generation.via",
+        "lineEndingsNormalized": false
+      },
+      {
+        "path": "src/cast/server/workflows/location-sheet-workflow.ts",
+        "line": 201,
+        "beforeSha256": "b9b6228876d859e788ba03690b89234f52f29b09111316b74299ef2387aeac30",
+        "afterSha256": "6d2e29f28bc858d98bb79cc0fa305c32399ca35c481fe047e51adbf004c3e8f9",
+        "semanticDiff": "Exactly one replacement: provider fal literal -> required generation.via",
+        "lineEndingsNormalized": false
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-workflow.ts",
+        "line": 226,
+        "beforeSha256": "3dfce825b3caffcb71db881c593b075498aeb17f48a83cf2188e145fda161f46",
+        "afterSha256": "5e13cbc3edd6097133aa779c92a29fe81b8866cd804cb32b8593b7b88022f9be",
+        "semanticDiff": "Exactly one replacement: provider fal literal -> required generation.via",
+        "lineEndingsNormalized": true
+      }
+    ],
+    "newTest": {
+      "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+      "sha256": "e675bcfc04ea07c9fe0bf2366617cf0efad527b6d36f06675223d182fecb45f9",
+      "physicalLines": 460,
+      "caseCount": 9,
+      "kinds": ["character", "location", "element"],
+      "vias": ["compatible", "fal", "google"],
+      "finalTypeFixtureRepair": {
+        "type": "FalUsage",
+        "field": "endpointId",
+        "constant": "ENDPOINT_ID",
+        "value": "mock-sheet-endpoint",
+        "providerAssertionsPreserved": true
+      }
+    },
+    "unchanged": [
+      "Shared generation implementation and configured image attempt organization/identity",
+      "Step names and ordering",
+      "Billing cost, reservation and idempotency identities",
+      "Claim/version/asset identities",
+      "Schema, fallback behavior and provider routing",
+      "Existing tests and original G10 before audit"
+    ]
+  },
+  "evidenceBoundary": {
+    "validationLevel": "Real parent runImpl -> real recordProvenance and prompt hash -> real createProvenanceMethods SQL using repository createTestDb; all external generation and spending are explicit stubs",
+    "real": [
+      "CharacterSheetWorkflow.runImpl",
+      "LocationSheetWorkflow.runImpl",
+      "ElementSheetWorkflow.runImpl",
+      "Character/location snapshot hash generation and validation",
+      "recordProvenance and SHA256 prompt hashing",
+      "createProvenanceMethods SQL and content_provenance readback",
+      "Migrated node:sqlite via createTestDb and drizzle-orm/d1 driver"
+    ],
+    "stubs": [
+      "WorkflowEntrypoint base and step.do engine (callbacks execute locally without durable replay)",
+      "generateImageSoftening returns declared via and stored metadata; provider and R2 bytes not invoked",
+      "deductWorkflowCredits and recordFalUsageStep; no real credits or fal reconciliation",
+      "Character/location landing and portrait dispatch",
+      "Element existence/live reads and ingest row creation",
+      "Realtime channel; global fetch rejects unexpected calls"
+    ],
+    "assertions": [
+      "Exactly one provenance row for each parent run",
+      "provider equals generation.via for compatible, original fal and native google",
+      "Correct organization/user/asset kind/asset id/storage key/model/run id/request id/prompt SHA256/reference fields",
+      "One unchanged debit with original cost, own-key fact, reservation and idempotency key",
+      "Original debit -> provenance -> reconcile/ingest step order",
+      "Claimed character/location version and workflow run identity preserved"
+    ],
+    "productionCallerCoverage": [
+      {
+        "parent": "CharacterSheetWorkflow",
+        "tested": true,
+        "viaCases": ["compatible", "fal", "google"]
+      },
+      {
+        "parent": "LocationSheetWorkflow",
+        "tested": true,
+        "viaCases": ["compatible", "fal", "google"]
+      },
+      {
+        "parent": "ElementSheetWorkflow",
+        "tested": true,
+        "viaCases": ["compatible", "fal", "google"]
+      }
+    ],
+    "widerG10CallerCoverage": "Complete earlier configured-image direct/parent caller matrix remains in the unchanged g10-audit.json. This repair dynamically covers only the three affected sheet parents; no other parent is claimed as dynamically covered by this new test.",
+    "stillNotAccepted": [
+      "Real Cloudflare Workflows durable replay, retries, suspension or cross-deployment checkpoints",
+      "Workerd/Miniflare D1 integration (createTestDb is a local SQLite D1 API facade)",
+      "Real fal, compatible or google provider submission and networking",
+      "Real R2 generation/storage or inline-byte persistence",
+      "Actual credits deduction, reservation capture and provider usage reconciliation",
+      "Real claim promotion/landing and realtime delivery",
+      "Additional native vias beyond google",
+      "Global typecheck, lint, production build and combined test totals owned by main thread"
+    ]
+  },
+  "verification": {
+    "baseline": {
+      "command": "bun run test src/cast/server/workflows/sheet-provenance-contract.test.ts --maxWorkers=1 --reporter=json --outputFile=.tmp/p3-g10-g14-20261113/provenance-baseline-results.json",
+      "exitCode": 1,
+      "result": {
+        "tests": 9,
+        "passed": 3,
+        "failed": 6,
+        "pending": 0,
+        "success": false,
+        "startTime": "2026-11-13T06:44:16.617Z",
+        "files": [
+          {
+            "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+            "tests": 9,
+            "passed": 3,
+            "failed": 6,
+            "status": "failed"
+          }
+        ]
+      },
+      "expectedFalPasses": [
+        "character sheet stores the required fal generation fact in real provenance D1",
+        "location sheet stores the required fal generation fact in real provenance D1",
+        "element sheet stores the required fal generation fact in real provenance D1"
+      ],
+      "expectedProviderFailures": [
+        {
+          "name": "character sheet stores the required compatible generation fact in real provenance D1",
+          "messages": [
+            "AssertionError: expected 'fal' to be 'compatible' // Object.is equality"
+          ]
+        },
+        {
+          "name": "character sheet stores the required google generation fact in real provenance D1",
+          "messages": [
+            "AssertionError: expected 'fal' to be 'google' // Object.is equality"
+          ]
+        },
+        {
+          "name": "location sheet stores the required compatible generation fact in real provenance D1",
+          "messages": [
+            "AssertionError: expected 'fal' to be 'compatible' // Object.is equality"
+          ]
+        },
+        {
+          "name": "location sheet stores the required google generation fact in real provenance D1",
+          "messages": [
+            "AssertionError: expected 'fal' to be 'google' // Object.is equality"
+          ]
+        },
+        {
+          "name": "element sheet stores the required compatible generation fact in real provenance D1",
+          "messages": [
+            "AssertionError: expected 'fal' to be 'compatible' // Object.is equality"
+          ]
+        },
+        {
+          "name": "element sheet stores the required google generation fact in real provenance D1",
+          "messages": [
+            "AssertionError: expected 'fal' to be 'google' // Object.is equality"
+          ]
+        }
+      ],
+      "note": "Recorded before the three production replacements. Final code retains the same nine provider cases and provider assertion; later test edits only format/fixture extraction and required endpointId type fixture."
+    },
+    "firstAfter": {
+      "command": "bun run test src/cast/server/workflows/sheet-provenance-contract.test.ts --maxWorkers=1 --reporter=json --outputFile=.tmp/p3-g10-g14-20261113/provenance-after-results.json",
+      "exitCode": 0,
+      "result": {
+        "tests": 9,
+        "passed": 9,
+        "failed": 0,
+        "pending": 0,
+        "success": true,
+        "startTime": "2026-11-13T06:45:35.446Z",
+        "files": [
+          {
+            "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+            "tests": 9,
+            "passed": 9,
+            "failed": 0,
+            "status": "passed"
+          }
+        ]
+      }
+    },
+    "finalCombined": {
+      "command": "bun run test src/cast/server/workflows/sheet-provenance-contract.test.ts src/cast/server/workflows/character-sheet-workflow.test.ts src/cast/server/workflows/element-sheet-workflow.test.ts src/cast/server/workflows/sheet-divergence.test.ts --maxWorkers=1 --reporter=json --outputFile=.tmp/p3-g10-g14-20261113/provenance-final-results.json",
+      "exitCode": 0,
+      "result": {
+        "tests": 25,
+        "passed": 25,
+        "failed": 0,
+        "pending": 0,
+        "success": true,
+        "startTime": "2026-11-13T06:53:50.876Z",
+        "files": [
+          {
+            "path": "src/cast/server/workflows/character-sheet-workflow.test.ts",
+            "tests": 10,
+            "passed": 10,
+            "failed": 0,
+            "status": "passed"
+          },
+          {
+            "path": "src/cast/server/workflows/element-sheet-workflow.test.ts",
+            "tests": 3,
+            "passed": 3,
+            "failed": 0,
+            "status": "passed"
+          },
+          {
+            "path": "src/cast/server/workflows/sheet-divergence.test.ts",
+            "tests": 3,
+            "passed": 3,
+            "failed": 0,
+            "status": "passed"
+          },
+          {
+            "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+            "tests": 9,
+            "passed": 9,
+            "failed": 0,
+            "status": "passed"
+          }
+        ]
+      },
+      "includesFinalEndpointIdFixture": true
+    },
+    "localLint": {
+      "command": "bunx --no-install oxlint --type-aware src/cast/server/workflows/sheet-provenance-contract.test.ts src/cast/server/workflows/character-sheet-workflow.ts src/cast/server/workflows/location-sheet-workflow.ts src/cast/server/workflows/element-sheet-workflow.ts",
+      "exitCode": 0,
+      "log": ".tmp/p3-g10-g14-20261113/provenance-lint.log",
+      "scopeFiles": 4
+    },
+    "localFormat": {
+      "command": "node node_modules/oxfmt/bin/oxfmt --check src/cast/server/workflows/sheet-provenance-contract.test.ts src/cast/server/workflows/character-sheet-workflow.ts src/cast/server/workflows/location-sheet-workflow.ts src/cast/server/workflows/element-sheet-workflow.ts",
+      "exitCode": 0,
+      "log": ".tmp/p3-g10-g14-20261113/provenance-format-check.log",
+      "scopeFiles": 4
+    },
+    "evidenceFiles": [
+      {
+        "path": ".tmp/p3-g10-g14-20261113/g10-audit.json",
+        "sha256": "93c445971cc54dd38016ec7effb604722c9efad86926159515a7b9c0e0bf9ac7"
+      },
+      {
+        "path": ".tmp/p3-g10-g14-20261113/provenance-baseline-results.json",
+        "sha256": "78f20896980ccc1922a56aec430e255026f594d2c8420618a0a4bc12701f8ebd"
+      },
+      {
+        "path": ".tmp/p3-g10-g14-20261113/provenance-after-results.json",
+        "sha256": "1ffffd4e9bb2d4143e2dc10302c7a4dde9ba46934f174244cf10974a6924736d"
+      },
+      {
+        "path": ".tmp/p3-g10-g14-20261113/provenance-final-results.json",
+        "sha256": "8e991a61f0504e441915e52a14e284dcddec9dfd63af40342fa23b02338ba385"
+      },
+      {
+        "path": ".tmp/p3-g10-g14-20261113/provenance-lint.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".tmp/p3-g10-g14-20261113/provenance-format-check.log",
+        "sha256": "81d0f5f48e1f0b5b0bf0dace1f2abf8c7fe28206ba2d28f66aa9876e3a93a917"
+      }
+    ],
+    "beforeSourceArchive": {
+      "path": ".tmp/p3-g10-g14-20261113/provenance-repair-before-sources.json",
+      "sha256": "1f030aa33aad5e248bbc11ff235477dbfaf4b46bd59a5e81326493eeaf3496a8"
+    },
+    "sourceAndTestFrozen": true,
+    "sourceOrTestEditsAfterFinalCombined": false
+  },
+  "delivery": {
+    "mainThreadOwns": "Global typecheck/lint/build/hooks, evidence integration, staging and commit",
+    "ownProductionDiff": "1\t1\tsrc/cast/server/workflows/character-sheet-workflow.ts\n1\t1\tsrc/cast/server/workflows/element-sheet-workflow.ts\n1\t1\tsrc/cast/server/workflows/location-sheet-workflow.ts",
+    "note": "No additional source/test edits planned after this report. Original before files and g10 audit were not rewritten."
+  }
+}

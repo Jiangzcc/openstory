@@ -1,0 +1,684 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "58c9a69b6f4bc3f453d66bdbe610f052b5838ebd",
+  "codeCommits": [
+    "7aab7bb9052554512b62c6c178579ca34ef8921e",
+    "1d2cf3d44aed64d29ab7778d9fd1247df363c9ce"
+  ],
+  "runtimes": {
+    "node": "v22.22.2",
+    "bun": "1.4.1"
+  },
+  "selectedRegression": {
+    "files": 52,
+    "tests": 714,
+    "passed": 714,
+    "failed": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "path": "src/billing/configured-image-billing.test.ts",
+        "tests": 15,
+        "passed": 15,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "e20bcb5ccdb49afee66d3f0565d9b99c66fd870f65031d97ce2f0c0422d9e2e1"
+      },
+      {
+        "path": "src/billing/configured-image-price-policy.test.ts",
+        "tests": 33,
+        "passed": 33,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "854bc625e27abb86110849ebc8ef557fee74c24f7f5a12b0e6d8d66d5f42b877"
+      },
+      {
+        "path": "src/billing/configured-image-specification.test.ts",
+        "tests": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "79fea5180db11b19b8300dace166d15031494a755e24d8a2237a835ad39d43dc"
+      },
+      {
+        "path": "src/billing/server/configured-image-billing.test.ts",
+        "tests": 13,
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "3fdff239d5e3cb9b8f3a9395afa1751f49e0719a1e59939ae36221bd21c76359"
+      },
+      {
+        "path": "src/cast/server/sheets/sheet-portrait-step.test.ts",
+        "tests": 10,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "e5d17de133fd46e8ce17382601e0ccb1e7d9e05475979624d0495a53a0ca2d52"
+      },
+      {
+        "path": "src/cast/server/workflows/character-sheet-workflow.test.ts",
+        "tests": 10,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "report": "provenance-final-results.json",
+        "testSha256": "d6bb47f7bde5998b397d1d4750297b44d27faecf4e997ea2b95dcde7129772c8"
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-workflow.test.ts",
+        "tests": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "report": "provenance-final-results.json",
+        "testSha256": "ee77af4e81854f3847ce1d6a35c776b78ae31644a53fcadad86976eb185348be"
+      },
+      {
+        "path": "src/cast/server/workflows/sheet-divergence.test.ts",
+        "tests": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "report": "provenance-final-results.json",
+        "testSha256": "aacad894598c0d277779f555a578c01b773514089c92004e7c89d9299b56f7c0"
+      },
+      {
+        "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+        "tests": 9,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "report": "provenance-final-results.json",
+        "testSha256": "e675bcfc04ea07c9fe0bf2366617cf0efad527b6d36f06675223d182fecb45f9"
+      },
+      {
+        "path": "src/models/configured-image-request.test.ts",
+        "tests": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "cbc94aa94fa01ecb09d02d5d492eef3f8ddc10185ed5d2b2a30121cff649519c"
+      },
+      {
+        "path": "src/models/configured-image-specification.test.ts",
+        "tests": 14,
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "422ba9cd607a3c614a1fb5276870357871b474f169b48d4c6984c5f544031256"
+      },
+      {
+        "path": "src/models/image-channels.test.ts",
+        "tests": 21,
+        "passed": 21,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "52f19dca96df8464fce163536285902d56ed37d9b3cb661e08bff3ed5efc2542"
+      },
+      {
+        "path": "src/models/workflow-image-model-routing.test.ts",
+        "tests": 10,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "49e89430702c64091fb7b44bc7c5b71969d542e4711beeb89c37831dd4379882"
+      },
+      {
+        "path": "src/platform/client-server-boundary.test.ts",
+        "tests": 17,
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "8a2255ad9698f8e750519d69600944a43c07618244c7d8064eb40f1ce185e6bb"
+      },
+      {
+        "path": "src/platform/server/workflow/child-snapshot-composition.test.ts",
+        "tests": 10,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "f09e8598630c17904d3b64acb9791e75636969cb25fcefe17bf534ac0a52fa8c"
+      },
+      {
+        "path": "src/sequences/server/configured-poster.test.ts",
+        "tests": 7,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "a3d04060850a47b464f354482ea399d4778d12187c5b3bedbcab7928bce28db4"
+      },
+      {
+        "path": "src/stills/server/compatible-image-bytes.test.ts",
+        "tests": 19,
+        "passed": 19,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "327f47aece6751f2d3be7525ea92ac0482a21451fe3c9ba2c924692c3100abd0"
+      },
+      {
+        "path": "src/stills/server/compatible-image-client.test.ts",
+        "tests": 21,
+        "passed": 21,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "684b022baa170a03ac6e6793bbc32d3e3347ae161c3e9f7a7e0070cc89745100"
+      },
+      {
+        "path": "src/stills/server/compatible-image-deadline.test.ts",
+        "tests": 5,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "227889aec2240fea3d1916780a7986c041306066f7f7dfbc1cdab2b39569adc3"
+      },
+      {
+        "path": "src/stills/server/compatible-image-decoder.test.ts",
+        "tests": 5,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "26cc7296e07bba8235673c07869a4d7aa1d843fdeafbb1e123626f1252468b04"
+      },
+      {
+        "path": "src/stills/server/compatible-image-error.test.ts",
+        "tests": 30,
+        "passed": 30,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "6bd318534fa20532c198446ffba6a25e6b8ebbe961594b0f948cf4d5cc000120"
+      },
+      {
+        "path": "src/stills/server/compatible-image-interruption.test.ts",
+        "tests": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "d799543105920e6adbc89217d55f27d1ed99f998a27e7119a9bb710dd5e24a22"
+      },
+      {
+        "path": "src/stills/server/compatible-image-parameters.test.ts",
+        "tests": 49,
+        "passed": 49,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "006617fad2dbaaabd47133c5a1a52efec597d80431e1e73822465260d2e1ad00"
+      },
+      {
+        "path": "src/stills/server/compatible-image-response.test.ts",
+        "tests": 35,
+        "passed": 35,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "a2853e1e03421f19bca6b1787f03b88bb1b2461c21a41a2d2e156d1112bf087f"
+      },
+      {
+        "path": "src/stills/server/compatible-image-transport.test.ts",
+        "tests": 7,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "report": "adapter-results.json",
+        "testSha256": "6e70869c229106e98322362ae0f8301c355551a634c85ea789691eb22fdc6116"
+      },
+      {
+        "path": "src/stills/server/configured-image-generation.test.ts",
+        "tests": 16,
+        "passed": 16,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "2299fbcdeb487580bd970e7ea7529fe9552ee3ae045ac4e501cd940711340ed7"
+      },
+      {
+        "path": "src/stills/server/configured-image-references.test.ts",
+        "tests": 7,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "e96db25a7a94c07c7cd4006d9c90a0f95061083e598211a481908309569bccf4"
+      },
+      {
+        "path": "src/stills/server/configured-image-test-mode.test.ts",
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "16f7815969f7dcbec134b3e2320ab176725325d2aed60d46e18b0ff4f228ea23"
+      },
+      {
+        "path": "src/stills/server/db/image-generation-attempts.test.ts",
+        "tests": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "d2f1bb088d730f2308199405d66772e5ffbeaf31a90c664bb6f8e6f9494e92c6"
+      },
+      {
+        "path": "src/stills/server/image-storage.test.ts",
+        "tests": 13,
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "b12d6f1ff09dca51ae020dadd80b731863d31fa293ff05480dda32bd4dbfbb4e"
+      },
+      {
+        "path": "src/stills/server/workflows/configured-image-contract.test.ts",
+        "tests": 14,
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "report": "g10-contract-results.json",
+        "testSha256": "74724582ffa790d2ea87a80e89496bfff91348fb848323eba2344436fa7222cf"
+      },
+      {
+        "path": "src/stills/server/workflows/configured-image-interruption.test.ts",
+        "tests": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "3d82ed453dfff7b19635cb47476d994bcd146e7e934ca7448b6cad219e73457f"
+      },
+      {
+        "path": "src/stills/server/workflows/configured-image-step.test.ts",
+        "tests": 31,
+        "passed": 31,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "34de7c453008fe72cda7d0334ad99efb0fb388556f5050057cba07fd8ab13cdb"
+      },
+      {
+        "path": "src/stills/server/workflows/content-soften.test.ts",
+        "tests": 9,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "c2ea55dd3153f8d189de318613047b78cf067f6606e237845fbf8e9e85b26a25"
+      },
+      {
+        "path": "src/stills/server/workflows/shot-variant-workflow-generation.test.ts",
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "fa411ad4166be5b778e68675bc31da8e5cf5a62ec6c576e5562964bf29eccec7"
+      },
+      {
+        "path": "src/stills/server/workflows/soften-image-prompt.test.ts",
+        "tests": 12,
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "c54647262c2adb3b84181bebfffb892844fb0647454b41bb7e10bd893d499bf4"
+      },
+      {
+        "path": "src/stills/server/workflows/upscale-shot-variant-workflow-generation.test.ts",
+        "tests": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "24be33c082b10dbc5a0df2ba1edf211a4e394319e8d7d55c925eb05f941ff86f"
+      },
+      {
+        "path": "src/studio/server/configured-studio-create.test.ts",
+        "tests": 19,
+        "passed": 19,
+        "failed": 0,
+        "skipped": 0,
+        "report": "studio-final-comparison-results.json",
+        "testSha256": "f7bf4c52599793050f2721681d903466659dfc3af6f0f1ac85be2780eabeb54d"
+      },
+      {
+        "path": "src/studio/server/create-studio-asset.test.ts",
+        "tests": 38,
+        "passed": 38,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "0034a0bd5bf6675ab54e9e8eee89cb5dbde2c547b97979c5be237483ee3bd45c"
+      },
+      {
+        "path": "src/studio/server/prepare-studio-image.test.ts",
+        "tests": 8,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "94197077103a46ed62405d7b56be2fd84ecdfd350ab74b2ea3ec5dff28a0523b"
+      },
+      {
+        "path": "src/studio/server/studio-asset-actions.test.ts",
+        "tests": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "68073cda984e07414a5f0a7e349dd03834b04721271690f2ac2f277ac46c5b45"
+      },
+      {
+        "path": "src/studio/server/studio-image-capabilities.test.ts",
+        "tests": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "5fff221ba86928f247235d956f2548dfaa6fad63b128fd0dd1f9dc52c9712e82"
+      },
+      {
+        "path": "src/studio/server/studio-prompt-draft.test.ts",
+        "tests": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "17f865ec200fccf0539218548468cb1de17f8961e3c431f46954c42e64ef1ca8"
+      },
+      {
+        "path": "src/studio/server/studio-prompt-locale.test.ts",
+        "tests": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "d3d661df5ed362189d9a89aafc669481b0783a1b71544ced65a6b6238aef0e43"
+      },
+      {
+        "path": "src/studio/server/studio-video-generation.test.ts",
+        "tests": 32,
+        "passed": 32,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "eef9ad9b3bd57ab138fef1cb6a8b020f938febba8e073f42716ddc8899ca798b"
+      },
+      {
+        "path": "src/studio/server/workflows/asset-generation-workflow.test.ts",
+        "tests": 14,
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "b4c1cac4ab0e183b65e20ad2737a43d7c9bf2d001715a2bda488870e99532f08"
+      },
+      {
+        "path": "src/studio/server/workflows/studio-generation-workflow.test.ts",
+        "tests": 21,
+        "passed": 21,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "9a1e3280beb21f36b14b32ad2c0940ba79106bc33a5a606517212d9c1726b0aa"
+      },
+      {
+        "path": "src/studio/ui/configured-image-count.test.ts",
+        "tests": 14,
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "53747f76ae433b4031c6471f61dea003a4b99f9e497a3c5a5f994df1452f5ca9"
+      },
+      {
+        "path": "src/studio/ui/configured-image-draft.test.ts",
+        "tests": 25,
+        "passed": 25,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "fbbf59524f8076535647cc091216accdae3877df39d9d42067a0d4f328092c5b"
+      },
+      {
+        "path": "src/studio/ui/configured-image-output.test.ts",
+        "tests": 9,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "67ca5564b559aa052e1df23bdf77b03a67f870e87c80f98c7a0c929bbad45402"
+      },
+      {
+        "path": "src/studio/ui/configured-image-settings.test.ts",
+        "tests": 30,
+        "passed": 30,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "9a452de4404d12793d662822c7dcbde6aabc67c8d7ad0f42d9f0f03c55d2fa72"
+      },
+      {
+        "path": "src/studio/ui/use-configured-image-controls.test.tsx",
+        "tests": 11,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "report": "integrated-results.json",
+        "testSha256": "0807a85fc3e1e234e0813164d2309ce17ea7ce3ec9c64b7f8ee59d6bbdcab478"
+      }
+    ]
+  },
+  "runRecords": [
+    {
+      "id": "integrated",
+      "report": "integrated-results.json",
+      "reportSha256": "213e28ea87fbb761828b2a713a9849b40abb1ad4f4d35dfb165650b84d827b1c",
+      "log": "integrated.log",
+      "logSha256": "2121b5fdd6b2e183460f8200836969f116255022b3d2f5a28791ddf25475a6cd",
+      "startedAt": "2026-11-13T06:28:28.290Z",
+      "finishedAt": "2026-11-13T06:35:39.224Z",
+      "reportedFiles": 41,
+      "reportedTests": 527,
+      "success": true
+    },
+    {
+      "id": "adapter",
+      "report": "adapter-results.json",
+      "reportSha256": "c0709c130bf0ee68d3bbb3588c6ce297c54e13022206dd81692e1f78fe199a0b",
+      "log": "adapter-tests.log",
+      "logSha256": "6ee67d82d5f1a214985da8634d0e5ff4c9a15869c87693f1fed1b70a3e683734",
+      "startedAt": "2026-11-13T06:34:50.799Z",
+      "finishedAt": "2026-11-13T06:35:50.731Z",
+      "reportedFiles": 9,
+      "reportedTests": 175,
+      "success": true
+    },
+    {
+      "id": "g10-final",
+      "report": "g10-contract-results.json",
+      "reportSha256": "319f388bf72d3c9ed4fc0a7e77a052e7332e3c49a6c0edb460fec6952ab1b2ff",
+      "log": "g10-contract-tests.log",
+      "logSha256": "a34fd5321bbea2ac79ef9dc598ec7d704d9b8fcaba17173b89e841bea5566a6f",
+      "startedAt": "2026-11-13T06:32:00.319Z",
+      "finishedAt": "2026-11-13T06:32:24.412Z",
+      "reportedFiles": 1,
+      "reportedTests": 14,
+      "success": true
+    },
+    {
+      "id": "provenance-final",
+      "report": "provenance-final-results.json",
+      "reportSha256": "8e991a61f0504e441915e52a14e284dcddec9dfd63af40342fa23b02338ba385",
+      "log": "provenance-final-tests.log",
+      "logSha256": "492ed0ebfb97ec035e16d8f2bf968ab77068ba8a3ad208be49566b774521f7b0",
+      "startedAt": "2026-11-13T06:53:50.876Z",
+      "finishedAt": "2026-11-13T06:55:09.815Z",
+      "reportedFiles": 4,
+      "reportedTests": 25,
+      "success": true
+    },
+    {
+      "id": "studio-final-comparison",
+      "report": "studio-final-comparison-results.json",
+      "reportSha256": "90bb835fb5f2f7eac28d604cf1fa1ff148bf9a5381ac1bc59abf796359fada5d",
+      "log": "studio-final-comparison.log",
+      "logSha256": "e8c2928d9b50f039c4246e07a08bf8f0bc1d0d9b21749e2847ed8b3403cf9424",
+      "startedAt": "2026-11-13T06:52:22.190Z",
+      "finishedAt": "2026-11-13T06:52:46.343Z",
+      "reportedFiles": 2,
+      "reportedTests": 38,
+      "success": true
+    }
+  ],
+  "countPolicy": "Each final path counted once. Final G10, Studio and parent-provider reports replace the corresponding initial integrated entries. Old-source aliases, standalone retries and hooks never add to totals.",
+  "globalChecks": {
+    "typecheck": {
+      "command": ["bun", "typecheck"],
+      "exitCode": 0,
+      "log": "typecheck-verified.log",
+      "logSha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3",
+      "sourceCommit": "1d2cf3d44aed64d29ab7778d9fd1247df363c9ce"
+    },
+    "lint": {
+      "command": ["bun", "lint"],
+      "exitCode": 0,
+      "log": "lint-verified.log",
+      "logSha256": "450a30e86e1d1c14c5a7196835f7f24b0ef4da1a7ad825b8360afcedaccbbe7b",
+      "sourceCommit": "1d2cf3d44aed64d29ab7778d9fd1247df363c9ce"
+    },
+    "build": {
+      "command": ["bun", "run", "build"],
+      "exitCode": 0,
+      "log": "build-final.log",
+      "logSha256": "825491e47cf1c8e7dc3b5a99518d27d65c27387a886c79094f6d3e79dc7a7582",
+      "sourceCommit": "1d2cf3d44aed64d29ab7778d9fd1247df363c9ce"
+    },
+    "codeFormat": {
+      "command": [
+        "bun",
+        "run",
+        "--bun",
+        "oxfmt",
+        "--check",
+        "<9 explicit changed code/test paths>"
+      ],
+      "exitCode": 0,
+      "log": "code-format.log",
+      "logSha256": "58cd149009d630ad3940d4b9a06670d67bb90a76fb3874bf057d9cdafe68f71a",
+      "sourceCommit": "1d2cf3d44aed64d29ab7778d9fd1247df363c9ce"
+    }
+  },
+  "lintComparison": {
+    "previousLog": ".tmp/p3-g09-repair-20261113/lint.log",
+    "previousLogSha256": "a7624f61b9c57108f03855b86f18d077560e3c1c6a416ba7c426be86d024cfca",
+    "currentLog": ".tmp/p3-g10-g14-20261113/lint-verified.log",
+    "currentLogSha256": "450a30e86e1d1c14c5a7196835f7f24b0ef4da1a7ad825b8360afcedaccbbe7b",
+    "previousWarnings": 146,
+    "currentWarnings": 146,
+    "newWarningMessages": [],
+    "removedWarningMessages": [],
+    "normalization": "File paths and exact messages retained; line/column positions only removed."
+  },
+  "normalCodeCommits": [
+    {
+      "commit": "7aab7bb9052554512b62c6c178579ca34ef8921e",
+      "log": "code-commit.log",
+      "run": "code-commit-run.json",
+      "startedAt": "2026-11-13T06:56:43.2221511Z",
+      "finishedAt": "2026-11-13T06:58:57.8045818Z",
+      "exitCode": 0,
+      "durationSeconds": 134.5824307,
+      "logSha256": "c72956f3cca529a9a4f172c1f2759b9b8bf6c10552c924ca9f27a938b01335cf",
+      "passed": [
+        "client-server-boundary",
+        "dead-code",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "bypassed": false
+    },
+    {
+      "commit": "1d2cf3d44aed64d29ab7778d9fd1247df363c9ce",
+      "log": "provenance-commit.log",
+      "run": "provenance-commit-run.json",
+      "startedAt": "2026-11-13T07:00:18.9083808Z",
+      "finishedAt": "2026-11-13T07:03:19.0134031Z",
+      "exitCode": 0,
+      "durationSeconds": 180.1050223,
+      "logSha256": "7dd7d8189b4e183610276b00c385a255b69ecd656321e4d603abe5423411885c",
+      "passed": [
+        "client-server-boundary",
+        "dead-code",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "bypassed": false
+    }
+  ],
+  "firstFailuresAndCorrections": [
+    {
+      "stage": "initial Studio fixture",
+      "detail": "Initial synthetic expectations included fields the existing stored snapshot intentionally omits and an incorrect existing failure message; aligned against the old implementation before accepted baseline."
+    },
+    {
+      "stage": "Studio typecheck",
+      "detail": "Replaced unsupported Array.findLastIndex with equivalent map/lastIndexOf, retaining assertions."
+    },
+    {
+      "stage": "G10 lint",
+      "detail": "Bound original attempt methods through object/arrow receivers instead of passing unbound methods; no lint suppression."
+    },
+    {
+      "stage": "final typecheck",
+      "detail": "Added the existing FalUsage.endpointId required field to the new provenance fixture."
+    },
+    {
+      "stage": "final lint",
+      "detail": "Removed an unnecessary array spread passed to Set in the new Studio test; expected identities and counts retained."
+    }
+  ],
+  "formatScope": "Changed paths only. A repository-wide formatting cleanup was neither performed nor claimed.",
+  "boundaries": [
+    "Real createStudioAssets, quote/specification/capability checks, preflight wrappers and generated-assets local D1; wallet, rights/compliance, configuration read and dispatch explicitly stubbed.",
+    "Provenance regression runs real parent runImpl, recordProvenance, hashing and scoped D1 writes; generation result, wallet, landing and realtime explicitly stubbed.",
+    "G10 original audit remains before-state evidence; it is not rewritten after the provider repair.",
+    "Adapter tests use mocked HTTP and synthetic bytes; G10 uses real attempt SQL and storage helpers with mocked supplier/R2/wallet.",
+    "The provenance regression executes parent bodies and D1 writes, but mocks generation, spend, claim landing and realtime.",
+    "No real Cloudflare durable replay, remote D1 contention, provider invoice, R2 durability or Worker heap acceptance.",
+    "A fresh final production build passed; there was no deployment."
+  ],
+  "documentationFormatting": {
+    "command": [
+      "bun",
+      "run",
+      "--bun",
+      "oxfmt",
+      "--check",
+      "docs/secondary-development/preservation/20261113-p3-g10-g14",
+      "docs/secondary-development/upstream-preservation-plan.md"
+    ],
+    "files": 10,
+    "exitCode": 0,
+    "logSha256": "398c3365bfdb3a462812f5fb9a4e969812854f79532d38e604f272838e8c591b"
+  }
+}
