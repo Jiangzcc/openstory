@@ -1,0 +1,2 @@
+src/motion/server/workflows/motion-batch-workflow.test.ts
+src/cast/server/workflows/recast-location-workflow.test.ts
