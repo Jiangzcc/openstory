@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "5a5cfe461",
+  "codeCommit": "cec298dc1",
+  "selectedRegression": {
+    "command": "bun run test src/motion/server/workflows/motion-batch-workflow.test.ts src/cast/server/workflows/recast-location-workflow.test.ts src/cast/server/workflows/replace-element-workflow-run.test.ts src/shots/server/workflows/shot-spec-rewrite-workflow-run.test.ts",
+    "files": 4,
+    "tests": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "Four parent runImpl bodies execute bounded model snapshot, child dispatch or claim promotion, derived work and result collection paths."
+  },
+  "checks": {
+    "typecheck": { "command": "bun typecheck", "status": "passed" },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check on the two added test files",
+      "status": "passed"
+    },
+    "diffCheck": { "command": "git diff --check", "status": "passed" },
+    "build": {
+      "command": "bun run build",
+      "status": "not-run",
+      "note": "Test-only batch; no production files changed."
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "cec298dc1",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "No production code, child payload, claim ownership or prompt snapshot behavior was changed.",
+    "Real durable replay, provider, remote D1/R2, browser HTTP and settlement were not run."
+  ]
+}
