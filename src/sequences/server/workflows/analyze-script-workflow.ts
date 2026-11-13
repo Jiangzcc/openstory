@@ -392,13 +392,35 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       sanitized,
     });
 
-    const userMessage =
-      (await handleLlmAuthFailure(scopedDb, sanitized)) ??
-      llmAuthFailureMessage(sanitized);
+    const fallbackMessage = llmAuthFailureMessage(sanitized);
+    let userMessage = fallbackMessage;
+    try {
+      userMessage =
+        (await handleLlmAuthFailure(scopedDb, sanitized)) ?? fallbackMessage;
+    } catch (authError) {
+      logger.error(
+        `[AnalyzeScriptWorkflow:cf] Failed to classify the LLM auth failure for sequence ${sequenceId}:`,
+        { err: authError }
+      );
+    }
 
-    await scopedDb.sequence(sequenceId).updateStatus('failed', userMessage);
-    await getGenerationChannel(sequenceId).emit('generation.failed', {
-      message: userMessage,
-    });
+    try {
+      await scopedDb.sequence(sequenceId).updateStatus('failed', userMessage);
+    } catch (statusError) {
+      logger.error(
+        `[AnalyzeScriptWorkflow:cf] Failed to persist failure status for sequence ${sequenceId}:`,
+        { err: statusError }
+      );
+    }
+    try {
+      await getGenerationChannel(sequenceId).emit('generation.failed', {
+        message: userMessage,
+      });
+    } catch (emitError) {
+      logger.error(
+        `[AnalyzeScriptWorkflow:cf] Failed to emit failure event for sequence ${sequenceId}:`,
+        { err: emitError }
+      );
+    }
   }
 }

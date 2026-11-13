@@ -129,4 +129,18 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
       message: '401 Unauthorized',
     });
   });
+
+  test('still emits failure when sequence status persistence fails', async () => {
+    const { scopedDb, updateStatus } = makeDb();
+    updateStatus.mockRejectedValueOnce(new Error('database down'));
+    emit.mockClear();
+
+    await expect(
+      makeWorkflow().failed('boom', scopedDb)
+    ).resolves.toBeUndefined();
+
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      message: 'boom',
+    });
+  });
 });

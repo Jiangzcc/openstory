@@ -445,18 +445,42 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
     }
     if (!sequenceId) return;
 
-    const sequence = await scopedDb.liveRead.sequences.getForUser({
-      sequenceId,
-    });
+    let currentStatus: string | null = null;
+    try {
+      currentStatus = (
+        await scopedDb.liveRead.sequences.getForUser({
+          sequenceId,
+        })
+      ).status;
+    } catch (readError) {
+      logger.error(
+        `[StoryboardWorkflow:cf] Failed to read current status for sequence ${sequenceId}:`,
+        { err: readError }
+      );
+    }
     // Trailing steps (email-ready) run AFTER mark-completed. A send failure
     // must not un-complete a successful generation.
-    if (sequence.status === 'failed' || sequence.status === 'completed') {
+    if (currentStatus === 'failed' || currentStatus === 'completed') {
       return;
     }
 
-    await scopedDb.sequence(sequenceId).updateStatus('failed', error);
-    await getGenerationChannel(sequenceId).emit('generation.failed', {
-      message: error,
-    });
+    try {
+      await scopedDb.sequence(sequenceId).updateStatus('failed', error);
+    } catch (statusError) {
+      logger.error(
+        `[StoryboardWorkflow:cf] Failed to persist failure status for sequence ${sequenceId}:`,
+        { err: statusError }
+      );
+    }
+    try {
+      await getGenerationChannel(sequenceId).emit('generation.failed', {
+        message: error,
+      });
+    } catch (emitError) {
+      logger.error(
+        `[StoryboardWorkflow:cf] Failed to emit failure event for sequence ${sequenceId}:`,
+        { err: emitError }
+      );
+    }
   }
 }

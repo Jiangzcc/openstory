@@ -294,15 +294,22 @@ export class MusicWorkflow extends OpenStoryWorkflowEntrypoint<MusicWorkflowInpu
       // Fail this run's row (the trigger's, or the one it opened) and clear
       // the claim only while it still names it (#1130 rule 5). A primary run
       // that died before any row existed records the failure as one.
-      await scopedDb.sequenceVariants.failMusicClaim(
-        {
-          sequenceId: input.sequenceId,
-          variantId: input.variantId,
-          workflowRunId: event.instanceId,
-          recordIfMissing: isPrimary ? { model } : undefined,
-        },
-        error
-      );
+      try {
+        await scopedDb.sequenceVariants.failMusicClaim(
+          {
+            sequenceId: input.sequenceId,
+            variantId: input.variantId,
+            workflowRunId: event.instanceId,
+            recordIfMissing: isPrimary ? { model } : undefined,
+          },
+          error
+        );
+      } catch (cleanupError) {
+        logger.error(
+          `[MusicWorkflow:cf] Failed to clear music failure claim for sequence ${input.sequenceId}:`,
+          { err: cleanupError }
+        );
+      }
 
       try {
         await getGenerationChannel(input.sequenceId).emit(

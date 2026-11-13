@@ -192,6 +192,24 @@ describe('StoryboardWorkflow.onFailure', () => {
     });
   });
 
+  test('still emits failure when sequence status persistence fails', async () => {
+    emit.mockReset();
+    const { scopedDb, updateStatus } = makeScopedDb('processing');
+    updateStatus.mockRejectedValueOnce(new Error('database down'));
+
+    await expect(
+      makeWorkflow().invokeOnFailure({
+        event: makeEvent('seq_1'),
+        error: 'Child workflow analyze-script timed out',
+        scopedDb,
+      })
+    ).resolves.toBeUndefined();
+
+    expect(emit).toHaveBeenCalledWith('generation.failed', {
+      message: 'Child workflow analyze-script timed out',
+    });
+  });
+
   test('child already marked the sequence failed → no write, no emit', async () => {
     emit.mockReset();
     const { scopedDb, updateStatus } = makeScopedDb('failed');
