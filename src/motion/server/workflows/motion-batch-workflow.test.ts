@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -21,6 +21,8 @@ const buildMotionRender = vi.fn(() => [
 ]);
 const resolveAudioModels = vi.fn(() => ['elevenlabs_music' as const]);
 const zeroReservation = vi.fn(async () => {});
+const emit = vi.fn(async () => undefined);
+const getGenerationChannel = vi.fn(() => ({ emit }));
 
 vi.doMock('@/platform/server/workflow/await-child', () => ({
   spawnAndAwaitChild,
@@ -44,6 +46,7 @@ vi.doMock('@/models/server/byteplus-config', () => ({
 vi.doMock('@/motion/server/motion-generation', () => ({
   arkStillsToRegister: vi.fn(() => []),
 }));
+vi.doMock('@/platform/realtime', () => ({ getGenerationChannel }));
 vi.doMock('./motion-batch-jobs', () => ({
   attachSpeechClips: (shots: unknown[]) => shots,
   buildMotionJobs: vi.fn(() => []),
@@ -62,6 +65,14 @@ class Probe extends MotionBatchWorkflow {
     scopedDb: WorkflowScopedDb
   ) {
     return this.runImpl(event, step, scopedDb);
+  }
+
+  failBody(
+    event: Readonly<WorkflowEvent<BatchMotionMusicWorkflowInput>>,
+    error: string,
+    scopedDb: WorkflowScopedDb
+  ) {
+    return this.onFailure({ event, error, scopedDb });
   }
 }
 
@@ -106,6 +117,12 @@ function makeInput(): BatchMotionMusicWorkflowInput {
 }
 
 describe('MotionBatchWorkflow', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    zeroReservation.mockResolvedValue(undefined);
+    emit.mockResolvedValue(undefined);
+  });
+
   it('propagates the parent model snapshot to motion and music children', async () => {
     const modelConfiguration: ModelRuntimeConfiguration = {
       ...DEFAULT_MODEL_CONFIGURATION,
@@ -170,5 +187,46 @@ describe('MotionBatchWorkflow', () => {
     );
     expect(zeroReservation).toHaveBeenCalledWith('reservation-1');
     expect(result).toEqual({ sequenceId: 'sequence-1' });
+  });
+
+  it('releases the reservation and reports a failed batch', async () => {
+    const event = asStub<WorkflowEvent<BatchMotionMusicWorkflowInput>>({
+      payload: asStub<BatchMotionMusicWorkflowInput>({
+        reservationId: 'reservation-1',
+        sequenceId: 'sequence-1',
+      }),
+    });
+
+    await new Probe(asStub(undefined), asStub({})).failBody(
+      event,
+      'batch failed',
+      asStub<WorkflowScopedDb>({ billing: { zeroReservation } })
+    );
+
+    expect(zeroReservation).toHaveBeenCalledWith('reservation-1');
+    expect(getGenerationChannel).toHaveBeenCalledWith('sequence-1');
+    expect(emit).toHaveBeenCalledWith('generation.failed', {
+      message: 'batch failed',
+    });
+  });
+
+  it('still reports a failed batch when reservation cleanup fails', async () => {
+    zeroReservation.mockRejectedValueOnce(new Error('billing unavailable'));
+    const event = asStub<WorkflowEvent<BatchMotionMusicWorkflowInput>>({
+      payload: asStub<BatchMotionMusicWorkflowInput>({
+        reservationId: 'reservation-1',
+        sequenceId: 'sequence-1',
+      }),
+    });
+
+    await new Probe(asStub(undefined), asStub({})).failBody(
+      event,
+      'batch failed',
+      asStub<WorkflowScopedDb>({ billing: { zeroReservation } })
+    );
+
+    expect(emit).toHaveBeenCalledWith('generation.failed', {
+      message: 'batch failed',
+    });
   });
 });
