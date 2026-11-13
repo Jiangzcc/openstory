@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "996f7fc1d",
+  "codeCommit": "7a1cdf536",
+  "selectedRegression": {
+    "command": "bun run test src/cast/server/workflows/location-bible-workflow.test.ts",
+    "files": 1,
+    "tests": 14,
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "LocationBibleWorkflow reports parent-owned location sheet spawn failures without duplicating child-owned failure events."
+  },
+  "relatedRegression": {
+    "command": "bun run test src/cast/server/workflows/location-bible-workflow.test.ts src/cast/server/workflows/location-sheet-workflow.test.ts src/platform/server/workflow/await-child.test.ts",
+    "files": 3,
+    "tests": 49,
+    "passed": 49,
+    "failed": 0,
+    "skipped": 0
+  },
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/cast/server/workflows/location-bible-workflow.ts src/cast/server/workflows/location-bible-workflow.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed"
+    },
+    "preCommitHooks": {
+      "command": "git commit -m \"fix: report location sheet spawn failures\"",
+      "status": "passed",
+      "bypassed": false
+    }
+  },
+  "boundaries": [
+    "The durable child, ScopedDb and realtime channel were host-side substitutes in the tests.",
+    "Real Cloudflare durable replay, Workerd authenticated HTTP, native providers, remote D1/R2, browser UI and wallet settlement were not run.",
+    "No remote writes or push were performed."
+  ]
+}
