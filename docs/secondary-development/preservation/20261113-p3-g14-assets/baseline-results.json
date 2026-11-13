@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "ffcaf1225a7dee1329721a1941a13fe2083b5fce",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "runs": [
+    {
+      "id": "studio-parent-final-probe",
+      "sourceBefore": "ffcaf1225a7dee1329721a1941a13fe2083b5fce",
+      "owner": "src/studio/server/workflows/studio-generation-workflow.ts",
+      "test": "src/studio/server/workflows/studio-asset-lifecycle-contract.test.ts",
+      "sourceSha256": "adcbb679aaf7cfd46bb33c77dc17ed96e812faf382261ed07c429274aabab70c",
+      "finalProbeSha256": "3761a2aea10cf1bef9792e83fbaecaa421b4934e4a23a2398b9a4eacfe4e9526",
+      "aliasProbeSha256": "ae5c5e596d3a939b524df49b512963a14fecebfb7fa7bcc02dd094130b903679",
+      "importOnlyChange": true,
+      "productionWorkingFileUnchanged": true,
+      "exitCode": 1,
+      "total": 12,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 0,
+      "method": "Same final test body with only its owner import redirected to an adjacent temporary git-show copy. Current production never rolled back.",
+      "report": ".tmp/p3-g14-assets-20261113/parent-final-probe-baseline.json"
+    },
+    {
+      "id": "registered-draft-final-probe",
+      "owner": "src/platform/server/mcp/tools/studio.ts",
+      "test": "src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts",
+      "sourceBefore": "ffcaf1225a7dee1329721a1941a13fe2083b5fce",
+      "sourceSha256": "7214c77f979b10a749c15d6c22520bbf367a95891fa1afee56e1f431e68678dc",
+      "finalProbeSha256": "67b4d4c5754bbef6db2a6815a24a9b802a6e47d3609b1d02f945669ba4ec3b7d",
+      "aliasProbeSha256": "41953ec3d6b7db795a238c064f8c374373ea3821e669524fb86e637c839dbc81",
+      "addedOnlyOwnerModuleRedirection": true,
+      "productionWorkingFileUnchanged": true,
+      "exitCode": 1,
+      "total": 33,
+      "passed": 27,
+      "failed": 6,
+      "skipped": 0,
+      "method": "Same final test body with one hoisted owner module redirection to a temporary git-show copy. Current production never rolled back.",
+      "report": ".tmp/p3-g14-assets-20261113/mcp-final-probe-baseline.json"
+    },
+    {
+      "id": "web-draft-and-provider-probe",
+      "total": 35,
+      "passed": 31,
+      "failed": 4,
+      "skipped": 0,
+      "log": "studio-draft-baseline.log",
+      "versionBoundary": "Prior 35-case probe. Final Studio 36-case set adds organization-key success preservation and is split across entry, upload and provider files. The 35 cases are not claimed to be the identical final test body.",
+      "failures": [
+        "User generation suspension did not stop web drafting.",
+        "Organization generation suspension did not stop web drafting.",
+        "A successful platform fallback retained the initial organization payer and escaped the debit.",
+        "The platform fallback did not preflight its own balance before the second call."
+      ]
+    }
+  ],
+  "harnessCorrections": [
+    "Catalog first run expected nonexistent promptHash; corrected to real promptSha256.",
+    "New fixtures were corrected to real schema fields, org/ prefixes, ledger metadata, Chinese copy and credential lookup types.",
+    "Initial MCP harness issues included SDK imports, tuple inference, required seed fields, per-key limiter use and existing ATTESTATION_REQUIRED code.",
+    "The assistant probe now observes the original real tool error before the synthetic HTTP entry serializes it; this is not a production error-handler change.",
+    "First lint found two missing nullable-key comparators and two unnecessary optional chains in new tests; fixed without rule changes.",
+    "After splitting new Studio entry/upload tests, unused/missing imports were fixed; original test bodies were preserved.",
+    "The initial final combined probe expected the domain error subclass through the assistant bridge. The bridge intentionally throws an ordinary Error containing the MCP error text; four new assertions were corrected to that existing contract without changing production error handling.",
+    "The first normal code commit was rejected by knip after extraction put a direct transitive test import in a fixture. Request context entry now stays in each .test.ts as in the original server-function composition test; the shared fixture accepts a callback. No dependency, lint/knip configuration or runtime behavior changed."
+  ],
+  "temporaryAliasesRemoved": true,
+  "productionRolledBackForBaselines": false,
+  "originalTestsChanged": false
+}

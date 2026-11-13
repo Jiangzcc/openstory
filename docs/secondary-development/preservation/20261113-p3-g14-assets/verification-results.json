@@ -1,0 +1,665 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "ffcaf1225a7dee1329721a1941a13fe2083b5fce",
+  "selection": "Same root Vitest config, one worker, explicit manifest. Reports overlaid by exact file path in chronological order; reruns and baselines are not added.",
+  "totals": {
+    "files": 54,
+    "tests": 1323,
+    "passed": 1323,
+    "failed": 0,
+    "skipped": 0,
+    "originalFiles": 47,
+    "originalTests": 1002,
+    "newFiles": 7,
+    "newTests": 321
+  },
+  "runs": [
+    {
+      "report": ".tmp/p3-g14-assets-20261113/regressions-integrated.json",
+      "sha256": "a7f42d7c5716c4e1abeabf575c93bfc35f472ba29d2aa5d83e4333338b734504",
+      "files": 54,
+      "total": 1323,
+      "passed": 1318,
+      "failed": 5,
+      "skipped": 0,
+      "failedSuites": 4,
+      "success": false
+    },
+    {
+      "report": ".tmp/p3-g14-assets-20261113/integration-rerun.json",
+      "sha256": "6380a7c10757afda5027731911913c145fe70cfc166a0e169fab0b2c47f6c99c",
+      "files": 2,
+      "total": 46,
+      "passed": 45,
+      "failed": 1,
+      "skipped": 0,
+      "failedSuites": 2,
+      "success": false
+    },
+    {
+      "report": ".tmp/p3-g14-assets-20261113/media-upload-isolated.json",
+      "sha256": "1e9c518627e8764a4caea726f725337a3cf84c1425e8ac2e8fb35b9c8bfe0c5b",
+      "files": 1,
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "failedSuites": 0,
+      "success": true
+    },
+    {
+      "report": ".tmp/p3-g14-assets-20261113/fixture-entry-rerun.json",
+      "sha256": "15a8909e2a975fb8fa3eed58c8cf2fef02e95edf9f1d87d02d68f4cafc3d9c0c",
+      "files": 2,
+      "total": 29,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 21,
+      "failedSuites": 1,
+      "success": false
+    },
+    {
+      "report": ".tmp/p3-g14-assets-20261113/fixture-entry-isolated.json",
+      "sha256": "2da17e7a6985974ddd9b60d36266a39455b4f9c2d1831ea8ff5719eab3bb1d5f",
+      "files": 2,
+      "total": 29,
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "failedSuites": 0,
+      "success": true
+    }
+  ],
+  "files": [
+    {
+      "path": "src/models/model-assets.fn.test.ts",
+      "original": true,
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/models/server/db/generated-assets.test.ts",
+      "original": true,
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/motion/server/video-storage.test.ts",
+      "original": true,
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/client-server-boundary.test.ts",
+      "original": true,
+      "tests": 17,
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/auth/server-function-composition.test.ts",
+      "original": true,
+      "tests": 40,
+      "passed": 40,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/compliance/provenance-wiring.test.ts",
+      "original": true,
+      "tests": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/compliance/provenance.test.ts",
+      "original": true,
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/mcp/auth.test.ts",
+      "original": true,
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/mcp/request-composition.test.ts",
+      "original": true,
+      "tests": 69,
+      "passed": 69,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/mcp/server.test.ts",
+      "original": true,
+      "tests": 176,
+      "passed": 176,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/mcp/tool-context.test.ts",
+      "original": true,
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/mcp/tools.test.ts",
+      "original": true,
+      "tests": 125,
+      "passed": 125,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/mcp/tools/asset-entry-contract.test.ts",
+      "original": false,
+      "tests": 224,
+      "passed": 224,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts",
+      "original": false,
+      "tests": 33,
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/storage/upload-locale.test.ts",
+      "original": true,
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/storage/upload-target.test.ts",
+      "original": true,
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "original": true,
+      "tests": 60,
+      "passed": 60,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/platform/server/workflow/wiring-consistency.test.ts",
+      "original": true,
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/shots/server/media-upload.test.ts",
+      "original": true,
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/stills/server/image-storage.test.ts",
+      "original": true,
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/stills/server/workflows/configured-image-contract.test.ts",
+      "original": true,
+      "tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/asset-entry-contract.test.ts",
+      "original": false,
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/asset-upload-contract.test.ts",
+      "original": false,
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/configured-studio-create.test.ts",
+      "original": true,
+      "tests": 19,
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/create-studio-asset.test.ts",
+      "original": true,
+      "tests": 38,
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/prepare-studio-image.test.ts",
+      "original": true,
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/studio-asset-actions.test.ts",
+      "original": true,
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/studio-draft-provider-contract.test.ts",
+      "original": false,
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/studio-image-capabilities.test.ts",
+      "original": true,
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/studio-prompt-draft.test.ts",
+      "original": true,
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/studio-prompt-locale.test.ts",
+      "original": true,
+      "tests": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/studio-video-generation.test.ts",
+      "original": true,
+      "tests": 32,
+      "passed": 32,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/workflows/asset-generation-workflow.test.ts",
+      "original": true,
+      "tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/workflows/asset-lifecycle-contract.test.ts",
+      "original": false,
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/workflows/studio-asset-lifecycle-contract.test.ts",
+      "original": false,
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/server/workflows/studio-generation-workflow.test.ts",
+      "original": true,
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/text-to-video.test.ts",
+      "original": true,
+      "tests": 35,
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/composer-prefs.test.ts",
+      "original": true,
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/configured-image-controls.test.tsx",
+      "original": true,
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/configured-image-count.test.ts",
+      "original": true,
+      "tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/configured-image-draft.test.ts",
+      "original": true,
+      "tests": 25,
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/configured-image-mask-upload.test.tsx",
+      "original": true,
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/configured-image-output.test.ts",
+      "original": true,
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/configured-image-settings.test.ts",
+      "original": true,
+      "tests": 30,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/list-prefs.test.ts",
+      "original": true,
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/outputs.test.ts",
+      "original": true,
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/paste-import.test.ts",
+      "original": true,
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/progress.test.ts",
+      "original": true,
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/prompt-display.test.ts",
+      "original": true,
+      "tests": 23,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/prompt-shuffle.test.ts",
+      "original": true,
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/studio-drawing-canvas.test.ts",
+      "original": true,
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/studio-gallery.test.tsx",
+      "original": true,
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/studio-reference-picker.test.tsx",
+      "original": true,
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "src/studio/ui/use-configured-image-controls.test.tsx",
+      "original": true,
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "quality": [
+    {
+      "id": "typecheck-final",
+      "command": "bun typecheck",
+      "exitCode": 0,
+      "durationMs": 75137
+    },
+    {
+      "id": "lint-final",
+      "command": "bun lint",
+      "exitCode": 0,
+      "durationMs": 81321
+    },
+    {
+      "id": "lint-post-fixture",
+      "command": "bun lint",
+      "exitCode": 0,
+      "durationMs": 84482,
+      "log": ".tmp/p3-g14-assets-20261113/lint-post-fixture.log",
+      "logSha256": "d1906d5f7a7ae2497c49a41da93c036f1b718c9928719d15f61b46416491616c",
+      "warningCount": 146,
+      "previousBatchCount": 146,
+      "warningMessagesIdentical": true,
+      "added": [],
+      "removed": []
+    }
+  ],
+  "lintWarnings": {
+    "count": 146,
+    "previousBatchCount": 146,
+    "added": [],
+    "removed": [],
+    "log": ".tmp/p3-g14-assets-20261113/lint-post-fixture.log",
+    "logSha256": "d1906d5f7a7ae2497c49a41da93c036f1b718c9928719d15f61b46416491616c",
+    "latestSourceSet": true
+  },
+  "build": {
+    "command": "bun run build",
+    "status": "passed",
+    "log": ".tmp/p3-g14-assets-20261113/build-final.log",
+    "inputs": {
+      "at": "2026-11-13T08:34:11.388Z",
+      "files": [
+        {
+          "path": "src/platform/server/mcp/tools/studio.ts",
+          "sha256": "441bc57be526893679c1489b9fc65a742bd8df70a3a38dfae343414e59a6ecaf"
+        },
+        {
+          "path": "src/studio/server/studio-asset-actions.ts",
+          "sha256": "dc03c68d66aee3b18777d54ab737c0129c9be70f3533f9cece05deadc1e85511"
+        },
+        {
+          "path": "src/studio/server/studio-prompt-draft.ts",
+          "sha256": "5f34dacd0eec9d89b4c622649dc19d2879748ae8687c3230127fa4be1da1dc37"
+        },
+        {
+          "path": "src/studio/studio-assets.fn.ts",
+          "sha256": "fab5fc77167c5ad8022e29d77e4e80973ca1d345529cf95813aa952cf62a96cc"
+        },
+        {
+          "path": "src/studio/server/workflows/studio-generation-workflow.ts",
+          "sha256": "826a5451f492c4c6c92e63cdbf6b0b8ff4bbd09558a81d8143b92af09913f2e8"
+        }
+      ]
+    },
+    "scope": "production build only; no deploy/migration/provider call"
+  },
+  "openTimingRisk": {
+    "path": "src/shots/server/media-upload.test.ts",
+    "testLine": 775,
+    "limitMs": 5000,
+    "integratedFailure": true,
+    "pairedRerunFailure": true,
+    "isolatedResult": "13/13 passed with unchanged assertions, timeout and root config",
+    "riskFixed": false
+  },
+  "firstCombinedRun": {
+    "report": ".tmp/p3-g14-assets-20261113/regressions-final.json",
+    "files": 52,
+    "total": 1304,
+    "passed": 1304,
+    "failed": 0,
+    "versionBoundary": "Before shared fixture extraction and additional MCP gate tests; not the final source set"
+  },
+  "initialQualityAndHarnessFailures": "See baseline-results.json. All unsuccessful runs below remain recorded; final counts overlay the latest report for each path and do not imply one green 54-file combined run.",
+  "noPaidCalls": true,
+  "noRemoteWrites": true,
+  "sourceAfter": "6b4799aeade34a8d2de2847b1762ff37252b206a",
+  "fixtureCorrection": {
+    "files": [
+      "src/studio/server/asset-entry-contract.test.ts",
+      "src/studio/server/asset-upload-contract.test.ts",
+      "src/studio/server/db/asset-entry.test.fixture.ts"
+    ],
+    "reason": "Keep Start-context integration in test entries and inject it into the shared fixture; knip production graph has no undeclared package import.",
+    "quality": [
+      {
+        "status": "fulfilled",
+        "value": {
+          "id": "fixture-entry-rerun",
+          "command": "bun run test src/studio/server/asset-entry-contract.test.ts src/studio/server/asset-upload-contract.test.ts --maxWorkers=1 --reporter=json --outputFile=.tmp/p3-g14-assets-20261113/fixture-entry-rerun.json",
+          "exitCode": 1,
+          "durationMs": 227683
+        }
+      },
+      {
+        "status": "fulfilled",
+        "value": {
+          "id": "dead-code-fixture-rerun",
+          "command": "bun dead-code",
+          "exitCode": 0,
+          "durationMs": 161800
+        }
+      }
+    ],
+    "finalRun": {
+      "command": "bun run test src/studio/server/asset-entry-contract.test.ts src/studio/server/asset-upload-contract.test.ts --maxWorkers=1 --reporter=json --outputFile=.tmp/p3-g14-assets-20261113/fixture-entry-isolated.json",
+      "exitCode": 0,
+      "durationMs": 150933,
+      "concurrentQualityRun": false
+    },
+    "temporaryHookTimeout": {
+      "path": "src/studio/server/asset-entry-contract.test.ts",
+      "limitMs": 10000,
+      "run": ".tmp/p3-g14-assets-20261113/fixture-entry-rerun.json",
+      "passed": 8,
+      "unexecutedTests": 21,
+      "failedSuites": 1,
+      "isolatedResult": "29/29 passed across both files with unchanged hook timeout and assertions",
+      "riskFixed": false
+    }
+  },
+  "commitHooks": {
+    "initialAttempt": {
+      "status": "rejected",
+      "log": ".tmp/p3-g14-assets-20261113/code-commit.log",
+      "reason": "knip reported @tanstack/start-storage-context as an unlisted dependency in the newly extracted shared fixture.",
+      "hooksBypassed": false
+    },
+    "code": {
+      "status": "passed",
+      "commit": "6b4799aeade34a8d2de2847b1762ff37252b206a",
+      "log": ".tmp/p3-g14-assets-20261113/code-commit-retry.log",
+      "logSha256": "fe438eb7b9cfdfd73235f7f435f0330c01f8f6a7b0aeebd4a0bc1b3c73bf4208",
+      "checks": [
+        "client-server-boundary: 17/17 passed",
+        "format",
+        "lint",
+        "typecheck",
+        "dead-code"
+      ],
+      "hooksBypassed": false
+    },
+    "archive": {
+      "status": "will-run-on-normal-docs-commit",
+      "selfReference": "The docs commit cannot contain its own final commit result. Its observed hooks and scope are checked after the commit in .tmp/p3-g14-assets-20261113/post-commit-check.json."
+    }
+  }
+}

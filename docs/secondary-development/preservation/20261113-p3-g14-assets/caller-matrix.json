@@ -1,0 +1,517 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "ffcaf1225a7dee1329721a1941a13fe2083b5fce",
+  "mainRows": [
+    {
+      "id": "G14-C01",
+      "entry": "src/models/ui/model-detail-view.tsx:ModelDetailView",
+      "calls": ["src/models/model-assets.fn.ts:createGeneratedAssetFn"],
+      "identity": "authWithOrganizationMiddleware supplies scopedDb; the form supplies endpoint/activity/input only",
+      "locale": "context.promptLocale",
+      "evidence": [
+        "src/platform/server/auth/server-function-composition.test.ts",
+        "src/models/model-assets.fn.test.ts",
+        "src/studio/server/workflows/asset-lifecycle-contract.test.ts"
+      ],
+      "boundary": "G01 verifies the real Start middleware/validator with the shared service doubled; the new local contract drives that service with real scoped SQL. This is not full browser RPC serialization."
+    },
+    {
+      "id": "G14-C02",
+      "entry": "src/models/server/generated-assets.ts:createGeneratedAsset",
+      "calls": [
+        "fetchModelInputSchema",
+        "requireGenerationAllowed",
+        "requireCredits",
+        "scopedDb.generatedAssets.insert",
+        "triggerWorkflow(/asset)",
+        "scopedDb.generatedAssets.setWorkflowRunId"
+      ],
+      "identity": "userId/organizationId are taken from the scope and injected by scoped SQL; unknown client actor fields cannot replace them",
+      "locale": "the explicit locale is copied unchanged into AssetGenerationWorkflowInput",
+      "dispatch": "asset-<row.id> remains the deduplicationId; dispatch rejection marks failed; a run-id write failure returns the successful dispatch and preserves the real SQL row state",
+      "evidence": [
+        "src/studio/server/workflows/asset-lifecycle-contract.test.ts"
+      ],
+      "boundary": "schema fetch, enforcement/credit admission and binding dispatch are doubles; the running/completed advancement at dispatch is simulated using the actual SQL methods"
+    },
+    {
+      "id": "G14-C03",
+      "entry": "src/studio/server/workflows/asset-generation-workflow.ts:AssetGenerationWorkflow.runImpl/onFailure",
+      "calls": [
+        "generatedAssets.markRunning",
+        "credentials.resolveKey(fal)",
+        "fal.queue.submit/status/result",
+        "extractAssetOutputs",
+        "uploadResponse",
+        "persistAssetCompletion",
+        "recordProvenance"
+      ],
+      "identity": "organization-scoped generated-assets writes and scoped provenance SQL stay real",
+      "locale": "payload retains the entry locale; arbitrary provider prompt/input is not translated",
+      "provider": "this catalog route is exclusively fal and does not bind administrator image channels",
+      "outputs": "all distinct image/video/audio output refs are stored in the corresponding bucket; provenance uses the actual stored full R2 keys",
+      "billing": "the upstream catalog path keeps costMicros null and records no supplier units; no billing capability was invented",
+      "evidence": [
+        "src/studio/server/workflows/asset-lifecycle-contract.test.ts",
+        "src/studio/server/workflows/asset-generation-workflow.test.ts",
+        "src/models/server/db/generated-assets.test.ts"
+      ],
+      "boundary": "paid fal APIs, R2 writes, requests and workflow steps are explicit doubles; partial uploads are not completed and the failure hook is invoked directly"
+    },
+    {
+      "id": "G14-C04",
+      "entry": "src/studio/server/workflows/studio-generation-workflow.ts:runImage",
+      "calls": [
+        "runConfiguredStudioImageStep",
+        "generateImageWithProvider",
+        "uploadStudioImage",
+        "deductWorkflowCredits",
+        "recordProvenance",
+        "generatedAssets.markCompleted"
+      ],
+      "identity": "event actor and scoped SQL provide organization/user attribution",
+      "locale": "input prompt stays verbatim; required promptLocale remains on the payload",
+      "provider": "completion and provenance use generated.via, independently of the initial queued fal/compatible label",
+      "outputs": "configured requested n=2 with 1 or 2 returned/stored outputs gives the same number of row outputs and provenance rows; costs multiply the integer unit rate by actual stored count",
+      "repair": "G14-PROVENANCE-KEY-01 builds THUMBNAILS/<relative path> only at provenance writing, preserving helper/checkpoint/attempt paths",
+      "evidence": [
+        "src/studio/server/workflows/studio-asset-lifecycle-contract.test.ts",
+        "src/stills/server/workflows/configured-image-contract.test.ts",
+        "src/studio/server/workflows/studio-generation-workflow.test.ts"
+      ],
+      "boundary": "configured adapter, actual upload helpers, attempt SQL and provenance SQL stay real; compatible generation HTTP, native generation, R2, wallet settlement and content-feed transport are doubles"
+    },
+    {
+      "id": "G14-C05",
+      "entry": "src/studio/server/workflows/studio-generation-workflow.ts:runVideo",
+      "calls": [
+        "resolveMotionVia",
+        "submitStudioVideoJob",
+        "pollStudioVideoJob",
+        "uploadStudioVideo",
+        "deductWorkflowCredits",
+        "recordProvenance",
+        "generatedAssets.markCompleted"
+      ],
+      "identity": "event actor and scoped SQL provide attribution; provider job polling follows the job stamp",
+      "provider": "fal/google/xai/byteplus returned job stamps reach completion and provenance; queue-time fal is not treated as executed provider",
+      "repair": "G14-PROVENANCE-KEY-01 builds VIDEOS/<relative path> at provenance writing",
+      "evidence": [
+        "src/studio/server/workflows/studio-asset-lifecycle-contract.test.ts",
+        "src/studio/server/workflows/studio-generation-workflow.test.ts",
+        "src/studio/server/studio-video-generation.test.ts",
+        "src/motion/server/video-storage.test.ts"
+      ],
+      "boundary": "new parent tests substitute route resolution, submit/poll and video cost result; actual upload helpers and final SQL/provenance stay real. Existing adapter tests remain separate from parent evidence."
+    },
+    {
+      "id": "G14-C06",
+      "entry": "src/models/server/db/generated-assets.ts:createGeneratedAssetsMethods",
+      "calls": [
+        "insert",
+        "list",
+        "getById",
+        "setWorkflowRunId",
+        "markRunning",
+        "markCompleted",
+        "markFailed",
+        "setFavorite",
+        "delete"
+      ],
+      "identity": "writes inject trusted scope IDs and reads/updates/deletes constrain organizationId",
+      "provider": "markCompleted requires an explicit provider; markFailed only changes the provider when the caller knows one",
+      "evidence": [
+        "src/models/server/db/generated-assets.test.ts",
+        "src/studio/server/workflows/asset-lifecycle-contract.test.ts"
+      ],
+      "boundary": "real migrated in-process SQLite via the D1 API; no remote concurrency or provider job is exercised"
+    }
+  ],
+  "studioRows": [
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:118 useCreateStudioAssets",
+      "entry": "src/studio/studio-assets.fn.ts:57 createStudioAssetsFn",
+      "downstream": "src/studio/server/create-studio-asset.ts createStudioAssets",
+      "contract": "...poisonedData() + real auth; real reservation, insert and /studio trigger; requested locale, userId and organizationId override forbidden",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:54 useStudioAssets",
+      "entry": "src/studio/studio-assets.fn.ts:119 listStudioAssetsFn",
+      "downstream": "src/models/server/db/generated-assets.ts generatedAssets.list",
+      "contract": "context.scopedDb; source=studio fixed; foreign organization and catalog rows absent",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:152 useToggleStudioFavorite",
+      "entry": "src/studio/studio-assets.fn.ts:171 setStudioAssetFavoriteFn",
+      "downstream": "src/studio/server/studio-asset-actions.ts setStudioAssetFavorite",
+      "contract": "context.scopedDb; own Studio row only; foreign/catalog IDs refused; locale not persisted or consumed",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:214 useDeleteStudioAsset",
+      "entry": "src/studio/studio-assets.fn.ts:185 deleteStudioAssetFn",
+      "downstream": "src/studio/server/studio-asset-actions.ts deleteStudioAsset",
+      "contract": "context.scopedDb; own Studio row only; DB delete succeeds when final R2 cleanup fails",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:207 useStudioEditHistory",
+      "entry": "src/studio/studio-assets.fn.ts:164 getStudioEditHistoryFn",
+      "downstream": "src/studio/server/studio-asset-actions.ts getStudioEditHistory",
+      "contract": "context.scopedDb for each parent read; stops at foreign/catalog ancestor; oldest to newest; locale unused",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:168 useRenderStudioAssetAtQuality",
+      "entry": "src/studio/studio-assets.fn.ts:134 renderStudioAssetAtQualityFn",
+      "downstream": "src/studio/server/create-studio-asset.ts renderStudioAssetAtQuality",
+      "contract": "server-loaded draftTaskId; trusted actor and Cookie locale -> createStudioAssets -> /studio; foreign/catalog refused",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:187 useEditStudioAsset",
+      "entry": "src/studio/studio-assets.fn.ts:145 editStudioAssetFn",
+      "downstream": "src/studio/server/create-studio-asset.ts editStudioAsset",
+      "contract": "server-loaded source asset + URL; trusted actor and Cookie locale -> createStudioAssets -> /studio; foreign/catalog refused",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:231 useDraftStudioPrompt",
+      "entry": "src/studio/studio-assets.fn.ts:193 draftStudioPromptFn",
+      "downstream": "src/studio/server/studio-asset-actions.ts draftStudioPromptForOrganization",
+      "contract": "trusted actor -> requireGenerationAllowed; Cookie promptLocale; server studioDraft model; real stream + billing SQL; no asset or workflow",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:247 useUploadStudioMedia",
+      "entry": "src/studio/studio-assets.fn.ts:95 presignStudioUploadFn",
+      "downstream": "src/platform/server/storage/storage-cloudflare.ts getSignedUploadUrl",
+      "contract": "organizationId only from auth; new ULID; talent/<org>/uploads/<id>.<ext>; PUT destination validated again",
+      "evidence": "src/studio/server/asset-upload-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "web",
+      "caller": "src/studio/ui/use-studio-assets.ts:269 useStudioUploads",
+      "entry": "src/studio/studio-assets.fn.ts:72 listStudioUploadsFn",
+      "downstream": "src/platform/server/storage/storage-cloudflare.ts listFiles",
+      "contract": "talent/<context.organizationId>/uploads prefix; only image/video/audio; newest key first; no body owner selection",
+      "evidence": "src/studio/server/asset-upload-contract.test.ts (real Start/auth/Zod/SQL; final external boundaries synthetic)"
+    },
+    {
+      "kind": "MCP-read-only-trace",
+      "caller": "src/platform/server/mcp/tools/studio.ts:83 create_studio_assets",
+      "entry": "src/platform/server/mcp/server.ts mcpToolContext -> src/platform/server/mcp/tool-context.ts openstoryTool/runTool",
+      "downstream": "src/studio/server/create-studio-asset.ts createStudioAssets",
+      "contract": "OAuth generate; scopedDb from authenticated MCP context; external MCP promptLocale=en; assistant inherits its request context. ",
+      "evidence": "Production caller/source traced only; full MCP/RPC execution belongs to the parallel MCP owner. Shared service/provider path covered by src/studio/server/studio-draft-provider-contract.test.ts"
+    },
+    {
+      "kind": "MCP-read-only-trace",
+      "caller": "src/platform/server/mcp/tools/studio.ts:142 edit_studio_asset",
+      "entry": "src/platform/server/mcp/server.ts mcpToolContext -> src/platform/server/mcp/tool-context.ts openstoryTool/runTool",
+      "downstream": "src/studio/server/create-studio-asset.ts editStudioAsset",
+      "contract": "OAuth generate; scopedDb from authenticated MCP context; external MCP promptLocale=en; assistant inherits its request context. ",
+      "evidence": "Production caller/source traced only; full MCP/RPC execution belongs to the parallel MCP owner. Shared service/provider path covered by src/studio/server/studio-draft-provider-contract.test.ts"
+    },
+    {
+      "kind": "MCP-read-only-trace",
+      "caller": "src/platform/server/mcp/tools/studio.ts:162 render_studio_asset_at_quality",
+      "entry": "src/platform/server/mcp/server.ts mcpToolContext -> src/platform/server/mcp/tool-context.ts openstoryTool/runTool",
+      "downstream": "src/studio/server/create-studio-asset.ts renderStudioAssetAtQuality",
+      "contract": "OAuth generate; scopedDb from authenticated MCP context; external MCP promptLocale=en; assistant inherits its request context. ",
+      "evidence": "Production caller/source traced only; full MCP/RPC execution belongs to the parallel MCP owner. Shared service/provider path covered by src/studio/server/studio-draft-provider-contract.test.ts"
+    },
+    {
+      "kind": "MCP-read-only-trace",
+      "caller": "src/platform/server/mcp/tools/studio.ts:178 set_studio_asset_favorite",
+      "entry": "src/platform/server/mcp/server.ts mcpToolContext -> src/platform/server/mcp/tool-context.ts openstoryTool/runTool",
+      "downstream": "src/studio/server/studio-asset-actions.ts setStudioAssetFavorite",
+      "contract": "OAuth sequences:write; scopedDb from authenticated MCP context; external MCP promptLocale=en; assistant inherits its request context. ",
+      "evidence": "Production caller/source traced only; full MCP/RPC execution belongs to the parallel MCP owner. Shared service/provider path covered by src/studio/server/studio-draft-provider-contract.test.ts"
+    },
+    {
+      "kind": "MCP-read-only-trace",
+      "caller": "src/platform/server/mcp/tools/studio.ts:192 delete_studio_asset",
+      "entry": "src/platform/server/mcp/server.ts mcpToolContext -> src/platform/server/mcp/tool-context.ts openstoryTool/runTool",
+      "downstream": "src/studio/server/studio-asset-actions.ts deleteStudioAsset",
+      "contract": "OAuth sequences:write; scopedDb from authenticated MCP context; external MCP promptLocale=en; assistant inherits its request context. ",
+      "evidence": "Production caller/source traced only; full MCP/RPC execution belongs to the parallel MCP owner. Shared service/provider path covered by src/studio/server/studio-draft-provider-contract.test.ts"
+    },
+    {
+      "kind": "MCP-read-only-trace",
+      "caller": "src/platform/server/mcp/tools/studio.ts:206 draft_studio_prompt",
+      "entry": "src/platform/server/mcp/server.ts mcpToolContext -> src/platform/server/mcp/tool-context.ts openstoryTool/runTool",
+      "downstream": "src/studio/server/studio-asset-actions.ts draftStudioPromptForOrganization",
+      "contract": "OAuth generate; scopedDb from authenticated MCP context; external MCP promptLocale=en; assistant inherits its request context. Generation-enforcement gate is not present on this wrapper; reported to parent owner.",
+      "evidence": "Production caller/source traced only; full MCP/RPC execution belongs to the parallel MCP owner. Shared service/provider path covered by src/studio/server/studio-draft-provider-contract.test.ts"
+    },
+    {
+      "kind": "MCP-read-only-trace",
+      "caller": "src/platform/server/mcp/tools/studio.ts:271 get_studio_edit_history",
+      "entry": "src/platform/server/mcp/server.ts mcpToolContext -> src/platform/server/mcp/tool-context.ts openstoryTool/runTool",
+      "downstream": "src/studio/server/studio-asset-actions.ts getStudioEditHistory",
+      "contract": "OAuth sequences:read; scopedDb from authenticated MCP context; external MCP promptLocale=en; assistant inherits its request context. ",
+      "evidence": "Production caller/source traced only; full MCP/RPC execution belongs to the parallel MCP owner. Shared service/provider path covered by src/studio/server/studio-draft-provider-contract.test.ts"
+    },
+    {
+      "kind": "service",
+      "caller": "src/studio/server/studio-asset-actions.ts draftStudioPromptForOrganization",
+      "entry": "src/studio/server/studio-asset-actions.ts resolveStudioDraftKey",
+      "downstream": "src/studio/server/studio-prompt-draft.ts draftStudioPrompt -> src/models/server/llm-client.ts callLLMStream -> real createAdapter -> synthetic @tanstack/ai.chat",
+      "contract": "One text routing snapshot; server studioDraft model; validate model/vision; every platform-key resolution preflights credits; successful resolved key determines payer and pricing",
+      "evidence": "src/studio/server/studio-draft-provider-contract.test.ts seven cases; real key routing, adapters, fallback, usage capture and D1 ledger"
+    },
+    {
+      "kind": "upload-request",
+      "caller": "src/studio/ui/use-studio-assets.ts useUploadStudioMedia",
+      "entry": "src/ui/upload.ts putToR2",
+      "downstream": "PUT /api/storage/upload or multipart create/parts/complete",
+      "contract": "Single PUT through 90 MiB; larger uses multipart; body bytes are not transferred by presign",
+      "evidence": "Client branch source traced; single PUT executed by src/studio/server/asset-entry-contract.test.ts; existing upload-locale.test.ts 18 cases also passed"
+    },
+    {
+      "kind": "upload-request",
+      "caller": "src/routes/api/storage/upload.ts PUT",
+      "entry": "src/platform/server/storage/upload-target.ts resolveUploadTarget",
+      "downstream": "requireUploadCheckAllowed -> real storage-cloudflare uploadFile/R2.put -> startCheckForStoredUpload",
+      "contract": "Authenticated user + actual target-path organization membership; Cookie locale from this PUT; forged user/organization/promptLocale query fields ineffective; foreign prefix 403",
+      "evidence": "src/studio/server/asset-entry-contract.test.ts five Cookie cases; real path parser/membership SQL/storage; final check services and R2 binding are explicit doubles"
+    },
+    {
+      "kind": "upload-check-source",
+      "caller": "src/cast/server/upload-check.ts startCheckForStoredUpload",
+      "entry": "startUploadCheck",
+      "downstream": "triggerWorkflow(/upload-check)",
+      "contract": "input.promptLocale/userId/organizationId forwarded; URL from bucket+path; filename only hint",
+      "evidence": "Read-only trace after the observed startCheck boundary; no actual check workflow started in this agent"
+    },
+    {
+      "kind": "generated-image",
+      "caller": "src/studio/server/workflows/studio-generation-workflow.ts StudioGenerationWorkflow.runImage",
+      "entry": "src/studio/server/upload.ts uploadStudioImage",
+      "downstream": "src/stills/server/image-storage.ts uploadImageFromUrl -> uploadResponse -> storage-cloudflare uploadFile -> R2.put",
+      "contract": "organizationId/assetId from workflow payload; optional imageIndex; helper returns bucket-relative org/<org>/studio/<asset>/image[-n].png; R2 key adds thumbnails/",
+      "evidence": "src/studio/server/asset-upload-contract.test.ts inline image byte sniff and exact R2 key; parent owns workflow/provenance coverage"
+    },
+    {
+      "kind": "configured-image",
+      "caller": "src/studio/server/configured-studio-image-step.ts runConfiguredStudioImageStep",
+      "entry": "src/studio/server/upload.ts uploadStudioImage",
+      "downstream": "Same real still-storage path as above",
+      "contract": "organizationId, assetId from event.payload; imageIndex from generated output; no helper path/checkpoint changes",
+      "evidence": "Read-only caller trace; parent configured-image probes cover workflow"
+    },
+    {
+      "kind": "generated-video",
+      "caller": "src/studio/server/workflows/studio-generation-workflow.ts StudioGenerationWorkflow.runVideo (Google inline store callback and general upload-video step)",
+      "entry": "src/studio/server/upload.ts uploadStudioVideo",
+      "downstream": "src/motion/server/video-storage.ts uploadVideoFromUrl -> uploadResponse -> storage-cloudflare uploadFile -> R2.put",
+      "contract": "organizationId/assetId from workflow payload; Google key forwarded; helper returns bucket-relative path; R2 key adds videos/",
+      "evidence": "src/studio/server/asset-upload-contract.test.ts real video streaming and Google header with exactly one simulated fetch; parent owns workflow/provenance tests"
+    }
+  ],
+  "registeredMcpTools": [
+    {
+      "name": "generate_shot_image",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "generate_shot_image_variants",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "select_shot_image_variant",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "generate_shot_video",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "lipsync_shot",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "cancel_video_render",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "render_shot_at_quality",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "render_sequence_drafts_at_quality",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "add_model_to_sequence",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "select_sequence_model",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "upload_media",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "set_shot_image_from_upload",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "set_shot_video_from_upload",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "set_music_from_upload",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "set_scene_dialogue_from_upload",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "set_character_sheet_from_upload",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "set_location_sheet_from_upload",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "add_element",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "replace_element",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts"
+    },
+    {
+      "name": "list_models",
+      "scope": "sequences:read",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts",
+      "scopeOwner": "src/platform/server/mcp/tool-context.ts:productionRead"
+    },
+    {
+      "name": "get_shot_variant_grid",
+      "scope": "sequences:read",
+      "owner": "src/platform/server/mcp/tools/generation-uploads.ts",
+      "scopeOwner": "src/platform/server/mcp/tool-context.ts:productionRead"
+    },
+    {
+      "name": "create_studio_assets",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/studio.ts"
+    },
+    {
+      "name": "edit_studio_asset",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/studio.ts"
+    },
+    {
+      "name": "render_studio_asset_at_quality",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/studio.ts"
+    },
+    {
+      "name": "set_studio_asset_favorite",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/studio.ts"
+    },
+    {
+      "name": "delete_studio_asset",
+      "scope": "sequences:write",
+      "owner": "src/platform/server/mcp/tools/studio.ts"
+    },
+    {
+      "name": "draft_studio_prompt",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/studio.ts"
+    },
+    {
+      "name": "watch_clip",
+      "scope": "generate",
+      "owner": "src/platform/server/mcp/tools/studio.ts"
+    },
+    {
+      "name": "get_studio_edit_history",
+      "scope": "sequences:read",
+      "owner": "src/platform/server/mcp/tools/studio.ts",
+      "scopeOwner": "src/platform/server/mcp/tool-context.ts:productionRead"
+    }
+  ],
+  "mcpCallerForms": [
+    {
+      "entry": "external MCP",
+      "path": "handleMcpPost -> serveMcpRequest -> mcpToolContext -> openstoryTool/runTool",
+      "identity": "authenticated principal and scoped organization",
+      "promptLocale": "en",
+      "scope": "registered tool scope enforced before service work"
+    },
+    {
+      "entry": "in-app assistant",
+      "path": "organization middleware -> assistant-chat.toolContext -> assistantTools.execute -> registered tool",
+      "identity": "session user and active organization",
+      "promptLocale": "request cookie: zh-CN by default, en when selected",
+      "scope": "same registered tools"
+    },
+    {
+      "entry": "apply_sequence_edits",
+      "path": "createApplySequenceEdits -> runRegisteredWrite -> registered write tool",
+      "identity": "outer trusted context",
+      "promptLocale": "outer context",
+      "scope": "sequences:write tools only"
+    },
+    {
+      "entry": "MCP Apps view",
+      "path": "current whitelist: get_sequence_status only",
+      "scope": "does not invoke these asset tools"
+    }
+  ],
+  "mcpDynamicEvidence": {
+    "files": [
+      "src/platform/server/mcp/tools/asset-entry-contract.test.ts",
+      "src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts"
+    ],
+    "adapterCases": 224,
+    "uploadAndAdmissionCases": 33,
+    "newGate": "draft_studio_prompt checks requireGenerationAllowed before the shared draft service; six cases cover user/org x external/assistant zh/assistant en"
+  },
+  "limits": [
+    "Expensive final services are doubles in the registry matrix; real authenticated upload/Studio service composition is separate.",
+    "The test compiler adapter does not prove browser RPC serialization.",
+    "Calling assistantTools.execute does not test a real chat model choosing a tool, persistence or approvals.",
+    "OAuth consent/code exchange, Workerd, remote D1/R2, settlement, durable Workflows, media decoding and deployment remain unverified."
+  ]
+}
