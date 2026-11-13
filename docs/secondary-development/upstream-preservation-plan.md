@@ -185,7 +185,9 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-13 继续执行 `G07-music-hold`：代码提交为 `ab6d584f4`。修复 smart retry 与 add-audio 在余额预占完成后、`claimMusic` 抛错或返回空值时未进入清理保护的窗口；成功 claim、workflow dispatch、claim failure 状态及并发空 claim 的原有 ownership 保持。2 个测试文件、16 项定向回归全过；typecheck、lint、生产 build、格式、diff 检查和正常 pre-commit hooks 通过。G07 的 motion 时长估价与引用路由估价风险仍开放，本批不关闭 GC-07 整体。[批次记录](preservation/20261113-p3-g07-music-hold/README.md)、[实现记录](preservation/20261113-p3-g07-music-hold/implementation.json)和[验证记录](preservation/20261113-p3-g07-music-hold/verification-results.json)记录本批边界。
 
-**P3 整体仍进行中。** G10 有限验证、G14 图片准备及资产入口/来源/草稿修复、G06-capture、G06-auxiliary 及 G07 音乐预占清理已有边界证据，GC-10/GC-14/GC-06/GC-07 不作整职责关闭。GC-06 剩余调用与真实环境验收、GC-14 剩余真环境验收、GC-09 其余职责、G03 领域覆盖和基线超时、G07 两项估价风险及其它 P3 工作仍待完成；下一步按最新台账选择依赖已满足且仍有明确代码或验证缺口的职责。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
+2026-11-13 继续执行 `G03-motion-music`：测试提交为 `03b6f1ad5`。补充 `MotionMusicPromptsWorkflow` 父主体的真实 `runImpl` 组合证据，核对父模型快照、请求上下文、稳定 child id、music prompt child payload 及结果合并；生产代码未改。1 个测试文件、1 项通过，typecheck、lint、格式、diff 检查和正常 pre-commit hooks 通过；没有重复生产 build。G03 其余父主体动态覆盖、lip-sync 分支、原 claim-discipline cold-import timeout 和真实 durable replay 仍开放，本批不关闭 GC-03。[批次记录](preservation/20261113-p3-g03-motion-music/README.md)、[实现记录](preservation/20261113-p3-g03-motion-music/implementation.json)和[验证记录](preservation/20261113-p3-g03-motion-music/verification-results.json)记录本批边界。
+
+**P3 整体仍进行中。** G10 有限验证、G14 图片准备及资产入口/来源/草稿修复、G06-capture、G06-auxiliary、G07 音乐预占清理及 G03 单个父主体证据已有边界记录，GC-10/GC-14/GC-06/GC-07/GC-03 不作整职责关闭。GC-06 剩余调用与真实环境验收、GC-14 剩余真环境验收、GC-09 其余职责、G03 其余领域覆盖和基线超时、G07 两项估价风险及其它 P3 工作仍待完成；下一步按最新台账选择依赖已满足且仍有明确代码或验证缺口的职责。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
 
 ## 6. 未来新增二开的接入流程
 

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "e329c86df68f4c6b419753b9ea89628ead6f5f1d",
+  "testCommit": "03b6f1ad5ebf0e59b50b03645036a8b56db8e93f",
+  "selectedRegression": {
+    "command": "bun run test src/motion/server/workflows/motion-music-prompts-workflow.test.ts",
+    "files": 1,
+    "tests": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "The selected parent workflow executes its child composition with the parent model snapshot and request context, then merges the child result."
+  },
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "targetedLint": {
+      "command": "bunx oxlint --type-aware src/motion/server/workflows/motion-music-prompts-workflow.test.ts",
+      "status": "passed"
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/motion/server/workflows/motion-music-prompts-workflow.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "03b6f1ad5ebf0e59b50b03645036a8b56db8e93f",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "The parent runImpl and WorkflowStep/WorkflowScopedDb boundary are exercised; child spawn and tag/summary helpers are stubs.",
+    "No Cloudflare durable engine replay, provider call, remote D1/R2 write, browser HTTP or settlement was run."
+  ]
+}

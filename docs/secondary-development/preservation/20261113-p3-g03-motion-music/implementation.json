@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-13",
+  "batchId": "G03-motion-music",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "p4Started": false,
+  "newProductCapability": false,
+  "sourceBefore": "e329c86df68f4c6b419753b9ea89628ead6f5f1d",
+  "sourceAfter": "03b6f1ad5ebf0e59b50b03645036a8b56db8e93f",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "authorization": "继续推进 P3；本批为 G03 未执行父主体中可独立验证的 MotionMusicPromptsWorkflow 补充生命周期证据。",
+  "scope": "One parent workflow body: MotionMusicPromptsWorkflow -> MusicPromptWorkflow child.",
+  "productionFilesChanged": [],
+  "testFilesChanged": [
+    "src/motion/server/workflows/motion-music-prompts-workflow.test.ts"
+  ],
+  "newEvidence": [
+    "Parent scopedDb.models is passed as child modelConfiguration.",
+    "Auth, reservation, analysis model, prompt source and stable child id are propagated.",
+    "Child music design is merged back and instrumental tags are preserved."
+  ],
+  "tests": {
+    "files": 1,
+    "tests": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "command": "bun run test src/motion/server/workflows/motion-music-prompts-workflow.test.ts"
+  },
+  "quality": {
+    "typecheck": "passed",
+    "targetedLint": "passed",
+    "format": "passed",
+    "diffCheck": "passed",
+    "preCommitHooks": "passed without bypass",
+    "build": "not rerun because production source was unchanged"
+  },
+  "openItems": [
+    "G03 dynamic body/branch/lifecycle coverage for the remaining parent workflows remains open.",
+    "MotionWorkflow lip-sync child dispatch branch remains open.",
+    "The unchanged claim-discipline cold-import timeout remains open.",
+    "Real durable replay, provider calls, remote D1/R2, settlement and browser HTTP remain unvalidated.",
+    "All 1219 frozen inventory dispositions remain pending; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "pushed": false
+}
