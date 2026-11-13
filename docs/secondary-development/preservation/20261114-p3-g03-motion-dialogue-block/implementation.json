@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-motion-dialogue-block",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "171bdded7",
+  "sourceAfter": "056f59f8a",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Execute a bounded host-side MotionBatchWorkflow dialogue-audio blocking probe.",
+  "productionFilesChanged": [],
+  "testFilesChanged": [
+    "src/motion/server/workflows/motion-batch-workflow.test.ts"
+  ],
+  "newEvidence": [
+    "A missing dialogue take creates a render segment for the blocked shot when needed.",
+    "The parent records a terminal motion failure with its workflow run id and model.",
+    "The parent throws a dialogue blocking validation error before motion/music child fan-out."
+  ],
+  "tests": {
+    "files": 1,
+    "tests": 4,
+    "passed": 4,
+    "failed": 0,
+    "command": "bun run test src/motion/server/workflows/motion-batch-workflow.test.ts"
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "preCommitHooks": "passed without bypass",
+    "build": "not-run; test-only batch with no production files changed"
+  },
+  "openItems": [
+    "Other parent workflow lifecycle and failure branches remain open.",
+    "Real durable replay, provider, remote D1/R2, browser HTTP and settlement remain unvalidated.",
+    "GC-03 and all 1219 frozen inventory dispositions remain open; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}

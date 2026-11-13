@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "171bdded7",
+  "codeCommit": "056f59f8a",
+  "selectedRegression": {
+    "command": "bun run test src/motion/server/workflows/motion-batch-workflow.test.ts",
+    "files": 1,
+    "tests": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "MotionBatchWorkflow blocks motion fan-out when dialogue audio is missing and records the blocked shot failure."
+  },
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/motion/server/workflows/motion-batch-workflow.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "not-run",
+      "note": "Test-only batch; no production files changed."
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "056f59f8a",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "No production code or dialogue blocking behavior was changed.",
+    "Real durable engine, provider, remote storage, browser HTTP and settlement were not run."
+  ]
+}
