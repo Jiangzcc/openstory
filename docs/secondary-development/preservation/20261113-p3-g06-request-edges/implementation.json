@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "batchId": "G06-request-edges",
+  "responsibilityId": "GC-06",
+  "status": "implemented-with-bounded-evidence",
+  "sourceBefore": "7e4bb738453ce0208ed2b4a915597aff3a37a84a",
+  "sourceAfter": "57824149d",
+  "codeCommit": "57824149d",
+  "changedProductionFiles": [
+    "src/platform/server/api-v1/create.ts",
+    "src/sequences/server/script-enhancement.ts",
+    "src/cast/server/locations/organization-locations.ts",
+    "src/cast/server/cast-generation.ts"
+  ],
+  "changedTestFiles": [
+    "src/platform/server/api-v1/create.test.ts",
+    "src/platform/server/api-v1/sequence-creation-capture.test.ts",
+    "src/platform/server/api-v1/entry-locale.test.ts",
+    "src/sequences/server/script-enhancement.test.ts",
+    "src/cast/server/cast-generation.test.ts"
+  ],
+  "preservedContracts": [
+    "The public API schemas do not expose modelConfiguration.",
+    "The API validates and captures configuration before enhancement and inline writes.",
+    "Location rows are created and the sequence completes before deferred sheet dispatch.",
+    "Sheet dispatch failure remains non-fatal after a successful sequence create.",
+    "Standalone enhancement and location roots retain their existing fallback capture.",
+    "No ownsReservation field was added or mechanically propagated."
+  ],
+  "remaining": [
+    "GC-06 whole-responsibility acceptance remains open.",
+    "Real Workerd durable replay, provider/invoice, remote D1/R2, wallet settlement and browser/RPC/compiler-manifest evidence were not run.",
+    "All frozen inventory dispositions remain pending; P3 and other responsibilities remain open."
+  ]
+}

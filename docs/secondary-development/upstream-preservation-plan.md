@@ -181,6 +181,8 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-13 继续执行 `G06-auxiliary`，起点为 `6ab8599f9`，代码提交为 `eab55944f`。将已捕获的 ModelRuntimeConfiguration 从 createSequences 传入草稿元素挂载和复制元素根，使 pending element-vision 使用同次配置；独立 upload-check 仍由 workflow client 自己捕获，element-sheet child 已有父快照因此保持不变。保留权利检查、元素创建、失败清理、storyboard 前顺序、locale 和 ownsReservation 边界。固定 12 个受影响测试文件、98 项全通过；类型、lint、生产 build、格式和正常提交 hooks 通过。本批仅关闭有限辅助传播证据，不关闭 GC-06；未运行真实供应商、远程 D1/R2 或 durable replay。[本批记录](preservation/20261113-p3-g06-auxiliary/README.md)、[实现记录](preservation/20261113-p3-g06-auxiliary/implementation.json)、[调用矩阵](preservation/20261113-p3-g06-auxiliary/caller-matrix.json)和[验证记录](preservation/20261113-p3-g06-auxiliary/verification-results.json)区分已修改入口与复核后保留的根任务。
 
+2026-11-13 完成 `G06-request-edges`：代码提交为 `57824149d`，在 API 一次性创建请求中让脚本增强和延后地点设定图复用同一 `ModelRuntimeConfiguration`；独立增强/地点入口继续保留自身一次捕获，create core、元素 vision、upload-check、element-sheet 与 full retry/regenerate 沿用既有边界。最终 48 个固定测试文件、930 项通过，typecheck、lint、生产 build、格式检查、diff 检查和正常 pre-commit hooks 通过；完整真实 Workerd/供应商/远程存储/结算未验收。[批次记录](preservation/20261113-p3-g06-request-edges/README.md)、[调用矩阵](preservation/20261113-p3-g06-request-edges/caller-matrix.json) 和[验证记录](preservation/20261113-p3-g06-request-edges/verification-results.json)固定本批范围。
+
 **P3 整体仍进行中。** G10 有限验证、G14 图片准备及资产入口/来源/草稿修复、G06-capture 与 G06-auxiliary 已有边界证据，GC-10/GC-14/GC-06 不作整职责关闭。GC-06 剩余调用与真实环境验收、GC-14 剩余真环境验收、GC-09 其余职责、G03 领域覆盖和基线超时、G07 开放项及其它 P3 工作仍待完成；下一步按依赖继续 GC-06 剩余入口。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
 
 ## 6. 未来新增二开的接入流程

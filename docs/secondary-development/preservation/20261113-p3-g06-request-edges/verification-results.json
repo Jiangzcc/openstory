@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "batchId": "G06-request-edges",
+  "sourceAfter": "57824149d",
+  "verification": [
+    {
+      "command": "bunx vitest run <48 unique G06 capture/auxiliary/request-edge test files>",
+      "result": "pass",
+      "testFiles": 48,
+      "tests": 930,
+      "note": "The first combined run had one expected-argument assertion failure after the new trusted field was introduced; after updating that unchanged contract assertion, the final rerun passed 48/48 files and 930/930 tests."
+    },
+    {
+      "command": "bun typecheck",
+      "result": "pass"
+    },
+    {
+      "command": "bun lint",
+      "result": "pass-with-existing-warnings",
+      "note": "No lint errors; existing repository warnings remain."
+    },
+    {
+      "command": "bun run build",
+      "result": "pass",
+      "note": "Client and SSR production builds completed; existing chunk and bundler warnings remain."
+    },
+    {
+      "command": "bunx oxfmt --check <9 changed files>",
+      "result": "pass",
+      "files": 9
+    },
+    {
+      "command": "git diff --check",
+      "result": "pass"
+    },
+    {
+      "command": "normal pre-commit hooks",
+      "result": "pass",
+      "note": "client-server-boundary 17 tests, knip, format, lint and typecheck all passed; normal hooks were not bypassed."
+    }
+  ],
+  "notRun": [
+    "Full repository Vitest beyond the bounded 48-file set.",
+    "Real Workerd durable replay and provider/settlement acceptance.",
+    "Remote D1/R2 writes, deployment and real paid model calls."
+  ]
+}
