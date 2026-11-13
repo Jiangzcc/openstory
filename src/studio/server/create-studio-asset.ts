@@ -1,7 +1,4 @@
-import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
-import { requireStudioImageCapabilities } from './studio-image-capabilities';
-import { prepareConfiguredImageBilling } from '@/billing/server/configured-image-billing';
-import { resolveImageModelRoute } from '@/models/image-channels';
+import { prepareStudioImage } from './prepare-studio-image';
 import { generateId } from '@/platform/id';
 /**
  * Images and Videos create flow (#1274).
@@ -365,30 +362,8 @@ export async function createStudioAssets(
     finalFromDraftTaskId?: string;
   } = {}
 ): Promise<StudioCreateResult> {
-  const modelConfiguration =
-    input.activity === 'image'
-      ? await loadModelRuntimeConfiguration()
-      : undefined;
-  const configuredImage =
-    input.activity === 'image'
-      ? await prepareConfiguredImageBilling({
-          model: input.imageModel,
-          modelConfiguration,
-          aspectRatio: input.aspectRatio,
-          resolution: input.resolution,
-          parameters: input.channelParameters,
-          referenceImageCount: input.referenceImages.length,
-          hasMask: Boolean(input.maskImageUrl),
-        })
-      : undefined;
-  const configuredRoute =
-    configuredImage && input.activity === 'image'
-      ? resolveImageModelRoute(
-          configuredImage.modelConfiguration.imageModelRouting,
-          input.imageModel
-        )
-      : undefined;
-  requireStudioImageCapabilities(input, modelConfiguration?.imageModelRouting);
+  const imagePreparation = await prepareStudioImage(input);
+  const configuredImage = imagePreparation?.configured;
   // Resolved before anything spends: an id becomes the output stored on the
   // row, an address stays the upload. The run receives only those addresses.
   const resolvedClips =
@@ -553,20 +528,12 @@ export async function createStudioAssets(
     throw error;
   }
 
-  const imageOperation =
-    input.activity === 'image' && input.referenceImages.length > 0
-      ? 'edit'
-      : 'generate';
-  const endpointId =
-    configuredRoute?.operations[imageOperation]?.upstreamModel ??
-    studioEndpointId(input);
-  const modelName = configuredRoute?.name ?? studioModelName(input);
+  const endpointId = imagePreparation?.endpointId ?? studioEndpointId(input);
+  const modelName = imagePreparation?.modelName ?? studioModelName(input);
   const runInput: StudioRunInput =
     input.activity === 'video'
       ? { ...input, referenceVideos: referenceVideoUrls }
-      : configuredImage
-        ? { ...input, channelParameters: configuredImage.parameters }
-        : input;
+      : (imagePreparation?.input ?? input);
   const snapshot = snapshotInput(runInput, referenceClips);
   const assets: StudioCreateResult['assets'] = [];
 
@@ -610,7 +577,9 @@ export async function createStudioAssets(
               workflowInput,
               {
                 deduplicationId: `studio-${row.id}`,
-                ...(modelConfiguration ? { modelConfiguration } : {}),
+                ...(imagePreparation
+                  ? { modelConfiguration: imagePreparation.modelConfiguration }
+                  : {}),
               }
             );
             return { rowId: row.id, workflowRunId };
