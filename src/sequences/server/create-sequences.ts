@@ -470,6 +470,7 @@ export const createSequences = createServerOnlyFn(
             if (elementUploads && elementUploads.length > 0) {
               await attachDraftElementUploads({
                 promptLocale: context.promptLocale,
+                modelConfiguration: configuration,
                 scopedDb: context.scopedDb,
                 organizationId,
                 userId: context.user.id,
@@ -482,6 +483,7 @@ export const createSequences = createServerOnlyFn(
             if (sourceSequenceId) {
               await copySequenceElements({
                 promptLocale: context.promptLocale,
+                modelConfiguration: configuration,
                 scopedDb: context.scopedDb,
                 organizationId,
                 userId: context.user.id,

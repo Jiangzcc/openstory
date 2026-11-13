@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScopedDb } from '@/platform/server/db/scoped';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { DraftElementUploadInput } from '@/cast/draft-element-upload';
 import { asStub } from '@/test/as-stub';
 
@@ -172,6 +173,29 @@ describe('attachElementUpload', () => {
         organizationId: 'organization-1',
         userId: 'user-1',
       })
+    );
+  });
+
+  it('passes the trusted create snapshot to the vision workflow', async () => {
+    const modelConfiguration = DEFAULT_MODEL_CONFIGURATION;
+
+    await attachElementUpload({
+      promptLocale: 'en',
+      modelConfiguration,
+      scopedDb: makeScopedDb(),
+      organizationId: 'organization-1',
+      userId: 'user-1',
+      sequenceId: 'seq-1',
+      path: 'elements/organization-1/seq-1/el-1.png',
+      filename: 'jersey.png',
+      description: null,
+      consistencyTag: null,
+    });
+
+    expect(mockTriggerWorkflow).toHaveBeenCalledWith(
+      '/element-vision',
+      expect.objectContaining({ organizationId: 'organization-1' }),
+      { modelConfiguration }
     );
   });
 

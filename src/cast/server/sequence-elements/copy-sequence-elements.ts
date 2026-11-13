@@ -1,4 +1,5 @@
 import type { Locale } from '@/platform/i18n/locale';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { copyFile } from '#storage';
 import { carryUploadRightsIfChecked } from '@/cast/server/upload-rights';
 import { generateId } from '@/platform/id';
@@ -25,6 +26,7 @@ export async function copySequenceElements(params: {
   organizationId: string;
   userId: string;
   promptLocale: Locale;
+  modelConfiguration?: ModelRuntimeConfiguration;
   sourceSequenceId: string;
   targetSequenceId: string;
 }): Promise<void> {
@@ -96,7 +98,13 @@ export async function copySequenceElements(params: {
         filename: element.uploadedFilename,
         token: element.token,
       };
-      await triggerWorkflow('/element-vision', input);
+      if (!params.modelConfiguration) {
+        await triggerWorkflow('/element-vision', input);
+      } else {
+        await triggerWorkflow('/element-vision', input, {
+          modelConfiguration: params.modelConfiguration,
+        });
+      }
     }
   }
 }

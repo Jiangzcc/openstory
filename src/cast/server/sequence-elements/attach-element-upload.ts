@@ -1,4 +1,5 @@
 import type { Locale } from '@/platform/i18n/locale';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { fileExists } from '#storage';
 import { deriveTokenFromFilename } from '@/cast/derive-token';
 import {
@@ -34,14 +35,19 @@ async function triggerElementVision(params: {
   organizationId: string;
   userId: string;
   promptLocale: Locale;
+  modelConfiguration?: ModelRuntimeConfiguration;
 }): Promise<void> {
-  const { organizationId, userId, ...element } = params;
+  const { organizationId, userId, modelConfiguration, ...element } = params;
   const input: ElementVisionWorkflowInput = {
     userId,
     organizationId,
     ...element,
   };
-  await triggerWorkflow('/element-vision', input);
+  if (!modelConfiguration) {
+    await triggerWorkflow('/element-vision', input);
+    return;
+  }
+  await triggerWorkflow('/element-vision', input, { modelConfiguration });
 }
 
 /**
@@ -101,6 +107,7 @@ export async function attachElementUpload(params: {
   organizationId: string;
   userId: string;
   promptLocale: Locale;
+  modelConfiguration?: ModelRuntimeConfiguration;
   sequenceId: string;
   path: string;
   filename: string;
@@ -165,6 +172,7 @@ export async function attachElementUpload(params: {
   try {
     await triggerElementVision({
       promptLocale: params.promptLocale,
+      modelConfiguration: params.modelConfiguration,
       elementId: element.id,
       sequenceId,
       imageUrl,
@@ -224,6 +232,7 @@ export async function attachDraftElementUploads(params: {
   organizationId: string;
   userId: string;
   promptLocale: Locale;
+  modelConfiguration?: ModelRuntimeConfiguration;
   sequenceId: string;
   uploads: DraftElementUploadInput[];
 }): Promise<void> {

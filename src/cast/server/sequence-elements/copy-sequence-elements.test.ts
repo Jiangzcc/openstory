@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { asStub } from '@/test/as-stub';
 
@@ -19,9 +20,47 @@ function fakeDb(source: Record<string, unknown>) {
 }
 
 describe('copySequenceElements', () => {
+  beforeEach(() => {
+    copyFile.mockClear();
+    triggerWorkflow.mockClear();
+  });
+
   // #1559: the copy dropped both, so a duplicated clip landed as an IMAGE
   // (the column default) with no length — sent to image endpoints, and
   // waved past every length check on the video side.
+  it('passes the trusted create snapshot when copied images need vision', async () => {
+    const { scopedDb } = fakeDb({
+      token: 'SMOKE_INK',
+      uploadedFilename: 'smoke-ink.png',
+      imagePath: 'elements/organization-1/seq-a/el-1.png',
+      imageUrl: null,
+      kind: 'image',
+      durationSeconds: null,
+      personInMedia: false,
+      visionStatus: 'pending',
+      description: null,
+      consistencyTag: null,
+      visionGeneratedAt: null,
+    });
+    const modelConfiguration = DEFAULT_MODEL_CONFIGURATION;
+
+    await copySequenceElements({
+      promptLocale: 'en',
+      modelConfiguration,
+      scopedDb,
+      organizationId: 'organization-1',
+      userId: 'user-1',
+      sourceSequenceId: 'seq-a',
+      targetSequenceId: 'seq-b',
+    });
+
+    expect(triggerWorkflow).toHaveBeenCalledWith(
+      '/element-vision',
+      expect.objectContaining({ organizationId: 'organization-1' }),
+      { modelConfiguration }
+    );
+  });
+
   it('carries a clip’s kind and length', async () => {
     const { scopedDb, create } = fakeDb({
       token: 'SMOKE_INK',

@@ -34,9 +34,19 @@ const CUSTOM_ROUTE: TextModelRoute = {
 const triggerStoryboard = vi.fn<typeof import('./launchers').triggerStoryboard>(
   async () => ({ workflowRunId: 'mock-run' })
 );
+const assertDraftElementUploadsAttachable = vi.fn(async () => undefined);
+const attachDraftElementUploads = vi.fn(async () => undefined);
+const copySequenceElements = vi.fn(async () => undefined);
 vi.doMock('./launchers', async () => ({
   ...(await vi.importActual('./launchers')),
   triggerStoryboard,
+}));
+vi.doMock('@/cast/server/sequence-elements/attach-element-upload', () => ({
+  assertDraftElementUploadsAttachable,
+  attachDraftElementUploads,
+}));
+vi.doMock('@/cast/server/sequence-elements/copy-sequence-elements', () => ({
+  copySequenceElements,
 }));
 vi.doMock('@tanstack/react-start/server', () => ({
   getRequest: () =>
@@ -87,7 +97,11 @@ function context(
     textChannels: { getSnapshot: vi.fn(async () => snapshot) },
     imageChannels: { getSnapshot: vi.fn(async () => opts.imageRouting ?? []) },
     modelConfiguration: { get: async () => configuration },
-    sequences: { create, listPage },
+    sequences: {
+      create,
+      listPage,
+      getById: vi.fn(async (id: string) => ({ id })),
+    },
     styles: { getById: async () => MOCK_SYSTEM_STYLES[0] },
   });
   return {
@@ -116,6 +130,45 @@ const input = (analysisModel: string) =>
 beforeEach(() => vi.clearAllMocks());
 
 describe('custom sequence creation request routing', () => {
+  it('passes one captured configuration to auxiliary element roots', async () => {
+    const c = context([]);
+    const elementUploads = [
+      {
+        tempPath: 'elements/t/uploads/logo.png',
+        tempPublicUrl: '/r2/elements/t/uploads/logo.png',
+        filename: 'logo.png',
+        token: 'LOGO',
+        description: 'A logo',
+        consistencyTag: 'logo',
+      },
+    ];
+
+    await createSequences(
+      {
+        ...input(DEFAULT_MODEL_CONFIGURATION.defaultAnalysis),
+        elementUploads,
+        sourceSequenceId: 'source-sequence',
+      },
+      c
+    );
+
+    expect(assertDraftElementUploadsAttachable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 't',
+      })
+    );
+    expect(attachDraftElementUploads).toHaveBeenCalledWith(
+      expect.objectContaining({
+        modelConfiguration: expect.objectContaining(c.configuration),
+      })
+    );
+    expect(copySequenceElements).toHaveBeenCalledWith(
+      expect.objectContaining({
+        modelConfiguration: expect.objectContaining(c.configuration),
+      })
+    );
+  });
+
   it('stores the selected custom id and forwards the same configuration to the launcher', async () => {
     const snapshot = [CUSTOM_ROUTE];
     const c = context(snapshot);
