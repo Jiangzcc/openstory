@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "55d6eeee4",
+  "codeCommit": "41e0c49fe",
+  "selectedRegression": {
+    "command": "bun run test src/cast/server/workflows/recast-location-workflow.test.ts",
+    "files": 1,
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "RecastLocationWorkflow propagates regenerate-shots child failure and reports it through the parent failed event."
+  },
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "bun lint",
+      "status": "passed",
+      "warningNote": "Existing repository warnings were emitted."
+    },
+    "format": {
+      "command": "bunx oxfmt --check src/cast/server/workflows/recast-location-workflow.test.ts",
+      "status": "passed"
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "not-run",
+      "note": "Test-only batch; no production files changed."
+    }
+  },
+  "normalCodeCommit": {
+    "commit": "41e0c49fe",
+    "passed": true,
+    "bypassed": false
+  },
+  "boundaries": [
+    "No production code or parent failure behavior was changed.",
+    "Real durable engine, provider, remote storage, browser HTTP and settlement were not run."
+  ]
+}

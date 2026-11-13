@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-recast-parent-failure",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "55d6eeee4",
+  "sourceAfter": "41e0c49fe",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Execute a bounded host-side RecastLocationWorkflow child rejection and parent onFailure probe.",
+  "productionFilesChanged": [],
+  "testFilesChanged": [
+    "src/cast/server/workflows/recast-location-workflow.test.ts"
+  ],
+  "newEvidence": [
+    "A regenerate-shots child rejection reaches the parent caller as the original error.",
+    "The parent failure hook emits generation.recast-location:failed with the sequence channel and location id."
+  ],
+  "tests": {
+    "files": 1,
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "command": "bun run test src/cast/server/workflows/recast-location-workflow.test.ts"
+  },
+  "quality": {
+    "typecheck": "passed",
+    "lint": "passed with existing repository warnings",
+    "format": "passed",
+    "diffCheck": "passed",
+    "preCommitHooks": "passed without bypass",
+    "build": "not-run; test-only batch with no production files changed"
+  },
+  "openItems": [
+    "Other parent workflow lifecycle and failure branches remain open.",
+    "Real durable replay, provider, remote D1/R2, browser HTTP and settlement remain unvalidated.",
+    "GC-03 and all 1219 frozen inventory dispositions remain open; P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPush": true
+}
