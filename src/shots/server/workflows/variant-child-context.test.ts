@@ -353,7 +353,7 @@ async function runRegenerate(context: Context) {
   );
 }
 
-async function runImages(context: Context) {
+async function runImagesResult(context: Context) {
   const payload = {
     ...context.payload,
     scenesWithVisualPrompts: [scene],
@@ -371,15 +371,18 @@ async function runImages(context: Context) {
     snapshotInputHash: await computeShotImagesHashFromDto(payload),
   };
   const workflow = new ImagesProbe(asStub(undefined), workflowEnv);
-  const result = await workflow.runBody(
+  return workflow.runBody(
     eventFor(input, context.parentInstanceId),
     context.step,
     context.db
   );
+}
+
+async function runImages(context: Context) {
+  const result = await runImagesResult(context);
   expect(result).toEqual({ imageUrls: [imageUrl], frameVersionIds: [null] });
   return shotVariantDedupId(context.parentInstanceId, shotId, imageModel);
 }
-
 function stalePlan(): UpdateStalePlan {
   return {
     aspectRatio: '16:9',
@@ -505,6 +508,8 @@ const scenarios = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  spawnImage.mockReset();
+  spawnImage.mockResolvedValue({ imageUrl });
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => {
@@ -619,4 +624,22 @@ describe.each(scenarios)('$name direct variant root', ({ name, run }) => {
       expect(spawnImage).toHaveBeenCalledTimes(2);
     }
   );
+});
+
+describe('ShotImagesWorkflow primary failure', () => {
+  it('returns a null primary after the lone failed child retry is exhausted', async () => {
+    const binding = bindingHarness();
+    workflowEnv = asStub<CloudflareEnv>({
+      VITE_APP_URL: 'https://variant.mock.invalid',
+      E2E_TEST: 'false',
+      SHOT_VARIANT_WORKFLOW: binding,
+      IMAGE_WORKFLOW: {},
+    });
+    const context = contextFor('en', 'mock-parent-shot-images-failure');
+    spawnImage.mockRejectedValue(new Error('child unavailable'));
+
+    const result = await runImagesResult(context);
+
+    expect(result).toEqual({ imageUrls: [null], frameVersionIds: [null] });
+  });
 });
