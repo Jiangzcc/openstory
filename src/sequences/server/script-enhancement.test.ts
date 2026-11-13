@@ -3,6 +3,7 @@ import type { LLMRequestParams, StreamChunk } from '@/models/server/llm-client';
 import type { EnhanceScriptInput } from '@/models/ai.fn';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { ModelConfiguration } from '@/models/model-configuration';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import type { AnalysisModelId } from '@/models/models.config';
 import type { ImageToVideoModel } from '@/models/models';
 import { micros } from '@/billing/money';
@@ -220,6 +221,28 @@ it('keeps the user custom model and reuses its snapshot on region retries', asyn
   expect(request?.model).toBe(CUSTOM_ROUTE.modelId);
   await request?.resolveApiKey?.(SERVED_MODEL);
   expect(c.resolveLlmKey).toHaveBeenLastCalledWith(SERVED_MODEL, snapshot);
+});
+
+it('uses a supplied runtime configuration without re-reading the catalog', async () => {
+  const snapshot = [CUSTOM_ROUTE];
+  const configuration: ModelRuntimeConfiguration = {
+    ...models,
+    defaultAnalysis: CUSTOM_ROUTE.modelId,
+    textModelRouting: snapshot,
+  };
+  const c = context('platform', models, []);
+
+  await enhanceScriptToString(
+    { script: 'A cyclist races home.' },
+    { ...c, modelConfiguration: configuration }
+  );
+
+  expect(c.getModelConfiguration).not.toHaveBeenCalled();
+  expect(c.scopedDb.textChannels.getSnapshot).not.toHaveBeenCalled();
+  expect(c.resolveLlmKey).toHaveBeenCalledExactlyOnceWith(
+    CUSTOM_ROUTE.modelId,
+    snapshot
+  );
 });
 
 it('uses a custom default from the server configuration', async () => {

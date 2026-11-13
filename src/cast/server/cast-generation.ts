@@ -30,6 +30,7 @@ import type {
 import { buildRecastRegenerateSnapshots } from '@/cast/server/workflows/recast-snapshot';
 import { enqueueCharacterVoiceDesign } from '@/cast/server/voice/enqueue-character-voice';
 import { isElevenLabsConfigured } from '@/models/server/elevenlabs-config';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { lookSheetFaceRefusal } from '@/cast/look-sheet-face';
 import { buildRegenerateCharacterSheetPayload } from '@/cast/server/sheets/character-sheet-trigger';
 import {
@@ -269,7 +270,11 @@ export async function regenerateLocationSheet(
   actor: Actor,
   /** Null from the Locations page (#1695): no sequence model. */
   sequence: Sequence | null,
-  data: { locationDbId: string; imageModel?: string }
+  data: {
+    locationDbId: string;
+    imageModel?: string;
+    modelConfiguration?: ModelRuntimeConfiguration;
+  }
 ): Promise<{ locationDbId: string; workflowRunId: string }> {
   const location = await requireLocation(
     scopedDb,
@@ -286,7 +291,8 @@ export async function regenerateLocationSheet(
     imageModel: data.imageModel,
   });
 
-  const modelConfiguration = await loadModelRuntimeConfiguration();
+  const modelConfiguration =
+    data.modelConfiguration ?? (await loadModelRuntimeConfiguration());
   const imageBilling = await prepareConfiguredImageBilling({
     modelConfiguration,
     ...locationSheetImageRequest(payload),

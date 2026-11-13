@@ -509,6 +509,26 @@ describe('cast sheet direct entry and configured plan quote agreement', () => {
   });
 });
 
+it('uses a supplied runtime configuration for a location sheet', async () => {
+  const payload = await locationPayload([]);
+  mockBuildLocationPayload.mockResolvedValue(payload);
+  mockLoadModels.mockClear();
+  const configuration = models();
+
+  await regenerateLocationSheet(makeScopedDb(), ACTOR, null, {
+    locationDbId: LOCATION_ID,
+    imageModel: REQUESTED_MODEL,
+    modelConfiguration: configuration,
+  });
+
+  expect(mockLoadModels).not.toHaveBeenCalled();
+  expect(mockTrigger).toHaveBeenCalledWith(
+    '/location-sheet',
+    expect.anything(),
+    expect.objectContaining({ modelConfiguration: configuration })
+  );
+});
+
 describe('cast sheet credit rejection before claim, reserve and trigger', () => {
   it.each(cases)('$name', async (testCase) => {
     const sheet = await prepare(testCase);

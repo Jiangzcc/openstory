@@ -481,6 +481,7 @@ describe('POST /api/v1/sequences: real route and one-shot service', () => {
       userId: user.id,
       organizationId,
       locationId,
+      modelConfiguration: expect.any(Object),
     });
     expectTrustedCreate(script);
     expect(createSequences.mock.calls[0]?.[0].suggestedLocationIds).toEqual([

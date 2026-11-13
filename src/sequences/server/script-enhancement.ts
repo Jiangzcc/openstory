@@ -37,6 +37,7 @@ import { reportMissingBillingCost } from '@/billing/billing-observability';
 import { estimateLLMCost } from '@/billing/cost-estimation';
 import { addMicros, ZERO_MICROS, type Microdollars } from '@/billing/money';
 import type { ScopedDb } from '@/platform/server/db/scoped';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import type { ResolvedLlmKey } from '@/models/server/db/api-keys';
 import { InsufficientCreditsError, ValidationError } from '@/platform/errors';
 import { getLogger } from '@/platform/logger';
@@ -169,12 +170,17 @@ export async function* streamScriptEnhancement(
     userId: string;
     organizationId: string;
     promptLocale: Locale;
+    modelConfiguration?: ModelRuntimeConfiguration;
   }
 ): AsyncGenerator<EnhanceChunk> {
-  const textModelRouting = await ctx.scopedDb.textChannels.getSnapshot();
-  const models = await ctx.scopedDb.modelConfiguration.get(
-    textModelCatalogFromRouting(textModelRouting)
-  );
+  const textModelRouting =
+    ctx.modelConfiguration?.textModelRouting ??
+    (await ctx.scopedDb.textChannels.getSnapshot());
+  const models =
+    ctx.modelConfiguration ??
+    (await ctx.scopedDb.modelConfiguration.get(
+      textModelCatalogFromRouting(textModelRouting)
+    ));
   const model = data.analysisModel ?? models.defaultAnalysis;
   const videoModel =
     data.videoModel && isValidImageToVideoModel(data.videoModel)
@@ -352,6 +358,7 @@ export const enhanceScriptToString = createServerOnlyFn(
       userId: string;
       organizationId: string;
       promptLocale: Locale;
+      modelConfiguration?: ModelRuntimeConfiguration;
     }
   ): Promise<string> => {
     let enhanced = '';

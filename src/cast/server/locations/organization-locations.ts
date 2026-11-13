@@ -14,6 +14,7 @@ import type { LocationWithReference } from '@/platform/server/db/schema';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import { STORAGE_BUCKETS } from '@/platform/server/storage/buckets';
 import type { PromptLocaleContext } from '@/platform/i18n/prompt-locale';
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 
 const logger = getLogger(['openstory', 'locations', 'organization-locations']);
 
@@ -55,13 +56,17 @@ export async function triggerOrganizationLocationSheet(
     userId: string;
     organizationId: string;
     locationId: string;
+    modelConfiguration?: ModelRuntimeConfiguration;
   } & PromptLocaleContext
 ): Promise<string> {
   const { workflowRunId } = await regenerateLocationSheet(
     scopedDb,
     { userId: ctx.userId, promptLocale: ctx.promptLocale },
     null,
-    { locationDbId: ctx.locationId }
+    {
+      locationDbId: ctx.locationId,
+      modelConfiguration: ctx.modelConfiguration,
+    }
   );
   return workflowRunId;
 }

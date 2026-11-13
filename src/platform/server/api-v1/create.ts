@@ -304,6 +304,7 @@ export async function runOneShotCreate(
         scopedDb: ctx.scopedDb,
         userId: ctx.user.id,
         organizationId: ctx.organizationId,
+        modelConfiguration: configuration,
       }
     );
     if (result.length > 0) {
@@ -432,6 +433,7 @@ export async function runOneShotCreate(
           userId: ctx.user.id,
           organizationId: ctx.organizationId,
           locationId,
+          modelConfiguration: configuration,
         }).catch((error: unknown) => {
           logger.error('Failed to start the location sheet run', {
             err: error,

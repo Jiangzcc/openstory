@@ -195,6 +195,31 @@ describe('runOneShotCreate', () => {
     });
   });
 
+  it('shares the captured runtime configuration with enhancement and location sheets', async () => {
+    mocks.enhanceScriptToString.mockResolvedValue('Enhanced script');
+
+    await runOneShotCreate(
+      {
+        ...baseInput,
+        enhance: 'always',
+        locations: [{ name: 'Pier' }],
+      },
+      ctx
+    );
+
+    const createContext = mocks.createSequences.mock.calls[0]?.[1];
+    const enhanceContext = mocks.enhanceScriptToString.mock.calls[0]?.[1];
+    const locationContext =
+      mocks.triggerOrganizationLocationSheet.mock.calls[0]?.[1];
+
+    expect(enhanceContext?.modelConfiguration).toBe(
+      createContext?.modelConfiguration
+    );
+    expect(locationContext?.modelConfiguration).toBe(
+      createContext?.modelConfiguration
+    );
+  });
+
   it('passes stop-at through and leaves voices to the deployment, with Match script when no style is named', async () => {
     await runOneShotCreate({ ...baseInput, stopAt: 'dialogue' }, ctx);
     expect(mocks.createSequences).toHaveBeenCalledWith(
@@ -460,12 +485,13 @@ describe('runOneShotCreate', () => {
     expect(mocks.triggerOrganizationLocationSheet).toHaveBeenCalledTimes(2);
     expect(mocks.triggerOrganizationLocationSheet).toHaveBeenCalledWith(
       expect.anything(),
-      {
+      expect.objectContaining({
         userId: 'user-1',
         organizationId: 'organization-1',
         locationId: 'loc-Pier',
         promptLocale: 'en',
-      }
+        modelConfiguration: expect.any(Object),
+      })
     );
     expect(locationDelete).not.toHaveBeenCalled();
   });

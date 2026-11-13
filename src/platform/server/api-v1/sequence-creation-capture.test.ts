@@ -696,6 +696,7 @@ it('waits for successful core completion before starting the location sheet', as
     userId: IDS.user,
     organizationId: IDS.organization,
     locationId: IDS.location,
+    modelConfiguration: activeConfiguration,
   });
   expectCapture(0, activeConfiguration);
 });
