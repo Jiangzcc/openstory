@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "sourceBefore": "9d14dd318035a0b62b3675673a0675a623835c89",
+  "method": "Only a dynamic owner import in an otherwise identical final probe is redirected to a same-directory git-show copy. Production working files are unchanged; other dependencies are current. This is an owner comparison, not a complete checkout rollback.",
+  "temporaryAliasesRemoved": true,
+  "results": [
+    {
+      "sourceBefore": "9d14dd318035a0b62b3675673a0675a623835c89",
+      "name": "web",
+      "owner": "src/sequences/sequences.fn.ts",
+      "test": "src/sequences/server/sequence-creation-entry.test.ts",
+      "aliasOwner": "src/sequences/g06-sequences-baseline.tmp.fn.ts",
+      "aliasTest": "src/sequences/server/g06-web-baseline.tmp.test.ts",
+      "from": "await import('../sequences.fn')",
+      "to": "await import('../g06-sequences-baseline.tmp.fn')",
+      "ownerSourceSha256": "a5fc69236bb6def5a7518c50bc6f693d942831630cb7ec893986487d34ec1bf4",
+      "finalProbeSha256": "7cb9038c2c712e5f21f546579abeb73ebbcfb11d75dd9e5d5f625f6aa7027e5f",
+      "redirectedProbeSha256": "c7c051a203403ed4d8abb782d2d7ee6da87ded4332808b341670678cd6b8d3ed",
+      "onlyOwnerImportRedirected": true,
+      "productionWorkingFileUnchanged": true,
+      "exitCode": 1,
+      "total": 10,
+      "passed": 4,
+      "failed": 6,
+      "skipped": 0,
+      "failures": [
+        {
+          "title": "web sequence creation trusted preparation and capture keeps the captured configuration with trusted actor and Chinese locale",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at D:/code/github/openstory/src/sequences/server/g06-web-baseline.tmp.test.ts:338:25\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "web sequence creation trusted preparation and capture keeps the captured configuration with trusted actor and English locale",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at D:/code/github/openstory/src/sequences/server/g06-web-baseline.tmp.test.ts:338:25\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "web sequence creation trusted preparation and capture keeps the captured configuration with trusted actor and missing locale",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at D:/code/github/openstory/src/sequences/server/g06-web-baseline.tmp.test.ts:338:25\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "web sequence creation trusted preparation and capture keeps the captured configuration with trusted actor and malformed locale",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at D:/code/github/openstory/src/sequences/server/g06-web-baseline.tmp.test.ts:338:25\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "web sequence creation trusted preparation and capture lets the next independent request see the changed administrator configuration",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at D:/code/github/openstory/src/sequences/server/g06-web-baseline.tmp.test.ts:363:27\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "web sequence creation trusted preparation and capture retains explicit model choices while using the trusted captured helper configuration",
+          "messages": [
+            "AssertionError: expected { …(24) } to deeply equal { …(24) }\n    at D:/code/github/openstory/src/sequences/server/g06-web-baseline.tmp.test.ts:392:48\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        }
+      ],
+      "finalProbeStillIdentical": true,
+      "rawLog": "web-baseline.log",
+      "rawLogSha256": "c3e55f9c566fd68cf1ff0d7223ceabbfe7a48215b639f2d73728a042c09aaa44"
+    },
+    {
+      "sourceBefore": "9d14dd318035a0b62b3675673a0675a623835c89",
+      "name": "core",
+      "owner": "src/sequences/server/create-sequences.ts",
+      "test": "src/sequences/server/sequence-creation-capture.test.ts",
+      "aliasOwner": "src/sequences/server/g06-create-sequences-baseline.tmp.ts",
+      "aliasTest": "src/sequences/server/g06-core-baseline.tmp.test.ts",
+      "from": "await import('./create-sequences')",
+      "to": "await import('./g06-create-sequences-baseline.tmp')",
+      "ownerSourceSha256": "daf81759b611595c22ff0a695cf2c703b5b7576b2c9d6af02ac020ed44fbb73a",
+      "finalProbeSha256": "caccf808412ed4f9ffe8961a3071fe2b44cf77a5cf0ee0f85d3331d52cbbd39d",
+      "redirectedProbeSha256": "e256e7a8cc88132c3e6f8bed7da8b0c003da7c709a81c9e1e3dd65814a83aa25",
+      "onlyOwnerImportRedirected": true,
+      "productionWorkingFileUnchanged": true,
+      "exitCode": 1,
+      "total": 15,
+      "passed": 2,
+      "failed": 13,
+      "skipped": 0,
+      "failures": [
+        {
+          "title": "keeps A routes, rotated credentials, rates, exact image hold and dispatch after stored configuration becomes B",
+          "messages": [
+            "AssertionError: expected [ 'custom:capture-analysis-a', …(1) ] to deeply equal [ 'custom:capture-analysis-a', …(1) ]\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:240:54\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "lets the next independent request use B credentials, helper and image card",
+          "messages": [
+            "AssertionError: expected 'd4e7cbf6-da95-4c3c-89bc-cceebd8401f4' not to be 'd4e7cbf6-da95-4c3c-89bc-cceebd8401f4' // Object.is equality\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:296:53\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "preserves explicit selections, de-duplicates analysis/image fanout and funds each independent run",
+          "messages": [
+            "AssertionError: expected false to be true // Object.is equality\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:325:73\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "keeps captured A executable after live text-capability changes and refuses that state on a fresh request despite organization keys",
+          "messages": [
+            "ValidationError: Select an available analysis model that supports structured output.\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:197:19\n    at Array.map (<anonymous>)\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:194:33\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:384:5\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "keeps captured A executable after live text-disabled changes and refuses that state on a fresh request despite organization keys",
+          "messages": [
+            "ValidationError: Select an available analysis model that supports structured output.\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:197:19\n    at Array.map (<anonymous>)\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:194:33\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:384:5\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "keeps captured A executable after live image-price changes and refuses that state on a fresh request despite organization keys",
+          "messages": [
+            "Error: No configured image price matches these parameters.\n    at quoteConfiguredImagePrice (D:/code/github/openstory/src/models/image-channel-pricing.ts:107:11)\n    at quoteConfiguredImageRequest (D:/code/github/openstory/src/billing/configured-image-billing.ts:87:17)\n    at estimateConfiguredImageCost (D:/code/github/openstory/src/billing/configured-image-billing.ts:109:17)\n    at estimateConfiguredImageRequestCost (D:/code/github/openstory/src/billing/cost-estimation.ts:171:10)\n    at estimateImageCost (D:/code/github/openstory/src/billing/cost-estimation.ts:204:12)\n    at line (D:/code/github/openstory/src/billing/cost-estimation.ts:571:11)\n    at estimateReferenceSheetCost (D:/code/github/openstory/src/billing/cost-estimation.ts:582:7)\n    at estimateStoryboardCost (D:/code/github/openstory/src/billing/cost-estimation.ts:602:7)\n    at estimateStoryboardPreflightCost (D:/code/github/openstory/src/billing/storyboard-preflight-cost.ts:138:10)\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:339:26"
+          ]
+        },
+        {
+          "title": "keeps captured A executable after live image-capability changes and refuses that state on a fresh request despite organization keys",
+          "messages": [
+            "Error: Configured image model is unavailable.\n    at resolveImageModelRoute (D:/code/github/openstory/src/models/image-channels.ts:473:11)\n    at quoteConfiguredImageRequest (D:/code/github/openstory/src/billing/configured-image-billing.ts:67:17)\n    at estimateConfiguredImageCost (D:/code/github/openstory/src/billing/configured-image-billing.ts:109:17)\n    at estimateConfiguredImageRequestCost (D:/code/github/openstory/src/billing/cost-estimation.ts:171:10)\n    at estimateImageCost (D:/code/github/openstory/src/billing/cost-estimation.ts:204:12)\n    at line (D:/code/github/openstory/src/billing/cost-estimation.ts:571:11)\n    at estimateReferenceSheetCost (D:/code/github/openstory/src/billing/cost-estimation.ts:582:7)\n    at estimateStoryboardCost (D:/code/github/openstory/src/billing/cost-estimation.ts:602:7)\n    at estimateStoryboardPreflightCost (D:/code/github/openstory/src/billing/storyboard-preflight-cost.ts:138:10)\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:339:26"
+          ]
+        },
+        {
+          "title": "keeps captured A executable after live image-disabled changes and refuses that state on a fresh request despite organization keys",
+          "messages": [
+            "Error: Configured image model is unavailable.\n    at resolveImageModelRoute (D:/code/github/openstory/src/models/image-channels.ts:473:11)\n    at quoteConfiguredImageRequest (D:/code/github/openstory/src/billing/configured-image-billing.ts:67:17)\n    at estimateConfiguredImageCost (D:/code/github/openstory/src/billing/configured-image-billing.ts:109:17)\n    at estimateConfiguredImageRequestCost (D:/code/github/openstory/src/billing/cost-estimation.ts:171:10)\n    at estimateImageCost (D:/code/github/openstory/src/billing/cost-estimation.ts:204:12)\n    at line (D:/code/github/openstory/src/billing/cost-estimation.ts:571:11)\n    at estimateReferenceSheetCost (D:/code/github/openstory/src/billing/cost-estimation.ts:582:7)\n    at estimateStoryboardCost (D:/code/github/openstory/src/billing/cost-estimation.ts:602:7)\n    at estimateStoryboardPreflightCost (D:/code/github/openstory/src/billing/storyboard-preflight-cost.ts:138:10)\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:339:26"
+          ]
+        },
+        {
+          "title": "requires platform funds for captured custom text despite usable organization keys",
+          "messages": [
+            "AssertionError: expected { Object (key, source, ...) } to match object { source: 'platform', …(2) }\n(16 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at assertPlatformResolutions (D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:155:17)\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:428:3\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "checks the captured platform helper when selected analysis uses an organization credential",
+          "messages": [
+            "AssertionError: expected { Object (key, source, ...) } to match object { via: 'compatible', …(1) }\n(16 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:453:19\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "requires platform image funds even when both text calls use organization credentials",
+          "messages": [
+            "AssertionError: expected [ 'organization', 'platform' ] to deeply equal [ 'organization', 'organization' ]\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:476:5\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "keeps zero-balance organization coverage when every charged route is organization-owned",
+          "messages": [
+            "InsufficientCreditsError: Insufficient credits to generate storyboard\n    at reserveRunCredits (D:/code/github/openstory/src/billing/server/preflight.ts:153:11)\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:399:13\n    at async Promise.all (index 0)\n    at D:/code/github/openstory/src/sequences/server/g06-create-sequences-baseline.tmp.ts:394:21\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:492:3\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "releases the real reservation and records failure when the synthetic final binding refuses dispatch",
+          "messages": [
+            "AssertionError: expected [ { …(9) } ] to match object [ { originalAmount: 120000, …(1) } ]\n(7 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at D:/code/github/openstory/src/sequences/server/g06-core-baseline.tmp.test.ts:538:23\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        }
+      ],
+      "finalProbeStillIdentical": true,
+      "rawLog": "core-baseline.log",
+      "rawLogSha256": "84f345e7b47c84546ec9a27416dcfd300785dc3dba15e53a06632df50e359c80"
+    },
+    {
+      "sourceBefore": "9d14dd318035a0b62b3675673a0675a623835c89",
+      "name": "api",
+      "owner": "src/platform/server/api-v1/create.ts",
+      "test": "src/platform/server/api-v1/sequence-creation-capture.test.ts",
+      "aliasOwner": "src/platform/server/api-v1/g06-create-baseline.tmp.ts",
+      "aliasTest": "src/platform/server/api-v1/g06-api-baseline.tmp.test.ts",
+      "from": "await import('./create')",
+      "to": "await import('./g06-create-baseline.tmp')",
+      "ownerSourceSha256": "d0dd7ffcd57a7e11dda155de0a51d626ff887d46383856e8cf8361d8427bd48a",
+      "finalProbeSha256": "8a09f6cda7b5c6514b10219d93c0a6a6a80104f5d3d086bd5bf5db173f7546c3",
+      "redirectedProbeSha256": "30a1c372efac6592874a2c6523df4db3a174f6d6a98b180e28b0b9a4b2897f89",
+      "onlyOwnerImportRedirected": true,
+      "productionWorkingFileUnchanged": true,
+      "exitCode": 1,
+      "total": 19,
+      "passed": 6,
+      "failed": 13,
+      "skipped": 0,
+      "failures": [
+        {
+          "title": "keeps A through a controlled admin change and captures B on the next request",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:386:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "preserves explicit model arrays, style, output switches and a verbatim script",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:453:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "keeps the real BytePlus source gate for no platform Ark key",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:487:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "keeps the real BytePlus source gate for disabled platform slots",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:487:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "keeps the real BytePlus source gate for an organization fal key",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:487:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "falls back to an offered model when both configured video defaults need BytePlus",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:498:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "refuses an unsigned location portrait before enhancement or any inline insert",
+          "messages": [
+            "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 0 times\n    at expectReads (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:328:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:535:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "refuses an unsigned element portrait before enhancement or any inline insert",
+          "messages": [
+            "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 0 times\n    at expectReads (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:328:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:535:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "records both portrait sign-offs before enhancement, inline rows, core and sheets",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:584:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "preserves Kling O3 reference-only acceptance in the real schema",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:610:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "cleans up both inline rows and starts no sheet when the core refuses creation",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:672:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "waits for successful core completion before starting the location sheet",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:700:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "title": "strips forged public actor, locale and configuration fields before the real service",
+          "messages": [
+            "AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }\n(12 matching properties omitted from actual)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1764:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at expectCapture (D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20)\n    at D:/code/github/openstory/src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:736:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        }
+      ],
+      "finalProbeStillIdentical": true,
+      "rawLog": "api-baseline.log",
+      "rawLogSha256": "5de33f1eea07547641ac18170496af39882724e21439a50a3f173e3cce7b5a37"
+    }
+  ],
+  "interpretation": "Failures demonstrate missing captured-configuration behavior and its required internal handoff; the failed-case count is not a count of separate production bugs. API tests use a mocked core, while web/core exercise the real create orchestrator within their declared boundaries."
+}

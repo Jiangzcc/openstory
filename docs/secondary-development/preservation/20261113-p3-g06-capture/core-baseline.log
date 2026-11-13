@@ -1,0 +1,256 @@
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts (15 tests | 13 failed) 1769ms
+   × keeps A routes, rotated credentials, rates, exact image hold and dispatch after stored configuration becomes B 149ms
+   × lets the next independent request use B credentials, helper and image card 71ms
+   × preserves explicit selections, de-duplicates analysis/image fanout and funds each independent run 53ms
+   ✓ retains the original core loader when no trusted configuration is supplied 46ms
+   × keeps captured A executable after live text-capability changes and refuses that state on a fresh request despite organization keys 24ms
+   × keeps captured A executable after live text-disabled changes and refuses that state on a fresh request despite organization keys 28ms
+   × keeps captured A executable after live image-price changes and refuses that state on a fresh request despite organization keys 28ms
+   × keeps captured A executable after live image-capability changes and refuses that state on a fresh request despite organization keys 28ms
+   × keeps captured A executable after live image-disabled changes and refuses that state on a fresh request despite organization keys 27ms
+   × requires platform funds for captured custom text despite usable organization keys 27ms
+   × checks the captured platform helper when selected analysis uses an organization credential 29ms
+   × requires platform image funds even when both text calls use organization credentials 38ms
+   × keeps zero-balance organization coverage when every charged route is organization-owned 27ms
+   ✓ keeps script-only creation free with no credential resolution or reservation 30ms
+   × releases the real reservation and records failure when the synthetic final binding refuses dispatch 34ms
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 2 passed (15)
+   Start at  18:21:01
+   Duration  11.22s (import 51%, transform 26%, tests 16%, setup 6%)
+
+JSON report written to D:/code/github/openstory/.tmp/p3-g06-capture-20261113/core-baseline-final.json
+$ vitest run "src/sequences/server/g06-core-baseline.tmp.test.ts" "--maxWorkers=1" "--reporter=default" "--reporter=json" "--outputFile=.tmp/p3-g06-capture-20261113/core-baseline-final.json"
+(node:45556) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > keeps A routes, rotated credentials, rates, exact image hold and dispatch after stored configuration becomes B
+AssertionError: expected [ 'custom:capture-analysis-a', …(1) ] to deeply equal [ 'custom:capture-analysis-a', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "custom:capture-analysis-a",
+-   "custom:capture-helper-a",
++   "custom:capture-helper-b",
+  ]
+
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:240:54
+    238|   });
+    239|   expect(load).toHaveBeenCalledOnce();
+    240|   expect(resolve.mock.calls.map(([model]) => model)).toEqual([
+       |                                                      ^
+    241|     CAPTURE.analysisA,
+    242|     CAPTURE.helperA,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > lets the next independent request use B credentials, helper and image card
+AssertionError: expected 'd4e7cbf6-da95-4c3c-89bc-cceebd8401f4' not to be 'd4e7cbf6-da95-4c3c-89bc-cceebd8401f4' // Object.is equality
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:296:53
+    294|   const a = dispatched().models;
+    295|   const b = dispatched(1).models;
+    296|   expect(a.textModelRouting?.[0]?.credentialId).not.toBe(
+       |                                                     ^
+    297|     b.textModelRouting?.[0]?.credentialId
+    298|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > preserves explicit selections, de-duplicates analysis/image fanout and funds each independent run
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:325:73
+    323|   expect(state.holds).toHaveLength(2);
+    324|   const expected = holdAmount('A') + CAPTURE_RATES.A.imageMicros;
+    325|   expect(state.holds.every((hold) => hold.originalAmount === expected)…
+       |                                                                         ^
+    326|     true
+    327|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > keeps captured A executable after live text-capability changes and refuses that state on a fresh request despite organization keys
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > keeps captured A executable after live text-disabled changes and refuses that state on a fresh request despite organization keys
+ValidationError: Select an available analysis model that supports structured output.
+ ❯ src/sequences/server/g06-create-sequences-baseline.tmp.ts:197:19
+    195|           const model = getAnalysisModelById(id, extraModels);
+    196|           if (!model || model.structuredOutput === false) {
+    197|             throw new ValidationError(
+       |                   ^
+    198|               'Select an available analysis model that supports struct…
+    199|             );
+ ❯ src/sequences/server/g06-create-sequences-baseline.tmp.ts:194:33
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:384:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > keeps captured A executable after live image-price changes and refuses that state on a fresh request despite organization keys
+Error: No configured image price matches these parameters.
+ ❯ quoteConfiguredImagePrice src/models/image-channel-pricing.ts:107:11
+    105|   );
+    106|   if (best.length === 0)
+    107|     throw new Error('No configured image price matches these parameter…
+       |           ^
+    108|   if (best.length !== 1)
+    109|     throw new Error(
+ ❯ quoteConfiguredImageRequest src/billing/configured-image-billing.ts:87:17
+ ❯ estimateConfiguredImageCost src/billing/configured-image-billing.ts:109:17
+ ❯ estimateConfiguredImageRequestCost src/billing/cost-estimation.ts:171:10
+ ❯ estimateImageCost src/billing/cost-estimation.ts:204:12
+ ❯ line src/billing/cost-estimation.ts:571:11
+ ❯ estimateReferenceSheetCost src/billing/cost-estimation.ts:582:7
+ ❯ estimateStoryboardCost src/billing/cost-estimation.ts:602:7
+ ❯ estimateStoryboardPreflightCost src/billing/storyboard-preflight-cost.ts:138:10
+ ❯ src/sequences/server/g06-create-sequences-baseline.tmp.ts:339:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > keeps captured A executable after live image-capability changes and refuses that state on a fresh request despite organization keys
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > keeps captured A executable after live image-disabled changes and refuses that state on a fresh request despite organization keys
+Error: Configured image model is unavailable.
+ ❯ resolveImageModelRoute src/models/image-channels.ts:473:11
+    471|   if (route) return route;
+    472|   if (modelId.startsWith('custom-image:'))
+    473|     throw new Error('Configured image model is unavailable.');
+       |           ^
+    474|   return undefined;
+    475| }
+ ❯ quoteConfiguredImageRequest src/billing/configured-image-billing.ts:67:17
+ ❯ estimateConfiguredImageCost src/billing/configured-image-billing.ts:109:17
+ ❯ estimateConfiguredImageRequestCost src/billing/cost-estimation.ts:171:10
+ ❯ estimateImageCost src/billing/cost-estimation.ts:204:12
+ ❯ line src/billing/cost-estimation.ts:571:11
+ ❯ estimateReferenceSheetCost src/billing/cost-estimation.ts:582:7
+ ❯ estimateStoryboardCost src/billing/cost-estimation.ts:602:7
+ ❯ estimateStoryboardPreflightCost src/billing/storyboard-preflight-cost.ts:138:10
+ ❯ src/sequences/server/g06-create-sequences-baseline.tmp.ts:339:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > requires platform funds for captured custom text despite usable organization keys
+AssertionError: expected { Object (key, source, ...) } to match object { source: 'platform', …(2) }
+(16 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "key": "synthetic-text-secret-A",
++   "key": "synthetic-text-secret-B",
+    "source": "platform",
+    "via": "compatible",
+  }
+
+ ❯ assertPlatformResolutions src/sequences/server/g06-core-baseline.tmp.test.ts:155:17
+    153|   expect(keys.length).toBeGreaterThan(0);
+    154|   for (const key of keys) {
+    155|     expect(key).toMatchObject({
+       |                 ^
+    156|       source: 'platform',
+    157|       via: 'compatible',
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:428:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > checks the captured platform helper when selected analysis uses an organization credential
+AssertionError: expected { Object (key, source, ...) } to match object { via: 'compatible', …(1) }
+(16 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "route": {
+-     "modelId": "custom:capture-helper-a",
++     "modelId": "custom:capture-helper-b",
+    },
+    "via": "compatible",
+  }
+
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:453:19
+    451|   );
+    452|   expect(keys.map((key) => key.source)).toEqual(['organization', 'plat…
+    453|   expect(keys[1]).toMatchObject({
+       |                   ^
+    454|     via: 'compatible',
+    455|     route: { modelId: CAPTURE.helperA },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > requires platform image funds even when both text calls use organization credentials
+AssertionError: expected [ 'organization', 'platform' ] to deeply equal [ 'organization', 'organization' ]
+
+- Expected
++ Received
+
+  [
+    "organization",
+-   "organization",
++   "platform",
+  ]
+
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:476:5
+    474|       resolve.mock.results.map(async (result) => (await result.value).…
+    475|     )
+    476|   ).toEqual(['organization', 'organization']);
+       |     ^
+    477|   await assertNoCreation(context);
+    478| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > keeps zero-balance organization coverage when every charged route is organization-owned
+InsufficientCreditsError: Insufficient credits to generate storyboard
+ ❯ reserveRunCredits src/billing/server/preflight.ts:153:11
+    151|   });
+    152|   if (!result.ok) {
+    153|     throw new InsufficientCreditsError(
+       |           ^
+    154|       opts.errorMessage ?? 'Insufficient credits'
+    155|     );
+ ❯ src/sequences/server/g06-create-sequences-baseline.tmp.ts:399:13
+ ❯ src/sequences/server/g06-create-sequences-baseline.tmp.ts:394:21
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:492:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  src/sequences/server/g06-core-baseline.tmp.test.ts > releases the real reservation and records failure when the synthetic final binding refuses dispatch
+AssertionError: expected [ { …(9) } ] to match object [ { originalAmount: 120000, …(1) } ]
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  [
+    {
+-     "originalAmount": 120000,
++     "originalAmount": 300000,
+      "remainingAmount": 0,
+    },
+  ]
+
+ ❯ src/sequences/server/g06-core-baseline.tmp.test.ts:538:23
+    536|   const state = await captureState(db, context);
+    537|   expect(state.rows).toMatchObject([{ status: 'failed' }]);
+    538|   expect(state.holds).toMatchObject([
+       |                       ^
+    539|     { originalAmount: holdAmount('A'), remainingAmount: 0 },
+    540|   ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+error: script "test" exited with code 1

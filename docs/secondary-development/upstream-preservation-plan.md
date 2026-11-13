@@ -177,7 +177,9 @@ P3 的范围是整个 fork 的长期二开职责与全部差异。先确认保�
 
 2026-11-13 继续 `G14-asset-verify`，起点为 `ffcaf1225a7dee1329721a1941a13fe2083b5fce`，代码提交为 `6b4799aeade34a8d2de2847b1762ff37252b206a`。核对目录资产、Studio actions/upload/draft 及实际注册 MCP/assistant 的可信身份、语言、终态、实际渠道、输出、usage 与 provenance，修复两处来源 key 缺桶前缀、草稿生成禁令漏检、区域回退实际付款方及平台回退前余额预检四类缺口。五个原生产路径作最小接入，新增七个测试文件 321 项及共享夹具；原 797 份 TypeScript 测试逐字节保留。最终按文件取最后结果去重为 54 文件、1,323 项全过、零跳过；初次整合 5 项失败、其后复跑及一次新夹具 hook 超时均如实保留，原 media-upload 5 秒组合超时和新夹具 10 秒初始化时序风险仍开放，未放宽断言、timeout 或根配置。类型/lint、最终生产构建及正常代码提交 hooks 通过，146 条既有 lint 消息无新增。冻结 25 文件、1,219 pending 及旧归档保留，台账仅追加第 14 行。[本批记录](preservation/20261113-p3-g14-assets/README.md)、[实现记录](preservation/20261113-p3-g14-assets/implementation.json)、[验证记录](preservation/20261113-p3-g14-assets/verification-results.json)区分本地 D1/真实适配与供应商、存储、工作流替身；历史来源不回填，真实引擎、供应商与结算未验收。
 
-**P3 整体仍进行中。** G10 有限验证、G14 图片准备及本批资产入口/来源/草稿修复已有本地证据，GC-10/GC-14 不作整职责关闭。GC-14 剩余真环境验收、GC-09 其余职责、G03 领域覆盖和基线超时、G07 开放项及其它 P3 工作仍待完成；后续按依赖继续 G06-capture。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
+2026-11-13 执行 `G06-capture`，起点为 `9d14dd318035a0b62b3675673a0675a623835c89`，代码提交为 `657dc9fe1662f99de1caf2f1cf81dc342f57e767`。在网页可信 validator、API 原配置读取点及共享 create core 之间传递同次完整运行配置，保留公开 schema、认证/组织/语言、权利/增强/inline/失败清理时序及 core 原 loader 回退。固定 37 文件、841 项回归全过；类型、lint、生产 build 和正常提交 hooks 通过。全仓 2,763 suites/10,192 项有 3 项在未修改的 ElevenLabs/agent discovery 测试失败，已单独复现并保留为范围外风险。[本批记录](preservation/20261113-p3-g06-capture/README.md)、[实现记录](preservation/20261113-p3-g06-capture/implementation.json)、[调用矩阵](preservation/20261113-p3-g06-capture/caller-matrix.json)和[验证记录](preservation/20261113-p3-g06-capture/verification-results.json)区分真实本地 D1/服务编排与外部替身，未关闭 GC-06 整职责。
+
+**P3 整体仍进行中。** G10 有限验证、G14 图片准备及本批资产入口/来源/草稿修复、G06-capture 已有边界证据，GC-10/GC-14/GC-06 不作整职责关闭。G06-auxiliary、GC-14 剩余真环境验收、GC-09 其余职责、G03 领域覆盖和基线超时、G07 开放项及其它 P3 工作仍待完成；后续按依赖继续 G06-auxiliary。1,219 项冻结 inventory 全部保持 pending，不作整文件或目录的批量语义批准；CONTINUE-LLM-SOURCE 按用户决定暂缓，P4 未开始。
 
 ## 6. 未来新增二开的接入流程
 

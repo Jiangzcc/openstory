@@ -1,0 +1,116 @@
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+ ❯ src/sequences/server/g06-web-baseline.tmp.test.ts (10 tests | 6 failed) 1459ms
+   ❯ web sequence creation trusted preparation and capture (10)
+     × keeps the captured configuration with trusted actor and Chinese locale 75ms
+     × keeps the captured configuration with trusted actor and English locale 18ms
+     × keeps the captured configuration with trusted actor and missing locale 15ms
+     × keeps the captured configuration with trusted actor and malformed locale 17ms
+     × lets the next independent request see the changed administrator configuration 34ms
+     × retains explicit model choices while using the trusted captured helper configuration 16ms
+     ✓ keeps invalid input out of the shared create core 10ms
+     ✓ keeps invalid input out of the shared create core 11ms
+     ✓ keeps invalid input out of the shared create core 12ms
+     ✓ keeps authentication before configuration capture and input validation 2ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 4 passed (10)
+   Start at  18:18:42
+   Duration  43.61s (import 73%, transform 21%, tests 3%, setup 2%)
+
+JSON report written to D:/code/github/openstory/.tmp/p3-g06-capture-20261113/web-baseline-final.json
+$ vitest run "src/sequences/server/g06-web-baseline.tmp.test.ts" "--maxWorkers=1" "--reporter=default" "--reporter=json" "--outputFile=.tmp/p3-g06-capture-20261113/web-baseline-final.json"
+(node:42016) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sequences/server/g06-web-baseline.tmp.test.ts > web sequence creation trusted preparation and capture > keeps the captured configuration with trusted actor and Chinese locale
+ FAIL  src/sequences/server/g06-web-baseline.tmp.test.ts > web sequence creation trusted preparation and capture > keeps the captured configuration with trusted actor and English locale
+ FAIL  src/sequences/server/g06-web-baseline.tmp.test.ts > web sequence creation trusted preparation and capture > keeps the captured configuration with trusted actor and missing locale
+ FAIL  src/sequences/server/g06-web-baseline.tmp.test.ts > web sequence creation trusted preparation and capture > keeps the captured configuration with trusted actor and malformed locale
+AssertionError: expected { …(24) } to deeply equal { …(24) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  {
+-   "defaultAnalysis": "google/gemini-3.8-flash",
+-   "defaultImage": "flux_2_turbo",
++   "defaultAnalysis": "anthropic/claude-sonnet-5.5",
++   "defaultImage": "gpt_image_2",
+    "defaultMusic": "ace_step",
+    "defaultVideo": "minimax_h3_max",
+    "imageModelRouting": [],
+    "newSequenceVideo": "seedance_v2_5",
+    "poster": "krea_2_turbo",
+
+ ❯ src/sequences/server/g06-web-baseline.tmp.test.ts:338:25
+    336|         promptLocale: expected,
+    337|       });
+    338|       expect(call?.[2]).toEqual({
+       |                         ^
+    339|         ...configurationA,
+    340|         textModelRouting: [],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/sequences/server/g06-web-baseline.tmp.test.ts > web sequence creation trusted preparation and capture > lets the next independent request see the changed administrator configuration
+AssertionError: expected { …(24) } to deeply equal { …(24) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  {
+-   "defaultAnalysis": "google/gemini-3.8-flash",
+-   "defaultImage": "flux_2_turbo",
++   "defaultAnalysis": "anthropic/claude-sonnet-5.5",
++   "defaultImage": "gpt_image_2",
+    "defaultMusic": "ace_step",
+    "defaultVideo": "minimax_h3_max",
+    "imageModelRouting": [],
+    "newSequenceVideo": "seedance_v2_5",
+    "poster": "krea_2_turbo",
+
+ ❯ src/sequences/server/g06-web-baseline.tmp.test.ts:363:27
+    361|     const calls = runtime.trigger.mock.calls;
+    362|     expect(calls).toHaveLength(2);
+    363|     expect(calls[0]?.[2]).toEqual({
+       |                           ^
+    364|       ...configurationA,
+    365|       textModelRouting: [],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/sequences/server/g06-web-baseline.tmp.test.ts > web sequence creation trusted preparation and capture > retains explicit model choices while using the trusted captured helper configuration
+AssertionError: expected { …(24) } to deeply equal { …(24) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  {
+-   "defaultAnalysis": "google/gemini-3.8-flash",
+-   "defaultImage": "flux_2_turbo",
++   "defaultAnalysis": "anthropic/claude-sonnet-5.5",
++   "defaultImage": "gpt_image_2",
+    "defaultMusic": "ace_step",
+    "defaultVideo": "minimax_h3_max",
+    "imageModelRouting": [],
+    "newSequenceVideo": "seedance_v2_5",
+    "poster": "krea_2_turbo",
+
+ ❯ src/sequences/server/g06-web-baseline.tmp.test.ts:392:48
+    390|       configurationB.defaultImage,
+    391|     ]);
+    392|     expect(runtime.trigger.mock.calls[0]?.[2]).toEqual({
+       |                                                ^
+    393|       ...configurationA,
+    394|       textModelRouting: [],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+error: script "test" exited with code 1

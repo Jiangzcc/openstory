@@ -1,0 +1,46 @@
+{
+  "sourceBefore": "9d14dd318035a0b62b3675673a0675a623835c89",
+  "proofs": [
+    {
+      "path": "src/sequences/server/create-sequences.ts",
+      "beforeSha256Lf": "daf81759b611595c22ff0a695cf2c703b5b7576b2c9d6af02ac020ed44fbb73a",
+      "afterSha256Lf": "ce92aad9582f01330e0aa26b9ca3eb08ab5b730309b2a43484b92ca83708084a",
+      "reverseChangesEqualsEntireBefore": true,
+      "replacements": 3,
+      "scope": "trusted configuration handoff only"
+    },
+    {
+      "path": "src/sequences/sequences.fn.ts",
+      "beforeSha256Lf": "a5fc69236bb6def5a7518c50bc6f693d942831630cb7ec893986487d34ec1bf4",
+      "afterSha256Lf": "d6476a7e444e9cf5f42352c52d08fc675db543dd40d460a6d6772167a7257fc3",
+      "reverseChangesEqualsEntireBefore": true,
+      "replacements": 3,
+      "scope": "trusted configuration handoff only"
+    },
+    {
+      "path": "src/platform/server/api-v1/create.ts",
+      "beforeSha256Lf": "d0dd7ffcd57a7e11dda155de0a51d626ff887d46383856e8cf8361d8427bd48a",
+      "afterSha256Lf": "b4929a4534f46c21abcb25073d63dee2428d48612296b242d11f59d9663beac4",
+      "reverseChangesEqualsEntireBefore": true,
+      "replacements": 3,
+      "scope": "trusted configuration handoff only"
+    },
+    {
+      "path": "src/platform/server/api-v1/create.test.ts",
+      "beforeSha256Lf": "20e0ac104635623da58f9ab0a63899a6b988e2fedff68f0e8d9db75af1e8fe49",
+      "afterSha256Lf": "efc11b9e5cae516d164d65c35e2ab0eb245cf1b8918ae57d0ed5de9a322b66bd",
+      "reverseChangesEqualsEntireBefore": true,
+      "replacements": 1,
+      "scope": "fixture additions only; all assertions preserved"
+    },
+    {
+      "path": "src/platform/server/api-v1/entry-locale.test.ts",
+      "beforeSha256Lf": "58c58f4e3bad401dffac374fef59f770ae9265f15a78594ff37ed9fd79471447",
+      "afterSha256Lf": "0fdfe9d1f6c761fc8324d32695534b936e4610ad606b74a8c04de2541d5b45d1",
+      "reverseChangesEqualsEntireBefore": true,
+      "replacements": 1,
+      "scope": "fixture additions only; all assertions preserved"
+    }
+  ],
+  "sourceAfter": "657dc9fe1662f99de1caf2f1cf81dc342f57e767"
+}

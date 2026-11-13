@@ -1,0 +1,26 @@
+PROVENANCE: Historical first-run evidence transcribed from this chat's exec/write_stdin tool output.
+This is an excerpt, not the original complete log and not a newly executed failing run.
+
+Command:
+bun run test src/platform/server/api-v1/sequence-creation-capture.test.ts --maxWorkers=1
+
+Observed first run: 2026-11-13 18:00:06 Asia/Shanghai
+Vitest v5.1.0
+Test Files  1 failed (1)
+Tests       1 failed | 17 passed (18)
+Duration    15.61s
+Exit code   1
+
+FAIL src/platform/server/api-v1/sequence-creation-capture.test.ts
+API sequence creation capture: real service with explicit IO doubles
+> keeps final reference-only capability validation after enhancement and inline creation
+AssertionError: expected 200 to be 400
+Expected: 400
+Received: 200
+Source location in the initial version: sequence-creation-capture.test.ts:623:31
+
+Fixture diagnosis:
+The test incorrectly treated kling_v3_pro as unable to render reference-only shots.
+Current src/models/models.ts includes the model in MOTION_REFERENCE_ENDPOINTS;
+src/models/models.test.ts also explicitly covers Kling O3 reference-only acceptance.
+The production schema was correct. No production capability rule was changed.

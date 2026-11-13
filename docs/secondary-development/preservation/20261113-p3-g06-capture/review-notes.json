@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "review": "main-agent integration review; no independent rerun is represented by this file",
+  "productionOwners": 3,
+  "newPreparationModule": 1,
+  "findings": [
+    {
+      "id": "public-trust",
+      "result": "The public schema receives no runtime configuration field; web returns only server-created configuration and API passes it through trusted internal context."
+    },
+    {
+      "id": "ordering",
+      "result": "API config-read and final parse positions retained; auth and rights/cleanup ordering covered by original and new probes."
+    },
+    {
+      "id": "scope",
+      "result": "Existing loaders remain composition roots; regenerate/full retry production files unchanged; auxiliary roots remain deferred."
+    },
+    {
+      "id": "preservation",
+      "result": "Owner reverse-edit proof and original assertion preservation are recorded separately."
+    },
+    {
+      "id": "quality-fixtures",
+      "result": "Initial type/lint errors were in new tests and fixed within their fixtures; no root rules, original assertion, timeout or production fallback was weakened."
+    }
+  ]
+}

@@ -1,0 +1,284 @@
+{
+  "numTotalTestSuites": 7,
+  "numPassedTestSuites": 3,
+  "numFailedTestSuites": 4,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 21,
+  "numPassedTests": 19,
+  "numFailedTests": 2,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1794575386282,
+  "success": false,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["isElevenLabsConfigured"],
+          "fullName": "isElevenLabsConfigured is off when no key is configured",
+          "status": "passed",
+          "title": "is off when no key is configured",
+          "duration": 1.4001000000000658,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["isElevenLabsConfigured"],
+          "fullName": "isElevenLabsConfigured is on when a platform key is set",
+          "status": "passed",
+          "title": "is on when a platform key is set",
+          "duration": 0.3350000000000364,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["isElevenLabsConfigured"],
+          "fullName": "isElevenLabsConfigured treats an empty-string key as unconfigured",
+          "status": "passed",
+          "title": "treats an empty-string key as unconfigured",
+          "duration": 0.2234000000000833,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["isElevenLabsConfigured"],
+          "fullName": "isElevenLabsConfigured stays off under E2E_TEST when no mock host is wired",
+          "status": "passed",
+          "title": "stays off under E2E_TEST when no mock host is wired",
+          "duration": 0.22050000000012915,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["isElevenLabsConfigured"],
+          "fullName": "isElevenLabsConfigured allows the route under E2E_TEST when ELEVENLABS_BASE_URL points at a mock",
+          "status": "passed",
+          "title": "allows the route under E2E_TEST when ELEVENLABS_BASE_URL points at a mock",
+          "duration": 0.12329999999997199,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["isElevenLabsConfigured"],
+          "fullName": "isElevenLabsConfigured enables native ElevenLabs against aimock in every built CI E2E job",
+          "status": "passed",
+          "title": "enables native ElevenLabs against aimock in every built CI E2E job",
+          "duration": 2.5238999999999123,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["elevenLabsAdapterConfig"],
+          "fullName": "elevenLabsAdapterConfig omits baseURL so the adapter default applies",
+          "status": "passed",
+          "title": "omits baseURL so the adapter default applies",
+          "duration": 0.2258999999999105,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["elevenLabsAdapterConfig"],
+          "fullName": "elevenLabsAdapterConfig passes ELEVENLABS_BASE_URL through for e2e/proxy overrides",
+          "status": "passed",
+          "title": "passes ELEVENLABS_BASE_URL through for e2e/proxy overrides",
+          "duration": 0.12199999999984357,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["lazy loaders"],
+          "fullName": "lazy loaders loads the speech adapter factory",
+          "status": "passed",
+          "title": "loads the speech adapter factory",
+          "duration": 970.2705000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["lazy loaders"],
+          "fullName": "lazy loaders loads the audio (music) adapter factory",
+          "status": "passed",
+          "title": "loads the audio (music) adapter factory",
+          "duration": 0.3259000000002743,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["lazy loaders"],
+          "fullName": "lazy loaders constructs the Voice Design SDK with the e2e base URL",
+          "status": "failed",
+          "title": "constructs the Voice Design SDK with the e2e base URL",
+          "duration": 6767.080199999999,
+          "failureMessages": [
+            "Error: Test timed out in 5000ms.\nIf this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".\n    at task (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2700:43)\n    at Object.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2717:16)\n    at Object.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2486:28)\n    at chain (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1870:14)\n    at D:/code/github/openstory/src/models/server/elevenlabs-config.test.ts:122:3\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2781:52\n    at runWithSuite (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3267:8)\n    at Object.collect (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2781:22)\n    at Object.collect (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2786:51)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)"
+          ],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["ElevenLabs concurrency 429"],
+          "fullName": "ElevenLabs concurrency 429 Voice Design waits out three 429s",
+          "status": "passed",
+          "title": "Voice Design waits out three 429s",
+          "duration": 730.4458000000013,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["ElevenLabs concurrency 429"],
+          "fullName": "ElevenLabs concurrency 429 Voice Design does not retry a 400",
+          "status": "passed",
+          "title": "Voice Design does not retry a 400",
+          "duration": 1.5651999999990949,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["ElevenLabs concurrency 429"],
+          "fullName": "ElevenLabs concurrency 429 the SDK waits out three 429s",
+          "status": "passed",
+          "title": "the SDK waits out three 429s",
+          "duration": 10.224599999999555,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["ElevenLabs concurrency 429"],
+          "fullName": "ElevenLabs concurrency 429 the SDK never resends a create after a 5xx",
+          "status": "passed",
+          "title": "the SDK never resends a create after a 5xx",
+          "duration": 1.1185999999997875,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["ElevenLabs concurrency 429"],
+          "fullName": "ElevenLabs concurrency 429 a voice save refused with 429 every time fails with that 429",
+          "status": "passed",
+          "title": "a voice save refused with 429 every time fails with that 429",
+          "duration": 4.5064000000002125,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["ElevenLabs concurrency 429"],
+          "fullName": "ElevenLabs concurrency 429 an abort stops the wait between 429s",
+          "status": "passed",
+          "title": "an abort stops the wait between 429s",
+          "duration": 1.5253999999986263,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["ElevenLabs concurrency 429"],
+          "fullName": "ElevenLabs concurrency 429 the SDK does not retry a 400",
+          "status": "passed",
+          "title": "the SDK does not retry a 400",
+          "duration": 1.1067999999995664,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794575397412,
+      "endTime": 1794575405906.1067,
+      "status": "failed",
+      "message": "",
+      "name": "D:/code/github/openstory/src/models/server/elevenlabs-config.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Voice Design over aimock"],
+          "fullName": "Voice Design over aimock designs previews through the adapter",
+          "status": "passed",
+          "title": "designs previews through the adapter",
+          "duration": 46.02880000000005,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["Voice Design over aimock"],
+          "fullName": "Voice Design over aimock saves, reads back and deletes a designed voice through the SDK",
+          "status": "failed",
+          "title": "saves, reads back and deletes a designed voice through the SDK",
+          "duration": 6432.095800000001,
+          "failureMessages": [
+            "Error: Test timed out in 5000ms.\nIf this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".\n    at task (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2700:43)\n    at Object.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2717:16)\n    at Object.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2486:28)\n    at chain (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1870:14)\n    at D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice-aimock.test.ts:102:3\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2781:52\n    at runWithSuite (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3267:8)\n    at Object.collect (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2781:22)\n    at Object.collect (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2786:51)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)"
+          ],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["Voice Design over aimock"],
+          "fullName": "Voice Design over aimock refuses an unrecorded design under strict replay",
+          "status": "passed",
+          "title": "refuses an unrecorded design under strict replay",
+          "duration": 33.430099999999584,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794575389552,
+      "endTime": 1794575396063.4302,
+      "status": "failed",
+      "message": "",
+      "name": "D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice-aimock.test.ts"
+    }
+  ]
+}

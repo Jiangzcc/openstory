@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "batch": "G06-capture",
+  "sourceBefore": "9d14dd318035a0b62b3675673a0675a623835c89",
+  "entries": [
+    {
+      "id": "web-create",
+      "owners": [
+        "src/sequences/sequences.fn.ts",
+        "src/sequences/server/prepare-sequence-creation.ts"
+      ],
+      "change": "The server validator captures runtime configuration and parses defaults; the handler passes the internal parsed input and configuration to createSequences.",
+      "trustedBoundary": "Existing Start auth/organization middleware and validated locale; input configuration and actor fields are stripped.",
+      "evidence": ["src/sequences/server/sequence-creation-entry.test.ts"],
+      "real": [
+        "Start builder and middleware after decoded RPC entry",
+        "Better Auth sessions",
+        "migrated local in-memory D1",
+        "global runtime loader",
+        "real parser and shared create orchestration",
+        "sequence and automatic-style writes"
+      ],
+      "doubles": [
+        "test compiler adapter metadata",
+        "final triggerStoryboard",
+        "environment and fixed fal cards",
+        "email/analytics/popularity"
+      ],
+      "notAccepted": [
+        "compiled server-function manifest",
+        "browser serialization/RPC",
+        "full global request pipeline",
+        "provider execution"
+      ]
+    },
+    {
+      "id": "api-one-shot",
+      "owners": ["src/platform/server/api-v1/create.ts"],
+      "change": "Use the existing scoped runtime loader at the former configuration read; retain rights/enhance/inline/final-parse order; pass the captured configuration to the core.",
+      "evidence": [
+        "src/platform/server/api-v1/sequence-creation-capture.test.ts",
+        "src/platform/server/api-v1/create.test.ts",
+        "src/platform/server/api-v1/entry-locale.test.ts",
+        "src/platform/server/api-v1/input-schema.test.ts"
+      ],
+      "real": [
+        "service orchestrator",
+        "public and configured schemas",
+        "runtime loader and catalog projection",
+        "video default/BytePlus source gate",
+        "error response mapping",
+        "resolve and ingest ordering"
+      ],
+      "doubles": [
+        "scoped reads",
+        "fetch/storage",
+        "rights classification and ledger",
+        "enhancement",
+        "inline writes/cleanup",
+        "shared create core and sheet dispatch"
+      ],
+      "notAccepted": [
+        "HTTP route dispatch and real auth in the new API probe",
+        "new API probe database/billing",
+        "provider and binding execution"
+      ]
+    },
+    {
+      "id": "shared-create",
+      "owners": ["src/sequences/server/create-sequences.ts"],
+      "change": "Reuse trusted context.modelConfiguration; otherwise retain the existing scoped loader. All other owner content matches the original after reversing the handoff.",
+      "evidence": [
+        "src/sequences/server/sequence-creation-capture.test.ts",
+        "src/sequences/server/db/sequence-capture.test.fixture.ts",
+        "src/sequences/server/create-sequences.test.ts",
+        "src/sequences/server/launchers.test.ts"
+      ],
+      "real": [
+        "migrated local in-memory D1",
+        "admin configuration save/read",
+        "synthetic credential encryption and immutable credential resolution",
+        "catalog and capability validation",
+        "configured text cost calculation",
+        "configured image quote",
+        "payer source decision",
+        "wallet reservation and dispatch-failure release",
+        "sequence writes",
+        "launcher claims",
+        "trigger packing/codec"
+      ],
+      "doubles": [
+        "request/environment",
+        "fixed fal cards",
+        "final Workflows binding.create",
+        "Realtime binding.fetch",
+        "analytics/popularity"
+      ],
+      "note": "The text preflight floor remains the existing coarse estimate; captured token rates are checked independently with llmCostFromUsage. This batch does not repair G07 estimates.",
+      "notAccepted": [
+        "paid calls and provider invoice costs",
+        "real Workerd/Workflows checkpoints/replay",
+        "remote D1/R2",
+        "new billing semantics"
+      ]
+    },
+    {
+      "id": "mcp-and-assistant-create",
+      "owners": [
+        "src/platform/server/mcp/tools/structure-edits.ts",
+        "src/assistant/server/assistant-tools.ts"
+      ],
+      "change": "No production edit: registered create_sequence calls the same runOneShotCreate service; assistant wraps MCP_TOOLS.",
+      "evidence": [
+        "src/platform/server/mcp/server.test.ts",
+        "src/platform/server/mcp/request-composition.test.ts",
+        "src/platform/server/mcp/tool-context.test.ts",
+        "src/platform/server/mcp/tools.test.ts"
+      ],
+      "boundary": "Static shared-service trace plus existing registration/identity/locale regressions. No new end-to-end assistant creation or tool-selection acceptance."
+    },
+    {
+      "id": "storyboard-regeneration",
+      "owners": [
+        "src/platform/server/mcp/tools/structure-edits.ts",
+        "src/sequences/server/sequence-edit.ts"
+      ],
+      "change": "No production edit: regenerateInput remains authoritative and createSequences retains its single scoped capture when no prepared configuration is supplied.",
+      "evidence": [
+        "src/sequences/server/sequence-creation-capture.test.ts",
+        "src/sequences/server/create-sequences.test.ts"
+      ],
+      "boundary": "Fallback core loader dynamically verified; MCP regeneration owner statically traced."
+    },
+    {
+      "id": "full-retry",
+      "owners": [
+        "src/sequences/server/smart-retry.ts",
+        "src/sequences/server/generation-operations.ts"
+      ],
+      "change": "No production edit: full retry already captures once for estimate/source/trigger; execution preparation shares the same object with its dry run and launch closure.",
+      "evidence": [
+        "src/sequences/server/smart-retry-snapshot.test.ts",
+        "src/sequences/server/smart-retry-billing.test.ts",
+        "src/sequences/server/generation-operations.test.ts",
+        "src/sequences/smart-retry.test.ts"
+      ],
+      "boundary": "Existing supplied/fallback snapshot and execution-preview/launch identity contracts. Plan and execute are separate requests; execute prepares again and validates its digest."
+    }
+  ],
+  "deferred": [
+    {
+      "id": "G06-auxiliary",
+      "owners": "attachDraftElementUploads/copySequenceElements and element-vision/upload-check/sheet roots",
+      "reason": "Separate declared batch; creation-success ordering and cleanup are protected here, auxiliary snapshot reuse is not implemented."
+    },
+    {
+      "id": "CONTINUE-LLM-SOURCE",
+      "reason": "Deferred by explicit user decision."
+    }
+  ],
+  "notClaimed": [
+    "cross-table atomic configuration revision",
+    "removed upstream conflict paths",
+    "whole-responsibility GC-06 acceptance",
+    "blanket approval of frozen inventory"
+  ]
+}

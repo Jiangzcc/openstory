@@ -1,0 +1,483 @@
+Core fixture development evidence. First three logs were exported from the original execution records, not re-executed. Counts are not cumulative verification totals.
+
+===== core-run01-initial.log =====
+C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\powershell\pwsh.exe,-Command,bun run test src/sequences/server/sequence-creation-capture.test.ts --maxWorkers=1 --no-file-parallelism
+
+$ vitest run src/sequences/server/sequence-creation-capture.test.ts "--maxWorkers=1" --no-file-parallelism
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+(node:48352) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/sequences/server/sequence-creation-capture.test.ts (15 tests | 14 failed) 3355ms
+   ❯ G06 shared creation configuration capture (synthetic local composition) (15)
+     × keeps A routes, rotated credentials, rates, exact image hold and dispatch after stored configuration becomes B 225ms
+     × lets the next independent request use B credentials, helper and image card 96ms
+     × preserves explicit selections, de-duplicates analysis/image fanout and funds each independent run 61ms
+     × retains the original core loader when no trusted configuration is supplied 102ms
+     × keeps captured A executable after live text-capability changes and refuses that state on a fresh request despite organization keys 82ms
+     × keeps captured A executable after live text-disabled changes and refuses that state on a fresh request despite organization keys 69ms
+     × keeps captured A executable after live image-price changes and refuses that state on a fresh request despite organization keys 93ms
+     × keeps captured A executable after live image-capability changes and refuses that state on a fresh request despite organization keys 75ms
+     × keeps captured A executable after live image-disabled changes and refuses that state on a fresh request despite organization keys 86ms
+     × requires platform funds for captured custom text despite usable organization keys 40ms
+     × checks the captured platform helper when selected analysis uses an organization credential 27ms
+     × keeps zero-balance organization coverage when every charged route is organization-owned 55ms
+     × keeps script-only creation free with no credential resolution or reservation 73ms
+     × releases the real reservation and records failure when the synthetic final binding refuses dispatch 50ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps A routes, rotated credentials, rates, exact image hold and dispatch after stored configuration becomes B
+Error: [vitest] No "getRequestHeader" export is defined on the "@tanstack/react-start/server" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@tanstack/react-start/server"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ getRequestCountry src/platform/server/request-country.ts:5:19
+      3| /** Country from the current Cloudflare request; absent for unknown/To…
+      4| export function getRequestCountry(): string | undefined {
+      5|   const country = getRequestHeader('cf-ipcountry')?.trim().toUpperCase…
+       |                   ^
+      6|   // Cloudflare reports XX for unknown and T1 for Tor, neither a count…
+      7|   return country && /^[A-Z]{2}$/.test(country) && country !== 'XX'
+ ❯ resolveStoryboardPayload src/sequences/server/launchers.ts:278:23
+ ❯ triggerStoryboard src/sequences/server/launchers.ts:354:19
+ ❯ src/sequences/server/create-sequences.ts:517:39
+ ❯ releaseReservationOnThrow src/billing/server/preflight.ts:175:12
+ ❯ src/sequences/server/create-sequences.ts:396:21
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:127:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > lets the next independent request use B credentials, helper and image card
+Error: [vitest] No "getRequestHeader" export is defined on the "@tanstack/react-start/server" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@tanstack/react-start/server"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ getRequestCountry src/platform/server/request-country.ts:5:19
+      3| /** Country from the current Cloudflare request; absent for unknown/To…
+      4| export function getRequestCountry(): string | undefined {
+      5|   const country = getRequestHeader('cf-ipcountry')?.trim().toUpperCase…
+       |                   ^
+      6|   // Cloudflare reports XX for unknown and T1 for Tor, neither a count…
+      7|   return country && /^[A-Z]{2}$/.test(country) && country !== 'XX'
+ ❯ resolveStoryboardPayload src/sequences/server/launchers.ts:278:23
+ ❯ triggerStoryboard src/sequences/server/launchers.ts:354:19
+ ❯ src/sequences/server/create-sequences.ts:517:39
+ ❯ releaseReservationOnThrow src/billing/server/preflight.ts:175:12
+ ❯ src/sequences/server/create-sequences.ts:396:21
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:146:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > preserves explicit selections, de-duplicates analysis/image fanout and funds each independent run
+Error: [vitest] No "getRequestHeader" export is defined on the "@tanstack/react-start/server" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@tanstack/react-start/server"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ getRequestCountry src/platform/server/request-country.ts:5:19
+      3| /** Country from the current Cloudflare request; absent for unknown/To…
+      4| export function getRequestCountry(): string | undefined {
+      5|   const country = getRequestHeader('cf-ipcountry')?.trim().toUpperCase…
+       |                   ^
+      6|   // Cloudflare reports XX for unknown and T1 for Tor, neither a count…
+      7|   return country && /^[A-Z]{2}$/.test(country) && country !== 'XX'
+ ❯ resolveStoryboardPayload src/sequences/server/launchers.ts:278:23
+ ❯ triggerStoryboard src/sequences/server/launchers.ts:354:19
+ ❯ src/sequences/server/create-sequences.ts:517:39
+ ❯ releaseReservationOnThrow src/billing/server/preflight.ts:175:12
+ ❯ src/sequences/server/create-sequences.ts:396:21
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:170:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > retains the original core loader when no trusted configuration is supplied
+Error: [vitest] No "getRequestHeader" export is defined on the "@tanstack/react-start/server" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@tanstack/react-start/server"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ getRequestCountry src/platform/server/request-country.ts:5:19
+      3| /** Country from the current Cloudflare request; absent for unknown/To…
+      4| export function getRequestCountry(): string | undefined {
+      5|   const country = getRequestHeader('cf-ipcountry')?.trim().toUpperCase…
+       |                   ^
+      6|   // Cloudflare reports XX for unknown and T1 for Tor, neither a count…
+      7|   return country && /^[A-Z]{2}$/.test(country) && country !== 'XX'
+ ❯ resolveStoryboardPayload src/sequences/server/launchers.ts:278:23
+ ❯ triggerStoryboard src/sequences/server/launchers.ts:354:19
+ ❯ src/sequences/server/create-sequences.ts:517:39
+ ❯ releaseReservationOnThrow src/billing/server/preflight.ts:175:12
+ ❯ src/sequences/server/create-sequences.ts:396:21
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:198:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps captured A executable after live text-capability changes and refuses that state on a fresh request despite organization keys
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps captured A executable after live text-disabled changes and refuses that state on a fresh request despite organization keys
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps captured A executable after live image-price changes and refuses that state on a fresh request despite organization keys
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps captured A executable after live image-capability changes and refuses that state on a fresh request despite organization keys
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps captured A executable after live image-disabled changes and refuses that state on a fresh request despite organization keys
+Error: [vitest] No "getRequestHeader" export is defined on the "@tanstack/react-start/server" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@tanstack/react-start/server"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ getRequestCountry src/platform/server/request-country.ts:5:19
+      3| /** Country from the current Cloudflare request; absent for unknown/To…
+      4| export function getRequestCountry(): string | undefined {
+      5|   const country = getRequestHeader('cf-ipcountry')?.trim().toUpperCase…
+       |                   ^
+      6|   // Cloudflare reports XX for unknown and T1 for Tor, neither a count…
+      7|   return country && /^[A-Z]{2}$/.test(country) && country !== 'XX'
+ ❯ resolveStoryboardPayload src/sequences/server/launchers.ts:278:23
+ ❯ triggerStoryboard src/sequences/server/launchers.ts:354:19
+ ❯ src/sequences/server/create-sequences.ts:517:39
+ ❯ releaseReservationOnThrow src/billing/server/preflight.ts:175:12
+ ❯ src/sequences/server/create-sequences.ts:396:21
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:215:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > requires platform funds for captured custom text despite usable organization keys
+ZodError: [
+  {
+    "code": "invalid_value",
+    "values": [
+      "script",
+      "references",
+      "images",
+      "dialogue",
+      "motion",
+      "music"
+    ],
+    "path": [
+      "stopAt"
+    ],
+    "message": "Invalid option: expected one of \"script\"|\"references\"|\"images\"|\"dialogue\"|\"motion\"|\"music\""
+  }
+]
+ ❯ parseConfiguredSequenceInput src/sequences/server/configured-sequence-input.ts:13:31
+     11|     Object.entries(supplied).filter(([, value]) => value !== undefined)
+     12|   );
+     13|   return createSequenceSchema.parse({
+       |                               ^
+     14|     analysisModels: [configuration.defaultAnalysis],
+     15|     imageModel: configuration.defaultImage,
+ ❯ prepareSequenceCreation src/sequences/server/prepare-sequence-creation.ts:7:12
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:232:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > checks the captured platform helper when selected analysis uses an organization credential
+ZodError: [
+  {
+    "code": "invalid_value",
+    "values": [
+      "script",
+      "references",
+      "images",
+      "dialogue",
+      "motion",
+      "music"
+    ],
+    "path": [
+      "stopAt"
+    ],
+    "message": "Invalid option: expected one of \"script\"|\"references\"|\"images\"|\"dialogue\"|\"motion\"|\"music\""
+  }
+]
+ ❯ parseConfiguredSequenceInput src/sequences/server/configured-sequence-input.ts:13:31
+     11|     Object.entries(supplied).filter(([, value]) => value !== undefined)
+     12|   );
+     13|   return createSequenceSchema.parse({
+       |                               ^
+     14|     analysisModels: [configuration.defaultAnalysis],
+     15|     imageModel: configuration.defaultImage,
+ ❯ prepareSequenceCreation src/sequences/server/prepare-sequence-creation.ts:7:12
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:244:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps zero-balance organization coverage when every charged route is organization-owned
+Error: [vitest] No "getRequestHeader" export is defined on the "@tanstack/react-start/server" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@tanstack/react-start/server"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ getRequestCountry src/platform/server/request-country.ts:5:19
+      3| /** Country from the current Cloudflare request; absent for unknown/To…
+      4| export function getRequestCountry(): string | undefined {
+      5|   const country = getRequestHeader('cf-ipcountry')?.trim().toUpperCase…
+       |                   ^
+      6|   // Cloudflare reports XX for unknown and T1 for Tor, neither a count…
+      7|   return country && /^[A-Z]{2}$/.test(country) && country !== 'XX'
+ ❯ resolveStoryboardPayload src/sequences/server/launchers.ts:278:23
+ ❯ triggerStoryboard src/sequences/server/launchers.ts:354:19
+ ❯ src/sequences/server/create-sequences.ts:517:39
+ ❯ releaseReservationOnThrow src/billing/server/preflight.ts:175:12
+ ❯ src/sequences/server/create-sequences.ts:396:21
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:274:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps script-only creation free with no credential resolution or reservation
+Error: [vitest] No "getRequestHeader" export is defined on the "@tanstack/react-start/server" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@tanstack/react-start/server"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ getRequestCountry src/platform/server/request-country.ts:5:19
+      3| /** Country from the current Cloudflare request; absent for unknown/To…
+      4| export function getRequestCountry(): string | undefined {
+      5|   const country = getRequestHeader('cf-ipcountry')?.trim().toUpperCase…
+       |                   ^
+      6|   // Cloudflare reports XX for unknown and T1 for Tor, neither a count…
+      7|   return country && /^[A-Z]{2}$/.test(country) && country !== 'XX'
+ ❯ resolveStoryboardPayload src/sequences/server/launchers.ts:278:23
+ ❯ triggerStoryboard src/sequences/server/launchers.ts:354:19
+ ❯ src/sequences/server/create-sequences.ts:517:39
+ ❯ releaseReservationOnThrow src/billing/server/preflight.ts:175:12
+ ❯ src/sequences/server/create-sequences.ts:396:21
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:288:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > releases the real reservation and records failure when the synthetic final binding refuses dispatch
+AssertionError: expected [Function] to throw error including 'Synthetic binding refusal' but got '[vitest] No "getRequestHeader" export…'
+
+- Expected
++ Received
+
+- Synthetic binding refusal
++ [vitest] No "getRequestHeader" export is defined on the "@tanstack/react-start/server" mock. Did you forget to return it from "vi.mock"?
++ If you need to partially mock a module, you can use "importOriginal" helper inside:
++
+
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:304:115
+    302|     await saveCaptureConfiguration(db, 'B');
+    303|     workflowCreate.mockRejectedValueOnce(new Error('Synthetic binding …
+    304|     await expect(createSequences(prepared.input, { ...context, modelCo…
+       |                                                                                                                   ^
+    305|     const state = await captureState(db, context);
+    306|     expect(state.rows).toMatchObject([{ status: 'failed' }]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  14 failed | 1 passed (15)
+   Start at  18:01:59
+   Duration  26.88s (import 61%, transform 23%, tests 13%, setup 4%)
+
+error: script "test" exited with code 1
+
+===== core-run02-request-stage-fixed.log =====
+C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\powershell\pwsh.exe,-Command,bun run test src/sequences/server/sequence-creation-capture.test.ts --maxWorkers=1 --no-file-parallelism
+
+$ vitest run src/sequences/server/sequence-creation-capture.test.ts "--maxWorkers=1" --no-file-parallelism
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+(node:32288) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/sequences/server/sequence-creation-capture.test.ts (15 tests | 2 failed) 2269ms
+   ❯ G06 shared creation configuration capture (synthetic local composition) (15)
+     × requires platform image funds even when both text calls use organization credentials 27ms
+     × keeps zero-balance organization coverage when every charged route is organization-owned 19ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > requires platform image funds even when both text calls use organization credentials
+ZodError: [
+  {
+    "code": "custom",
+    "path": [
+      "sceneSplit"
+    ],
+    "message": "Choose a supported model for this operation"
+  }
+]
+ ❯ Object.save src/models/server/db/model-configuration.ts:63:9
+     61|         false,
+     62|         imageModels
+     63|       ).parse(input);
+       |         ^
+     64|       const updatedAt = new Date();
+     65|       await db
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:259:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > G06 shared creation configuration capture (synthetic local composition) > keeps zero-balance organization coverage when every charged route is organization-owned
+ZodError: [
+  {
+    "code": "custom",
+    "path": [
+      "sceneSplit"
+    ],
+    "message": "Choose a supported model for this operation"
+  }
+]
+ ❯ Object.save src/models/server/db/model-configuration.ts:63:9
+     61|         false,
+     62|         imageModels
+     63|       ).parse(input);
+       |         ^
+     64|       const updatedAt = new Date();
+     65|       await db
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:271:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 13 passed (15)
+   Start at  18:03:54
+   Duration  15.52s (import 50%, transform 29%, tests 16%, setup 5%)
+
+error: script "test" exited with code 1
+
+===== core-run03-green.log =====
+C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\powershell\pwsh.exe,-Command,bun run test src/sequences/server/sequence-creation-capture.test.ts --maxWorkers=1 --no-file-parallelism
+
+$ vitest run src/sequences/server/sequence-creation-capture.test.ts "--maxWorkers=1" --no-file-parallelism
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+(node:8244) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  18:04:53
+   Duration  16.76s (import 42%, transform 35%, tests 17%, setup 5%)
+
+
+===== core-run04-specific-refusals.log =====
+$ vitest run src/sequences/server/sequence-creation-capture.test.ts "--maxWorkers=1" --no-file-parallelism "--reporter=default" "--reporter=json" "--outputFile.json=C:\\Users\\LSZHIC~1\\AppData\\Local\\Temp\\openstory-g06-capture-20261113\\capture-final.json"
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+(node:41840) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/sequences/server/sequence-creation-capture.test.ts (15 tests | 1 failed) 2588ms
+   ✓ keeps A routes, rotated credentials, rates, exact image hold and dispatch after stored configuration becomes B 172ms
+   ✓ lets the next independent request use B credentials, helper and image card 117ms
+   ✓ preserves explicit selections, de-duplicates analysis/image fanout and funds each independent run 74ms
+   ✓ retains the original core loader when no trusted configuration is supplied 58ms
+   ✓ keeps captured A executable after live text-capability changes and refuses that state on a fresh request despite organization keys 101ms
+   ✓ keeps captured A executable after live text-disabled changes and refuses that state on a fresh request despite organization keys 76ms
+   ✓ keeps captured A executable after live image-price changes and refuses that state on a fresh request despite organization keys 125ms
+   × keeps captured A executable after live image-capability changes and refuses that state on a fresh request despite organization keys 68ms
+   ✓ keeps captured A executable after live image-disabled changes and refuses that state on a fresh request despite organization keys 65ms
+   ✓ requires platform funds for captured custom text despite usable organization keys 63ms
+   ✓ checks the captured platform helper when selected analysis uses an organization credential 42ms
+   ✓ requires platform image funds even when both text calls use organization credentials 51ms
+   ✓ keeps zero-balance organization coverage when every charged route is organization-owned 52ms
+   ✓ keeps script-only creation free with no credential resolution or reservation 44ms
+   ✓ releases the real reservation and records failure when the synthetic final binding refuses dispatch 62ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sequences/server/sequence-creation-capture.test.ts > keeps captured A executable after live image-capability changes and refuses that state on a fresh request despite organization keys
+AssertionError: expected [Function] to throw error including 'This image operation is unavailable.' but got 'Configured image model is unavailable.'
+
+Expected: "This image operation is unavailable."
+Received: "Configured image model is unavailable."
+
+ ❯ src/sequences/server/sequence-creation-capture.test.ts:392:6
+    390|         modelConfiguration: fresh.modelConfiguration,
+    391|       })
+    392|     ).rejects.toThrow(CAPTURE_REFUSALS[fault]);
+       |      ^
+    393|     await assertNoCreation(next);
+    394|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  18:10:27
+   Duration  23.28s (import 57%, transform 26%, tests 12%, setup 5%)
+
+JSON report written to C:/Users/LSZHIC~1/AppData/Local/Temp/openstory-g06-capture-20261113/capture-final.json
+error: script "test" exited with code 1
+
+===== core-capture-final.log =====
+$ vitest run src/sequences/server/sequence-creation-capture.test.ts "--maxWorkers=1" --no-file-parallelism "--reporter=default" "--reporter=json" "--outputFile.json=C:\\Users\\LSZHIC~1\\AppData\\Local\\Temp\\openstory-g06-capture-20261113\\capture-final.json"
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+(node:34604) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/sequence-creation-capture.test.ts (15 tests) 2277ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  18:13:32
+   Duration  14.85s (import 50%, transform 29%, tests 16%, setup 5%)
+
+JSON report written to C:/Users/LSZHIC~1/AppData/Local/Temp/openstory-g06-capture-20261113/capture-final.json
+
+===== core-capture-lint-fixed.log =====
+$ vitest run src/sequences/server/sequence-creation-capture.test.ts "--maxWorkers=1" --no-file-parallelism "--reporter=default" "--reporter=json" "--outputFile.json=D:\\code\\github\\openstory\\.tmp\\p3-g06-capture-20261113\\core-capture-lint-fixed.json"
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+(node:19380) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/sequence-creation-capture.test.ts (15 tests) 1845ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  18:18:11
+   Duration  12.43s (import 50%, transform 30%, tests 15%, setup 4%)
+
+JSON report written to D:/code/github/openstory/.tmp/p3-g06-capture-20261113/core-capture-lint-fixed.json

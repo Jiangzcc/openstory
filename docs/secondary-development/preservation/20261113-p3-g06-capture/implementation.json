@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-13",
+  "batchId": "G06-capture",
+  "responsibilityId": "GC-06",
+  "status": "completed-with-open-risks",
+  "sourceBefore": "9d14dd318035a0b62b3675673a0675a623835c89",
+  "sourceAfter": "657dc9fe1662f99de1caf2f1cf81dc342f57e767",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "problem": "A single creation request could read defaults, routing, capability, price and dispatch configuration from different live versions when an administrator changed configuration between reads.",
+  "changes": [
+    {
+      "id": "trusted-sequence-preparation",
+      "owners": [
+        "src/sequences/server/prepare-sequence-creation.ts",
+        "src/sequences/sequences.fn.ts"
+      ],
+      "before": "Web validator parsed defaults from one global read and the core loaded a second configuration.",
+      "after": "Server validator returns parsed input plus one runtime configuration; handler passes both through trusted internal context.",
+      "contract": "Public schema stays unchanged; auth, organization and locale remain middleware-owned."
+    },
+    {
+      "id": "api-capture",
+      "owners": ["src/platform/server/api-v1/create.ts"],
+      "before": "API one-shot read only default configuration before rights/enhance/inline work and core re-read full configuration.",
+      "after": "Existing scoped runtime loader runs at the original capture point; final parse and rights/enhance/inline order stay in place; same configuration reaches core."
+    },
+    {
+      "id": "core-handoff",
+      "owners": ["src/sequences/server/create-sequences.ts"],
+      "before": "Shared core always loaded a fresh runtime configuration.",
+      "after": "Core uses trusted modelConfiguration when supplied and retains the old scoped loader fallback for regeneration and other callers."
+    }
+  ],
+  "callers": [
+    {
+      "path": "src/platform/server/mcp/tools/structure-edits.ts",
+      "status": "unchanged-reuses-api-service",
+      "note": "create_sequence still calls runOneShotCreate; assistant uses MCP_TOOLS."
+    },
+    {
+      "path": "src/platform/server/mcp/tools/structure-edits.ts",
+      "status": "unchanged-core-fallback",
+      "note": "regenerate_storyboard still supplies regenerateInput and lets core capture once."
+    },
+    {
+      "path": "src/sequences/server/generation-operations.ts",
+      "status": "unchanged-already-consistent",
+      "note": "full retry execution preparation already shares one captured configuration with preview and launch; plan and execute remain separate requests."
+    }
+  ],
+  "verification": {
+    "record": "verification-results.json",
+    "callerMatrix": "caller-matrix.json",
+    "totals": {
+      "files": 37,
+      "tests": 841,
+      "passed": 841,
+      "failed": 0,
+      "skipped": 0,
+      "originalFiles": 34,
+      "originalTests": 797,
+      "newFiles": 3,
+      "newTests": 44
+    },
+    "oneBoundedManifestGreenRun": true,
+    "fullRepositoryGreen": false,
+    "fullRepositoryFailureFollowup": "full-failure-followup-voice.json and full-failure-followup-discovery.json"
+  },
+  "preservation": {
+    "record": "source-preservation.json",
+    "originalTrackedFiles": 3692,
+    "originalTests": 804,
+    "rawUnchangedTests": 802,
+    "fixtureOnlyTests": [
+      "src/platform/server/api-v1/create.test.ts",
+      "src/platform/server/api-v1/entry-locale.test.ts"
+    ],
+    "frozenFiles": 25,
+    "frozenInventoryRows": 1219,
+    "previousArchiveFiles": 140,
+    "ledgerPrefixRows": 14
+  },
+  "newSourcePaths": [
+    "src/sequences/server/prepare-sequence-creation.ts",
+    "src/sequences/server/sequence-creation-entry.test.ts",
+    "src/sequences/server/sequence-creation-capture.test.ts",
+    "src/sequences/server/db/sequence-capture.test.fixture.ts",
+    "src/platform/server/api-v1/sequence-creation-capture.test.ts"
+  ],
+  "modifiedSourcePaths": [
+    "src/sequences/sequences.fn.ts",
+    "src/sequences/server/create-sequences.ts",
+    "src/platform/server/api-v1/create.ts"
+  ],
+  "openActions": [
+    "G06-auxiliary",
+    "real browser/RPC and compiled manifest acceptance",
+    "real Workerd durable replay and provider/billing acceptance"
+  ],
+  "authorization": "Continued user authorization for P3 implementation, local verification, parallel work and normal local commits.",
+  "remote": {
+    "fetched": false,
+    "merged": false,
+    "pushed": false,
+    "deployed": false,
+    "remoteDatabaseWrites": false,
+    "paidProviderCalls": false
+  }
+}

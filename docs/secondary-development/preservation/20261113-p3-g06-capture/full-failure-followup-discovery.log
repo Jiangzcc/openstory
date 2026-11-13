@@ -1,0 +1,144 @@
+$ vitest run src/platform/server/agent/discovery.test.ts "--maxWorkers=1" "--reporter=default" "--reporter=json" "--outputFile=.tmp/p3-g06-capture-20261113/full-failure-followup-discovery.json"
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+ ❯ src/platform/server/agent/discovery.test.ts (19 tests | 1 failed) 25ms
+   ✓ DISCOVERY_LINK_HEADER (1)
+     ✓ advertises the llms.txt overview, human docs, and OpenAPI spec 1ms
+   ✓ acceptsMarkdown (5)
+     ✓ matches GET requests asking for text/markdown 2ms
+     ✓ matches markdown among multiple accept values 0ms
+     ✓ ignores plain HTML requests 0ms
+     ✓ ignores requests without an Accept header 0ms
+     ✓ ignores non-GET/HEAD methods 0ms
+   ❯ getMarkdownForPath (6)
+     × serves the llms.txt overview for the homepage 8ms
+     ✓ serves the FAQ rendition 0ms
+     ✓ serves docs pages from content-collections by slug 0ms
+     ✓ tolerates trailing slashes 0ms
+     ✓ returns null for unknown docs slugs 0ms
+     ✓ returns null for app routes 0ms
+   ✓ markdownResponse (2)
+     ✓ returns text/markdown with token estimate and discovery links 2ms
+     ✓ omits the body for HEAD requests 0ms
+   ✓ withHtmlAccept (1)
+     ✓ replaces the Accept header with text/html 1ms
+   ✓ withDiscoveryLinkHeader (4)
+     ✓ adds the Link header to HTML responses 0ms
+     ✓ adds the Link header to the homepage redirect 0ms
+     ✓ leaves non-document responses untouched 0ms
+     ✓ preserves an existing Link header 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/platform/server/agent/discovery.test.ts > getMarkdownForPath > serves the llms.txt overview for the homepage
+AssertionError: expected '# ??\n\n> Create 5-minute AI films wi…' to contain '# OpenStory'
+
+- Expected
++ Received
+
+- # OpenStory
++ # ??
++
++ > Create 5-minute AI films with consistent characters. Iterate until you nail it. Open source and free to self-host.
++
++ ?? is an open source AI video production platform. Paste a script or a one-liner and it builds a multi-scene film with consistent characters and look — then you iterate until you nail it. Fully exportable, and free to self-host.
++
++ ## How It Works
++
++ 01. **Describe Your Idea**: Start with a one-liner or a full script. OpenStory builds out scenes, assigns characters and locations, and prepares shot directions for a multi-scene film.
++ 02. **Define Your Look**: Set your visual style, cast your characters, choose your locations. These carry across your entire project.
++ 03. **Generate & Refine**: Generate AI shots for every shot. Swap models, try variations, regenerate until every shot is right.
++ 04. **Export Everything**: Download shots, sequences, prompts, and music. Take it all into your editing tool of choice.
++
++ ## Features
++
++ - **From Idea to Finished Video**: Describe what you want in a line or paste a full script. OpenStory breaks it into scenes, generates shots, and scores the music — a multi-scene film with consistent characters, not a single-shot toy.
++ - **Cast Your Own Characters & Locations**: Define your characters and environments once — age, wardrobe, lighting, architecture. OpenStory maintains consistency across every shot in every sequence.
++ - **Get The Shot You Want**: Generate variations of any shot — different angles, lighting, compositions — and iterate the whole film until it’s exactly right.
++ - **Take Your Work Anywhere**: Download individual shots, export full sequences, and get the prompts behind every generation. Your work isn’t trapped here — use it in any editing tool or pipeline.
++ - **Latest Models**: Access the best image and video models as they ship. Switch per shot, or let OpenStory pick the best one for the job.
++ - **Music & Audio**: Generate music tracks and sound effects that match your sequence. Full audio composition built in.
++
++ ## Open & Fair
++
++ - **Open Source**: MIT licensed, full source on GitHub. Fork it, self-host it, or build entirely new workflows on top.
++ - **Bring Your Own Keys**: Use your own API keys or self-host entirely. Pay providers directly with no platform fees.
++ - **At Cost Pricing**: No subscriptions. AI usage at provider cost. A small fee applies only when buying credits.
++ - **Export Everything**: Shots, sequences, prompts, and music. Your work isn’t trapped — take it anywhere.
++
++ ## FAQ
++
++ ### What is OpenStory?
++
++ OpenStory is an open source AI video production platform. Paste a script or a one-liner and it builds a multi-scene film — consistent characters, locations, and look across every shot, up to around five minutes. Iterate on scenes until you nail it, then export. Free to self-host.
++
++ ### Do I need to write a full script?
++
++ No. You can start with a single line and OpenStory will expand it into a full script with scenes, characters, and shot directions. Or paste in a complete script if you have one.
++
++ ### What AI models does it support?
++
++ OpenStory fully supports the latest image and video models as close to day zero as possible. You can switch models per shot or let OpenStory pick the best one.
++
++ ### How does pricing work?
++
++ No subscriptions. Generations are billed at the rates of the labs and platforms that run them (fal.ai, OpenRouter, and more soon). A platform fee applies only when you buy credits, not on each generation. See openstory.so/pricing for the full model price list. Bring your own API keys to skip credits entirely.
++
++ ### Can I use my own API keys?
++
++ Absolutely. You can enter your own API keys directly — no self-hosting required. Pay providers directly with full control over costs and usage.
++
++ ### Is it open source?
++
++ Yes. MIT licensed, full source on GitHub. You can self-host it, fork it, or use the managed cloud version.
++
++ ### How do I get started?
++
++ Sign up to start immediately, or clone the GitHub repo to self-host. Describe your idea, define your look, and generate your first storyboard in minutes.
++
++ ## API
++
++ ?? has a public HTTP API for agents and scripts: create an AI video sequence from a script in one call then poll its status, or enhance a script on its own (streamed back). The endpoints below are self-describing and need no separate docs.
++
++ - API root (instructions, request schema, and HAL links): http://localhost:3000/api/v1
++ - OpenAPI 3.1 spec (JSON): http://localhost:3000/api/v1/openapi.json
++
++ Authenticate with an API key (create one under Settings → Developer) sent as "Authorization: Bearer <key>" or "x-api-key". POST /api/v1/sequences to create; GET the returned status URL (append ?wait=60s to long-poll) to watch progress. POST /api/v1/scripts/enhance to enhance a script without creating a sequence — the enhanced script streams back as Server-Sent Events.
++
++ ## MCP
++
++ MCP clients connect to http://localhost:3000/mcp (Streamable HTTP, protocol 2026-07-28, OAuth or an API key) to inspect a production, edit scenes, plan and approve generation, poll operations and export.
++ - Agent guide: http://localhost:3000/docs/developer-guide/agents
++
++ ## Documentation
++
++ - Docs: http://localhost:3000/docs
++ - Full docs (markdown): http://localhost:3000/docs/llms.md
++
++ ## Links
++
++ - Website: http://localhost:3000
++ - App: http://localhost:3000/
++ - GitHub: https://github.com/openstory-so/openstory
++ - License: https://github.com/openstory-so/openstory/blob/main/LICENSE
++
+
+ ❯ src/platform/server/agent/discovery.test.ts:78:22
+     76|   it('serves the llms.txt overview for the homepage', () => {
+     77|     const markdown = getMarkdownForPath('/');
+     78|     expect(markdown).toContain('# OpenStory');
+       |                      ^
+     79|     expect(markdown).toContain('## FAQ');
+     80|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  21:10:34
+   Duration  1.48s (transform 48%, setup 47%, tests 2%, import 2%, worker 1%)
+
+JSON report written to D:/code/github/openstory/.tmp/p3-g06-capture-20261113/full-failure-followup-discovery.json
+error: script "test" exited with code 1

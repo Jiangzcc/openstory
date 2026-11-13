@@ -1,0 +1,915 @@
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts (19 tests | 13 failed) 122ms
+   × keeps A through a controlled admin change and captures B on the next request 31ms
+   × preserves explicit model arrays, style, output switches and a verbatim script 6ms
+   × keeps the real BytePlus source gate for no platform Ark key 5ms
+   × keeps the real BytePlus source gate for disabled platform slots 4ms
+   × keeps the real BytePlus source gate for an organization fal key 3ms
+   × falls back to an offered model when both configured video defaults need BytePlus 3ms
+   × refuses an unsigned location portrait before enhancement or any inline insert 12ms
+   × refuses an unsigned element portrait before enhancement or any inline insert 4ms
+   × records both portrait sign-offs before enhancement, inline rows, core and sheets 12ms
+   ✓ fails ingestion before rights checks, enhancement or inline creation 2ms
+   × preserves Kling O3 reference-only acceptance in the real schema 3ms
+   ✓ keeps final analysis model validation after enhancement and inline creation 4ms
+   ✓ keeps final video model array validation after enhancement and inline creation 3ms
+   × cleans up both inline rows and starts no sheet when the core refuses creation 4ms
+   × waits for successful core completion before starting the location sheet 3ms
+   ✓ retains the successful sequence when later sheet dispatch fails 2ms
+   × strips forged public actor, locale and configuration fields before the real service 3ms
+   ✓ rejects public schema failure short script before capturing or doing IO 2ms
+   ✓ rejects public schema failure strict inline character before capturing or doing IO 2ms
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 6 passed (19)
+   Start at  18:19:28
+   Duration  4.13s (transform 45%, import 34%, setup 17%, tests 3%)
+
+JSON report written to D:/code/github/openstory/.tmp/p3-g06-capture-20261113/api-baseline-final.json
+$ vitest run "src/platform/server/api-v1/g06-api-baseline.tmp.test.ts" "--maxWorkers=1" "--reporter=default" "--reporter=json" "--outputFile=.tmp/p3-g06-capture-20261113/api-baseline-final.json"
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > keeps A through a controlled admin change and captures B on the next request
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:386:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > preserves explicit model arrays, style, output switches and a verbatim script
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:453:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > keeps the real BytePlus source gate for no platform Ark key
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > keeps the real BytePlus source gate for disabled platform slots
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > keeps the real BytePlus source gate for an organization fal key
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:487:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > falls back to an offered model when both configured video defaults need BytePlus
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2_5",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:498:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > refuses an unsigned location portrait before enhancement or any inline insert
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > refuses an unsigned element portrait before enhancement or any inline insert
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ expectReads src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:328:20
+    326|
+    327| function expectReads(count: number) {
+    328|   expect(readText).toHaveBeenCalledTimes(count);
+       |                    ^
+    329|   expect(readImage).toHaveBeenCalledTimes(count);
+    330|   expect(readConfiguration).toHaveBeenCalledTimes(count);
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:535:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > records both portrait sign-offs before enhancement, inline rows, core and sheets
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:584:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > preserves Kling O3 reference-only acceptance in the real schema
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:610:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > cleans up both inline rows and starts no sheet when the core refuses creation
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:672:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > waits for successful core completion before starting the location sheet
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:700:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  src/platform/server/api-v1/g06-api-baseline.tmp.test.ts > strips forged public actor, locale and configuration fields before the real service
+AssertionError: expected { promptLocale: 'en', …(5) } to match object { promptLocale: 'en', …(4) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,76 +1,6 @@
+  {
+-   "modelConfiguration": {
+-     "defaultAnalysis": "custom:capture",
+-     "defaultImage": "custom-image:capture",
+-     "defaultMusic": "elevenlabs_music",
+-     "defaultVideo": "seedance_v2",
+-     "imageModelRouting": [
+-       {
+-         "baseUrl": "https://capture-image-a.invalid/v1",
+-         "channelId": "capture-image-channel",
+-         "credentialId": "synthetic-image-credential",
+-         "modelId": "custom-image:capture",
+-         "name": "Synthetic capture image",
+-         "operations": {
+-           "generate": {
+-             "mask": "unsupported",
+-             "maxReferenceImages": 0,
+-             "minReferenceImages": 0,
+-             "status": "verified",
+-             "upstreamModel": "capture-a",
+-           },
+-         },
+-         "parameters": [],
+-         "priceCards": [
+-           {
+-             "id": "capture",
+-             "match": {},
+-             "operation": "generate",
+-             "unitPriceUsd": 0.02,
+-           },
+-         ],
+-         "protocol": "openai-images",
+-       },
+-     ],
+-     "newSequenceVideo": "seedance_v2_5",
+-     "poster": "krea_2_turbo",
+-     "promptShortening": "anthropic/claude-sonnet-5.5",
+-     "qualityAnalysis": "google/gemini-4-argon",
+-     "qualityImage": "gpt_image_2",
+-     "qualityMusic": "elevenlabs_music",
+-     "qualityVideo": "seedance_v2_5",
+-     "sceneSplit": "anthropic/claude-opus-5.5",
+-     "shotPreview": "nano_banana_2_lite",
+-     "studioDraft": "anthropic/claude-sonnet-5.5",
+-     "styleRecommendation": "anthropic/claude-sonnet-5.5",
+-     "talentVideo": "google/gemini-3.8-flash",
+-     "textModelRouting": [
+-       {
+-         "baseUrl": "https://capture-text-a.invalid/v1",
+-         "channelId": "capture-text-channel",
+-         "contextWindow": 16000,
+-         "credentialId": "synthetic-text-credential",
+-         "inputPricePerMillion": 2,
+-         "maxOutputTokens": 4000,
+-         "modelId": "custom:capture",
+-         "name": "Synthetic capture model",
+-         "outputPricePerMillion": 6,
+-         "protocol": "openai-chat-completions",
+-         "structuredOutput": true,
+-         "tools": true,
+-         "upstreamModel": "capture-a",
+-         "vision": true,
+-       },
+-     ],
+-     "turboAnalysis": "anthropic/claude-sonnet-5.5",
+-     "turboImage": "nano_banana_2_lite",
+-     "turboMusic": "elevenlabs_music",
+-     "turboVideo": "minimax_h3_max",
+-     "vision": "anthropic/claude-sonnet-5.5",
+-     "watchClip": "google/gemini-4-argon",
+-   },
+    "notify": false,
+    "organizationId": "01M7A6PSTA8RG6FR8K82NQH96X",
+    "promptLocale": "en",
+    "user": {
+      "id": "01M7A6PST94HPD3ATKK61AZGS5",
+
+ ❯ expectCapture src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:310:20
+    308| function expectCapture(index: number, snapshot: ModelRuntimeConfigurat…
+    309|   const [input, internal] = coreCall(index);
+    310|   expect(internal).toMatchObject({
+       |                    ^
+    311|     promptLocale: context.promptLocale,
+    312|     organizationId: IDS.organization,
+ ❯ src/platform/server/api-v1/g06-api-baseline.tmp.test.ts:736:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+error: script "test" exited with code 1

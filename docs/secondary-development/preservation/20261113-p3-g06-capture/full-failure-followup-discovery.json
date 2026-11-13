@@ -1,0 +1,251 @@
+{
+  "numTotalTestSuites": 7,
+  "numPassedTestSuites": 5,
+  "numFailedTestSuites": 2,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 19,
+  "numPassedTests": 18,
+  "numFailedTests": 1,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1794575433904,
+  "success": false,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["DISCOVERY_LINK_HEADER"],
+          "fullName": "DISCOVERY_LINK_HEADER advertises the llms.txt overview, human docs, and OpenAPI spec",
+          "status": "passed",
+          "title": "advertises the llms.txt overview, human docs, and OpenAPI spec",
+          "duration": 1.240099999999984,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["acceptsMarkdown"],
+          "fullName": "acceptsMarkdown matches GET requests asking for text/markdown",
+          "status": "passed",
+          "title": "matches GET requests asking for text/markdown",
+          "duration": 1.5235999999999876,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["acceptsMarkdown"],
+          "fullName": "acceptsMarkdown matches markdown among multiple accept values",
+          "status": "passed",
+          "title": "matches markdown among multiple accept values",
+          "duration": 0.3770999999999276,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["acceptsMarkdown"],
+          "fullName": "acceptsMarkdown ignores plain HTML requests",
+          "status": "passed",
+          "title": "ignores plain HTML requests",
+          "duration": 0.3966000000000349,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["acceptsMarkdown"],
+          "fullName": "acceptsMarkdown ignores requests without an Accept header",
+          "status": "passed",
+          "title": "ignores requests without an Accept header",
+          "duration": 0.20860000000016043,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["acceptsMarkdown"],
+          "fullName": "acceptsMarkdown ignores non-GET/HEAD methods",
+          "status": "passed",
+          "title": "ignores non-GET/HEAD methods",
+          "duration": 0.2639999999998963,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getMarkdownForPath"],
+          "fullName": "getMarkdownForPath serves the llms.txt overview for the homepage",
+          "status": "failed",
+          "title": "serves the llms.txt overview for the homepage",
+          "duration": 7.827199999999948,
+          "failureMessages": [
+            "AssertionError: expected '# ??\\n\\n> Create 5-minute AI films wi…' to contain '# OpenStory'\n    at D:/code/github/openstory/src/platform/server/agent/discovery.test.ts:78:22\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3276:10)\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3922:64"
+          ],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getMarkdownForPath"],
+          "fullName": "getMarkdownForPath serves the FAQ rendition",
+          "status": "passed",
+          "title": "serves the FAQ rendition",
+          "duration": 0.28960000000006403,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getMarkdownForPath"],
+          "fullName": "getMarkdownForPath serves docs pages from content-collections by slug",
+          "status": "passed",
+          "title": "serves docs pages from content-collections by slug",
+          "duration": 0.355199999999968,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getMarkdownForPath"],
+          "fullName": "getMarkdownForPath tolerates trailing slashes",
+          "status": "passed",
+          "title": "tolerates trailing slashes",
+          "duration": 0.22309999999993124,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getMarkdownForPath"],
+          "fullName": "getMarkdownForPath returns null for unknown docs slugs",
+          "status": "passed",
+          "title": "returns null for unknown docs slugs",
+          "duration": 0.08909999999991669,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getMarkdownForPath"],
+          "fullName": "getMarkdownForPath returns null for app routes",
+          "status": "passed",
+          "title": "returns null for app routes",
+          "duration": 0.05950000000007094,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["markdownResponse"],
+          "fullName": "markdownResponse returns text/markdown with token estimate and discovery links",
+          "status": "passed",
+          "title": "returns text/markdown with token estimate and discovery links",
+          "duration": 1.9651000000001204,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["markdownResponse"],
+          "fullName": "markdownResponse omits the body for HEAD requests",
+          "status": "passed",
+          "title": "omits the body for HEAD requests",
+          "duration": 0.324100000000044,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["withHtmlAccept"],
+          "fullName": "withHtmlAccept replaces the Accept header with text/html",
+          "status": "passed",
+          "title": "replaces the Accept header with text/html",
+          "duration": 0.5697000000000116,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["withDiscoveryLinkHeader"],
+          "fullName": "withDiscoveryLinkHeader adds the Link header to HTML responses",
+          "status": "passed",
+          "title": "adds the Link header to HTML responses",
+          "duration": 0.31529999999997926,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["withDiscoveryLinkHeader"],
+          "fullName": "withDiscoveryLinkHeader adds the Link header to the homepage redirect",
+          "status": "passed",
+          "title": "adds the Link header to the homepage redirect",
+          "duration": 0.16589999999996508,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["withDiscoveryLinkHeader"],
+          "fullName": "withDiscoveryLinkHeader leaves non-document responses untouched",
+          "status": "passed",
+          "title": "leaves non-document responses untouched",
+          "duration": 0.13589999999999236,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["withDiscoveryLinkHeader"],
+          "fullName": "withDiscoveryLinkHeader preserves an existing Link header",
+          "status": "passed",
+          "title": "preserves an existing Link header",
+          "duration": 0.13409999999998945,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794575435595,
+      "endTime": 1794575435612.134,
+      "status": "failed",
+      "message": "",
+      "name": "D:/code/github/openstory/src/platform/server/agent/discovery.test.ts"
+    }
+  ]
+}

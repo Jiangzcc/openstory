@@ -1,0 +1,1924 @@
+$ vitest run "--maxWorkers=1" "--reporter=default" "--reporter=json" "--outputFile=.tmp/p3-g06-capture-20261113/full-test.json"
+
+ RUN  v5.1.0 D:/code/github/openstory
+
+ ✓ src/motion/server/motion-generation.test.ts (58 tests) 304ms
+(node:52696) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/shot-prompt-versions.test.ts (39 tests) 1329ms
+(node:8928) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/auth/server-function-composition.test.ts (40 tests) 1393ms
+(node:53188) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/mcp/tools.test.ts (125 tests) 4831ms
+   ✓ official MCP client transport (#1463) (3)
+     ✓ discovers the read tools and resources, and navigates sequence → shot → scene 391ms
+(node:33160) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/stills/server/db/frame-variants.test.ts (59 tests) 1205ms
+ ✓ src/sequences/server/workflows/scene-split-workflow.test.ts (36 tests) 77ms
+(node:36828) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/media-upload.test.ts (13 tests) 2352ms
+   ✓ character sheet upload for a look other than the default (#2015) (1)
+     ✓ is allowed before the default has a sheet, and reads stale once one lands 1109ms
+ ✓ src/shots/server/workflows/update-stale-plan-run.test.ts (25 tests) 62ms
+(node:37748) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/realtime/realtime-channel.do.test.ts (26 tests) 680ms
+(node:15872) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/frame-prompt-versions.test.ts (22 tests) 988ms
+(node:17628) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/shot-dialogue.test.ts (29 tests) 1023ms
+ ✓ src/platform/ui/realtime/__tests__/query-cache-updater.test.ts (32 tests) 46ms
+ ✓ src/platform/server/workflow/claim-discipline.test.ts (5 tests) 3063ms
+   ✓ claim discipline (#1130) (5)
+     ✓ every claim domain exposes claim, clear and promote 2994ms
+ ✓ src/platform/client-server-boundary.test.ts (17 tests) 3752ms
+   ✓ client/server import boundary (17)
+     ✓ no server-only module is reachable from client components/hooks/routes/functions 3680ms
+(node:38052) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/stills/server/workflows/configured-image-contract.test.ts (14 tests) 966ms
+(node:48852) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/mcp/tools/asset-entry-contract.test.ts (224 tests) 1638ms
+(node:29308) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/workflow/child-snapshot-composition.test.ts (10 tests) 890ms
+(node:36280) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/db/image-channels.test.ts (14 tests) 920ms
+(node:34088) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/db/text-channels.test.ts (18 tests) 1327ms
+(node:33508) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/db/api-keys.test.ts (56 tests) 1298ms
+ ✓ src/shots/input-hash.test.ts (82 tests) 83ms
+ ✓ src/sequences/smart-retry.test.ts (27 tests) 65ms
+(node:30784) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/billing/server/refresh-fal-pricing.test.ts (30 tests) 3051ms
+ ✓ src/shots/scene-segments.test.ts (46 tests) 26ms
+ ✓ src/motion/server/build-motion-prompts.test.ts (57 tests) 22ms
+ ✓ src/shots/shot-list-pass.test.ts (36 tests) 24ms
+ ✓ src/motion/server/build-model-input.test.ts (70 tests) 48ms
+ ✓ packages/stitch/src/cli.test.ts (52 tests) 1882ms
+ ✓ src/motion/server/build-reference-video-prompt.test.ts (35 tests) 27ms
+(node:35392) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/studio/server/asset-entry-contract.test.ts (21 tests) 1324ms
+(node:42248) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/studio/server/create-studio-asset.test.ts (38 tests) 1038ms
+(node:15188) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/stills/server/shot-image-generation-billing.test.ts (19 tests) 1910ms
+(node:33836) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/upload-rights.test.ts (15 tests) 1161ms
+ ✓ src/models/server/llm-client.test.ts (82 tests) 50ms
+(node:15648) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/byteplus-asset-pool.test.ts (29 tests) 989ms
+ ✓ src/models/server/llm-call-helper.test.ts (30 tests) 49ms
+ ✓ src/models/server/configured-text-protocol.test.ts (20 tests) 95ms
+ ✓ src/motion/server/generate-dialogue-speech.test.ts (26 tests) 54ms
+ ✓ src/models/ui/admin-text-channels.test.tsx (27 tests) 265ms
+ ✓ src/models/server/create-adapter.test.ts (33 tests) 22ms
+ ✓ src/models/server/configured-text-call.test.ts (83 tests) 76ms
+ ✓ src/cast/server/cast-generation.test.ts (20 tests) 57ms
+ ✓ scripts/localization/ui-copy.test.ts (54 tests) 64ms
+ ✓ src/models/ui/admin-save-cache.test.tsx (27 tests) 78ms
+ ✓ packages/stitch/src/stitched-media.test.ts (19 tests) 27ms
+ ✓ src/billing/server/preflight.test.ts (33 tests) 31ms
+ ✓ packages/stitch/src/export.test.ts (18 tests) 34ms
+ ✓ src/models/ui/admin-text-channels-state.test.ts (42 tests) 36ms
+ ✓ src/models/server/image-channel-service.test.ts (27 tests) 152ms
+ ✓ scripts/localization/report.test.ts (33 tests) 49ms
+ ✓ packages/stitch/src/ranged-source.test.ts (17 tests) 360ms
+ ✓ src/billing/server/workflow-deduction.test.ts (17 tests) 21ms
+ ✓ src/billing/server/fal-pricing-fetch.test.ts (18 tests) 46ms
+(node:24676) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/character-library.test.ts (8 tests) 1180ms
+ ✓ src/motion/server/pack-motion-jobs.test.ts (27 tests) 25ms
+ ✓ src/motion/server/build-byteplus-video-request.test.ts (23 tests) 20ms
+ ✓ packages/stitch/src/share.test.ts (6 tests) 309ms
+ ✓ src/motion/server/batch-motion-cost.test.ts (15 tests) 20ms
+(node:28816) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/studio/server/studio-draft-provider-contract.test.ts (7 tests) 1909ms
+(node:43160) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/mcp/request-composition.test.ts (69 tests) 2992ms
+(node:52812) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/studio/server/configured-studio-create.test.ts (19 tests) 1079ms
+(node:29288) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts > Studio draft generation admission on registered tools > blocks a generation-suspended user on assistant-zh before calling the draft service
+Error: New generations are paused on this account following a other report.
+    at unwrapMcpResult (D:/code/github/openstory/src/assistant/server/assistant-tools.ts:105:11)
+    at Object.execute (D:/code/github/openstory/src/assistant/server/assistant-tools.ts:135:9)
+    at next (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:329:14)
+    at D:/code/github/openstory/src/platform/middleware.fn.ts:367:14
+    at Object.fetch (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:346:9)
+    at async file:///D:/code/github/openstory/node_modules/@tanstack/start-server-core/dist/esm/internal-request-response.js:463:11
+    at assistantCall (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:357:20)
+    at D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:691:11
+    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20
+
+stderr | src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts > Studio draft generation admission on registered tools > blocks a generation-suspended organization on assistant-zh before calling the draft service
+Error: New generations are paused on this account following a other report.
+    at unwrapMcpResult (D:/code/github/openstory/src/assistant/server/assistant-tools.ts:105:11)
+    at Object.execute (D:/code/github/openstory/src/assistant/server/assistant-tools.ts:135:9)
+    at next (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:329:14)
+    at D:/code/github/openstory/src/platform/middleware.fn.ts:367:14
+    at Object.fetch (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:346:9)
+    at async file:///D:/code/github/openstory/node_modules/@tanstack/start-server-core/dist/esm/internal-request-response.js:463:11
+    at assistantCall (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:357:20)
+    at D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:691:11
+    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20
+
+stderr | src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts > Studio draft generation admission on registered tools > blocks a generation-suspended user on assistant-en before calling the draft service
+Error: New generations are paused on this account following a other report.
+    at unwrapMcpResult (D:/code/github/openstory/src/assistant/server/assistant-tools.ts:105:11)
+    at Object.execute (D:/code/github/openstory/src/assistant/server/assistant-tools.ts:135:9)
+    at next (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:329:14)
+    at D:/code/github/openstory/src/platform/middleware.fn.ts:367:14
+    at Object.fetch (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:346:9)
+    at async file:///D:/code/github/openstory/node_modules/@tanstack/start-server-core/dist/esm/internal-request-response.js:463:11
+    at assistantCall (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:357:20)
+    at D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:691:11
+    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20
+
+stderr | src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts > Studio draft generation admission on registered tools > blocks a generation-suspended organization on assistant-en before calling the draft service
+Error: New generations are paused on this account following a other report.
+    at unwrapMcpResult (D:/code/github/openstory/src/assistant/server/assistant-tools.ts:105:11)
+    at Object.execute (D:/code/github/openstory/src/assistant/server/assistant-tools.ts:135:9)
+    at next (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:329:14)
+    at D:/code/github/openstory/src/platform/middleware.fn.ts:367:14
+    at Object.fetch (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:346:9)
+    at async file:///D:/code/github/openstory/node_modules/@tanstack/start-server-core/dist/esm/internal-request-response.js:463:11
+    at assistantCall (D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:357:20)
+    at D:/code/github/openstory/src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts:691:11
+    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20
+
+ ✓ src/platform/server/mcp/tools/asset-upload-entry-contract.test.ts (33 tests) 1629ms
+ ✓ src/platform/server/api-v1/entry-locale.test.ts (46 tests) 96ms
+ ✓ src/platform/server/observability/ai-otel.test.ts (28 tests) 859ms
+   ✓ aiObservabilityMiddleware (13)
+     ✓ returns [] when PostHog is not configured 811ms
+ ✓ src/platform/server/api-v1/sequence-creation-capture.test.ts (19 tests) 79ms
+(node:26740) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/motion/server/db/video-variants.test.ts (31 tests) 1110ms
+(node:15020) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/billing/server/db/billing.test.ts (24 tests) 946ms
+ ✓ src/platform/server/api-v1/state.test.ts (13 tests) 25ms
+ ✓ src/platform/server/db/scoped.test.ts (24 tests) 36ms
+(node:22208) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/mcp/admin-sequence-access.test.ts (11 tests) 946ms
+(node:52432) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/stills/server/db/image-generation-attempts.test.ts (6 tests) 1018ms
+(node:13496) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/workflow/model-snapshot-composition.test.ts (11 tests) 1220ms
+(node:40888) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/mcp/cast-audio-generation.test.ts (23 tests) 1572ms
+ ✓ src/platform/server/mcp/auth-cookie.test.ts (10 tests) 384ms
+ ✓ src/platform/server/mcp/server.test.ts (176 tests) 575ms
+ ✓ src/platform/server/workflow/no-mid-run-reads.test.ts (60 tests) 179ms
+ ✓ src/shots/server/workflows/variant-child-context.test.ts (6 tests) 58ms
+ ✓ src/sequences/server/workflows/analyze-script-workflow.test.ts (16 tests) 59ms
+ ✓ src/platform/server/cron/reconcile-all.test.ts (25 tests) 460ms
+   ✓ reconcileAllStuckJobs — blind-fail passes (2)
+     ✓ sequence_elements.vision writes visionStatus=failed 430ms
+ ✓ src/shots/server/prompt-context.test.ts (24 tests) 38ms
+(node:39300) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/structure-crud.test.ts (18 tests) 1098ms
+ ✓ src/shots/server/shot-image-input.test.ts (24 tests) 42ms
+(node:14728) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/studio/server/workflows/asset-lifecycle-contract.test.ts (16 tests) 1019ms
+(node:39208) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/studio/server/workflows/studio-asset-lifecycle-contract.test.ts (12 tests) 1282ms
+ ✓ src/cast/server/workflows/character-voice-workflow.test.ts (11 tests) 29ms
+(node:51688) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/billing/server/db/billing-auto-topup.test.ts (17 tests) 1477ms
+(node:54828) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/workflows/sheet-provenance-contract.test.ts (9 tests) 984ms
+(node:54472) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/audio/server/db/sequence-variants.test.ts (15 tests) 1101ms
+(node:33480) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/sheet-variants.test.ts (17 tests) 1050ms
+ ✓ src/sequences/ui/use-generation-settings.test.ts (29 tests) 54ms
+(node:46988) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/sequence-creation-entry.test.ts (10 tests) 1168ms
+(node:54784) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/sheet-claims.test.ts (44 tests) 1574ms
+(node:52648) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/locations.test.ts (60 tests) 1514ms
+(node:40664) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/sequence-cast-crud.test.ts (64 tests) 1746ms
+(node:29080) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/sequence-creation-capture.test.ts (15 tests) 2004ms
+(node:5200) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/sequence-elements.test.ts (12 tests) 1128ms
+(node:49828) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/locations-create-bulk.test.ts (20 tests) 1199ms
+ ✓ src/shots/server/staleness-matrix.test.ts (100 tests) 306ms
+ ✓ src/sequences/generation-plan.test.ts (33 tests) 26ms
+ ✓ src/sequences/server/workflows/storyboard-workflow.test.ts (18 tests) 38ms
+ ✓ src/sequences/failure-analysis.test.ts (26 tests) 32ms
+ ✓ src/shots/server/workflows/regenerate-shots-snapshot.test.ts (15 tests) 32ms
+ ✓ src/shots/server/optimised-prompt-preview.test.ts (17 tests) 32ms
+ ✓ src/sequences/script-enhancer-prompt.test.ts (18 tests) 27ms
+ ✓ packages/stitch/src/assets.test.ts (4 tests) 189ms
+(node:48296) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/db/generated-assets.test.ts (11 tests) 967ms
+(node:41868) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/db/model-configuration.test.ts (10 tests) 1166ms
+(node:24188) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/draft-element-analysis.test.ts (11 tests) 1010ms
+(node:10852) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/smart-retry-billing.test.ts (10 tests) 1060ms
+ ✓ src/stills/server/compatible-image-error.test.ts (30 tests) 103ms
+ ✓ src/shots/server/shot-staleness.test.ts (35 tests) 115ms
+(node:34340) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/db/configuration-session.test.ts (6 tests) 112ms
+ ✓ src/motion/server/workflows/motion-workflow.test.ts (41 tests) 63ms
+ ✓ src/cast/server/sheets/sheet-portrait-step.test.ts (10 tests) 53ms
+ ✓ src/models/text-channels.test.ts (47 tests) 48ms
+ ✓ src/stills/server/compatible-image-client.test.ts (21 tests) 94ms
+ ✓ src/stills/server/workflows/configured-image-step.test.ts (31 tests) 104ms
+ ✓ src/studio/server/workflows/studio-generation-workflow.test.ts (21 tests) 50ms
+ ✓ src/models/server/llm-call-routing.test.ts (36 tests) 59ms
+ ✓ src/shots/server/update-stale-plan.test.ts (34 tests) 45ms
+ ✓ src/studio/text-to-video.test.ts (35 tests) 26ms
+ ✓ src/shots/scene-matching.test.ts (54 tests) 34ms
+(node:16424) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/db/sequence-events.test.ts (13 tests) 1091ms
+ ✓ src/billing/fal-cost.test.ts (35 tests) 29ms
+ ✓ src/motion/server/workflows/motion-workflow-persist.test.ts (14 tests) 28ms
+(node:11000) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | scripts/preview-db.test.ts > preview D1 lineage > checks the configured fork and preserves an open PR database
+keep openstory-pr-12 (pr-db)
+0 closed preview database(s) to delete:
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > records an occupied database instead of importing into it
+PR 12 database already has tables; recording fork revision 2 without importing
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > records an occupied database instead of importing into it
+Forked PR 12 from preview base revision 2
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > ignores a name-search hit that is not the registry
+Forked PR 12 from preview base revision 2
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > forks only once, preserving the PR database on redeploy
+Forked PR 12 from preview base revision 2
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > forks only once, preserving the PR database on redeploy
+PR 12 already forked from revision 2; retaining its data
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > promotes a matching fork and treats retries as successful
+Promoted PR 12 as preview base revision 3
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > promotes a matching fork and treats retries as successful
+PR 12 already promoted
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > deletes a merged preview that changed no migrations
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > deletes a merged preview that changed no migrations
+PR 12 changed no files under drizzle/migrations; deleted its preview D1
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > refuses to promote a preview that never deployed
+Promoted PR 12 as preview base revision 3
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > discards an unmerged PR and lets reopening fork the current base
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > discards an unmerged PR and lets reopening fork the current base
+Forked PR 12 from preview base revision 2
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > preserves the base when promotion wins before the deletion claim
+Promoted PR 12 as preview base revision 3
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > rejects a stale promotion when deletion wins before its CAS
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > reserves an orphan before deletion and refuses readiness or reuse
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > claims a fork registered after an orphan lookup before deleting
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > preserves an orphan promoted after its initial fork lookup
+Promoted PR 12 as preview base revision 3
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > retains a retryable deletion claim after a failed delete, existing fork: false
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > retains a retryable deletion claim after a failed delete, existing fork: true
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > claims an orphan while the initial base is null
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > clears only its matching deletion claim: ready = 1
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+stdout | scripts/preview-db.test.ts > preview D1 lineage > clears only its matching deletion claim: database_id = 'replacement-db'
+Deleted unmerged preview database openstory-pr-12 (pr-db)
+
+ ✓ scripts/preview-db.test.ts (31 tests) 159ms
+ ✓ src/motion/dialogue-tts.test.ts (49 tests) 29ms
+ ✓ src/cast/voice.test.ts (50 tests) 34ms
+ ✓ src/models/catalog.test.ts (20 tests) 109ms
+ ✓ src/sequences/server/smart-retry-snapshot.test.ts (15 tests) 59ms
+ ✓ src/sequences/server/generation-plan.test.ts (10 tests) 38ms
+(node:35996) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/fresh-plan-persistence.test.ts (2 tests) 2261ms
+   ✓ keeps zh-CN snapshot-derived prompts current before sheets exist, while retaining edit staleness 1180ms
+   ✓ keeps en snapshot-derived prompts current before sheets exist, while retaining edit staleness 1067ms
+ ✓ src/shots/server/shot-dialogue.test.ts (18 tests) 29ms
+(node:33908) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/continue-plan-estimate.test.ts (4 tests) 1150ms
+ ✓ src/sequences/server/freeze-fresh-generation-plan.test.ts (14 tests) 40ms
+ ✓ src/sequences/ui/theatre/playback-clips.test.ts (25 tests) 24ms
+ ✓ src/sequences/server/social/upload-post.test.ts (30 tests) 44ms
+ ✓ src/sequences/server/recorded-e2e-scenes.test.ts (7 tests) 532ms
+ ✓ src/sequences/server/sequence.schemas.test.ts (24 tests) 28ms
+(node:34756) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/assistant/server/db/assistant.test.ts (9 tests) 1163ms
+ ✓ src/shots/server/shot-preview.test.ts (10 tests) 25ms
+(node:10924) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | src/sequences/server/generation-plan-queries.test.ts > sequence page query counts (#2082) > do not grow with shots, characters or locations
+fn | 2 of each | 8 of each
+getGenerationPlanFn | 33 | 33
+getSequenceSegmentsFn | 12 | 12
+getSequenceCharactersFn | 3 | 3
+getScenesFn | 2 | 2
+getSceneFacetMapsFn | 10 | 10
+getShotStalenessBatchFn | 29 | 29
+getShotsFn | 14 | 14
+
+ ✓ src/sequences/server/generation-plan-queries.test.ts (3 tests) 1380ms
+ ✓ src/shots/server/regenerate-shot-prompt.test.ts (8 tests) 31ms
+ ✓ src/sequences/server/script-enhancement.test.ts (13 tests) 55ms
+ ✓ src/sequences/server/streaming-scene-parser.test.ts (13 tests) 35ms
+ ✓ src/audio/server/workflows/music-scene-summaries.test.ts (8 tests) 31ms
+(node:34448) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/export.test.ts (5 tests) 1094ms
+ ✓ src/ui/docs/docs-session.test.tsx (4 tests) 84ms
+ ✓ src/shots/server/update-stale-preview.test.ts (7 tests) 26ms
+ ✓ src/shots/server/update-stale-references.test.ts (6 tests) 24ms
+ ✓ src/shots/server/reference-only-is-per-shot.test.ts (2 tests) 1723ms
+   ✓ reference-only is resolved per shot (2)
+     ✓ reads the sequence flag only where a sequence-level answer is right 1690ms
+(node:30548) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/sequence-assets.test.ts (1 test) 1083ms
+ ✓ src/sequences/ui/list-prefs.test.ts (9 tests) 171ms
+ ✓ src/shots/server/scene-script.test.ts (9 tests) 30ms
+ ✓ src/studio/ui/list-prefs.test.ts (9 tests) 682ms
+   ✓ studio list prefs (9)
+     ✓ reads empty URL search as the default list prefs 659ms
+(node:41260) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/generation-operations.test.ts (19 tests) 1492ms
+ ✓ src/shots/server/shot-work-items.test.ts (9 tests) 24ms
+ ✓ src/sequences/ui/use-sequences.test.ts (4 tests) 31ms
+ ✓ src/studio/ui/studio-gallery.test.tsx (9 tests) 129ms
+ ✓ src/studio/ui/studio-reference-picker.test.tsx (8 tests) 95ms
+ ✓ src/studio/ui/use-configured-image-controls.test.tsx (11 tests) 73ms
+ ✓ src/stills/server/workflows/upscale-shot-variant-workflow-generation.test.ts (6 tests) 55ms
+(node:52380) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/db/sequence-poster.test.ts (8 tests) 1268ms
+ ✓ src/shots/ui/prompt-mention/mention-items.test.ts (16 tests) 18ms
+ ✓ src/sequences/ui/generation/sequence-runs.test.ts (14 tests) 19ms
+ ✓ src/sequences/ui/eval/eval-sequences-mobile.test.tsx (4 tests) 66ms
+ ✓ src/stills/server/workflows/content-soften.test.ts (9 tests) 33ms
+ ✓ src/stills/server/workflows/soften-image-prompt.test.ts (12 tests) 54ms
+ ✓ src/stills/server/workflows/upscale-shot-variant-workflow.test.ts (6 tests) 23ms
+ ✓ src/models/ui/pickers/sequence-model-coverage.test.ts (8 tests) 17ms
+(node:8904) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/db/sequences-create.test.ts (4 tests) 1074ms
+(node:50000) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/db/configured-text-routing.test.ts (7 tests) 1162ms
+ ✓ src/stills/server/workflows/configured-image-interruption.test.ts (4 tests) 28ms
+ ✓ src/studio/server/workflows/asset-generation-workflow.test.ts (14 tests) 21ms
+ ✓ src/sequences/server/vtt/generate-chapters.test.ts (9 tests) 21ms
+ ✓ src/sequences/ui/eval/eval-view.test.tsx (5 tests) 47ms
+ ✓ src/shots/ui/prompt-mention/mention-roundtrip.test.ts (5 tests) 14ms
+ ✓ src/stills/server/workflows/image-workflow-failure.test.ts (4 tests) 23ms
+ ✓ src/sequences/ui/theatre/player-events.test.ts (7 tests) 19ms
+ ✓ src/sequences/ui/theatre/server-export-client.test.ts (4 tests) 27ms
+ ✓ src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts (3 tests) 18ms
+ ✓ src/models/ui/pickers/base-model-selector.test.tsx (6 tests) 57ms
+ ✓ src/stills/server/workflows/image-workflow-snapshot.test.ts (5 tests) 26ms
+(node:40464) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/db/sequences-create-defaults.test.ts (3 tests) 1037ms
+(node:4988) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/db/sequences-style-snapshot.test.ts (17 tests) 1280ms
+ ✓ src/platform/server/mcp/ui/sequence-card.test.ts (10 tests) 31ms
+(node:500) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/frames.test.ts (13 tests) 1179ms
+(node:48332) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/db/scoped/search.test.ts (3 tests) 1053ms
+(node:45628) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/shot-variants.test.ts (7 tests) 1144ms
+(node:50308) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/scene-script-versions.test.ts (9 tests) 980ms
+ ✓ src/sequences/server/workflows/scene-split-output-budget.test.ts (8 tests) 46ms
+(node:22468) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/db/scoped/admin.test.ts (8 tests) 1035ms
+ ✓ src/shots/server/workflows/extract-continuity-from-prompt.test.ts (19 tests) 22ms
+ ✓ src/ui/text-editor/mention/tagify.test.ts (13 tests) 19ms
+(node:48336) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/shots-anchor.test.ts (7 tests) 1035ms
+(node:45812) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/shots-scene-trim.test.ts (6 tests) 1207ms
+(node:37220) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/shots-by-ids.test.ts (5 tests) 1086ms
+(node:47936) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/shot-view-query.test.ts (3 tests) 1293ms
+ ✓ src/platform/server/ai/prompts/catalog.test.ts (26 tests) 47ms
+ ✓ src/shots/ui/staleness/update-all-dialog.test.ts (13 tests) 24ms
+(node:13732) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/db/scoped/divergent-insert.test.ts (11 tests) 1003ms
+   ✓ isUniqueConstraintError (5)
+     ✓ matches a real collision, wrapped by drizzle 985ms
+(node:4588) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/shots/server/db/is-stale.test.ts (2 tests) 1073ms
+(node:54164) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/db/scoped/compliance-enforcement.test.ts (3 tests) 1154ms
+(node:41248) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/db/scoped/compliance-attestations.test.ts (1 test) 1011ms
+ ✓ src/platform/server/mcp/handle.test.ts (9 tests) 164ms
+ ✓ src/platform/server/workflow/trigger-bindings.test.ts (26 tests) 44ms
+ ✓ src/sequences/server/workflows/analyze-script-child-context.test.ts (6 tests) 63ms
+ ✓ src/platform/server/workflow/wiring-consistency.test.ts (18 tests) 19ms
+ ✓ src/platform/server/workflow/base-workflow.test.ts (36 tests) 54ms
+ ✓ src/platform/server/workflow/await-child.test.ts (32 tests) 49ms
+ ✓ src/platform/server/api-v1/create.test.ts (14 tests) 51ms
+ ✓ src/platform/server/api-v1/list.test.ts (10 tests) 38ms
+ ✓ src/platform/server/api-v1/resolve.test.ts (24 tests) 32ms
+ ✓ src/platform/server/auth/oauth-consent.test.ts (17 tests) 56ms
+ ✓ src/platform/server/storage/external-url.test.ts (21 tests) 27ms
+ ✓ src/platform/server/realtime/merged-sse.test.ts (14 tests) 263ms
+ ✓ src/platform/server/workflow/llm-auth-failure.test.ts (31 tests) 34ms
+ ✓ src/platform/server/env/push-secrets.test.ts (23 tests) 23ms
+(node:51740) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/db/reconcile-sweep-indexes.test.ts (3 tests) 29ms
+ ✓ src/platform/server/auth/oauth-provider.test.ts (15 tests) 72ms
+ ✓ src/platform/server/workflow/sanitize-fail-response.test.ts (29 tests) 18ms
+ ✓ src/platform/server/api-v1/safe-fetch.test.ts (25 tests) 33ms
+(node:50756) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/motion/server/db/render-segments.test.ts (8 tests) 1156ms
+ ✓ src/platform/server/api-v1/openapi.test.ts (13 tests) 37ms
+ ✓ src/motion/server/workflows/motion-batch-jobs.test.ts (14 tests) 24ms
+ ✓ src/motion/server/workflows/dialogue-upload-workflow.test.ts (4 tests) 29ms
+ ✓ src/platform/server/observability/flush-analytics.test.ts (9 tests) 31ms
+(node:26124) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/db/seed-system-templates.test.ts (7 tests) 2245ms
+   ✓ ensureSystemTemplatesSeeded (7)
+     ✓ a failed sync releases the lock and leaves the hash unwritten 1071ms
+ ✓ src/motion/server/workflows/dialogue-take-workflow.test.ts (4 tests) 24ms
+ ✓ src/platform/server/mcp/auth.test.ts (8 tests) 31ms
+ ✓ src/sequences/server/configured-poster.test.ts (7 tests) 39ms
+ ✓ src/platform/server/storage/upload-locale.test.ts (18 tests) 49ms
+ ✓ src/sequences/server/launchers.test.ts (36 tests) 50ms
+ ✓ src/ui/docs/markdown-ast.test.ts (8 tests) 83ms
+ ✓ src/ui/docs/dependency-graph.test.ts (11 tests) 60ms
+ ✓ src/sequences/server/notify-sequence-ready.test.ts (6 tests) 24ms
+ ✓ src/shots/server/store-upload-audio.test.ts (5 tests) 38ms
+ ✓ src/shots/server/audio-upload-plan.test.ts (7 tests) 23ms
+ ✓ src/shots/server/save-shot-prompt.test.ts (4 tests) 21ms
+ ✓ src/shots/server/rebuild-shot-prompts.test.ts (2 tests) 24ms
+ ✓ src/sequences/server/recorded-motion-fixtures.test.ts (1 test) 94ms
+ ✓ src/sequences/ui/failure-summary-banner.test.tsx (7 tests) 61ms
+ ✓ src/sequences/server/continue-plan-billing.test.ts (4 tests) 28ms
+ ✓ src/shots/server/persist-shot-spec.test.ts (4 tests) 27ms
+ ✓ src/ui/i18n/rendering.test.tsx (7 tests) 55ms
+ ✓ src/sequences/server/transcode-audio.test.ts (6 tests) 26ms
+ ✓ src/shots/server/still-prompt.test.ts (5 tests) 25ms
+ ✓ src/ui/i18n/resources.test.ts (3 tests) 59ms
+ ✓ src/sequences/ui/localize-history.test.ts (14 tests) 32ms
+ ✓ src/ui/i18n/use-live-translation.test.tsx (4 tests) 42ms
+ ✓ src/studio/ui/configured-image-mask-upload.test.tsx (5 tests) 49ms
+ ✓ src/sequences/server/create-sequences.test.ts (11 tests) 107ms
+(node:47092) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/sequences/server/resolve-style-source.test.ts (10 tests) 1250ms
+ ✓ src/shots/server/update-stale-run.test.ts (4 tests) 24ms
+ ✓ src/sequences/server/add-image-model.test.ts (1 test) 27ms
+ ✓ src/sequences/server/fresh-plan-snapshot.test.ts (5 tests) 30ms
+ ✓ src/sequences/server/scene-persistence.test.ts (11 tests) 21ms
+ ✓ src/shots/server/live-shot-state.test.ts (1 test) 18ms
+ ✓ src/shots/server/shot-staleness-batch.test.ts (2 tests) 22ms
+ ✓ src/ui/i18n/markdown.test.ts (20 tests) 143ms
+ ✓ src/shots/server/pending-voices.test.ts (2 tests) 39ms
+ ✓ src/ui/i18n/head.test.ts (4 tests) 18ms
+ ✓ src/sequences/ui/creating-sequence.test.ts (2 tests) 41ms
+ ✓ src/shots/server/shot-subtitles.test.ts (4 tests) 21ms
+ ✓ src/shots/server/scene-look-patch.test.ts (5 tests) 16ms
+ ✓ src/studio/ui/studio-drawing-canvas.test.ts (6 tests) 19ms
+ ✓ src/studio/ui/configured-image-settings.test.ts (30 tests) 51ms
+ ✓ src/cast/bible-looks.test.ts (19 tests) 27ms
+ ✓ src/motion/reference-support.test.ts (30 tests) 29ms
+ ✓ src/models/server/text-channel-service.test.ts (50 tests) 103ms
+ ✓ src/look/auto-style.test.ts (19 tests) 28ms
+(node:5240) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/look/server/db/styles.test.ts (16 tests) 1342ms
+ ✓ src/ui/schema-form/widget-plan.test.ts (39 tests) 30ms
+ ✓ src/models/ui/resolution-support.test.ts (35 tests) 60ms
+ ✓ src/models/content-rejection.test.ts (16 tests) 22ms
+ ✓ src/assistant/ui/page-context-from-cache.test.ts (18 tests) 63ms
+ ✓ src/shots/shot-view.test.ts (24 tests) 41ms
+ ✓ src/assistant/ui/assistant-approvals.test.ts (16 tests) 830ms
+ ✓ src/models/models.test.ts (26 tests) 36ms
+ ✓ src/models/workflow-routing-contract.test.ts (11 tests) 52ms
+ ✓ src/assistant/ui/assistant-connection.test.ts (26 tests) 502ms
+ ✓ src/stills/build-image-request.test.ts (52 tests) 20ms
+ ✓ src/models/model-families.test.ts (34 tests) 34ms
+ ✓ src/motion/server/cut-audio-section.test.ts (15 tests) 48ms
+ ✓ src/stills/server/shot-image-generation-lifecycle.test.ts (8 tests) 40ms
+(node:44696) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/location-ownership-contract.test.ts (9 tests) 1375ms
+ ✓ src/stills/server/compatible-image-response.test.ts (35 tests) 120ms
+ ✓ src/sequences/sequence-assets.test.ts (10 tests) 34ms
+ ✓ src/billing/storyboard-preflight-cost.test.ts (13 tests) 26ms
+ ✓ src/models/server/byteplus-asset-steps.test.ts (10 tests) 26ms
+ ✓ src/models/server/byteplus-assets.test.ts (7 tests) 55ms
+ ✓ src/motion/server/build-motion-references.test.ts (14 tests) 22ms
+ ✓ src/billing/server/configured-image-billing.test.ts (13 tests) 30ms
+ ✓ src/cast/server/sequence-elements/attach-element-upload.test.ts (13 tests) 42ms
+ ✓ src/models/server/quota-retry.test.ts (34 tests) 65ms
+ ✓ src/models/generation-mode.test.ts (19 tests) 31ms
+(node:38512) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/billing/server/reconcile-fal-billing.test.ts (10 tests) 6446ms
+   ✓ fal billing reconcile cron wiring (2)
+     ✓ the cron expression is registered in the default block and [env.production] 2088ms
+ ✓ src/models/resolve-asset-models.test.ts (29 tests) 54ms
+ ✓ src/motion/seedance-edit.test.ts (7 tests) 37ms
+ ✓ src/platform/errors.test.ts (18 tests) 103ms
+ ✓ src/motion/server/build-motion-prompts.i18n.test.ts (15 tests) 38ms
+ ✓ src/billing/server/fal-pricing-live.test.ts (14 tests) 1467ms
+   ✓ getEffectiveFalPricing (8)
+     ✓ builds pricing from rows, with a null typicalUnitsPerCall as "no history" 1148ms
+ ✓ src/look/server/workflows/auto-style-step.test.ts (8 tests) 29ms
+ ✓ src/stills/server/build-shot-image-input.test.ts (12 tests) 36ms
+ ✓ src/cast/server/voice/enqueue-character-voice.test.ts (7 tests) 31ms
+ ✓ src/cast/server/talent-vision.test.ts (15 tests) 67ms
+ ✓ src/motion/server/render-at-quality.test.ts (7 tests) 26ms
+(node:34388) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/model-assets.fn.test.ts (11 tests) 2696ms
+(node:31896) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/character-ownership-contract.test.ts (2 tests) 2417ms
+ ✓ src/look/ui/library/style-filters.test.ts (26 tests) 41ms
+(node:28972) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/look/server/db/styles-automatic.test.ts (10 tests) 1211ms
+ ✓ src/shots/ui/use-scene-structure.test.tsx (7 tests) 41ms
+(node:53848) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/location-sheet-ownership.test.ts (8 tests) 1194ms
+(node:36232) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/db/character-replace.test.ts (4 tests) 1136ms
+ ✓ src/platform/server/auth/middleware-locale.test.ts (18 tests) 46ms
+ ✓ src/cast/server/workflows/character-sheet-workflow.test.ts (10 tests) 40ms
+stderr | packages/stitch/src/playback.test.ts > SequencePlayerEngine whole-clip download (#2124) > play() clears buffering when the download fails
+SequencePlayerEngine: download failed for clip 0 {
+  err: Error: HTTP 404
+      at D:/code/github/openstory/packages/stitch/src/playback.test.ts:167:31
+      at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20
+}
+
+ ✓ packages/stitch/src/playback.test.ts (8 tests) 194ms
+ ✓ src/billing/server/checkout-events.test.ts (10 tests) 24ms
+ ✓ src/models/server/response-schema-budget.test.ts (37 tests) 1278ms
+   ✓ structured-output schema budget (37)
+     ✓ every responseSchema/outputSchema call site is measured here 1243ms
+ ✓ src/models/ui/admin-image-channels-state.test.ts (14 tests) 50ms
+(node:42760) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/cast/server/upload-ownership-contract.test.ts (12 tests) 1151ms
+stderr | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+❌ [tanstack-ai:errors] ❌ elevenlabs.generateVoice fatal
+
+stdout | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+{
+  error: ElevenLabsError: Status code: 429
+  Body: {
+    "detail": {
+      "status": "concurrent_limit_exceeded",
+      "message": "Too many concurrent requests."
+    }
+  }
+      at Object.makeError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:92:83[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:152:18[90m)[39m
+  [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+      at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+      at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+      at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+      at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+      at Module.designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+    statusCode: [33m429[39m,
+    body: {
+      detail: {
+        status: [32m'concurrent_limit_exceeded'[39m,
+        message: [32m'Too many concurrent requests.'[39m
+      }
+    },
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m429[39m,
+      statusText: [32m''[39m,
+      type: [32m'default'[39m,
+      url: [32m''[39m
+    }
+  },
+  source: [32m'elevenlabs.generateVoice'[39m
+}
+
+stdout | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+{
+  error: ElevenLabsError: Status code: 429
+  Body: {
+    "detail": {
+      "status": "concurrent_limit_exceeded",
+      "message": "Too many concurrent requests."
+    }
+  }
+      at Object.makeError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:92:83[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:152:18[90m)[39m
+  [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+      at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+      at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+      at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+      at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+      at Module.designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+    statusCode: [33m429[39m,
+    body: {
+      detail: {
+        status: [32m'concurrent_limit_exceeded'[39m,
+        message: [32m'Too many concurrent requests.'[39m
+      }
+    },
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m429[39m,
+      statusText: [32m''[39m,
+      type: [32m'default'[39m,
+      url: [32m''[39m
+    }
+  },
+  source: [32m'generateVoice'[39m
+}
+
+stderr | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+❌ [tanstack-ai:errors] ❌ generateVoice activity failed
+
+stdout | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+{
+  error: ElevenLabsError: Status code: 429
+  Body: {
+    "detail": {
+      "status": "concurrent_limit_exceeded",
+      "message": "Too many concurrent requests."
+    }
+  }
+      at Object.makeError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:92:83[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:152:18[90m)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+      at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+      at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+      at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+      at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+      at Module.designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+    statusCode: [33m429[39m,
+    body: {
+      detail: {
+        status: [32m'concurrent_limit_exceeded'[39m,
+        message: [32m'Too many concurrent requests.'[39m
+      }
+    },
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m429[39m,
+      statusText: [32m''[39m,
+      type: [32m'default'[39m,
+      url: [32m''[39m
+    }
+  },
+  source: [32m'elevenlabs.generateVoice'[39m
+}
+
+stderr | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+❌ [tanstack-ai:errors] ❌ elevenlabs.generateVoice fatal
+
+stdout | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+{
+  error: ElevenLabsError: Status code: 429
+  Body: {
+    "detail": {
+      "status": "concurrent_limit_exceeded",
+      "message": "Too many concurrent requests."
+    }
+  }
+      at Object.makeError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:92:83[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:152:18[90m)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+      at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+      at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+      at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+      at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+      at Module.designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+    statusCode: [33m429[39m,
+    body: {
+      detail: {
+        status: [32m'concurrent_limit_exceeded'[39m,
+        message: [32m'Too many concurrent requests.'[39m
+      }
+    },
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m429[39m,
+      statusText: [32m''[39m,
+      type: [32m'default'[39m,
+      url: [32m''[39m
+    }
+  },
+  source: [32m'generateVoice'[39m
+}
+
+stderr | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+❌ [tanstack-ai:errors] ❌ generateVoice activity failed
+
+stdout | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+{
+  error: ElevenLabsError: Status code: 429
+  Body: {
+    "detail": {
+      "status": "concurrent_limit_exceeded",
+      "message": "Too many concurrent requests."
+    }
+  }
+      at Object.makeError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:92:83[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:152:18[90m)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+      at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+      at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+      at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+      at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+      at Module.designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+    statusCode: [33m429[39m,
+    body: {
+      detail: {
+        status: [32m'concurrent_limit_exceeded'[39m,
+        message: [32m'Too many concurrent requests.'[39m
+      }
+    },
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m429[39m,
+      statusText: [32m''[39m,
+      type: [32m'default'[39m,
+      url: [32m''[39m
+    }
+  },
+  source: [32m'elevenlabs.generateVoice'[39m
+}
+
+stderr | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+❌ [tanstack-ai:errors] ❌ elevenlabs.generateVoice fatal
+
+stdout | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+{
+  error: ElevenLabsError: Status code: 429
+  Body: {
+    "detail": {
+      "status": "concurrent_limit_exceeded",
+      "message": "Too many concurrent requests."
+    }
+  }
+      at Object.makeError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:92:83[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:152:18[90m)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+      at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+      at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+      at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+      at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+      at Module.designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+    statusCode: [33m429[39m,
+    body: {
+      detail: {
+        status: [32m'concurrent_limit_exceeded'[39m,
+        message: [32m'Too many concurrent requests.'[39m
+      }
+    },
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m429[39m,
+      statusText: [32m''[39m,
+      type: [32m'default'[39m,
+      url: [32m''[39m
+    }
+  },
+  source: [32m'generateVoice'[39m
+}
+
+stderr | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design waits out three 429s
+❌ [tanstack-ai:errors] ❌ generateVoice activity failed
+
+stdout | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design does not retry a 400
+{
+  error: ElevenLabsError: Status code: 400
+  Body: {
+    "detail": {
+      "status": "invalid_request"
+    }
+  }
+      at Object.makeError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:92:83[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:152:18[90m)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+      at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+      at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+      at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+      at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+      at Module.designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+    statusCode: [33m400[39m,
+    body: { detail: { status: [32m'invalid_request'[39m } },
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m400[39m,
+      statusText: [32m''[39m,
+      type: [32m'default'[39m,
+      url: [32m''[39m
+    }
+  },
+  source: [32m'elevenlabs.generateVoice'[39m
+}
+
+stderr | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design does not retry a 400
+❌ [tanstack-ai:errors] ❌ elevenlabs.generateVoice fatal
+
+stderr | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design does not retry a 400
+❌ [tanstack-ai:errors] ❌ generateVoice activity failed
+
+stdout | src/models/server/elevenlabs-config.test.ts > ElevenLabs concurrency 429 > Voice Design does not retry a 400
+{
+  error: ElevenLabsError: Status code: 400
+  Body: {
+    "detail": {
+      "status": "invalid_request"
+    }
+  }
+      at Object.makeError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:92:83[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:152:18[90m)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+      at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+      at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+      at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+      at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+      at Module.designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+    statusCode: [33m400[39m,
+    body: { detail: { status: [32m'invalid_request'[39m } },
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m400[39m,
+      statusText: [32m''[39m,
+      type: [32m'default'[39m,
+      url: [32m''[39m
+    }
+  },
+  source: [32m'generateVoice'[39m
+}
+
+ ❯ src/models/server/elevenlabs-config.test.ts (18 tests | 1 failed) 9859ms
+   ✓ isElevenLabsConfigured (6)
+     ✓ is off when no key is configured 2ms
+     ✓ is on when a platform key is set 1ms
+     ✓ treats an empty-string key as unconfigured 0ms
+     ✓ stays off under E2E_TEST when no mock host is wired 0ms
+     ✓ allows the route under E2E_TEST when ELEVENLABS_BASE_URL points at a mock 0ms
+     ✓ enables native ElevenLabs against aimock in every built CI E2E job 8ms
+   ✓ elevenLabsAdapterConfig (2)
+     ✓ omits baseURL so the adapter default applies 0ms
+     ✓ passes ELEVENLABS_BASE_URL through for e2e/proxy overrides 0ms
+   ❯ lazy loaders (3)
+     ✓ loads the speech adapter factory 818ms
+     ✓ loads the audio (music) adapter factory 1ms
+     × constructs the Voice Design SDK with the e2e base URL 8360ms
+   ✓ ElevenLabs concurrency 429 (7)
+     ✓ Voice Design waits out three 429s 629ms
+     ✓ Voice Design does not retry a 400 4ms
+     ✓ the SDK waits out three 429s 10ms
+     ✓ the SDK never resends a create after a 5xx 2ms
+     ✓ a voice save refused with 429 every time fails with that 429 7ms
+     ✓ an abort stops the wait between 429s 2ms
+     ✓ the SDK does not retry a 400 2ms
+ ✓ src/motion/server/reference-only-guards.test.ts (18 tests) 30ms
+ ✓ src/sequences/prompt-validation.test.ts (14 tests) 28ms
+ ✓ src/sequences/pipeline.test.ts (16 tests) 28ms
+ ✓ src/models/ai.recommend-styles.test.ts (13 tests) 28ms
+ ✓ src/motion/server/build-gemini-video-request.test.ts (9 tests) 26ms
+stderr | packages/stitch/src/concatenated-video-source.test.ts > mixed canvas timeline > falls back after a preview error and holds a quiet frame when both images fail
+Clip 0: still image failed to load {
+  url: '/missing.png',
+  error: Error: decode failed
+      at Object.decode (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.test.ts:90:33)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:343:10
+      at new Promise (<anonymous>)
+      at ConcatenatedVideoSource.decodeStill (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:335:12)
+      at ConcatenatedVideoSource.openStill (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:272:30)
+      at ConcatenatedVideoSource.openClip (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:248:44)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:181:35
+      at Array.map (<anonymous>)
+      at ConcatenatedVideoSource.prepare (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:180:18)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.test.ts:184:20
+}
+
+stderr | packages/stitch/src/concatenated-video-source.test.ts > mixed canvas timeline > falls back after a preview error and holds a quiet frame when both images fail
+Clip 0: still image failed to load {
+  url: '/missing.png',
+  error: Error: decode failed
+      at Object.decode (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.test.ts:90:33)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:343:10
+      at new Promise (<anonymous>)
+      at ConcatenatedVideoSource.decodeStill (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:335:12)
+      at ConcatenatedVideoSource.openStill (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:272:30)
+      at ConcatenatedVideoSource.openClip (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:248:44)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:181:35
+      at Array.map (<anonymous>)
+      at ConcatenatedVideoSource.prepare (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:180:18)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.test.ts:191:26
+}
+
+stderr | packages/stitch/src/concatenated-video-source.test.ts > mixed canvas timeline > falls back after a preview error and holds a quiet frame when both images fail
+Clip 0: still image failed to load {
+  url: '/missing-2.png',
+  error: Error: decode failed
+      at Object.decode (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.test.ts:90:33)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:343:10
+      at new Promise (<anonymous>)
+      at ConcatenatedVideoSource.decodeStill (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:335:12)
+      at ConcatenatedVideoSource.openStill (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:272:30)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:181:24
+      at async Promise.allSettled (index 0)
+      at ConcatenatedVideoSource.prepare (D:/code/github/openstory/packages/stitch/src/concatenated-video-source.ts:179:21)
+      at D:/code/github/openstory/packages/stitch/src/concatenated-video-source.test.ts:191:12
+}
+
+stderr | packages/stitch/src/concatenated-video-source.test.ts > mixed canvas timeline > reports undecodable embedded audio and ignores a clip with no audio track
+Clip 0: embedded audio cannot be decoded by this browser; it plays silent { codec: 'aac' }
+
+ ✓ packages/stitch/src/concatenated-video-source.test.ts (7 tests) 38ms
+(node:37788) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/billing/configured-image-plan-billing-balance.test.ts (4 tests) 1133ms
+ ✓ src/models/image-model-catalog.test.ts (18 tests) 22ms
+ ✓ src/models/ui/admin-image-channels.test.tsx (8 tests) 186ms
+ ✓ src/motion/server/render-segments.test.ts (18 tests) 27ms
+ ✓ src/look/ui/style-detail-dialog.i18n.test.tsx (8 tests) 121ms
+(node:41864) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/studio/server/asset-upload-contract.test.ts (8 tests) 1364ms
+ ✓ src/studio/server/studio-video-generation.test.ts (32 tests) 50ms
+ ✓ src/models/server/llm-call-helper-region.test.ts (20 tests) 54ms
+ ✓ src/models/server/byteplus-config.test.ts (22 tests) 23ms
+ ✓ src/stills/server/compatible-image-bytes.test.ts (19 tests) 84ms
+ ✓ src/stills/server/image-storage.test.ts (13 tests) 41ms
+ ✓ src/sequences/boundary-split.test.ts (19 tests) 35ms
+ ✓ src/models/resolutions.test.ts (19 tests) 43ms
+ ✓ src/motion/server/pad-dialogue-audio.test.ts (18 tests) 53ms
+ ✓ packages/stitch/src/resolution.test.ts (20 tests) 28ms
+ ✓ src/look/ui/style-assets.test.ts (16 tests) 36ms
+ ✓ src/models/server/llm-key-routing.test.ts (15 tests) 31ms
+ ✓ src/stitches/server/stitch-routes.test.ts (6 tests) 39ms
+ ✓ src/cast/server/describe-upload.test.ts (7 tests) 32ms
+ ✓ src/cast/server/talent-vision-region-fallback.test.ts (5 tests) 28ms
+ ✓ src/models/ui/model-configuration-draft.test.ts (8 tests) 45ms
+ ✓ src/motion/server/synthesize-dialogue.test.ts (4 tests) 49ms
+ ✓ src/stills/server/image-generation.test.ts (10 tests) 47ms
+ ✓ src/motion/server/record-dialogue-take-splice.test.ts (5 tests) 52ms
+ ✓ src/stills/server/compatible-image-deadline.test.ts (5 tests) 77ms
+ ✓ src/cast/ui/localize-cast-name-conflict.test.ts (27 tests) 36ms
+ ✓ src/motion/server/video-variant-projection.test.ts (6 tests) 19ms
+ ✓ src/stills/server/image-generation-region.test.ts (4 tests) 53ms
+ ✓ src/models/server/watch-clip.test.ts (5 tests) 27ms
+ ✓ src/stitches/server/publish-stitch.test.ts (7 tests) 27ms
+ ✓ src/models/server/llm-auth-failure-stream.test.ts (3 tests) 29ms
+ ✓ src/models/server/fal-deadline-fetch.test.ts (6 tests) 27ms
+ ✓ src/look/ui/composer-style-row.test.ts (13 tests) 32ms
+ ✓ src/look/ui/sample-entries.test.ts (7 tests) 24ms
+ ✓ src/look/ui/localized-style-sample.test.ts (171 tests) 103ms
+ ✓ src/motion/ui/localize-reference-problem.test.ts (12 tests) 32ms
+ ✓ src/stills/server/compatible-image-parameters.test.ts (49 tests) 73ms
+ ✓ src/models/workflow-image-model-routing.test.ts (10 tests) 339ms
+ ✓ src/studio/ui/configured-image-controls.test.tsx (10 tests) 66ms
+ ✓ src/stills/server/compatible-image-transport.test.ts (7 tests) 67ms
+ ✓ src/models/workflow-text-model-routing.test.ts (12 tests) 97ms
+ ✓ src/billing/configured-image-plan-partition.test.ts (9 tests) 39ms
+ ✓ src/billing/configured-image-price-policy.test.ts (33 tests) 61ms
+ ✓ src/models/image-channel-pricing.test.ts (24 tests) 44ms
+ ✓ src/models/configured-image-defaults.test.ts (13 tests) 75ms
+ ✓ src/models/image-channel-contract-compatibility.test.ts (7 tests) 42ms
+ ✓ src/motion/server/build-motion-render.test.ts (5 tests) 23ms
+ ✓ src/billing/image-cost-hint.test.ts (10 tests) 28ms
+ ✓ src/models/ai-model-configuration.test.ts (9 tests) 40ms
+ ✓ src/cast/sheet-image-request.test.ts (19 tests) 31ms
+ ✓ src/models/server/configured-text.test.ts (11 tests) 20ms
+ ✓ src/assistant/server/assistant-chat.test.ts (12 tests) 37ms
+ ✓ src/cast/server/workflows/location-bible-workflow.test.ts (12 tests) 42ms
+ ✓ src/cast/server/workflows/sheet-portrait-context.test.ts (9 tests) 55ms
+ ✓ src/motion/ui/packed-playback.test.ts (8 tests) 22ms
+ ✓ src/studio/server/studio-image-capabilities.test.ts (6 tests) 33ms
+ ✓ src/studio/server/prepare-studio-image.test.ts (8 tests) 37ms
+ ✓ src/billing/server/preflight-routing.test.ts (2 tests) 25ms
+ ✓ src/billing/server/storyboard-render-gate.test.ts (4 tests) 21ms
+ ✓ src/studio/server/studio-asset-actions.test.ts (4 tests) 23ms
+ ✓ src/models/server/byteplus-preview-groups.test.ts (4 tests) 21ms
+ ✓ src/models/server/schema-fetch.test.ts (5 tests) 632ms
+   ✓ fetchModelInputSchema (5)
+     ✓ fetches the per-endpoint input schema, preserving id slashes in the path 598ms
+ ✓ packages/stitch/src/join-audio-buffers.test.ts (8 tests) 20ms
+ ✓ src/assistant/ui/tool-titles.test.ts (7 tests) 28ms
+ ✓ src/models/ui/image-model-options.test.ts (4 tests) 22ms
+ ✓ src/stills/server/configured-image-references.test.ts (7 tests) 57ms
+ ✓ src/billing/cost-estimation.test.ts (35 tests) 31ms
+ ✓ src/models/image-channels.test.ts (21 tests) 48ms
+ ✓ src/stills/server/configured-image-generation.test.ts (16 tests) 67ms
+ ✓ src/shots/image-reference-count.test.ts (10 tests) 25ms
+ ✓ src/sequences/scene-from-slice.test.ts (16 tests) 24ms
+ ✓ src/models/image-parameter-contract.test.ts (37 tests) 46ms
+ ✓ src/models/region-policy.test.ts (17 tests) 25ms
+ ✓ src/models/llmtr.test.ts (13 tests) 24ms
+ ✓ scripts/check-localization-changes.test.ts (11 tests) 20776ms
+   ✓ committed localization comparisons (3)
+     ✓ compares immutable refs while ignoring working and untracked changes 2017ms
+     ✓ returns an empty diff for the same revision 1427ms
+     ✓ rejects an unknown revision rather than manufacturing a baseline 446ms
+   ✓ working tree localization comparisons (5)
+     ✓ includes combined staged, unstaged, removed and untracked sources 2149ms
+     ✓ writes only the requested report and leaves source/index data untouched 2582ms
+   ✓ report output ownership (3)
+     ✓ refuses to overwrite inspected source files and preserves their contents 2105ms
+     ✓ refuses absolute output over current or deleted sources: src/example/ui/中文 page.tsx 3021ms
+     ✓ refuses absolute output over current or deleted sources: src/example/ui/removed.tsx 2974ms
+ ✓ src/billing/pricing.fn.test.ts (6 tests) 32ms
+ ✓ src/billing/configured-image-resolution-paths.test.ts (6 tests) 29ms
+ ✓ src/models/image-operation-capabilities.test.ts (26 tests) 37ms
+ ✓ src/cast/location-prompt.test.ts (16 tests) 22ms
+ ✓ src/billing/configured-image-plan-billing.test.ts (29 tests) 54ms
+ ✓ src/sequences/sequences.fn.test.ts (21 tests) 34ms
+ ✓ src/shots/shot-dialogue.test.ts (23 tests) 26ms
+ ✓ src/cast/bible-field.test.ts (26 tests) 48ms
+ ✓ src/cast/character-prompt.test.ts (11 tests) 16ms
+ ✓ src/billing/configured-image-billing.test.ts (15 tests) 36ms
+ ✓ src/platform/server/byok/complete-oauth.test.ts (12 tests) 127ms
+ ✓ src/assistant/server/assistant-tool-schema.test.ts (4 tests) 167ms
+ ✓ src/motion/lipsync.test.ts (15 tests) 26ms
+ ✓ src/models/enhance-duration.test.ts (20 tests) 29ms
+ ✓ src/motion/resolve-motion-endpoint.test.ts (26 tests) 27ms
+ ✓ src/sequences/time-estimate.test.ts (26 tests) 28ms
+ ✓ src/platform/server/compliance/enforcement.test.ts (17 tests) 23ms
+ ✓ src/shots/shot-list.derive.test.ts (8 tests) 20ms
+ ✓ src/ui/query-client.test.ts (11 tests) 150ms
+ ✓ src/models/gemini-native.test.ts (15 tests) 22ms
+ ✓ src/models/google-region.test.ts (15 tests) 28ms
+ ❯ src/platform/server/agent/discovery.test.ts (19 tests | 1 failed) 39ms
+   ✓ DISCOVERY_LINK_HEADER (1)
+     ✓ advertises the llms.txt overview, human docs, and OpenAPI spec 2ms
+   ✓ acceptsMarkdown (5)
+     ✓ matches GET requests asking for text/markdown 2ms
+     ✓ matches markdown among multiple accept values 1ms
+     ✓ ignores plain HTML requests 1ms
+     ✓ ignores requests without an Accept header 0ms
+     ✓ ignores non-GET/HEAD methods 0ms
+   ❯ getMarkdownForPath (6)
+     × serves the llms.txt overview for the homepage 11ms
+     ✓ serves the FAQ rendition 0ms
+     ✓ serves docs pages from content-collections by slug 1ms
+     ✓ tolerates trailing slashes 0ms
+     ✓ returns null for unknown docs slugs 0ms
+     ✓ returns null for app routes 0ms
+   ✓ markdownResponse (2)
+     ✓ returns text/markdown with token estimate and discovery links 3ms
+     ✓ omits the body for HEAD requests 1ms
+   ✓ withHtmlAccept (1)
+     ✓ replaces the Accept header with text/html 1ms
+   ✓ withDiscoveryLinkHeader (4)
+     ✓ adds the Link header to HTML responses 1ms
+     ✓ adds the Link header to the homepage redirect 0ms
+     ✓ leaves non-document responses untouched 0ms
+     ✓ preserves an existing Link header 0ms
+ ✓ src/platform/server/ai/workflow-prompts.test.ts (12 tests) 24ms
+ ✓ src/billing/server/__tests__/checkout.test.ts (5 tests) 28ms
+ ✓ src/shots/shot-list.schema.test.ts (10 tests) 35ms
+ ✓ src/sequences/tag-reconcile.test.ts (9 tests) 22ms
+ ✓ src/look/localization/style-content.test.ts (89 tests) 138ms
+ ✓ src/ui/clipboard.test.ts (9 tests) 25ms
+ ✓ src/cast/ui/talent/character-sheet-cost.test.ts (6 tests) 28ms
+ ✓ src/platform/server/auth/oauth-bearer.test.ts (12 tests) 49ms
+(node:52284) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/billing/server/db/billing-balance-emit.test.ts (5 tests) 1162ms
+(node:36884) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/billing/server/db/gift-redeem.test.ts (6 tests) 1193ms
+ ✓ src/cast/server/workflows/wait-for-sheets.test.ts (4 tests) 24ms
+(node:48904) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/cron/reconcile-look-claims.test.ts (2 tests) 1232ms
+ ✓ src/billing/server/__tests__/billing-observability.test.ts (4 tests) 22ms
+ ✓ src/platform/server/compliance/provenance.test.ts (10 tests) 27ms
+ ✓ src/billing/server/__tests__/money.test.ts (18 tests) 19ms
+ ✓ src/platform/server/byok/openrouter-oauth-cookie.test.ts (9 tests) 41ms
+ ✓ src/platform/ui/auth/client-cache.test.ts (4 tests) 34ms
+ ✓ src/platform/ui/auth/last-page.test.ts (7 tests) 18ms
+ ✓ src/platform/server/compliance/generation-gate.wiring.test.ts (3 tests) 1701ms
+   ✓ generation-gate wiring (3)
+     ✓ every request-path requireCredits call has a gate or triggerWorkflow 1683ms
+ ✓ src/platform/ui/auth/auth-cache-generation.test.ts (7 tests) 22ms
+ ✓ src/sequences/ui/use-draft-generation-estimate.test.ts (3 tests) 19ms
+ ✓ src/sequences/ui/use-sequences-with-shots.test.tsx (3 tests) 28ms
+ ✓ src/ui/error/route-error-fallback.i18n.test.tsx (3 tests) 62ms
+ ✓ src/shots/server/scene-edit.test.ts (2 tests) 20ms
+ ✓ src/ui/marketing/constants.test.ts (3 tests) 17ms
+ ✓ src/sequences/server/server-export-available.test.ts (4 tests) 19ms
+ ✓ src/ui/docs/markdown.test.ts (4 tests) 22ms
+ ✓ src/studio/ui/progress.test.ts (2 tests) 17ms
+ ✓ src/cast/server/workflows/sheet-divergence.test.ts (3 tests) 37ms
+ ✓ src/cast/server/workflows/sheet-snapshots.test.ts (24 tests) 48ms
+ ✓ src/studio/ui/prompt-shuffle.test.ts (11 tests) 29ms
+ ✓ src/studio/ui/prompt-display.test.ts (23 tests) 26ms
+ ✓ src/cast/server/workflows/character-bible-workflow.test.ts (8 tests) 47ms
+ ✓ src/cast/server/workflows/recast-snapshot.test.ts (6 tests) 44ms
+ ✓ src/cast/server/workflows/cast-records.test.ts (13 tests) 32ms
+ ✓ src/sequences/ui/generation-stream.reducer.test.ts (14 tests) 22ms
+ ✓ src/platform/ui/auth/oauth-login-resume.test.ts (6 tests) 17ms
+ ✓ src/platform/server/auth/oauth-client-registration.test.ts (4 tests) 23ms
+ ✓ src/cast/ui/element/element-selector.test.ts (4 tests) 42ms
+ ✓ src/cast/server/workflows/element-sheet-workflow.test.ts (3 tests) 19ms
+ ✓ src/cast/server/voice/release-voice.test.ts (14 tests) 29ms
+ ✓ src/cast/server/workflows/replace-element-workflow.test.ts (24 tests) 30ms
+ ✓ src/cast/server/voice/elevenlabs-voice.test.ts (14 tests) 27ms
+ ✓ src/sequences/server/continue-plan.test.ts (11 tests) 21ms
+ ✓ src/cast/server/sheets/sheet-portrait.test.ts (7 tests) 26ms
+ ✓ src/ui/voice/dictation-session.test.ts (11 tests) 24ms
+ ✓ src/platform/server/workflow/reconcile.test.ts (12 tests) 731ms
+   ✓ resolveRunState (10)
+     ✓ returns "failed" when runId is empty (workflow was never tracked) 710ms
+ ✓ src/cast/server/voice/take-check.test.ts (9 tests) 31ms
+ ✓ src/cast/server/talent/analyze-talent-media.test.ts (4 tests) 23ms
+ ✓ src/sequences/server/poster-prompt.test.ts (8 tests) 20ms
+ ✓ src/platform/server/workflow/dedup-ids.test.ts (8 tests) 19ms
+ ✓ src/platform/server/workflow/client.test.ts (5 tests) 26ms
+ ✓ src/platform/server/db/scoped-workflow-models.test.ts (4 tests) 29ms
+ ✓ src/platform/server/workflow/errors.test.ts (14 tests) 23ms
+ ✓ src/platform/server/emails/organization-invitation-localization.test.tsx (5 tests) 99ms
+ ✓ src/platform/server/mcp/tool-context.test.ts (9 tests) 38ms
+ ✓ src/platform/server/storage/buckets.test.ts (14 tests) 22ms
+ ✓ src/platform/server/storage/upload-target.test.ts (9 tests) 30ms
+ ✓ src/platform/server/workflow/instance-id.test.ts (13 tests) 28ms
+ ✓ src/platform/server/observability/content-feed.test.ts (5 tests) 18ms
+ ✓ src/shots/server/workflows/regenerate-shots-workflow.test.ts (1 test) 21ms
+ ✓ src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts (3 tests) 20ms
+ ✓ src/motion/server/workflows/dialogue-audio-workflow.test.ts (7 tests) 19ms
+ ✓ src/platform/server/auth/oauth-metadata-route.test.ts (7 tests) 42ms
+stderr | src/platform/server/db/test-d1.test.ts
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProxy environment variables detected. We'll use your proxy for fetch requests.[0m
+
+
+
+(node:53716) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:53716) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+ ✓ src/platform/server/db/test-d1.test.ts (16 tests) 3755ms
+ ✓ src/platform/server/api-v1/device-routes.test.ts (10 tests) 39ms
+ ✓ src/platform/server/api-v1/discovery.test.ts (8 tests) 51ms
+ ✓ src/platform/server/auth/request-principal.test.ts (5 tests) 30ms
+(node:20308) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/test/seed.test.ts (1 test) 1209ms
+ ✓ src/platform/server/api-v1/wait.test.ts (8 tests) 20ms
+ ✓ src/platform/server/db/no-bare-select-with-join.test.ts (4 tests) 1785ms
+   ✓ no bare select joins anywhere in src 1767ms
+ ✓ src/platform/server/db/migrations-layout.test.ts (5 tests) 160ms
+ ✓ src/platform/server/api-v1/oauth-scopes.test.ts (5 tests) 24ms
+ ✓ src/platform/server/api-v1/enhance.test.ts (3 tests) 29ms
+ ✓ src/platform/server/db/db-access-allowlist.test.ts (2 tests) 15ms
+ ✓ src/platform/server/auth/organization-memo.test.ts (6 tests) 25ms
+ ✓ src/platform/server/workflow/client.compliance.test.ts (5 tests) 20ms
+ ✓ src/platform/server/api-v1/input-schema.test.ts (13 tests) 32ms
+ ✓ src/cast/look-sheet-face.test.ts (7 tests) 19ms
+ ✓ src/stills/reference-image-prompt.test.ts (7 tests) 21ms
+ ✓ src/look/server/sample-videos.test.ts (16 tests) 35ms
+ ✓ src/look/style-config.test.ts (12 tests) 51ms
+ ✓ src/shots/input-hash-manifest.test.ts (8 tests) 33ms
+ ✓ src/shots/ui/optimised-prompt-panel.test.tsx (9 tests) 78ms
+ ✓ src/sequences/generation-plan.i18n.test.ts (16 tests) 34ms
+ ✓ src/sequences/history-changes.test.ts (8 tests) 18ms
+ ✓ scripts/dev-hosts.test.ts (10 tests) 88ms
+ ✓ src/platform/logger.test.ts (9 tests) 22ms
+ ✓ src/shots/packed-clip-window.test.ts (14 tests) 21ms
+ ✓ src/cast/attached-cast.test.ts (8 tests) 17ms
+ ✓ src/stills/server/image-crop-tile.test.ts (4 tests) 19ms
+ ✓ src/models/text-channels.fn.test.ts (3 tests) 22ms
+stderr | src/cast/server/voice/elevenlabs-voice-aimock.test.ts > Voice Design over aimock > refuses an unrecorded design under strict replay
+❌ [tanstack-ai:errors] ❌ elevenlabs.generateVoice fatal
+
+stdout | src/cast/server/voice/elevenlabs-voice-aimock.test.ts > Voice Design over aimock > refuses an unrecorded design under strict replay
+{
+  error: ElevenLabsError: fetch failed
+      at makeConnectionError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:98:36[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:132:44[90m)[39m
+  [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+  [90m    ... 4 lines matching cause stack trace ...[39m
+      at designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18)
+      at D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice-aimock.test.ts:127:5 {
+    statusCode: [90mundefined[39m,
+    body: [90mundefined[39m,
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m0[39m,
+      statusText: [32m'Unknown Error'[39m,
+      type: [32m'error'[39m,
+      url: [32m''[39m
+    },
+    cause: TypeError: fetch failed
+    [90m    at node:internal/deps/undici/undici:14976:13[39m
+    [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+        at async fetch [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:86:22[90m)[39m
+        at async Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:116:16[90m)[39m
+        at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+        at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+        at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+        at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+        at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+        at designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+      [cause]: Error: read ECONNRESET
+      [90m    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)[39m
+      [90m    at TCP.callbackTrampoline (node:internal/async_hooks:130:17)[39m {
+        errno: [33m-4077[39m,
+        code: [32m'ECONNRESET'[39m,
+        syscall: [32m'read'[39m
+      }
+    }
+  },
+  source: [32m'elevenlabs.generateVoice'[39m
+}
+
+stderr | src/cast/server/voice/elevenlabs-voice-aimock.test.ts > Voice Design over aimock > refuses an unrecorded design under strict replay
+❌ [tanstack-ai:errors] ❌ generateVoice activity failed
+
+stdout | src/cast/server/voice/elevenlabs-voice-aimock.test.ts > Voice Design over aimock > refuses an unrecorded design under strict replay
+{
+  error: ElevenLabsError: fetch failed
+      at makeConnectionError [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:98:36[90m)[39m
+      at Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:132:44[90m)[39m
+  [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+      at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+  [90m    ... 4 lines matching cause stack trace ...[39m
+      at designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18)
+      at D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice-aimock.test.ts:127:5 {
+    statusCode: [90mundefined[39m,
+    body: [90mundefined[39m,
+    rawResponse: {
+      headers: Headers {},
+      redirected: [33mfalse[39m,
+      status: [33m0[39m,
+      statusText: [32m'Unknown Error'[39m,
+      type: [32m'error'[39m,
+      url: [32m''[39m
+    },
+    cause: TypeError: fetch failed
+    [90m    at node:internal/deps/undici/undici:14976:13[39m
+    [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+        at async fetch [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:86:22[90m)[39m
+        at async Object.request [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-utils[24m/dist/esm/http/client.js:116:16[90m)[39m
+        at async send [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:110:11[90m)[39m
+        at async Object.design [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/client/index.js:195:27[90m)[39m
+        at async ElevenLabsVoiceAdapter.generateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai-elevenlabs[24m/dist/esm/adapters/voice.js:49:28[90m)[39m
+        at async runGenerateVoice [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/generateVoice/index.js:114:21[90m)[39m
+        at retryOnRateLimit (D:/code/github/openstory/src/models/server/elevenlabs-config.ts:95:14)
+        at designVoicePreviews (D:/code/github/openstory/src/cast/server/voice/elevenlabs-voice.ts:55:18) {
+      [cause]: Error: read ECONNRESET
+      [90m    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)[39m
+      [90m    at TCP.callbackTrampoline (node:internal/async_hooks:130:17)[39m {
+        errno: [33m-4077[39m,
+        code: [32m'ECONNRESET'[39m,
+        syscall: [32m'read'[39m
+      }
+    }
+  },
+  source: [32m'generateVoice'[39m
+}
+
+ ❯ src/cast/server/voice/elevenlabs-voice-aimock.test.ts (3 tests | 1 failed) 14258ms
+   ❯ Voice Design over aimock (3)
+     ✓ designs previews through the adapter 62ms
+     × saves, reads back and deletes a designed voice through the SDK 9239ms
+     ✓ refuses an unrecorded design under strict replay 22ms
+ ✓ src/models/ai.prompt-locale.test.ts (2 tests) 25ms
+ ✓ src/motion/server/video-storage.test.ts (7 tests) 22ms
+ ✓ src/models/configured-image-specification.test.ts (14 tests) 22ms
+ ✓ src/cast/server/sequence-elements/media-duration.test.ts (6 tests) 31ms
+ ✓ src/models/grok-native.test.ts (11 tests) 21ms
+ ✓ src/motion/draft-mode.i18n.test.ts (11 tests) 29ms
+ ✓ src/ui/chunk-reload.test.ts (7 tests) 710ms
+   ✓ installChunkReload (6)
+     ✓ reloads on the first preload error and suppresses the throw 625ms
+ ✓ src/sequences/add-audio-model.test.ts (3 tests) 25ms
+ ✓ src/sequences/fast-scene-split.test.ts (9 tests) 22ms
+(node:15540) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/models/server/reconcile-byteplus-assets.test.ts (4 tests) 1116ms
+ ✓ src/platform/auth/oauth-query-snapshot.test.ts (9 tests) 25ms
+ ✓ src/motion/server/resolve-motion-prompt.test.ts (7 tests) 19ms
+ ✓ src/studio/ui/composer-prefs.test.ts (10 tests) 21ms
+ ✓ src/models/server/llm-call-helper.prompt-locale.test.ts (4 tests) 27ms
+ ✓ src/motion/snap-duration.test.ts (15 tests) 19ms
+ ✓ src/models/image-channel-parameters.test.ts (29 tests) 36ms
+ ✓ src/shots/scenes.fn.test.ts (2 tests) 23ms
+ ✓ src/sequences/enhance-script-turns.test.ts (3 tests) 23ms
+ ✓ src/motion/server/build-grok-video-request.test.ts (4 tests) 22ms
+ ✓ src/audio/music-track-staleness.test.ts (9 tests) 31ms
+ ✓ src/motion/server/fit-dialogue-clip.test.ts (3 tests) 17ms
+ ✓ src/cast/ui/rendering-field.test.tsx (13 tests) 59ms
+ ✓ src/assistant/ui/scripted-connection.test.ts (3 tests) 280ms
+ ✓ src/platform/domain-blind.test.ts (2 tests) 292ms
+ ✓ src/platform/server/emails/emails.test.tsx (5 tests) 81ms
+ ✓ src/shots/prompt-variants.fn.test.ts (10 tests) 21ms
+ ✓ src/models/server/auxiliary-models.test.ts (4 tests) 26ms
+ ✓ src/assistant/ui/assistant-store.test.ts (10 tests) 50ms
+ ✓ packages/stitch/src/disposed-iterator.test.ts (8 tests) 19ms
+ ✓ src/models/content-filter-finish.test.ts (9 tests) 17ms
+ ✓ src/sequences/ui/sequence-assets-page.test.tsx (4 tests) 63ms
+ ✓ src/studio/ui/configured-image-draft.test.ts (25 tests) 24ms
+ ✓ src/studio/ui/outputs.test.ts (6 tests) 18ms
+ ✓ src/studio/ui/paste-import.test.ts (5 tests) 22ms
+ ✓ src/studio/ui/configured-image-count.test.ts (14 tests) 21ms
+ ✓ src/studio/ui/configured-image-output.test.ts (9 tests) 21ms
+ ✓ src/motion/reference-provenance.test.ts (5 tests) 16ms
+ ✓ src/ui/shadcn/app-image.test.tsx (8 tests) 35ms
+ ✓ src/billing/motion-rate-cards.test.ts (9 tests) 28ms
+ ✓ src/platform/server/api-v1/device-auth.test.ts (9 tests) 31ms
+stderr | src/assistant/server/assistant-model-input.test.ts > refuses stored images before a model call for partial input []
+❌ [tanstack-ai:errors] ❌ chat run failed
+
+stdout | src/assistant/server/assistant-model-input.test.ts > refuses stored images before a model call for partial input []
+{
+  error: ValidationError: The assistant model must support vision for image context.
+      at requireAssistantVision (D:/code/github/openstory/src/assistant/server/assistant-model-input.ts:22:11)
+      at Object.onConfig (D:/code/github/openstory/src/assistant/server/assistant-model-input.ts:34:7)
+      at MiddlewareRunner.runOnConfig [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/middleware/compose.js:113:28[90m)[39m
+  [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+      at async TextEngine.runWhileYielding [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:2982:4[90m)[39m
+      at async TextEngine.run [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:503:30[90m)[39m
+      at async runChatEngine [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:3217:20[90m)[39m
+      at async streamTextChunks [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:3269:2[90m)[39m
+      at collect (D:/code/github/openstory/src/assistant/server/assistant-model-input.test.ts:34:20)
+      at D:/code/github/openstory/src/assistant/server/assistant-model-input.test.ts:64:5 {
+    code: [32m'VALIDATION_ERROR'[39m,
+    statusCode: [33m400[39m,
+    details: [90mundefined[39m
+  },
+  threadId: [32m'mock-vision-thread'[39m
+}
+
+stdout | src/assistant/server/assistant-model-input.test.ts > refuses stored images before a model call for partial input [ [Object] ]
+{
+  error: ValidationError: The assistant model must support vision for image context.
+      at requireAssistantVision (D:/code/github/openstory/src/assistant/server/assistant-model-input.ts:22:11)
+      at Object.onConfig (D:/code/github/openstory/src/assistant/server/assistant-model-input.ts:34:7)
+      at MiddlewareRunner.runOnConfig [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/middleware/compose.js:113:28[90m)[39m
+  [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+      at async TextEngine.runWhileYielding [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:2982:4[90m)[39m
+      at async TextEngine.run [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:503:30[90m)[39m
+      at async runChatEngine [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:3217:20[90m)[39m
+      at async streamTextChunks [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:3269:2[90m)[39m
+      at collect (D:/code/github/openstory/src/assistant/server/assistant-model-input.test.ts:34:20)
+      at D:/code/github/openstory/src/assistant/server/assistant-model-input.test.ts:64:5 {
+    code: [32m'VALIDATION_ERROR'[39m,
+    statusCode: [33m400[39m,
+    details: [90mundefined[39m
+  },
+  threadId: [32m'mock-vision-thread'[39m
+}
+
+stderr | src/assistant/server/assistant-model-input.test.ts > refuses stored images before a model call for partial input [ [Object] ]
+❌ [tanstack-ai:errors] ❌ chat run failed
+
+stdout | src/assistant/server/assistant-model-input.test.ts > returns a readable stream error when stored images fail validation
+{
+  error: ValidationError: The assistant model must support vision for image context.
+      at requireAssistantVision (D:/code/github/openstory/src/assistant/server/assistant-model-input.ts:22:11)
+      at Object.onConfig (D:/code/github/openstory/src/assistant/server/assistant-model-input.ts:34:7)
+      at MiddlewareRunner.runOnConfig [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/middleware/compose.js:113:28[90m)[39m
+  [90m    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+      at async TextEngine.runWhileYielding [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:2982:4[90m)[39m
+      at async TextEngine.run [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:503:30[90m)[39m
+      at async runChatEngine [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:3217:20[90m)[39m
+      at async streamTextChunks [90m(file:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/activities/chat/index.js:3269:2[90m)[39m
+      at async [90mfile:///D:/code/github/openstory/[39mnode_modules/[4m@tanstack/ai[24m/dist/esm/stream-to-response.js:159:22 {
+    code: [32m'VALIDATION_ERROR'[39m,
+    statusCode: [33m400[39m,
+    details: [90mundefined[39m
+  },
+  threadId: [32m'mock-vision-thread'[39m
+}
+
+stderr | src/assistant/server/assistant-model-input.test.ts > returns a readable stream error when stored images fail validation
+❌ [tanstack-ai:errors] ❌ chat run failed
+
+ ✓ src/assistant/server/assistant-model-input.test.ts (6 tests) 53ms
+ ✓ src/audio/server/music-generation.test.ts (2 tests) 27ms
+ ✓ src/stills/build-byteplus-image-request.test.ts (10 tests) 24ms
+ ✓ src/shots/ui/scene-selection.test.ts (9 tests) 22ms
+ ✓ src/shots/ui/staleness/staleness-copy.test.tsx (12 tests) 75ms
+ ✓ src/platform/i18n/runtime.test.ts (14 tests) 27ms
+ ✓ src/sequences/ui/script/sequence-draft.test.ts (6 tests) 23ms
+ ✓ src/models/aspect-ratios.test.ts (10 tests) 21ms
+ ✓ src/cast/ui/localize-look-sheet-face.test.ts (9 tests) 28ms
+ ✓ src/stills/server/workflows/shot-variant-workflow.test.ts (4 tests) 20ms
+ ✓ src/billing/credits-short.test.ts (10 tests) 20ms
+ ✓ src/models/server/byteplus-governor.do.test.ts (5 tests) 16ms
+ ✓ src/motion/server/motion-render-boundary.test.ts (9 tests) 1555ms
+   ✓ render paths use the canonical prompt builder and construct inputs centrally 1541ms
+ ✓ src/audio/server/music-staleness.test.ts (1 test) 27ms
+ ✓ src/stitches/cut-contract.test.ts (1 test) 78ms
+ ✓ src/ui/device-login.i18n.test.tsx (6 tests) 78ms
+ ✓ src/stitches/stitch-storage.test.ts (5 tests) 21ms
+ ✓ src/look/server/bump-style-popularity.test.ts (4 tests) 28ms
+ ✓ src/platform/server/storage/serve-media.test.ts (5 tests) 25ms
+stdout | src/platform/log-context.test.ts > withContext > stamps nested context on a record logged inside an awaited call
+12:59:04.135 INF logtape·meta LogTape loggers are configured.  Note that LogTape itself uses the meta logger, which has category [ 'logtape', 'meta', [length]: 2 ].  The meta logger is used to log internal diagnostics such as sink exceptions.  It's recommended to configure the meta logger with a separate sink so that you can easily notice if logging itself fails or is misconfigured.  To turn off this message, configure the meta logger with higher log levels than 'info'.  See also <https://logtape.org/manual/categories#meta-logger>.
+
+stdout | src/platform/log-context.test.ts > withContext > isolates concurrent requests across awaited work
+12:59:04.139 INF logtape·meta LogTape loggers are configured.  Note that LogTape itself uses the meta logger, which has category [ 'logtape', 'meta', [length]: 2 ].  The meta logger is used to log internal diagnostics such as sink exceptions.  It's recommended to configure the meta logger with a separate sink so that you can easily notice if logging itself fails or is misconfigured.  To turn off this message, configure the meta logger with higher log levels than 'info'.  See also <https://logtape.org/manual/categories#meta-logger>.
+
+ ✓ src/platform/log-context.test.ts (4 tests) 37ms
+ ✓ src/models/prompt-length.test.ts (7 tests) 19ms
+ ✓ src/motion/model-capabilities.test.ts (6 tests) 24ms
+ ✓ src/cast/ui/upload-rights-queue.test.ts (4 tests) 265ms
+ ✓ src/assistant/server/assistant-tools.test.ts (6 tests) 30ms
+ ✓ src/models/ui/use-model-defaults.test.tsx (4 tests) 34ms
+ ✓ src/billing/configured-text-cost.test.ts (13 tests) 18ms
+ ✓ src/cast/reference-order.test.ts (1 test) 21ms
+ ✓ src/billing/elevenlabs-pricing.test.ts (13 tests) 17ms
+ ✓ packages/stitch/src/image-size.test.ts (8 tests) 23ms
+ ✓ src/stills/server/image-crop.test.ts (4 tests) 18ms
+ ✓ src/stills/server/shot-image-generation.test.ts (2 tests) 18ms
+ ✓ src/motion/server/generate-seed-dialogue-speech.test.ts (5 tests) 26ms
+ ✓ src/models/server/byteplus-final-render.test.ts (2 tests) 20ms
+ ✓ src/models/server/catalog-lag.test.ts (4 tests) 15ms
+ ✓ src/stills/server/compatible-image-interruption.test.ts (4 tests) 71ms
+ ✓ src/stills/server/compatible-image-decoder.test.ts (5 tests) 29ms
+ ✓ src/models/server/fal-config.test.ts (3 tests) 927ms
+   ✓ rewriteFalUrl (3)
+     ✓ rewrites a fal host onto the aimock proxy and leaves other hosts 907ms
+ ✓ src/studio/server/studio-prompt-locale.test.ts (1 test) 16ms
+ ✓ src/cast/server/person-lock.test.ts (2 tests) 25ms
+ ✓ src/studio/server/studio-prompt-draft.test.ts (2 tests) 22ms
+ ✓ src/cast/server/organization-user-upload.test.ts (6 tests) 19ms
+ ✓ src/assistant/ui/assistant-conversation.test.tsx (4 tests) 44ms
+ ✓ src/assistant/chat-model.test.ts (6 tests) 18ms
+ ✓ src/sequences/social-publish.test.ts (9 tests) 28ms
+ ✓ src/billing/server/storyboard-envelope.wiring.test.ts (8 tests) 32ms
+(node:1716) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/stitches/server/db/stitches.test.ts (2 tests) 1082ms
+ ✓ src/cast/server/sequence-elements/storage-path.test.ts (9 tests) 18ms
+ ✓ src/platform/server/auth/oauth-register-route.test.ts (5 tests) 23ms
+ ✓ src/models/fal-error.test.ts (8 tests) 16ms
+ ✓ src/cast/element-prompt.test.ts (5 tests) 15ms
+ ✓ src/shots/ui/sequence-video-variants-poll.test.ts (5 tests) 21ms
+ ✓ src/platform/stale-server-fn.test.ts (8 tests) 23ms
+ ✓ src/look/ui/composer-sample.test.ts (7 tests) 18ms
+ ✓ src/stills/tile-crop.test.ts (6 tests) 19ms
+ ✓ src/cast/element-kind.test.ts (5 tests) 20ms
+ ✓ src/sequences/ui/script/composer-style-sync.test.ts (8 tests) 18ms
+ ✓ src/platform/server/crypto/api-key-encryption.test.ts (8 tests) 34ms
+ ✓ src/assistant/ui/mcp-app-context.test.ts (14 tests) 22ms
+ ✓ src/billing/configured-image-specification.test.ts (4 tests) 22ms
+ ✓ src/platform/server/api-v1/ui-settings-parity.test.ts (3 tests) 22ms
+ ✓ src/motion/draft-mode.test.ts (7 tests) 15ms
+ ✓ src/shots/scene-direction.test.ts (4 tests) 17ms
+ ✓ scripts/regen-worker-types.test.ts (8 tests) 30ms
+ ✓ src/ui/layout/breadcrumbs.test.ts (9 tests) 20ms
+(node:43576) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/test/api-key-window.test.ts (3 tests) 23ms
+ ✓ src/platform/server/mcp/json-rpc.test.ts (6 tests) 31ms
+ ✓ src/shots/ui/scene-script-editors.test.tsx (3 tests) 53ms
+ ✓ src/sequences/ui/eval/eval-sequence-metadata.test.tsx (5 tests) 36ms
+ ✓ src/platform/server/api-v1/export-reuse.test.ts (6 tests) 11ms
+ ✓ src/ui/text-editor/mention/mention-list.i18n.test.tsx (4 tests) 62ms
+ ✓ src/stills/server/workflows/shot-variant-workflow-generation.test.ts (2 tests) 19ms
+ ✓ src/models/model-configuration.test.ts (6 tests) 37ms
+ ✓ src/billing/gift-redeem.test.ts (5 tests) 17ms
+ ✓ src/models/configured-image-request.test.ts (4 tests) 20ms
+ ✓ src/shots/shot-media-staleness.test.ts (9 tests) 15ms
+ ✓ src/cast/server/element-vision.test.ts (1 test) 15ms
+ ✓ src/platform/compliance/attestations.test.ts (7 tests) 28ms
+ ✓ src/shots/ui/scene-script-document.test.ts (7 tests) 19ms
+ ✓ src/sequences/ui/theatre/source-shots-hash.test.ts (5 tests) 19ms
+ ✓ src/sequences/server/configured-sequence-input.test.ts (3 tests) 27ms
+ ✓ src/shots/ui/scene-thumbnail.test.ts (6 tests) 18ms
+ ✓ src/platform/schemas/media-url.schemas.test.ts (6 tests) 21ms
+ ✓ src/billing/server/fetch-rate-cards.test.ts (2 tests) 834ms
+   ✓ fetchFalRateCards (2)
+     ✓ stores a card and skips an endpoint whose pricing is not a card 818ms
+ ✓ src/billing/ui/use-billing-balance-realtime.test.ts (6 tests) 20ms
+ ✓ src/platform/server/api-v1/errors.test.ts (3 tests) 20ms
+ ✓ packages/stitch/src/play-attempt.test.ts (7 tests) 19ms
+ ✓ src/platform/auth/cookie-prefix.test.ts (7 tests) 17ms
+ ✓ src/look/server/style.schemas.test.ts (4 tests) 24ms
+ ✓ src/cast/ui/localize-character-form-error.test.ts (6 tests) 27ms
+ ✓ src/shots/server/workflows/user-edit-predicate.test.ts (8 tests) 17ms
+ ✓ src/models/vision-model-routing.test.ts (7 tests) 18ms
+ ✓ src/motion/resolve-shot-duration.test.ts (7 tests) 21ms
+ ✓ src/stills/server/workflows/image-workflow-preview-failure.test.ts (1 test) 18ms
+ ✓ src/look/server/sequence-style.test.ts (3 tests) 25ms
+ ✓ src/platform/server/db/d1-session.test.ts (4 tests) 19ms
+ ✓ src/platform/server/instance-startup.test.ts (3 tests) 17ms
+ ✓ src/platform/realtime/sse-session.test.ts (6 tests) 17ms
+ ✓ src/ui/text-editor/mention/mention-edit-popover.test.ts (7 tests) 17ms
+ ✓ src/platform/server/observability/product-events.test.ts (3 tests) 22ms
+ ✓ src/models/server/byteplus-openapi-sign.test.ts (4 tests) 23ms
+ ✓ src/billing/server/pricing-catalog.test.ts (2 tests) 40ms
+ ✓ src/shots/use-start-frame.test.ts (4 tests) 17ms
+ ✓ src/cast/server/sequence-elements/copy-sequence-elements.test.ts (1 test) 19ms
+ ✓ src/platform/server/mcp/shot-frames.test.ts (5 tests) 26ms
+ ✓ src/ui/drag-images.test.ts (3 tests) 16ms
+ ✓ src/models/max-output-tokens.test.ts (5 tests) 19ms
+ ✓ src/shots/ui/localize-speaker-conflict.test.ts (4 tests) 22ms
+ ✓ src/platform/server/db/check-migrations.test.ts (4 tests) 42ms
+ ✓ src/models/server/byteplus-portrait-filter.test.ts (5 tests) 15ms
+ ✓ src/platform/server/ai/stream-extract.test.ts (7 tests) 17ms
+ ✓ src/platform/server-fn-id.test.ts (5 tests) 19ms
+ ✓ src/platform/server/env/environment.test.ts (5 tests) 20ms
+ ✓ src/motion/server/place-uploaded-dialogue.test.ts (2 tests) 19ms
+ ✓ src/platform/server/mcp/origin.test.ts (6 tests) 31ms
+(node:20956) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/platform/server/db/device-grant-organization.test.ts (1 test) 1144ms
+ ✓ src/audio/server/e2e-music-fixture.test.ts (1 test) 93ms
+ ✓ src/models/image-model-schema.test.ts (4 tests) 23ms
+ ✓ src/platform/base64.test.ts (6 tests) 86ms
+ ✓ src/cast/sheet-progress-copy.test.ts (8 tests) 13ms
+ ✓ src/models/server/gemini-files.test.ts (1 test) 42ms
+ ✓ src/billing/server/film-cost-examples.test.ts (3 tests) 13ms
+ ✓ src/billing/ui/localize-pricing.test.ts (11 tests) 34ms
+ ✓ src/sequences/ui/localize-asset-label.test.ts (13 tests) 28ms
+ ✓ src/shots/ui/shot-walk.test.ts (8 tests) 13ms
+ ✓ src/models/server/byteplus-asset-size.test.ts (4 tests) 21ms
+ ✓ src/motion/server/record-dialogue-take.test.ts (2 tests) 24ms
+ ✓ src/platform/server/compliance/generation-gate.test.ts (2 tests) 14ms
+ ✓ src/ui/schema-form/schema-form.i18n.test.tsx (2 tests) 78ms
+ ✓ src/platform/server/api-v1/styles.test.ts (2 tests) 25ms
+ ✓ src/look/ui/prioritize-recommended-styles.test.ts (2 tests) 17ms
+ ✓ src/billing/byteplus-pricing.test.ts (7 tests) 19ms
+ ✓ src/shots/server/workflows/update-stale-shots-workflow.test.ts (3 tests) 19ms
+ ✓ src/look/cloudflare-video.test.ts (6 tests) 11ms
+ ✓ src/models/text-model-catalog.test.ts (3 tests) 13ms
+ ✓ src/platform/server/emails/otp-localization.test.tsx (2 tests) 70ms
+ ✓ src/ui/fit-image-aspect.test.ts (8 tests) 14ms
+ ✓ src/shots/scene-analysis.schema.test.ts (3 tests) 15ms
+ ✓ src/sequences/sequence-asset-folder.test.ts (2 tests) 18ms
+ ✓ packages/stitch/src/webvtt.test.ts (4 tests) 14ms
+ ✓ packages/stitch/src/music-gain.test.ts (7 tests) 20ms
+ ✓ src/billing/billed-quantity.test.ts (5 tests) 11ms
+ ✓ src/platform/e2e-recorded-fixture-media.test.ts (2 tests) 444ms
+   ✓ recorded fixtures do not keep rotting provider media (1)
+     ✓ every media URL is on assets.openstory.so 430ms
+ ✓ src/cast/server/upload-check.test.ts (3 tests) 18ms
+ ✓ src/shots/generation-prompt.test.ts (5 tests) 23ms
+ ✓ src/platform/ui/auth/navigation.test.ts (5 tests) 18ms
+ ✓ src/platform/server/byok/openrouter-oauth.test.ts (3 tests) 18ms
+ ✓ src/sequences/server/social/publish-guards.test.ts (12 tests) 18ms
+ ✓ src/billing/server/catalog-endpoints.test.ts (3 tests) 12ms
+ ✓ src/shots/validate-example.test.ts (4 tests) 24ms
+ ✓ src/platform/server/storage/file.test.ts (7 tests) 19ms
+ ✓ src/models/server/grok-prompt-cap-patch.test.ts (1 test) 11ms
+ ✓ src/billing/server/__tests__/constants.test.ts (6 tests) 16ms
+ ✓ src/cast/ui/first-appearance.test.tsx (3 tests) 30ms
+ ✓ src/platform/server/workflow/rpc-dispose.test.ts (4 tests) 18ms
+ ✓ src/cast/upload-rights.test.ts (2 tests) 13ms
+ ✓ src/sequences/measured-latency.test.ts (4 tests) 17ms
+ ✓ src/stills/configured-image-request.test.ts (2 tests) 19ms
+ ✓ src/stills/server/workflows/shot-images-silent-retry.test.ts (4 tests) 18ms
+ ✓ packages/stitch/src/subtitles.test.ts (5 tests) 19ms
+ ✓ src/ui/voice/speech-recognition.test.ts (4 tests) 19ms
+ ✓ src/ui/voice/transcript-insert.test.ts (8 tests) 21ms
+ ✓ src/sequences/server/production-bible.test.ts (2 tests) 21ms
+ ✓ src/motion/ui/player-poster.test.ts (5 tests) 11ms
+ ✓ src/look/style-slug.test.ts (5 tests) 23ms
+ ✓ src/cast/sheet-image-model.test.ts (5 tests) 17ms
+ ✓ src/look/server/style-image-prompt.test.ts (3 tests) 19ms
+ ✓ src/cast/ui/character-replace-dialog.test.tsx (3 tests) 21ms
+ ✓ src/ui/react-errors.test.ts (3 tests) 15ms
+ ✓ packages/stitch/src/cues.test.ts (4 tests) 18ms
+ ✓ src/ui/text-editor/markdown-editor-placeholder.test.tsx (3 tests) 43ms
+ ✓ src/look/styles.promote.test.ts (4 tests) 58ms
+ ✓ src/platform/server/storage/storage-page.test.ts (1 test) 33ms
+ ✓ src/shots/ui/prompts/word-diff.test.ts (6 tests) 62ms
+ ✓ src/assistant/ui/attachments.test.ts (2 tests) 29ms
+ ✓ src/shots/ui/scene-script-prompts.test.ts (4 tests) 16ms
+ ✓ src/models/resolve-video-models.test.ts (5 tests) 22ms
+ ✓ src/platform/server/ai/workers-safe-fetch.test.ts (2 tests) 20ms
+ ✓ src/ui/play-hover-preview.test.ts (4 tests) 32ms
+ ✓ src/sequences/manual-pipeline-guards.test.ts (4 tests) 19ms
+ ✓ src/sequences/ui/generation/pending-generate.test.ts (1 test) 30ms
+ ✓ scripts/check-workflow-triggers.test.ts (13 tests) 20ms
+ ✓ src/motion/ui/showing-caption.test.ts (3 tests) 14ms
+ ✓ src/cast/ui/element/normalize-element-file.test.ts (2 tests) 18ms
+ ✓ src/platform/realtime/emit.test.ts (2 tests) 27ms
+ ✓ src/shots/dialogue-take-runs.test.ts (2 tests) 26ms
+ ✓ src/look/ui/style-inline-tile.test.tsx (1 test) 42ms
+ ✓ src/shots/ui/use-stale-detected.test.ts (3 tests) 14ms
+ ✓ scripts/reorder-preview-dump.test.ts (3 tests) 15ms
+ ✓ src/sequences/ui/use-generation-plan.test.ts (1 test) 16ms
+ ✓ src/platform/i18n/prompt-locale.test.ts (10 tests) 18ms
+ ✓ src/stills/reference-legend.test.ts (3 tests) 15ms
+ ✓ src/shots/ui/use-shot-staleness.test.ts (5 tests) 17ms
+ ✓ src/motion/server/video-job-status.test.ts (2 tests) 14ms
+ ✓ src/platform/server/storage/copy-stored-image.test.ts (5 tests) 13ms
+ ✓ src/stitches/opening-picture.test.ts (3 tests) 14ms
+ ✓ src/platform/i18n/preference.test.ts (4 tests) 13ms
+ ✓ src/models/ui/resolution-support.i18n.test.ts (2 tests) 16ms
+ ✓ src/platform/server/auth/review-login.test.ts (9 tests) 14ms
+ ✓ src/shots/ui/motion-dialogue-panel.test.tsx (2 tests) 68ms
+ ✓ src/shots/scene-narrative.test.ts (2 tests) 14ms
+ ✓ src/billing/server/gift-redeem-report.test.ts (1 test) 12ms
+ ✓ e2e/mocks/recorded-errors.test.ts (3 tests) 13ms
+ ✓ src/models/resolve-audio-models.test.ts (4 tests) 13ms
+ ✓ src/cast/likeness.test.ts (4 tests) 14ms
+ ✓ src/platform/markdown-plain.test.ts (3 tests) 13ms
+ ✓ src/stills/server/configured-image-test-mode.test.ts (2 tests) 12ms
+ ✓ src/billing/server/seed-model-pricing.test.ts (3 tests) 12ms
+ ✓ scripts/latin1-server-chunks.test.ts (3 tests) 15ms
+ ✓ src/platform/server/mcp/tools/add-model-to-sequence.test.ts (2 tests) 14ms
+ ✓ src/platform/server/compliance/provenance-wiring.test.ts (1 test) 652ms
+   ✓ provenance wiring (1)
+     ✓ every workflow that uploads a generated asset records provenance 641ms
+ ✓ src/shots/ui/prompts/prompt-diff-view.test.tsx (1 test) 30ms
+ ✓ src/stills/shot-image.history.test.ts (5 tests) 16ms
+ ✓ src/platform/server/auth/format-better-auth-log.test.ts (3 tests) 19ms
+ ✓ src/billing/server/__tests__/typical-short-cost.test.ts (2 tests) 15ms
+ ✓ src/platform/auth/organization-access.test.ts (3 tests) 12ms
+ ✓ packages/stitch/src/place-cues.test.ts (2 tests) 14ms
+ ✓ src/platform/server/api-v1/hal.test.ts (3 tests) 13ms
+ ✓ src/platform/search.test.ts (4 tests) 14ms
+ ✓ src/shots/ui/use-sequence-video-variants.test.tsx (1 test) 13ms
+ ✓ src/platform/server/auth/public-api-key.test.ts (4 tests) 14ms
+ ✓ src/shots/update-stale-depth.test.ts (3 tests) 27ms
+ ✓ src/platform/server/compatibility-date.test.ts (2 tests) 16ms
+ ✓ src/stills/server/variant-image.test.ts (2 tests) 10ms
+ ✓ src/shots/ui/localize-dialogue-take-label.test.ts (6 tests) 15ms
+ ✓ src/motion/server/motion-transform.test.ts (4 tests) 13ms
+ ✓ src/cast/cast-alias.test.ts (3 tests) 17ms
+ ✓ src/audio/server/recorded-e2e-music-prompt.test.ts (1 test) 46ms
+ ✓ packages/stitch/src/playback-gap.test.ts (2 tests) 14ms
+ ✓ src/models/image-resource-budget.test.ts (11 tests) 16ms
+ ✓ src/cast/ui/library-search.test.ts (2 tests) 26ms
+ ✓ src/start.test.ts (1 test) 9ms
+ ✓ src/assistant/ui/localize-page-context-label.test.ts (1 test) 10ms
+ ✓ src/sequences/ui/use-sequence-stale-detected.test.ts (2 tests) 14ms
+ ✓ src/cast/ui/element/element-support-badge.i18n.test.ts (1 test) 23ms
+ ✓ src/platform/expected-rejection-codes.test.ts (1 test) 12ms
+ ✓ packages/stitch/src/react.test.tsx (1 test) 25ms
+ ✓ src/shots/shot-spec-vocabulary.test.ts (1 test) 11ms
+ ✓ packages/stitch/src/video-size.test.ts (1 test) 31ms
+ ✓ src/platform/server/storage/content-range.test.ts (3 tests) 9ms
+ ✓ src/ui/upload.test.ts (1 test) 13ms
+ ✓ src/billing/ui/use-balance-count-up.test.ts (3 tests) 11ms
+ ✓ src/cast/ui/use-sheet-stale-detected.test.ts (2 tests) 10ms
+ ✓ src/platform/realtime/schema.test.ts (1 test) 15ms
+ ✓ src/ui/text-editor/markdown-editor.test.ts (2 tests) 22ms
+ ✓ src/billing/server/__tests__/extract-image-cost.test.ts (2 tests) 10ms
+ ✓ src/platform/server/read-page.test.ts (1 test) 18ms
+ ✓ src/shots/ui/mic-take.test.ts (1 test) 10ms
+ ✓ src/platform/server/agent/llms.test.ts (1 test) 10ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/models/server/elevenlabs-config.test.ts > lazy loaders > constructs the Voice Design SDK with the e2e base URL
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/models/server/elevenlabs-config.test.ts:122:3
+    120|   });
+    121|
+    122|   it('constructs the Voice Design SDK with the e2e base URL', async ()…
+       |   ^
+    123|     const client = await createElevenLabsSdk('el-test');
+    124|     expect(client).toBeDefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/cast/server/voice/elevenlabs-voice-aimock.test.ts > Voice Design over aimock > saves, reads back and deletes a designed voice through the SDK
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/cast/server/voice/elevenlabs-voice-aimock.test.ts:102:3
+    100|   }, 15_000);
+    101|
+    102|   it('saves, reads back and deletes a designed voice through the SDK',…
+       |   ^
+    103|     const { saveDesignedVoice, getElevenLabsVoice, deleteElevenLabsVoi…
+    104|       await voice();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/platform/server/agent/discovery.test.ts > getMarkdownForPath > serves the llms.txt overview for the homepage
+AssertionError: expected '# ??\n\n> Create 5-minute AI films wi…' to contain '# OpenStory'
+
+- Expected
++ Received
+
+- # OpenStory
++ # ??
++
++ > Create 5-minute AI films with consistent characters. Iterate until you nail it. Open source and free to self-host.
++
++ ?? is an open source AI video production platform. Paste a script or a one-liner and it builds a multi-scene film with consistent characters and look — then you iterate until you nail it. Fully exportable, and free to self-host.
++
++ ## How It Works
++
++ 01. **Describe Your Idea**: Start with a one-liner or a full script. OpenStory builds out scenes, assigns characters and locations, and prepares shot directions for a multi-scene film.
++ 02. **Define Your Look**: Set your visual style, cast your characters, choose your locations. These carry across your entire project.
++ 03. **Generate & Refine**: Generate AI shots for every shot. Swap models, try variations, regenerate until every shot is right.
++ 04. **Export Everything**: Download shots, sequences, prompts, and music. Take it all into your editing tool of choice.
++
++ ## Features
++
++ - **From Idea to Finished Video**: Describe what you want in a line or paste a full script. OpenStory breaks it into scenes, generates shots, and scores the music — a multi-scene film with consistent characters, not a single-shot toy.
++ - **Cast Your Own Characters & Locations**: Define your characters and environments once — age, wardrobe, lighting, architecture. OpenStory maintains consistency across every shot in every sequence.
++ - **Get The Shot You Want**: Generate variations of any shot — different angles, lighting, compositions — and iterate the whole film until it’s exactly right.
++ - **Take Your Work Anywhere**: Download individual shots, export full sequences, and get the prompts behind every generation. Your work isn’t trapped here — use it in any editing tool or pipeline.
++ - **Latest Models**: Access the best image and video models as they ship. Switch per shot, or let OpenStory pick the best one for the job.
++ - **Music & Audio**: Generate music tracks and sound effects that match your sequence. Full audio composition built in.
++
++ ## Open & Fair
++
++ - **Open Source**: MIT licensed, full source on GitHub. Fork it, self-host it, or build entirely new workflows on top.
++ - **Bring Your Own Keys**: Use your own API keys or self-host entirely. Pay providers directly with no platform fees.
++ - **At Cost Pricing**: No subscriptions. AI usage at provider cost. A small fee applies only when buying credits.
++ - **Export Everything**: Shots, sequences, prompts, and music. Your work isn’t trapped — take it anywhere.
++
++ ## FAQ
++
++ ### What is OpenStory?
++
++ OpenStory is an open source AI video production platform. Paste a script or a one-liner and it builds a multi-scene film — consistent characters, locations, and look across every shot, up to around five minutes. Iterate on scenes until you nail it, then export. Free to self-host.
++
++ ### Do I need to write a full script?
++
++ No. You can start with a single line and OpenStory will expand it into a full script with scenes, characters, and shot directions. Or paste in a complete script if you have one.
++
++ ### What AI models does it support?
++
++ OpenStory fully supports the latest image and video models as close to day zero as possible. You can switch models per shot or let OpenStory pick the best one.
++
++ ### How does pricing work?
++
++ No subscriptions. Generations are billed at the rates of the labs and platforms that run them (fal.ai, OpenRouter, and more soon). A platform fee applies only when you buy credits, not on each generation. See openstory.so/pricing for the full model price list. Bring your own API keys to skip credits entirely.
++
++ ### Can I use my own API keys?
++
++ Absolutely. You can enter your own API keys directly — no self-hosting required. Pay providers directly with full control over costs and usage.
++
++ ### Is it open source?
++
++ Yes. MIT licensed, full source on GitHub. You can self-host it, fork it, or use the managed cloud version.
++
++ ### How do I get started?
++
++ Sign up to start immediately, or clone the GitHub repo to self-host. Describe your idea, define your look, and generate your first storyboard in minutes.
++
++ ## API
++
++ ?? has a public HTTP API for agents and scripts: create an AI video sequence from a script in one call then poll its status, or enhance a script on its own (streamed back). The endpoints below are self-describing and need no separate docs.
++
++ - API root (instructions, request schema, and HAL links): http://localhost:3000/api/v1
++ - OpenAPI 3.1 spec (JSON): http://localhost:3000/api/v1/openapi.json
++
++ Authenticate with an API key (create one under Settings → Developer) sent as "Authorization: Bearer <key>" or "x-api-key". POST /api/v1/sequences to create; GET the returned status URL (append ?wait=60s to long-poll) to watch progress. POST /api/v1/scripts/enhance to enhance a script without creating a sequence — the enhanced script streams back as Server-Sent Events.
++
++ ## MCP
++
++ MCP clients connect to http://localhost:3000/mcp (Streamable HTTP, protocol 2026-07-28, OAuth or an API key) to inspect a production, edit scenes, plan and approve generation, poll operations and export.
++ - Agent guide: http://localhost:3000/docs/developer-guide/agents
++
++ ## Documentation
++
++ - Docs: http://localhost:3000/docs
++ - Full docs (markdown): http://localhost:3000/docs/llms.md
++
++ ## Links
++
++ - Website: http://localhost:3000
++ - App: http://localhost:3000/
++ - GitHub: https://github.com/openstory-so/openstory
++ - License: https://github.com/openstory-so/openstory/blob/main/LICENSE
++
+
+ ❯ src/platform/server/agent/discovery.test.ts:78:22
+     76|   it('serves the llms.txt overview for the homepage', () => {
+     77|     const markdown = getMarkdownForPath('/');
+     78|     expect(markdown).toContain('# OpenStory');
+       |                      ^
+     79|     expect(markdown).toContain('## FAQ');
+     80|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  3 failed | 803 passed (806)
+      Tests  3 failed | 10189 passed (10192)
+   Start at  20:23:46
+   Duration  2716.74s (import 63%, setup 22%, tests 10%, transform 4%, worker 1%)
+
+     Import  2195 modules were evaluated 59482 times · 1481.86s total, 63% of tracked time
+             ~1427.18s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+             learn more: https://vitest.dev/guide/improving-performance#test-isolation
+
+JSON report written to D:/code/github/openstory/.tmp/p3-g06-capture-20261113/full-test.json
+error: script "test" exited with code 1
