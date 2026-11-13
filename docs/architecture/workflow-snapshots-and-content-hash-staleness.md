@@ -15,6 +15,12 @@ content DTOs, `inputHash`, database rows or idempotency keys. Changing language
 alone therefore does not stale saved prompts. See
 [system prompt localization](../secondary-development/system-prompt-localization.md).
 
+## Child dispatch snapshots (secondary development, 2026-11-12)
+
+For an awaited child, the domain parent chooses the child DTO, identity, required promptLocale and reservation fields. It supplies its decoded model configuration separately to spawnAndAwaitChild; the platform helper packs it and injects the parent notification address in the original spawn step. The existing step names, run-scoped child IDs, timeout/status fallback, success/failure notification and engine-abort handling keep their upstream owners. The local regression exercises those helpers together with real workflow bases and ScopedDb; its deterministic step/event runner models the tested retries and cached results without claiming a real Cloudflare restart.
+
+A workflow that starts an independent variant-image root passes the trusted model configuration through the root trigger option. Its original deduplication and charging remain separate from an awaited child. A freshly requested framing grid remains an independent enrichment operation; snapshot propagation is not permission to copy the parent reservation or attach a generic parent envelope. See the [G03 caller and verification record](../secondary-development/preservation/20261112-p3-g03/README.md) for each actual edge and the test-double boundaries.
+
 ## The two failure modes we're closing
 
 **1. Lost-work mid-generation.** Content-generation workflows must not read mutable DB state for anything that should be frozen at trigger time. Before the snapshot pattern, `regenerateShotsWorkflow` (`RegenerateShotsWorkflow` in `src/shots/server/workflows/regenerate-shots-workflow.ts`) could re-resolve sequence fields or sheet references mid-flight. If a user edits a character, location, or prompt while the workflow is running, generation can read a mix of pre- and post-edit inputs. The result is written as the primary artifact either way, with no signal that what landed isn't what the user had in mind when they triggered the workflow. `RegenerateShotsWorkflow` is the reference fix: it inlines per-shot snapshot DTOs and a batch `snapshotInputHash` at trigger time via `src/shots/server/workflows/regenerate-shots-snapshot.ts`.

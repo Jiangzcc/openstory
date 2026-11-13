@@ -276,7 +276,8 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
         await scopedDb.liveRead.compliance.listEnforcementFor(
           input.userId,
           organizationId
-        )
+        ),
+        scopedDb.models
       );
     });
 

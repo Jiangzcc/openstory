@@ -329,7 +329,8 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
         await scopedDb.liveRead.compliance.listEnforcementFor(
           input.userId,
           organizationId
-        )
+        ),
+        scopedDb.models
       );
     });
 

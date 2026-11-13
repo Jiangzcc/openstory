@@ -1,3 +1,4 @@
+import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { getLogger } from '@/platform/logger';
 import { triggerWorkflow } from '@/platform/server/workflow/client';
 import type { SheetPortraitWorkflowInput } from '@/platform/server/workflow/types';
@@ -20,12 +21,14 @@ export async function triggerSheetPortrait(
   input: SheetPortraitWorkflowInput,
   enforcement?: NonNullable<
     Parameters<typeof triggerWorkflow>[2]
-  >['enforcement']
+  >['enforcement'],
+  modelConfiguration?: ModelRuntimeConfiguration
 ): Promise<void> {
   try {
     await triggerWorkflow('/sheet-portrait', input, {
       deduplicationId: `sheet-portrait-${input.versionId}`,
       enforcement,
+      modelConfiguration,
     });
   } catch (error) {
     logger.error('sheet portrait run not started', { err: error });

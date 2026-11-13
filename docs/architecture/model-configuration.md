@@ -50,6 +50,14 @@ After capture or enqueue, real administrator writes change defaults, text protoc
 
 A separate JSON-wire regression preserves complete text-channel identity, image execution fields, legacy image v1/route arrays and omitted-versus-empty routing. Image v2 admits 262,143 and 262,144 UTF-8 bytes and refuses 262,145 without truncation. This budget applies to the image-routing component, not the entire payload, checkpoint or production heap. Caller discovery, unchanged-source evidence and test boundaries are recorded in the [G02 verification record](../secondary-development/preservation/20261112-p3-g02/README.md).
 
+### P3 parent-to-child snapshot propagation (secondary development, 2026-11-12)
+
+A domain parent supplies its decoded scopedDb.models to spawnAndAwaitChild. The helper packs that configuration inside the existing spawn step and overrides both any child-supplied configuration and the notify hint. The child base builds its ScopedDb from the queued identity and decodes the queued configuration; it does not reload administrator defaults or channel registries. User/organization identity, promptLocale and reservation ownership remain explicit domain inputs rather than an implicitly copied parent envelope.
+
+Generated character and location sheets now pass their parent configuration through triggerSheetPortrait as a trusted internal option. The previous helper omitted it and the root captured the current administrator configuration. Uploaded-sheet requests still capture their own current configuration. Portraits retain their version-based deduplication, save-before-trigger ordering, logged admission failure and independent hold/charge; parent reservation ownership is not copied.
+
+The G03 regression composes real spawn/notify helpers, routing codecs, workflow bases and migrated in-memory D1 with synthetic parent/child/grandchild workflows. Controlled step/event doubles cover concurrent parents, cached steps, an already-created child, lost or finite-parent notification, terminal failure and an interrupted child resuming from the same input. These are local composition results, not Cloudflare durable-engine restart acceptance. Domain caller evidence and independent variant-root boundaries are recorded in the [G03 verification record](../secondary-development/preservation/20261112-p3-g03/README.md).
+
 ## Deliberate limits
 
 The text extension adds explicit administrator-owned Chat Completions / Responses bindings and custom text identities. The text extension does not itself add image/video/audio adapters, global model enable/disable governance, CNY sales prices or cross-device user preferences. Administrator image channels are a separate extension described below. Speech synthesis and voice conversion retain their one-model adapter contracts.
