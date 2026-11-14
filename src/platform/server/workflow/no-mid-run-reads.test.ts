@@ -274,7 +274,12 @@ const ALLOWED_LIVE_READS: Record<string, SanctionedRead[]> = {
       why: 'The platform ElevenLabs (and, for a Seed voice, Seed Speech) key, resolved inside the step that converts the mic take (#1802).',
     },
   ],
-  'element-sheet-workflow.ts': [
+  'element-sheet-output.ts': [
+    {
+      read: 'sequences.getForUser',
+      bucket: 'EXISTENCE-GUARD',
+      why: 'Validate the live organization/sequence before reusing an element, including the standalone entry point.',
+    },
     {
       read: 'sequenceElements.getById',
       bucket: 'EXISTENCE-GUARD',

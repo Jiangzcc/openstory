@@ -547,6 +547,8 @@ export type ElementSheetEntry = ElementBibleEntry & {
 
 export interface ElementSheetWorkflowInput extends UserWorkflowContext {
   sequenceId: string;
+  storyboardOwner?: GenerationWorkflowOwner;
+  _parent?: ParentNotifyHint;
   /** Element bible entries with no matching uploaded element */
   entries: ElementSheetEntry[];
   /** Image model to use (defaults to DEFAULT_IMAGE_MODEL) */

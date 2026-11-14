@@ -65,6 +65,7 @@ import { createStoryboardContentMethods } from '@/sequences/server/db/storyboard
 import { createStoryboardAnalysisOutputMethods } from '@/sequences/server/db/storyboard-analysis-output';
 import { createStoryboardAutoStyleMethods } from '@/sequences/server/db/storyboard-auto-style';
 import { createStoryboardCastMethods } from '@/sequences/server/db/storyboard-cast';
+import { createStoryboardElementSheetsMethods } from '@/sequences/server/db/storyboard-element-sheets';
 import type { StoryboardOwner } from '@/sequences/server/db/storyboard-owner';
 import { createProductionReadMethods } from '@/shots/server/db/production-reads';
 import { createSceneScriptVersionsMethods } from '@/shots/server/db/scene-script-versions';
@@ -82,6 +83,7 @@ import { createLocationSheetVariantsMethods } from '@/cast/server/db/location-sh
 import { createBytePlusAssetsMethods } from '@/models/server/db/byteplus-assets';
 import { createModelUsageMethods } from '@/billing/server/db/model-usage';
 import { createSequenceElementsMethods } from '@/cast/server/db/sequence-elements';
+import { createElementSheetPublicationMethods } from '@/cast/server/db/element-sheet-publication';
 import { createSequenceExportsMethods } from '@/sequences/server/db/sequence-exports';
 import {
   createPublicStitchReads,
@@ -421,6 +423,8 @@ export function createScopedDb(organizationId: string, userId: string) {
       createStoryboardAutoStyleMethods(db, organizationId, owner),
     storyboardCast: (owner: StoryboardOwner) =>
       createStoryboardCastMethods(db, organizationId, owner),
+    storyboardElementSheets: (owner: StoryboardOwner) =>
+      createStoryboardElementSheetsMethods(db, organizationId, owner),
 
     styles: createStylesMethods(db, organizationId, userId),
     locations: createLocationsMethods(db, organizationId),
@@ -466,7 +470,10 @@ export function createScopedDb(organizationId: string, userId: string) {
     assistant: createAssistantMethods(db, organizationId, userId),
 
     characters: createCharactersMethods(db, organizationId),
-    sequenceElements: createSequenceElementsMethods(db),
+    sequenceElements: {
+      ...createSequenceElementsMethods(db),
+      ...createElementSheetPublicationMethods(db, organizationId),
+    },
 
     // Direct model access (#458) — flat organization-scoped runs of arbitrary fal
     // endpoints, decoupled from the sequence graph.

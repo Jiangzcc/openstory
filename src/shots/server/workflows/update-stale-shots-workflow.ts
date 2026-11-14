@@ -122,6 +122,7 @@ import { bindPendingVoices } from '@/shots/server/pending-voices';
 import { triggerWorkflow } from '@/platform/server/workflow/client';
 import { shotVariantDedupId } from '@/platform/server/workflow/dedup-ids';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
+import { resolveStoryboardOwner } from '@/sequences/server/workflows/generation-workflow-owner';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
 import {
   isEngineAbortError,
@@ -621,6 +622,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                     childId: `element-sheets:${sequenceId}:${parentInstanceId}`,
                     childPayload: {
                       ...payload,
+                      storyboardOwner: resolveStoryboardOwner(input),
                       promptLocale: input.promptLocale,
                       reservationId: input.reservationId,
                     },

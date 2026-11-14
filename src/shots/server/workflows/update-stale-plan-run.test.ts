@@ -12,6 +12,7 @@ import type {
 } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
+import type { ParentNotifyHint } from '@/platform/server/workflow/await-child';
 import type { UpdateStaleShotsWorkflowInput } from '@/platform/server/workflow/types';
 import type { PlanTarget, UpdateStalePlan } from '../update-stale-plan';
 import { DEFAULT_ANALYSIS_MODEL } from '@/models/models.config';
@@ -335,7 +336,9 @@ function plan(overrides: Partial<UpdateStalePlan>): UpdateStalePlan {
 
 const run = (
   p: UpdateStalePlan,
-  options: Partial<UpdateStaleShotsWorkflowInput> = {}
+  options: Partial<UpdateStaleShotsWorkflowInput> & {
+    _parent?: ParentNotifyHint;
+  } = {}
 ) =>
   new Testable(
     // ctx is never read
@@ -380,6 +383,17 @@ const references = {
   cost: { sheets: 0, voices: 0 },
 };
 
+const referencesWithStaleElementOwner = {
+  ...references,
+  elementSheets: {
+    ...references.elementSheets,
+    storyboardOwner: {
+      workflowRunId: 'synthetic-stale-root',
+      workflowClaimId: 'synthetic-stale-claim',
+    },
+  },
+};
+
 describe('UpdateStaleShotsWorkflow — a continue (#1818)', () => {
   beforeEach(() => {
     spawnAndAwaitChild.mockClear();
@@ -387,6 +401,84 @@ describe('UpdateStaleShotsWorkflow — a continue (#1818)', () => {
     emit.mockClear();
     failCharacter.clear();
   });
+
+  it.each([
+    undefined,
+    'STORYBOARD_WORKFLOW',
+    'UPDATE_STALE_SHOTS_WORKFLOW',
+    'MOTION_WORKFLOW',
+  ] as const)(
+    'passes the explicit root and raw claim to the element child over parent %s and stale payload owner',
+    async (bindingName) => {
+      const result = await run(
+        plan({ references: asStub<never>(referencesWithStaleElementOwner) }),
+        {
+          storyboardOwner: STORYBOARD_OWNER,
+          _parent: bindingName
+            ? {
+                bindingName,
+                parentInstanceId: 'synthetic-other-parent',
+                eventType: 'update-stale-done:synthetic-child',
+              }
+            : undefined,
+        }
+      );
+      expect(result.failures).toEqual([]);
+      expect(payloadOf('spawn-element-sheets')).toHaveProperty(
+        'storyboardOwner',
+        STORYBOARD_OWNER
+      );
+    }
+  );
+
+  it('falls back to the actual Storyboard parent for the element child without inferring a raw claim', async () => {
+    const parent: ParentNotifyHint = {
+      bindingName: 'STORYBOARD_WORKFLOW',
+      parentInstanceId: 'synthetic-storyboard-parent',
+      eventType: 'update-stale-done:synthetic-child',
+    };
+    const result = await run(
+      plan({ references: asStub<never>(referencesWithStaleElementOwner) }),
+      { _parent: parent }
+    );
+    expect(result.failures).toEqual([]);
+    expect(payloadOf('spawn-element-sheets')).toHaveProperty(
+      'storyboardOwner',
+      {
+        workflowRunId: parent.parentInstanceId,
+      }
+    );
+    expect(payloadOf('spawn-element-sheets')).not.toHaveProperty(
+      'storyboardOwner.workflowClaimId'
+    );
+  });
+
+  it.each([
+    undefined,
+    'UPDATE_STALE_SHOTS_WORKFLOW',
+    'MOTION_WORKFLOW',
+  ] as const)(
+    'does not invent an element child root from parent %s or a stale payload owner',
+    async (bindingName) => {
+      const result = await run(
+        plan({ references: asStub<never>(referencesWithStaleElementOwner) }),
+        {
+          _parent: bindingName
+            ? {
+                bindingName,
+                parentInstanceId: 'synthetic-other-parent',
+                eventType: 'update-stale-done:synthetic-child',
+              }
+            : undefined,
+        }
+      );
+      expect(result.failures).toEqual([]);
+      expect(payloadOf('spawn-element-sheets')).toHaveProperty(
+        'storyboardOwner',
+        undefined
+      );
+    }
+  );
 
   it.each([
     { freshRun: true, storyboardOwner: STORYBOARD_OWNER },

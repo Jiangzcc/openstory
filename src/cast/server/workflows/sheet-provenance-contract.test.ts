@@ -178,9 +178,10 @@ async function seedScope() {
     provenance: createProvenanceMethods(db, organizationId, userId),
     characterSheetVariants: { promoteIfPending: mocks.characterLanding },
     locationSheetVariants: { promoteIfPending: mocks.locationLanding },
-    sequenceElements: { create: createElement },
+    sequenceElements: { publishGenerated: createElement },
     liveRead: {
       compliance: { listEnforcementFor: async () => [] },
+      sequences: { getForUser: async () => ({}) },
       sequenceElements: {
         getById: async () => undefined,
         getByToken: async () => undefined,

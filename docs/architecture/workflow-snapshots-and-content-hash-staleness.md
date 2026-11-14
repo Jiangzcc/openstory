@@ -1,5 +1,24 @@
 # Workflow snapshots and content-hash staleness
 
+## Generated element references (secondary development, 2026-11-14)
+
+The element-sheet descendant inherits its explicit Storyboard root through
+Update-all and publishes through `storyboardElementSheets`. Its atomic
+conditional UPDATE/INSERT/result batch checks organization, actual sequence,
+current root/explicit trusted claim and `processing` in SQL. Immutable ID
+precedence survives rename, uploads win over generated storage, and deleted
+identities are not resurrected. Ordinary ownerless publication uses the same
+atomic candidate rules with organization/sequence admission.
+
+Preflight retains the existing live existence hatches, now in
+`element-sheet-output.ts`, and validates sequence access before returning a
+minimal row. The input content remains frozen. Incurred usage, deduction and
+provenance keep their original durable steps and precede publication refusal;
+inline bytes remain stored within the generate step. The
+[generation-plan contract](generation-plan.md#generated-element-reference-publication-secondary-development-2026-11-14)
+records the final check, cached-step limits, independent callers and remaining
+descendant/event/cancellation acceptance. No hash, schema or read hatch changes.
+
 ## Storyboard poster publication (secondary development, 2026-11-14)
 
 The poster's selection write now requires its active Storyboard root in the

@@ -7,6 +7,57 @@ run and Update all. There is no stored stage and no checkpoint: the old
 ~80 edits that never moved it, and every mismatch was a refused click. The
 columns are gone (#1819).
 
+## Generated element-reference publication (secondary development, 2026-11-14)
+
+Update-all passes its resolved Storyboard root to the element-sheet child,
+overriding any owner embedded in the frozen references payload. An explicit
+root/claim wins; only a real `STORYBOARD_WORKFLOW` notification parent can
+supply an instance-only fallback. Other parent IDs and ID prefixes confer
+no root authority. Independent ownerless entry points remain available.
+
+`storyboardElementSheets(owner)` binds the narrow `publishGenerated` operation.
+Both it and ordinary scoped `sequenceElements.publishGenerated` use one D1
+batch: conditionally fill an empty live candidate, insert only if neither
+identity exists, then select the admitted result. The actual SQL checks the
+organization and sequence; the bound operation also checks the current root
+or explicitly trusted raw claim and `processing`. A missing final candidate
+fails the batch so earlier statements roll back. Method pre/post checks and
+the `withOwnership` bracket cover no-ops and errors, not write authorization.
+
+An existing immutable ID takes precedence over the token, including after a
+rename. A foreign-sequence or deleted ID is refused rather than falling back
+to a different token. A deleted token still reserves that identity. A live
+upload or earlier generated winner is returned unchanged; a placeholder fill
+changes only its storage fields and timestamp. Initial rows retain the
+original generated metadata and schema defaults. Ordinary element CRUD is
+unchanged. This closes the generation publisher's token and empty-image
+check/write windows, without redesigning every upload/edit entry point.
+
+Preflight uses the existing named existence-read hatches to validate sequence
+access and the actual row relation before reusing an uploaded reference. The
+durable preflight, generation, usage, deduction, provenance and ingest names,
+per-entry concurrency, entry cap, prompts, models, language and accounting
+identities stay unchanged. Storage remains inside the generation step.
+Incurred usage, deduction and provenance precede publication, even if a later
+root check refuses it. The generated object's original ID and storage key
+remain its provenance when a competing upload wins the reference.
+
+Confirmed root loss becomes non-retryable inside the affected step. Unknown
+checks retain their retryable error and cause. All entries settle before an
+ordinary failure is aggregated; engine interruption takes priority and keeps
+its original value. Root-bound runs add a final durable completion check,
+including empty results and cached element steps that first reach it.
+
+This is a publication contract, not whole-root cancellation or refund logic.
+Already admitted batches, recorded costs and stored bytes are not undone.
+Cached preflight/generation/publication/completion results do not execute new
+checks; fully cached old runs and descendants dispatched without a trusted
+root are not repaired. A caller's separate later write can still change a
+reference. Complete descendant selection/event/preview ownership, parent
+notification, shared eligibility, email and deployed engine/provider/wallet
+acceptance remain open. Exact local evidence is in the
+[element publication batch](../secondary-development/preservation/20261114-p3-g03-element-sheet-publication/README.md).
+
 ## Analysis cast ownership (secondary development, 2026-11-14)
 
 AnalyzeScript passes its resolved Storyboard root to `createCastRecords`.
