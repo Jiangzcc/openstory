@@ -55,7 +55,8 @@ type SchemaEventData<K extends SchemaEventPath> =
 type RealtimeChannelApi = {
   emit: <K extends SchemaEventPath>(
     event: K,
-    data: SchemaEventData<K>
+    data: SchemaEventData<K>,
+    options?: { requireAcknowledgement?: boolean }
   ) => Promise<void>;
   history: () => Promise<ChannelHistoryMessage[]>;
 };
@@ -81,7 +82,7 @@ function channelStub(channel: string) {
 /** Build the DO-backed channel API for a concrete channel id. */
 function realtimeChannel(channel: string): RealtimeChannelApi {
   return {
-    async emit(event, data) {
+    async emit(event, data, options) {
       try {
         const response = await channelStub(channel).fetch(
           `https://realtime.do/emit?channel=${encodeURIComponent(channel)}`,
@@ -96,14 +97,19 @@ function realtimeChannel(channel: string): RealtimeChannelApi {
           }
         );
         if (!response.ok) {
+          if (options?.requireAcknowledgement) {
+            throw new Error(
+              `realtime emit failed for "${channel}": HTTP ${response.status}`
+            );
+          }
           logger.warn(`realtime emit failed for "${channel}"`, {
             status: response.status,
             event,
           });
         }
       } catch (error) {
-        // A realtime emit is best-effort progress signalling — never let a
-        // broker hiccup fail the workflow step that produced the real artifact.
+        if (options?.requireAcknowledgement) throw error;
+        // Progress notifications remain best-effort.
         logger.warn(`realtime emit threw for "${channel}"`, {
           err: error,
           event,
@@ -136,7 +142,12 @@ function noopChannel(label: string): RealtimeChannelApi {
     `dropping ${label} emit: missing channel id — caller should guard on id presence before emitting`
   );
   return {
-    emit: () => Promise.resolve(),
+    emit: (_event, _data, options) =>
+      options?.requireAcknowledgement
+        ? Promise.reject(
+            new Error(`Cannot acknowledge ${label} emit: missing channel id`)
+          )
+        : Promise.resolve(),
     history: () => Promise.resolve([]),
   };
 }

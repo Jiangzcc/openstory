@@ -214,6 +214,10 @@ test('uses the Storyboard root and raw claim rather than the child instance id',
     id: fixture.sequence.id,
     ...STORYBOARD_OWNER,
     error: FAILURE_MESSAGE,
+    notification: {
+      event: 'generation.failed',
+      data: { workflowOwner: STORYBOARD_OWNER, message: FAILURE_MESSAGE },
+    },
   });
   expect(await storedSequence()).toMatchObject({
     status: STATUS.failed,
@@ -221,10 +225,14 @@ test('uses the Storyboard root and raw claim rather than the child instance id',
     workflowRunId: ROOT_RUN,
   });
   expect(fixture.sequenceMethod).not.toHaveBeenCalled();
-  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-    workflowOwner: STORYBOARD_OWNER,
-    message: FAILURE_MESSAGE,
-  });
+  expect(emit).toHaveBeenCalledExactlyOnceWith(
+    'generation.failed',
+    {
+      workflowOwner: STORYBOARD_OWNER,
+      message: FAILURE_MESSAGE,
+    },
+    { requireAcknowledgement: true }
+  );
 });
 
 test('recognizes the raw claim before the launcher publishes its root instance id', async () => {
@@ -235,10 +243,14 @@ test('recognizes the raw claim before the launcher publishes its root instance i
     status: STATUS.failed,
     statusError: FAILURE_MESSAGE,
   });
-  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-    workflowOwner: STORYBOARD_OWNER,
-    message: FAILURE_MESSAGE,
-  });
+  expect(emit).toHaveBeenCalledExactlyOnceWith(
+    'generation.failed',
+    {
+      workflowOwner: STORYBOARD_OWNER,
+      message: FAILURE_MESSAGE,
+    },
+    { requireAcknowledgement: true }
+  );
 });
 
 test('uses the explicit server owner even when the notify parent is different', async () => {
@@ -252,6 +264,10 @@ test('uses the explicit server owner even when the notify parent is different', 
     id: fixture.sequence.id,
     ...STORYBOARD_OWNER,
     error: FAILURE_MESSAGE,
+    notification: {
+      event: 'generation.failed',
+      data: { workflowOwner: STORYBOARD_OWNER, message: FAILURE_MESSAGE },
+    },
   });
   expect((await storedSequence()).status).toBe(STATUS.failed);
 });
@@ -313,13 +329,24 @@ test('a legacy Storyboard child guards its real parent without inventing a raw c
     id: fixture.sequence.id,
     workflowRunId: ROOT_RUN,
     error: FAILURE_MESSAGE,
+    notification: {
+      event: 'generation.failed',
+      data: {
+        workflowOwner: { workflowRunId: ROOT_RUN },
+        message: FAILURE_MESSAGE,
+      },
+    },
   });
   expect((await storedSequence()).status).toBe(STATUS.failed);
   expect(fixture.sequenceMethod).not.toHaveBeenCalled();
-  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-    message: FAILURE_MESSAGE,
-    workflowOwner: { workflowRunId: ROOT_RUN },
-  });
+  expect(emit).toHaveBeenCalledExactlyOnceWith(
+    'generation.failed',
+    {
+      message: FAILURE_MESSAGE,
+      workflowOwner: { workflowRunId: ROOT_RUN },
+    },
+    { requireAcknowledgement: true }
+  );
 });
 
 test('a legacy child cannot claim the unpublished raw slot without a snapshot', async () => {
@@ -389,7 +416,7 @@ test('does not fall back to an unconditional write for a missing sequence', asyn
   await expectRejectedFailure(eventFor({ sequenceId: generateId() }));
 });
 
-test('propagates a real SQL guard failure after attempting the notification', async () => {
+test('propagates a real SQL guard failure without emitting an uncommitted terminal notification', async () => {
   await db.run(
     sql.raw(
       'CREATE TRIGGER ' +
@@ -413,8 +440,5 @@ test('propagates a real SQL guard failure after attempting the notification', as
   expect(await storedSequence()).toEqual(before);
   expect(fixture.guard).toHaveBeenCalledOnce();
   expect(fixture.sequenceMethod).not.toHaveBeenCalled();
-  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-    workflowOwner: STORYBOARD_OWNER,
-    message: FAILURE_MESSAGE,
-  });
+  expect(emit).not.toHaveBeenCalled();
 });

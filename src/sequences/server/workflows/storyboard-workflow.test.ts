@@ -10,6 +10,11 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
 import { WorkflowLoggedError } from '@/platform/server/workflow/errors';
 import { asStub } from '@/test/as-stub';
+import {
+  createStoryboardNotificationStub,
+  makeStep,
+  storyboardFailureInput,
+} from './storyboard-notifications.test.fixture';
 
 vi.doMock('@/platform/server/db/scoped', () => ({
   createScopedDb: vi.fn(),
@@ -154,13 +159,14 @@ function makeEvent(
 
 function makeScopedDb(updated = true) {
   const zeroReservation = vi.fn(async () => undefined);
-  const failWorkflowIfCurrent = vi.fn(async () => updated);
+  const { methods, receipts } = createStoryboardNotificationStub();
+  if (!updated) methods.failWorkflowIfCurrent.mockResolvedValue(false);
   const updateStatus = vi.fn();
   const getForUser = vi.fn(async () => ({ id: 'seq_1', status: 'processing' }));
   const stub = {
     models: DEFAULT_MODEL_CONFIGURATION,
     billing: { zeroReservation },
-    sequences: { failWorkflowIfCurrent },
+    sequences: methods,
     liveRead: { sequences: { getForUser } },
     sequence: vi.fn(() => ({ updateStatus })),
   };
@@ -168,7 +174,8 @@ function makeScopedDb(updated = true) {
   const scopedDb = asStub<WorkflowScopedDb>(stub);
   return {
     scopedDb,
-    failWorkflowIfCurrent,
+    ...methods,
+    receipts,
     updateStatus,
     getForUser,
     zeroReservation,
@@ -193,21 +200,26 @@ describe('StoryboardWorkflow.onFailure', () => {
         scopedDb,
       });
 
-      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
-        id: 'seq_1',
-        ...storyboardOwner(workflowClaimId),
-        error: 'Child workflow analyze-script timed out',
-      });
+      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
+        storyboardFailureInput(
+          { id: 'seq_1', ...storyboardOwner(workflowClaimId) },
+          'Child workflow analyze-script timed out'
+        )
+      );
       expect(getGenerationChannel).toHaveBeenCalledExactlyOnceWith('seq_1');
-      expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-        workflowOwner: storyboardOwner(workflowClaimId),
-        message: 'Child workflow analyze-script timed out',
-      });
+      expect(emit).toHaveBeenCalledExactlyOnceWith(
+        'generation.failed',
+        {
+          workflowOwner: storyboardOwner(workflowClaimId),
+          message: 'Child workflow analyze-script timed out',
+        },
+        { requireAcknowledgement: true }
+      );
     }
   );
 
   test.each([false, true])(
-    'preserves the guard error after attempting notification (notification fails: %s)',
+    'preserves the guard error without sending an unpersisted failure (transport fails: %s)',
     async (notificationFails) => {
       emit.mockReset();
       const { scopedDb, failWorkflowIfCurrent } = makeScopedDb();
@@ -224,15 +236,13 @@ describe('StoryboardWorkflow.onFailure', () => {
         })
       ).rejects.toBe(persistenceError);
 
-      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
-        id: 'seq_1',
-        ...storyboardOwner(),
-        error: 'Child workflow analyze-script timed out',
-      });
-      expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-        workflowOwner: storyboardOwner(),
-        message: 'Child workflow analyze-script timed out',
-      });
+      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
+        storyboardFailureInput(
+          { id: 'seq_1', ...storyboardOwner() },
+          'Child workflow analyze-script timed out'
+        )
+      );
+      expect(emit).not.toHaveBeenCalled();
     }
   );
 
@@ -254,11 +264,12 @@ describe('StoryboardWorkflow.onFailure', () => {
       });
 
       expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('reservation-1');
-      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
-        id: 'seq_1',
-        ...storyboardOwner(workflowClaimId),
-        error: 'Child workflow analyze-script… failed',
-      });
+      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
+        storyboardFailureInput(
+          { id: 'seq_1', ...storyboardOwner(workflowClaimId) },
+          'Child workflow analyze-script… failed'
+        )
+      );
       expect(updateStatus).not.toHaveBeenCalled();
       expect(getGenerationChannel).not.toHaveBeenCalled();
       expect(emit).not.toHaveBeenCalled();
@@ -304,11 +315,12 @@ describe('StoryboardWorkflow.onFailure', () => {
         })
       ).resolves.toBeUndefined();
 
-      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
-        id: 'seq_1',
-        ...storyboardOwner(),
-        error: 'trailing step failed',
-      });
+      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
+        storyboardFailureInput(
+          { id: 'seq_1', ...storyboardOwner() },
+          'trailing step failed'
+        )
+      );
       expect(getForUser).not.toHaveBeenCalled();
       expect(updateStatus).not.toHaveBeenCalled();
       expect(emit).toHaveBeenCalledTimes(updated ? 1 : 0);
@@ -329,15 +341,17 @@ describe('StoryboardWorkflow.onFailure', () => {
     ).resolves.toBeUndefined();
 
     expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('reservation-1');
-    expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
-      id: 'seq_1',
-      ...storyboardOwner(),
-      error: 'boom',
-    });
-    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      workflowOwner: storyboardOwner(),
-      message: 'boom',
-    });
+    expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
+      storyboardFailureInput({ id: 'seq_1', ...storyboardOwner() }, 'boom')
+    );
+    expect(emit).toHaveBeenCalledExactlyOnceWith(
+      'generation.failed',
+      {
+        workflowOwner: storyboardOwner(),
+        message: 'boom',
+      },
+      { requireAcknowledgement: true }
+    );
   });
 
   test.each(['zeroReservation', 'failWorkflowIfCurrent'] as const)(
@@ -365,11 +379,9 @@ describe('StoryboardWorkflow.onFailure', () => {
       if (phase === 'zeroReservation')
         expect(db.failWorkflowIfCurrent).not.toHaveBeenCalled();
       else
-        expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
-          id: 'seq_1',
-          ...storyboardOwner(),
-          error: 'boom',
-        });
+        expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
+          storyboardFailureInput({ id: 'seq_1', ...storyboardOwner() }, 'boom')
+        );
       expect(db.getForUser).not.toHaveBeenCalled();
       expect(db.updateStatus).not.toHaveBeenCalled();
       expect(getGenerationChannel).not.toHaveBeenCalled();
@@ -394,32 +406,15 @@ describe('StoryboardWorkflow.onFailure', () => {
         scopedDb,
       })
     ).rejects.toBe(notificationError);
-    expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
-      id: 'seq_1',
-      ...storyboardOwner(),
-      error: 'boom',
-    });
+    expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
+      storyboardFailureInput({ id: 'seq_1', ...storyboardOwner() }, 'boom')
+    );
   });
 });
 
-function makeStep(cachedResults: ReadonlyMap<string, unknown> = new Map()) {
-  const names: string[] = [];
-  // minimal WorkflowStep stub: runImpl only uses `do`
-  const step = asStub<WorkflowStep>({
-    do: vi.fn((_name: string, fn: () => Promise<unknown>) => {
-      names.push(_name);
-      if (cachedResults.has(_name))
-        return Promise.resolve(cachedResults.get(_name));
-      return fn();
-    }),
-  });
-  return { step, names };
-}
-
 function makeRunImplDb() {
   const startWorkflowIfCurrent = vi.fn(async () => true);
-  const completeWorkflowIfCurrent = vi.fn(async () => true);
-  const failWorkflowIfCurrent = vi.fn(async () => true);
+  const { methods, receipts } = createStoryboardNotificationStub();
   const deleteBySequence = vi.fn();
   const getForUser = vi.fn(async () => ({ id: 'seq_1', status: 'processing' }));
   const update = vi.fn();
@@ -428,12 +423,7 @@ function makeRunImplDb() {
     liveRead: { sequences: { getForUser } },
     shots: { deleteBySequence },
     credentials: {},
-    sequences: {
-      update,
-      startWorkflowIfCurrent,
-      completeWorkflowIfCurrent,
-      failWorkflowIfCurrent,
-    },
+    sequences: { ...methods, update, startWorkflowIfCurrent },
   };
   // stub covering only the runImpl surface
   const scopedDb = asStub<WorkflowScopedDb>(stub);
@@ -442,8 +432,8 @@ function makeRunImplDb() {
     deleteBySequence,
     update,
     startWorkflowIfCurrent,
-    completeWorkflowIfCurrent,
-    failWorkflowIfCurrent,
+    ...methods,
+    receipts,
   };
 }
 
@@ -454,6 +444,10 @@ function expectCurrentCompletion(
     id: 'seq_1',
     ...storyboardOwner(),
     eventId: expect.any(String),
+    notification: {
+      event: 'generation.complete',
+      data: { workflowOwner: storyboardOwner(), sequenceId: 'seq_1' },
+    },
   });
 }
 
@@ -784,8 +778,20 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
       id: 'seq_1',
       ...storyboardOwner(),
       error: expect.stringMatching(/not enough credits to generate/i),
+      notification: {
+        event: 'generation.reservation:short',
+        data: {
+          workflowOwner: storyboardOwner(),
+          neededUsd: 5,
+          remainingUsd: 0,
+          sceneCount: 0,
+        },
+      },
     });
-    expect(names).toContain('emit-reservation-short');
+    expect(names).toContain('mark-reservation-short');
+    expect(names.indexOf('emit-reservation-short')).toBeGreaterThan(
+      names.indexOf('mark-reservation-short')
+    );
     expect(names).not.toContain('mark-completed');
     expect(names).not.toContain('email-ready');
   });

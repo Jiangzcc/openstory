@@ -25,6 +25,7 @@ import {
   sequenceScenesUrl,
 } from '@/sequences/server/notify-sequence-ready';
 import { getGenerationChannel } from '@/platform/realtime';
+import { deliverStoryboardNotification } from '../storyboard-notifications';
 import { includesStage } from '@/sequences/pipeline';
 import { generateId } from '@/platform/id';
 import { validateSequenceAuth } from '@/platform/server/workflow/auth';
@@ -310,23 +311,31 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       const { short } = frozen;
       if (short) {
         const message = creditsShortStatusError(short);
-        await step.do('emit-reservation-short', async () => {
-          const failed = await scopedDb.sequences.failWorkflowIfCurrent({
+        await step.do('mark-reservation-short', async () => {
+          await scopedDb.sequences.failWorkflowIfCurrent({
             ...owner,
             error: message,
+            notification: {
+              event: 'generation.reservation:short',
+              data: {
+                workflowOwner,
+                neededUsd: microsToUsd(short.neededMicros),
+                remainingUsd: microsToUsd(short.remainingMicros),
+                sceneCount: short.sceneCount,
+              },
+            },
           });
-          if (!failed) return;
-          // A top-up prompt, not a failure toast (#1328).
-          await getGenerationChannel(sequenceId).emit(
-            'generation.reservation:short',
-            {
-              workflowOwner,
-              neededUsd: microsToUsd(short.neededMicros),
-              remainingUsd: microsToUsd(short.remainingMicros),
-              sceneCount: short.sceneCount,
-            }
-          );
         });
+        try {
+          await step.do('emit-reservation-short', async () => {
+            await deliverStoryboardNotification(scopedDb.sequences, owner);
+          });
+        } catch (error) {
+          if (isEngineAbortError(error)) throw error;
+          logger.error('Storyboard shortfall notification remains pending', {
+            err: error,
+          });
+        }
         throw new WorkflowLoggedError(message, {
           kind: 'run.failed',
           summary: message,
@@ -390,16 +399,24 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       return scopedDb.sequences.completeWorkflowIfCurrent({
         ...owner,
         eventId: completedEventId,
+        notification: {
+          event: 'generation.complete',
+          data: { workflowOwner, sequenceId },
+        },
       });
     });
     if (!completed) return;
 
-    await step.do('emit-complete', async () => {
-      await getGenerationChannel(sequenceId).emit('generation.complete', {
-        workflowOwner,
-        sequenceId,
+    try {
+      await step.do('emit-complete', async () => {
+        await deliverStoryboardNotification(scopedDb.sequences, owner);
       });
-    });
+    } catch (error) {
+      if (isEngineAbortError(error)) throw error;
+      logger.error('Storyboard completion notification remains pending', {
+        err: error,
+      });
+    }
 
     // "Your video is ready" is a one-shot claim per sequence: sending it for
     // a run that stopped before motion would spend it on a board with no video
@@ -460,22 +477,25 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       workflowRunId: event.instanceId,
       workflowClaimId: event.payload.workflowClaimId,
     };
-    let shouldNotify = Boolean(sequenceId);
     await runFailureActions([
       () => this.releaseFailureReservation(scopedDb, reservationId),
       async () => {
         if (!sequenceId) return;
-        shouldNotify = await scopedDb.sequences.failWorkflowIfCurrent({
+        await scopedDb.sequences.failWorkflowIfCurrent({
           id: sequenceId,
           ...workflowOwner,
           error,
+          notification: {
+            event: 'generation.failed',
+            data: { workflowOwner, message: error },
+          },
         });
       },
       async () => {
-        if (!sequenceId || !shouldNotify) return;
-        await getGenerationChannel(sequenceId).emit('generation.failed', {
-          workflowOwner,
-          message: error,
+        if (!sequenceId) return;
+        await deliverStoryboardNotification(scopedDb.sequences, {
+          id: sequenceId,
+          ...workflowOwner,
         });
       },
     ]);

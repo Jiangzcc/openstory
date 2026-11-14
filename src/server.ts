@@ -15,6 +15,7 @@ import {
   withHtmlAccept,
 } from '@/platform/server/agent/discovery';
 import { reconcileAllStuckJobs } from '@/platform/server/cron/reconcile-all';
+import { reconcileStoryboardNotifications } from '@/sequences/server/reconcile-storyboard-notifications';
 import {
   reconcileStoryboardLaunches,
   resolveStoryboardSequenceState,
@@ -247,6 +248,7 @@ const exportedHandler: ExportedHandler<WorkerEnv> = {
       reconcileAllStuckJobs({
         resolveSequenceState: resolveStoryboardSequenceState,
         dispatchSequences: reconcileStoryboardLaunches,
+        dispatchSequenceNotifications: reconcileStoryboardNotifications,
       }).catch((error) => {
         logger.error('reconcileAllStuckJobs failed:', { err: error });
       })

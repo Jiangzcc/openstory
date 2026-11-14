@@ -3,6 +3,10 @@ import type { WorkflowEvent } from 'cloudflare:workers';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { AnalyzeScriptWorkflowInput } from '@/platform/server/workflow/types';
 import { asStub } from '@/test/as-stub';
+import {
+  createStoryboardNotificationStub,
+  storyboardFailureInput,
+} from './storyboard-notifications.test.fixture';
 import { withLlmAuthFailureSource } from '@/platform/server/workflow/llm-auth-failure-source';
 import { sanitizeFailResponse } from '@/platform/server/workflow/sanitize-fail-response';
 
@@ -45,9 +49,7 @@ function makeWorkflow() {
 }
 
 function makeDb() {
-  const failWorkflowIfCurrent = vi.fn<
-    WorkflowScopedDb['sequences']['failWorkflowIfCurrent']
-  >(async () => true);
+  const { methods, receipts } = createStoryboardNotificationStub();
   const updateStatus = vi.fn(async () => undefined);
   const markKeyInvalid = vi.fn(async () => undefined);
   const zeroReservation = vi.fn(async () => undefined);
@@ -58,14 +60,15 @@ function makeDb() {
   }));
   const scopedDb = asStub<WorkflowScopedDb>({
     sequence: () => ({ updateStatus }),
-    sequences: { failWorkflowIfCurrent },
+    sequences: methods,
     apiKeys: { markKeyInvalid },
     billing: { zeroReservation },
     credentials: { resolveLlmKey },
   });
   return {
     scopedDb,
-    failWorkflowIfCurrent,
+    ...methods,
+    receipts,
     updateStatus,
     markKeyInvalid,
     zeroReservation,
@@ -270,7 +273,10 @@ describe('AnalyzeScriptWorkflow parented auth failure actions (service substitut
     'still handles credentials and reservations after ownership has moved',
     verifyLostOwnerAuthFailure
   );
-  test('notifies and propagates an ordinary guard failure', verifyGuardFailure);
+  test(
+    'does not notify an unpersisted failure and preserves the guard error',
+    verifyGuardFailure
+  );
   test.each([
     'Aborting engine: Grace period complete',
     'Durable Object reset because its code was updated',
@@ -286,11 +292,12 @@ async function verifyRootAuthFailure() {
   await makeWorkflow().failed(taggedAuthFailure(), db.scopedDb, {
     storyboardOwner: STORYBOARD_OWNER,
   });
-  expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
-    id: 'mock-sequence',
-    ...STORYBOARD_OWNER,
-    error: AUTH_MESSAGE,
-  });
+  expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
+    storyboardFailureInput(
+      { id: 'mock-sequence', ...STORYBOARD_OWNER },
+      AUTH_MESSAGE
+    )
+  );
   expect(db.updateStatus).not.toHaveBeenCalled();
   expect(db.markKeyInvalid).toHaveBeenCalledExactlyOnceWith(
     'google',
@@ -299,10 +306,20 @@ async function verifyRootAuthFailure() {
   expect(db.zeroReservation).toHaveBeenCalledExactlyOnceWith(
     'mock-reservation'
   );
-  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-    workflowOwner: STORYBOARD_OWNER,
-    message: AUTH_MESSAGE,
+  expect(emit).toHaveBeenCalledExactlyOnceWith(
+    'generation.failed',
+    {
+      workflowOwner: STORYBOARD_OWNER,
+      message: AUTH_MESSAGE,
+    },
+    { requireAcknowledgement: true }
+  );
+  expect(db.beginWorkflowNotificationAttempt).toHaveBeenCalledExactlyOnceWith({
+    id: 'mock-sequence',
+    ...STORYBOARD_OWNER,
   });
+  expect(db.confirmWorkflowNotificationDelivery).toHaveBeenCalledOnce();
+  expect([...db.receipts.values()][0]?.deliveredAt).toBeInstanceOf(Date);
 }
 
 async function verifyLostOwnerAuthFailure() {
@@ -319,6 +336,8 @@ async function verifyLostOwnerAuthFailure() {
     'mock-reservation'
   );
   expect(db.updateStatus).not.toHaveBeenCalled();
+  expect(db.receipts.size).toBe(0);
+  expect(db.confirmWorkflowNotificationDelivery).not.toHaveBeenCalled();
   expect(emit).not.toHaveBeenCalled();
 }
 
@@ -332,10 +351,9 @@ async function verifyGuardFailure() {
     })
   ).rejects.toBe(failure);
   expect(db.updateStatus).not.toHaveBeenCalled();
-  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-    workflowOwner: STORYBOARD_OWNER,
-    message: AUTH_MESSAGE,
-  });
+  expect(db.receipts.size).toBe(0);
+  expect(db.confirmWorkflowNotificationDelivery).not.toHaveBeenCalled();
+  expect(emit).not.toHaveBeenCalled();
 }
 
 async function verifyGuardAbort(message: string) {

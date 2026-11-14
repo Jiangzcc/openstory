@@ -13,7 +13,6 @@ import type { SQL } from 'drizzle-orm';
 import { generateId } from '@/platform/id';
 import type { Database } from '@/platform/server/db/client';
 import { sequenceEvents, sequences, shots } from '@/platform/server/db/schema';
-import type { SequenceStatus } from '@/platform/server/db/schema/sequences';
 import type { GenerationStage } from '@/sequences/pipeline';
 import {
   buildEventInsertIfPresent,
@@ -21,27 +20,13 @@ import {
 } from './sequence-events';
 import { generationStopChangedSummary } from '@/sequences/model-label';
 
-const WORKFLOW_STATUS = {
-  processing: 'processing',
-  completed: 'completed',
-  failed: 'failed',
-} as const satisfies Record<string, SequenceStatus>;
-
-interface StoryboardOwner {
-  id: string;
-  workflowRunId: string;
-  workflowClaimId?: string;
-}
-
-function ownerWhere(organizationId: string, owner: StoryboardOwner) {
-  const runIds = [owner.workflowRunId];
-  if (owner.workflowClaimId) runIds.push(owner.workflowClaimId);
-  return and(
-    eq(sequences.id, owner.id),
-    eq(sequences.organizationId, organizationId),
-    inArray(sequences.workflowRunId, runIds)
-  );
-}
+import type { StoryboardNotification } from '@/sequences/storyboard-notification';
+import { buildStoryboardNotificationInsert } from './storyboard-notifications';
+import {
+  STORYBOARD_WORKFLOW_STATUS as WORKFLOW_STATUS,
+  storyboardOwnerWhere as ownerWhere,
+} from './storyboard-owner';
+import type { StoryboardOwner } from './storyboard-owner';
 
 function processingWhere(organizationId: string, owner: StoryboardOwner) {
   return and(
@@ -152,32 +137,58 @@ export function createStoryboardLifecycleMethods(
     },
 
     failWorkflowIfCurrent: async (
-      params: StoryboardOwner & { error: string }
+      params: StoryboardOwner & {
+        error: string;
+        notification?: Exclude<
+          StoryboardNotification,
+          { event: 'generation.complete' }
+        >;
+      }
     ): Promise<boolean> => {
-      const [updated] = await db
+      const where = and(
+        ownerWhere(organizationId, params),
+        not(
+          inArray(sequences.status, [
+            WORKFLOW_STATUS.failed,
+            WORKFLOW_STATUS.completed,
+          ])
+        )
+      );
+      const update = db
         .update(sequences)
         .set({
           status: WORKFLOW_STATUS.failed,
           statusError: params.error,
           updatedAt: new Date(),
         })
-        .where(
-          and(
-            ownerWhere(organizationId, params),
-            not(
-              inArray(sequences.status, [
-                WORKFLOW_STATUS.failed,
-                WORKFLOW_STATUS.completed,
-              ])
-            )
-          )
-        )
+        .where(where)
         .returning({ id: sequences.id });
-      return Boolean(updated);
+      const updated = params.notification
+        ? (
+            await db.batch([
+              buildStoryboardNotificationInsert(
+                db,
+                organizationId,
+                params,
+                params.notification,
+                WORKFLOW_STATUS.failed,
+                where
+              ),
+              update,
+            ])
+          )[1]
+        : await update;
+      return updated.length > 0;
     },
 
     completeWorkflowIfCurrent: async (
-      params: StoryboardOwner & { eventId: string }
+      params: StoryboardOwner & {
+        eventId: string;
+        notification?: Extract<
+          StoryboardNotification,
+          { event: 'generation.complete' }
+        >;
+      }
     ): Promise<boolean> => {
       const where = processingWhere(organizationId, params);
       const [, , completed] = await db.batch([
@@ -207,6 +218,18 @@ export function createStoryboardLifecycleMethods(
           .select({ id: sequences.id })
           .from(sequences)
           .where(completionWhere(db, organizationId, params)),
+        ...(params.notification
+          ? [
+              buildStoryboardNotificationInsert(
+                db,
+                organizationId,
+                params,
+                params.notification,
+                WORKFLOW_STATUS.completed,
+                completionWhere(db, organizationId, params)
+              ),
+            ]
+          : []),
       ]);
       return completed.length > 0;
     },
