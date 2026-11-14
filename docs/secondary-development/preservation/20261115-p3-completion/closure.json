@@ -1,0 +1,29 @@
+{
+  "sourceCommit": "2827b099b69f32c9e6043a00be2e55f1586078e5",
+  "packages": {
+    "K0": "closed-at-original-structural-and-explicit-evidence-boundary",
+    "K1": "closed-at-original-structural-and-explicit-evidence-boundary",
+    "K2": "closed-at-original-structural-and-explicit-evidence-boundary",
+    "K3": "closed-at-original-structural-and-explicit-evidence-boundary",
+    "K4": "closed-at-original-structural-and-explicit-evidence-boundary",
+    "K5": "closed-at-original-structural-and-explicit-evidence-boundary",
+    "K6": "closed-at-original-structural-and-explicit-evidence-boundary",
+    "K7": "closed-at-original-structural-and-explicit-evidence-boundary",
+    "K8": "closed-at-original-structural-and-explicit-evidence-boundary"
+  },
+  "responsibilities": 60,
+  "originalActions": 66,
+  "currentPaths": 1712,
+  "actualHunks": 5874,
+  "unclosedCurrentPaths": 0,
+  "unclosedCurrentHunks": 0,
+  "unclosedOriginalLocalGaps": [],
+  "historicalInventoriesOverwritten": false,
+  "historical59LogRowBytesPreserved": true,
+  "originalLogPrefixSha256": "c599df1b1e8ea2cba29ca199fdd3de3efbaef170200fbe47b9a831a8eb75bef9",
+  "originalLogRawPrefixLength": 96053,
+  "noExternalAcceptanceInvented": true,
+  "P4": "not-started",
+  "push": "not-performed",
+  "sourcePreservation": "Current original five criteria are explained in p3-completion-20261115.md; retain/conditional triggers are dispositions, not claims of unrun external validation."
+}
