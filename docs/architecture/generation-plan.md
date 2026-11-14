@@ -185,6 +185,29 @@ and unknown-price floors. Continue retains its existing display-price check
 for that path. Unknown mixed-image prices keep `priced: false` and a floored
 numeric subtotal for the credit gate; they never become a free estimate.
 
+### Storyboard mutex and failure ownership (secondary development, 2026-11-14)
+
+The launcher checks the previous run and compare-and-swaps the sequence's
+workflow slot to a raw `claimId`. It overwrites `workflowClaimId` on the trigger
+payload with that trusted claim; `StoryboardTriggerInput` omits the field.
+The actual Cloudflare instance ID may differ after namespacing, sanitization
+or truncation and may not yet have been written back to the sequence.
+
+`failWorkflowIfCurrent`, exposed by `createSequencesMethods`, returns
+`Promise<boolean>` from one conditional `UPDATE`: sequence and organization
+must match, the stored `workflowRunId` must equal the actual instance ID or the
+trusted snapshotted claim, and status must be neither `failed` nor `completed`.
+Storyboard passes
+both identities; `false` skips `generation.failed`. The launcher's trigger
+catch uses the same guard with only the raw claim as `workflowRunId`. An
+ordinary failure of that write retains the existing status-error log; the
+catch still records `run.failed` and rethrows the original trigger error.
+
+Startup and success status writes and the launcher's final instance-ID
+write-back remain unconditional. The failure `UPDATE` and realtime emit are
+separate operations; the [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14)
+records the remaining lifecycle and event-consistency limits.
+
 ## Shot specs and prompts (#1923, #1929)
 
 A shot's still and motion prompts are built from its selected spec. The plan

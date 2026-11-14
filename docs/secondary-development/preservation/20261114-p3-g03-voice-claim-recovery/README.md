@@ -37,3 +37,7 @@
 上游若调整 voice 状态枚举、claim/promotion、组织 ScopedDb、D1 batch 或取消入口的 row/null 语义，需要复核这两个写入的原子性和恢复条件。保留现有领域模块与公开方法，不把单批修复算作全量职责收敛。
 
 测试证明 host-side SQLite/D1 模拟器中的原子回滚及列出的顺序交错；不是实际 Cloudflare 多实例并发或 durable replay/restart 验收。真实 Workerd HTTP、远程 D1/R2、供应商、浏览器通知送达和钱包结算未执行。Storyboard 原有读写竞态、其它 failure hook 和剩余生命周期分支仍开放；voice 取消调用链的完整事件送达也未在本批做端到端验收。没有 push、部署、远程写入或真实模型调用。
+
+## 后续批次
+
+2026-11-14 的 [Storyboard failure guard 批次](../20261114-p3-g03-storyboard-failure-guard/README.md)补上父任务失败状态的组织、任务归属和终态原子守卫，并覆盖启动器 claim 尚未回写实例 ID 的窗口。本记录保留当时测试成绩与开放项；后续批次没有关闭终态后的通知重试、事件归属或全部生命周期，GC-03/P3 仍未验收。

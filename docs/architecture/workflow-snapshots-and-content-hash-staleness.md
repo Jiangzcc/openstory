@@ -23,11 +23,26 @@ A workflow that starts an independent variant-image root passes the trusted mode
 
 ## Failure cleanup and durable retries (secondary development, 2026-11-14)
 
-The base owns the durable `step.do('emit-failure')` and catches ordinary hook errors only after that step exhausts its retries. Required cleanup writes and notifications retain their retry contract: a hook rejects when one fails. Logging and returning inside the step would checkpoint incomplete work as successful. Existing optional best-effort work is reviewed separately rather than mechanically promoted to a required action. The base then preserves the original generation error. An engine abort or deployment reset remains a transient interruption and must escape unchanged before later failure actions or parent notification run.
+The base owns the durable `step.do('emit-failure')` and catches ordinary hook errors only after that step exhausts its retries. Required cleanup writes reject on failure, and hooks propagate notification errors that their adapters surface. Logging and returning inside the step would checkpoint incomplete work as successful. Existing optional best-effort work is reviewed separately rather than mechanically promoted to a required action. The base then preserves the original generation error. An engine abort or deployment reset remains a transient interruption and must escape unchanged before later failure actions or parent notification run.
 
-`runFailureActions` sequences independent failure actions. After an ordinary error it attempts the remaining actions, including realtime notification, and then rejects with the first error so the existing step can retry. An engine interruption stops the sequence immediately and takes precedence over an earlier ordinary error. Reads and writes that depend on one another belong in the same action: Storyboard cannot decide to write a failed status when its current-status read failed. The helper owns error propagation only; the domain still owns claim guards, child failure ownership, terminal-state checks and primary/variant payloads.
+`runFailureActions` sequences independent failure actions. After an ordinary error it attempts the remaining actions, including realtime notification, and then rejects with the first error so the existing step can retry. An engine interruption stops the sequence immediately and takes precedence over an earlier ordinary error. The helper owns error propagation only; the domain still owns claim guards, child failure ownership, terminal-state checks and primary/variant payloads.
 
-Retrying the step can repeat a notification or an already completed cleanup, so actions retain their existing guarded/idempotent writes. A successful call to the channel is evidence of an attempted emit, not proof that a browser received it. The helper and real workflow base are tested with explicit host-side action, channel and retry substitutes; these tests do not exercise Cloudflare durable replay or restart. The correction scope and remaining hooks are recorded in the [failure retry contract batch](../secondary-development/preservation/20261114-p3-g03-failure-retry-contract/README.md).
+Storyboard's status action calls the guard directly:
+
+```typescript
+shouldNotify = await scopedDb.sequences.failWorkflowIfCurrent({
+  id: sequenceId,
+  workflowRunId: event.instanceId,
+  workflowClaimId: event.payload.workflowClaimId,
+  error,
+});
+```
+
+The method returns `Promise<boolean>` from one conditional `UPDATE`, scoped to the sequence and organization, with the stored owner equal to the actual instance ID or the trusted snapshotted claim and status outside `failed` / `completed`. It does not read status before a separate write. The [launcher contract](generation-plan.md#storyboard-mutex-and-failure-ownership-secondary-development-2026-11-14) establishes the claim before dispatch, so it still identifies this run when the actual instance ID was namespaced, sanitized or truncated and has not been written back. A `false` result skips `generation.failed`. An ordinary guard error leaves the notification action eligible, attempts it, then propagates the first error for durable retry; an engine abort stops immediately. Reservation release remains best effort for ordinary errors.
+
+The failure `UPDATE` and emit are not atomic. If the row was marked `failed` before an emit rejected, the retry can skip that emit because the guard now sees a terminal row. The real realtime adapter also swallows ordinary HTTP/RPC errors, so a mock rejection demonstrates surfaced-error propagation, not real retry delivery. A new run can start between the `UPDATE` and emit; the event schema has no run identity, and `useGenerationStream` can still apply the old failure to the new run. Startup/success status writes and the launcher's final instance-ID write-back remain unconditional. New/old event handling and child failure hooks remain outside this guard; this batch does not close the entire lifecycle or event consistency.
+
+Retrying the step can repeat a notification or an already completed cleanup, so actions retain their existing guarded/idempotent writes. A successful call to the channel is evidence of an attempted emit, not proof that a browser received it. The helper and real workflow base are tested with explicit host-side action, channel and retry substitutes; these tests do not exercise Cloudflare durable replay or restart. The correction scope and remaining hooks are recorded in the [failure retry contract batch](../secondary-development/preservation/20261114-p3-g03-failure-retry-contract/README.md). The selected Storyboard guard and its remaining ownership and delivery limits are recorded in the [Storyboard failure guard batch](../secondary-development/preservation/20261114-p3-g03-storyboard-failure-guard/README.md).
 
 ## The two failure modes we're closing
 

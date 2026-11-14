@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-storyboard-failure-guard",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "6e7441c880e870dfac0312dca892a0f39361bc6a",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Guard the existing Storyboard failure state transition by organization, current workflow identity and terminal status in one database statement.",
+  "productionPaths": [
+    "src/platform/server/workflow/types.ts",
+    "src/sequences/server/db/sequences.ts",
+    "src/sequences/server/launchers.ts",
+    "src/sequences/server/workflows/storyboard-workflow.ts"
+  ],
+  "testFilesChanged": [
+    "src/sequences/server/launchers.test.ts",
+    "src/sequences/server/workflows/storyboard-workflow.test.ts",
+    "src/sequences/server/workflows/storyboard-failure-status.test.ts"
+  ],
+  "newSourcePaths": [
+    "src/sequences/server/workflows/storyboard-failure-status.test.ts"
+  ],
+  "beforeAfter": [
+    {
+      "before": "Storyboard read mutable status, then wrote failed unconditionally. A completed result, specific child failure or newer run could win between the two operations and still be overwritten.",
+      "after": "One conditional UPDATE checks sequence, organization, current run ownership and nonterminal status; false skips the parent failure event."
+    },
+    {
+      "before": "Only using the actual workflow instance id would miss the launcher raw claim before the final instance-id write-back.",
+      "after": "The launcher snapshots its acquired claim onto the internal payload after resolving user input; failure cleanup matches either this trusted claim or the actual instance id without decoding ids."
+    },
+    {
+      "before": "A trigger exception marked the sequence failed without checking whether its claim still owned it.",
+      "after": "The launcher exception path uses the same guard with its raw claim and preserves its original error, logging and run.failed activity behavior."
+    }
+  ],
+  "preservedContracts": [
+    "failed and completed rows keep their original status, statusError and updatedAt; newer run owners are not modified.",
+    "A true result means this call changed the current nonterminal sequence to failed. Guard misses, repeated failure, absent rows, null owners and foreign organizations return false.",
+    "Storyboard ordinary guard errors still allow an independent notification attempt and then reject with the first error; surfaced engine aborts stop later actions.",
+    "Reservation release and launcher status cleanup remain best effort for ordinary errors. The launcher rethrows its original trigger error even when guard persistence fails.",
+    "Old payloads lacking workflowClaimId may match the actual instance id only; no raw claim is guessed. New launcher calls always overwrite the field with the acquired claim.",
+    "runImpl orchestration and success/startup writes, model configuration snapshots, pricing, organization permissions and public API/MCP schemas are unchanged."
+  ],
+  "productionCallSites": [
+    {
+      "path": "src/sequences/server/workflows/storyboard-workflow.ts",
+      "purpose": "onFailure passes actual instance id and optional trusted claim; emits only after a guard hit, or as the preserved fallback when the guard throws an ordinary error."
+    },
+    {
+      "path": "src/sequences/server/launchers.ts",
+      "purpose": "Trusted claim snapshot at dispatch and guarded failure cleanup on a trigger exception, before the final instance id is known."
+    }
+  ],
+  "originalAssertionTreatment": "Mutable-status read assertions were migrated because that action no longer exists. Real DB tests now preserve the completed/child-failed and newer-owner protections. Hook mocks still pin guard parameters, reservation best effort, guard miss suppression, first-error propagation and engine abort. The test section from makeStep through all runImpl tests was compared with sourceBefore and is byte-identical after CRLF normalization. The exact launcher payload snapshot was extended with the acquired workflowClaimId rather than loosened.",
+  "alternativeAssessment": "A workflow-side reread or outer catch cannot make the status check and write atomic. Reuse the existing scoped DB and launcher ownership protocol; add one internal snapshot field because raw claims and transformed platform ids differ. No parallel lifecycle implementation or ID parsing was added.",
+  "compatibilityRisks": [
+    "Upstream changes to workflow slot acquisition, instance-id generation, terminal statuses, organization scoping or launcher dispatch/write-back require reviewing all four production integration points.",
+    "The guard is a bounded database fix, not completion of the full lifecycle, event delivery or frozen responsibility inventory."
+  ],
+  "newEvidence": [
+    "Six behavior failures in the nine-case real DB/hook composition baseline before production changes.",
+    "Sixteen new real createTestDb cases combine actual migrations and domain DB methods with an explicit partial WorkflowScopedDb, event and channel stub; SQL errors are injected by a test-only synthetic trigger.",
+    "The three directly affected suites passed 84 tests; the selected integration command passed 26 files and 384 tests."
+  ],
+  "schemaChanged": false,
+  "migrationsChanged": false,
+  "workflowPayloadChanged": true,
+  "internalWorkflowPayloadField": "workflowClaimId?: string",
+  "publicApiChanged": false,
+  "providerCallsRun": false,
+  "originalInventoryApproved": false,
+  "followUpOf": ["G03-voice-claim-recovery", "G03-failure-retry-contract"],
+  "remainingActions": [
+    "Separate failure-state persistence from notification delivery and review same-run retry suppression after a successful failed write.",
+    "Review realtime adapter error propagation, run identity, history replay and reducer handling together with child failure ownership.",
+    "Review startup/success state writes and the launcher final instance-id write-back for the remaining lifecycle ownership windows.",
+    "Real Cloudflare durable replay/restart, Workerd HTTP, D1 multi-instance concurrency, browser delivery, provider and wallet settlement remain unverified.",
+    "GC-03/P3 remain in progress, the frozen inventory is not approved, and P4 has not started."
+  ],
+  "codeCommit": "4153a336e36eed97eb492007b452eb58833e26cf"
+}
