@@ -1,43 +1,8 @@
+import { WorkflowLaunchPendingError } from '@/platform/server/workflow/launch-pending';
+import type { PreparedWorkflowRun } from '@/platform/server/workflow/prepared-trigger';
 import type { Locale } from '@/platform/i18n/locale';
 import { toImageModelCatalog } from '@/models/image-channels';
-/**
- * Centralised top-level workflow launchers.
- *
- * Every non-child workflow start belongs here as a named launcher function
- * that owns the trigger AND its side effects — deduplication id, persisting
- * the run id, status writes, and cross-cutting policy like the generation
- * mutex. Feature code calls `triggerStoryboard(...)`, never a bare
- * `triggerWorkflow('/storyboard', ...)`: duplicated side-effect logic at
- * call sites is how the four storyboard triggers drifted apart before #839.
- *
- * Today only the storyboard launcher lives here; the remaining ~30
- * `triggerWorkflow` call sites migrate incrementally, after which imports of
- * `@/platform/server/workflow/client` get lint-restricted to this file.
- *
- * ## The storyboard generation mutex (#839)
- *
- * CF Workflows has no "singleton instance" mode — instance ids are unique
- * FOREVER (a completed instance blocks its id for the 30-day retention
- * window), so a stable `storyboard-<sequenceId>` id would block legitimate
- * retries, not just concurrent ones. Instead `sequences.workflow_run_id`
- * doubles as a lock:
- *
- *   1. Read the column; if it points at a live instance, reject.
- *   2. Claim it with a compare-and-swap (`scopedDb.sequences
- *      .claimWorkflowSlot`) — exactly one of two racing requests wins, even
- *      when both passed step 1.
- *   3. Trigger with the claim id as `deduplicationId`, then replace the
- *      claim with the real instance id only while it still owns the slot.
- *      If the trigger crashes in between,
- *      the stranded claim resolves as 'failed' on the next acquire (it
- *      matches no workflow binding), so the slot recovers — never wedges.
- *
- * Termination-order caveat: a terminal storyboard does NOT imply its
- * descendants are dead (children outlive a timed-out parent — see #839).
- * This mutex guards the storyboard ROOT only; cooperative descendant
- * cancellation (rootRunId staleness check + user-facing cancel) is tracked
- * separately.
- */
+// Storyboard roots reserve one final instance ID and its frozen request atomically.
 
 import { resolveLlmSources } from '@/billing/server/preflight';
 import { characterToBible } from '@/cast/server/bibles-from-scoped';
@@ -56,10 +21,8 @@ import {
   getAnalysisModelById,
 } from '@/models/models.config';
 import { generateId } from '@/platform/id';
-import { getLogger } from '@/platform/logger';
 import { isElevenLabsConfigured } from '@/models/server/elevenlabs-config';
 import { NotFoundError, ValidationError } from '@/platform/errors';
-import { recordTriggerFailure } from '@/sequences/server/db/sequence-events';
 import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { Sequence } from '@/platform/server/db/schema';
 import { resolveSequenceStyleConfig } from '@/look/style-config';
@@ -70,8 +33,11 @@ import {
   type GenerationStage,
 } from '@/sequences/pipeline';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
-import { triggerWorkflow } from '@/platform/server/workflow/client';
-import { resolveRunState } from '@/platform/server/workflow/reconcile';
+import {
+  prepareWorkflowRun,
+  triggerPreparedWorkflow,
+} from '@/platform/server/workflow/prepared-trigger';
+import { resolveStoryboardRunState } from './storyboard-run-state';
 import type {
   StoryboardTriggerInput,
   StoryboardWorkflowInput,
@@ -129,8 +95,6 @@ function storyboardAnalysisModel(
   return model.id;
 }
 
-const logger = getLogger(['openstory', 'launchers']);
-
 /** Thrown when a storyboard run is already in flight for the sequence. */
 export class GenerationInProgressError extends Error {
   constructor() {
@@ -171,7 +135,10 @@ export async function getSequenceRejectingActiveRun(
 ) {
   const sequence = await scopedDb.sequences.getForUser({ sequenceId });
   if (!sequence.workflowRunId) return sequence; // legacy row or never generated
-  const state = await resolveRunState(sequence.workflowRunId);
+  const state = await resolveStoryboardRunState(scopedDb, {
+    id: sequence.id,
+    workflowRunId: sequence.workflowRunId,
+  });
   if (state === null) throw new GenerationInProgressError();
   if (state === 'unknown') throw new GenerationStatusUnknownError();
   return sequence;
@@ -360,62 +327,74 @@ export async function triggerStoryboard(
     analysisModelId
   );
 
-  // Mutex step 2: CAS-claim the slot so two racing requests can't both pass.
-  const claimId = `storyboard-${sequenceId}-${generateId()}`;
-  const claimed = await scopedDb.sequences.claimWorkflowSlot({
-    id: sequenceId,
+  return reserveStoryboardLaunch(scopedDb, sequence, payload, configuration);
+}
+
+async function reserveStoryboardLaunch(
+  scopedDb: ScopedDb,
+  sequence: Sequence,
+  payload: StoryboardWorkflowInput,
+  configuration: ModelRuntimeConfiguration
+) {
+  const prepared = await prepareWorkflowRun('/storyboard', payload, {
+    deduplicationId: generateId(),
+    modelConfiguration: configuration,
+  });
+  const workflowRunId = prepared.workflowRunId;
+  const launch = {
+    ...prepared,
+    body: { ...prepared.body, workflowClaimId: workflowRunId },
+  };
+  const claimed = await claimStoryboardLaunch(scopedDb, {
+    id: sequence.id,
     expectedRunId: sequence.workflowRunId,
-    claimId,
+    claimId: workflowRunId,
+    launch,
     activity: {
-      summary: input.resume ? 'Continued generation' : 'Started the storyboard',
+      summary: payload.resume
+        ? 'Continued generation'
+        : 'Started the storyboard',
     },
   });
   if (!claimed) throw new GenerationInProgressError();
+  return submitStoryboardLaunch(scopedDb, sequence.id, launch);
+}
 
-  // Mutex step 3: the claim id IS the deduplication id — if this call
-  // crashes after create() but the caller retries the whole launcher, the
-  // fresh claim produces a fresh instance; a stranded claim resolves as
-  // 'failed' on the next acquire and the slot recovers.
-  let workflowRunId: string;
+async function claimStoryboardLaunch(
+  scopedDb: ScopedDb,
+  params: Parameters<ScopedDb['sequences']['claimWorkflowSlot']>[0]
+) {
   try {
-    workflowRunId = await triggerWorkflow(
-      '/storyboard',
-      { ...payload, workflowClaimId: claimId },
-      {
-        deduplicationId: claimId,
-        modelConfiguration: configuration,
-      }
-    );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    try {
-      await scopedDb.sequences.failWorkflowIfCurrent({
-        id: sequenceId,
-        workflowRunId: claimId,
-        error: message,
-      });
-    } catch (statusError) {
-      logger.error('Storyboard trigger status was not marked failed', {
-        err: statusError,
-        sequenceId,
-      });
-    }
-    await recordTriggerFailure(scopedDb.sequenceEvents, {
-      sequenceId,
-      actorId: input.userId,
-      kind: 'run.failed',
-      targetType: 'sequence',
-      targetId: sequenceId,
-      summary: 'Storyboard failed',
+    return await scopedDb.sequences.claimWorkflowSlot(params);
+  } catch (cause) {
+    throw new WorkflowLaunchPendingError({
+      workflowRunId: params.launch.workflowRunId,
+      reservationId: params.launch.body.reservationId,
+      cause,
     });
-    throw error;
   }
-  await scopedDb.sequences.publishWorkflowInstance({
-    id: sequenceId,
-    claimId,
-    workflowRunId,
-  });
+}
 
+async function submitStoryboardLaunch(
+  scopedDb: ScopedDb,
+  sequenceId: string,
+  launch: PreparedWorkflowRun<StoryboardWorkflowInput>
+) {
+  const { workflowRunId } = launch;
+  try {
+    await triggerPreparedWorkflow(launch);
+    await scopedDb.sequences.publishWorkflowInstance({
+      id: sequenceId,
+      claimId: workflowRunId,
+      workflowRunId,
+    });
+  } catch (cause) {
+    throw new WorkflowLaunchPendingError({
+      workflowRunId,
+      reservationId: launch.body.reservationId,
+      cause,
+    });
+  }
   return { workflowRunId };
 }
 

@@ -63,6 +63,17 @@ const WRITE_ONLY_TRIGGERS = new Set(['sequence-export']);
  */
 const RUNS_UNDER_E2E = new Set(['upload-check']);
 
+export function isMockWorkflowTrigger(
+  urlPath: string,
+  env: { E2E_TEST?: string; E2E_FULL_PIPELINE?: string }
+): boolean {
+  return (
+    env.E2E_TEST === 'true' &&
+    env.E2E_FULL_PIPELINE !== 'true' &&
+    !RUNS_UNDER_E2E.has(urlPath.replace(/^\//, ''))
+  );
+}
+
 /**
  * Refuse to start durable work for a restricted account.
  *
@@ -78,7 +89,7 @@ const RUNS_UNDER_E2E = new Set(['upload-check']);
  * parent with children partly spawned — correct for a ban. Child spawns via
  * `spawnAndAwaitChild` use `binding.create()` directly and are not gated here.
  */
-async function assertTriggerAllowed(
+export async function assertTriggerAllowed(
   urlPath: string,
   body: { userId: string; organizationId: string },
   enforcementRows?: readonly EnforcementRow[]
@@ -95,7 +106,7 @@ async function assertTriggerAllowed(
   assertCanGenerate(state);
 }
 
-type TriggerWorkflowOptions = {
+export type TriggerWorkflowOptions = {
   deduplicationId?: string;
   /** Trusted server snapshot; never forward this option from client input. */
   modelConfiguration?: ModelRuntimeConfiguration;
@@ -155,11 +166,7 @@ export async function triggerWorkflowRun<
   await assertTriggerAllowed(urlPath, body, options?.enforcement);
 
   const env = getEnv();
-  if (
-    env.E2E_TEST === 'true' &&
-    env.E2E_FULL_PIPELINE !== 'true' &&
-    !RUNS_UNDER_E2E.has(urlPath.replace(/^\//, ''))
-  ) {
+  if (isMockWorkflowTrigger(urlPath, env)) {
     const mockId = options?.deduplicationId ?? `mock-${Date.now()}`;
     logger.info(`Skipping workflow trigger: ${urlPath} (mock ID: ${mockId})`);
     return { workflowRunId: mockId, reused: false };

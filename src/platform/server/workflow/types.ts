@@ -274,7 +274,7 @@ export interface ShotVariantWorkflowResult {
  * asked for. Call sites build the smaller {@link StoryboardTriggerInput}.
  */
 export interface StoryboardWorkflowInput extends SequenceWorkflowContext {
-  /** The launcher's slot claim, before its instance id is persisted. */
+  /** Trusted alias for the slot reserved by this root's launcher. */
   workflowClaimId?: string;
   title: string;
   script: string;

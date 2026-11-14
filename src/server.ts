@@ -16,6 +16,10 @@ import {
 } from '@/platform/server/agent/discovery';
 import { reconcileAllStuckJobs } from '@/platform/server/cron/reconcile-all';
 import {
+  reconcileStoryboardLaunches,
+  resolveStoryboardSequenceState,
+} from '@/sequences/server/reconcile-storyboard-launches';
+import {
   FAL_PRICING_CRON,
   refreshFalPricing,
 } from '@/billing/server/refresh-fal-pricing';
@@ -240,7 +244,10 @@ const exportedHandler: ExportedHandler<WorkerEnv> = {
     // Best-effort sweep for stuck generating-status rows across every table.
     // See src/platform/server/cron/reconcile-all.ts; cron schedule is in wrangler.jsonc.
     ctx.waitUntil(
-      reconcileAllStuckJobs().catch((error) => {
+      reconcileAllStuckJobs({
+        resolveSequenceState: resolveStoryboardSequenceState,
+        dispatchSequences: reconcileStoryboardLaunches,
+      }).catch((error) => {
         logger.error('reconcileAllStuckJobs failed:', { err: error });
       })
     );

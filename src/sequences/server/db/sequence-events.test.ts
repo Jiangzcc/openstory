@@ -6,6 +6,11 @@
  */
 
 import type { Database } from '@/platform/server/db/client';
+import type { PreparedWorkflowRun } from '@/platform/server/workflow/prepared-trigger';
+import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
+import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import { packModelRuntimeConfiguration } from '@/platform/server/db/scoped-workflow';
+import { asStub } from '@/test/as-stub';
 import { createTestDb } from '@/platform/server/db/test-d1';
 import { generateId } from '@/platform/id';
 import { dbSceneId } from '@/shots/scene-id';
@@ -18,6 +23,7 @@ import {
   scenes,
   sequenceCast,
   sequenceEvents,
+  storyboardLaunches,
   sequenceExports,
   sequences,
   shots,
@@ -47,6 +53,7 @@ let organizationId = '';
 let userId = '';
 
 async function seed() {
+  await db.delete(storyboardLaunches);
   await db.delete(sequenceEvents);
   await db.delete(frameVariants);
   await db.delete(frames);
@@ -715,6 +722,24 @@ describe('export.finished', () => {
 });
 
 describe('storyboard.started', () => {
+  // The snapshot is synthetic: these activity tests never dispatch a workflow.
+  const launch = (
+    workflowRunId: string
+  ): PreparedWorkflowRun<StoryboardWorkflowInput> => ({
+    workflowRunId,
+    triggerPath: '/storyboard',
+    body: asStub<PreparedWorkflowRun<StoryboardWorkflowInput>['body']>({
+      promptLocale: 'en',
+      userId,
+      organizationId,
+      sequenceId,
+      workflowClaimId: workflowRunId,
+      modelConfiguration: packModelRuntimeConfiguration(
+        DEFAULT_MODEL_CONFIGURATION
+      ),
+    }),
+  });
+
   const started = () =>
     db
       .select()
@@ -727,6 +752,7 @@ describe('storyboard.started', () => {
       id: sequenceId,
       expectedRunId: 'someone-else',
       claimId: 'run-lost',
+      launch: launch('run-lost'),
       activity: { summary: 'Started the storyboard' },
     });
     expect(lost).toBe(false);
@@ -736,6 +762,7 @@ describe('storyboard.started', () => {
       id: sequenceId,
       expectedRunId: null,
       claimId: 'run-won',
+      launch: launch('run-won'),
       activity: { summary: 'Started the storyboard' },
     });
     expect(won).toBe(true);

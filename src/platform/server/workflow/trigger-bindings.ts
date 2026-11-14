@@ -129,7 +129,12 @@ function normaliseTriggerPath(triggerPath: string): string {
 }
 
 function isWorkflowBinding(value: unknown): value is Workflow<unknown> {
-  return typeof value === 'object' && value !== null && 'create' in value;
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'create' in value &&
+    typeof value.create === 'function'
+  );
 }
 
 /**

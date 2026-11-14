@@ -5,6 +5,7 @@
 
 import { withSequencePosters } from './sequence-poster';
 import { createStoryboardLifecycleMethods } from './storyboard-lifecycle';
+import { createStoryboardLaunchMethods } from './storyboard-launches';
 import { DEFAULT_ANALYSIS_MODEL } from '@/models/models.config';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '@/models/models';
 import { type AspectRatio, DEFAULT_ASPECT_RATIO } from '@/models/aspect-ratios';
@@ -22,6 +23,7 @@ import {
   sequenceMusicPromptVersions,
   sequenceMusicVariants,
   sequenceStyleVersions,
+  storyboardLaunches,
   sequences,
   shotPromptVersions,
   shots,
@@ -59,7 +61,6 @@ import { getPrimaryVideoByShotIds } from '@/motion/server/db/video-variants';
 import { describeSettingsChange } from '@/sequences/model-label';
 import {
   buildEventInsert,
-  buildEventInsertIfPresent,
   buildEventInsertOnce,
   SETTINGS_CHANGED_EVENT,
 } from './sequence-events';
@@ -619,6 +620,7 @@ export function createSequencesMethods(
   return {
     ...createSequencesReadMethods(db, organizationId),
     ...createStoryboardLifecycleMethods(db, organizationId, userId),
+    ...createStoryboardLaunchMethods(db, organizationId, userId),
 
     /**
      * A new sequence; its style snapshot (#1600) lands as its first
@@ -715,79 +717,6 @@ export function createSequencesMethods(
       }
 
       return data;
-    },
-
-    // Acquire the storyboard slot and processing state together.
-    claimWorkflowSlot: async (params: {
-      id: string;
-      expectedRunId: string | null;
-      claimId: string;
-      /** The start line, committed with the claim. Null writes none. */
-      activity: { summary: string } | null;
-    }): Promise<boolean> => {
-      const where = and(
-        eq(sequences.id, params.id),
-        eq(sequences.organizationId, organizationId),
-        params.expectedRunId === null
-          ? isNull(sequences.workflowRunId)
-          : eq(sequences.workflowRunId, params.expectedRunId)
-      );
-      const claim = db
-        .update(sequences)
-        .set({
-          workflowRunId: params.claimId,
-          status: 'processing',
-          statusError: null,
-          updatedAt: new Date(),
-        })
-        .where(where)
-        .returning({ id: sequences.id });
-      if (!params.activity) {
-        const claimed = await claim;
-        return claimed.length > 0;
-      }
-      const [claimed] = await db.batch([
-        claim,
-        buildEventInsertIfPresent(
-          db,
-          {
-            id: generateId(),
-            sequenceId: params.id,
-            actorId: userId,
-            kind: 'storyboard.started',
-            targetType: 'sequence',
-            targetId: params.id,
-            summary: params.activity.summary,
-          },
-          sequences,
-          and(
-            eq(sequences.id, params.id),
-            eq(sequences.organizationId, organizationId),
-            eq(sequences.workflowRunId, params.claimId)
-          )
-        ),
-      ]);
-      return claimed.length > 0;
-    },
-
-    // Replace only this launcher's claim; a fast terminal result keeps its state.
-    publishWorkflowInstance: async (params: {
-      id: string;
-      claimId: string;
-      workflowRunId: string;
-    }): Promise<boolean> => {
-      const [published] = await db
-        .update(sequences)
-        .set({ workflowRunId: params.workflowRunId, updatedAt: new Date() })
-        .where(
-          and(
-            eq(sequences.id, params.id),
-            eq(sequences.organizationId, organizationId),
-            eq(sequences.workflowRunId, params.claimId)
-          )
-        )
-        .returning({ id: sequences.id });
-      return Boolean(published);
     },
 
     /**
@@ -1051,6 +980,9 @@ export function createSequencesMethods(
         : sql`0`;
       await assertVoicesReleased(db, theirs, opts.releasedVoiceIds);
       await db.batch([
+        db
+          .delete(storyboardLaunches)
+          .where(inArray(storyboardLaunches.sequenceId, mine)),
         db
           .delete(sequenceStyleVersions)
           .where(inArray(sequenceStyleVersions.sequenceId, mine)),

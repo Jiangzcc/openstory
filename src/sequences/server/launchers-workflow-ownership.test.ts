@@ -15,11 +15,18 @@ import type { StyleConfig } from '@/look/style-config';
 import type { StoryboardTriggerInput } from '@/platform/server/workflow/types';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+import { packModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import type {
+  PrepareWorkflowRunOptions,
+  PreparedWorkflowRun,
+} from '@/platform/server/workflow/prepared-trigger';
+import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
 import { generateId } from '@/platform/id';
 import {
   organization,
   sequences,
   sequenceEvents,
+  storyboardLaunches,
   styles,
   user,
 } from '@/platform/server/db/schema';
@@ -28,10 +35,6 @@ import { asStub } from '@/test/as-stub';
 import { createSequenceMethods, createSequencesMethods } from './db/sequences';
 import { createSequenceEventsMethods } from './db/sequence-events';
 
-const OLD_RUN = 'synthetic-old-instance';
-const CREATED_RUN = 'synthetic-created-instance';
-const NEW_RUN = 'synthetic-new-instance';
-const CLAIM = 'synthetic-acquired-claim';
 const PRIOR_ERROR = 'Synthetic previous failure';
 const NEW_ERROR = 'Synthetic newer result';
 const STYLE_CONFIG: StyleConfig = {
@@ -46,11 +49,55 @@ const STYLE_CONFIG: StyleConfig = {
   motion: { camera: 'static' },
   references: [],
 };
-const trigger = vi.fn<(...args: unknown[]) => Promise<string>>(
-  async () => CREATED_RUN
+// The engine is substituted; all launch, sequence and activity writes use migrated test D1.
+const preparedRuns: PreparedWorkflowRun<StoryboardWorkflowInput>[] = [];
+async function prepareSyntheticRun(
+  triggerPath: string,
+  body: StoryboardWorkflowInput,
+  options?: PrepareWorkflowRunOptions
+): Promise<PreparedWorkflowRun<StoryboardWorkflowInput>> {
+  const prepared = {
+    workflowRunId: 'synthetic-prepared-' + generateId(),
+    triggerPath,
+    body: structuredClone({
+      ...body,
+      modelConfiguration: packModelRuntimeConfiguration(
+        options?.modelConfiguration ?? DEFAULT_MODEL_CONFIGURATION
+      ),
+    }),
+  };
+  preparedRuns.push(prepared);
+  return prepared;
+}
+function createdRunId() {
+  const [prepared] = preparedRuns;
+  if (!prepared) throw new Error('Missing synthetic prepared run');
+  return prepared.workflowRunId;
+}
+const prepare = vi.fn(prepareSyntheticRun);
+const trigger = vi.fn(
+  async (prepared: PreparedWorkflowRun<StoryboardWorkflowInput>) =>
+    prepared.workflowRunId
 );
-vi.doMock('@/platform/server/workflow/client', () => ({
-  triggerWorkflow: trigger,
+const { WorkflowLaunchPendingError } = await vi.importActual<
+  typeof import('@/platform/server/workflow/prepared-trigger')
+>('@/platform/server/workflow/prepared-trigger');
+vi.doMock('@/platform/server/workflow/prepared-trigger', () => ({
+  prepareWorkflowRun: prepare,
+  triggerPreparedWorkflow: trigger,
+  WorkflowLaunchPendingError,
+}));
+const liveRead = {
+  kind: 'read',
+  status: 'running',
+  output: undefined,
+  error: null,
+} as const;
+const readInstance = vi.fn<
+  typeof import('@/platform/server/workflow/run-outcome').readInstanceIfExists
+>(async () => liveRead);
+vi.doMock('@/platform/server/workflow/run-outcome', () => ({
+  readInstanceIfExists: readInstance,
 }));
 vi.doMock('@/platform/server/workflow/reconcile', () => ({
   resolveRunState: vi.fn(async () => 'failed'),
@@ -69,18 +116,29 @@ beforeAll(async () => {
 });
 afterAll(async () => await closeDb());
 beforeEach(async () => {
-  trigger.mockReset().mockResolvedValue(CREATED_RUN);
+  preparedRuns.length = 0;
+  prepare.mockReset().mockImplementation(prepareSyntheticRun);
+  trigger
+    .mockReset()
+    .mockImplementation(async (prepared) => prepared.workflowRunId);
   fixture = await seedSequence();
 });
 afterEach(async () => {
   await db.run(sql.raw('DROP TRIGGER IF EXISTS synthetic_processing_failure'));
   await db.run(sql.raw('DROP TRIGGER IF EXISTS synthetic_start_event_failure'));
   await db.run(sql.raw('DROP TRIGGER IF EXISTS synthetic_publish_failure'));
+  await db.run(sql.raw('DROP TRIGGER IF EXISTS synthetic_launch_failure'));
+  readInstance.mockReset().mockResolvedValue(liveRead);
 });
 
 async function seedSequence() {
   const organizationId = generateId();
   const actorId = generateId();
+  const runs = {
+    previous: 'synthetic-old-' + generateId(),
+    claim: 'synthetic-claim-' + generateId(),
+    newer: 'synthetic-new-' + generateId(),
+  };
   await db.insert(organization).values({
     id: organizationId,
     name: 'Launcher owner',
@@ -108,10 +166,10 @@ async function seedSequence() {
       script: 'INT. SYNTHETIC TEST — DAY',
       status: 'failed',
       statusError: PRIOR_ERROR,
-      workflowRunId: OLD_RUN,
+      workflowRunId: runs.previous,
     })
     .where(eq(sequences.id, sequence.id));
-  return { organizationId, actorId, sequence, methods };
+  return { organizationId, actorId, sequence, methods, runs };
 }
 
 function makeScopedDb(methods = fixture.methods) {
@@ -161,15 +219,55 @@ async function events() {
     .where(eq(sequenceEvents.sequenceId, fixture.sequence.id));
 }
 
+// Direct SQL fixtures stub unused storyboard content; scoped identity and packed configuration are explicit.
+function preparedFixture(
+  owner = fixture,
+  workflowRunId = owner.runs.claim,
+  sequenceId = owner.sequence.id
+): PreparedWorkflowRun<StoryboardWorkflowInput> {
+  return {
+    workflowRunId,
+    triggerPath: '/storyboard',
+    body: asStub<PreparedWorkflowRun<StoryboardWorkflowInput>['body']>({
+      promptLocale: 'en',
+      userId: owner.actorId,
+      organizationId: owner.organizationId,
+      sequenceId,
+      workflowClaimId: workflowRunId,
+      modelConfiguration: packModelRuntimeConfiguration(
+        DEFAULT_MODEL_CONFIGURATION
+      ),
+    }),
+  };
+}
+
 function claim(
   activity: { summary: string } | null = { summary: 'Synthetic start' }
 ) {
   return fixture.methods.claimWorkflowSlot({
     id: fixture.sequence.id,
-    expectedRunId: OLD_RUN,
-    claimId: CLAIM,
+    expectedRunId: fixture.runs.previous,
+    claimId: fixture.runs.claim,
+    launch: preparedFixture(),
     activity,
   });
+}
+
+function deferred<T>() {
+  let resolve = (_value: T): void => {
+    throw new Error('Deferred promise has not been initialized');
+  };
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
+async function launches() {
+  return db
+    .select()
+    .from(storyboardLaunches)
+    .where(eq(storyboardLaunches.sequenceId, fixture.sequence.id));
 }
 
 function launch(scopedDb = makeScopedDb()) {
@@ -188,7 +286,7 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
       expect(await claim()).toBe(true);
 
       expect(await stored()).toMatchObject({
-        workflowRunId: CLAIM,
+        workflowRunId: fixture.runs.claim,
         status: 'processing',
         statusError: null,
       });
@@ -204,7 +302,7 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
   it('keeps processing part of acquisition when no activity is requested', async () => {
     expect(await claim(null)).toBe(true);
     expect(await stored()).toMatchObject({
-      workflowRunId: CLAIM,
+      workflowRunId: fixture.runs.claim,
       status: 'processing',
       statusError: null,
     });
@@ -223,6 +321,7 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
 
     expect(await stored()).toEqual(before);
     expect(await events()).toEqual([]);
+    expect(await launches()).toEqual([]);
     expect(trigger).not.toHaveBeenCalled();
   });
 
@@ -238,26 +337,44 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
 
     expect(await stored()).toEqual(before);
     expect(await events()).toEqual([]);
+    expect(await launches()).toEqual([]);
     expect(trigger).not.toHaveBeenCalled();
   });
 
   it('dispatches only after the processing claim is committed and publishes its instance', async () => {
     trigger.mockImplementationOnce(async () => {
       const row = await stored();
-      expect(row.workflowRunId).toMatch(/^storyboard-/);
+      expect(row.workflowRunId).toBe(createdRunId());
+      expect(await launches()).toEqual([
+        expect.objectContaining({
+          workflowRunId: createdRunId(),
+          submittedAt: null,
+          prepared: expect.objectContaining({
+            workflowRunId: createdRunId(),
+            body: expect.objectContaining({ workflowClaimId: createdRunId() }),
+          }),
+        }),
+      ]);
       expect(row).toMatchObject({ status: 'processing', statusError: null });
       expect(await events()).toHaveLength(1);
-      return CREATED_RUN;
+      return createdRunId();
     });
 
-    await expect(launch()).resolves.toEqual({ workflowRunId: CREATED_RUN });
+    const launched = await launch();
+    expect(launched).toEqual({ workflowRunId: createdRunId() });
 
     expect(await stored()).toMatchObject({
-      workflowRunId: CREATED_RUN,
+      workflowRunId: createdRunId(),
       status: 'processing',
       statusError: null,
     });
     expect(trigger).toHaveBeenCalledTimes(1);
+    expect(await launches()).toEqual([
+      expect.objectContaining({
+        workflowRunId: createdRunId(),
+        submittedAt: expect.any(Date),
+      }),
+    ]);
     expect(await events()).toHaveLength(1);
   });
 
@@ -268,13 +385,20 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
       trigger.mockImplementationOnce(async () => {
         await db
           .update(sequences)
-          .set({ workflowRunId: NEW_RUN, status, statusError: NEW_ERROR })
+          .set({
+            workflowRunId: fixture.runs.newer,
+            status,
+            statusError: NEW_ERROR,
+          })
           .where(eq(sequences.id, fixture.sequence.id));
         newer = await stored();
-        return CREATED_RUN;
+        return createdRunId();
       });
 
-      await expect(launch()).resolves.toEqual({ workflowRunId: CREATED_RUN });
+      const launched = await launch();
+      expect(launched).toEqual({
+        workflowRunId: createdRunId(),
+      });
 
       expect(await stored()).toEqual(newer);
       expect(trigger).toHaveBeenCalledTimes(1);
@@ -290,13 +414,16 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
           .update(sequences)
           .set({ status, statusError: NEW_ERROR })
           .where(eq(sequences.id, fixture.sequence.id));
-        return CREATED_RUN;
+        return createdRunId();
       });
 
-      await expect(launch()).resolves.toEqual({ workflowRunId: CREATED_RUN });
+      const launched = await launch();
+      expect(launched).toEqual({
+        workflowRunId: createdRunId(),
+      });
 
       expect(await stored()).toMatchObject({
-        workflowRunId: CREATED_RUN,
+        workflowRunId: createdRunId(),
         status,
         statusError: NEW_ERROR,
       });
@@ -314,7 +441,7 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
         await db
           .update(sequences)
           .set({
-            workflowRunId: NEW_RUN,
+            workflowRunId: fixture.runs.newer,
             status: 'completed',
             statusError: NEW_ERROR,
           })
@@ -323,12 +450,13 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
       },
     };
 
-    await expect(launch(makeScopedDb(methods))).resolves.toEqual({
-      workflowRunId: CREATED_RUN,
+    const launched = await launch(makeScopedDb(methods));
+    expect(launched).toEqual({
+      workflowRunId: createdRunId(),
     });
 
     expect(await stored()).toMatchObject({
-      workflowRunId: NEW_RUN,
+      workflowRunId: fixture.runs.newer,
       status: 'completed',
       statusError: NEW_ERROR,
     });
@@ -338,7 +466,7 @@ describe('Storyboard launcher ownership with real sequence DB methods', () => {
     await db
       .update(sequences)
       .set({
-        workflowRunId: NEW_RUN,
+        workflowRunId: fixture.runs.newer,
         status: 'completed',
         statusError: NEW_ERROR,
       })
@@ -363,13 +491,14 @@ describe('Storyboard acquisition and publication database boundaries', () => {
       await fixture.methods.claimWorkflowSlot({
         id: fixture.sequence.id,
         expectedRunId: null,
-        claimId: CLAIM,
+        claimId: fixture.runs.claim,
+        launch: preparedFixture(),
         activity: null,
       })
     ).toBe(true);
 
     expect(await stored()).toMatchObject({
-      workflowRunId: CLAIM,
+      workflowRunId: fixture.runs.claim,
       status: 'processing',
       statusError: null,
     });
@@ -383,8 +512,13 @@ describe('Storyboard acquisition and publication database boundaries', () => {
     expect(
       await other.methods.claimWorkflowSlot({
         id: fixture.sequence.id,
-        expectedRunId: OLD_RUN,
-        claimId: OLD_RUN,
+        expectedRunId: fixture.runs.previous,
+        claimId: fixture.runs.previous,
+        launch: preparedFixture(
+          other,
+          fixture.runs.previous,
+          fixture.sequence.id
+        ),
         activity: { summary: 'Synthetic foreign attempt' },
       })
     ).toBe(false);
@@ -393,7 +527,7 @@ describe('Storyboard acquisition and publication database boundaries', () => {
     expect(await events()).toEqual([]);
   });
 
-  it('refuses publication into another organization with a matching raw claim', async () => {
+  it('refuses publication into another organization with a matching final instance id', async () => {
     await claim(null);
     const other = await seedSequence();
     const before = await stored();
@@ -401,8 +535,8 @@ describe('Storyboard acquisition and publication database boundaries', () => {
     expect(
       await other.methods.publishWorkflowInstance({
         id: fixture.sequence.id,
-        claimId: CLAIM,
-        workflowRunId: CREATED_RUN,
+        claimId: fixture.runs.claim,
+        workflowRunId: fixture.runs.claim,
       })
     ).toBe(false);
 
@@ -421,8 +555,8 @@ describe('Storyboard acquisition and publication database boundaries', () => {
       expect(
         await fixture.methods.publishWorkflowInstance({
           id: kind === 'missing' ? generateId() : fixture.sequence.id,
-          claimId: CLAIM,
-          workflowRunId: CREATED_RUN,
+          claimId: fixture.runs.claim,
+          workflowRunId: fixture.runs.claim,
         })
       ).toBe(false);
 
@@ -430,44 +564,108 @@ describe('Storyboard acquisition and publication database boundaries', () => {
     }
   );
 
-  it('publishes once and leaves an already-published owner unchanged on repetition', async () => {
+  it('records submission once when the final instance id already owns the slot', async () => {
     await claim(null);
     const params = {
       id: fixture.sequence.id,
-      claimId: CLAIM,
-      workflowRunId: CREATED_RUN,
+      claimId: fixture.runs.claim,
+      workflowRunId: fixture.runs.claim,
     };
 
     expect(await fixture.methods.publishWorkflowInstance(params)).toBe(true);
     const published = await stored();
-    expect(await fixture.methods.publishWorkflowInstance(params)).toBe(false);
+    const submitted = await launches();
+    expect(submitted).toEqual([
+      expect.objectContaining({
+        workflowRunId: fixture.runs.claim,
+        submittedAt: expect.any(Date),
+      }),
+    ]);
+    await fixture.methods.publishWorkflowInstance(params);
 
-    expect(await stored()).toEqual(published);
+    expect(await launches()).toEqual(submitted);
     expect(published).toMatchObject({
-      workflowRunId: CREATED_RUN,
+      workflowRunId: fixture.runs.claim,
       status: 'processing',
       statusError: null,
     });
     expect(await events()).toEqual([]);
   });
 
-  it('propagates a publication SQL error after creation without retriggering or fabricating a run failure', async () => {
+  it.each([
+    ['workflowRunId', 'synthetic-invalid-' + generateId()],
+    ['triggerPath', '/image'],
+    ['organizationId', 'synthetic-foreign-organization'],
+    ['userId', 'synthetic-foreign-user'],
+    ['sequenceId', 'synthetic-foreign-sequence'],
+    ['workflowClaimId', 'synthetic-invalid-' + generateId()],
+  ] as const)(
+    'refuses mismatched prepared %s before any acquisition write',
+    async (field, value) => {
+      const launch = preparedFixture();
+      const invalid =
+        field === 'workflowRunId' || field === 'triggerPath'
+          ? { ...launch, [field]: value }
+          : { ...launch, body: { ...launch.body, [field]: value } };
+      const before = await stored();
+      await expect(
+        fixture.methods.claimWorkflowSlot({
+          id: fixture.sequence.id,
+          expectedRunId: fixture.runs.previous,
+          claimId: fixture.runs.claim,
+          launch: invalid,
+          activity: { summary: 'Synthetic invalid claim' },
+        })
+      ).rejects.toThrow('Storyboard launch does not match its scoped owner');
+      expect(await stored()).toEqual(before);
+      expect(await launches()).toEqual([]);
+      expect(await events()).toEqual([]);
+    }
+  );
+
+  it('preserves a publication SQL cause and verifies the created instance on retry', async () => {
     await db.run(
       sql.raw(
-        "CREATE TRIGGER synthetic_publish_failure BEFORE UPDATE OF workflow_run_id ON sequences WHEN NEW.workflow_run_id = 'synthetic-created-instance' BEGIN SELECT RAISE(ABORT, 'Synthetic publish failure'); END"
+        "CREATE TRIGGER synthetic_publish_failure BEFORE UPDATE OF submitted_at ON storyboard_launches WHEN NEW.submitted_at IS NOT NULL BEGIN SELECT RAISE(ABORT, 'Synthetic publish failure'); END"
       )
     );
+    const publisher = vi.spyOn(fixture.methods, 'publishWorkflowInstance');
+    const pending = launch();
+    await expect(pending).rejects.toBeInstanceOf(WorkflowLaunchPendingError);
+    const sqlError = await publisher.mock.results[0]?.value.catch(
+      (error: unknown) => error
+    );
+    await expect(pending).rejects.toMatchObject({
+      workflowRunId: createdRunId(),
+      cause: sqlError,
+    });
+    expect(sqlError).toBeInstanceOf(Error);
+    expect(sqlError).toMatchObject({
+      message: expect.stringContaining('Synthetic publish failure'),
+    });
+    expect(await stored()).toMatchObject({
+      workflowRunId: createdRunId(),
+      status: 'processing',
+      statusError: null,
+    });
+    expect(await launches()).toEqual([
+      expect.objectContaining({
+        workflowRunId: createdRunId(),
+        submittedAt: null,
+      }),
+    ]);
+    await db.run(sql.raw('DROP TRIGGER synthetic_publish_failure'));
 
     await expect(launch()).rejects.toMatchObject({
-      cause: expect.objectContaining({
-        message: expect.stringContaining('Synthetic publish failure'),
-      }),
+      name: 'GenerationInProgressError',
     });
 
-    const row = await stored();
-    expect(row.workflowRunId).toMatch(/^storyboard-/);
-    expect(row).toMatchObject({ status: 'processing', statusError: null });
+    expect(readInstance).toHaveBeenCalledExactlyOnceWith(createdRunId());
     expect(trigger).toHaveBeenCalledTimes(1);
+    expect(prepare).toHaveBeenCalledTimes(1);
+    expect(await launches()).toEqual([
+      expect.objectContaining({ submittedAt: expect.any(Date) }),
+    ]);
     expect(await events()).toEqual([
       expect.objectContaining({ kind: 'storyboard.started' }),
     ]);
@@ -488,9 +686,9 @@ it('keeps Continue switches and its created instance id when publication loses o
   trigger.mockImplementationOnce(async () => {
     await db
       .update(sequences)
-      .set({ workflowRunId: NEW_RUN })
+      .set({ workflowRunId: fixture.runs.newer })
       .where(eq(sequences.id, fixture.sequence.id));
-    return CREATED_RUN;
+    return createdRunId();
   });
 
   const result = await withContinueSwitches(scopedDb, sequence, settings, () =>
@@ -506,12 +704,64 @@ it('keeps Continue switches and its created instance id when publication loses o
     })
   );
 
-  expect(result).toEqual({ workflowRunId: CREATED_RUN });
+  expect(result).toEqual({ workflowRunId: createdRunId() });
   expect(await stored()).toMatchObject({
     ...settings,
-    workflowRunId: NEW_RUN,
+    workflowRunId: fixture.runs.newer,
     status: 'processing',
     statusError: null,
   });
   expect(trigger).toHaveBeenCalledTimes(1);
+});
+
+describe('Storyboard startup exclusion regressions', () => {
+  it('retains the same slot while the first create response is in flight', async () => {
+    const created = deferred<string>();
+    const entered = deferred<void>();
+    trigger.mockImplementationOnce(async () => {
+      entered.resolve();
+      return created.promise;
+    });
+    const first = launch();
+    await Promise.race([entered.promise, first]);
+    const acquired = await stored();
+    try {
+      await expect(launch()).rejects.toMatchObject({
+        name: 'GenerationInProgressError',
+      });
+      expect(acquired.workflowRunId).toBe(createdRunId());
+      expect((await stored()).workflowRunId).toBe(acquired.workflowRunId);
+      expect(trigger).toHaveBeenCalledTimes(1);
+      expect(prepare).toHaveBeenCalledTimes(1);
+      expect(await launches()).toHaveLength(1);
+      expect(await events()).toHaveLength(1);
+    } finally {
+      created.resolve(createdRunId());
+      await first;
+    }
+  });
+
+  it('keeps an uncertain create result pending instead of recording a definitive failure', async () => {
+    const lostReply = new Error('Synthetic create reply was lost');
+    trigger.mockRejectedValueOnce(lostReply);
+    const pending = launch();
+    await expect(pending).rejects.toBeInstanceOf(WorkflowLaunchPendingError);
+    await expect(pending).rejects.toMatchObject({
+      workflowRunId: createdRunId(),
+      cause: lostReply,
+    });
+    expect(await launches()).toEqual([
+      expect.objectContaining({
+        workflowRunId: createdRunId(),
+        submittedAt: null,
+      }),
+    ]);
+    expect(await stored()).toMatchObject({
+      status: 'processing',
+      statusError: null,
+    });
+    expect((await events()).map((event) => event.kind)).toEqual([
+      'storyboard.started',
+    ]);
+  });
 });

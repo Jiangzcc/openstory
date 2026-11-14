@@ -11,6 +11,7 @@ import {
   sequenceCast,
   sequenceLocationLinks,
   sequenceStyleVersions,
+  storyboardLaunches,
 } from '@/platform/server/db/schema';
 
 /**
@@ -21,6 +22,7 @@ import {
  * characters, locations, sequences or organizations calls this first.
  */
 export async function clearVersionRows(db: Database): Promise<void> {
+  await db.delete(storyboardLaunches);
   await db.delete(sequenceCast);
   await db.delete(characterSheetVariants);
   await db.delete(characterVoiceVersions);

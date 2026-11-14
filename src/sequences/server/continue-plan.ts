@@ -1,3 +1,4 @@
+import { WorkflowLaunchPendingError } from '@/platform/server/workflow/launch-pending';
 import { partitionPlanImageEstimate } from '@/billing/configured-image-plan-billing';
 import { computePlan } from '@/shots/server/update-stale-plan';
 import type { Locale } from '@/platform/i18n/locale';
@@ -280,7 +281,9 @@ export async function withContinueSwitches<T>(
   try {
     return await run();
   } catch (error) {
-    await scopedDb.sequences.update({ id: sequence.id, ...before });
+    if (!(error instanceof WorkflowLaunchPendingError)) {
+      await scopedDb.sequences.update({ id: sequence.id, ...before });
+    }
     throw error;
   }
 }

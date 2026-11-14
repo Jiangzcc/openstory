@@ -1,3 +1,4 @@
+import { WorkflowLaunchPendingError } from '@/platform/server/workflow/launch-pending';
 /**
  * requireCredits BYOK bypass — a fal key must satisfy the openrouter
  * requirement too, since LLM calls route through fal's OpenRouter endpoint
@@ -393,4 +394,34 @@ describe('actual image credential coverage', () => {
       })
     ).rejects.toThrow(InsufficientCreditsError);
   });
+});
+
+describe('reservation ownership while a workflow launch is unconfirmed', () => {
+  it.each([
+    ['res_1', false],
+    ['other_reservation', true],
+    [undefined, true],
+  ] as const)(
+    'only preserves the pending launch reservation %s',
+    async (pendingReservation, releases) => {
+      const zeroReservation = vi.fn();
+      const pending = new WorkflowLaunchPendingError({
+        workflowRunId: 'local_storyboard_synthetic',
+        reservationId: pendingReservation,
+        cause: new Error('Synthetic create reply lost'),
+      });
+      await expect(
+        releaseReservationOnThrow(
+          { billing: { zeroReservation } },
+          'res_1',
+          async () => {
+            throw pending;
+          }
+        )
+      ).rejects.toBe(pending);
+      if (releases)
+        expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('res_1');
+      else expect(zeroReservation).not.toHaveBeenCalled();
+    }
+  );
 });

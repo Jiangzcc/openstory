@@ -39,6 +39,7 @@ import {
   videoVariants,
 } from '@/platform/server/db/schema';
 import { getDb } from '#db-client';
+import { deleteStoryboardLaunchesForSequences } from '@/sequences/server/db/storyboard-launch-reconcile';
 import { deleteCharactersStatements } from '@/cast/server/db/characters';
 import { deleteLocationsStatements } from '@/cast/server/db/locations';
 import { getSequenceByIdUnscoped } from '@/platform/server/db/scoped';
@@ -255,6 +256,7 @@ async function deleteSequenceVersionRows(where: SQL) {
     )}))`
   );
   await db.batch([
+    deleteStoryboardLaunchesForSequences(db, where),
     db
       .delete(sequenceStyleVersions)
       .where(inArray(sequenceStyleVersions.sequenceId, ids)),
