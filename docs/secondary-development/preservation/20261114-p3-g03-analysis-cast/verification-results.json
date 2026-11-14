@@ -1,0 +1,1204 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-analysis-cast",
+  "sourceBefore": "14dbc6c103988349282b82139033ac92d19b562b",
+  "sourceAfter": "f9a2ab5921abb7f92d4b02d7f7999c323bd2a560",
+  "evidenceScope": "Complete migrations into in-process Node SQLite through the actual Drizzle D1 driver/scoped DB. Transport substitutes delay real SQL or whole atomic batches, never simulate batch-internal interleaving. Cloudflare engine/error classes and workflow edges are explicit substitutes; no paid model, deployed/browser/provider acceptance.",
+  "checks": [
+    {
+      "stage": "Original service/workflow regression selection",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/cast/server/workflows/cast-records.test.ts src/sequences/server/workflows/analyze-script-output.test.ts src/sequences/server/workflows/analyze-script-workflow.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-cast-original-service.json",
+      "files": 3,
+      "tests": 132,
+      "passed": 132,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/cast/server/workflows/cast-records.test.ts",
+        "src/sequences/server/workflows/analyze-script-output.test.ts",
+        "src/sequences/server/workflows/analyze-script-workflow.test.ts"
+      ],
+      "failures": [],
+      "reportSha256": "da2e87465dfabd1ed0e6cb0c2f913af5209ba76e080ff1307e0dabcdc438a2d7",
+      "reportStartTimeMs": 1794654015291,
+      "reportedResultSpanMs": 9734.07
+    },
+    {
+      "stage": "First actual service composition",
+      "status": "failed-before-fixture-expectation-correction",
+      "reproduceCommand": "bun run test src/cast/server/workflows/cast-records-ownership.test.ts src/cast/server/workflows/cast-records.test.ts src/sequences/server/workflows/analyze-script-output.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-cast-service-first.json",
+      "files": 3,
+      "tests": 127,
+      "passed": 126,
+      "failed": 1,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/cast/server/workflows/cast-records-ownership.test.ts",
+        "src/cast/server/workflows/cast-records.test.ts",
+        "src/sequences/server/workflows/analyze-script-output.test.ts"
+      ],
+      "failures": [
+        {
+          "test": "retains the authorized first character batch but stops all later methods after takeover",
+          "message": "AssertionError: expected [ { …(18) }, { …(18) }, { …(18) } ] to have a length of +0 but got 3"
+        }
+      ],
+      "reportSha256": "0ee0516ae1f1e57ab4abbf82186121945eed22cc7cbd125418d53d9aea5570c5",
+      "reportStartTimeMs": 1794654179545,
+      "reportedResultSpanMs": 28571.84
+    },
+    {
+      "stage": "Corrected service/root propagation selection",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/cast/server/workflows/cast-records-ownership.test.ts src/sequences/server/workflows/analyze-script-output.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-cast-service-corrected.json",
+      "files": 2,
+      "tests": 114,
+      "passed": 114,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/cast/server/workflows/cast-records-ownership.test.ts",
+        "src/sequences/server/workflows/analyze-script-output.test.ts"
+      ],
+      "failures": [],
+      "reportSha256": "a1826ff9ecd662ca01e89235c48c79f955076478c57770dd28d88a6bb151f065",
+      "reportStartTimeMs": 1794654311011,
+      "reportedResultSpanMs": 18857.49
+    },
+    {
+      "stage": "Early new suite selection before element cases were finished",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/cast/server/db/storyboard-character-writes.test.ts src/cast/server/db/storyboard-location-writes.test.ts src/cast/server/workflows/cast-records-ownership.test.ts src/sequences/server/db/storyboard-cast-scope.test.ts src/sequences/server/db/storyboard-cast.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-cast-new-first.json",
+      "files": 5,
+      "tests": 179,
+      "passed": 179,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/cast/server/db/storyboard-character-writes.test.ts",
+        "src/cast/server/db/storyboard-location-writes.test.ts",
+        "src/cast/server/workflows/cast-records-ownership.test.ts",
+        "src/sequences/server/db/storyboard-cast-scope.test.ts",
+        "src/sequences/server/db/storyboard-cast.test.ts"
+      ],
+      "failures": [],
+      "reportSha256": "b3221548e13066d383647df8242e3915af0c385f8abcce30be45d967f1088a11",
+      "reportStartTimeMs": 1794654580531,
+      "reportedResultSpanMs": 25508.29
+    },
+    {
+      "stage": "Final integrated selection",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/platform/client-server-boundary.test.ts src/platform/domain-blind.test.ts src/shots/server/artifact-cancellation.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/wiring-consistency.test.ts src/sequences/server/db/sequence-events.test.ts src/sequences/server/db/storyboard-content-completion.test.ts src/sequences/server/db/storyboard-content-errors.test.ts src/sequences/server/db/storyboard-content-ownership.test.ts src/sequences/server/workflows/analyze-script-child-context.test.ts src/sequences/server/workflows/analyze-script-failure-ownership.test.ts src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/sequences/server/workflows/analyze-script-workflow.test.ts src/sequences/server/workflows/scene-split-content.test.ts src/sequences/server/workflows/scene-split-output-budget.test.ts src/sequences/server/workflows/scene-split-workflow.test.ts src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts src/shots/server/db/scene-script-versions.test.ts src/shots/server/db/shot-dialogue.test.ts src/shots/server/db/shots-anchor.test.ts src/shots/server/db/shots-scene-trim.test.ts src/shots/server/db/structure-crud.test.ts src/sequences/server/db/storyboard-analysis-output.test.ts src/sequences/server/db/storyboard-analysis-persistence.test.ts src/sequences/server/workflows/analyze-script-output.test.ts src/shots/server/db/frame-prompt-versions.test.ts src/shots/server/db/shot-prompt-versions.test.ts src/shots/server/persist-shot-spec.test.ts src/sequences/server/scene-persistence.test.ts src/look/server/workflows/auto-style-step.test.ts src/look/server/workflows/auto-style-ownership.test.ts src/sequences/server/db/storyboard-auto-style.test.ts src/sequences/server/db/sequences-style-snapshot.test.ts src/look/server/db/styles.test.ts src/look/server/db/styles-automatic.test.ts src/look/auto-style.test.ts src/cast/server/db/voice-claim-terminal.test.ts src/cast/server/db/storyboard-location-writes.test.ts src/cast/server/db/storyboard-character-writes.test.ts src/cast/server/db/sheet-variants.test.ts src/cast/server/db/sheet-claims.test.ts src/cast/server/db/sequence-elements.test.ts src/cast/server/db/sequence-cast-crud.test.ts src/cast/server/db/locations.test.ts src/cast/server/db/locations-create-bulk.test.ts src/cast/server/db/location-sheet-ownership.test.ts src/cast/server/db/location-ownership-contract.test.ts src/cast/server/db/character-replace.test.ts src/cast/server/db/character-ownership-contract.test.ts src/sequences/server/db/storyboard-cast.test.ts src/sequences/server/db/storyboard-cast-scope.test.ts src/sequences/server/db/storyboard-cast-elements.test.ts src/cast/server/workflows/cast-records.test.ts src/cast/server/workflows/cast-records-ownership.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-cast-integrated-tests.json",
+      "files": 57,
+      "tests": 1610,
+      "passed": 1610,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/look/auto-style.test.ts",
+        "src/platform/client-server-boundary.test.ts",
+        "src/platform/domain-blind.test.ts",
+        "src/sequences/server/scene-persistence.test.ts",
+        "src/shots/server/artifact-cancellation.test.ts",
+        "src/shots/server/persist-shot-spec.test.ts",
+        "src/look/server/workflows/auto-style-ownership.test.ts",
+        "src/look/server/workflows/auto-style-step.test.ts",
+        "src/look/server/db/styles-automatic.test.ts",
+        "src/look/server/db/styles.test.ts",
+        "src/cast/server/db/character-ownership-contract.test.ts",
+        "src/cast/server/db/character-replace.test.ts",
+        "src/cast/server/db/location-ownership-contract.test.ts",
+        "src/cast/server/db/location-sheet-ownership.test.ts",
+        "src/cast/server/db/locations-create-bulk.test.ts",
+        "src/cast/server/db/locations.test.ts",
+        "src/cast/server/db/sequence-cast-crud.test.ts",
+        "src/cast/server/db/sequence-elements.test.ts",
+        "src/cast/server/db/sheet-claims.test.ts",
+        "src/cast/server/db/sheet-variants.test.ts",
+        "src/cast/server/db/storyboard-character-writes.test.ts",
+        "src/cast/server/db/storyboard-location-writes.test.ts",
+        "src/cast/server/db/voice-claim-terminal.test.ts",
+        "src/cast/server/workflows/cast-records-ownership.test.ts",
+        "src/cast/server/workflows/cast-records.test.ts",
+        "src/platform/server/db/db-access-allowlist.test.ts",
+        "src/platform/server/workflow/base-workflow.test.ts",
+        "src/platform/server/workflow/claim-discipline.test.ts",
+        "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "src/platform/server/workflow/wiring-consistency.test.ts",
+        "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+        "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+        "src/sequences/server/workflows/analyze-script-output.test.ts",
+        "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+        "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+        "src/sequences/server/workflows/scene-split-content.test.ts",
+        "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+        "src/sequences/server/workflows/scene-split-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+        "src/sequences/server/db/sequence-events.test.ts",
+        "src/sequences/server/db/sequences-style-snapshot.test.ts",
+        "src/sequences/server/db/storyboard-analysis-output.test.ts",
+        "src/sequences/server/db/storyboard-analysis-persistence.test.ts",
+        "src/sequences/server/db/storyboard-auto-style.test.ts",
+        "src/sequences/server/db/storyboard-cast-elements.test.ts",
+        "src/sequences/server/db/storyboard-cast-scope.test.ts",
+        "src/sequences/server/db/storyboard-cast.test.ts",
+        "src/sequences/server/db/storyboard-content-completion.test.ts",
+        "src/sequences/server/db/storyboard-content-errors.test.ts",
+        "src/sequences/server/db/storyboard-content-ownership.test.ts",
+        "src/shots/server/db/frame-prompt-versions.test.ts",
+        "src/shots/server/db/scene-script-versions.test.ts",
+        "src/shots/server/db/shot-dialogue.test.ts",
+        "src/shots/server/db/shot-prompt-versions.test.ts",
+        "src/shots/server/db/shots-anchor.test.ts",
+        "src/shots/server/db/shots-scene-trim.test.ts",
+        "src/shots/server/db/structure-crud.test.ts"
+      ],
+      "failures": [],
+      "reportSha256": "552a71db042ceb6518a8fab0699cabd68ec5169e65b42855cf13566689ffe485",
+      "reportStartTimeMs": 1794654875607,
+      "reportedResultSpanMs": 127553.04
+    },
+    {
+      "stage": "Exact original factories with new admission checks retained",
+      "status": "expected-regression-failure",
+      "reproduceCommand": "bun run test src/cast/server/db/storyboard-character-writes.test.ts src/cast/server/db/storyboard-location-writes.test.ts src/sequences/server/db/storyboard-cast-elements.test.ts -t \"^(fences|guards the actual INSERT after precheck)\" --maxWorkers=4 --reporter=json --outputFile=.codex/p3-cast-original-red.json",
+      "files": 3,
+      "tests": 147,
+      "passed": 0,
+      "failed": 32,
+      "skipped": 115,
+      "todo": 0,
+      "paths": [
+        "src/cast/server/db/storyboard-character-writes.test.ts",
+        "src/cast/server/db/storyboard-location-writes.test.ts",
+        "src/sequences/server/db/storyboard-cast-elements.test.ts"
+      ],
+      "failures": [
+        {
+          "test": "fences new character and incoming voice when replacement lands after precheck",
+          "message": "AssertionError: expected { …(8) } to deeply equal { characters: [ { …(30) } ], …(7) }"
+        },
+        {
+          "test": "fences bible, clothing, status, claims, events… when replacement lands after precheck",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences look versions, legacy move, new look, r… when replacement lands after precheck",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences shared look linking when replacement lands after precheck",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences create default-look backfill after its legacy read",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences sync default-look backfill after its legacy read",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences the separate incoming voice batch for new characters",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences the separate incoming voice batch for existing characters",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences retirement after earlier look versions and revival were authorized",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences the shared-character status update without revoking claims",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences direct helper versions, legacy migration and claims for foreign parents",
+          "message": "AssertionError: expected { …(8) } to deeply equal { …(8) }"
+        },
+        {
+          "test": "fences every existing rewritten link/bible/pointer/claim write",
+          "message": "AssertionError: expected { locations: [ { …(18) } ], …(5) } to deeply equal { locations: [ { …(18) } ], …(5) }"
+        },
+        {
+          "test": "fences every existing unchanged link/bible/pointer/claim write",
+          "message": "AssertionError: expected { locations: [ { …(18) } ], …(5) } to deeply equal { locations: [ { …(18) } ], …(5) }"
+        },
+        {
+          "test": "fences every existing attached link/bible/pointer/claim write",
+          "message": "AssertionError: expected { locations: [ { …(18) } ], …(5) } to deeply equal { locations: [ { …(18) } ], …(5) }"
+        },
+        {
+          "test": "fences every existing shared link/bible/pointer/claim write",
+          "message": "AssertionError: expected { locations: [ { …(18) } ], …(5) } to deeply equal { locations: [ { …(18) } ], …(5) }"
+        },
+        {
+          "test": "fences matched new insertion, repointing and conflict deletion",
+          "message": "AssertionError: expected { locations: [ { …(18) } ], …(5) } to deeply equal { locations: [ { …(18) } ], …(5) }"
+        },
+        {
+          "test": "fences matched own insertion, repointing and conflict deletion",
+          "message": "AssertionError: expected { locations: [ { …(18) } ], …(5) } to deeply equal { locations: [ { …(18) } ], …(5) }"
+        },
+        {
+          "test": "fences matched holder insertion, repointing and conflict deletion",
+          "message": "AssertionError: expected { Object (locations, links, ...) } to deeply equal { Object (locations, links, ...) }"
+        },
+        {
+          "test": "fences matched own-and-holder insertion, repointing and conflict deletion",
+          "message": "AssertionError: expected { Object (locations, links, ...) } to deeply equal { Object (locations, links, ...) }"
+        },
+        {
+          "test": "fences the conflict DELETE before the entire bind batch",
+          "message": "AssertionError: expected { Object (locations, links, ...) } to deeply equal { Object (locations, links, ...) }"
+        },
+        {
+          "test": "fences the separate orphan cleanup after authorized holder repointing",
+          "message": "AssertionError: expected { Object (locations, links, ...) } to deeply equal { Object (locations, links, ...) }"
+        },
+        {
+          "test": "fences the separate orphan cleanup after authorized own-and-holder repointing",
+          "message": "AssertionError: expected { Object (locations, links, ...) } to deeply equal { Object (locations, links, ...) }"
+        },
+        {
+          "test": "fences a matched holder whose actual parent becomes other-sequence",
+          "message": "AssertionError: expected { Object (locations, links, ...) } to deeply equal { Object (locations, links, ...) }"
+        },
+        {
+          "test": "fences a matched holder whose actual parent becomes foreign-location",
+          "message": "Error: promise resolved \"[ { …(33) } ]\" instead of rejecting"
+        },
+        {
+          "test": "fences another sequence even when it shares the owner location",
+          "message": "AssertionError: expected { locations: [ { …(18) } ], …(5) } to deeply equal { locations: [ { …(18) } ], …(5) }"
+        },
+        {
+          "test": "guards the actual INSERT after precheck against replacement root",
+          "message": "AssertionError: expected undefined to match object { Object (message) }"
+        },
+        {
+          "test": "guards the actual INSERT after precheck against cleared root",
+          "message": "AssertionError: expected undefined to match object { Object (message) }"
+        },
+        {
+          "test": "guards the actual INSERT after precheck against failed root",
+          "message": "AssertionError: expected undefined to match object { Object (message) }"
+        },
+        {
+          "test": "guards the actual INSERT after precheck against completed root",
+          "message": "AssertionError: expected undefined to match object { Object (message) }"
+        },
+        {
+          "test": "guards the actual INSERT after precheck against draft root",
+          "message": "AssertionError: expected undefined to match object { Object (message) }"
+        },
+        {
+          "test": "guards the actual INSERT after precheck against undeclared raw claim",
+          "message": "AssertionError: expected undefined to match object { Object (message) }"
+        },
+        {
+          "test": "guards the actual INSERT after precheck against foreign organization",
+          "message": "AssertionError: expected undefined to match object { Object (message) }"
+        }
+      ],
+      "reportSha256": "0311b58f08ae0aa6bd442edf323aef30fed54a82adfcca27bb667278f390f882",
+      "reportStartTimeMs": 1794655126251,
+      "reportedResultSpanMs": 10667.67
+    },
+    {
+      "stage": "Corrected bytes after exact restoration",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/cast/server/db/storyboard-character-writes.test.ts src/cast/server/db/storyboard-location-writes.test.ts src/cast/server/workflows/cast-records-ownership.test.ts src/sequences/server/db/storyboard-cast-elements.test.ts src/sequences/server/db/storyboard-cast-scope.test.ts src/sequences/server/db/storyboard-cast.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-cast-post-restore.json",
+      "files": 6,
+      "tests": 212,
+      "passed": 212,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/cast/server/db/storyboard-character-writes.test.ts",
+        "src/cast/server/db/storyboard-location-writes.test.ts",
+        "src/cast/server/workflows/cast-records-ownership.test.ts",
+        "src/sequences/server/db/storyboard-cast-elements.test.ts",
+        "src/sequences/server/db/storyboard-cast-scope.test.ts",
+        "src/sequences/server/db/storyboard-cast.test.ts"
+      ],
+      "failures": [],
+      "reportSha256": "7a64c50c71f6d1b3d42101f9034b94d68cab6f261f6eb5c79802ea44d05608d5",
+      "reportStartTimeMs": 1794655172380,
+      "reportedResultSpanMs": 11924.75
+    }
+  ],
+  "commandNote": "Test commands are reproducible equivalents using the retained actual paths and filters. Report span is not full CLI wall time. Domain-worker test results are not added to main totals.",
+  "additionalChecks": [
+    {
+      "stage": "Typecheck during parallel test authoring",
+      "command": "bun typecheck",
+      "status": "failed-while-test-file-in-progress",
+      "detail": "Five unused imports in the new character test that was still being written; no production diagnostics. Both later full typechecks and final hook passed."
+    },
+    {
+      "stage": "Initial quality",
+      "status": "failed-before-test-registration-refactor",
+      "detail": "Three new location describe registration callbacks exceeded 50 lines. Worker flattened registration; final tests and Oxc checks passed. Unchanged buildLocationInsert baseline complexity 11 is separately retained."
+    },
+    {
+      "stage": "Initial full lint",
+      "command": "bun lint",
+      "status": "failed-before-fixture-placement-correction",
+      "detail": "New cast-records ownership fixture imported SQL outside server/db. Moved the fixture into cast/server/db and updated the test import; no lint exception added."
+    },
+    {
+      "stage": "Final typecheck",
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    {
+      "stage": "Final formatting",
+      "command": "bunx --no-install oxfmt --check docs/architecture/character-looks.md docs/architecture/generation-plan.md docs/architecture/organization-characters.md docs/architecture/organization-locations.md docs/architecture/workflow-snapshots-and-content-hash-staleness.md src/cast/server/db/cast-records-ownership.test.fixture.ts src/cast/server/db/character-looks.ts src/cast/server/db/characters.ts src/cast/server/db/locations.ts src/cast/server/db/sequence-elements.ts src/cast/server/db/storyboard-character-writes.test.fixture.ts src/cast/server/db/storyboard-character-writes.test.ts src/cast/server/db/storyboard-location-writes.test.fixture.ts src/cast/server/db/storyboard-location-writes.test.ts src/cast/server/workflows/cast-records-output.ts src/cast/server/workflows/cast-records-ownership.test.ts src/cast/server/workflows/cast-records.ts src/platform/server/db/scoped.ts src/sequences/server/db/storyboard-cast-elements.test.ts src/sequences/server/db/storyboard-cast-scope.test.ts src/sequences/server/db/storyboard-cast-scope.ts src/sequences/server/db/storyboard-cast.test.fixture.ts src/sequences/server/db/storyboard-cast.test.ts src/sequences/server/db/storyboard-cast.ts src/sequences/server/workflows/analyze-script-output.test.ts src/sequences/server/workflows/analyze-script-workflow.ts",
+      "files": 26,
+      "status": "passed"
+    },
+    {
+      "stage": "Final full lint",
+      "command": "bun lint",
+      "status": "passed",
+      "warnings": 147
+    },
+    {
+      "stage": "Production build",
+      "command": "$env:CLOUDFLARE_ENV = 'production'; bun run build",
+      "status": "passed",
+      "client": true,
+      "ssr": true,
+      "clientBuildSeconds": 41.18,
+      "ssrBuildSeconds": 50.0,
+      "deploy": false
+    },
+    {
+      "stage": "First source normal hooks",
+      "command": "git commit -m \"fix: fence analysis cast writes by storyboard owner\"",
+      "status": "failed-before-unused-fixture-export-correction",
+      "durationSeconds": 64.13,
+      "failedCheck": "dead-code",
+      "unusedExports": ["LOOKS", "LOOK_NAME"],
+      "unusedExportedTypes": ["Bound"],
+      "otherChecksPassed": [
+        "client-server-boundary",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "resolution": "Made three fixture-only declarations private; normal hooks repeated without bypass."
+    },
+    {
+      "stage": "Final source normal hooks",
+      "command": "git commit -m \"fix: fence analysis cast writes by storyboard owner\"",
+      "status": "passed",
+      "durationSeconds": 59.39,
+      "boundaryTests": 17,
+      "checks": [
+        "client-server-boundary",
+        "dead-code",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "checkDurationsSeconds": {
+        "client-server-boundary": 6.38,
+        "dead-code": 14.54,
+        "format": 0.98,
+        "lint": 15.52,
+        "typecheck": 21.8
+      },
+      "skippedAsNotApplicable": [
+        "migration-safety",
+        "typegen-regen",
+        "workflow-trigger-safety"
+      ]
+    },
+    {
+      "stage": "New files and extracted service functions",
+      "status": "passed",
+      "tool": "locally installed oxc-parser AST; nested functions measured separately",
+      "results": [
+        {
+          "path": "src/cast/server/db/cast-records-ownership.test.fixture.ts",
+          "lines": 108,
+          "maxFunctionLines": 21,
+          "maxCyclomatic": 1,
+          "maxControlNesting": 0,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/cast/server/db/storyboard-character-writes.test.fixture.ts",
+          "lines": 381,
+          "maxFunctionLines": 33,
+          "maxCyclomatic": 6,
+          "maxControlNesting": 1,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/cast/server/db/storyboard-character-writes.test.ts",
+          "lines": 727,
+          "maxFunctionLines": 37,
+          "maxCyclomatic": 4,
+          "maxControlNesting": 3,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/cast/server/db/storyboard-location-writes.test.fixture.ts",
+          "lines": 351,
+          "maxFunctionLines": 47,
+          "maxCyclomatic": 8,
+          "maxControlNesting": 1,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/cast/server/db/storyboard-location-writes.test.ts",
+          "lines": 745,
+          "maxFunctionLines": 44,
+          "maxCyclomatic": 8,
+          "maxControlNesting": 2,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/cast/server/workflows/cast-records-output.ts",
+          "lines": 41,
+          "maxFunctionLines": 36,
+          "maxCyclomatic": 1,
+          "maxControlNesting": 0,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/cast/server/workflows/cast-records-ownership.test.ts",
+          "lines": 336,
+          "maxFunctionLines": 36,
+          "maxCyclomatic": 2,
+          "maxControlNesting": 1,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-cast-elements.test.ts",
+          "lines": 288,
+          "maxFunctionLines": 25,
+          "maxCyclomatic": 3,
+          "maxControlNesting": 1,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-cast-scope.test.ts",
+          "lines": 284,
+          "maxFunctionLines": 50,
+          "maxCyclomatic": 2,
+          "maxControlNesting": 1,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-cast-scope.ts",
+          "lines": 155,
+          "maxFunctionLines": 24,
+          "maxCyclomatic": 1,
+          "maxControlNesting": 0,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-cast.test.fixture.ts",
+          "lines": 376,
+          "maxFunctionLines": 37,
+          "maxCyclomatic": 6,
+          "maxControlNesting": 2,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-cast.test.ts",
+          "lines": 389,
+          "maxFunctionLines": 32,
+          "maxCyclomatic": 2,
+          "maxControlNesting": 1,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-cast.ts",
+          "lines": 60,
+          "maxFunctionLines": 31,
+          "maxCyclomatic": 2,
+          "maxControlNesting": 1,
+          "preservedBaselineExceptions": [],
+          "violations": []
+        },
+        {
+          "path": "src/cast/server/workflows/cast-records.ts",
+          "lines": 306,
+          "maxFunctionLines": 36,
+          "maxCyclomatic": 4,
+          "maxControlNesting": 2,
+          "preservedBaselineExceptions": [
+            {
+              "name": "buildLocationInsert",
+              "line": 72,
+              "lines": 35,
+              "cyclomatic": 11,
+              "nesting": 0,
+              "baselineAstIdentical": true
+            }
+          ],
+          "violations": []
+        }
+      ]
+    }
+  ],
+  "finalNonRuntimeChanges": [
+    "After integrated/post-restore tests, three unused fixture export modifiers were removed: LOOKS, LOOK_NAME, Bound. No runtime function/test body changed; all normal hooks passed on the final declarations."
+  ],
+  "baselineOverride": {
+    "source": "14dbc6c103988349282b82139033ac92d19b562b",
+    "paths": [
+      "src/cast/server/db/characters.ts",
+      "src/cast/server/db/character-looks.ts",
+      "src/cast/server/db/locations.ts",
+      "src/cast/server/db/sequence-elements.ts"
+    ],
+    "exactOriginalFactories": true,
+    "newFacadeServiceAndPrePostChecksRetained": true,
+    "restoredExactWorkingBytes": true,
+    "expectedFailedTests": 32,
+    "passed": 0,
+    "skippedByFilter": 115,
+    "restoredFiles": [
+      {
+        "sha256": "f48009b7a35b96b4075850d5b03490a1ed16ce38114f4cc853a4c5384b9ef7f1",
+        "path": "src/cast/server/db/characters.ts",
+        "restoredExactWorkingBytes": true
+      },
+      {
+        "sha256": "c440a236a8eee4797e3b4aeef0459c3b4034d5b98a17d4bc80eb95e8593112f9",
+        "path": "src/cast/server/db/character-looks.ts",
+        "restoredExactWorkingBytes": true
+      },
+      {
+        "sha256": "96b5166262e6f31df4f89dea37de6c9a465bb9cb103b5d1e66bdb50878d645c3",
+        "path": "src/cast/server/db/locations.ts",
+        "restoredExactWorkingBytes": true
+      },
+      {
+        "sha256": "19bcb88ee79d474a77b70766fe46a7409e3df213aa684f657334c8d6045aa49c",
+        "path": "src/cast/server/db/sequence-elements.ts",
+        "restoredExactWorkingBytes": true
+      }
+    ],
+    "restoreProtocol": "Saved raw bytes/SHA256, wrote exact sourceBefore Git blobs for all four factories, restored every file in finally, verified all four hashes and all 17 reviewed source/dependency hashes, then reran all 212 new cases."
+  },
+  "newCoverage": {
+    "charactersLooks": 54,
+    "locations": 64,
+    "facadeScopeElements": 83,
+    "actualScopedDbCastServiceComposition": 11,
+    "total": 212,
+    "existingTrustedRootCasesStrengthened": 2
+  },
+  "selectedTestPaths": [
+    "src/platform/client-server-boundary.test.ts",
+    "src/platform/domain-blind.test.ts",
+    "src/shots/server/artifact-cancellation.test.ts",
+    "src/platform/server/db/db-access-allowlist.test.ts",
+    "src/platform/server/workflow/base-workflow.test.ts",
+    "src/platform/server/workflow/claim-discipline.test.ts",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts",
+    "src/platform/server/workflow/wiring-consistency.test.ts",
+    "src/sequences/server/db/sequence-events.test.ts",
+    "src/sequences/server/db/storyboard-content-completion.test.ts",
+    "src/sequences/server/db/storyboard-content-errors.test.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+    "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+    "src/sequences/server/workflows/scene-split-content.test.ts",
+    "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+    "src/sequences/server/workflows/scene-split-workflow.test.ts",
+    "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+    "src/shots/server/db/scene-script-versions.test.ts",
+    "src/shots/server/db/shot-dialogue.test.ts",
+    "src/shots/server/db/shots-anchor.test.ts",
+    "src/shots/server/db/shots-scene-trim.test.ts",
+    "src/shots/server/db/structure-crud.test.ts",
+    "src/sequences/server/db/storyboard-analysis-output.test.ts",
+    "src/sequences/server/db/storyboard-analysis-persistence.test.ts",
+    "src/sequences/server/workflows/analyze-script-output.test.ts",
+    "src/shots/server/db/frame-prompt-versions.test.ts",
+    "src/shots/server/db/shot-prompt-versions.test.ts",
+    "src/shots/server/persist-shot-spec.test.ts",
+    "src/sequences/server/scene-persistence.test.ts",
+    "src/look/server/workflows/auto-style-step.test.ts",
+    "src/look/server/workflows/auto-style-ownership.test.ts",
+    "src/sequences/server/db/storyboard-auto-style.test.ts",
+    "src/sequences/server/db/sequences-style-snapshot.test.ts",
+    "src/look/server/db/styles.test.ts",
+    "src/look/server/db/styles-automatic.test.ts",
+    "src/look/auto-style.test.ts",
+    "src/cast/server/db/voice-claim-terminal.test.ts",
+    "src/cast/server/db/storyboard-location-writes.test.ts",
+    "src/cast/server/db/storyboard-character-writes.test.ts",
+    "src/cast/server/db/sheet-variants.test.ts",
+    "src/cast/server/db/sheet-claims.test.ts",
+    "src/cast/server/db/sequence-elements.test.ts",
+    "src/cast/server/db/sequence-cast-crud.test.ts",
+    "src/cast/server/db/locations.test.ts",
+    "src/cast/server/db/locations-create-bulk.test.ts",
+    "src/cast/server/db/location-sheet-ownership.test.ts",
+    "src/cast/server/db/location-ownership-contract.test.ts",
+    "src/cast/server/db/character-replace.test.ts",
+    "src/cast/server/db/character-ownership-contract.test.ts",
+    "src/sequences/server/db/storyboard-cast.test.ts",
+    "src/sequences/server/db/storyboard-cast-scope.test.ts",
+    "src/sequences/server/db/storyboard-cast-elements.test.ts",
+    "src/cast/server/workflows/cast-records.test.ts",
+    "src/cast/server/workflows/cast-records-ownership.test.ts"
+  ],
+  "unchangedOriginalTestPaths": [
+    "src/platform/client-server-boundary.test.ts",
+    "src/platform/domain-blind.test.ts",
+    "src/shots/server/artifact-cancellation.test.ts",
+    "src/platform/server/db/db-access-allowlist.test.ts",
+    "src/platform/server/workflow/base-workflow.test.ts",
+    "src/platform/server/workflow/claim-discipline.test.ts",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts",
+    "src/platform/server/workflow/wiring-consistency.test.ts",
+    "src/sequences/server/db/sequence-events.test.ts",
+    "src/sequences/server/db/storyboard-content-completion.test.ts",
+    "src/sequences/server/db/storyboard-content-errors.test.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+    "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+    "src/sequences/server/workflows/scene-split-content.test.ts",
+    "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+    "src/sequences/server/workflows/scene-split-workflow.test.ts",
+    "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+    "src/shots/server/db/scene-script-versions.test.ts",
+    "src/shots/server/db/shot-dialogue.test.ts",
+    "src/shots/server/db/shots-anchor.test.ts",
+    "src/shots/server/db/shots-scene-trim.test.ts",
+    "src/shots/server/db/structure-crud.test.ts",
+    "src/sequences/server/db/storyboard-analysis-output.test.ts",
+    "src/sequences/server/db/storyboard-analysis-persistence.test.ts",
+    "src/shots/server/db/frame-prompt-versions.test.ts",
+    "src/shots/server/db/shot-prompt-versions.test.ts",
+    "src/shots/server/persist-shot-spec.test.ts",
+    "src/sequences/server/scene-persistence.test.ts",
+    "src/look/server/workflows/auto-style-step.test.ts",
+    "src/look/server/workflows/auto-style-ownership.test.ts",
+    "src/sequences/server/db/storyboard-auto-style.test.ts",
+    "src/sequences/server/db/sequences-style-snapshot.test.ts",
+    "src/look/server/db/styles.test.ts",
+    "src/look/server/db/styles-automatic.test.ts",
+    "src/look/auto-style.test.ts",
+    "src/cast/server/db/voice-claim-terminal.test.ts",
+    "src/cast/server/db/sheet-variants.test.ts",
+    "src/cast/server/db/sheet-claims.test.ts",
+    "src/cast/server/db/sequence-elements.test.ts",
+    "src/cast/server/db/sequence-cast-crud.test.ts",
+    "src/cast/server/db/locations.test.ts",
+    "src/cast/server/db/locations-create-bulk.test.ts",
+    "src/cast/server/db/location-sheet-ownership.test.ts",
+    "src/cast/server/db/location-ownership-contract.test.ts",
+    "src/cast/server/db/character-replace.test.ts",
+    "src/cast/server/db/character-ownership-contract.test.ts",
+    "src/cast/server/workflows/cast-records.test.ts"
+  ],
+  "selectedTestResults": [
+    {
+      "path": "src/look/auto-style.test.ts",
+      "status": "passed",
+      "tests": 19,
+      "durationMs": 87.65
+    },
+    {
+      "path": "src/platform/client-server-boundary.test.ts",
+      "status": "passed",
+      "tests": 17,
+      "durationMs": 6435.83
+    },
+    {
+      "path": "src/platform/domain-blind.test.ts",
+      "status": "passed",
+      "tests": 2,
+      "durationMs": 464.96
+    },
+    {
+      "path": "src/sequences/server/scene-persistence.test.ts",
+      "status": "passed",
+      "tests": 11,
+      "durationMs": 20.61
+    },
+    {
+      "path": "src/shots/server/artifact-cancellation.test.ts",
+      "status": "passed",
+      "tests": 24,
+      "durationMs": 462.77
+    },
+    {
+      "path": "src/shots/server/persist-shot-spec.test.ts",
+      "status": "passed",
+      "tests": 4,
+      "durationMs": 31.6
+    },
+    {
+      "path": "src/look/server/workflows/auto-style-ownership.test.ts",
+      "status": "passed",
+      "tests": 14,
+      "durationMs": 134.68
+    },
+    {
+      "path": "src/look/server/workflows/auto-style-step.test.ts",
+      "status": "passed",
+      "tests": 8,
+      "durationMs": 45.18
+    },
+    {
+      "path": "src/look/server/db/styles-automatic.test.ts",
+      "status": "passed",
+      "tests": 10,
+      "durationMs": 170.23
+    },
+    {
+      "path": "src/look/server/db/styles.test.ts",
+      "status": "passed",
+      "tests": 16,
+      "durationMs": 162.06
+    },
+    {
+      "path": "src/cast/server/db/character-ownership-contract.test.ts",
+      "status": "passed",
+      "tests": 2,
+      "durationMs": 107.26
+    },
+    {
+      "path": "src/cast/server/db/character-replace.test.ts",
+      "status": "passed",
+      "tests": 4,
+      "durationMs": 164.61
+    },
+    {
+      "path": "src/cast/server/db/location-ownership-contract.test.ts",
+      "status": "passed",
+      "tests": 9,
+      "durationMs": 226.45
+    },
+    {
+      "path": "src/cast/server/db/location-sheet-ownership.test.ts",
+      "status": "passed",
+      "tests": 8,
+      "durationMs": 126.79
+    },
+    {
+      "path": "src/cast/server/db/locations-create-bulk.test.ts",
+      "status": "passed",
+      "tests": 20,
+      "durationMs": 389.54
+    },
+    {
+      "path": "src/cast/server/db/locations.test.ts",
+      "status": "passed",
+      "tests": 60,
+      "durationMs": 810.8
+    },
+    {
+      "path": "src/cast/server/db/sequence-cast-crud.test.ts",
+      "status": "passed",
+      "tests": 64,
+      "durationMs": 1452.94
+    },
+    {
+      "path": "src/cast/server/db/sequence-elements.test.ts",
+      "status": "passed",
+      "tests": 12,
+      "durationMs": 179.71
+    },
+    {
+      "path": "src/cast/server/db/sheet-claims.test.ts",
+      "status": "passed",
+      "tests": 44,
+      "durationMs": 1062.59
+    },
+    {
+      "path": "src/cast/server/db/sheet-variants.test.ts",
+      "status": "passed",
+      "tests": 17,
+      "durationMs": 339.27
+    },
+    {
+      "path": "src/cast/server/db/storyboard-character-writes.test.ts",
+      "status": "passed",
+      "tests": 54,
+      "durationMs": 1336.86
+    },
+    {
+      "path": "src/cast/server/db/storyboard-location-writes.test.ts",
+      "status": "passed",
+      "tests": 64,
+      "durationMs": 1110.52
+    },
+    {
+      "path": "src/cast/server/db/voice-claim-terminal.test.ts",
+      "status": "passed",
+      "tests": 12,
+      "durationMs": 204.91
+    },
+    {
+      "path": "src/cast/server/workflows/cast-records-ownership.test.ts",
+      "status": "passed",
+      "tests": 11,
+      "durationMs": 297.23
+    },
+    {
+      "path": "src/cast/server/workflows/cast-records.test.ts",
+      "status": "passed",
+      "tests": 13,
+      "durationMs": 34.88
+    },
+    {
+      "path": "src/platform/server/db/db-access-allowlist.test.ts",
+      "status": "passed",
+      "tests": 2,
+      "durationMs": 11.04
+    },
+    {
+      "path": "src/platform/server/workflow/base-workflow.test.ts",
+      "status": "passed",
+      "tests": 36,
+      "durationMs": 89.02
+    },
+    {
+      "path": "src/platform/server/workflow/claim-discipline.test.ts",
+      "status": "passed",
+      "tests": 5,
+      "durationMs": 176.44
+    },
+    {
+      "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "status": "passed",
+      "tests": 67,
+      "durationMs": 325.12
+    },
+    {
+      "path": "src/platform/server/workflow/wiring-consistency.test.ts",
+      "status": "passed",
+      "tests": 18,
+      "durationMs": 33.24
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+      "status": "passed",
+      "tests": 10,
+      "durationMs": 213.33
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+      "status": "passed",
+      "tests": 18,
+      "durationMs": 225.9
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-output.test.ts",
+      "status": "passed",
+      "tests": 103,
+      "durationMs": 226.73
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+      "status": "passed",
+      "tests": 18,
+      "durationMs": 49.44
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+      "status": "passed",
+      "tests": 16,
+      "durationMs": 166.81
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-content.test.ts",
+      "status": "passed",
+      "tests": 27,
+      "durationMs": 66.62
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+      "status": "passed",
+      "tests": 8,
+      "durationMs": 93.15
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-workflow.test.ts",
+      "status": "passed",
+      "tests": 41,
+      "durationMs": 391.53
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+      "status": "passed",
+      "tests": 30,
+      "durationMs": 455.6
+    },
+    {
+      "path": "src/sequences/server/db/sequence-events.test.ts",
+      "status": "passed",
+      "tests": 13,
+      "durationMs": 199.23
+    },
+    {
+      "path": "src/sequences/server/db/sequences-style-snapshot.test.ts",
+      "status": "passed",
+      "tests": 17,
+      "durationMs": 332.91
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-analysis-output.test.ts",
+      "status": "passed",
+      "tests": 155,
+      "durationMs": 11190.57
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-analysis-persistence.test.ts",
+      "status": "passed",
+      "tests": 3,
+      "durationMs": 203.56
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-auto-style.test.ts",
+      "status": "passed",
+      "tests": 106,
+      "durationMs": 1457.65
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-cast-elements.test.ts",
+      "status": "passed",
+      "tests": 29,
+      "durationMs": 438.3
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-cast-scope.test.ts",
+      "status": "passed",
+      "tests": 29,
+      "durationMs": 538.17
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-cast.test.ts",
+      "status": "passed",
+      "tests": 25,
+      "durationMs": 447.88
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-completion.test.ts",
+      "status": "passed",
+      "tests": 4,
+      "durationMs": 18.05
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-errors.test.ts",
+      "status": "passed",
+      "tests": 7,
+      "durationMs": 32.06
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-ownership.test.ts",
+      "status": "passed",
+      "tests": 174,
+      "durationMs": 11247.68
+    },
+    {
+      "path": "src/shots/server/db/frame-prompt-versions.test.ts",
+      "status": "passed",
+      "tests": 22,
+      "durationMs": 310.91
+    },
+    {
+      "path": "src/shots/server/db/scene-script-versions.test.ts",
+      "status": "passed",
+      "tests": 9,
+      "durationMs": 82.04
+    },
+    {
+      "path": "src/shots/server/db/shot-dialogue.test.ts",
+      "status": "passed",
+      "tests": 29,
+      "durationMs": 418.13
+    },
+    {
+      "path": "src/shots/server/db/shot-prompt-versions.test.ts",
+      "status": "passed",
+      "tests": 39,
+      "durationMs": 464.31
+    },
+    {
+      "path": "src/shots/server/db/shots-anchor.test.ts",
+      "status": "passed",
+      "tests": 7,
+      "durationMs": 138.02
+    },
+    {
+      "path": "src/shots/server/db/shots-scene-trim.test.ts",
+      "status": "passed",
+      "tests": 6,
+      "durationMs": 101.27
+    },
+    {
+      "path": "src/shots/server/db/structure-crud.test.ts",
+      "status": "passed",
+      "tests": 18,
+      "durationMs": 266.48
+    }
+  ],
+  "independentReview": {
+    "status": "completed",
+    "blockingFindings": 0,
+    "actionableFindings": 0,
+    "readOnly": true,
+    "capturedAtUtc": "2026-11-14T11:11:50Z",
+    "rawFileSha256": {
+      "src/cast/server/db/characters.ts": "f48009b7a35b96b4075850d5b03490a1ed16ce38114f4cc853a4c5384b9ef7f1",
+      "src/cast/server/db/character-looks.ts": "c440a236a8eee4797e3b4aeef0459c3b4034d5b98a17d4bc80eb95e8593112f9",
+      "src/cast/server/db/locations.ts": "96b5166262e6f31df4f89dea37de6c9a465bb9cb103b5d1e66bdb50878d645c3",
+      "src/cast/server/db/sequence-elements.ts": "19bcb88ee79d474a77b70766fe46a7409e3df213aa684f657334c8d6045aa49c",
+      "src/sequences/server/db/storyboard-cast.ts": "401e3af116e44338baf9ad1fbe359e28654ac82e1db1e51d6c8144a41940ab44",
+      "src/sequences/server/db/storyboard-cast-scope.ts": "3cfd92afefb114d4c5e820ca543848a604c93da8d3d01b44f4ba78844e69d76d",
+      "src/cast/server/workflows/cast-records.ts": "1ad78b1a7d4b53a4ad58e21c89d7d32a51368756e94322f0c8faa2e3ff2e5bdc",
+      "src/cast/server/workflows/cast-records-output.ts": "d999a37cee7f54e891cb66af4f4929a178793fb2b9c9dbf73a09303f10f88c5f",
+      "src/platform/server/db/scoped.ts": "b605d1a3408f0a76c788ad3bc0b27136c63e4ac685fd45267e97431ace274e3a",
+      "src/sequences/server/workflows/analyze-script-workflow.ts": "5752399ca84435727caec1439560c1e4cf803d85616c62dea4d2c3a1144b51b5",
+      "src/sequences/server/db/storyboard-content-scope.ts": "8c82ea28987fc8c1964ee6f62a40d01cad387ed171bb2f2ac1f7752f3ee05dd5",
+      "src/sequences/server/db/storyboard-content-writes.ts": "56f50d47e3adac2ee95b6f543cee428cbc35c2ee7b84bfb915e2c8788ba8913a",
+      "src/sequences/server/db/storyboard-owner.ts": "1ac9d74b6d10898e43b53f2b4fd524cd6cea455b733b66556aeb638949939a4d",
+      "src/sequences/server/workflows/storyboard-content-errors.ts": "22852dc81b5b944b88d43684b712739d5e86ff8dd7acc37a0810158ea2eb2cb2",
+      "src/sequences/server/workflows/generation-workflow-owner.ts": "1c725f1a79a3881a0428bd7277571c60b2c8c66975af970c9c0ec57e379e01fb",
+      "src/cast/server/db/sheet-claims.ts": "5457a893415e7b0c4e77febd4bc32772ee4183432761aefd5b4a9d60aa80cd4e",
+      "src/cast/server/db/sequence-cast.ts": "0bf36eacade47f52bbb40f5786593703481cc6d01c5794c80d059a90a76136a7"
+    },
+    "notes": "All reachable guarded mutations and unchanged ordinary semantics reviewed. No tests, edits or Git mutations by reviewer.",
+    "scope": "All reachable character/look/location/element mutations, actual parent relationships, initial/bind/orphan admission, service extraction, ordinary behavior and step-local error classification.",
+    "finalSourceVerified": true
+  },
+  "rawArtifactPolicy": "Task-created raw reports/logs are hashed, summarized and removed after audit; names, failures, command equivalents and per-file results remain in this record.",
+  "rawArtifacts": [
+    {
+      "path": ".codex/p3-cast-baseline-restore.json",
+      "sha256": "62cc61ffcf7b1bd88826640587b0c3c3b50fcaa0a88f43e733d3e97e2368985d"
+    },
+    {
+      "path": ".codex/p3-cast-build.log",
+      "sha256": "dea140f6f7b882ef4a6dc68d62f00e60312633989e2e703d1d5fb148aa591964"
+    },
+    {
+      "path": ".codex/p3-cast-drizzle.log",
+      "sha256": "e9fc37de4997f58fa8acb37033eb1a7ab8e322a0c3d3680d061057fd2afbb816"
+    },
+    {
+      "path": ".codex/p3-cast-integrated-tests.json",
+      "sha256": "552a71db042ceb6518a8fab0699cabd68ec5169e65b42855cf13566689ffe485"
+    },
+    {
+      "path": ".codex/p3-cast-intent.log",
+      "sha256": "ee140b236114e9fab293d27340b03ee9dfbe627cb623eafa8751d6a50974d1c8"
+    },
+    {
+      "path": ".codex/p3-cast-lint-final.log",
+      "sha256": "b7a5e1b932bf432eddcc7112f2f69b349f702eb17c24ee050bc699363795c85a"
+    },
+    {
+      "path": ".codex/p3-cast-lint-first.log",
+      "sha256": "f1338b4dbe40dddb5ab93e3e438198ec862445fb43fc29b6eb6eb7f74df1ec4e"
+    },
+    {
+      "path": ".codex/p3-cast-new-first.json",
+      "sha256": "b3221548e13066d383647df8242e3915af0c385f8abcce30be45d967f1088a11"
+    },
+    {
+      "path": ".codex/p3-cast-original-red.json",
+      "sha256": "0311b58f08ae0aa6bd442edf323aef30fed54a82adfcca27bb667278f390f882"
+    },
+    {
+      "path": ".codex/p3-cast-original-service.json",
+      "sha256": "da2e87465dfabd1ed0e6cb0c2f913af5209ba76e080ff1307e0dabcdc438a2d7"
+    },
+    {
+      "path": ".codex/p3-cast-post-restore.json",
+      "sha256": "7a64c50c71f6d1b3d42101f9034b94d68cab6f261f6eb5c79802ea44d05608d5"
+    },
+    {
+      "path": ".codex/p3-cast-quality-final.json",
+      "sha256": "1053474a25f65e011144a7f0cf59f5b0e374d0fb7ed7b2adca51fba482f0da38"
+    },
+    {
+      "path": ".codex/p3-cast-quality-first.json",
+      "sha256": "5646f9718437bf2cf7c1b9dc2c15ecb66509c537635eff4cb243d8c47177d75b"
+    },
+    {
+      "path": ".codex/p3-cast-review.json",
+      "sha256": "6b769f1294094eefc529d796cd22e00a3e48e263945fc9aa5337a5e26fa0f35d"
+    },
+    {
+      "path": ".codex/p3-cast-selected.json",
+      "sha256": "b818914666cbe938f08d7a8195b485f1bc99c10a47a85bfc171250d419b697b9"
+    },
+    {
+      "path": ".codex/p3-cast-service-corrected.json",
+      "sha256": "a1826ff9ecd662ca01e89235c48c79f955076478c57770dd28d88a6bb151f065"
+    },
+    {
+      "path": ".codex/p3-cast-service-first.json",
+      "sha256": "0ee0516ae1f1e57ab4abbf82186121945eed22cc7cbd125418d53d9aea5570c5"
+    },
+    {
+      "path": ".codex/p3-cast-source-paths.json",
+      "sha256": "7a150ec67ad25eece53f7fcc3643436d4c22cb137ef50d36da8bd0bfaf7b475e"
+    },
+    {
+      "path": ".codex/p3-cast-typecheck-final.log",
+      "sha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+    },
+    {
+      "path": ".codex/p3-cast-typecheck-first.log",
+      "sha256": "56b31baff9f7ec35c7f5e991cfe763cc335e9d89013f6cce057cc6020cd34133"
+    },
+    {
+      "path": ".codex/p3-cast-typecheck-second.log",
+      "sha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+    }
+  ],
+  "remainingActions": [
+    "Only the AnalyzeScript createCastRecords slice is fenced here; other descendants and independent edit/generation entry points still need their own ownership contract.",
+    "Complete content/asset/realtime/phase/preview/callback ownership and whole-root cancellation remain open; a successful final check can precede a later takeover.",
+    "Original concurrent-attach sharing-eligibility check/write windows and element token-lookup/unique-INSERT races were not redesigned. Real uniqueness errors remain visible.",
+    "Previously authorized batches may remain after later failure; the complete cast loop is not atomic.",
+    "Old cached checkpoints, payloads without trusted roots, independent Update all, standalone AnalyzeScript CLI and email delivery remain open.",
+    "Deployed Workerd/D1 restart/replay, multi-instance behavior, browser convergence, provider termination and wallet settlement acceptance remain unverified."
+  ],
+  "verificationBatchClosed": true,
+  "responsibilityClosed": false,
+  "acceptanceComplete": false
+}
