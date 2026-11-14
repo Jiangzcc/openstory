@@ -1,0 +1,340 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-scene-split-content",
+  "evidenceScope": "Migrated Node SQLite behind actual Drizzle D1 driver and createScopedDb. Race substitutes delay real prepared-SQL execution; engine/provider/adapter and error scheduling are explicit substitutes. No deployed/runtime/provider acceptance.",
+  "checks": [
+    {
+      "stage": "Existing DB and boundary selection",
+      "status": "passed",
+      "command": "bun run test src/shots/server/db/scene-script-versions.test.ts src/shots/server/db/shot-dialogue.test.ts src/shots/server/db/shots-anchor.test.ts src/shots/server/db/shots-scene-trim.test.ts src/shots/server/db/structure-crud.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/db/db-access-allowlist.test.ts --maxWorkers=4",
+      "files": 8,
+      "tests": 139,
+      "passed": 139,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "stage": "Original completion ownership swallowing",
+      "status": "failed-before-correction",
+      "command": "bun run test src/sequences/server/db/storyboard-content-completion.test.ts --maxWorkers=2",
+      "files": 1,
+      "tests": 2,
+      "passed": 1,
+      "failed": 1,
+      "skipped": 0,
+      "failures": [
+        {
+          "test": "does not let completion logging swallow a lost storyboard owner",
+          "message": "Error: promise resolved \"undefined\" instead of rejecting"
+        }
+      ]
+    },
+    {
+      "stage": "Error substitutes before lazy-query correction",
+      "status": "failed-before-fixture-correction",
+      "command": "bun run test src/sequences/server/db/storyboard-content-errors.test.ts src/sequences/server/db/storyboard-content-completion.test.ts --maxWorkers=2",
+      "files": 2,
+      "tests": 11,
+      "passed": 6,
+      "failed": 5,
+      "skipped": 0,
+      "failures": [
+        {
+          "test": "retains the original SQL error when the owner is still active",
+          "message": "Error: expected StoryboardContentOwnershipCheckError: Sto… to be Error: Synthetic write failure // Object.is equality"
+        },
+        {
+          "test": "classifies a guarded missing-row failure as ownership loss and retains its cause",
+          "message": "Error: expected StoryboardContentOwnershipCheckError: Sto… to be an instance of StoryboardContentOwnershipError"
+        },
+        {
+          "test": "retains both write and verification failures under a named retryable ownership error",
+          "message": "AssertionError: expected [ Array(2) ] to deeply equal [ Array(2) ]"
+        },
+        {
+          "test": "preserves engine abort at write unchanged",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "test": "preserves engine abort at recheck unchanged",
+          "message": "Error: expected StoryboardContentOwnershipCheckError: Sto… to be Error: Aborting engine: Grace period comp… // Object.is equality"
+        }
+      ]
+    },
+    {
+      "stage": "Error substitutes after lazy-query correction",
+      "status": "passed",
+      "command": "bun run test src/sequences/server/db/storyboard-content-errors.test.ts src/sequences/server/db/storyboard-content-completion.test.ts --maxWorkers=2",
+      "files": 2,
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "stage": "Original unfenced DB methods with new prechecks retained",
+      "status": "expected-regression-failure",
+      "command": "bun run test src/sequences/server/db/storyboard-content-ownership.test.ts -t \"rejects (scenes.upsert.insert|shots.update|shotDialogue.write|sceneScriptVersions.seedSplitVersions) when the owner changes after precheck\" --maxWorkers=2",
+      "files": 1,
+      "tests": 174,
+      "passed": 0,
+      "failed": 4,
+      "skipped": 170,
+      "failures": [
+        {
+          "test": "rejects scenes.upsert.insert when the owner changes after precheck",
+          "message": "AssertionError: expected { sequences: [ { …(34) } ], …(10) } to deeply equal { sequences: [ { …(34) } ], …(10) }"
+        },
+        {
+          "test": "rejects shots.update when the owner changes after precheck",
+          "message": "AssertionError: expected { …(11) } to deeply equal { …(11) }"
+        },
+        {
+          "test": "rejects sceneScriptVersions.seedSplitVersions when the owner changes after precheck",
+          "message": "AssertionError: expected { …(11) } to deeply equal { …(11) }"
+        },
+        {
+          "test": "rejects shotDialogue.write when the owner changes after precheck",
+          "message": "AssertionError: expected { …(11) } to deeply equal { …(11) }"
+        }
+      ]
+    },
+    {
+      "stage": "Final integrated selection",
+      "status": "passed",
+      "command": "bun run test src/platform/client-server-boundary.test.ts src/platform/domain-blind.test.ts src/shots/server/artifact-cancellation.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/wiring-consistency.test.ts src/sequences/server/db/sequence-events.test.ts src/sequences/server/db/storyboard-content-completion.test.ts src/sequences/server/db/storyboard-content-errors.test.ts src/sequences/server/db/storyboard-content-ownership.test.ts src/sequences/server/workflows/analyze-script-child-context.test.ts src/sequences/server/workflows/analyze-script-failure-ownership.test.ts src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/sequences/server/workflows/analyze-script-workflow.test.ts src/sequences/server/workflows/scene-split-content.test.ts src/sequences/server/workflows/scene-split-output-budget.test.ts src/sequences/server/workflows/scene-split-workflow.test.ts src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts src/shots/server/db/scene-script-versions.test.ts src/shots/server/db/shot-dialogue.test.ts src/shots/server/db/shots-anchor.test.ts src/shots/server/db/shots-scene-trim.test.ts src/shots/server/db/structure-crud.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-scene-content-final-tests.json",
+      "files": 25,
+      "tests": 602,
+      "passed": 602,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    },
+    {
+      "stage": "Final error selection after removing unused exports",
+      "status": "passed",
+      "command": "bun run test src/sequences/server/db/storyboard-content-errors.test.ts src/sequences/server/db/storyboard-content-completion.test.ts --maxWorkers=2",
+      "files": 2,
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "failures": []
+    }
+  ],
+  "additionalChecks": [
+    {
+      "stage": "Initial typecheck",
+      "status": "failed-before-correction",
+      "detail": "TS7053 on generic insert-value indexing; use a Map<string, unknown> of supplied entries instead of a type assertion. Final typecheck passed."
+    },
+    {
+      "stage": "Initial workflow fixture integration",
+      "status": "failed-before-fixture-correction",
+      "tests": 65,
+      "passed": 64,
+      "failed": 1,
+      "detail": "One original owner-bearing workflow fixture lacked the new storyboardContent method. Added a labeled factory substitute; original assertions retained."
+    },
+    {
+      "stage": "Final typecheck",
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    {
+      "stage": "Formatting",
+      "command": "bunx --no-install oxfmt --check <18 source/document paths>",
+      "files": 18,
+      "status": "passed"
+    },
+    {
+      "stage": "Full lint",
+      "command": "bun lint",
+      "status": "passed",
+      "warnings": 147,
+      "notes": "Two inherited warnings are on unchanged logic in touched SceneSplit source/test files; none in newly added files."
+    },
+    {
+      "stage": "Initial dead-code check",
+      "command": "bun dead-code",
+      "status": "failed-before-correction",
+      "detail": "Two internal error-name constants were unnecessarily exported. Removed export only; no runtime behavior change."
+    },
+    {
+      "stage": "Production build before and after unused-export cleanup",
+      "command": "$env:CLOUDFLARE_ENV = 'production'; bun run build",
+      "status": "passed",
+      "client": true,
+      "ssr": true,
+      "deploy": false
+    },
+    {
+      "stage": "Source commit normal hooks",
+      "command": "git commit -m \"fix: fence scene split writes by storyboard owner\"",
+      "status": "passed",
+      "durationSeconds": 60.99,
+      "boundaryTests": 17,
+      "checks": [
+        "client-server-boundary",
+        "knip",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "skippedAsNotApplicable": [
+        "migration-safety",
+        "typegen-regen",
+        "workflow-trigger-safety"
+      ]
+    },
+    {
+      "stage": "New-file size and function check",
+      "status": "passed",
+      "tool": "locally installed oxc-parser AST",
+      "results": [
+        {
+          "path": "src/sequences/server/db/storyboard-content-scope.ts",
+          "lines": 148,
+          "maxFunctionLines": 36,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content.ts",
+          "lines": 168,
+          "maxFunctionLines": 33,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/workflows/scene-split-content.ts",
+          "lines": 97,
+          "maxFunctionLines": 25,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-ownership.test.ts",
+          "lines": 752,
+          "maxFunctionLines": 41,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-ownership.test.fixture.ts",
+          "lines": 501,
+          "maxFunctionLines": 48,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-errors.test.ts",
+          "lines": 100,
+          "maxFunctionLines": 31,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-completion.test.ts",
+          "lines": 68,
+          "maxFunctionLines": 11,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/workflows/scene-split-content.test.ts",
+          "lines": 321,
+          "maxFunctionLines": 34,
+          "violations": []
+        }
+      ]
+    }
+  ],
+  "baselineOverride": {
+    "source": "149016d16c5d440dcc96c47a8d403852a73f968e",
+    "paths": [
+      "src/shots/server/db/scenes.ts",
+      "src/shots/server/db/shots.ts",
+      "src/shots/server/db/scene-script-versions.ts",
+      "src/shots/server/db/shot-dialogue.ts"
+    ],
+    "newBridgeAndPrechecksRetained": true,
+    "restoredExactWorkingBytes": true,
+    "expectedFailedTests": 4
+  },
+  "selectedTestPaths": [
+    "src/platform/client-server-boundary.test.ts",
+    "src/platform/domain-blind.test.ts",
+    "src/shots/server/artifact-cancellation.test.ts",
+    "src/platform/server/db/db-access-allowlist.test.ts",
+    "src/platform/server/workflow/base-workflow.test.ts",
+    "src/platform/server/workflow/claim-discipline.test.ts",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts",
+    "src/platform/server/workflow/wiring-consistency.test.ts",
+    "src/sequences/server/db/sequence-events.test.ts",
+    "src/sequences/server/db/storyboard-content-completion.test.ts",
+    "src/sequences/server/db/storyboard-content-errors.test.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+    "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+    "src/sequences/server/workflows/scene-split-content.test.ts",
+    "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+    "src/sequences/server/workflows/scene-split-workflow.test.ts",
+    "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+    "src/shots/server/db/scene-script-versions.test.ts",
+    "src/shots/server/db/shot-dialogue.test.ts",
+    "src/shots/server/db/shots-anchor.test.ts",
+    "src/shots/server/db/shots-scene-trim.test.ts",
+    "src/shots/server/db/structure-crud.test.ts"
+  ],
+  "unchangedOriginalTestPaths": [
+    "src/platform/client-server-boundary.test.ts",
+    "src/platform/domain-blind.test.ts",
+    "src/shots/server/artifact-cancellation.test.ts",
+    "src/platform/server/db/db-access-allowlist.test.ts",
+    "src/platform/server/workflow/base-workflow.test.ts",
+    "src/platform/server/workflow/claim-discipline.test.ts",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts",
+    "src/platform/server/workflow/wiring-consistency.test.ts",
+    "src/sequences/server/db/sequence-events.test.ts",
+    "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+    "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+    "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+    "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+    "src/shots/server/db/scene-script-versions.test.ts",
+    "src/shots/server/db/shot-dialogue.test.ts",
+    "src/shots/server/db/shots-anchor.test.ts",
+    "src/shots/server/db/shots-scene-trim.test.ts",
+    "src/shots/server/db/structure-crud.test.ts"
+  ],
+  "independentReview": {
+    "status": "completed",
+    "blockingFindings": 0,
+    "readOnly": true,
+    "initialFindings": [
+      {
+        "priority": "P1",
+        "finding": "logRunEvent swallowed ownership loss and could let the old parent continue",
+        "status": "resolved",
+        "evidence": "One failing completion regression before correction; named loss and unknown ownership now escape the logger."
+      },
+      {
+        "priority": "P2",
+        "finding": "Proven ownership loss was an ordinary retryable Error inside provider steps",
+        "status": "resolved",
+        "evidence": "Every bound writer maps proven loss to Cloudflare NonRetryableError inside the step callback; original cause retained. Unknown ownership stays retryable; engine abort is unchanged."
+      }
+    ],
+    "followUp": "Reviewer re-read final code and confirmed both findings closed with no new actionable findings. Test totals come from main; reviewer ran no tests."
+  },
+  "verificationBatchClosed": true,
+  "responsibilityClosed": false,
+  "acceptanceComplete": false,
+  "remainingActions": [
+    "Later AnalyzeScript cast, location, continuity, specifications and derived prompt writes, and other descendants remain outside this SceneSplit fence.",
+    "Whole-root cancellation, complete content/asset event ownership and post-write realtime/preview races remain open. Already committed chunks are not rolled back.",
+    "Tail shot/scene trimming remains separate guarded mutations. Pre-existing reads with more than 100 scene ids remain unchunked.",
+    "Payloads without an explicit root, old cached checkpoints/raw claims without launch requests, standalone CLI, independent Update all and email delivery remain open.",
+    "Real Cloudflare restart/replay and multi-instance behavior, browser convergence, provider termination and wallet settlement remain unverified."
+  ]
+}

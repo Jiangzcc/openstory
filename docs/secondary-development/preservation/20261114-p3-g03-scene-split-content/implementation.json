@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-scene-split-content",
+  "responsibilityId": "GC-03",
+  "status": "completed",
+  "p3Status": "in-progress",
+  "p4Status": "not-started",
+  "sourceBefore": "149016d16c5d440dcc96c47a8d403852a73f968e",
+  "sourceAfter": "dfcb4cbb5d84fef104ba4b4331b2b88a95dd1d56",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Fence all bounded SceneSplit structural/script/dialogue and completion-activity writes by the explicit active Storyboard root at SQL execution time.",
+  "upstreamExisting": [
+    "Streamed scenes, shot/anchor upserts, split script revisions and authored dialogue",
+    "Activity logging and standalone analysis",
+    "Organization-scoped composition and schema column defaults/encoders"
+  ],
+  "implemented": [
+    "Narrow storyboardContent owner-bound write surface",
+    "Mutation-time organization/sequence/root-or-trusted-claim/processing predicates on inserts, updates and deletes",
+    "Actual parent constraints for scene/shot/script/dialogue/element targets and per-row insert guards",
+    "All SceneSplit content and completion-activity write sites use the bound surface",
+    "Atomic initial split seed and selection batch, existing dialogue and fallback batch boundaries retained",
+    "Before/after and early/no-op ownership checks; proven loss non-retryable inside workflow steps",
+    "Named retryable unknown ownership, retained original/aggregate causes, unchanged engine abort, and ownership errors escaping best-effort completion logging"
+  ],
+  "schemaChanges": false,
+  "migrationsAdded": false,
+  "newCronOrBindings": false,
+  "newWorkflowReadHatch": false,
+  "newBoundaryExceptions": false,
+  "modifiedProductionFiles": 10,
+  "modifiedTestFiles": 5,
+  "newTestFixtures": 1,
+  "addedTests": 214,
+  "originalTestFilesUnchanged": 20,
+  "remainingActions": [
+    "Later AnalyzeScript cast, location, continuity, specifications and derived prompt writes, and other descendants remain outside this SceneSplit fence.",
+    "Whole-root cancellation, complete content/asset event ownership and post-write realtime/preview races remain open. Already committed chunks are not rolled back.",
+    "Tail shot/scene trimming remains separate guarded mutations. Pre-existing reads with more than 100 scene ids remain unchunked.",
+    "Payloads without an explicit root, old cached checkpoints/raw claims without launch requests, standalone CLI, independent Update all and email delivery remain open.",
+    "Real Cloudflare restart/replay and multi-instance behavior, browser convergence, provider termination and wallet settlement remain unverified."
+  ],
+  "independentReview": {
+    "status": "completed",
+    "blockingFindings": 0,
+    "readOnly": true,
+    "initialFindings": [
+      {
+        "priority": "P1",
+        "finding": "logRunEvent swallowed ownership loss and could let the old parent continue",
+        "status": "resolved",
+        "evidence": "One failing completion regression before correction; named loss and unknown ownership now escape the logger."
+      },
+      {
+        "priority": "P2",
+        "finding": "Proven ownership loss was an ordinary retryable Error inside provider steps",
+        "status": "resolved",
+        "evidence": "Every bound writer maps proven loss to Cloudflare NonRetryableError inside the step callback; original cause retained. Unknown ownership stays retryable; engine abort is unchanged."
+      }
+    ],
+    "followUp": "Reviewer re-read final code and confirmed both findings closed with no new actionable findings. Test totals come from main; reviewer ran no tests."
+  },
+  "frozenInventory": {
+    "files": 5,
+    "items": 1219,
+    "pending": 1219,
+    "approved": 0,
+    "modified": false,
+    "comparedWith": "149016d16c5d440dcc96c47a8d403852a73f968e"
+  },
+  "assertionChanges": {
+    "addedTests": 214,
+    "removedTests": 0,
+    "originalTestFilesModified": 1,
+    "weakenedAssertions": false,
+    "notes": [
+      "Existing SceneSplit fixture gained an explicitly labeled owner-factory substitute and two runtime tests; original assertions retained.",
+      "Error substitute initially executed query .where eagerly; corrected to lazy execution, without changing production semantics."
+    ]
+  },
+  "qualityScope": "Eight new source/test/fixture files are below 800 lines and all functions below 50 lines by local Oxc AST. Existing large factories/tests receive only required seams; no unrelated size refactor.",
+  "sourcePaths": [
+    "docs/architecture/generation-plan.md",
+    "docs/architecture/workflow-snapshots-and-content-hash-staleness.md",
+    "src/platform/server/db/scoped.ts",
+    "src/sequences/server/db/sequence-events.ts",
+    "src/sequences/server/db/storyboard-content-completion.test.ts",
+    "src/sequences/server/db/storyboard-content-errors.test.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.fixture.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.ts",
+    "src/sequences/server/db/storyboard-content-scope.ts",
+    "src/sequences/server/db/storyboard-content.ts",
+    "src/sequences/server/workflows/scene-split-content.test.ts",
+    "src/sequences/server/workflows/scene-split-content.ts",
+    "src/sequences/server/workflows/scene-split-workflow.test.ts",
+    "src/sequences/server/workflows/scene-split-workflow.ts",
+    "src/shots/server/db/scene-script-versions.ts",
+    "src/shots/server/db/scenes.ts",
+    "src/shots/server/db/shot-dialogue.ts",
+    "src/shots/server/db/shots.ts"
+  ],
+  "productionPaths": [
+    "src/platform/server/db/scoped.ts",
+    "src/sequences/server/db/sequence-events.ts",
+    "src/sequences/server/db/storyboard-content-scope.ts",
+    "src/sequences/server/db/storyboard-content.ts",
+    "src/sequences/server/workflows/scene-split-content.ts",
+    "src/sequences/server/workflows/scene-split-workflow.ts",
+    "src/shots/server/db/scene-script-versions.ts",
+    "src/shots/server/db/scenes.ts",
+    "src/shots/server/db/shot-dialogue.ts",
+    "src/shots/server/db/shots.ts"
+  ],
+  "newSourcePaths": [
+    "src/sequences/server/db/storyboard-content-completion.test.ts",
+    "src/sequences/server/db/storyboard-content-errors.test.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.fixture.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.ts",
+    "src/sequences/server/db/storyboard-content-scope.ts",
+    "src/sequences/server/db/storyboard-content.ts",
+    "src/sequences/server/workflows/scene-split-content.test.ts",
+    "src/sequences/server/workflows/scene-split-content.ts"
+  ],
+  "sourceFingerprintFormat": "SHA256 of each committed Git blob",
+  "sourceFingerprints": [
+    {
+      "path": "docs/architecture/generation-plan.md",
+      "sha256": "937ad8720b1018a2c7542b31c7c5a308d38c98bebdb51a4b629c7a08f9f0bcbf"
+    },
+    {
+      "path": "docs/architecture/workflow-snapshots-and-content-hash-staleness.md",
+      "sha256": "1fe0d104d356f076c5c539a60991c438a188d97322ad54c63bf0aebb0a8d96fe"
+    },
+    {
+      "path": "src/platform/server/db/scoped.ts",
+      "sha256": "c9fc8b590985fb52b96b84e6e19d0f2826026407571426959d146e77b037b5e5"
+    },
+    {
+      "path": "src/sequences/server/db/sequence-events.ts",
+      "sha256": "10c71cafd566f9cc9e22ce0eaee6b6fc8c425c0328757168bc77db5a3aae50e8"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-completion.test.ts",
+      "sha256": "90630382855c024a3921069f7413cdedd665cee61462b96d45045cdb9cf470cc"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-errors.test.ts",
+      "sha256": "14f30a9ae8b56c780916b4c77646e69ad38465961e8971887f020e71edfbb09d"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-ownership.test.fixture.ts",
+      "sha256": "2b536c2acc88db41c11476b4df3cc390965069d1ff404f322763dd665ee96007"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-ownership.test.ts",
+      "sha256": "b0b487e8504fd4b75f5db6bcae5d94a130d1e15dd4c619feef003522b70d1edc"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-scope.ts",
+      "sha256": "e1d005da367e248ddc36ca00719fbd273841b032e382532b4d3cff349cedea19"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content.ts",
+      "sha256": "8ae74172e19d0f21788fab6424743fee4469000e262c41918e56750af9c54577"
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-content.test.ts",
+      "sha256": "640994fe706c4f4bb0c984c9b776a073d54d8803788d05e7da4067f6dcfd79b2"
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-content.ts",
+      "sha256": "52abab2ad8e1a0381cdebecd9d97ba679a132b55d4f2096fe87fa4be4ec16e10"
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-workflow.test.ts",
+      "sha256": "56bc27c94932ae0a1e363fd64e317f0bd1851a30f02a6a91ecf69fd805ac4306"
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-workflow.ts",
+      "sha256": "f66d4b7735597aba057fe40e25ac996c738359c3226de3a5aae3fa83829395c6"
+    },
+    {
+      "path": "src/shots/server/db/scene-script-versions.ts",
+      "sha256": "86fc12d338d708b4e9b854818dba31718606185bbf497116642e372e7dbdf867"
+    },
+    {
+      "path": "src/shots/server/db/scenes.ts",
+      "sha256": "59af91c2d41e01fa69452389c0127ef7b198289abf1e93d73203f31d60438f64"
+    },
+    {
+      "path": "src/shots/server/db/shot-dialogue.ts",
+      "sha256": "dc5675ab3f56286186aa4af3c63be805ade6aad7f7336ba9dc27e9532f87880d"
+    },
+    {
+      "path": "src/shots/server/db/shots.ts",
+      "sha256": "1656972695ac8ac7effbba7ad3b8731b08d0c23c6414a15d1920512374e16088"
+    }
+  ],
+  "verificationBatchClosed": true,
+  "responsibilityClosed": false,
+  "acceptanceComplete": false
+}
