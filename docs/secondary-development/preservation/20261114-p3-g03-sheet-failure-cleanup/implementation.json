@@ -57,5 +57,10 @@
     "GC-03 and all 1219 frozen inventory dispositions remain open; P4 has not started."
   ],
   "noRemoteWrites": true,
-  "noPush": true
+  "noPush": true,
+  "followUpCorrection": {
+    "date": "2026-11-14",
+    "record": "../20261114-p3-g03-failure-retry-contract/README.md",
+    "scope": "Earlier channel substitutes proved emit attempts only. Internal catches could checkpoint failed cleanup without retry and did not preserve engine aborts. The follow-up corrects propagation; earlier command results remain historical evidence."
+  }
 }

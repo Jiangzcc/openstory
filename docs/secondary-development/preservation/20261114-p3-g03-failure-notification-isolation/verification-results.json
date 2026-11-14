@@ -9,7 +9,7 @@
     "passed": 13,
     "failed": 0,
     "skipped": 0,
-    "claim": "Recast, image, variant-image and upscale failure hooks preserve user-visible failure notifications when persistence or notification operations fail."
+    "claim": "Host-side channel substitutes were called in the covered failure branches; delivery, durable retry and engine-abort behavior were not established by this batch."
   },
   "relatedRegression": {
     "command": "bun run test src/cast/server/workflows/recast-location-workflow.test.ts src/stills/server/workflows/shot-variant-workflow-failure.test.ts src/stills/server/workflows/shot-variant-workflow.test.ts src/stills/server/workflows/image-workflow-failure.test.ts src/stills/server/workflows/image-workflow-preview-failure.test.ts src/stills/server/workflows/image-workflow-snapshot.test.ts src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts src/stills/server/workflows/upscale-shot-variant-workflow-generation.test.ts src/stills/server/workflows/upscale-shot-variant-workflow.test.ts src/cast/server/workflows/location-sheet-workflow.test.ts src/cast/server/workflows/character-sheet-workflow.test.ts src/cast/server/workflows/character-voice-workflow.test.ts src/cast/server/workflows/location-bible-workflow.test.ts src/cast/server/workflows/character-bible-workflow.test.ts src/platform/server/workflow/await-child.test.ts",
@@ -20,7 +20,10 @@
     "skipped": 0
   },
   "checks": {
-    "typecheck": { "command": "bun typecheck", "status": "passed" },
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed"
+    },
     "lint": {
       "command": "bun lint",
       "status": "passed",
@@ -30,8 +33,14 @@
       "command": "bunx oxfmt --check src/cast/server/workflows/recast-location-workflow.ts src/cast/server/workflows/recast-location-workflow.test.ts src/stills/server/workflows/shot-variant-workflow.ts src/stills/server/workflows/shot-variant-workflow-failure.test.ts src/stills/server/workflows/image-workflow.ts src/stills/server/workflows/image-workflow-failure.test.ts src/stills/server/workflows/upscale-shot-variant-workflow.ts src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts",
       "status": "passed"
     },
-    "diffCheck": { "command": "git diff --check", "status": "passed" },
-    "build": { "command": "bun run build", "status": "passed" },
+    "diffCheck": {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed"
+    },
     "preCommitHooks": {
       "command": "git commit -m \"fix: isolate generation failure notifications\"",
       "status": "passed",
@@ -42,5 +51,10 @@
     "The durable child, ScopedDb and realtime channel were host-side substitutes in the tests.",
     "Real Cloudflare durable replay, Workerd authenticated HTTP, native providers, remote D1/R2, browser UI and wallet settlement were not run.",
     "No remote writes or push were performed."
-  ]
+  ],
+  "followUpCorrection": {
+    "date": "2026-11-14",
+    "record": "../20261114-p3-g03-failure-retry-contract/README.md",
+    "scope": "Earlier channel substitutes proved emit attempts only. Internal catches could checkpoint failed cleanup without retry and did not preserve engine aborts. The follow-up corrects propagation; earlier command results remain historical evidence."
+  }
 }

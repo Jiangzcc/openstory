@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-failure-retry-contract",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "06c0203994168c71e19939a2796ad5ec2f409fcf",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Restore retry and engine-abort propagation for the selected required failure actions, preserve reviewed optional policies, protect Storyboard from writing a terminal status after a failed status read, and finish Motion failure notification isolation.",
+  "productionFilesChanged": [
+    "src/audio/server/workflows/music-workflow.ts",
+    "src/cast/server/workflows/character-bible-workflow.ts",
+    "src/cast/server/workflows/character-sheet-workflow.ts",
+    "src/cast/server/workflows/character-voice-workflow.ts",
+    "src/cast/server/workflows/location-bible-workflow.ts",
+    "src/cast/server/workflows/location-sheet-workflow.ts",
+    "src/cast/server/workflows/recast-location-workflow.ts",
+    "src/motion/server/workflows/lipsync-workflow.ts",
+    "src/motion/server/workflows/motion-workflow-persist.ts",
+    "src/platform/server/workflow/failure-actions.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.ts",
+    "src/sequences/server/workflows/storyboard-workflow.ts",
+    "src/stills/server/workflows/image-workflow.ts",
+    "src/stills/server/workflows/shot-variant-workflow.ts",
+    "src/stills/server/workflows/upscale-shot-variant-workflow.ts"
+  ],
+  "testFilesChanged": [
+    "src/audio/server/workflows/music-workflow-failure.test.ts",
+    "src/cast/server/workflows/character-bible-workflow.test.ts",
+    "src/cast/server/workflows/character-sheet-workflow.test.ts",
+    "src/cast/server/workflows/character-voice-workflow.test.ts",
+    "src/cast/server/workflows/location-bible-workflow.test.ts",
+    "src/cast/server/workflows/location-sheet-workflow.test.ts",
+    "src/cast/server/workflows/recast-location-workflow.test.ts",
+    "src/motion/server/workflows/lipsync-workflow-failure.test.ts",
+    "src/motion/server/workflows/motion-batch-workflow.test.ts",
+    "src/motion/server/workflows/motion-workflow-persist.test.ts",
+    "src/platform/server/workflow/failure-actions-workflow.test.ts",
+    "src/platform/server/workflow/failure-actions.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/storyboard-workflow.test.ts",
+    "src/stills/server/workflows/image-workflow-failure.test.ts",
+    "src/stills/server/workflows/image-workflow-preview-failure.test.ts",
+    "src/stills/server/workflows/shot-variant-workflow-failure.test.ts",
+    "src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts"
+  ],
+  "newSourcePaths": [
+    "src/platform/server/workflow/failure-actions-workflow.test.ts",
+    "src/platform/server/workflow/failure-actions.test.ts",
+    "src/platform/server/workflow/failure-actions.ts"
+  ],
+  "historicalBatchesPartlyCorrected": [
+    "G03-cast-failure-cleanup",
+    "G03-failure-notification-isolation",
+    "G03-sequence-failure-notification-isolation",
+    "G03-lipsync-failure-notification-isolation"
+  ],
+  "beforeAfter": [
+    {
+      "before": "Separate catch/log/return blocks let required cleanup failures checkpoint as successful.",
+      "after": "The domain groups dependent reads/writes; runFailureActions attempts remaining independent actions and then throws the first required-action error."
+    },
+    {
+      "before": "Generic catches or allSettled could treat engine interruptions as terminal child failures.",
+      "after": "Engine interruptions escape unchanged, stop later failure actions, and survive the reviewed parent aggregations."
+    },
+    {
+      "before": "Storyboard could write failed after its current-status read threw.",
+      "after": "Read and guarded write share an action, so a failed read skips the write while independent notification is still attempted."
+    },
+    {
+      "before": "Motion failure persistence could stop before notifying.",
+      "after": "Motion attempts its independent notification and propagates required persistence errors; its batch caller preserves the failure for step retry."
+    }
+  ],
+  "preservedOptionalPolicies": [
+    "LocationSheet, Image, ShotVariant, Music and Lipsync ordinary notification errors remain best effort; engine aborts propagate.",
+    "AnalyzeScript/Storyboard ordinary reservation-release errors and Image preview ordinary failure-row write errors retain their existing best-effort behavior.",
+    "Recast keeps a direct await for its single required notification rather than adding a wrapper."
+  ],
+  "newParentFailureSteps": [
+    "fail-location-sheet-${index}",
+    "fail-character-sheet-${index}",
+    "fail-character-voice-${row.characterId}"
+  ],
+  "originalAssertionTreatment": "Existing ownership, payload, primary/variant and successful terminal-state assertions continue to pass. Expectations that a required cleanup failure resolves successfully were changed to assert notification attempt plus rejection. Ordinary notification best-effort cases remain distinct from abort cases.",
+  "newEvidence": [
+    "Nine pure failure-action cases and five real-base composition cases exercise the shared retry/error contract with host-side substitutes.",
+    "The selected domain hook regressions cover notification attempts after ordinary persistence failures and immediate abort propagation.",
+    "Bible parent regressions cover durable cleanup retry/exhaustion, held:false, guarded child-failure cleanup without duplicate broadcast, and abort propagation.",
+    "Motion regression covers lookup/claim/clear/append/write boundaries and its blocked-dialogue batch caller.",
+    "The final integrated suite passed 29 files and 477 tests."
+  ],
+  "tests": {
+    "command": "bun run test src/audio/server/workflows/music-workflow-failure.test.ts src/cast/server/workflows/character-bible-workflow.test.ts src/cast/server/workflows/character-sheet-workflow.test.ts src/cast/server/workflows/character-voice-workflow.test.ts src/cast/server/workflows/location-bible-workflow.test.ts src/cast/server/workflows/location-sheet-workflow.test.ts src/cast/server/workflows/recast-location-workflow.test.ts src/motion/server/workflows/lipsync-workflow-failure.test.ts src/motion/server/workflows/motion-batch-workflow.test.ts src/motion/server/workflows/motion-workflow-persist.test.ts src/motion/server/workflows/motion-workflow.test.ts src/platform/client-server-boundary.test.ts src/platform/domain-blind.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/server/workflow/child-snapshot-composition.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/failure-actions-workflow.test.ts src/platform/server/workflow/failure-actions.test.ts src/platform/server/workflow/llm-auth-failure.test.ts src/platform/server/workflow/model-snapshot-composition.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/wiring-consistency.test.ts src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts src/stills/server/workflows/image-workflow-failure.test.ts src/stills/server/workflows/image-workflow-preview-failure.test.ts src/stills/server/workflows/shot-variant-workflow-failure.test.ts src/stills/server/workflows/upscale-shot-variant-workflow-failure.test.ts",
+    "files": 29,
+    "tests": 477,
+    "passed": 477,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "Required failure actions preserve retry/error propagation and engine interruptions while retaining the reviewed optional policies; host-side tests do not establish Cloudflare replay or delivery."
+  },
+  "quality": {
+    "typecheck": "passed after three callback-narrowing errors were fixed",
+    "lint": "passed with repository warnings",
+    "targetedLint": "passed with one unchanged warning outside the diff",
+    "sourceFormat": "passed on 33 source/test files",
+    "diffCheck": "passed",
+    "build": "passed client and SSR",
+    "preCommitHooks": "passed without bypass",
+    "documentation": "passed: 17 format files, 10 JSON, 43 JSONL records and 160 local links"
+  },
+  "openItems": [
+    "The existing markVoiceClaimTerminal updates the version and pending voice pointer separately; failure of the second update may make a retry skip pointer cleanup. This DB helper was not changed.",
+    "Storyboard retains its original non-atomic read/terminal-status write and skip-on-terminal notification guard; this batch only closes the failed-read blind write.",
+    "Other failure hooks and historical best-effort policies remain subject to separate review.",
+    "Real Cloudflare durable replay/restart, Workerd authenticated HTTP, provider, remote D1/R2, browser delivery and wallet settlement remain unvalidated.",
+    "GC-03/P3 remain open; all 1219 frozen inventory dispositions remain pending and P4 has not started."
+  ],
+  "noRemoteWrites": true,
+  "noPaidCalls": true,
+  "noPush": true,
+  "sourceAfter": "408a8fe85c4c63924490e30b29366207e9ffca3d",
+  "normalCodeCommit": "408a8fe85c4c63924490e30b29366207e9ffca3d"
+}

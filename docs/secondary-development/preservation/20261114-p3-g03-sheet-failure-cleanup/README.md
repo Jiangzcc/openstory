@@ -1,5 +1,7 @@
 # G03 Cast 子工作流失败清理隔离（2026-11-14）
 
+> 复核更正（2026-11-14）：本批历史测试只证明特定异常下仍调用了 channel emit 替身，不能证明通知送达。内部 catch 返回成功还可能使 emit-failure 提前 checkpoint，跳过清理重试；这些测试未覆盖该契约和 engine abort。后续在[失败重试契约批次](../20261114-p3-g03-failure-retry-contract/README.md)中修正传播与中断处理，原测试成绩保留其历史含义。
+
 本批继续执行 P3 的 G03，处理 LocationSheetWorkflow、CharacterSheetWorkflow 和 CharacterVoiceWorkflow 的失败钩子隔离问题。原实现先写失败 claim 或 voice husk，再发送 realtime failed 事件；如果清理写入本身失败，异常会提前结束 `onFailure`，用户可见的 failed 事件就不会发送。realtime 发送异常也可能反过来让失败钩子继续抛出。
 
 ## 改动

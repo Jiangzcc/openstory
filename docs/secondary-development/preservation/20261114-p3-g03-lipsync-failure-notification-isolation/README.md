@@ -1,5 +1,7 @@
 # G03 Lip-sync 失败通知隔离（2026-11-14）
 
+> 复核更正（2026-11-14）：本批历史测试只证明特定异常下仍调用了 channel emit 替身，不能证明通知送达。内部 catch 返回成功还可能使 emit-failure 提前 checkpoint，跳过清理重试；这些测试未覆盖该契约和 engine abort。后续在[失败重试契约批次](../20261114-p3-g03-failure-retry-contract/README.md)中修正传播与中断处理，原测试成绩保留其历史含义。
+
 本批继续执行 P3 的 G03，处理 LipsyncWorkflow 的 failure hook。原实现先读取 shot/render segment、清理 pending promote、写失败 video variant，再发送 `generation.video:progress`；任一清理或持久化操作失败都会阻断失败通知，而且通知所需的 sequence id 没有直接使用任务 payload 中已冻结的值。
 
 ## 改动

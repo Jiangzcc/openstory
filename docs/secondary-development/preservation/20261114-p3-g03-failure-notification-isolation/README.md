@@ -1,5 +1,7 @@
 # G03 生成失败通知隔离（2026-11-14）
 
+> 复核更正（2026-11-14）：本批历史测试只证明特定异常下仍调用了 channel emit 替身，不能证明通知送达。内部 catch 返回成功还可能使 emit-failure 提前 checkpoint，跳过清理重试；这些测试未覆盖该契约和 engine abort。后续在[失败重试契约批次](../20261114-p3-g03-failure-retry-contract/README.md)中修正传播与中断处理，原测试成绩保留其历史含义。
+
 本批继续执行 P3 的 G03，沿同一根因复核 recast、image、variant-image 和 upscale failure hook。原实现中，失败状态写入、claim/自动 promote 清理或失败前的缩略图读取发生在用户可见 failed 事件之前；这些 best-effort 操作一旦抛错，failure hook 就会提前结束，页面可能收不到失败或 upscaleError 通知。
 
 ## 改动
