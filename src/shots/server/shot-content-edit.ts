@@ -19,7 +19,6 @@ import {
 } from './regenerate-shot-prompt';
 import type { ShotEditContext } from './shot-context';
 import { redrawShotPreview } from './shot-preview';
-import type { ScopedDb } from '@/platform/server/db/scoped';
 import { terminateSingleArtifactRun } from '@/platform/server/workflow/run-outcome';
 
 /**
@@ -184,27 +183,17 @@ export async function saveShotSpec(
   return regenerateShotPrompt(context, scene, { force: false, replace });
 }
 
-/**
- * Settle the frame after an image claim cancel (#1095 review): the producing
- * run may be terminated before its own settle path runs, so drop the promote
- * claim if THIS row holds it. The status needs no write: a cancelled row
- * reads as the frame's selection (#1942), and a newer kickoff's row is newer.
- */
-async function settleFrameAfterImageCancel(
-  scopedDb: ScopedDb,
-  frameId: string,
-  row: { id: string }
-): Promise<void> {
-  await scopedDb.frames.clearPendingPromoteVersionIdIf(frameId, row.id);
+async function finishArtifactCancellation(result: {
+  cancelled: boolean;
+  workflowRunIds: Array<string | null>;
+}): Promise<{ cancelled: boolean }> {
+  for (const runId of result.workflowRunIds) {
+    await terminateSingleArtifactRun(runId);
+  }
+  return { cancelled: result.cancelled };
 }
 
-/**
- * Cancel an in-flight pending artifact claim (#1085): flip the row to
- * 'cancelled' (a completion that races in afterwards is discarded against the
- * status guard), cascade to dependent image claims, and best-effort terminate
- * the producing workflow when it's a single-artifact run. Idempotent — a row
- * that already went terminal reports `cancelled: false`.
- */
+// Commit cancellation before best-effort workflow termination.
 export async function cancelPendingArtifact(
   context: Pick<ShotEditContext, 'scopedDb' | 'shot' | 'frame'>,
   data: {
@@ -220,24 +209,12 @@ export async function cancelPendingArtifact(
       frame.id
     );
     if (!row) throw new NotFoundError('Prompt version not found for this shot');
-    const cancelled = await scopedDb.framePromptVersions.markTerminal(
-      row.id,
-      'cancelled'
+    return finishArtifactCancellation(
+      await scopedDb.artifactCancellations.cancelVisualPrompt({
+        versionId: row.id,
+        frameId: frame.id,
+      })
     );
-    if (!cancelled) return { cancelled: false };
-    const cascaded = await scopedDb.frameVariants.cancelByDependency(
-      row.id,
-      'Upstream visual prompt was cancelled'
-    );
-    for (const dep of cascaded) {
-      // Terminate the image child (if it has a real single-artifact run id)
-      // before settling frame state — cancel should stop spend when possible.
-      // Status guards still discard any completion that races past this.
-      await terminateSingleArtifactRun(dep.workflowRunId);
-      await settleFrameAfterImageCancel(scopedDb, dep.frameId, dep);
-    }
-    await terminateSingleArtifactRun(row.workflowRunId);
-    return { cancelled: true };
   }
 
   if (data.artifact === 'motion-prompt') {
@@ -259,13 +236,10 @@ export async function cancelPendingArtifact(
   if (!row || row.frameId !== frame.id) {
     throw new NotFoundError('Image version not found for this shot');
   }
-  const cancelled = await scopedDb.frameVariants.markTerminal(
-    row.id,
-    'cancelled',
-    'Cancelled by user'
+  return finishArtifactCancellation(
+    await scopedDb.artifactCancellations.cancelImage({
+      versionId: row.id,
+      frameId: frame.id,
+    })
   );
-  if (!cancelled) return { cancelled: false };
-  await terminateSingleArtifactRun(row.workflowRunId);
-  await settleFrameAfterImageCancel(scopedDb, row.frameId, row);
-  return { cancelled: true };
 }

@@ -322,6 +322,12 @@ takes along the sheets its shots are made from; music stays sequence-wide.
 It never makes a first sheet, still or clip — that is a continue. A shot the
 plan could not check is reported as `staleness-unknown`.
 
+### Cancelling a pending artifact (secondary development, 2026-11-14)
+
+The existing pending visual prompt / motion prompt / image cancel actions remain artifact-scoped. Visual-prompt cancellation commits its source status, dependent image cancellations and exact frame promote clears in one organization-scoped D1 batch; direct image cancellation commits status and promote clear together. A completed source and another kickoff's claim are preserved. The common frame claim setter and conditional handover also recheck that the destination exists and is uncancelled in their SQL write, so a delayed callback cannot re-install it. Repeating a cancelled source returns false for the source transition while repairing any eligible legacy partial cleanup. A late image claim for a cancelled visual dependency in its own organization is inserted cancelled and non-primary, writes no started activity, and cannot hide a newer active render; its generation claim stands down.
+
+Termination stays best effort after the data commit, including when a parent owns the run and cannot safely be terminated. A lost commit reply can leave termination unattempted, but cannot leave half of the batch committed. The [cancellation contract](workflow-snapshots-and-content-hash-staleness.md#pending-artifact-cancellation-secondary-development-2026-11-14) records the boundary. This adds no root cancellation UI and does not close all descendant content/event ownership.
+
 ## What the footer shows
 
 The scene list reads `getGenerationPlanFn` (one query, 10s stale time,

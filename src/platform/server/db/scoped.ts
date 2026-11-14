@@ -58,6 +58,7 @@ import { createCharactersMethods } from '@/cast/server/db/characters';
 import { createFramePromptVersionsMethods } from '@/shots/server/db/frame-prompt-versions';
 import { createFrameVariantsMethods } from '@/stills/server/db/frame-variants';
 import { createFramesMethods } from '@/shots/server/db/frames';
+import { createArtifactCancellationMethods } from '@/shots/server/db/artifact-cancellations';
 import { createGeneratedAssetsMethods } from '@/models/server/db/generated-assets';
 import { createScenesMethods } from '@/shots/server/db/scenes';
 import { createProductionReadMethods } from '@/shots/server/db/production-reads';
@@ -430,6 +431,10 @@ export function createScopedDb(organizationId: string, userId: string) {
     frames: createFramesMethods(db),
     frameVariants: createFrameVariantsMethods(db),
     framePromptVersions: createFramePromptVersionsMethods(db),
+    artifactCancellations: createArtifactCancellationMethods(
+      db,
+      organizationId
+    ),
     sequenceEvents: createSequenceEventsMethods(db),
     characterSheetVariants: createCharacterSheetVariantsMethods(
       db,
