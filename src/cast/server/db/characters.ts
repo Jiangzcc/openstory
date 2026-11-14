@@ -483,6 +483,11 @@ export const deleteCharactersStatements = (db: Database, where: SQL) => {
 export function createCharactersMethods(db: Database, organizationId: string) {
   const looks = createCharacterLooksMethods(db, organizationId);
   const inOrganization = eq(characters.organizationId, organizationId);
+  const voiceInOrganization = () =>
+    inArray(
+      characterVoiceVersions.characterId,
+      db.select({ id: characters.id }).from(characters).where(inOrganization)
+    );
 
   /**
    * The organization's characters as their sequences cast them, and the joins they
@@ -2135,28 +2140,44 @@ export function createCharactersMethods(db: Database, organizationId: string) {
       status: Extract<CharacterVoiceVersionStatus, 'failed'>,
       error?: string
     ) => {
-      const [row] = await db
-        .update(characterVoiceVersions)
-        .set({ status, error: error ?? null })
-        .where(
-          and(
-            eq(characterVoiceVersions.id, versionId),
-            inArray(characterVoiceVersions.status, [
-              ...LIVE_VOICE_CLAIM_STATUSES,
-            ])
+      const claim = and(
+        eq(characterVoiceVersions.id, versionId),
+        voiceInOrganization()
+      );
+      const [rows] = await db.batch([
+        db
+          .update(characterVoiceVersions)
+          .set({ status, error: error ?? null })
+          .where(
+            and(
+              claim,
+              inArray(characterVoiceVersions.status, [
+                ...LIVE_VOICE_CLAIM_STATUSES,
+              ])
+            )
           )
-        )
-        .returning();
-      if (row) {
-        await db
+          .returning(),
+        db
           .update(characters)
           .set({
             pendingPromoteVoiceVersionId: null,
             updatedAt: new Date(),
           })
-          .where(eq(characters.pendingPromoteVoiceVersionId, versionId));
-      }
-      return row ?? null;
+          .where(
+            and(
+              inOrganization,
+              eq(characters.pendingPromoteVoiceVersionId, versionId),
+              inArray(
+                characters.id,
+                db
+                  .select({ id: characterVoiceVersions.characterId })
+                  .from(characterVoiceVersions)
+                  .where(and(claim, eq(characterVoiceVersions.status, status)))
+              )
+            )
+          ),
+      ]);
+      return rows[0] ?? null;
     },
 
     /**
