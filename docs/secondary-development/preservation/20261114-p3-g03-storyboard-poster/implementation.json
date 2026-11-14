@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-storyboard-poster",
+  "responsibilityId": "GC-03",
+  "status": "completed",
+  "p3Status": "in-progress",
+  "p4Status": "not-started",
+  "sourceBefore": "151b6ffe8958eff48296ea29265133ea9b7ea04a",
+  "sourceAfter": "c433acc8bbbbe017f514e540ea977bb265a4f17c",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Fence Storyboard poster persistence and replace event URL adoption with authoritative detail refresh.",
+  "upstreamExisting": [
+    "Script poster generation/storage, native/configured models and durable checkpoints",
+    "Organization wallet reservations, usage observations and idempotent debit",
+    "Durable Object realtime/SSE/history, QueryClient detail and pending-launch registry"
+  ],
+  "implemented": [
+    "One SQL UPDATE RETURNING checks organization, sequence, current root or explicitly trusted raw claim, and processing.",
+    "Incurred usage/debit steps precede publication with unchanged names, identity, pricing and reservation fields.",
+    "A refused publication emits nothing, releases only its payload hold and returns before child dispatch.",
+    "Poster owner survives the optional schema, real DO SSE/history serialization and leaf parsing; ownerless legacy events remain accepted.",
+    "Events request exact authoritative detail; their URL never writes cache. Old reads are cancelled, cold/no-observer detail is fetched and later signals require a trailing read.",
+    "Pending launches retain their confirmation authority. Per-read non-manual query success distinguishes warm cancellation from an actual read.",
+    "A synchronous detail-query lifetime makes cold clear/removal discard queued refreshes; subscriptions and ordinary errors have explicit cleanup."
+  ],
+  "schemaChanges": false,
+  "migrationsAdded": false,
+  "dependenciesChanged": false,
+  "newCronOrBindings": false,
+  "newWorkflowReadHatch": false,
+  "newBoundaryExceptions": false,
+  "modifiedProductionFiles": 8,
+  "modifiedTestFiles": 10,
+  "newTestFiles": 5,
+  "newTestFixtures": 3,
+  "addedTests": 124,
+  "originalTestFilesUnchanged": 18,
+  "assertionChanges": {
+    "removedTests": 0,
+    "weakenedAssertions": false,
+    "notes": [
+      "Existing workflow mock construction extracted and its poster assertion now requires the trusted owner.",
+      "Original failed-event transport round trip retains all assertions and adds a poster table case.",
+      "Other selected original test files are byte-identical Git blobs."
+    ]
+  },
+  "frozenInventory": {
+    "files": 5,
+    "items": 1219,
+    "pending": 1219,
+    "approved": 0,
+    "modified": false,
+    "entries": [
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-01.jsonl",
+        "items": 400,
+        "sha256": "ea08df4afbab6b90fb5c6291cc21b93b56292cf220c4550e25966378d51da145",
+        "pending": 400
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-02.jsonl",
+        "items": 11,
+        "sha256": "f1181344dcbddf97c86624576e87c9f173c88b8e248d9208d58d750b5d3b9e7a",
+        "pending": 11
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-01.jsonl",
+        "items": 400,
+        "sha256": "0200433309e1d75aee51354453827b74dbfbf4100e64037ad98c8b23a8872288",
+        "pending": 400
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-02.jsonl",
+        "items": 206,
+        "sha256": "b69c66c3ac7ddf76030f0188e54d834a605666daac144b7fcf8bf43266c8f6d2",
+        "pending": 206
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-support-01.jsonl",
+        "items": 202,
+        "sha256": "fcbe45cf4e127518d801c65619f57e421f6f1d7abb6ae19f07be91d34f43c771",
+        "pending": 202
+      }
+    ]
+  },
+  "implementationLogPrefix": {
+    "path": "docs/secondary-development/preservation/p3-implementation-log.jsonl",
+    "workingBytes": 90046,
+    "workingSha256": "5f4f173b5467b93d10440c5fdb223588f9ba825ce960faee49035c2f5afba8e0",
+    "committedBytes": 90032,
+    "committedSha256": "fbaebeb534bdeb197308eaeb202df5cef88a66752d65ec8ac38d5da215239cf3",
+    "records": 57,
+    "appendOnly": true
+  },
+  "qualityScope": "Oxc AST checks all 11 added TypeScript files; functions <=50, complexity <=10, nesting <=3, files <=800. Existing large upstream modules retain bounded seams.",
+  "baselineSizeExceptions": [
+    {
+      "path": "src/platform/server/realtime/realtime-channel.do.test.ts",
+      "beforeLines": 975,
+      "afterLines": 983,
+      "reason": "Existing large module; only the required poster seam/test changed."
+    },
+    {
+      "path": "src/platform/ui/realtime/query-cache-updater.ts",
+      "beforeLines": 952,
+      "afterLines": 941,
+      "reason": "Existing large module; only the required poster seam/test changed."
+    },
+    {
+      "path": "src/sequences/server/db/sequences.ts",
+      "beforeLines": 1000,
+      "afterLines": 1002,
+      "reason": "Existing large module; only the required poster seam/test changed."
+    }
+  ],
+  "independentReview": {
+    "serverInitialFindings": 0,
+    "clientInitialFindings": 2,
+    "clientFindingsReproduced": 2,
+    "clientFindingsFixed": 2,
+    "finalActionableFindings": 0
+  },
+  "sourceFingerprints": [
+    {
+      "path": "docs/architecture/generation-plan.md",
+      "gitBlob": "9b049c02b6d3cff0835a2bbad8ffbc3309626dd2",
+      "sha256": "bc4a3184ea6aa9e05dcc4673bf4633c4eb719f8aa1396212df690fad1b241469",
+      "bytes": 57036
+    },
+    {
+      "path": "docs/architecture/workflow-snapshots-and-content-hash-staleness.md",
+      "gitBlob": "5b2a94f69397e1b59e9f48423ec5b7a863b2d60a",
+      "sha256": "a36a29e2663b090892c162c25e12194976c671fe3a308b441893d4d841f5730d",
+      "bytes": 96233
+    },
+    {
+      "path": "src/platform/realtime/schema.test.ts",
+      "gitBlob": "678fb3df49ee120100e9522ece4af64e46c499f1",
+      "sha256": "2436d7634ba53ec93e457fd9bf76387ee250eedd94a373370eaf5ccbd130ab6b",
+      "bytes": 1453
+    },
+    {
+      "path": "src/platform/realtime/schema.ts",
+      "gitBlob": "23a6a3f5855ed440838c7d107433b6e798b9b5b7",
+      "sha256": "4b4866614ec32206fcda661d0720f8f695d6aba5be8549e2ac8593e748c4d562",
+      "bytes": 26142
+    },
+    {
+      "path": "src/platform/server/realtime/realtime-channel.do.test.ts",
+      "gitBlob": "418db22b638807c0e34cd769bab5457eba358ee5",
+      "sha256": "3a60eb09437597ed6086ab5ea8a357c5634c15427a1db6e6ea5743b0fff8ec4d",
+      "bytes": 31288
+    },
+    {
+      "path": "src/platform/ui/realtime/__tests__/query-cache-updater.test.ts",
+      "gitBlob": "0a26730b84dc86952f8cc54c312cef794774cb2c",
+      "sha256": "a7a4e7110edb52429321db13d7c318cb2c6a79d80fba8d20f3141782633d21b9",
+      "bytes": 25002
+    },
+    {
+      "path": "src/platform/ui/realtime/query-cache-updater.ts",
+      "gitBlob": "e5ddb7e65cb7e81e77c554a4874258b3bfd93674",
+      "sha256": "a3c5a6224ac085eb78c34a8bb058de4470cc8b6eabdb0fe49572105a55bdf75c",
+      "bytes": 35493
+    },
+    {
+      "path": "src/sequences/server/db/sequences.ts",
+      "gitBlob": "c7a483d3dfb9ce315b21e8892aced7f7795c34e9",
+      "sha256": "7d4224920c8ab901b657ab689aace08e791565f9b1f0404f79943feceb2a4b5a",
+      "bytes": 36087
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-poster-publication.test.ts",
+      "gitBlob": "086c6ea2d237a7acee1f9d663351917001b78469",
+      "sha256": "628b8be27feba0a8631256c42bbfced2b398b613631c0b154539d2207267b14f",
+      "bytes": 3406
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-poster.test.fixture.ts",
+      "gitBlob": "e4f5720b6aafc7c8e827a3ec9a3fa2534ffd5a54",
+      "sha256": "fe80674538f1f57131b9ff7947a442efae1f09cbf07e3b735ba0c31958a62a77",
+      "bytes": 5961
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-poster.test.ts",
+      "gitBlob": "b08cba3285f9d1fdcfd3134c106e2b0f465effbd",
+      "sha256": "2d4371762a7dcb466403e10cbff8aa42265ca265b95022cb5c76849b697511de",
+      "bytes": 9301
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-poster.ts",
+      "gitBlob": "abe9b5a1c4219c9e999c1436bce0c8c63fa339ba",
+      "sha256": "d04a85fb2ef1e14284d5391559535360261be8eec66145a30d1c894be6f9b34e",
+      "bytes": 926
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-poster-workflow.test.ts",
+      "gitBlob": "036d3f000f69936a0b7ea81baee940ee42a83dc7",
+      "sha256": "2dc46ef231d7ece2c68e7f433eb951c809eff55ba5f1800e4ccf937da4ffa8e9",
+      "bytes": 8920
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-poster.test.fixture.ts",
+      "gitBlob": "a0e0dd3e96266cc693ede590f8924cd4f4de2305",
+      "sha256": "acbe71d7b1ad318cb1a22b5a78fac61c3102bb4a02108cb1ce901b48739e891a",
+      "bytes": 3009
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-poster.test.ts",
+      "gitBlob": "32f56552aa2e0f11ac98ead3d06f76d69e8196d4",
+      "sha256": "451c06aa29867b792abc0d2a33072b30a3b5da79491267f08faed220c4db7621",
+      "bytes": 7196
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-poster.ts",
+      "gitBlob": "a34ba55d49056cd8427d5a40574197c68ce830bf",
+      "sha256": "a3457e3eb0c01588d934b41083dae9fa54aa7b905243732c8ba69ab6787d72c2",
+      "bytes": 2519
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-workflow.test.fixture.ts",
+      "gitBlob": "baa6adc150425cd2a0a2339ab9541b10967ad874",
+      "sha256": "6cb90afe58f882c2b1e29257992ddf82e0339474c0e0a2cf1ef631ed9bf7dbd3",
+      "bytes": 1222
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-workflow.test.ts",
+      "gitBlob": "dc3010c34961f32d169c6f70ce66b52a6f10330d",
+      "sha256": "678f624569bed85965a2ba23a903c734acdab2ac97dd800f46e3d7ecdbcdfb7c",
+      "bytes": 25520
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-workflow.ts",
+      "gitBlob": "806c28dea0a2d87ac21e6103fe4f4ecacf48d474",
+      "sha256": "98f286287c44988f3d2bd8df9c8d001e82004c50fe6012bab09b5427891c7803",
+      "bytes": 17071
+    },
+    {
+      "path": "src/sequences/ui/generation-poster.refresh.test.ts",
+      "gitBlob": "14585b459802775bfd507c0cc0a48d610319558d",
+      "sha256": "635976b18ec81bbdd74affef01d761e2d0a065aac53d0697a40452c971c6865f",
+      "bytes": 15806
+    },
+    {
+      "path": "src/sequences/ui/generation-poster.refresh.ts",
+      "gitBlob": "27ee55b3c7e7c1209925f4caae6bceed0343eb55",
+      "sha256": "f43f511c292b740e4f9712ea9d94d14071b03e877b1018c3af2c5e8f8d9b2774",
+      "bytes": 5030
+    },
+    {
+      "path": "src/sequences/ui/generation-stream.delivery.test.ts",
+      "gitBlob": "bce48e48bd39d1b45175ffbdf9ea8393c0bc2f8c",
+      "sha256": "fae61cf295f554d405b719efbd230738fc1b404521e3a837de3a8cc47b9bb404",
+      "bytes": 6832
+    },
+    {
+      "path": "src/sequences/ui/generation-stream.delivery.ts",
+      "gitBlob": "4b80589e0b5765f0531273eaf72cf9cdbf46f00e",
+      "sha256": "96a67a7592e281d030cca29fa63a8b9c93165f62769e53af4c008d2a8a73b782",
+      "bytes": 2176
+    }
+  ],
+  "remainingActions": [
+    "Other descendants and independent generation/edit entry points need their own ownership contract.",
+    "Complete scene/shot/style/asset/realtime/phase/preview/callback ownership and whole-root cancellation remain open.",
+    "Previously authorized SQL batches and stored objects are not rolled back after a later takeover.",
+    "Old cached save-poster void checkpoints perform no new publication and retain original continuation; broader cached-checkpoint repair is not provided.",
+    "Missing trusted roots, independent Update all, standalone AnalyzeScript CLI and email delivery remain open.",
+    "Original shared-eligibility attach windows and element-token uniqueness races remain unchanged.",
+    "Deployed Workerd/D1 restart/replay, multi-instance, browser convergence, provider termination and wallet settlement remain unverified."
+  ],
+  "nextImplementation": [
+    "G03-descendant-asset-event-ownership",
+    "G03-shared-eligibility-concurrency",
+    "G03-email-delivery-contract"
+  ]
+}

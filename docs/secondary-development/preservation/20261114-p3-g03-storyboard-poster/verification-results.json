@@ -1,0 +1,1406 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-storyboard-poster",
+  "sourceBefore": "151b6ffe8958eff48296ea29265133ea9b7ea04a",
+  "sourceAfter": "c433acc8bbbbe017f514e540ea977bb265a4f17c",
+  "evidenceScope": "Complete migrations into in-process Node SQLite through real Drizzle D1/scoped DB; real QueryClient and DO SQL/SSE/history. Cloudflare engine, server functions, uploads, provider, email and credit capture are explicit substitutes.",
+  "checks": [
+    {
+      "stage": "Initial publisher/orchestrator and original workflow",
+      "status": "passed",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/sequences/server/workflows/storyboard-poster.test.ts src/sequences/server/workflows/storyboard-poster-workflow.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts \"--reporter=json\" \"--outputFile=.codex/p3-poster-initial-tests.json\"",
+      "files": 3,
+      "tests": 53,
+      "passed": 53,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "reportSha256": "0d47e0ae1ededaab9dac640adf2b1b691770a8c3667d1b81fd8b6a7d3bbc0ec1",
+      "reportStartTimeMs": 1794656437394,
+      "paths": [
+        "src/sequences/server/workflows/storyboard-poster-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-poster.test.ts",
+        "src/sequences/server/workflows/storyboard-workflow.test.ts"
+      ]
+    },
+    {
+      "stage": "Real scoped/workflow DB and publisher composition",
+      "status": "passed",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/sequences/server/db/storyboard-poster-publication.test.ts src/sequences/server/workflows/storyboard-poster.test.ts src/sequences/server/workflows/storyboard-poster-workflow.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts \"--reporter=json\" \"--outputFile=.codex/p3-poster-composition-tests.json\"",
+      "files": 4,
+      "tests": 57,
+      "passed": 57,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "reportSha256": "b7a8767fb440acb623df3f47996b9d70367354ac81a1ab557df13b49c7f757e0",
+      "reportStartTimeMs": 1794656597203,
+      "paths": [
+        "src/sequences/server/workflows/storyboard-poster-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-poster.test.ts",
+        "src/sequences/server/workflows/storyboard-workflow.test.ts",
+        "src/sequences/server/db/storyboard-poster-publication.test.ts"
+      ]
+    },
+    {
+      "stage": "Server, transport, billing and architecture selection",
+      "status": "passed",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/sequences/server/db/storyboard-poster.test.ts src/sequences/server/db/storyboard-poster-publication.test.ts src/sequences/server/db/sequence-poster.test.ts src/sequences/server/workflows/storyboard-poster.test.ts src/sequences/server/workflows/storyboard-poster-workflow.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts src/sequences/server/workflows/storyboard-failure-status.test.ts src/sequences/server/workflows/storyboard-shortfall-delivery.test.ts src/sequences/server/configured-poster.test.ts src/billing/server/workflow-deduction.test.ts src/platform/server/realtime/realtime-channel.do.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/domain-blind.test.ts src/platform/client-server-boundary.test.ts \"--maxWorkers=4\" \"--reporter=json\" \"--outputFile=.codex/p3-poster-server-tests.json\"",
+      "files": 17,
+      "tests": 323,
+      "passed": 323,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "reportSha256": "43aa2261e0f5c4b013033b0bbe0e729caef963560e75cc7cdbcd221a6d7b7100",
+      "reportStartTimeMs": 1794656798307,
+      "paths": [
+        "src/platform/client-server-boundary.test.ts",
+        "src/platform/domain-blind.test.ts",
+        "src/billing/server/workflow-deduction.test.ts",
+        "src/sequences/server/configured-poster.test.ts",
+        "src/platform/server/db/db-access-allowlist.test.ts",
+        "src/platform/server/realtime/realtime-channel.do.test.ts",
+        "src/platform/server/workflow/claim-discipline.test.ts",
+        "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "src/sequences/server/workflows/storyboard-failure-status.test.ts",
+        "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+        "src/sequences/server/workflows/storyboard-poster-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-poster.test.ts",
+        "src/sequences/server/workflows/storyboard-shortfall-delivery.test.ts",
+        "src/sequences/server/workflows/storyboard-workflow.test.ts",
+        "src/sequences/server/db/sequence-poster.test.ts",
+        "src/sequences/server/db/storyboard-poster-publication.test.ts",
+        "src/sequences/server/db/storyboard-poster.test.ts"
+      ]
+    },
+    {
+      "stage": "Original ordinary sequence writer through the new bridge",
+      "status": "expected-red",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/sequences/server/db/storyboard-poster.test.ts src/sequences/server/db/storyboard-poster-publication.test.ts \"--maxWorkers=2\" -t \"checks .* against replacement run immediately|refuses a real composed publication\" \"--reporter=json\" \"--outputFile=.codex/p3-poster-server-red.json\"",
+      "files": 2,
+      "tests": 63,
+      "passed": 0,
+      "failed": 4,
+      "skipped": 59,
+      "failures": [
+        {
+          "test": "refuses a real composed publication after current run loses its SQL slot",
+          "message": "Error: expected true to be false // Object.is equality\n    at _Assertion.__VITEST_RESOLVES__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2149:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/sequences/server/db/storyboard-poster-publication.test.ts:105:58\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        },
+        {
+          "test": "refuses a real composed publication after explicit raw claim loses its SQL slot",
+          "message": "Error: expected true to be false // Object.is equality\n    at _Assertion.__VITEST_RESOLVES__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2149:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/sequences/server/db/storyboard-poster-publication.test.ts:105:58\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        },
+        {
+          "test": "checks current run against replacement run immediately before actual SQL execution",
+          "message": "AssertionError: expected true to be false // Object.is equality\n    at D:/code/github/openstory/src/sequences/server/db/storyboard-poster.test.ts:202:32\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        },
+        {
+          "test": "checks explicit raw claim against replacement run immediately before actual SQL execution",
+          "message": "AssertionError: expected true to be false // Object.is equality\n    at D:/code/github/openstory/src/sequences/server/db/storyboard-poster.test.ts:202:32\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        }
+      ],
+      "reportSha256": "f1e17a1bb075659373363cf14273f51cd0cc974245e6e8e2c89f97d986a5ca92",
+      "reportStartTimeMs": 1794657241809,
+      "paths": [
+        "src/sequences/server/db/storyboard-poster-publication.test.ts",
+        "src/sequences/server/db/storyboard-poster.test.ts"
+      ]
+    },
+    {
+      "stage": "First integrated selection before independent-review regressions",
+      "status": "passed",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/billing/server/workflow-deduction.test.ts src/platform/client-server-boundary.test.ts src/platform/domain-blind.test.ts src/platform/realtime/emit.test.ts src/platform/realtime/schema.test.ts src/platform/realtime/sse-session.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/server/realtime/realtime-channel.do.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/ui/realtime/__tests__/query-cache-updater.test.ts src/sequences/server/configured-poster.test.ts src/sequences/server/db/sequence-poster.test.ts src/sequences/server/db/storyboard-poster-publication.test.ts src/sequences/server/db/storyboard-poster.test.ts src/sequences/server/workflows/storyboard-failure-status.test.ts src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts src/sequences/server/workflows/storyboard-poster-workflow.test.ts src/sequences/server/workflows/storyboard-poster.test.ts src/sequences/server/workflows/storyboard-shortfall-delivery.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts src/sequences/ui/generation-poster.refresh.test.ts src/sequences/ui/generation-stream.delivery.test.ts src/sequences/ui/generation-stream.events.test.ts src/sequences/ui/generation-stream.launch.test.ts src/sequences/ui/generation-stream.reconcile.test.ts src/sequences/ui/generation-stream.reducer.test.ts src/sequences/ui/generation-stream.session.test.ts \"--maxWorkers=4\" \"--reporter=json\" \"--outputFile=.codex/p3-poster-integrated-tests.json\"",
+      "files": 28,
+      "tests": 533,
+      "passed": 533,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "reportSha256": "f5b04ff8046d8e4e67bcbd36c731a2b79cf52499c801407ac95c6280f8c309c4",
+      "reportStartTimeMs": 1794657324533,
+      "paths": [
+        "src/platform/client-server-boundary.test.ts",
+        "src/platform/domain-blind.test.ts",
+        "src/billing/server/workflow-deduction.test.ts",
+        "src/platform/realtime/emit.test.ts",
+        "src/platform/realtime/schema.test.ts",
+        "src/platform/realtime/sse-session.test.ts",
+        "src/sequences/ui/generation-poster.refresh.test.ts",
+        "src/sequences/ui/generation-stream.delivery.test.ts",
+        "src/sequences/ui/generation-stream.events.test.ts",
+        "src/sequences/ui/generation-stream.launch.test.ts",
+        "src/sequences/ui/generation-stream.reconcile.test.ts",
+        "src/sequences/ui/generation-stream.reducer.test.ts",
+        "src/sequences/ui/generation-stream.session.test.ts",
+        "src/sequences/server/configured-poster.test.ts",
+        "src/platform/server/db/db-access-allowlist.test.ts",
+        "src/platform/server/realtime/realtime-channel.do.test.ts",
+        "src/platform/server/workflow/claim-discipline.test.ts",
+        "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "src/sequences/server/db/sequence-poster.test.ts",
+        "src/sequences/server/db/storyboard-poster-publication.test.ts",
+        "src/sequences/server/db/storyboard-poster.test.ts",
+        "src/sequences/server/workflows/storyboard-failure-status.test.ts",
+        "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+        "src/sequences/server/workflows/storyboard-poster-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-poster.test.ts",
+        "src/sequences/server/workflows/storyboard-shortfall-delivery.test.ts",
+        "src/sequences/server/workflows/storyboard-workflow.test.ts",
+        "src/platform/ui/realtime/__tests__/query-cache-updater.test.ts"
+      ]
+    },
+    {
+      "stage": "Both independently found client races reproduced",
+      "status": "expected-red",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/sequences/ui/generation-poster.refresh.test.ts -t \"pre-launch cancellation|entirely cold refresh\" \"--reporter=json\" \"--outputFile=.codex/p3-poster-review-red.json\"",
+      "files": 1,
+      "tests": 24,
+      "passed": 0,
+      "failed": 2,
+      "skipped": 22,
+      "failures": [
+        {
+          "test": "retains a warm refresh through pre-launch cancellation and a refused launch",
+          "message": "AssertionError: expected { id: 'synthetic-sequence', …(3) } to deeply equal { id: 'synthetic-sequence', …(3) }\n    at D:/code/github/openstory/src/sequences/ui/generation-poster.refresh.test.ts:324:62\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        },
+        {
+          "test": "does not create detail after an entirely cold refresh is immediately cleared",
+          "message": "AssertionError: expected \"vi.fn()\" to not be called at all, but actually been called 1 times\n\nReceived:\n\n  1st vi.fn() call:\n\n    Array [\n      Object {\n        \"data\": Object {\n          \"sequenceId\": \"synthetic-sequence\",\n        },\n      },\n    ]\n\n\nNumber of calls: 1\n\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1928:51)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at D:/code/github/openstory/src/sequences/ui/generation-poster.refresh.test.ts:335:28\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        }
+      ],
+      "reportSha256": "2587471ef7ff74f046fe271ae7ad67e318b00bb047e67a44ce7e36a310773bc6",
+      "reportStartTimeMs": 1794657536821,
+      "paths": ["src/sequences/ui/generation-poster.refresh.test.ts"]
+    },
+    {
+      "stage": "Client race fixes with launch/reconcile regressions",
+      "status": "passed",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/sequences/ui/generation-poster.refresh.test.ts src/sequences/ui/generation-stream.delivery.test.ts src/sequences/ui/generation-stream.reconcile.test.ts src/sequences/ui/generation-stream.launch.test.ts \"--maxWorkers=3\" \"--reporter=json\" \"--outputFile=.codex/p3-poster-review-fixed.json\"",
+      "files": 4,
+      "tests": 61,
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "reportSha256": "8e54a6a7f10eac0ed15db6f97ce61590d78c195295c63e1d0f46ab8dfef453d3",
+      "reportStartTimeMs": 1794657588714,
+      "paths": [
+        "src/sequences/ui/generation-poster.refresh.test.ts",
+        "src/sequences/ui/generation-stream.delivery.test.ts",
+        "src/sequences/ui/generation-stream.launch.test.ts",
+        "src/sequences/ui/generation-stream.reconcile.test.ts"
+      ]
+    },
+    {
+      "stage": "Original cache delivery/updater restored",
+      "status": "expected-red",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/sequences/ui/generation-stream.delivery.test.ts src/platform/ui/realtime/__tests__/query-cache-updater.test.ts \"--maxWorkers=2\" -t \"refreshes poster detail independently|routes a legacy poster|never installs a poster event payload\" \"--reporter=json\" \"--outputFile=.codex/p3-poster-client-red.json\"",
+      "files": 2,
+      "tests": 49,
+      "passed": 0,
+      "failed": 5,
+      "skipped": 44,
+      "failures": [
+        {
+          "test": "refreshes poster detail independently of cached owner run-A",
+          "message": "AssertionError: expected \"vi.fn()\" to be called once with arguments: [ QueryClient{ …(1) }, 'sequence' ]\n\nNumber of calls: 0\n\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1963:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at D:/code/github/openstory/src/sequences/ui/generation-stream.delivery.test.ts:56:27\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2886:64\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)"
+        },
+        {
+          "test": "refreshes poster detail independently of cached owner run-B",
+          "message": "AssertionError: expected \"vi.fn()\" to be called once with arguments: [ QueryClient{ …(1) }, 'sequence' ]\n\nNumber of calls: 0\n\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1963:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at D:/code/github/openstory/src/sequences/ui/generation-stream.delivery.test.ts:56:27\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2886:64\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)"
+        },
+        {
+          "test": "refreshes poster detail independently of cached owner null",
+          "message": "AssertionError: expected \"vi.fn()\" to be called once with arguments: [ QueryClient{ …(1) }, 'sequence' ]\n\nNumber of calls: 0\n\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1963:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at D:/code/github/openstory/src/sequences/ui/generation-stream.delivery.test.ts:56:27\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2886:64\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)"
+        },
+        {
+          "test": "routes a legacy poster through refresh while launch is pending",
+          "message": "AssertionError: expected \"vi.fn()\" to be called once with arguments: [ QueryClient{ …(1) }, 'sequence' ]\n\nNumber of calls: 0\n\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1963:10)\n    at Proxy.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///D:/code/github/openstory/node_modules/chai/index.js:1737:25)\n    at D:/code/github/openstory/src/sequences/ui/generation-stream.delivery.test.ts:71:25\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20"
+        },
+        {
+          "test": "updateQueryCacheFromEvent — variant-only guard (#547) never installs a poster event payload into an existing sequence",
+          "message": "AssertionError: expected { workflowRunId: 'run-B', …(1) } to deeply equal { workflowRunId: 'run-B', …(1) }\n    at D:/code/github/openstory/src/platform/ui/realtime/__tests__/query-cache-updater.test.ts:133:55\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3276:10)\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3922:64"
+        }
+      ],
+      "reportSha256": "c2ae9fed2f5f98862bf32296d39549f79af81e295cf8f38245a51c2c6a29a147",
+      "reportStartTimeMs": 1794658165067,
+      "paths": [
+        "src/sequences/ui/generation-stream.delivery.test.ts",
+        "src/platform/ui/realtime/__tests__/query-cache-updater.test.ts"
+      ]
+    },
+    {
+      "stage": "Exact restoration and new/affected suites",
+      "status": "passed",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/sequences/server/db/storyboard-poster.test.ts src/sequences/server/db/storyboard-poster-publication.test.ts src/sequences/server/workflows/storyboard-poster.test.ts src/sequences/server/workflows/storyboard-poster-workflow.test.ts src/sequences/ui/generation-poster.refresh.test.ts src/sequences/ui/generation-stream.delivery.test.ts src/platform/ui/realtime/__tests__/query-cache-updater.test.ts \"--maxWorkers=4\" \"--reporter=json\" \"--outputFile=.codex/p3-poster-post-red-green.json\"",
+      "files": 7,
+      "tests": 160,
+      "passed": 160,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "reportSha256": "0ed22734378336bba5230f7b1aae325f5d2d3333aff142ee1d34a62943c15253",
+      "reportStartTimeMs": 1794658264480,
+      "paths": [
+        "src/sequences/ui/generation-poster.refresh.test.ts",
+        "src/sequences/ui/generation-stream.delivery.test.ts",
+        "src/sequences/server/db/storyboard-poster-publication.test.ts",
+        "src/sequences/server/db/storyboard-poster.test.ts",
+        "src/sequences/server/workflows/storyboard-poster-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-poster.test.ts",
+        "src/platform/ui/realtime/__tests__/query-cache-updater.test.ts"
+      ]
+    },
+    {
+      "stage": "Final integrated selection",
+      "status": "passed",
+      "workingDirectory": "D:/code/github/openstory",
+      "reproduceCommand": "bun run test src/billing/server/workflow-deduction.test.ts src/platform/client-server-boundary.test.ts src/platform/domain-blind.test.ts src/platform/realtime/emit.test.ts src/platform/realtime/schema.test.ts src/platform/realtime/sse-session.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/server/realtime/realtime-channel.do.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/ui/realtime/__tests__/query-cache-updater.test.ts src/sequences/server/configured-poster.test.ts src/sequences/server/db/sequence-poster.test.ts src/sequences/server/db/storyboard-poster-publication.test.ts src/sequences/server/db/storyboard-poster.test.ts src/sequences/server/workflows/storyboard-failure-status.test.ts src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts src/sequences/server/workflows/storyboard-poster-workflow.test.ts src/sequences/server/workflows/storyboard-poster.test.ts src/sequences/server/workflows/storyboard-shortfall-delivery.test.ts src/sequences/server/workflows/storyboard-workflow.test.ts src/sequences/ui/generation-poster.refresh.test.ts src/sequences/ui/generation-stream.delivery.test.ts src/sequences/ui/generation-stream.events.test.ts src/sequences/ui/generation-stream.launch.test.ts src/sequences/ui/generation-stream.reconcile.test.ts src/sequences/ui/generation-stream.reducer.test.ts src/sequences/ui/generation-stream.session.test.ts \"--maxWorkers=4\" \"--reporter=json\" \"--outputFile=.codex/p3-poster-integrated-final.json\"",
+      "files": 28,
+      "tests": 535,
+      "passed": 535,
+      "failed": 0,
+      "skipped": 0,
+      "failures": [],
+      "reportSha256": "0fe039a9642da857bc3c7ba2cf0a7c72c3162e1adf25cf22f2c35946a5669595",
+      "reportStartTimeMs": 1794658381660,
+      "paths": [
+        "src/platform/client-server-boundary.test.ts",
+        "src/platform/domain-blind.test.ts",
+        "src/billing/server/workflow-deduction.test.ts",
+        "src/platform/realtime/emit.test.ts",
+        "src/platform/realtime/schema.test.ts",
+        "src/platform/realtime/sse-session.test.ts",
+        "src/sequences/ui/generation-poster.refresh.test.ts",
+        "src/sequences/ui/generation-stream.delivery.test.ts",
+        "src/sequences/ui/generation-stream.events.test.ts",
+        "src/sequences/ui/generation-stream.launch.test.ts",
+        "src/sequences/ui/generation-stream.reconcile.test.ts",
+        "src/sequences/ui/generation-stream.reducer.test.ts",
+        "src/sequences/ui/generation-stream.session.test.ts",
+        "src/sequences/server/configured-poster.test.ts",
+        "src/platform/server/db/db-access-allowlist.test.ts",
+        "src/platform/server/realtime/realtime-channel.do.test.ts",
+        "src/platform/server/workflow/claim-discipline.test.ts",
+        "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "src/sequences/server/workflows/storyboard-failure-status.test.ts",
+        "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+        "src/sequences/server/workflows/storyboard-poster-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-poster.test.ts",
+        "src/sequences/server/workflows/storyboard-shortfall-delivery.test.ts",
+        "src/sequences/server/workflows/storyboard-workflow.test.ts",
+        "src/sequences/server/db/sequence-poster.test.ts",
+        "src/sequences/server/db/storyboard-poster-publication.test.ts",
+        "src/sequences/server/db/storyboard-poster.test.ts",
+        "src/platform/ui/realtime/__tests__/query-cache-updater.test.ts"
+      ]
+    }
+  ],
+  "qualityCommandExits": {
+    "typecheck": 0,
+    "warnings": 147,
+    "format": 0,
+    "lint": 0
+  },
+  "productionBuild": {
+    "status": "passed",
+    "command": "bun run build",
+    "clientAndSsr": true,
+    "logSha256": "fcd1acc957ac6715bce76a9270d6e30ac77d3086582c660bdf3c33fcfed97d4f"
+  },
+  "sourceCommitHooks": {
+    "status": "passed",
+    "command": "git commit -m \"fix: fence storyboard poster publication and refresh\"",
+    "normalHooks": true,
+    "logSha256": "da793738946670e714e3775114f57576f518b81fe416552f207bcec3d1ff8c05",
+    "durationSeconds": 130.18,
+    "checks": [
+      "client-server-boundary (17 passed)",
+      "dead-code",
+      "format",
+      "lint",
+      "typecheck"
+    ]
+  },
+  "firstFailuresAndCorrections": [
+    "DB worker first interceptor assumed SET column order (18 failures); regex now recognizes the poster SET anywhere. These agent-only results are not added to main totals.",
+    "New root fixture typecheck exposed missing style guard, unsupported synthetic model IDs, sequenceUrl and a partial plan; fixed using actual registry defaults, required fields and an explicitly marked executor stub.",
+    "Client worker fixed a failed-read/trailing-signal case before integration; no independent acceptance is inferred from that report.",
+    "Independent review found warm reverted-fetch fulfillment and entirely cold clear races. Both failed before correction and pass after actual success receipts and synchronous query lifetime.",
+    "A closure-mutated primitive caused one new lint warning; a mutable read receipt preserves semantics without a rule suppression. Final lint is back to the original 147 warnings."
+  ],
+  "redProof": {
+    "server": {
+      "path": "src/sequences/server/db/storyboard-poster.ts",
+      "beforeRawSha256": "d04a85fb2ef1e14284d5391559535360261be8eec66145a30d1c894be6f9b34e",
+      "exactRestoration": true,
+      "afterRawSha256": "d04a85fb2ef1e14284d5391559535360261be8eec66145a30d1c894be6f9b34e"
+    },
+    "client": [
+      {
+        "afterRawSha256": "96a67a7592e281d030cca29fa63a8b9c93165f62769e53af4c008d2a8a73b782",
+        "beforeRawSha256": "96a67a7592e281d030cca29fa63a8b9c93165f62769e53af4c008d2a8a73b782",
+        "path": "src/sequences/ui/generation-stream.delivery.ts",
+        "exactRestoration": true
+      },
+      {
+        "afterRawSha256": "a3c5a6224ac085eb78c34a8bb058de4470cc8b6eabdb0fe49572105a55bdf75c",
+        "beforeRawSha256": "a3c5a6224ac085eb78c34a8bb058de4470cc8b6eabdb0fe49572105a55bdf75c",
+        "path": "src/platform/ui/realtime/query-cache-updater.ts",
+        "exactRestoration": true
+      }
+    ],
+    "originalSequencesFactory": "Compared to sourceBefore: exactly the import and factory spread differ; the ordinary update used by the red bridge is unchanged.",
+    "noProductionMutationLeft": true
+  },
+  "qualityAudit": {
+    "status": "passed",
+    "newFiles": 11,
+    "violations": [],
+    "files": [
+      {
+        "path": "src/sequences/server/db/storyboard-poster-publication.test.ts",
+        "rawSha256": "628b8be27feba0a8631256c42bbfced2b398b613631c0b154539d2207267b14f",
+        "lines": 115,
+        "maxFunctionLines": 29,
+        "maxComplexity": 3,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-poster.test.fixture.ts",
+        "rawSha256": "fe80674538f1f57131b9ff7947a442efae1f09cbf07e3b735ba0c31958a62a77",
+        "lines": 190,
+        "maxFunctionLines": 38,
+        "maxComplexity": 6,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-poster.test.ts",
+        "rawSha256": "2d4371762a7dcb466403e10cbff8aa42265ca265b95022cb5c76849b697511de",
+        "lines": 286,
+        "maxFunctionLines": 24,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-poster.ts",
+        "rawSha256": "d04a85fb2ef1e14284d5391559535360261be8eec66145a30d1c894be6f9b34e",
+        "lines": 31,
+        "maxFunctionLines": 22,
+        "maxComplexity": 1,
+        "maxNesting": 0
+      },
+      {
+        "path": "src/sequences/server/workflows/storyboard-poster-workflow.test.ts",
+        "rawSha256": "2dc46ef231d7ece2c68e7f433eb951c809eff55ba5f1800e4ccf937da4ffa8e9",
+        "lines": 259,
+        "maxFunctionLines": 33,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/workflows/storyboard-poster.test.fixture.ts",
+        "rawSha256": "acbe71d7b1ad318cb1a22b5a78fac61c3102bb4a02108cb1ce901b48739e891a",
+        "lines": 91,
+        "maxFunctionLines": 26,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/workflows/storyboard-poster.test.ts",
+        "rawSha256": "451c06aa29867b792abc0d2a33072b30a3b5da79491267f08faed220c4db7621",
+        "lines": 207,
+        "maxFunctionLines": 38,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/workflows/storyboard-poster.ts",
+        "rawSha256": "a3457e3eb0c01588d934b41083dae9fa54aa7b905243732c8ba69ab6787d72c2",
+        "lines": 81,
+        "maxFunctionLines": 38,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/workflows/storyboard-workflow.test.fixture.ts",
+        "rawSha256": "6cb90afe58f882c2b1e29257992ddf82e0339474c0e0a2cf1ef631ed9bf7dbd3",
+        "lines": 36,
+        "maxFunctionLines": 29,
+        "maxComplexity": 1,
+        "maxNesting": 0
+      },
+      {
+        "path": "src/sequences/ui/generation-poster.refresh.test.ts",
+        "rawSha256": "635976b18ec81bbdd74affef01d761e2d0a065aac53d0697a40452c971c6865f",
+        "lines": 446,
+        "maxFunctionLines": 23,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/ui/generation-poster.refresh.ts",
+        "rawSha256": "f43f511c292b740e4f9712ea9d94d14071b03e877b1018c3af2c5e8f8d9b2774",
+        "lines": 182,
+        "maxFunctionLines": 34,
+        "maxComplexity": 8,
+        "maxNesting": 2
+      }
+    ]
+  },
+  "unchangedOriginalSelectedTests": [
+    {
+      "path": "src/platform/client-server-boundary.test.ts",
+      "sha256": "3c1ec25f2882cb61da07119a55a844eda9d2494332462c19d116cc3e4b8ecc6e"
+    },
+    {
+      "path": "src/platform/domain-blind.test.ts",
+      "sha256": "e6fe00a8ff52bc17ed0e7636e7617fe2cccf2ce7ffaec6dff7ddadf5512b8fc8"
+    },
+    {
+      "path": "src/billing/server/workflow-deduction.test.ts",
+      "sha256": "350103a2ee6ea33e4b47e485dc7accc58664734237c3858344b4683bcfe21109"
+    },
+    {
+      "path": "src/platform/realtime/emit.test.ts",
+      "sha256": "9d500b5b7cb5c309c0b5b1777ae33c4569f93d5bbcfee4a453a473ee8ca604e9"
+    },
+    {
+      "path": "src/platform/realtime/sse-session.test.ts",
+      "sha256": "5f112b13f3a7b868ae1ac1401c1979fde3e48d638841826a9c0f1f6df81c5540"
+    },
+    {
+      "path": "src/sequences/ui/generation-stream.events.test.ts",
+      "sha256": "87b2d6a1536ce798700be8941545b3e154223c90a4872cd54c1589997429f7df"
+    },
+    {
+      "path": "src/sequences/ui/generation-stream.launch.test.ts",
+      "sha256": "79390abe589a5ad5f113f33814a749923da9fa94105ea661e9d65d4b6aadff26"
+    },
+    {
+      "path": "src/sequences/ui/generation-stream.reconcile.test.ts",
+      "sha256": "dc7fb9140833174a4ec80ae7bea4a3d361a3baf289b2efc1396cce54fdb75a82"
+    },
+    {
+      "path": "src/sequences/ui/generation-stream.reducer.test.ts",
+      "sha256": "8fd1876e67f847ef4970f0643695d684d02db6e3302ce109136a845c7c898c48"
+    },
+    {
+      "path": "src/sequences/ui/generation-stream.session.test.ts",
+      "sha256": "44080f29b2c97b9073f05a20e44898b8160dade43be34c6523d4705f84f91af4"
+    },
+    {
+      "path": "src/sequences/server/configured-poster.test.ts",
+      "sha256": "a3d04060850a47b464f354482ea399d4778d12187c5b3bedbcab7928bce28db4"
+    },
+    {
+      "path": "src/platform/server/db/db-access-allowlist.test.ts",
+      "sha256": "1a8767462ea262ce417c1da4c9dcda94d8280680ab0436a41b670c28539e3167"
+    },
+    {
+      "path": "src/platform/server/workflow/claim-discipline.test.ts",
+      "sha256": "b97e979d540eafa50b06877e46fdc3ec1cf697c8729623f0324beb13596eec27"
+    },
+    {
+      "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "sha256": "e309532ea7bb52e13eff145d2f59691a2645274c71a3304de1baddc5f490d363"
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-failure-status.test.ts",
+      "sha256": "5ae2be02a89629eb9d4fbd9225f7ce37c0fb9c1a3b7d4262148b9a6f434e62e9"
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+      "sha256": "fe17e4a7afbe418c3599f2b8ea951526e48c4947819df66cef31c9a7cd51c317"
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-shortfall-delivery.test.ts",
+      "sha256": "44efd103992e790ad2480738616b61b6d659772d1c0feee2ba4bf71a8f349dfc"
+    },
+    {
+      "path": "src/sequences/server/db/sequence-poster.test.ts",
+      "sha256": "4e0f300ca59ff03a0be5bc2287e6b76050018fd9703c95f78d1bfae9b5c1b413"
+    }
+  ],
+  "independentReview": {
+    "server": {
+      "status": "completed",
+      "actionableFindings": 0,
+      "readOnly": true,
+      "files": [
+        {
+          "path": "src/sequences/server/db/storyboard-poster.ts",
+          "rawSha256": "d04a85fb2ef1e14284d5391559535360261be8eec66145a30d1c894be6f9b34e"
+        },
+        {
+          "path": "src/sequences/server/db/sequences.ts",
+          "rawSha256": "7d4224920c8ab901b657ab689aace08e791565f9b1f0404f79943feceb2a4b5a"
+        },
+        {
+          "path": "src/sequences/server/workflows/storyboard-poster.ts",
+          "rawSha256": "a3457e3eb0c01588d934b41083dae9fa54aa7b905243732c8ba69ab6787d72c2"
+        },
+        {
+          "path": "src/sequences/server/workflows/storyboard-workflow.ts",
+          "rawSha256": "98f286287c44988f3d2bd8df9c8d001e82004c50fe6012bab09b5427891c7803"
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-owner.ts",
+          "rawSha256": "1ac9d74b6d10898e43b53f2b4fd524cd6cea455b733b66556aeb638949939a4d"
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-lifecycle.ts",
+          "rawSha256": "19df295039d6a713239094205ce131386586a5ba7a2e4287ae9dfdeadf95da86"
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-launches.ts",
+          "rawSha256": "6cb6863e32958653d37e92e128cf9a12f8b0651e5ff64b9142a8ed5c1bec7aa3"
+        },
+        {
+          "path": "src/sequences/server/configured-poster.ts",
+          "rawSha256": "4603e35bedf489e0621f1ab58d2bfaa4ffefe2f2cc4f442099d79a53328b9eb5"
+        },
+        {
+          "path": "src/billing/server/workflow-deduction.ts",
+          "rawSha256": "31627f710305212e278ae921208c70c08666a8dc4d81018b9070ffc2bc586c75"
+        },
+        {
+          "path": "src/billing/server/db/billing.ts",
+          "rawSha256": "9256b156d23d680684145d69ba77c20333a2113d38f7ad30cf551c260d1f5392"
+        },
+        {
+          "path": "src/models/image-channels.ts",
+          "rawSha256": "912d3598e7a27e69cbcb3368755675beca35ec273d35fe83935959231006fd56"
+        },
+        {
+          "path": "src/platform/server/db/scoped.ts",
+          "rawSha256": "b605d1a3408f0a76c788ad3bc0b27136c63e4ac685fd45267e97431ace274e3a"
+        },
+        {
+          "path": "src/platform/server/db/scoped-workflow.ts",
+          "rawSha256": "6ab318347a32feb8184eacb2a4e627163a44f2c82454f5e79d0beadf12149b1a"
+        },
+        {
+          "path": "src/platform/server/workflow/base-workflow.ts",
+          "rawSha256": "399c372ae19ec2cf102f00fb6beefd02b313dd68722b581b1b144709eef58aba"
+        },
+        {
+          "path": "src/platform/server/workflow/types.ts",
+          "rawSha256": "47931e7070c9643fdb4266c786328d0e6fe335c918712c0430fae68604ceab13"
+        },
+        {
+          "path": "src/stills/server/workflows/configured-image-step.ts",
+          "rawSha256": "3f2b71586a2ec14c18a578aca40b2948153df82ce090ee92083eab1f33ae39a8"
+        },
+        {
+          "path": "src/platform/realtime/index.ts",
+          "rawSha256": "bf208acf7595c6664e3239260f348420cb62f7a461018c4ef272f436c4d1e014"
+        },
+        {
+          "path": "src/platform/realtime/schema.ts",
+          "rawSha256": "4b4866614ec32206fcda661d0720f8f695d6aba5be8549e2ac8593e748c4d562"
+        }
+      ]
+    },
+    "client": {
+      "schema_version": 1,
+      "review_type": "focused_independent_client_correctness_rereview",
+      "result": "no_actionable_findings_in_focused_rereview",
+      "repository": {
+        "root": "D:/code/github/openstory",
+        "branch": "develop",
+        "base_commit": "151b6ffe8958eff48296ea29265133ea9b7ea04a",
+        "head_commit": "151b6ffe8958eff48296ea29265133ea9b7ea04a",
+        "target": "uncommitted working-tree poster client delta"
+      },
+      "reviewed_at_utc": "2026-11-14T12:06:23.0463097Z",
+      "scope": {
+        "focused_production_change": "src/sequences/ui/generation-poster.refresh.ts",
+        "protocol_files": [
+          "src/sequences/ui/generation-poster.refresh.ts",
+          "src/sequences/ui/generation-stream.delivery.ts",
+          "src/platform/ui/realtime/query-cache-updater.ts",
+          "src/platform/realtime/schema.ts"
+        ],
+        "dependency_version": "@tanstack/query-core 5.107.1",
+        "method": "Static source review of coordinator, regression sources, related launch/reconciliation and delivery paths, and installed dependency source and ESM runtime behavior.",
+        "supporting_files": "Manifest binds whole files; supporting files were reviewed at the relevant call paths and dependency implementations.",
+        "excluded": [
+          "Main server correctness review",
+          "Browser or SSR execution",
+          "Test execution",
+          "Remote calls",
+          "Unrelated refactors"
+        ]
+      },
+      "execution": {
+        "tests_run": false,
+        "builds_run": false,
+        "remote_calls": false,
+        "git_mutations": false,
+        "source_edits": false,
+        "documentation_edits": false,
+        "frozen_desktop_worktree_touched": false,
+        "only_authorized_write": ".codex/p3-poster-client-review.json"
+      },
+      "initial_findings": [
+        {
+          "id": "P3-POSTER-CLIENT-01",
+          "severity": "P2",
+          "title": "Warm cancellation could consume the only poster refresh signal",
+          "original_locations": [
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 59,
+              "line_end": 66,
+              "snapshot": "initial coordinator before focused fix"
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 81,
+              "line_end": 85,
+              "snapshot": "initial coordinator before focused fix"
+            }
+          ],
+          "original_race": "Continue cancels a warm detail fetch before registering its pending launch. Query-core can fulfill that cancelled fetch with reverted cached data. The former coordinator then closed with dirty=false, so an insufficient-credit refusal could leave the stale poster without a remaining refresh obligation.",
+          "dependency_evidence": [
+            {
+              "path": "node_modules/@tanstack/query-core/src/query.ts",
+              "line_start": 909,
+              "line_end": 916
+            },
+            {
+              "path": "node_modules/@tanstack/query-core/src/queryClient.ts",
+              "line_start": 462,
+              "line_end": 474
+            },
+            {
+              "path": "node_modules/@tanstack/query-core/build/modern/query.js",
+              "line_start": 459,
+              "line_end": 467
+            }
+          ],
+          "caller_evidence": [
+            {
+              "path": "src/shots/ui/scenes-view.tsx",
+              "line_start": 1467,
+              "line_end": 1477
+            },
+            {
+              "path": "src/shots/ui/scenes-view.tsx",
+              "line_start": 1511,
+              "line_end": 1532
+            }
+          ],
+          "resolution": {
+            "status": "resolved_by_static_review",
+            "locations": [
+              {
+                "path": "src/sequences/ui/generation-poster.refresh.ts",
+                "line_start": 59,
+                "line_end": 81
+              }
+            ],
+            "explanation": "Each read subscribes before fetchQuery to non-manual success events on the exact detail key in that QueryClient. Fulfillment without such a success sets dirty=true. The per-read subscription is removed in finally. Reverted warm data and manual setQueryData do not count as authoritative read completion, and pending launch checks retain the obligation until registry completion.",
+            "regression": {
+              "path": "src/sequences/ui/generation-poster.refresh.test.ts",
+              "line_start": 309,
+              "line_end": 329
+            },
+            "regression_review": "Source inspected only; synthetic launch registry completion models refusal rather than invoking the entire Continue UI handler."
+          },
+          "accepted_by_primary_executor": true
+        },
+        {
+          "id": "P3-POSTER-CLIENT-02",
+          "severity": "P2",
+          "title": "A queued empty-cache refresh could survive clear and recreate detail",
+          "original_locations": [
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 49,
+              "line_end": 58,
+              "snapshot": "initial coordinator before focused fix"
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 98,
+              "line_end": 108,
+              "snapshot": "initial coordinator before focused fix"
+            }
+          ],
+          "original_race": "Before the first awaited cancellation settles, neither a detail nor a launch query need exist. clear() then emitted no matching removed event, allowing the queued refresh to fetch and recreate detail after teardown.",
+          "dependency_evidence": [
+            {
+              "path": "node_modules/@tanstack/query-core/src/queryCache.ts",
+              "line_start": 235,
+              "line_end": 241
+            },
+            {
+              "path": "node_modules/@tanstack/query-core/src/queryCache.ts",
+              "line_start": 254,
+              "line_end": 259
+            },
+            {
+              "path": "src/platform/ui/auth/client.ts",
+              "line_start": 40,
+              "line_end": 55
+            }
+          ],
+          "resolution": {
+            "status": "resolved_by_static_review",
+            "locations": [
+              {
+                "path": "src/sequences/ui/generation-poster.refresh.ts",
+                "line_start": 174,
+                "line_end": 180
+              },
+              {
+                "path": "src/sequences/ui/generation-poster.refresh.ts",
+                "line_start": 110,
+                "line_end": 120
+              },
+              {
+                "path": "src/sequences/ui/generation-poster.refresh.ts",
+                "line_start": 49,
+                "line_end": 58
+              }
+            ],
+            "explanation": "The exact detail query is synchronously built after the lifetime watcher is installed and before startRefresh reaches its first await. Immediate clear now removes that entry, closes the coordinator, and prevents resumed reads from fetching. Building the lifetime neither writes a poster nor starts a network request.",
+            "regression": {
+              "path": "src/sequences/ui/generation-poster.refresh.test.ts",
+              "line_start": 331,
+              "line_end": 339
+            },
+            "regression_review": "Source inspected only; the test clears a wholly cold client immediately after scheduling refresh."
+          },
+          "accepted_by_primary_executor": true
+        }
+      ],
+      "current_findings": [],
+      "blocking_findings_count": 0,
+      "static_checks": [
+        {
+          "check": "Authoritative success detection",
+          "outcome": "No actionable issue found",
+          "evidence": [
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 59,
+              "line_end": 81
+            }
+          ],
+          "reasoning": "Only a non-manual success on the exact detail key can fulfill the read obligation. Errors and cold cancellation retain the existing error/cancellation paths; finally removes the read-scoped listener."
+        },
+        {
+          "check": "Launch ordering and wakeups",
+          "outcome": "No actionable issue found",
+          "evidence": [
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 49,
+              "line_end": 58
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 84,
+              "line_end": 107
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 122,
+              "line_end": 132
+            },
+            {
+              "path": "src/sequences/ui/generation-stream.reconcile.ts",
+              "line_start": 56,
+              "line_end": 88
+            }
+          ],
+          "reasoning": "Pending state is checked after both awaits. A pending launch marks dirty and cancels an active poster read. A completion notification either starts a stopped drain or is observed by the already-running drain. Poster refresh does not call finishGenerationLaunch or arm owner confirmation."
+        },
+        {
+          "check": "Trailing signals and subscriber coalescing",
+          "outcome": "No actionable issue found",
+          "evidence": [
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 69,
+              "line_end": 77
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 84,
+              "line_end": 98
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 166,
+              "line_end": 180
+            }
+          ],
+          "reasoning": "Signals received during a read set dirty=true on the shared state. Successful completion never resets that trailing dirty flag. The state remains scoped by QueryClient and sequence."
+        },
+        {
+          "check": "Removal and cleanup",
+          "outcome": "No actionable issue found in the focused fixes",
+          "evidence": [
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 40,
+              "line_end": 46
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 78,
+              "line_end": 80
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 110,
+              "line_end": 120
+            },
+            {
+              "path": "src/sequences/ui/generation-poster.refresh.ts",
+              "line_start": 174,
+              "line_end": 180
+            },
+            {
+              "path": "node_modules/@tanstack/query-core/build/modern/query.js",
+              "line_start": 138,
+              "line_end": 152
+            }
+          ],
+          "reasoning": "The cold lifetime is registered synchronously. Detail removal closes the coordinator and dependency destruction cancels its fetch. Closed states cannot restart or delete a later state; each per-read listener is removed when its fetch settles."
+        },
+        {
+          "check": "Payload, lifecycle and other event semantics",
+          "outcome": "No actionable issue found",
+          "evidence": [
+            {
+              "path": "src/sequences/ui/generation-stream.delivery.ts",
+              "line_start": 33,
+              "line_end": 64
+            },
+            {
+              "path": "src/sequences/ui/generation-stream.events.ts",
+              "line_start": 192,
+              "line_end": 236
+            },
+            {
+              "path": "src/sequences/ui/generation-stream.session.ts",
+              "line_start": 83,
+              "line_end": 101
+            }
+          ],
+          "reasoning": "Poster URL payloads are not installed in cache. Owned and legacy posters remain refresh signals, with no lifecycle action or lifecycle-owner adoption. Existing terminal guards and non-poster dispatch rules are unchanged."
+        }
+      ],
+      "validation": {
+        "reviewer_runtime_execution": false,
+        "added_regression_sources_inspected": true,
+        "fixed_suite": "Primary executor reports 61 tests across four files and 535 tests across 28 files, plus typecheck/build passing before the receipt-only lint correction. Final lint/typecheck/tests/build are managed by the primary executor; the reviewer did not execute or independently verify those checks. No end-user testing or acceptance is asserted.",
+        "limits": [
+          "Static source conclusions do not establish browser, Workerd, provider, wallet, or deployed acceptance."
+        ],
+        "primary_executor_reported_old_coordinator_regressions": {
+          "failed": 2,
+          "passed": 0,
+          "filtered": 22,
+          "independently_executed_by_reviewer": false
+        },
+        "primary_executor_reported_validation_update": {
+          "source": "primary executor (parent agent)",
+          "before_receipt_change": {
+            "focused_files": 4,
+            "focused_tests_passed": 61,
+            "full_files": 28,
+            "full_tests_passed": 535,
+            "typecheck": "passed",
+            "build": "passed",
+            "lint": "reported no-unnecessary-condition diagnostic on closure-mutated primitive"
+          },
+          "latest_final_checks": "main rerunning lint/typecheck/tests/build",
+          "independently_verified_by_reviewer": false
+        },
+        "attribution_note": "Fix acceptance and reported validation are attributed to the primary executor (parent agent). This review is static-only and asserts no end-user testing or acceptance. The primary executor stores its own actual test evidence separately."
+      },
+      "hash_manifest_metadata": {
+        "algorithm": "SHA256",
+        "encoding": "lowercase hexadecimal",
+        "input": "raw on-disk file bytes",
+        "generated_by": "PowerShell Get-FileHash -Algorithm SHA256",
+        "captured_at_utc": "2026-11-14T12:06:23.0463097Z",
+        "file_count": 29,
+        "all_values_validated_against": "^[0-9a-f]{64}$",
+        "stability": "All 29 file hashes regenerated for receipt rebinding; only the coordinator differs from the prior artifact. The remaining 28 hashes are unchanged.",
+        "supersedes_prior_published_manifest": true,
+        "correction": "This machine-generated manifest supersedes the prior response, whose first transcribed hash had 65 characters. No prior response hash value was reused.",
+        "artifact_self_hash_included": false
+      },
+      "manifest": [
+        {
+          "path": "src/sequences/ui/generation-poster.refresh.ts",
+          "kind": "production",
+          "sha256": "f43f511c292b740e4f9712ea9d94d14071b03e877b1018c3af2c5e8f8d9b2774",
+          "bytes": 5030
+        },
+        {
+          "path": "src/sequences/ui/generation-stream.delivery.ts",
+          "kind": "production",
+          "sha256": "96a67a7592e281d030cca29fa63a8b9c93165f62769e53af4c008d2a8a73b782",
+          "bytes": 2176
+        },
+        {
+          "path": "src/platform/ui/realtime/query-cache-updater.ts",
+          "kind": "production",
+          "sha256": "a3c5a6224ac085eb78c34a8bb058de4470cc8b6eabdb0fe49572105a55bdf75c",
+          "bytes": 35493
+        },
+        {
+          "path": "src/platform/realtime/schema.ts",
+          "kind": "production",
+          "sha256": "4b4866614ec32206fcda661d0720f8f695d6aba5be8549e2ac8593e748c4d562",
+          "bytes": 26142
+        },
+        {
+          "path": "src/sequences/ui/generation-stream.launch.ts",
+          "kind": "production",
+          "sha256": "5300bc72972c84c33fdd960fcbd9f317ba8f0645f432df2fd1bdbfe0a55ae7eb",
+          "bytes": 2252
+        },
+        {
+          "path": "src/sequences/ui/generation-stream.reconcile.ts",
+          "kind": "production",
+          "sha256": "1252093cea7438f0291a8a0721d3fffd61c6dd4cefdeb645c2aa91b5a1c00e4e",
+          "bytes": 2839
+        },
+        {
+          "path": "src/sequences/ui/use-generation-stream.ts",
+          "kind": "production",
+          "sha256": "40e0c10f76e29e83613b186cd07985f13904f5b23cf087e898778b7266f0e0e7",
+          "bytes": 8212
+        },
+        {
+          "path": "src/sequences/ui/generation-stream.events.ts",
+          "kind": "production",
+          "sha256": "d1b6e5b3c393c07275dc5e5c57c7bb73b5127c19b9d1d9b92fba93136f1365e2",
+          "bytes": 7000
+        },
+        {
+          "path": "src/sequences/ui/generation-stream.session.ts",
+          "kind": "production",
+          "sha256": "12873da6e3038ed7e1ae89b706041cf7d8fae8911c350f6e4d5f12093165de95",
+          "bytes": 5441
+        },
+        {
+          "path": "src/sequences/ui/generation-stream.reducer.ts",
+          "kind": "production",
+          "sha256": "55160a74db6ec27653a041dbadbab111e08adf09b202c2387427c0e168ffd91d",
+          "bytes": 12566
+        },
+        {
+          "path": "src/sequences/ui/use-generation-launch.ts",
+          "kind": "production",
+          "sha256": "028d417cd5835a2a10b633dca712d249806cd5472e847469e2c53e8dd4265938",
+          "bytes": 418
+        },
+        {
+          "path": "src/sequences/ui/use-sequences.ts",
+          "kind": "production",
+          "sha256": "36511fa4954cef7ee74f15cc8566136d6562ed85e1056fdc4cf360c47bf890f2",
+          "bytes": 19813
+        },
+        {
+          "path": "src/sequences/sequences.fn.ts",
+          "kind": "production",
+          "sha256": "dabcaa252440d54f85e7f3287b4b26c920fb241c64dfbbfad4f64cbf19a26ab8",
+          "bytes": 20831
+        },
+        {
+          "path": "src/shots/ui/scenes-view.tsx",
+          "kind": "production",
+          "sha256": "6744b3132e0cdcba9920550935ae9d5f57cfc30eb7f352a6673b99f160b9c0ac",
+          "bytes": 75905
+        },
+        {
+          "path": "src/platform/ui/auth/client.ts",
+          "kind": "production",
+          "sha256": "4ec3aeba8db65c4ded4f59970d093ffadf40c884457dd9b9ed0fe1154c5c121c",
+          "bytes": 2767
+        },
+        {
+          "path": "src/ui/query-client.ts",
+          "kind": "production",
+          "sha256": "48fa39bdfb6be0ada3017f565e3261a2f4b1a2023e7551bb729aa51eb634e803",
+          "bytes": 3818
+        },
+        {
+          "path": "node_modules/@tanstack/react-query/package.json",
+          "kind": "dependency",
+          "sha256": "2a2d66d46321b0a124a3ad5f8d6378ec08621bcc18f91ab3128b4fc884d51cbe",
+          "bytes": 3728
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/package.json",
+          "kind": "dependency",
+          "sha256": "37d2e9a3680dbf81f1c8b452babb0420d0c942857d1ffa9e94c35b55b432a426",
+          "bytes": 2693
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/src/query.ts",
+          "kind": "dependency",
+          "sha256": "b44007f68b58ae39f4884e5e31ee0ef3208c47a5e810205ff92022bf3fc870bc",
+          "bytes": 34080
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/src/retryer.ts",
+          "kind": "dependency",
+          "sha256": "d47c3202676eca8653d9e9525fe1a76627e8bc004f9adc91c6268b5b1cb9c4ed",
+          "bytes": 8942
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/src/queryClient.ts",
+          "kind": "dependency",
+          "sha256": "2d1e2b8f550fef9f3c2a136ad7dedf196923c0b7efa47bfd03637af99d15c2a2",
+          "bytes": 40780
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/src/queryCache.ts",
+          "kind": "dependency",
+          "sha256": "cd20a15e5ef60a3585b9484723e63a0441e2b7909e1e2c4cdd2fc63d40cafd2a",
+          "bytes": 12333
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/src/notifyManager.ts",
+          "kind": "dependency",
+          "sha256": "008f46723c56f2e82bc9777eb43069c8dd8a5d78b9b688add97721979ad17ceb",
+          "bytes": 4738
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/src/subscribable.ts",
+          "kind": "dependency",
+          "sha256": "fa7e8191e97c0ca1c591dcec9f2fdd97685e230c67a3a7049bd94b709520fadf",
+          "bytes": 1945
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/build/modern/query.js",
+          "kind": "dependency",
+          "sha256": "c02a04305d97ea62de23265f80c8870f6b92468b246504cfe6d9963d7be7c346",
+          "bytes": 20108
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/build/modern/retryer.js",
+          "kind": "dependency",
+          "sha256": "e7fd0d11ec9e848e16eb8385cc29873565716cae27629f4d3526080a3f97ada6",
+          "bytes": 5324
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/build/modern/queryClient.js",
+          "kind": "dependency",
+          "sha256": "73545469ab78f0c41d5839614f515364c8096cc862127ee3cd1905b46ae567ce",
+          "bytes": 30443
+        },
+        {
+          "path": "node_modules/@tanstack/query-core/build/modern/queryCache.js",
+          "kind": "dependency",
+          "sha256": "ca4a202de2046ef6c7bb350b9d1a0cf6866ba52bd892d5357750ca6a8e5eee63",
+          "bytes": 7336
+        },
+        {
+          "path": "src/sequences/ui/generation-poster.refresh.test.ts",
+          "kind": "regression_test_source",
+          "sha256": "635976b18ec81bbdd74affef01d761e2d0a065aac53d0697a40452c971c6865f",
+          "bytes": 15806
+        }
+      ],
+      "latest_receipt_rebinding": {
+        "reviewed_at_utc": "2026-11-14T12:06:23.0463097Z",
+        "coordinator_path": "src/sequences/ui/generation-poster.refresh.ts",
+        "previous_reviewed_sha256": "74c59d679f4979ee6cccb56d87584b9e5b4ece0ceae36d172125e2c2d282afc1",
+        "current_sha256": "f43f511c292b740e4f9712ea9d94d14071b03e877b1018c3af2c5e8f8d9b2774",
+        "locations": [
+          {
+            "path": "src/sequences/ui/generation-poster.refresh.ts",
+            "line_start": 59,
+            "line_end": 81
+          }
+        ],
+        "source_change": "Per-read primitive committed flag replaced with a local mutable receipt object; the callback assignment and post-fetch check use read.committed.",
+        "exact_receipt_only_delta_verified_by_in_memory_reverse_substitution_hash": true,
+        "conclusion": "Behavior-equivalent receipt representation; both initial races remain resolved, with no new actionable finding.",
+        "reviewer_tests_run": false,
+        "other_production_and_dependency_changes_detected": false
+      }
+    }
+  },
+  "rawArtifacts": {
+    "retainedInWorkingTree": false,
+    "hashesCapturedBeforeRemoval": true,
+    "count": 49,
+    "entries": [
+      {
+        "path": ".codex/p3-poster-build-final.log",
+        "bytes": 130406,
+        "sha256": "fcd1acc957ac6715bce76a9270d6e30ac77d3086582c660bdf3c33fcfed97d4f"
+      },
+      {
+        "path": ".codex/p3-poster-build-reviewed-primitive.log",
+        "bytes": 131746,
+        "sha256": "6804538860bbed1e53104d7decc9820779ff0a014bec039929b4c0d1699ebf52"
+      },
+      {
+        "path": ".codex/p3-poster-build.log",
+        "bytes": 131747,
+        "sha256": "7723ed26f31235205586836cdf49fe423e98d0225084651fe642eabebddef2c4"
+      },
+      {
+        "path": ".codex/p3-poster-check-exits.json",
+        "bytes": 74,
+        "sha256": "07d24f6b6fe2744339e081590da879e54c7163474c5ccd5c7ca14b19e453cfa6"
+      },
+      {
+        "path": ".codex/p3-poster-client-lint.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".codex/p3-poster-client-red-restoration.json",
+        "bytes": 580,
+        "sha256": "844701492dcae1fd960e76e9980f9e1d3aa0667e0bc7a19e1f0a0cc2763e1725"
+      },
+      {
+        "path": ".codex/p3-poster-client-red.json",
+        "bytes": 26668,
+        "sha256": "c2ae9fed2f5f98862bf32296d39549f79af81e295cf8f38245a51c2c6a29a147"
+      },
+      {
+        "path": ".codex/p3-poster-client-red.log",
+        "bytes": 439,
+        "sha256": "72d02d48f86e91a9df0f5efe3a1c91e79e0d40fa5e958cd250d87b12632ecfe7"
+      },
+      {
+        "path": ".codex/p3-poster-client-review.json",
+        "bytes": 21278,
+        "sha256": "9a5060db7b080769151d5eb7d37e027f88559f574ea91fcf1d16811a50c2234f"
+      },
+      {
+        "path": ".codex/p3-poster-composition-tests.json",
+        "bytes": 19415,
+        "sha256": "b7a8767fb440acb623df3f47996b9d70367354ac81a1ab557df13b49c7f757e0"
+      },
+      {
+        "path": ".codex/p3-poster-composition-tests.log",
+        "bytes": 591,
+        "sha256": "bfad7104354722aa14565bb64faabe2b95e2b377d5f5da5f82199838412b7301"
+      },
+      {
+        "path": ".codex/p3-poster-dead-code.log",
+        "bytes": 917,
+        "sha256": "12a64381b73408198051c4eb923984ba7c8f53ba73f175dd2d555f7d7907e83e"
+      },
+      {
+        "path": ".codex/p3-poster-format-reviewed.log",
+        "bytes": 118,
+        "sha256": "a93b6262a3423743b82a66a14278056c55e6d9c6494e48343c4a2a206659a085"
+      },
+      {
+        "path": ".codex/p3-poster-format.log",
+        "bytes": 118,
+        "sha256": "6f7efe422c8d84cac8bb78f3cc0aba7b9b43ab14ec012b262ec17143eec1772c"
+      },
+      {
+        "path": ".codex/p3-poster-initial-tests.json",
+        "bytes": 18040,
+        "sha256": "0d47e0ae1ededaab9dac640adf2b1b691770a8c3667d1b81fd8b6a7d3bbc0ec1"
+      },
+      {
+        "path": ".codex/p3-poster-initial-tests.log",
+        "bytes": 350,
+        "sha256": "2fd515983a89c1d7dcedb0691dd02763542fbe4cb163d1c2b96167daa16f1810"
+      },
+      {
+        "path": ".codex/p3-poster-integrated-before-receipt.json",
+        "bytes": 193430,
+        "sha256": "62772c146060890362c94b84095a93c7ad9482b7cbfa7cac73b4478125530a38"
+      },
+      {
+        "path": ".codex/p3-poster-integrated-before-receipt.log",
+        "bytes": 2854,
+        "sha256": "a921ac0b6050e964bb4f5e0bf4b7d322c696036144acab36d21fc6753c1eb5c6"
+      },
+      {
+        "path": ".codex/p3-poster-integrated-final.json",
+        "bytes": 193381,
+        "sha256": "0fe039a9642da857bc3c7ba2cf0a7c72c3162e1adf25cf22f2c35946a5669595"
+      },
+      {
+        "path": ".codex/p3-poster-integrated-final.log",
+        "bytes": 2856,
+        "sha256": "35f5a635149e0594dc303a86f5649a47cd757477a8d8a53215f53e0b3e2461fe"
+      },
+      {
+        "path": ".codex/p3-poster-integrated-tests.json",
+        "bytes": 192849,
+        "sha256": "f5b04ff8046d8e4e67bcbd36c731a2b79cf52499c801407ac95c6280f8c309c4"
+      },
+      {
+        "path": ".codex/p3-poster-integrated-tests.log",
+        "bytes": 2854,
+        "sha256": "aa4725a30e231197bcafe9178c6c099eae904df3eaf0d1b616c362ed12f3c808"
+      },
+      {
+        "path": ".codex/p3-poster-lint-final.log",
+        "bytes": 53447,
+        "sha256": "bf0a97187875c0e122b631dd147a5ab28d0142e7f1f4eeee5d2e22ff5885b226"
+      },
+      {
+        "path": ".codex/p3-poster-lint-primitive-receipt.log",
+        "bytes": 53637,
+        "sha256": "306ad85b958136b7f7afff6d736d9ba6185c3271993c16b19b2a0a8b3cdf802f"
+      },
+      {
+        "path": ".codex/p3-poster-lint-reviewed.log",
+        "bytes": 53447,
+        "sha256": "ffde8cffc0ddb8a52acf1b1813bb0c622037117510ba965ad4a9739e9a1f6181"
+      },
+      {
+        "path": ".codex/p3-poster-lint.log",
+        "bytes": 53447,
+        "sha256": "a17ad15c1c3403149f78ffad557de0e53859161567960a1a0e62068943792527"
+      },
+      {
+        "path": ".codex/p3-poster-post-red-green.json",
+        "bytes": 55074,
+        "sha256": "0ed22734378336bba5230f7b1aae325f5d2d3333aff142ee1d34a62943c15253"
+      },
+      {
+        "path": ".codex/p3-poster-post-red-green.log",
+        "bytes": 930,
+        "sha256": "59d200d5f99fb9919c420a51ec6b5c84a2e9757f9ae515f4fc99b085629d6ffd"
+      },
+      {
+        "path": ".codex/p3-poster-quality.json",
+        "bytes": 24740,
+        "sha256": "6f3fada9fb803d472cd6dba883740d6ea0ac2354ab7546af564c4e621431fd32"
+      },
+      {
+        "path": ".codex/p3-poster-review-fixed.json",
+        "bytes": 20555,
+        "sha256": "8e54a6a7f10eac0ed15db6f97ce61590d78c195295c63e1d0f46ab8dfef453d3"
+      },
+      {
+        "path": ".codex/p3-poster-review-fixed.log",
+        "bytes": 389,
+        "sha256": "e1d3d1386ec3c23f3af83d7bbfb3b356930a4b2d80c37230bfeb1a0e82428f48"
+      },
+      {
+        "path": ".codex/p3-poster-review-red.json",
+        "bytes": 8093,
+        "sha256": "2587471ef7ff74f046fe271ae7ad67e318b00bb047e67a44ce7e36a310773bc6"
+      },
+      {
+        "path": ".codex/p3-poster-review-red.log",
+        "bytes": 305,
+        "sha256": "95a9a27316ebd931f5ae5fb7c9a2ea1049e13a7962ced7fe6bc676f1b2d7bb5c"
+      },
+      {
+        "path": ".codex/p3-poster-selection.json",
+        "bytes": 1641,
+        "sha256": "2940bb5f512a97bf94c88fce5582a6ff656e08ee39c12469341588606b2fd4d3"
+      },
+      {
+        "path": ".codex/p3-poster-server-red-restoration.json",
+        "bytes": 272,
+        "sha256": "5c59256d9f94469289835fc985c81e76eb1f392523a4cd8bb69f7b56f1d48cc7"
+      },
+      {
+        "path": ".codex/p3-poster-server-red.json",
+        "bytes": 19194,
+        "sha256": "f1e17a1bb075659373363cf14273f51cd0cc974245e6e8e2c89f97d986a5ca92"
+      },
+      {
+        "path": ".codex/p3-poster-server-red.log",
+        "bytes": 761,
+        "sha256": "258b8c7a0d3aa58cf7d33e0eb8a8d037798161b239d0585eeab77c9d85f0ebf9"
+      },
+      {
+        "path": ".codex/p3-poster-server-review.json",
+        "bytes": 3006,
+        "sha256": "39e894b586331a396cf75b4fcef8fc0594b765c83875c1b58d2d31aaf149756a"
+      },
+      {
+        "path": ".codex/p3-poster-server-tests.json",
+        "bytes": 116045,
+        "sha256": "43aa2261e0f5c4b013033b0bbe0e729caef963560e75cc7cdbcd221a6d7b7100"
+      },
+      {
+        "path": ".codex/p3-poster-server-tests.log",
+        "bytes": 2310,
+        "sha256": "c6ac98374e29fe453a45493676e830de707f5fc27043e92c56e6a6f83c285e94"
+      },
+      {
+        "path": ".codex/p3-poster-source-commit.log",
+        "bytes": 3083,
+        "sha256": "da793738946670e714e3775114f57576f518b81fe416552f207bcec3d1ff8c05"
+      },
+      {
+        "path": ".codex/p3-poster-source-paths.json",
+        "bytes": 1352,
+        "sha256": "06787474689c9469b7efcb97a8875d4f04ef7ffba8aae9db10948643f276d1ba"
+      },
+      {
+        "path": ".codex/p3-poster-start.json",
+        "bytes": 2007,
+        "sha256": "f0ed62b1f8d9e33b2e9e7baf130b2ea08b7566b19298541f6ad1d0e2c3ee139c"
+      },
+      {
+        "path": ".codex/p3-poster-typecheck-final.log",
+        "bytes": 17,
+        "sha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+      },
+      {
+        "path": ".codex/p3-poster-typecheck-first.log",
+        "bytes": 1629,
+        "sha256": "f9b8c7494fad0c62d6a333e370c5dc78d70a9ee3f7517c6011e2b43b6cc32879"
+      },
+      {
+        "path": ".codex/p3-poster-typecheck-reviewed.log",
+        "bytes": 17,
+        "sha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+      },
+      {
+        "path": ".codex/p3-poster-typecheck-second.log",
+        "bytes": 712,
+        "sha256": "38c8f7a255c9a7de550dd704a862b65eab51864fc471856d05cc5b3eba2edcb0"
+      },
+      {
+        "path": ".codex/p3-poster-typecheck-third.log",
+        "bytes": 340,
+        "sha256": "81552527e8cf9485a5f2c83b46c4978a4a421b63a1e9a1af14a701874cd27306"
+      },
+      {
+        "path": ".codex/p3-poster-write-evidence.py",
+        "bytes": 20758,
+        "sha256": "4826f5e5f9e4385a20d9af6775d7a7a235480afe1d5355ebac304dde9b4e67ee"
+      }
+    ]
+  },
+  "notPerformed": [
+    "Push, deployment, existing-database migration, paid generation and real email",
+    "Deployed Workerd restart/replay, multi-instance and browser acceptance",
+    "Provider termination and actual wallet settlement acceptance"
+  ]
+}
