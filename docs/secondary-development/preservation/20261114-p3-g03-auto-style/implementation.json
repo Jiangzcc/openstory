@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-auto-style",
+  "responsibilityId": "GC-03",
+  "status": "completed",
+  "p3Status": "in-progress",
+  "p4Status": "not-started",
+  "sourceBefore": "74a773d105164789e460dc4aac89c7eed0837e3a",
+  "sourceAfter": "355dee0cd0de8d67a5a588f044b110d1ec616fe1",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Fence automatic-style recipe, history and selected-style publication by the active Storyboard root at actual SQL execution time.",
+  "upstreamExisting": [
+    "Automatic script-derived styles and sequence-bound placeholder rows",
+    "Organization style library promotion, version history and selection pointers",
+    "Localized recipe coercion, durable LLM step, model/reservation context and style-ready event"
+  ],
+  "implemented": [
+    "Narrow storyboardAutoStyle(owner) facade exposes only setGeneratedForSequence and snapshotAutoStyle.",
+    "Style UPDATE, version INSERT and sequence pointer UPDATE each check organization, sequence, actual root-or-explicitly-trusted-claim and processing inside SQL.",
+    "Extracted recipe/snapshot writers are reused by original ordinary methods; their read order, JSON/default encoders, public selected styles and history/pointer batch semantics remain.",
+    "AnalyzeScript passes its existing resolved trusted Storyboard owner to deriveAutoStyle. The analysis child and arbitrary notification parents are not inferred as root authority.",
+    "Shared before/after/no-op/error protocol and NonRetryableError adapter execute inside save-automatic-style; unknown verification remains retryable and causes/engine aborts survive.",
+    "Standalone ownerless callers use original ordinary writers. LLM call/context, returned config, step names, promotion/selector behavior and separate authorized recipe write are retained."
+  ],
+  "schemaChanges": false,
+  "migrationsAdded": false,
+  "dependenciesChanged": false,
+  "newCronOrBindings": false,
+  "newWorkflowReadHatch": false,
+  "newBoundaryExceptions": false,
+  "modifiedProductionFiles": 9,
+  "modifiedTestFiles": 3,
+  "newTestFixtures": 1,
+  "addedTests": 122,
+  "originalTestFilesUnchanged": 36,
+  "assertionChanges": {
+    "addedTests": 122,
+    "removedTests": 0,
+    "originalTestFilesModified": 1,
+    "weakenedAssertions": false,
+    "notes": [
+      "Existing analyze-script-output mock now carries the real deriveAutoStyle signature; two trusted-root propagation tests were appended. All original assertions remain.",
+      "New runtime error-loop checks were parameterized into eight independent cases. Persisted JSON expectations explicitly account for omitted undefined optional fields.",
+      "36 other selected original test files have identical Git blobs to sourceBefore."
+    ]
+  },
+  "frozenInventory": {
+    "files": 5,
+    "items": 1219,
+    "pending": 1219,
+    "approved": 0,
+    "modified": false,
+    "comparedWith": "74a773d105164789e460dc4aac89c7eed0837e3a",
+    "entries": [
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-01.jsonl",
+        "items": 400,
+        "pending": 400,
+        "sha256": "ea08df4afbab6b90fb5c6291cc21b93b56292cf220c4550e25966378d51da145"
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-02.jsonl",
+        "items": 11,
+        "pending": 11,
+        "sha256": "f1181344dcbddf97c86624576e87c9f173c88b8e248d9208d58d750b5d3b9e7a"
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-01.jsonl",
+        "items": 400,
+        "pending": 400,
+        "sha256": "0200433309e1d75aee51354453827b74dbfbf4100e64037ad98c8b23a8872288"
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-02.jsonl",
+        "items": 206,
+        "pending": 206,
+        "sha256": "b69c66c3ac7ddf76030f0188e54d834a605666daac144b7fcf8bf43266c8f6d2"
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-support-01.jsonl",
+        "items": 202,
+        "pending": 202,
+        "sha256": "fcbe45cf4e127518d801c65619f57e421f6f1d7abb6ae19f07be91d34f43c771"
+      }
+    ]
+  },
+  "implementationLogPrefix": {
+    "records": 55,
+    "source": "74a773d105164789e460dc4aac89c7eed0837e3a",
+    "committedBytes": 83947,
+    "committedSha256": "ed328c5013cae8af704b9de5562134d3fd9172d6e4e15dc40dad748f58a46075",
+    "workingBytes": 83961,
+    "workingSha256": "b54c6a7c82f4f382eb3a22fc86563f00d0efb0b2d7520a40a984a1928cdb52c6",
+    "appendOnly": true
+  },
+  "qualityScope": "Local Oxc AST checked seven new files and the modified automatic-style step: file <=800 lines; function <=50 lines; syntactic cyclomatic <=10; control nesting <=3. Existing large factories receive required delegates only.",
+  "independentReview": {
+    "status": "completed",
+    "blockingFindings": 0,
+    "actionableFindings": 0,
+    "readOnly": true,
+    "scope": "Actual recipe UPDATE/history INSERT/pointer UPDATE root and target guards, shared pre/post/no-op/error checks, NonRetryableError conversion inside save step, original read/batch/promotion/selector semantics and unbound behavior.",
+    "notes": "Reviewer ran no tests or Git operations. Main executor owns all results."
+  },
+  "followUpDiscovery": {
+    "status": "read-only-map-completed",
+    "implementationComplete": false,
+    "scope": "createCastRecords",
+    "entryPoints": [
+      "characters.create",
+      "characterLooks.syncFromAnalysis",
+      "characterLooks.linkFromAnalysis",
+      "locations.createBulk",
+      "sequenceElements.create"
+    ],
+    "nestedRisks": [
+      "Shared character default-look status and separate voice-description updateVoice batch",
+      "Look backfill, legacy-feature bible migration and retirement/claim/event writes",
+      "Location link repoint/delete followed by separate orphan soft deletion",
+      "Element live-token lookup followed by separate INSERT"
+    ],
+    "invariants": [
+      "Preserve attached/shared organization bibles and stable identities",
+      "Retain claim demotion, soft-delete and look-retirement eligibility",
+      "Uploaded elements win; exact token matching and MAX_AUTO_ELEMENTS remain",
+      "Every nested mutation needs its actual owner/parent predicate; a createCastRecords wrapper is insufficient"
+    ]
+  },
+  "sourcePaths": [
+    "docs/architecture/generation-plan.md",
+    "docs/architecture/workflow-snapshots-and-content-hash-staleness.md",
+    "src/look/server/db/automatic-style-write.ts",
+    "src/look/server/db/styles.ts",
+    "src/look/server/workflows/auto-style-output.ts",
+    "src/look/server/workflows/auto-style-ownership.test.ts",
+    "src/look/server/workflows/auto-style-step.ts",
+    "src/platform/server/db/scoped.ts",
+    "src/sequences/server/db/sequence-style-writes.ts",
+    "src/sequences/server/db/sequences.ts",
+    "src/sequences/server/db/storyboard-auto-style.test.fixture.ts",
+    "src/sequences/server/db/storyboard-auto-style.test.ts",
+    "src/sequences/server/db/storyboard-auto-style.ts",
+    "src/sequences/server/workflows/analyze-script-output.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.ts"
+  ],
+  "productionPaths": [
+    "src/look/server/db/automatic-style-write.ts",
+    "src/look/server/db/styles.ts",
+    "src/look/server/workflows/auto-style-output.ts",
+    "src/look/server/workflows/auto-style-step.ts",
+    "src/platform/server/db/scoped.ts",
+    "src/sequences/server/db/sequence-style-writes.ts",
+    "src/sequences/server/db/sequences.ts",
+    "src/sequences/server/db/storyboard-auto-style.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.ts"
+  ],
+  "testPaths": [
+    "src/look/server/workflows/auto-style-ownership.test.ts",
+    "src/sequences/server/db/storyboard-auto-style.test.ts",
+    "src/sequences/server/workflows/analyze-script-output.test.ts"
+  ],
+  "newSourcePaths": [
+    "src/look/server/db/automatic-style-write.ts",
+    "src/look/server/workflows/auto-style-output.ts",
+    "src/look/server/workflows/auto-style-ownership.test.ts",
+    "src/sequences/server/db/sequence-style-writes.ts",
+    "src/sequences/server/db/storyboard-auto-style.test.fixture.ts",
+    "src/sequences/server/db/storyboard-auto-style.test.ts",
+    "src/sequences/server/db/storyboard-auto-style.ts"
+  ],
+  "sourceFingerprintFormat": "SHA256 of each committed Git blob",
+  "sourceFingerprints": [
+    {
+      "path": "docs/architecture/generation-plan.md",
+      "sha256": "390e10de59483bed5fddbd2aab7a93dc1c82db3596fa97f05c7541b9965fa452"
+    },
+    {
+      "path": "docs/architecture/workflow-snapshots-and-content-hash-staleness.md",
+      "sha256": "cb4fddfb24dfb8bd6235444d31ae2d031f4270d4f1d5795d524d039c2e468684"
+    },
+    {
+      "path": "src/look/server/db/automatic-style-write.ts",
+      "sha256": "0a092ddc04a57ef327304d1841d552c68dfe670a7072a8492bbb5b797aa71ce0"
+    },
+    {
+      "path": "src/look/server/db/styles.ts",
+      "sha256": "c31a009a49aca74d1eb3b86ae075927cbe3ba693647f12bc4613e0cc389f1889"
+    },
+    {
+      "path": "src/look/server/workflows/auto-style-output.ts",
+      "sha256": "8788863842427ebf3c4f46bb8f9e2bc4ffbf56be2e2d5e0ae7b4304fc4d63f2e"
+    },
+    {
+      "path": "src/look/server/workflows/auto-style-ownership.test.ts",
+      "sha256": "153e8fb0df3437c1728c1cd1dd4faac9cc052813d0e662aace4c46470fe25b6f"
+    },
+    {
+      "path": "src/look/server/workflows/auto-style-step.ts",
+      "sha256": "d003ae1f58af405d6fc44a124e4d9f4de2d38a00aa50cce57a9d74b760de3a38"
+    },
+    {
+      "path": "src/platform/server/db/scoped.ts",
+      "sha256": "bbea8fe24f29948784b3f279060f1f3f40da40764fc3e460e93474fad5261ba4"
+    },
+    {
+      "path": "src/sequences/server/db/sequence-style-writes.ts",
+      "sha256": "e50a0ed83c090d4d72b2474eea10470ec830187db5b3dc17a6e9fd7c041e3623"
+    },
+    {
+      "path": "src/sequences/server/db/sequences.ts",
+      "sha256": "76e200903d3bc121d9c3a739022dc140db80316b82b386f49cbeee8338a6b283"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-auto-style.test.fixture.ts",
+      "sha256": "9317a682e407974f959628d2ede82cddb1a0969f643b2932aa5c3541f3b039b7"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-auto-style.test.ts",
+      "sha256": "569267d5698d5aaddcac8bc34a49b5890e6759dd18c9325047fc3e2e501969e6"
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-auto-style.ts",
+      "sha256": "81dedf47f526306a62a053707dd319e78b1439a4579e0bc3f91cb335b3babbcf"
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-output.test.ts",
+      "sha256": "704bf9e4e68f16d89d7f48232b0ace781bdb268fe85672cfd610d09cc5b828ec"
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow.ts",
+      "sha256": "bd02fc2414c9fae66fb32201a1dfa75b2ed6e06334ad2f8a5f315bbbd45a5512"
+    }
+  ],
+  "remainingActions": [
+    "createCastRecords shared characters/looks/voices, location links and orphan cleanup, generated elements and their nested histories/pointers/claims/events remain outside this batch.",
+    "This fences automatic-style persistence, not already-started LLM spending or provider termination. Takeover can still occur after a successful check and before generation.style:ready.",
+    "The authorized style UPDATE remains separate from the snapshot batch. It can remain after later ownership loss; a live root with a concurrent user style switch retains the existing historical-row behavior.",
+    "Whole-root cancellation, other descendants and complete content/asset/realtime/phase/preview/callback ownership remain open.",
+    "Cached checkpoints, ownerless payloads, independent Update all, standalone AnalyzeScript CLI and email delivery remain open.",
+    "Deployed Workerd/D1 restart/replay, multi-instance concurrency, browser convergence, provider termination and wallet settlement acceptance remain unverified."
+  ],
+  "verificationBatchClosed": true,
+  "responsibilityClosed": false,
+  "acceptanceComplete": false
+}

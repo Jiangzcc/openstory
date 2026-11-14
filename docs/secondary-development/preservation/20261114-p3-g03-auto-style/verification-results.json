@@ -1,0 +1,876 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-auto-style",
+  "sourceBefore": "74a773d105164789e460dc4aac89c7eed0837e3a",
+  "sourceAfter": "355dee0cd0de8d67a5a588f044b110d1ec616fe1",
+  "evidenceScope": "Complete migrations into in-process Node SQLite through the actual Drizzle D1 driver and scoped DB. Timing substitutes delay real statement execution or an entire atomic batch, never simulate interleaving inside D1 batch. Cloudflare engine/error classes, LLM and realtime are explicit substitutes; not deployed or provider acceptance.",
+  "checks": [
+    {
+      "stage": "First persistence selection",
+      "status": "failed-before-fixture-correction",
+      "reproduceCommand": "bun run test src/look/server/workflows/auto-style-ownership.test.ts src/look/server/workflows/auto-style-step.test.ts src/sequences/server/workflows/analyze-script-output.test.ts src/sequences/server/db/sequences-style-snapshot.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-auto-style-first-tests.json",
+      "files": 4,
+      "tests": 136,
+      "passed": 131,
+      "failed": 5,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/look/server/workflows/auto-style-ownership.test.ts",
+        "src/look/server/workflows/auto-style-step.test.ts",
+        "src/sequences/server/workflows/analyze-script-output.test.ts",
+        "src/sequences/server/db/sequences-style-snapshot.test.ts"
+      ],
+      "failures": [
+        {
+          "test": "persists the actual localized draft through scoped DB and announces only after both writes",
+          "message": "DrizzleQueryError: Failed query: insert into \"sequences\" (\"id\", \"organization_id\", \"title\", \"script\", \"status\", \"status_error\", \"workflow_run_id\", \"created_at\", \"updated_at\", \"created_by\", \"updated_by\", \"style_id\", \"selected_style_version_id\", \"style_config\", \"aspect_ratio\", \"resolution\", \"analysis_model\", \"analysis_duration_ms\", \"image_model\", \"video_model\", \"workflow\", \"music_model\", \"selected_music_variant_id\", \"selected_music_prompt_version_id\", \"pending_promote_music_variant_id\", \"include_music\", \"poster_url\", \"ready_email_sent_at\", \"generate_start_frames\", \"generate_voices\", \"draft_motion\", \"target_duration_seconds\", \"generation_stop_at\", \"suggested_location_ids\") values (?, ?, null, null, ?, null, ?, ?, ?, null, null, ?, null, null, ?, ?, ?, ?, ?, ?, null, null, null, null, null, ?, null, null, ?, ?, ?, null, null, null)"
+        },
+        {
+          "test": "stops replacement before any automatic-style persistence",
+          "message": "DrizzleQueryError: Failed query: insert into \"sequences\" (\"id\", \"organization_id\", \"title\", \"script\", \"status\", \"status_error\", \"workflow_run_id\", \"created_at\", \"updated_at\", \"created_by\", \"updated_by\", \"style_id\", \"selected_style_version_id\", \"style_config\", \"aspect_ratio\", \"resolution\", \"analysis_model\", \"analysis_duration_ms\", \"image_model\", \"video_model\", \"workflow\", \"music_model\", \"selected_music_variant_id\", \"selected_music_prompt_version_id\", \"pending_promote_music_variant_id\", \"include_music\", \"poster_url\", \"ready_email_sent_at\", \"generate_start_frames\", \"generate_voices\", \"draft_motion\", \"target_duration_seconds\", \"generation_stop_at\", \"suggested_location_ids\") values (?, ?, null, null, ?, null, ?, ?, ?, null, null, ?, null, null, ?, ?, ?, ?, ?, ?, null, null, null, null, null, ?, null, null, ?, ?, ?, null, null, null)"
+        },
+        {
+          "test": "stops terminal before any automatic-style persistence",
+          "message": "DrizzleQueryError: Failed query: insert into \"sequences\" (\"id\", \"organization_id\", \"title\", \"script\", \"status\", \"status_error\", \"workflow_run_id\", \"created_at\", \"updated_at\", \"created_by\", \"updated_by\", \"style_id\", \"selected_style_version_id\", \"style_config\", \"aspect_ratio\", \"resolution\", \"analysis_model\", \"analysis_duration_ms\", \"image_model\", \"video_model\", \"workflow\", \"music_model\", \"selected_music_variant_id\", \"selected_music_prompt_version_id\", \"pending_promote_music_variant_id\", \"include_music\", \"poster_url\", \"ready_email_sent_at\", \"generate_start_frames\", \"generate_voices\", \"draft_motion\", \"target_duration_seconds\", \"generation_stop_at\", \"suggested_location_ids\") values (?, ?, null, null, ?, null, ?, ?, ?, null, null, ?, null, null, ?, ?, ?, ?, ?, ?, null, null, null, null, null, ?, null, null, ?, ?, ?, null, null, null)"
+        },
+        {
+          "test": "keeps an authorized recipe but rejects snapshot and announcement after takeover between methods",
+          "message": "DrizzleQueryError: Failed query: insert into \"sequences\" (\"id\", \"organization_id\", \"title\", \"script\", \"status\", \"status_error\", \"workflow_run_id\", \"created_at\", \"updated_at\", \"created_by\", \"updated_by\", \"style_id\", \"selected_style_version_id\", \"style_config\", \"aspect_ratio\", \"resolution\", \"analysis_model\", \"analysis_duration_ms\", \"image_model\", \"video_model\", \"workflow\", \"music_model\", \"selected_music_variant_id\", \"selected_music_prompt_version_id\", \"pending_promote_music_variant_id\", \"include_music\", \"poster_url\", \"ready_email_sent_at\", \"generate_start_frames\", \"generate_voices\", \"draft_motion\", \"target_duration_seconds\", \"generation_stop_at\", \"suggested_location_ids\") values (?, ?, null, null, ?, null, ?, ?, ?, null, null, ?, null, null, ?, ?, ?, ?, ?, ?, null, null, null, null, null, ?, null, null, ?, ?, ?, null, null, null)"
+        },
+        {
+          "test": "retains the original SQL failure while the root remains active",
+          "message": "DrizzleQueryError: Failed query: insert into \"sequences\" (\"id\", \"organization_id\", \"title\", \"script\", \"status\", \"status_error\", \"workflow_run_id\", \"created_at\", \"updated_at\", \"created_by\", \"updated_by\", \"style_id\", \"selected_style_version_id\", \"style_config\", \"aspect_ratio\", \"resolution\", \"analysis_model\", \"analysis_duration_ms\", \"image_model\", \"video_model\", \"workflow\", \"music_model\", \"selected_music_variant_id\", \"selected_music_prompt_version_id\", \"pending_promote_music_variant_id\", \"include_music\", \"poster_url\", \"ready_email_sent_at\", \"generate_start_frames\", \"generate_voices\", \"draft_motion\", \"target_duration_seconds\", \"generation_stop_at\", \"suggested_location_ids\") values (?, ?, null, null, ?, null, ?, ?, ?, null, null, ?, null, null, ?, ?, ?, ?, ?, ?, null, null, null, null, null, ?, null, null, ?, ?, ?, null, null, null)"
+        }
+      ],
+      "reportSha256": "a5cf2e12b036d586a0c98e2af30235af319618e5f92c772adbc0597f967a18d8",
+      "reportStartTimeMs": 1794652427388,
+      "reportedResultSpanMs": 22816.86
+    },
+    {
+      "stage": "Selection after title/type correction",
+      "status": "failed-before-json-expectation-correction",
+      "reproduceCommand": "bun run test src/look/server/workflows/auto-style-ownership.test.ts src/look/server/workflows/auto-style-step.test.ts src/sequences/server/db/sequences-style-snapshot.test.ts src/sequences/server/workflows/analyze-script-output.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-auto-style-corrected-tests.json",
+      "files": 4,
+      "tests": 142,
+      "passed": 141,
+      "failed": 1,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/look/server/workflows/auto-style-ownership.test.ts",
+        "src/look/server/workflows/auto-style-step.test.ts",
+        "src/sequences/server/db/sequences-style-snapshot.test.ts",
+        "src/sequences/server/workflows/analyze-script-output.test.ts"
+      ],
+      "failures": [
+        {
+          "test": "persists the actual localized draft through scoped DB and announces only after both writes",
+          "message": "AssertionError: expected { …(22) } to match object { name: '合成风格 \"黎明\"', …(1) }"
+        }
+      ],
+      "reportSha256": "c4b8074d2f6cb8d688e34772c849e5436c45af616a9663258a4cb256f3683176",
+      "reportStartTimeMs": 1794652527640,
+      "reportedResultSpanMs": 10405.31
+    },
+    {
+      "stage": "Corrected persistence selection",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/look/server/workflows/auto-style-ownership.test.ts src/look/server/workflows/auto-style-step.test.ts src/sequences/server/workflows/analyze-script-output.test.ts src/sequences/server/db/sequences-style-snapshot.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-auto-style-corrected-final-tests.json",
+      "files": 4,
+      "tests": 142,
+      "passed": 142,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/look/server/workflows/auto-style-ownership.test.ts",
+        "src/look/server/workflows/auto-style-step.test.ts",
+        "src/sequences/server/workflows/analyze-script-output.test.ts",
+        "src/sequences/server/db/sequences-style-snapshot.test.ts"
+      ],
+      "failures": [],
+      "reportSha256": "3c01638d00d31d6b58f12585a392b1ba83372a6c00c1ad9306034ab7bbc635d5",
+      "reportStartTimeMs": 1794652683944,
+      "reportedResultSpanMs": 10548.27
+    },
+    {
+      "stage": "Final integrated selection",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/platform/client-server-boundary.test.ts src/platform/domain-blind.test.ts src/shots/server/artifact-cancellation.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/wiring-consistency.test.ts src/sequences/server/db/sequence-events.test.ts src/sequences/server/db/storyboard-content-completion.test.ts src/sequences/server/db/storyboard-content-errors.test.ts src/sequences/server/db/storyboard-content-ownership.test.ts src/sequences/server/workflows/analyze-script-child-context.test.ts src/sequences/server/workflows/analyze-script-failure-ownership.test.ts src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts src/sequences/server/workflows/analyze-script-workflow.test.ts src/sequences/server/workflows/scene-split-content.test.ts src/sequences/server/workflows/scene-split-output-budget.test.ts src/sequences/server/workflows/scene-split-workflow.test.ts src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts src/shots/server/db/scene-script-versions.test.ts src/shots/server/db/shot-dialogue.test.ts src/shots/server/db/shots-anchor.test.ts src/shots/server/db/shots-scene-trim.test.ts src/shots/server/db/structure-crud.test.ts src/sequences/server/db/storyboard-analysis-output.test.ts src/sequences/server/db/storyboard-analysis-persistence.test.ts src/sequences/server/workflows/analyze-script-output.test.ts src/shots/server/db/frame-prompt-versions.test.ts src/shots/server/db/shot-prompt-versions.test.ts src/shots/server/persist-shot-spec.test.ts src/sequences/server/scene-persistence.test.ts src/look/server/workflows/auto-style-step.test.ts src/look/server/workflows/auto-style-ownership.test.ts src/sequences/server/db/storyboard-auto-style.test.ts src/sequences/server/db/sequences-style-snapshot.test.ts src/look/server/db/styles.test.ts src/look/server/db/styles-automatic.test.ts src/look/auto-style.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-auto-style-integrated-tests.json",
+      "files": 39,
+      "tests": 1132,
+      "passed": 1132,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/look/auto-style.test.ts",
+        "src/platform/client-server-boundary.test.ts",
+        "src/platform/domain-blind.test.ts",
+        "src/sequences/server/scene-persistence.test.ts",
+        "src/shots/server/artifact-cancellation.test.ts",
+        "src/shots/server/persist-shot-spec.test.ts",
+        "src/look/server/db/styles-automatic.test.ts",
+        "src/look/server/db/styles.test.ts",
+        "src/look/server/workflows/auto-style-ownership.test.ts",
+        "src/look/server/workflows/auto-style-step.test.ts",
+        "src/platform/server/db/db-access-allowlist.test.ts",
+        "src/platform/server/workflow/base-workflow.test.ts",
+        "src/platform/server/workflow/claim-discipline.test.ts",
+        "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "src/platform/server/workflow/wiring-consistency.test.ts",
+        "src/sequences/server/db/sequence-events.test.ts",
+        "src/sequences/server/db/sequences-style-snapshot.test.ts",
+        "src/sequences/server/db/storyboard-analysis-output.test.ts",
+        "src/sequences/server/db/storyboard-analysis-persistence.test.ts",
+        "src/sequences/server/db/storyboard-auto-style.test.ts",
+        "src/sequences/server/db/storyboard-content-completion.test.ts",
+        "src/sequences/server/db/storyboard-content-errors.test.ts",
+        "src/sequences/server/db/storyboard-content-ownership.test.ts",
+        "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+        "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+        "src/sequences/server/workflows/analyze-script-output.test.ts",
+        "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+        "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+        "src/sequences/server/workflows/scene-split-content.test.ts",
+        "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+        "src/sequences/server/workflows/scene-split-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+        "src/shots/server/db/frame-prompt-versions.test.ts",
+        "src/shots/server/db/scene-script-versions.test.ts",
+        "src/shots/server/db/shot-dialogue.test.ts",
+        "src/shots/server/db/shot-prompt-versions.test.ts",
+        "src/shots/server/db/shots-anchor.test.ts",
+        "src/shots/server/db/shots-scene-trim.test.ts",
+        "src/shots/server/db/structure-crud.test.ts"
+      ],
+      "failures": [],
+      "reportSha256": "4d3801e2315c7424aa9a869157a411d5bbacbcb50f11d69c118bc8d09d7b6002",
+      "reportStartTimeMs": 1794652845806,
+      "reportedResultSpanMs": 91881.67
+    },
+    {
+      "stage": "Initial original-code filter selected no cases",
+      "status": "no-cases-selected-not-evidence",
+      "reproduceCommand": "bun run test src/sequences/server/db/storyboard-auto-style.test.ts -t \"replacement root after successful precheck fences\" --maxWorkers=4 --reporter=json --outputFile=.codex/p3-auto-style-original-filter-empty.json",
+      "files": 1,
+      "tests": 106,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 106,
+      "todo": 0,
+      "paths": ["src/sequences/server/db/storyboard-auto-style.test.ts"],
+      "failures": [],
+      "reportSha256": "95e80a7b242b7db87954a1c629039cbc613a39bd56391a5bc5ad74304cf8dfed",
+      "reportStartTimeMs": 1794653002839,
+      "reportedResultSpanMs": 0
+    },
+    {
+      "stage": "Original factories with checked facade retained",
+      "status": "expected-regression-failure",
+      "reproduceCommand": "bun run test src/sequences/server/db/storyboard-auto-style.test.ts -t \"fences.*in actual SQL\" --maxWorkers=4 --reporter=json --outputFile=.codex/p3-auto-style-original-red.json",
+      "files": 1,
+      "tests": 106,
+      "passed": 0,
+      "failed": 18,
+      "skipped": 88,
+      "todo": 0,
+      "paths": ["src/sequences/server/db/storyboard-auto-style.test.ts"],
+      "failures": [
+        {
+          "test": "replacement root after successful precheck fences style UPDATE in actual SQL",
+          "message": "AssertionError: expected { …(3) } to deeply equal { …(3) }"
+        },
+        {
+          "test": "replacement root after successful precheck fences version INSERT in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(3) ], …(2) } to deeply equal { styles: [ { …(22) }, …(3) ], …(2) }"
+        },
+        {
+          "test": "replacement root after successful precheck fences pointer UPDATE in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(5) ], …(2) } to deeply equal { styles: [ { …(22) }, …(5) ], …(2) }"
+        },
+        {
+          "test": "failed root after successful precheck fences style UPDATE in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(7) ], …(2) } to deeply equal { styles: [ { …(22) }, …(7) ], …(2) }"
+        },
+        {
+          "test": "failed root after successful precheck fences version INSERT in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(9) ], …(2) } to deeply equal { styles: [ { …(22) }, …(9) ], …(2) }"
+        },
+        {
+          "test": "failed root after successful precheck fences pointer UPDATE in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(11) ], …(2) } to deeply equal { styles: [ { …(22) }, …(11) ], …(2) }"
+        },
+        {
+          "test": "completed root after successful precheck fences style UPDATE in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(13) ], …(2) } to deeply equal { styles: [ { …(22) }, …(13) ], …(2) }"
+        },
+        {
+          "test": "completed root after successful precheck fences version INSERT in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(15) ], …(2) } to deeply equal { styles: [ { …(22) }, …(15) ], …(2) }"
+        },
+        {
+          "test": "completed root after successful precheck fences pointer UPDATE in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(17) ], …(2) } to deeply equal { styles: [ { …(22) }, …(17) ], …(2) }"
+        },
+        {
+          "test": "draft root after successful precheck fences style UPDATE in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(19) ], …(2) } to deeply equal { styles: [ { …(22) }, …(19) ], …(2) }"
+        },
+        {
+          "test": "draft root after successful precheck fences version INSERT in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(21) ], …(2) } to deeply equal { styles: [ { …(22) }, …(21) ], …(2) }"
+        },
+        {
+          "test": "draft root after successful precheck fences pointer UPDATE in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(23) ], …(2) } to deeply equal { styles: [ { …(22) }, …(23) ], …(2) }"
+        },
+        {
+          "test": "archived root after successful precheck fences style UPDATE in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(25) ], …(2) } to deeply equal { styles: [ { …(22) }, …(25) ], …(2) }"
+        },
+        {
+          "test": "archived root after successful precheck fences version INSERT in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(27) ], …(2) } to deeply equal { styles: [ { …(22) }, …(27) ], …(2) }"
+        },
+        {
+          "test": "archived root after successful precheck fences pointer UPDATE in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(29) ], …(2) } to deeply equal { styles: [ { …(22) }, …(29) ], …(2) }"
+        },
+        {
+          "test": "cleared owner (synthetic cancellation) after successful precheck fences style UPDATE in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(31) ], …(2) } to deeply equal { styles: [ { …(22) }, …(31) ], …(2) }"
+        },
+        {
+          "test": "cleared owner (synthetic cancellation) after successful precheck fences version INSERT in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(33) ], …(2) } to deeply equal { styles: [ { …(22) }, …(33) ], …(2) }"
+        },
+        {
+          "test": "cleared owner (synthetic cancellation) after successful precheck fences pointer UPDATE in snapshot batch in actual SQL",
+          "message": "AssertionError: expected { styles: [ { …(22) }, …(35) ], …(2) } to deeply equal { styles: [ { …(22) }, …(35) ], …(2) }"
+        }
+      ],
+      "reportSha256": "54818bc8752d456984bbb0dc57886401b3bcc429a3628dd59865904e09e7ffbc",
+      "reportStartTimeMs": 1794653069449,
+      "reportedResultSpanMs": 7702.35
+    },
+    {
+      "stage": "Corrected bytes after exact restoration",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/look/server/workflows/auto-style-ownership.test.ts src/sequences/server/db/storyboard-auto-style.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-auto-style-post-restore.json",
+      "files": 2,
+      "tests": 120,
+      "passed": 120,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0,
+      "paths": [
+        "src/look/server/workflows/auto-style-ownership.test.ts",
+        "src/sequences/server/db/storyboard-auto-style.test.ts"
+      ],
+      "failures": [],
+      "reportSha256": "a1cb843c48038e26a58100872aeed4df830c71f2c1e227812a6eee3dd2c2ef46",
+      "reportStartTimeMs": 1794653114547,
+      "reportedResultSpanMs": 9518.2
+    }
+  ],
+  "commandNote": "Test commands are reproducible equivalents from retained paths/filter; reportedResultSpanMs measures report events, not full CLI wall time.",
+  "additionalChecks": [
+    {
+      "stage": "Initial typecheck",
+      "command": "bun typecheck",
+      "status": "failed-before-fixture-correction",
+      "detail": "Missing required sequence title in a new fixture and widened _parent.bindingName string in new test.each cases. Added the field and contextual satisfies typing; production behavior unchanged."
+    },
+    {
+      "stage": "Persisted JSON diagnostic",
+      "command": "bun run test src/look/server/workflows/auto-style-ownership.test.ts -t \"persists the actual\" --maxWorkers=1",
+      "status": "failed-before-json-expectation-correction",
+      "detail": "JSON storage omits undefined look.medium and motion.shots. Assertion now compares every serialized config field and separately checks name, source and pointers; no production serialization change."
+    },
+    {
+      "stage": "Initial full lint",
+      "command": "bun lint",
+      "status": "failed-on-temporary-audit-script",
+      "errors": 2,
+      "detail": "Only .codex/p3-auto-style-quality.mjs had an unused local and console output. The temporary audit script was removed after generating its report. No production lint errors."
+    },
+    {
+      "stage": "Final full typecheck",
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    {
+      "stage": "Formatting",
+      "command": "bunx --no-install oxfmt --check docs/architecture/generation-plan.md docs/architecture/workflow-snapshots-and-content-hash-staleness.md src/look/server/db/automatic-style-write.ts src/look/server/db/styles.ts src/look/server/workflows/auto-style-output.ts src/look/server/workflows/auto-style-ownership.test.ts src/look/server/workflows/auto-style-step.ts src/platform/server/db/scoped.ts src/sequences/server/db/sequence-style-writes.ts src/sequences/server/db/sequences.ts src/sequences/server/db/storyboard-auto-style.test.fixture.ts src/sequences/server/db/storyboard-auto-style.test.ts src/sequences/server/db/storyboard-auto-style.ts src/sequences/server/workflows/analyze-script-output.test.ts src/sequences/server/workflows/analyze-script-workflow.ts",
+      "files": 15,
+      "status": "passed"
+    },
+    {
+      "stage": "Final full lint",
+      "command": "bun lint",
+      "status": "passed",
+      "warnings": 147
+    },
+    {
+      "stage": "Production build",
+      "command": "$env:CLOUDFLARE_ENV = 'production'; bun run build",
+      "status": "passed",
+      "client": true,
+      "ssr": true,
+      "clientBuildSeconds": 25.23,
+      "ssrBuildSeconds": 42.2,
+      "deploy": false
+    },
+    {
+      "stage": "Source normal hooks",
+      "command": "git commit -m \"fix: fence automatic styles by storyboard owner\"",
+      "status": "passed",
+      "durationSeconds": 69.3,
+      "boundaryTests": 17,
+      "checks": [
+        "client-server-boundary",
+        "dead-code",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "checkDurationsSeconds": {
+        "client-server-boundary": 9.83,
+        "dead-code": 15.58,
+        "format": 1.02,
+        "lint": 14.21,
+        "typecheck": 28.49
+      },
+      "skippedAsNotApplicable": [
+        "migration-safety",
+        "typegen-regen",
+        "workflow-trigger-safety"
+      ]
+    },
+    {
+      "stage": "New files and modified step quality",
+      "status": "passed",
+      "tool": "locally installed oxc-parser AST; nested functions measured separately",
+      "results": [
+        {
+          "path": "src/look/server/db/automatic-style-write.ts",
+          "lines": 32,
+          "maxFunctionLines": 25,
+          "maxCyclomatic": 1,
+          "maxControlNesting": 0,
+          "violations": []
+        },
+        {
+          "path": "src/look/server/workflows/auto-style-output.ts",
+          "lines": 23,
+          "maxFunctionLines": 18,
+          "maxCyclomatic": 2,
+          "maxControlNesting": 1,
+          "violations": []
+        },
+        {
+          "path": "src/look/server/workflows/auto-style-ownership.test.ts",
+          "lines": 320,
+          "maxFunctionLines": 35,
+          "maxCyclomatic": 3,
+          "maxControlNesting": 1,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/sequence-style-writes.ts",
+          "lines": 85,
+          "maxFunctionLines": 41,
+          "maxCyclomatic": 2,
+          "maxControlNesting": 1,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-auto-style.test.fixture.ts",
+          "lines": 310,
+          "maxFunctionLines": 44,
+          "maxCyclomatic": 8,
+          "maxControlNesting": 1,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-auto-style.test.ts",
+          "lines": 618,
+          "maxFunctionLines": 40,
+          "maxCyclomatic": 8,
+          "maxControlNesting": 1,
+          "violations": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-auto-style.ts",
+          "lines": 29,
+          "maxFunctionLines": 21,
+          "maxCyclomatic": 1,
+          "maxControlNesting": 0,
+          "violations": []
+        },
+        {
+          "path": "src/look/server/workflows/auto-style-step.ts",
+          "lines": 146,
+          "maxFunctionLines": 38,
+          "maxCyclomatic": 3,
+          "maxControlNesting": 2,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "stage": "Initial integrated test launcher",
+      "status": "launcher-failed-no-tests-ran",
+      "detail": "Python subprocess could not execute the PowerShell bun.ps1 wrapper by bare name. Invoked the actual project bun command from PowerShell with the selected paths; 39-file integration passed."
+    }
+  ],
+  "baselineOverride": {
+    "source": "74a773d105164789e460dc4aac89c7eed0837e3a",
+    "originalFactoryPaths": [
+      "src/look/server/db/styles.ts",
+      "src/sequences/server/db/sequences.ts"
+    ],
+    "checkedFacadeAdapter": "storyboard-auto-style.ts temporarily calls the exact original factories, retaining the new shared before/after checks but no mutation guards.",
+    "newBridgeAndPrechecksRetained": true,
+    "restoredExactWorkingBytes": true,
+    "expectedFailedTests": 18,
+    "skippedByFilter": 88,
+    "restoredFiles": [
+      {
+        "restoredExactWorkingBytes": true,
+        "path": "src/look/server/db/styles.ts",
+        "sha256": "c31a009a49aca74d1eb3b86ae075927cbe3ba693647f12bc4613e0cc389f1889"
+      },
+      {
+        "restoredExactWorkingBytes": true,
+        "path": "src/sequences/server/db/sequences.ts",
+        "sha256": "76e200903d3bc121d9c3a739022dc140db80316b82b386f49cbeee8338a6b283"
+      },
+      {
+        "restoredExactWorkingBytes": true,
+        "path": "src/sequences/server/db/storyboard-auto-style.ts",
+        "sha256": "81dedf47f526306a62a053707dd319e78b1439a4579e0bc3f91cb335b3babbcf"
+      }
+    ],
+    "restoreProtocol": "Saved raw bytes and SHA256 for both original factories and the facade, restored each in finally, verified raw-byte hashes, then reran 120 related tests."
+  },
+  "newCoverage": {
+    "databaseMatrix": 106,
+    "actualDeriveStylePersistenceComposition": 5,
+    "explicitErrorAdapterAndOwnerlessSubstitutes": 9,
+    "actualAnalyzeScriptWithMockedEdgesRootPropagation": 2,
+    "total": 122
+  },
+  "selectedTestPaths": [
+    "src/platform/client-server-boundary.test.ts",
+    "src/platform/domain-blind.test.ts",
+    "src/shots/server/artifact-cancellation.test.ts",
+    "src/platform/server/db/db-access-allowlist.test.ts",
+    "src/platform/server/workflow/base-workflow.test.ts",
+    "src/platform/server/workflow/claim-discipline.test.ts",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts",
+    "src/platform/server/workflow/wiring-consistency.test.ts",
+    "src/sequences/server/db/sequence-events.test.ts",
+    "src/sequences/server/db/storyboard-content-completion.test.ts",
+    "src/sequences/server/db/storyboard-content-errors.test.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+    "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+    "src/sequences/server/workflows/scene-split-content.test.ts",
+    "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+    "src/sequences/server/workflows/scene-split-workflow.test.ts",
+    "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+    "src/shots/server/db/scene-script-versions.test.ts",
+    "src/shots/server/db/shot-dialogue.test.ts",
+    "src/shots/server/db/shots-anchor.test.ts",
+    "src/shots/server/db/shots-scene-trim.test.ts",
+    "src/shots/server/db/structure-crud.test.ts",
+    "src/sequences/server/db/storyboard-analysis-output.test.ts",
+    "src/sequences/server/db/storyboard-analysis-persistence.test.ts",
+    "src/sequences/server/workflows/analyze-script-output.test.ts",
+    "src/shots/server/db/frame-prompt-versions.test.ts",
+    "src/shots/server/db/shot-prompt-versions.test.ts",
+    "src/shots/server/persist-shot-spec.test.ts",
+    "src/sequences/server/scene-persistence.test.ts",
+    "src/look/server/workflows/auto-style-step.test.ts",
+    "src/look/server/workflows/auto-style-ownership.test.ts",
+    "src/sequences/server/db/storyboard-auto-style.test.ts",
+    "src/sequences/server/db/sequences-style-snapshot.test.ts",
+    "src/look/server/db/styles.test.ts",
+    "src/look/server/db/styles-automatic.test.ts",
+    "src/look/auto-style.test.ts"
+  ],
+  "unchangedOriginalTestPaths": [
+    "src/platform/client-server-boundary.test.ts",
+    "src/platform/domain-blind.test.ts",
+    "src/shots/server/artifact-cancellation.test.ts",
+    "src/platform/server/db/db-access-allowlist.test.ts",
+    "src/platform/server/workflow/base-workflow.test.ts",
+    "src/platform/server/workflow/claim-discipline.test.ts",
+    "src/platform/server/workflow/no-mid-run-reads.test.ts",
+    "src/platform/server/workflow/wiring-consistency.test.ts",
+    "src/sequences/server/db/sequence-events.test.ts",
+    "src/sequences/server/db/storyboard-content-completion.test.ts",
+    "src/sequences/server/db/storyboard-content-errors.test.ts",
+    "src/sequences/server/db/storyboard-content-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+    "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+    "src/sequences/server/workflows/scene-split-content.test.ts",
+    "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+    "src/sequences/server/workflows/scene-split-workflow.test.ts",
+    "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+    "src/shots/server/db/scene-script-versions.test.ts",
+    "src/shots/server/db/shot-dialogue.test.ts",
+    "src/shots/server/db/shots-anchor.test.ts",
+    "src/shots/server/db/shots-scene-trim.test.ts",
+    "src/shots/server/db/structure-crud.test.ts",
+    "src/sequences/server/db/storyboard-analysis-output.test.ts",
+    "src/sequences/server/db/storyboard-analysis-persistence.test.ts",
+    "src/shots/server/db/frame-prompt-versions.test.ts",
+    "src/shots/server/db/shot-prompt-versions.test.ts",
+    "src/shots/server/persist-shot-spec.test.ts",
+    "src/sequences/server/scene-persistence.test.ts",
+    "src/look/server/workflows/auto-style-step.test.ts",
+    "src/sequences/server/db/sequences-style-snapshot.test.ts",
+    "src/look/server/db/styles.test.ts",
+    "src/look/server/db/styles-automatic.test.ts",
+    "src/look/auto-style.test.ts"
+  ],
+  "selectedTestResults": [
+    {
+      "path": "src/look/auto-style.test.ts",
+      "status": "passed",
+      "tests": 19,
+      "durationMs": 56.79
+    },
+    {
+      "path": "src/platform/client-server-boundary.test.ts",
+      "status": "passed",
+      "tests": 17,
+      "durationMs": 5896.99
+    },
+    {
+      "path": "src/platform/domain-blind.test.ts",
+      "status": "passed",
+      "tests": 2,
+      "durationMs": 398.57
+    },
+    {
+      "path": "src/sequences/server/scene-persistence.test.ts",
+      "status": "passed",
+      "tests": 11,
+      "durationMs": 28.64
+    },
+    {
+      "path": "src/shots/server/artifact-cancellation.test.ts",
+      "status": "passed",
+      "tests": 24,
+      "durationMs": 704.23
+    },
+    {
+      "path": "src/shots/server/persist-shot-spec.test.ts",
+      "status": "passed",
+      "tests": 4,
+      "durationMs": 18.73
+    },
+    {
+      "path": "src/look/server/db/styles-automatic.test.ts",
+      "status": "passed",
+      "tests": 10,
+      "durationMs": 140.46
+    },
+    {
+      "path": "src/look/server/db/styles.test.ts",
+      "status": "passed",
+      "tests": 16,
+      "durationMs": 146.03
+    },
+    {
+      "path": "src/look/server/workflows/auto-style-ownership.test.ts",
+      "status": "passed",
+      "tests": 14,
+      "durationMs": 105.35
+    },
+    {
+      "path": "src/look/server/workflows/auto-style-step.test.ts",
+      "status": "passed",
+      "tests": 8,
+      "durationMs": 53.13
+    },
+    {
+      "path": "src/platform/server/db/db-access-allowlist.test.ts",
+      "status": "passed",
+      "tests": 2,
+      "durationMs": 3.67
+    },
+    {
+      "path": "src/platform/server/workflow/base-workflow.test.ts",
+      "status": "passed",
+      "tests": 36,
+      "durationMs": 76.75
+    },
+    {
+      "path": "src/platform/server/workflow/claim-discipline.test.ts",
+      "status": "passed",
+      "tests": 5,
+      "durationMs": 261.83
+    },
+    {
+      "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "status": "passed",
+      "tests": 66,
+      "durationMs": 278.18
+    },
+    {
+      "path": "src/platform/server/workflow/wiring-consistency.test.ts",
+      "status": "passed",
+      "tests": 18,
+      "durationMs": 21.19
+    },
+    {
+      "path": "src/sequences/server/db/sequence-events.test.ts",
+      "status": "passed",
+      "tests": 13,
+      "durationMs": 169.57
+    },
+    {
+      "path": "src/sequences/server/db/sequences-style-snapshot.test.ts",
+      "status": "passed",
+      "tests": 17,
+      "durationMs": 309.07
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-analysis-output.test.ts",
+      "status": "passed",
+      "tests": 155,
+      "durationMs": 13536.25
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-analysis-persistence.test.ts",
+      "status": "passed",
+      "tests": 3,
+      "durationMs": 230.55
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-auto-style.test.ts",
+      "status": "passed",
+      "tests": 106,
+      "durationMs": 1466.39
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-completion.test.ts",
+      "status": "passed",
+      "tests": 4,
+      "durationMs": 15.84
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-errors.test.ts",
+      "status": "passed",
+      "tests": 7,
+      "durationMs": 24.9
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-content-ownership.test.ts",
+      "status": "passed",
+      "tests": 174,
+      "durationMs": 14514.64
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+      "status": "passed",
+      "tests": 10,
+      "durationMs": 138.64
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+      "status": "passed",
+      "tests": 18,
+      "durationMs": 205.7
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-output.test.ts",
+      "status": "passed",
+      "tests": 103,
+      "durationMs": 194.65
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+      "status": "passed",
+      "tests": 18,
+      "durationMs": 99.45
+    },
+    {
+      "path": "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+      "status": "passed",
+      "tests": 16,
+      "durationMs": 94.0
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-content.test.ts",
+      "status": "passed",
+      "tests": 27,
+      "durationMs": 70.38
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-output-budget.test.ts",
+      "status": "passed",
+      "tests": 8,
+      "durationMs": 115.29
+    },
+    {
+      "path": "src/sequences/server/workflows/scene-split-workflow.test.ts",
+      "status": "passed",
+      "tests": 41,
+      "durationMs": 166.32
+    },
+    {
+      "path": "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+      "status": "passed",
+      "tests": 30,
+      "durationMs": 530.14
+    },
+    {
+      "path": "src/shots/server/db/frame-prompt-versions.test.ts",
+      "status": "passed",
+      "tests": 22,
+      "durationMs": 443.45
+    },
+    {
+      "path": "src/shots/server/db/scene-script-versions.test.ts",
+      "status": "passed",
+      "tests": 9,
+      "durationMs": 89.83
+    },
+    {
+      "path": "src/shots/server/db/shot-dialogue.test.ts",
+      "status": "passed",
+      "tests": 29,
+      "durationMs": 433.88
+    },
+    {
+      "path": "src/shots/server/db/shot-prompt-versions.test.ts",
+      "status": "passed",
+      "tests": 39,
+      "durationMs": 550.21
+    },
+    {
+      "path": "src/shots/server/db/shots-anchor.test.ts",
+      "status": "passed",
+      "tests": 7,
+      "durationMs": 131.34
+    },
+    {
+      "path": "src/shots/server/db/shots-scene-trim.test.ts",
+      "status": "passed",
+      "tests": 6,
+      "durationMs": 129.17
+    },
+    {
+      "path": "src/shots/server/db/structure-crud.test.ts",
+      "status": "passed",
+      "tests": 18,
+      "durationMs": 257.88
+    }
+  ],
+  "independentReview": {
+    "status": "completed",
+    "blockingFindings": 0,
+    "actionableFindings": 0,
+    "readOnly": true,
+    "scope": "Actual recipe UPDATE/history INSERT/pointer UPDATE root and target guards, shared pre/post/no-op/error checks, NonRetryableError conversion inside save step, original read/batch/promotion/selector semantics and unbound behavior.",
+    "notes": "Reviewer ran no tests or Git operations. Main executor owns all results."
+  },
+  "rawArtifactPolicy": "Raw temporary reports/logs are hashed, summarized here and removed after audit. Failure names, paths, reproducible command equivalents and per-file results are retained.",
+  "rawArtifacts": [
+    {
+      "path": ".codex/p3-auto-style-baseline-restore.json",
+      "sha256": "13eb055a1904e0ad7c695f80ab2156f1025c0e5f67c256921a44ee6558646673"
+    },
+    {
+      "path": ".codex/p3-auto-style-build.log",
+      "sha256": "d18eeec7e7886c9a2b83b072bfe7ca90868305f2da32f453632cebb1f4b401ee"
+    },
+    {
+      "path": ".codex/p3-auto-style-corrected-final-tests.json",
+      "sha256": "3c01638d00d31d6b58f12585a392b1ba83372a6c00c1ad9306034ab7bbc635d5"
+    },
+    {
+      "path": ".codex/p3-auto-style-corrected-tests.json",
+      "sha256": "c4b8074d2f6cb8d688e34772c849e5436c45af616a9663258a4cb256f3683176"
+    },
+    {
+      "path": ".codex/p3-auto-style-drizzle.log",
+      "sha256": "e9fc37de4997f58fa8acb37033eb1a7ab8e322a0c3d3680d061057fd2afbb816"
+    },
+    {
+      "path": ".codex/p3-auto-style-first-tests.json",
+      "sha256": "a5cf2e12b036d586a0c98e2af30235af319618e5f92c772adbc0597f967a18d8"
+    },
+    {
+      "path": ".codex/p3-auto-style-integrated-tests.json",
+      "sha256": "4d3801e2315c7424aa9a869157a411d5bbacbcb50f11d69c118bc8d09d7b6002"
+    },
+    {
+      "path": ".codex/p3-auto-style-intent.log",
+      "sha256": "ee140b236114e9fab293d27340b03ee9dfbe627cb623eafa8751d6a50974d1c8"
+    },
+    {
+      "path": ".codex/p3-auto-style-lint-final.log",
+      "sha256": "adf23202884899ee27d24f450c86b0de517709d05f013ef94b4bc092369e5a41"
+    },
+    {
+      "path": ".codex/p3-auto-style-lint.log",
+      "sha256": "0ed94af473c8fede713923baa1ece432ff044dfbfd893152249a8ac3cfdf6ecf"
+    },
+    {
+      "path": ".codex/p3-auto-style-original-filter-empty.json",
+      "sha256": "95e80a7b242b7db87954a1c629039cbc613a39bd56391a5bc5ad74304cf8dfed"
+    },
+    {
+      "path": ".codex/p3-auto-style-original-red.json",
+      "sha256": "54818bc8752d456984bbb0dc57886401b3bcc429a3628dd59865904e09e7ffbc"
+    },
+    {
+      "path": ".codex/p3-auto-style-post-restore.json",
+      "sha256": "a1cb843c48038e26a58100872aeed4df830c71f2c1e227812a6eee3dd2c2ef46"
+    },
+    {
+      "path": ".codex/p3-auto-style-quality.json",
+      "sha256": "9ecb2e4fe55cec9c321b317233f317db558d80fcf9c2e1a4704d90f9aeb7cd52"
+    },
+    {
+      "path": ".codex/p3-auto-style-selected.json",
+      "sha256": "d1d98ec24af1010540818e6e1113e21711be401964d34d57803eaf9f2d3346c1"
+    },
+    {
+      "path": ".codex/p3-auto-style-source-paths.json",
+      "sha256": "5e94df0f35f470915c832ee8ba032ea38863fd7408a6adde51645a9bfc57a6e6"
+    },
+    {
+      "path": ".codex/p3-auto-style-typecheck-final.log",
+      "sha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+    },
+    {
+      "path": ".codex/p3-auto-style-typecheck.log",
+      "sha256": "3b8f2d17f2940783263dbb4cb903d8e5e53df2b5aef060942900eee21a27a018"
+    }
+  ],
+  "remainingActions": [
+    "createCastRecords shared characters/looks/voices, location links and orphan cleanup, generated elements and their nested histories/pointers/claims/events remain outside this batch.",
+    "This fences automatic-style persistence, not already-started LLM spending or provider termination. Takeover can still occur after a successful check and before generation.style:ready.",
+    "The authorized style UPDATE remains separate from the snapshot batch. It can remain after later ownership loss; a live root with a concurrent user style switch retains the existing historical-row behavior.",
+    "Whole-root cancellation, other descendants and complete content/asset/realtime/phase/preview/callback ownership remain open.",
+    "Cached checkpoints, ownerless payloads, independent Update all, standalone AnalyzeScript CLI and email delivery remain open.",
+    "Deployed Workerd/D1 restart/replay, multi-instance concurrency, browser convergence, provider termination and wallet settlement acceptance remain unverified."
+  ],
+  "verificationBatchClosed": true,
+  "responsibilityClosed": false,
+  "acceptanceComplete": false
+}
