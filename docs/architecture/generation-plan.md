@@ -229,15 +229,9 @@ flight. These guards protect their state and ID writes after takeover; they
 neither prevent takeover nor stop the older workflow. No lease, TTL or schema
 change is added.
 
-This batch covers launcher claim/processing and instance publication only.
-`StoryboardWorkflow.runImpl` startup and success writes remain unconditional.
-Analyze-script child failure handling, Continue settings save/refusal
-rollback, the independent Update all preflight race, and realtime/old-event
-handling remain outside it. Creation followed by a publication SQL error
-still has its existing recovery gap. The failure `UPDATE` and realtime emit
-remain separate operations; the [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14)
-records the event-consistency limits. See the [launcher ownership batch](../secondary-development/preservation/20261114-p3-g03-launcher-ownership/README.md)
-for the implementation and verification record.
+The [launcher ownership batch](../secondary-development/preservation/20261114-p3-g03-launcher-ownership/README.md) covers claim/processing and instance publication. The [lifecycle branches follow-up](../secondary-development/preservation/20261114-p3-g03-lifecycle-branches/README.md) guards the selected runImpl startup, shot clearing, stop-at/settings activity, credits-short and completion/activity operations, plus parented AnalyzeScript failure using an explicit root owner snapshot. Completion has a stable DB event receipt for retry; a missed start returns before poster/child work and releases only the payload reservation.
+
+Other content writes and descendant notifications, the standalone AnalyzeScript CLI without a slot protocol, Continue settings save/refusal rollback, independent Update all preflight and create-success/publication-SQL-failure recovery remain open. Database commits do not make realtime or email delivery atomic; a takeover after a successful guard or replay of an already-cached successful step still needs event-level ownership. The [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14) records the complete bounded contract and notification/replay limits.
 
 ## Shot specs and prompts (#1923, #1929)
 

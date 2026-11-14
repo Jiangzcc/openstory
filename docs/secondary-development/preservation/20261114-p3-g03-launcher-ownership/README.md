@@ -35,3 +35,5 @@
 - 真实 Workerd HTTP、Cloudflare replay/restart、多实例并发、浏览器送达、供应商及钱包结算未验收；没有 push、部署、远程 D1/R2 写入或真实模型调用。
 
 下一步按上述根任务、子失败和设置写入契约继续核对，GC-03/P3 保持 in-progress，不能用本批回归替代冻结清单的全量处置。
+
+2026-11-14 后续 [lifecycle branches](../20261114-p3-g03-lifecycle-branches/README.md) 已为选定的父启动/stopAt/settings activity、fresh shots 清理、余额不足、完成/activity 及分析子失败增加归属守卫，并补充完成 DB 回执重放。该后续证据不追改本批成绩；严格互斥、外部发送、其它内容写入和设置竞争仍按后续记录开放。
