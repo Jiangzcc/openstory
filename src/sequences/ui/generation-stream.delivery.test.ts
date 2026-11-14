@@ -1,5 +1,12 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const { posterRefresh } = vi.hoisted(() => ({
+  posterRefresh: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('./generation-poster.refresh', () => ({
+  refreshGenerationPoster: posterRefresh,
+}));
 import { sequenceKeys } from './use-sequences';
 import {
   beginGenerationLaunch,
@@ -30,6 +37,52 @@ const signal = (workflowRunId: string, name = 'generation.failed') => ({
 });
 afterEach(() => {
   clients.splice(0).forEach((client) => client.clear());
+  posterRefresh.mockClear();
+});
+
+it.each(['run-A', 'run-B', null])(
+  'refreshes poster detail independently of cached owner %s',
+  (run) => {
+    const { client, invalidate } = setup(run);
+    const current = { workflowRunId: run, posterUrl: '/r2/current.png' };
+    client.setQueryData(sequenceKeys.detail('sequence'), current);
+    deliverGenerationCacheEvent(client, 'sequence', {
+      event: 'generation.poster:ready',
+      data: {
+        posterUrl: '/r2/old.png',
+        workflowOwner: { workflowRunId: 'run-A' },
+      },
+    });
+    expect(posterRefresh).toHaveBeenCalledExactlyOnceWith(client, 'sequence');
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(client.getQueryData(sequenceKeys.detail('sequence'))).toEqual(
+      current
+    );
+  }
+);
+
+it('routes a legacy poster through refresh while launch is pending', () => {
+  const { client } = setup();
+  beginGenerationLaunch(client, 'sequence', 'run-B');
+  deliverGenerationCacheEvent(client, 'sequence', {
+    event: 'generation.poster:ready',
+    data: { posterUrl: '/r2/legacy.png' },
+  });
+  expect(posterRefresh).toHaveBeenCalledExactlyOnceWith(client, 'sequence');
+  expect(
+    generationContextFromCache(client, 'sequence').launchToken
+  ).not.toBeNull();
+});
+
+it('observes a rejected background refresh without an unhandled promise', async () => {
+  const { client } = setup();
+  posterRefresh.mockRejectedValueOnce(new Error('synthetic refresh failure'));
+  deliverGenerationCacheEvent(client, 'sequence', {
+    event: 'generation.poster:ready',
+    data: { posterUrl: '/r2/poster.png' },
+  });
+  await Promise.resolve();
+  expect(posterRefresh).toHaveBeenCalledTimes(1);
 });
 
 describe('generation cache delivery ownership', () => {

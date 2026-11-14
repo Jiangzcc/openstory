@@ -7,6 +7,7 @@ import { withSequencePosters } from './sequence-poster';
 import { createStoryboardLifecycleMethods } from './storyboard-lifecycle';
 import { createStoryboardNotificationMethods } from './storyboard-notifications';
 import { createStoryboardLaunchMethods } from './storyboard-launches';
+import { createStoryboardPosterMethods } from './storyboard-poster';
 import {
   createAutoStyleSnapshotWriter,
   insertStyleVersion,
@@ -600,6 +601,7 @@ export function createSequencesMethods(
     ...createStoryboardLifecycleMethods(db, organizationId, userId),
     ...createStoryboardNotificationMethods(db, organizationId),
     ...createStoryboardLaunchMethods(db, organizationId, userId),
+    ...createStoryboardPosterMethods(db, organizationId),
 
     /**
      * A new sequence; its style snapshot (#1600) lands as its first

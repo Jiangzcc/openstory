@@ -653,17 +653,6 @@ export function updateQueryCacheFromEvent(
       break;
     }
 
-    case 'generation.poster:ready': {
-      const posterUrl = getOptionalString(data, 'posterUrl');
-      if (posterUrl) {
-        queryClient.setQueryData<Sequence>(
-          sequenceKeys.detail(sequenceId),
-          (old) => (old ? { ...old, posterUrl } : old)
-        );
-      }
-      break;
-    }
-
     case 'generation.style:ready': {
       const styleId = getString(data, 'styleId');
       if (styleId) {

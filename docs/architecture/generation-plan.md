@@ -783,3 +783,36 @@ agent hands back, and the launched runs are the operation.
   API keys stay unscoped. `confirm: true` is the caller's assertion that a
   human approved the plan; scope, digest and credits are what the server
   enforces.
+
+## Storyboard poster publication (secondary development, 2026-11-14)
+
+The script poster belongs to its Storyboard root. `setPosterIfCurrent` writes
+only its URL and timestamp, in one UPDATE requiring the organization, sequence,
+actual root or explicitly trusted raw claim, and `processing`. Ordinary sequence
+updates retain their existing contract. A refused publication emits nothing and
+the root stops before children, releasing only its payload's remaining hold.
+
+Generated media stays in the generation step. The existing usage-observation and
+poster-debit steps now run before publication: a stale result or a publication
+error must not erase incurred spend. Their names, pricing, reservation and debit
+identity stay unchanged. Save errors still escape for the engine to retry. A
+previously checkpointed `save-poster` returned void; replay performs no new write
+or event and keeps that original continuation behavior. This is not a general
+root-cancellation or old-checkpoint repair protocol.
+
+`generation.poster:ready` carries its root identity. It is a signal to read current
+sequence detail, never authority to install the event's URL. The shared client
+refresh cancels an older detail read, fetches even with no observer, and performs
+a trailing read when another signal arrives during the first. Launches retain
+their own confirmation barrier; a poster cannot finish a pending launch or
+reopen terminal progress. Legacy events without an owner also request a refresh.
+Only a non-manual query success fulfills that read: a cancelled warm fetch can
+resolve with reverted cached data. The detail-query lifetime exists before the
+first await, so clearing even an entirely cold cache discards queued refreshes.
+
+The SQL commit and realtime emission are separate. Delivery is still best effort,
+and a lost signal is recovered by a later ordinary detail read. This slice does
+not make every content event safe, provide an outbox for posters, remove unused
+stored media, or prove deployed Workerd replay, browser convergence or wallet
+settlement. The rest of descendant ownership and whole-root cancellation remain
+open under GC-03.

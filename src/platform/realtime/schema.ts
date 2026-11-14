@@ -359,6 +359,7 @@ export const realtimeSchema = {
 
     // Poster image ready (sequence-level preview from script)
     'poster:ready': z.object({
+      workflowOwner: generationWorkflowOwnerSchema.optional(),
       posterUrl: z.string(),
     }),
 

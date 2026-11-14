@@ -10,11 +10,7 @@ import { gateStoryboardRenders } from '@/billing/server/storyboard-render-gate';
  * Runs surface in the Cloudflare Workflows dashboard by `event.instanceId`.
  */
 
-import {
-  deductWorkflowCredits,
-  extractImageCost,
-  recordFalUsageStep,
-} from '@/billing/server/workflow-deduction';
+import { publishStoryboardPoster } from './storyboard-poster';
 import { aspectRatioToImageSize } from '@/models/aspect-ratios';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { generateImageWithProvider } from '@/stills/server/image-generation';
@@ -24,7 +20,6 @@ import {
   notifySequenceReady,
   sequenceScenesUrl,
 } from '@/sequences/server/notify-sequence-ready';
-import { getGenerationChannel } from '@/platform/realtime';
 import { deliverStoryboardNotification } from '../storyboard-notifications';
 import { includesStage } from '@/sequences/pipeline';
 import { generateId } from '@/platform/id';
@@ -190,48 +185,22 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       const savedPosterUrl = posterResult.url;
       posterUrl = savedPosterUrl;
 
-      await step.do('save-poster', async () => {
-        await scopedDb.sequences.update({
-          id: sequenceId,
-          posterUrl: savedPosterUrl,
-        });
-        await getGenerationChannel(sequenceId).emit('generation.poster:ready', {
-          posterUrl: savedPosterUrl,
-        });
+      const published = await publishStoryboardPoster({
+        step,
+        scopedDb,
+        owner,
+        poster: posterResult,
+        reservationId: input.reservationId,
       });
-
-      // Before the deduction guard — see recordFalUsageStep (#1069).
-      const posterUsage = usesConfiguredImageChannel(
-        scopedDb.models.poster,
-        scopedDb.models.imageModelRouting
-      )
-        ? {}
-        : await recordFalUsageStep(
-            step,
-            scopedDb,
-            posterResult.metadata,
-            'record-fal-usage-poster'
-          );
-
-      await step.do('deduct-poster-credits', async () => {
-        await deductWorkflowCredits({
-          scopedDb,
-          costMicros: extractImageCost(posterResult.metadata),
-          usedOwnKey: posterResult.metadata.usedOwnKey,
-          description: `Sequence poster (${scopedDb.models.poster})`,
-          idempotencyKey: `${event.instanceId}:poster`,
-          reservationId: input.reservationId,
-          metadata: {
-            ...posterUsage,
-            ...(posterResult.metadata.configuredPricing
-              ? { configuredPricing: posterResult.metadata.configuredPricing }
-              : {}),
-            model: scopedDb.models.poster,
-            sequenceId,
-          },
-          workflowName: 'StoryboardWorkflow',
-        });
-      });
+      if (!published) {
+        const reservationId = input.reservationId;
+        if (reservationId) {
+          await step.do('zero-reservation', async () => {
+            await scopedDb.billing.zeroReservation(reservationId);
+          });
+        }
+        return;
+      }
     }
 
     let plan = input.plan;

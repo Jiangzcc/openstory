@@ -10,6 +10,7 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
 import { WorkflowLoggedError } from '@/platform/server/workflow/errors';
 import { asStub } from '@/test/as-stub';
+import { makeStoryboardRunImplDb as makeRunImplDb } from './storyboard-workflow.test.fixture';
 import {
   createStoryboardNotificationStub,
   makeStep,
@@ -412,31 +413,6 @@ describe('StoryboardWorkflow.onFailure', () => {
   });
 });
 
-function makeRunImplDb() {
-  const startWorkflowIfCurrent = vi.fn(async () => true);
-  const { methods, receipts } = createStoryboardNotificationStub();
-  const deleteBySequence = vi.fn();
-  const getForUser = vi.fn(async () => ({ id: 'seq_1', status: 'processing' }));
-  const update = vi.fn();
-  const stub = {
-    models: DEFAULT_MODEL_CONFIGURATION,
-    liveRead: { sequences: { getForUser } },
-    shots: { deleteBySequence },
-    credentials: {},
-    sequences: { ...methods, update, startWorkflowIfCurrent },
-  };
-  // stub covering only the runImpl surface
-  const scopedDb = asStub<WorkflowScopedDb>(stub);
-  return {
-    scopedDb,
-    deleteBySequence,
-    update,
-    startWorkflowIfCurrent,
-    ...methods,
-    receipts,
-  };
-}
-
 function expectCurrentCompletion(
   complete: ReturnType<typeof makeRunImplDb>['completeWorkflowIfCurrent']
 ) {
@@ -461,7 +437,7 @@ describe('StoryboardWorkflow email-ready', () => {
       url: '/r2/thumbnails/mock-legacy-poster.png',
       metadata: { endpointId: 'mock-native', usedOwnKey: false },
     };
-    const { scopedDb, update } = makeRunImplDb();
+    const { scopedDb, setPosterIfCurrent } = makeRunImplDb();
     const { step, names } = makeStep(
       new Map<string, unknown>([
         ['generate-poster', poster],
@@ -472,7 +448,11 @@ describe('StoryboardWorkflow email-ready', () => {
 
     await makeWorkflow().invokeRunImpl(makeEvent('seq_1'), step, scopedDb);
 
-    expect(update).toHaveBeenCalledWith({ id: 'seq_1', posterUrl: poster.url });
+    expect(setPosterIfCurrent).toHaveBeenCalledWith({
+      id: 'seq_1',
+      ...storyboardOwner(),
+      posterUrl: poster.url,
+    });
     expect(generateImageWithProvider).not.toHaveBeenCalled();
     expect(names).toContain('generate-poster');
     expect(names).not.toContain('generate-poster:record');

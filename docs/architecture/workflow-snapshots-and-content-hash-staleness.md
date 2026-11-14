@@ -1,5 +1,15 @@
 # Workflow snapshots and content-hash staleness
 
+## Storyboard poster publication (secondary development, 2026-11-14)
+
+The poster's selection write now requires its active Storyboard root in the
+actual UPDATE, after incurred usage/debit steps. A stale root cannot publish or
+continue from that refusal. Its realtime event requests authoritative detail
+rather than installing a URL from an old run. The client cancels stale reads,
+coalesces signals with a trailing read and defers to pending-launch confirmation.
+The [poster publication contract](generation-plan.md#storyboard-poster-publication-secondary-development-2026-11-14)
+records the legacy checkpoint, retry, delivery and remaining acceptance limits.
+
 ## Analysis cast write fences (secondary development, 2026-11-14)
 
 The `createCastRecords` service binds its five writers through

@@ -18,6 +18,7 @@ import { sequenceElementKeys } from '@/cast/ui/use-sequence-elements';
 import { sequenceLocationKeys } from '@/cast/ui/use-sequence-locations';
 import { shotKeys } from '@/shots/ui/use-shots';
 import { shotPromptPreviewShotKey } from '@/shots/ui/shot-prompt-preview-query';
+import { sequenceKeys } from '@/sequences/ui/use-sequences';
 import type {
   FrameVariant,
   Shot,
@@ -120,6 +121,23 @@ describe('updateQueryCacheFromEvent — variant-only guard (#547)', () => {
   afterEach(() => {
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
+  });
+
+  it('never installs a poster event payload into an existing sequence', () => {
+    const current = { workflowRunId: 'run-B', posterUrl: OLD_THUMB };
+    qc.setQueryData(sequenceKeys.detail(SEQ), current);
+    updateQueryCacheFromEvent(qc, SEQ, 'generation.poster:ready', {
+      posterUrl: NEW_URL,
+      workflowOwner: { workflowRunId: 'run-A' },
+    });
+    expect(qc.getQueryData(sequenceKeys.detail(SEQ))).toEqual(current);
+  });
+
+  it('never creates a sequence from a poster payload when detail is absent', () => {
+    updateQueryCacheFromEvent(qc, SEQ, 'generation.poster:ready', {
+      posterUrl: NEW_URL,
+    });
+    expect(qc.getQueryData(sequenceKeys.detail(SEQ))).toBeUndefined();
   });
 
   describe('generation.image:progress', () => {
