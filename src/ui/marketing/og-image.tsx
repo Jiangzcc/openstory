@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { GitHubIcon } from '@/ui/icons/github-icon';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { Button } from '@/ui/shadcn/button';
 import { SITE_CONFIG } from './constants';
 
 export const OgImage: React.FC = () => {
+  const translateLabel = useLabelTranslation('labels');
   const { t } = useTranslation('interface');
 
   return (
@@ -36,7 +38,7 @@ export const OgImage: React.FC = () => {
         </h1>
 
         <p className="mt-5 max-w-md text-xl text-white/70">
-          {SITE_CONFIG.description}
+          {translateLabel(SITE_CONFIG.description)}
         </p>
 
         <div className="mt-8 flex gap-3">

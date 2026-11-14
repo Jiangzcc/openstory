@@ -1,4 +1,5 @@
 import { localizeMeta } from '@/ui/i18n/head';
+import { translateStaticLabel } from '@/platform/i18n/labels';
 // Used only inside createIsomorphicFn().server(…) below. The Start compiler
 // strips that body from the client build; the boundary test models the strip.
 // oxlint-disable-next-line boundaries/no-server-imports
@@ -114,7 +115,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
             '@type': 'WebSite',
             name: SITE_CONFIG.name,
             url: SITE_CONFIG.url,
-            description: SITE_CONFIG.description,
+            description: translateStaticLabel(
+              match.context.i18n,
+              'labels',
+              SITE_CONFIG.description
+            ),
             publisher: {
               '@type': 'Organization',
               name: SITE_CONFIG.name,

@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { SITE_CONFIG } from './constants';
 
 export const OgImageLinkedIn: React.FC = () => {
+  const translateLabel = useLabelTranslation('labels');
   const { t } = useTranslation('interface');
 
   return (
@@ -38,7 +40,7 @@ export const OgImageLinkedIn: React.FC = () => {
         </h1>
 
         <p className="mt-5 max-w-md text-xl text-white/70">
-          {SITE_CONFIG.description}
+          {translateLabel(SITE_CONFIG.description)}
         </p>
       </div>
     </div>
