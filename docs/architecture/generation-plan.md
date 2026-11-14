@@ -417,6 +417,10 @@ refetch on focus, invalidated by realtime and by any refused continue —
   surface that shows a draft clip says so with `draftBadgeLabel` /
   `shotDraftLabel` / `theatreDraftLabel` (`src/motion/draft-mode.ts`): "Draft"
   until three days remain, then the countdown, then "Draft expired".
+  Creation persists an explicit `draftMotion` boolean on the sequence;
+  omitting it keeps the existing false default. The storyboard launcher reads
+  that saved value into its prepared request. The [creation regression record](../secondary-development/preservation/20261114-p3-g03-create-draft-motion/README.md)
+  covers persistence and launch snapshots with their local test boundaries.
 - **Ready email** only sends when the run reached motion: the send is a
   one-shot claim per sequence.
 
