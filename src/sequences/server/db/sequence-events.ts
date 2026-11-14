@@ -105,7 +105,8 @@ const bound = (value: string | number | null, name: string) =>
  */
 function eventColumns<S>(
   input: Omit<RecordEventInput, 'sequenceId'> & { id: string },
-  sequenceId: S
+  sequenceId: S,
+  data?: SQL
 ) {
   return {
     id: bound(input.id, 'id'),
@@ -118,7 +119,9 @@ function eventColumns<S>(
     targetType: bound(input.targetType, 'target_type'),
     targetId: bound(input.targetId, 'target_id'),
     summary: bound(input.summary ?? null, 'summary'),
-    data: bound(input.data == null ? null : JSON.stringify(input.data), 'data'),
+    data:
+      data?.as('data') ??
+      bound(input.data == null ? null : JSON.stringify(input.data), 'data'),
     createdAt: bound(Math.floor(Date.now() / 1000), 'created_at'),
   };
 }
@@ -156,13 +159,16 @@ export function buildEventInsertIfPresent(
   db: Database,
   input: RecordEventInput & { id: string },
   source: SQLiteTable,
-  where: SQL | undefined
+  where: SQL | undefined,
+  data?: SQL
 ) {
   return db
     .insert(sequenceEvents)
     .select(
       db
-        .select(eventColumns(input, bound(input.sequenceId, 'sequence_id')))
+        .select(
+          eventColumns(input, bound(input.sequenceId, 'sequence_id'), data)
+        )
         .from(source)
         .where(where)
         .limit(1)

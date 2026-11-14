@@ -79,6 +79,10 @@ type HistorySettingValues = {
   generationStopAt: GenerationStage | null;
 };
 
+export function generationStopChangedSummary(stop: GenerationStage): string {
+  return `Changed where generation stops to ${GENERATION_STAGE_META[stop].shortName}`;
+}
+
 /**
  * One sentence per field whose stored value actually moved. Empty when the
  * write repeats the current row (a storyboard step re-sends `generationStopAt`
@@ -144,9 +148,7 @@ export function describeSettingsChange(
     const stop = values.generationStopAt;
     if (isGenerationStage(stop)) {
       note('generationStopAt');
-      sentences.push(
-        `Changed where generation stops to ${GENERATION_STAGE_META[stop].shortName}`
-      );
+      sentences.push(generationStopChangedSummary(stop));
     }
   }
   if (sentences.length === 0) return null;

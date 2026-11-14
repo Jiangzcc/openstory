@@ -64,7 +64,11 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         'Sequence ID, organization ID, and user ID are required'
       );
     }
-    const seq = scopedDb.sequence(sequenceId);
+    const owner = {
+      id: sequenceId,
+      workflowRunId: event.instanceId,
+      workflowClaimId: input.workflowClaimId,
+    };
 
     // Everything this run generates from was snapshotted onto the payload by
     // `triggerStoryboard`. The step below re-reads the row only to re-assert
@@ -80,30 +84,38 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       elementIds,
     } = input;
 
-    await step.do('verify-clear-and-start-processing', async () => {
-      logger.info('[StoryboardWorkflow:cf] Input received:', {
-        sequenceId: input.sequenceId,
-        organizationId: input.organizationId,
-        userId: input.userId,
-        autoGenerateMotion: input.autoGenerateMotion,
-        stopAt: input.stopAt,
-        resume: input.resume,
-      });
-      validateSequenceAuth(input);
+    const started = await step.do(
+      'verify-clear-and-start-processing',
+      async () => {
+        logger.info('[StoryboardWorkflow:cf] Input received:', {
+          sequenceId: input.sequenceId,
+          organizationId: input.organizationId,
+          userId: input.userId,
+          autoGenerateMotion: input.autoGenerateMotion,
+          stopAt: input.stopAt,
+          resume: input.resume,
+        });
+        validateSequenceAuth(input);
 
-      // Throws if the sequence was deleted (or moved organization) since the trigger.
-      await scopedDb.liveRead.sequences.getForUser({ sequenceId });
+        // Throws if the sequence was deleted (or moved organization) since the trigger.
+        await scopedDb.liveRead.sequences.getForUser({ sequenceId });
 
-      if (!input.resume) {
-        await scopedDb.shots.deleteBySequence(sequenceId);
+        return scopedDb.sequences.startWorkflowIfCurrent({
+          ...owner,
+          stopAt: input.stopAt,
+          resume: Boolean(input.resume),
+        });
       }
-
-      await seq.updateStatus('processing');
-      await scopedDb.sequences.update({
-        id: sequenceId,
-        generationStopAt: input.stopAt,
-      });
-    });
+    );
+    if (!started) {
+      const reservationId = input.reservationId;
+      if (reservationId) {
+        await step.do('zero-reservation', async () => {
+          await scopedDb.billing.zeroReservation(reservationId);
+        });
+      }
+      return;
+    }
 
     // Pending automatic style (#1213): the poster renders from the script alone.
     // Continue-from-DAG skips the poster — the sequence already has one.
@@ -231,6 +243,10 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         parentInstanceId: event.instanceId,
         childId: `analyze-script:${sequenceId}`,
         childPayload: {
+          storyboardOwner: {
+            workflowRunId: event.instanceId,
+            workflowClaimId: input.workflowClaimId,
+          },
           promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
@@ -298,7 +314,11 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       if (short) {
         const message = creditsShortStatusError(short);
         await step.do('emit-reservation-short', async () => {
-          await seq.updateStatus('failed', message);
+          const failed = await scopedDb.sequences.failWorkflowIfCurrent({
+            ...owner,
+            error: message,
+          });
+          if (!failed) return;
           // A top-up prompt, not a failure toast (#1328).
           await getGenerationChannel(sequenceId).emit(
             'generation.reservation:short',
@@ -367,17 +387,13 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       'storyboard-completed-event-id',
       async () => generateId()
     );
-    await step.do('mark-completed', async () => {
-      await seq.updateStatus('completed', null, {
-        id: completedEventId,
-        sequenceId,
-        actorId: userId,
-        kind: 'storyboard.completed',
-        targetType: 'sequence',
-        targetId: sequenceId,
-        summary: 'Finished the storyboard',
+    const completed = await step.do('mark-completed', async () => {
+      return scopedDb.sequences.completeWorkflowIfCurrent({
+        ...owner,
+        eventId: completedEventId,
       });
     });
+    if (!completed) return;
 
     await step.do('emit-complete', async () => {
       await getGenerationChannel(sequenceId).emit('generation.complete', {

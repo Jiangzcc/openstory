@@ -395,6 +395,13 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     scopedDb: WorkflowScopedDb;
   }): Promise<void> {
     const { sequenceId, reservationId } = event.payload;
+    const { storyboardOwner, _parent } = event.payload;
+    const owner =
+      storyboardOwner ??
+      (_parent?.bindingName === 'STORYBOARD_WORKFLOW'
+        ? { workflowRunId: _parent.parentInstanceId }
+        : undefined);
+    let shouldNotify = Boolean(owner) || !_parent;
     const sanitized = sanitizeFailResponse(error);
     let userMessage = llmAuthFailureMessage(sanitized);
     if (sequenceId)
@@ -408,13 +415,20 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
           (await handleLlmAuthFailure(scopedDb, sanitized)) ?? userMessage;
       },
       async () => {
-        if (sequenceId)
+        if (!sequenceId || !shouldNotify) return;
+        if (owner)
+          shouldNotify = await scopedDb.sequences.failWorkflowIfCurrent({
+            id: sequenceId,
+            ...owner,
+            error: userMessage,
+          });
+        else
           await scopedDb
             .sequence(sequenceId)
             .updateStatus('failed', userMessage);
       },
       async () => {
-        if (!sequenceId) return;
+        if (!sequenceId || !shouldNotify) return;
         await getGenerationChannel(sequenceId).emit('generation.failed', {
           message: userMessage,
         });

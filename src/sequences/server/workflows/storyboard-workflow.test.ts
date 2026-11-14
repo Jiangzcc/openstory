@@ -416,21 +416,45 @@ function makeStep(cachedResults: ReadonlyMap<string, unknown> = new Map()) {
 }
 
 function makeRunImplDb() {
-  const updateStatus = vi.fn();
+  const startWorkflowIfCurrent = vi.fn(async () => true);
+  const completeWorkflowIfCurrent = vi.fn(async () => true);
+  const failWorkflowIfCurrent = vi.fn(async () => true);
   const deleteBySequence = vi.fn();
   const getForUser = vi.fn(async () => ({ id: 'seq_1', status: 'processing' }));
   const update = vi.fn();
   const stub = {
     models: DEFAULT_MODEL_CONFIGURATION,
     liveRead: { sequences: { getForUser } },
-    sequence: vi.fn(() => ({ updateStatus })),
     shots: { deleteBySequence },
     credentials: {},
-    sequences: { update },
+    sequences: {
+      update,
+      startWorkflowIfCurrent,
+      completeWorkflowIfCurrent,
+      failWorkflowIfCurrent,
+    },
   };
   // stub covering only the runImpl surface
   const scopedDb = asStub<WorkflowScopedDb>(stub);
-  return { scopedDb, updateStatus, deleteBySequence, update };
+  return {
+    scopedDb,
+    deleteBySequence,
+    update,
+    startWorkflowIfCurrent,
+    completeWorkflowIfCurrent,
+    failWorkflowIfCurrent,
+  };
+}
+
+function expectCurrentCompletion(
+  complete: ReturnType<typeof makeRunImplDb>['completeWorkflowIfCurrent']
+) {
+  expect(complete).toHaveBeenCalledWith({
+    id: 'seq_1',
+    workflowRunId: 'storyboard_run_A',
+    workflowClaimId: undefined,
+    eventId: expect.any(String),
+  });
 }
 
 describe('StoryboardWorkflow email-ready', () => {
@@ -493,9 +517,8 @@ describe('StoryboardWorkflow email-ready', () => {
     spawnAndAwaitChild.mockResolvedValue(undefined);
     emit.mockReset();
 
-    const { scopedDb, updateStatus } = makeRunImplDb();
+    const { scopedDb, completeWorkflowIfCurrent } = makeRunImplDb();
     const { step, names } = makeStep();
-
     await makeWorkflow().invokeRunImpl(makeEvent('seq_1'), step, scopedDb);
 
     expect(names).toEqual(
@@ -507,15 +530,7 @@ describe('StoryboardWorkflow email-ready', () => {
     expect(names.indexOf('email-ready')).toBeGreaterThan(
       names.indexOf('emit-complete')
     );
-    expect(updateStatus).toHaveBeenCalledWith(
-      'completed',
-      null,
-      expect.objectContaining({
-        kind: 'storyboard.completed',
-        summary: 'Finished the storyboard',
-        id: expect.any(String),
-      })
-    );
+    expectCurrentCompletion(completeWorkflowIfCurrent);
     expect(notifySequenceReady).toHaveBeenCalledTimes(1);
     expect(notifySequenceReady).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -552,7 +567,8 @@ describe('StoryboardWorkflow email-ready', () => {
     notifySequenceReady.mockRejectedValue(new Error('smtp down'));
     spawnAndAwaitChild.mockReset();
     spawnAndAwaitChild.mockResolvedValue(undefined);
-    const { scopedDb, updateStatus } = makeRunImplDb();
+    const { scopedDb, completeWorkflowIfCurrent, failWorkflowIfCurrent } =
+      makeRunImplDb();
 
     await expect(
       makeWorkflow().invokeRunImpl(
@@ -562,16 +578,8 @@ describe('StoryboardWorkflow email-ready', () => {
       )
     ).resolves.toBeUndefined();
 
-    expect(updateStatus).toHaveBeenCalledWith(
-      'completed',
-      null,
-      expect.objectContaining({ kind: 'storyboard.completed' })
-    );
-    expect(updateStatus).not.toHaveBeenCalledWith(
-      'failed',
-      expect.anything(),
-      expect.anything()
-    );
+    expectCurrentCompletion(completeWorkflowIfCurrent);
+    expect(failWorkflowIfCurrent).not.toHaveBeenCalled();
   });
 
   test('an engine abort during the ready email still aborts', async () => {
@@ -614,38 +622,56 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
   };
 
   test('a fresh run wipes shots', async () => {
-    const { deleteBySequence, update, names } = await run({ stopAt: 'music' });
-
-    expect(deleteBySequence).toHaveBeenCalledWith('seq_1');
-    expect(update).toHaveBeenCalledWith({
-      id: 'seq_1',
-      generationStopAt: 'music',
+    const { startWorkflowIfCurrent, deleteBySequence, names } = await run({
+      stopAt: 'music',
     });
+
+    expect(startWorkflowIfCurrent).toHaveBeenCalledWith({
+      id: 'seq_1',
+      workflowRunId: 'storyboard_run_A',
+      workflowClaimId: undefined,
+      stopAt: 'music',
+      resume: false,
+    });
+    expect(deleteBySequence).not.toHaveBeenCalled();
     expect(names).toContain('generate-poster');
   });
 
-  test('passes the captured user country to script analysis', async () => {
-    await run({ stopAt: 'script', userCountry: 'AU' });
+  test('passes captured country and root ownership to script analysis', async () => {
+    await run({
+      stopAt: 'script',
+      userCountry: 'AU',
+      workflowClaimId: 'storyboard_claim_A',
+    });
 
     expect(spawnAndAwaitChild).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         spawnStepName: 'spawn-analyze-script',
-        childPayload: expect.objectContaining({ userCountry: 'AU' }),
+        childPayload: expect.objectContaining({
+          userCountry: 'AU',
+          storyboardOwner: {
+            workflowRunId: 'storyboard_run_A',
+            workflowClaimId: 'storyboard_claim_A',
+          },
+        }),
       })
     );
   });
 
   test('a resume keeps shots and poster', async () => {
-    const { deleteBySequence, update, names } = await run({
+    const { startWorkflowIfCurrent, deleteBySequence, names } = await run({
       stopAt: 'images',
       resume: true,
     });
 
     expect(deleteBySequence).not.toHaveBeenCalled();
-    expect(update).toHaveBeenCalledWith({
+    expect(startWorkflowIfCurrent).toHaveBeenCalledWith({
       id: 'seq_1',
-      generationStopAt: 'images',
+      workflowRunId: 'storyboard_run_A',
+      workflowClaimId: undefined,
+      stopAt: 'images',
+      resume: true,
     });
     expect(names).not.toContain('generate-poster');
   });
@@ -718,37 +744,28 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
     const plan = asStub<NonNullable<StoryboardWorkflowInput['plan']>>({
       targets: [],
     });
-    const { updateStatus, names } = await run(
-      { stopAt: 'motion', resume: true, plan },
-      {
-        failures: [
-          { shotId: 'shot_1', stage: 'video', error: 'Insufficient credits' },
-        ],
-      }
-    );
+    const { completeWorkflowIfCurrent, failWorkflowIfCurrent, names } =
+      await run(
+        { stopAt: 'motion', resume: true, plan },
+        {
+          failures: [
+            { shotId: 'shot_1', stage: 'video', error: 'Insufficient credits' },
+          ],
+        }
+      );
 
-    expect(updateStatus).toHaveBeenCalledWith(
-      'completed',
-      null,
-      expect.objectContaining({ kind: 'storyboard.completed' })
-    );
-    expect(updateStatus).not.toHaveBeenCalledWith(
-      'failed',
-      expect.anything(),
-      expect.anything()
-    );
+    expectCurrentCompletion(completeWorkflowIfCurrent);
+    expect(failWorkflowIfCurrent).not.toHaveBeenCalled();
     expect(names).toContain('emit-complete');
     expect(names).not.toContain('email-ready');
   });
 
   test('an early stop completes without spending the ready email', async () => {
-    const { updateStatus, names } = await run({ stopAt: 'script' });
+    const { completeWorkflowIfCurrent, names } = await run({
+      stopAt: 'script',
+    });
 
-    expect(updateStatus).toHaveBeenCalledWith(
-      'completed',
-      null,
-      expect.objectContaining({ kind: 'storyboard.completed' })
-    );
+    expectCurrentCompletion(completeWorkflowIfCurrent);
     expect(names).toContain('emit-complete');
     expect(names).not.toContain('email-ready');
     expect(notifySequenceReady).not.toHaveBeenCalled();
@@ -761,17 +778,19 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
       remainingMicros: 0,
     });
     emit.mockReset();
-    const { scopedDb, updateStatus } = makeRunImplDb();
+    const { scopedDb, failWorkflowIfCurrent } = makeRunImplDb();
     const { step, names } = makeStep();
 
     await expect(
       makeWorkflow().invokeRunImpl(makeEvent('seq_1'), step, scopedDb)
     ).rejects.toBeInstanceOf(WorkflowLoggedError);
 
-    expect(updateStatus).toHaveBeenCalledWith(
-      'failed',
-      expect.stringMatching(/not enough credits to generate/i)
-    );
+    expect(failWorkflowIfCurrent).toHaveBeenCalledWith({
+      id: 'seq_1',
+      workflowRunId: 'storyboard_run_A',
+      workflowClaimId: undefined,
+      error: expect.stringMatching(/not enough credits to generate/i),
+    });
     expect(names).toContain('emit-reservation-short');
     expect(names).not.toContain('mark-completed');
     expect(names).not.toContain('email-ready');

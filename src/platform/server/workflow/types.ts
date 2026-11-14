@@ -4,6 +4,7 @@
 
 import type { WorkflowModelConfiguration } from '@/models/model-runtime-configuration';
 import type { Locale } from '@/platform/i18n/locale';
+import type { ParentNotifyHint } from './await-child';
 import type { VoiceProvider } from '@/cast/seed-voice';
 import type { AspectRatio, ImageSize } from '@/models/aspect-ratios';
 import type {
@@ -419,6 +420,13 @@ export type StoryboardTriggerInput = Omit<
  * Analyze scenes workflow input
  */
 export interface AnalyzeScriptWorkflowInput extends SequenceWorkflowContext {
+  /** Server-snapshotted Storyboard owner, including its unpublished launcher claim. */
+  storyboardOwner?: {
+    workflowRunId: string;
+    workflowClaimId?: string;
+  };
+  /** Direct-parent notification metadata injected by spawnAndAwaitChild. */
+  _parent?: ParentNotifyHint;
   // Required inputs
   script: string;
   /** @see StoryboardWorkflowInput.userCountry — passed straight through. */
