@@ -240,7 +240,39 @@ records deterministic races, recovery and the remaining acceptance boundaries.
 
 The [launcher ownership batch](../secondary-development/preservation/20261114-p3-g03-launcher-ownership/README.md) covers claim/processing and instance publication. The [lifecycle branches follow-up](../secondary-development/preservation/20261114-p3-g03-lifecycle-branches/README.md) guards the selected runImpl startup, shot clearing, stop-at/settings activity, credits-short and completion/activity operations, plus parented AnalyzeScript failure using an explicit root owner snapshot. Completion has a stable DB event receipt for retry; a missed start returns before poster/child work and releases only the payload reservation.
 
-Other content writes and descendant notifications, the standalone AnalyzeScript CLI without a slot protocol, complete Continue settings save/refusal rollback and independent Update all preflight remain open. The durable startup recovery above covers new launches; cancellation and legacy raw claims without a launch record remain outside that protocol. Database commits do not make realtime or email delivery atomic; a takeover after a successful guard or replay of an already-cached successful step still needs event-level ownership. The [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14) records the complete bounded contract and notification/replay limits.
+Other content writes and descendant notifications, the standalone AnalyzeScript CLI without a slot protocol, and independent Update all preflight remain open. The durable startup recovery above covers new launches; cancellation and legacy raw claims without a launch record remain outside that protocol. Database commits do not make realtime or email delivery atomic; a takeover after a successful guard or replay of an already-cached successful step still needs event-level ownership. The [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14) records the complete bounded contract and notification/replay limits.
+
+### Continue request settings (secondary development, 2026-11-14)
+
+The editor and MCP send one explicit four-field settings record to
+`triggerContinue`: stop-at, start frames, voices and draft motion. The returned
+stop-at from `prepareContinue` remains authoritative. The launcher copies
+these request values before its asynchronous work and overlays them on the
+sequence snapshot before voice validation and payload preparation.
+
+The request never saves switches before preparing or creates a refusal
+rollback. The expected-slot UPDATE writes these four fields with the final
+instance ID, processing state and cleared error. Its prepared request and
+start activity commit in the same D1 batch. A losing CAS, including a second
+request for identical values, changes neither settings nor activities. A SQL
+failure rolls the batch back; a lost commit/create/acknowledgment receipt
+leaves whatever that batch committed available to the existing exact-ID
+recovery protocol. No later failure writes an earlier settings snapshot.
+
+A changed stop-at retains the existing `sequence.settings-changed` history
+shape and summary. Its conditional insert-select runs before the UPDATE,
+uses the same sequence/organization/expected-slot predicate, and reads the
+actual previous stop-at in that batch, including NULL. Its event ID is
+allocated before the start activity's ID. Equal stop-at and boolean-only
+changes add no settings history. The later owner-guarded workflow start
+repeats the same stop-at and therefore adds no duplicate settings activity.
+
+The [Continue settings record](../secondary-development/preservation/20261114-p3-g03-continue-settings-ownership/README.md)
+covers deterministic D1 races and substituted engine failures. Ordinary
+internal `sequences.update` can still write these fields, and the workflow
+start step still repeats stop-at under its owner guard. This batch defines
+Continue startup; it does not add a general settings revision or a separate
+setting-edit invalidation protocol.
 
 ### Sequence lifecycle signal ownership (secondary development, 2026-11-14)
 
@@ -250,7 +282,7 @@ A Continue has a sequence-specific pending token shared by its QueryClient subsc
 
 History is parsed through the same leaf schemas, scoped to the current session/request, then followed by live events received while it was pending. An accepted terminal event is retained across hydration and claim-to-instance publication; history and late phases cannot reopen that same owner. A new confirmed owner or explicit launch establishes a new session. The pending live replay buffer is bounded to 2,000 events; overflow abandons hydration and keeps displayed live state.
 
-The [lifecycle notification batch](../secondary-development/preservation/20261114-p3-g03-notification-ownership/README.md) records the source changes, deterministic races and real QueryClient/SQLite/SSE host evidence. This does not make realtime/email transactional, repair failure-after-terminal-write notification retries, guard every content write or event, or prove Cloudflare/browser delivery. New-launch startup exclusion and publication-error recovery use the durable protocol above. Server Continue settings ownership, independent Update all preflight, cancellation and legacy raw claims without durable requests remain open.
+The [lifecycle notification batch](../secondary-development/preservation/20261114-p3-g03-notification-ownership/README.md) records the source changes, deterministic races and real QueryClient/SQLite/SSE host evidence. This does not make realtime/email transactional, repair failure-after-terminal-write notification retries, guard every content write or event, or prove Cloudflare/browser delivery. New-launch startup exclusion and publication-error recovery use the durable protocol above. Independent Update all preflight, cancellation and legacy raw claims without durable requests remain open.
 
 ## Shot specs and prompts (#1923, #1929)
 
