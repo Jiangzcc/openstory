@@ -1,0 +1,1249 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-element-sheet-publication",
+  "responsibilityId": "GC-03",
+  "status": "completed",
+  "sourceBefore": "23ee5a756a76b72c0dce0c9f44f82c09c60e443b",
+  "sourceAfter": "ae478f5b288fa973fe02161ead9ab69ff8381175",
+  "p3Status": "in-progress",
+  "p4Status": "not-started",
+  "evidenceScope": "Real createScopedDb/toWorkflowScopedDb and fully migrated in-process Node SQLite behind the D1 API. Usage observations and provenance stay real; provider, storage, engine checkpoints and credit debit are explicit synthetic substitutes. No real provider/wallet/remote Cloudflare/browser acceptance.",
+  "workingDirectory": "D:/code/github/openstory",
+  "checks": [
+    {
+      "stage": "Initial original workflow/provenance/parent/resolver regressions",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/cast/server/workflows/element-sheet-workflow.test.ts src/cast/server/workflows/sheet-provenance-contract.test.ts src/shots/server/workflows/update-stale-plan-run.test.ts src/sequences/server/workflows/generation-workflow-owner.test.ts",
+      "files": 4,
+      "tests": 46,
+      "passed": 46
+    },
+    {
+      "stage": "Initial real scoped composition fixture",
+      "status": "failed",
+      "tests": 21,
+      "passed": 9,
+      "failed": 12,
+      "reason": "A nonexistent modelUsage schema export was used by the test fixture. Replaced with the actual modelUsageObservations table; this is not original-code failure evidence."
+    },
+    {
+      "stage": "Types while fixtures were under construction",
+      "status": "failed",
+      "reason": "Temporary worker unused imports, then missing ImageGenerationResult fixture fields and missing explicit _parent DTO typing. Fixed before final checks."
+    },
+    {
+      "stage": "Initial moved workflow read registration",
+      "status": "failed",
+      "files": 3,
+      "tests": 95,
+      "passed": 93,
+      "failed": 2,
+      "reason": "The exact read-site registration still referred to the original inline file. Moved the entries and registered sequence existence on the existing hatch; no gate weakened."
+    },
+    {
+      "stage": "Initial whole-repository lint",
+      "status": "failed",
+      "errors": 1,
+      "warnings": 147,
+      "reason": "SQL fixture was under server/workflows. Moved the fixture to server/db; no boundary exception added."
+    },
+    {
+      "stage": "Initial dead-code",
+      "status": "failed",
+      "reason": "Unused ROOT_REPLACEMENT fixture export; removed only the export keyword. Normal source hooks rerun knip successfully."
+    },
+    {
+      "stage": "After fixture corrections",
+      "status": "passed",
+      "files": 2,
+      "tests": 28,
+      "passed": 28
+    },
+    {
+      "stage": "Publication SQL boundary races, workflow failures and live-read gate",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/cast/server/workflows/element-sheet-publication.test.ts src/cast/server/workflows/element-sheet-errors.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts --reporter=json --outputFile=.codex/p3-element-composition-3.json",
+      "files": 3,
+      "tests": 103,
+      "passed": 103,
+      "failed": 0,
+      "skipped": 0,
+      "reportSha256": "5bafe4eefc1cc7077df18bc95417a5a7a3437dd85eb979afb41b460a0b2ab96a",
+      "reportStartTimeMs": 1794662452961,
+      "paths": [
+        {
+          "path": "src/cast/server/workflows/element-sheet-errors.test.ts",
+          "tests": 7,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/element-sheet-publication.test.ts",
+          "tests": 24,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+          "tests": 72,
+          "status": "passed",
+          "failures": []
+        }
+      ]
+    },
+    {
+      "stage": "Exact original workflow red proof",
+      "status": "failed",
+      "reproduceCommand": "python -X utf8 .codex/p3-element-red.py (restore the recorded original Git blob; execute recorded testArguments; restore fixed bytes in finally)",
+      "files": 1,
+      "tests": 24,
+      "passed": 0,
+      "failed": 8,
+      "skipped": 16,
+      "reportSha256": "cbef804ad34311a9eee4acd240830ba7fbdf730694a33983e6258277b9f239a7",
+      "reportStartTimeMs": 1794662627890,
+      "paths": [
+        {
+          "path": "src/cast/server/workflows/element-sheet-publication.test.ts",
+          "tests": 24,
+          "status": "failed",
+          "failures": [
+            {
+              "name": "rejects a lost root before generation inside the existing preflight step",
+              "messages": [
+                "Error: promise resolved \"{ elements: [ { …(8) } ] }\" instead of rejecting\n    at _Assertion.__VITEST_REJECTS__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2178:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts:220:30\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+              ]
+            },
+            {
+              "name": "records spent usage and provenance before rejecting publication after a takeover",
+              "messages": [
+                "Error: promise resolved \"{ elements: [ { …(8) } ] }\" instead of rejecting\n    at _Assertion.__VITEST_REJECTS__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2178:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts:232:30\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)"
+              ]
+            },
+            {
+              "name": "rejects a tombstoned ID rather than falling back to an uploaded token",
+              "messages": [
+                "Error: promise resolved \"{ elements: [ { …(8) } ] }\" instead of rejecting\n    at _Assertion.__VITEST_REJECTS__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2178:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts:275:30\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+              ]
+            },
+            {
+              "name": "validates sequence organization before returning an uploaded element",
+              "messages": [
+                "Error: promise resolved \"{ elements: [ { …(8) } ] }\" instead of rejecting\n    at _Assertion.__VITEST_REJECTS__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2178:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts:285:30\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+              ]
+            },
+            {
+              "name": "rejects a foreign-sequence ID even when the requested token exists locally",
+              "messages": [
+                "Error: promise resolved \"{ elements: [ { …(8) } ] }\" instead of rejecting\n    at _Assertion.__VITEST_REJECTS__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2178:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts:300:30\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+              ]
+            },
+            {
+              "name": "preserves an upload arriving after the last empty read at publication SQL",
+              "messages": [
+                "Error: expected { elements: [ { …(8) } ] } to have property \"elements.0.imageUrl\" with value '/r2/mock/upload.mp4'\n    at _Assertion.__VITEST_RESOLVES__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2149:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts:415:30\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+              ]
+            },
+            {
+              "name": "reuses a token uploaded after the last missing read at publication SQL",
+              "messages": [
+                "Error: promise rejected \"Error: Element reference generation faile…\" instead of resolving\n    at _Assertion.__VITEST_RESOLVES__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2149:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts:432:30\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)"
+              ]
+            },
+            {
+              "name": "refuses a root lost after all prechecks at publication SQL",
+              "messages": [
+                "Error: promise resolved \"{ elements: [ { …(8) } ] }\" instead of rejecting\n    at _Assertion.__VITEST_REJECTS__ (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:2178:33)\n    at _Assertion.propertyGetter (file:///D:/code/github/openstory/node_modules/chai/index.js:1607:27)\n    at Reflect.get (<anonymous>)\n    at Object.proxyGetter [as get] (file:///D:/code/github/openstory/node_modules/chai/index.js:1696:22)\n    at D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts:448:30\n    at async file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "First final regression concurrent with production build",
+      "status": "failed",
+      "reproduceCommand": "bun run test src/cast/server/db/element-sheet-publication.test.ts src/sequences/server/db/storyboard-element-sheets.test.ts src/cast/server/db/sequence-elements.test.ts src/cast/server/workflows/cast-records.test.ts src/cast/server/workflows/cast-records-ownership.test.ts src/cast/server/workflows/element-sheet-workflow.test.ts src/cast/server/workflows/element-sheet-publication.test.ts src/cast/server/workflows/element-sheet-errors.test.ts src/cast/server/workflows/sheet-provenance-contract.test.ts src/sequences/server/workflows/generation-workflow-owner.test.ts src/shots/server/workflows/update-stale-plan-run.test.ts src/shots/server/workflows/update-stale-shots-workflow.test.ts src/sequences/server/db/storyboard-content-errors.test.ts src/sequences/server/db/storyboard-content-ownership.test.ts src/sequences/server/db/storyboard-content-completion.test.ts src/billing/server/workflow-deduction.test.ts src/platform/server/compliance/provenance.test.ts src/platform/server/compliance/provenance-wiring.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/server/db/scoped-workflow-models.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/wiring-consistency.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/domain-blind.test.ts src/platform/client-server-boundary.test.ts src/platform/server/db/no-bare-select-with-join.test.ts src/cast/server/sequence-elements/attach-element-upload.test.ts src/cast/server/sequence-elements/copy-sequence-elements.test.ts src/cast/server/sequence-elements/media-duration.test.ts src/cast/server/sequence-elements/storage-path.test.ts --maxWorkers=4 --reporter=json --outputFile=.codex/p3-element-final-tests.json",
+      "files": 31,
+      "tests": 624,
+      "passed": 623,
+      "failed": 1,
+      "skipped": 0,
+      "reportSha256": "3a16eed8299c2bad35acd4c1dd9164527d1c56b9d331a1f72b3cc0dceda27655",
+      "reportStartTimeMs": 1794662736935,
+      "paths": [
+        {
+          "path": "src/platform/client-server-boundary.test.ts",
+          "tests": 17,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/domain-blind.test.ts",
+          "tests": 2,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/billing/server/workflow-deduction.test.ts",
+          "tests": 17,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/sequence-elements/attach-element-upload.test.ts",
+          "tests": 14,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/sequence-elements/copy-sequence-elements.test.ts",
+          "tests": 2,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/sequence-elements/media-duration.test.ts",
+          "tests": 6,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/sequence-elements/storage-path.test.ts",
+          "tests": 9,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/db/element-sheet-publication.test.ts",
+          "tests": 33,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/db/sequence-elements.test.ts",
+          "tests": 12,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/cast-records-ownership.test.ts",
+          "tests": 11,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/cast-records.test.ts",
+          "tests": 13,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/element-sheet-errors.test.ts",
+          "tests": 7,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/element-sheet-publication.test.ts",
+          "tests": 24,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/element-sheet-workflow.test.ts",
+          "tests": 3,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+          "tests": 9,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/compliance/provenance-wiring.test.ts",
+          "tests": 1,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/compliance/provenance.test.ts",
+          "tests": 10,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/db/db-access-allowlist.test.ts",
+          "tests": 2,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/db/no-bare-select-with-join.test.ts",
+          "tests": 4,
+          "status": "failed",
+          "failures": [
+            {
+              "name": "no bare select joins anywhere in src",
+              "messages": [
+                "Error: Test timed out in 5000ms.\nIf this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".\n    at task (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2700:43)\n    at Object.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2717:16)\n    at Object.<anonymous> (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2486:28)\n    at chain (file:///D:/code/github/openstory/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1870:14)\n    at D:/code/github/openstory/src/platform/server/db/no-bare-select-with-join.test.ts:87:1\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async VitestModuleEvaluator._runInlinedModule (file:///D:/code/github/openstory/node_modules/vitest/dist/module-evaluator.js:261:4)\n    at async VitestModuleRunner.directRequest (file:///D:/code/github/openstory/node_modules/vite/dist/node/module-runner.js:1281:59)\n    at async VitestModuleRunner.cachedRequest (file:///D:/code/github/openstory/node_modules/vite/dist/node/module-runner.js:1188:73)\n    at async VitestModuleRunner.import (file:///D:/code/github/openstory/node_modules/vite/dist/node/module-runner.js:1143:10)"
+              ]
+            }
+          ]
+        },
+        {
+          "path": "src/platform/server/db/scoped-workflow-models.test.ts",
+          "tests": 4,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/base-workflow.test.ts",
+          "tests": 36,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/claim-discipline.test.ts",
+          "tests": 5,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+          "tests": 72,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/wiring-consistency.test.ts",
+          "tests": 18,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+          "tests": 37,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/shots/server/workflows/update-stale-shots-workflow.test.ts",
+          "tests": 3,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/workflows/generation-workflow-owner.test.ts",
+          "tests": 5,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-completion.test.ts",
+          "tests": 4,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-errors.test.ts",
+          "tests": 7,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-ownership.test.ts",
+          "tests": 174,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-element-sheets.test.ts",
+          "tests": 63,
+          "status": "passed",
+          "failures": []
+        }
+      ]
+    },
+    {
+      "stage": "Final regression without concurrent build",
+      "status": "passed",
+      "reproduceCommand": "bun run test src/cast/server/db/element-sheet-publication.test.ts src/sequences/server/db/storyboard-element-sheets.test.ts src/cast/server/db/sequence-elements.test.ts src/cast/server/workflows/cast-records.test.ts src/cast/server/workflows/cast-records-ownership.test.ts src/cast/server/workflows/element-sheet-workflow.test.ts src/cast/server/workflows/element-sheet-publication.test.ts src/cast/server/workflows/element-sheet-errors.test.ts src/cast/server/workflows/sheet-provenance-contract.test.ts src/sequences/server/workflows/generation-workflow-owner.test.ts src/shots/server/workflows/update-stale-plan-run.test.ts src/shots/server/workflows/update-stale-shots-workflow.test.ts src/sequences/server/db/storyboard-content-errors.test.ts src/sequences/server/db/storyboard-content-ownership.test.ts src/sequences/server/db/storyboard-content-completion.test.ts src/billing/server/workflow-deduction.test.ts src/platform/server/compliance/provenance.test.ts src/platform/server/compliance/provenance-wiring.test.ts src/platform/server/db/db-access-allowlist.test.ts src/platform/server/db/scoped-workflow-models.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/wiring-consistency.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/base-workflow.test.ts src/platform/domain-blind.test.ts src/platform/client-server-boundary.test.ts src/platform/server/db/no-bare-select-with-join.test.ts src/cast/server/sequence-elements/attach-element-upload.test.ts src/cast/server/sequence-elements/copy-sequence-elements.test.ts src/cast/server/sequence-elements/media-duration.test.ts src/cast/server/sequence-elements/storage-path.test.ts --maxWorkers=2 --reporter=json --outputFile=.codex/p3-element-final-tests-2.json",
+      "files": 31,
+      "tests": 624,
+      "passed": 624,
+      "failed": 0,
+      "skipped": 0,
+      "reportSha256": "e0cc3f8845b3c628b1fe06fc0b7708d7267fef196c59b3a7d64947b367f5baa5",
+      "reportStartTimeMs": 1794662935246,
+      "paths": [
+        {
+          "path": "src/platform/client-server-boundary.test.ts",
+          "tests": 17,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/domain-blind.test.ts",
+          "tests": 2,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/billing/server/workflow-deduction.test.ts",
+          "tests": 17,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/sequence-elements/attach-element-upload.test.ts",
+          "tests": 14,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/sequence-elements/copy-sequence-elements.test.ts",
+          "tests": 2,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/sequence-elements/media-duration.test.ts",
+          "tests": 6,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/sequence-elements/storage-path.test.ts",
+          "tests": 9,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/db/element-sheet-publication.test.ts",
+          "tests": 33,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/db/sequence-elements.test.ts",
+          "tests": 12,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/cast-records-ownership.test.ts",
+          "tests": 11,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/cast-records.test.ts",
+          "tests": 13,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/element-sheet-errors.test.ts",
+          "tests": 7,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/element-sheet-publication.test.ts",
+          "tests": 24,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/element-sheet-workflow.test.ts",
+          "tests": 3,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+          "tests": 9,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/compliance/provenance-wiring.test.ts",
+          "tests": 1,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/compliance/provenance.test.ts",
+          "tests": 10,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/db/db-access-allowlist.test.ts",
+          "tests": 2,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/db/no-bare-select-with-join.test.ts",
+          "tests": 4,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/db/scoped-workflow-models.test.ts",
+          "tests": 4,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/base-workflow.test.ts",
+          "tests": 36,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/claim-discipline.test.ts",
+          "tests": 5,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+          "tests": 72,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/platform/server/workflow/wiring-consistency.test.ts",
+          "tests": 18,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+          "tests": 37,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/shots/server/workflows/update-stale-shots-workflow.test.ts",
+          "tests": 3,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-completion.test.ts",
+          "tests": 4,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-errors.test.ts",
+          "tests": 7,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-content-ownership.test.ts",
+          "tests": 174,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/db/storyboard-element-sheets.test.ts",
+          "tests": 63,
+          "status": "passed",
+          "failures": []
+        },
+        {
+          "path": "src/sequences/server/workflows/generation-workflow-owner.test.ts",
+          "tests": 5,
+          "status": "passed",
+          "failures": []
+        }
+      ]
+    },
+    {
+      "stage": "Final typecheck",
+      "status": "passed",
+      "reproduceCommand": "bun typecheck",
+      "log": ".codex/p3-element-typecheck-4.log"
+    },
+    {
+      "stage": "Final whole-repository lint",
+      "status": "passed",
+      "reproduceCommand": "bun lint",
+      "errors": 0,
+      "warnings": 147,
+      "notes": "All 147 inherited warnings are outside changed lines; three existing warnings remain in the touched UpdateStale module."
+    },
+    {
+      "stage": "Scoped formatting",
+      "status": "passed",
+      "reproduceCommand": "bunx --no-install oxfmt --check docs/architecture/generation-plan.md docs/architecture/workflow-snapshots-and-content-hash-staleness.md src/cast/server/db/element-sheet-publication.test.fixture.ts src/cast/server/db/element-sheet-publication.test.ts src/cast/server/db/element-sheet-publication.ts src/cast/server/db/element-sheet-workflow.test.fixture.ts src/cast/server/workflows/element-sheet-entry.ts src/cast/server/workflows/element-sheet-errors.test.ts src/cast/server/workflows/element-sheet-output.ts src/cast/server/workflows/element-sheet-publication.test.ts src/cast/server/workflows/element-sheet-workflow.ts src/cast/server/workflows/sheet-provenance-contract.test.ts src/platform/server/db/scoped.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/types.ts src/sequences/server/db/storyboard-element-sheets.test.ts src/sequences/server/db/storyboard-element-sheets.ts src/sequences/server/workflows/generation-workflow-owner.ts src/shots/server/workflows/update-stale-plan-run.test.ts src/shots/server/workflows/update-stale-shots-workflow.ts",
+      "files": 20
+    },
+    {
+      "stage": "New-file AST quality",
+      "status": "passed",
+      "reproduceCommand": "node .codex/p3-element-quality.mjs",
+      "files": 10,
+      "notes": "Installed oxc-parser; callback bodies counted separately, with limits 800/50/10/3. The initial attempt with TypeScript default package API failed before audit; the final AST audit passed."
+    },
+    {
+      "stage": "Client and SSR production compilation",
+      "status": "passed",
+      "reproduceCommand": "bun run build",
+      "clientSeconds": 55.8,
+      "ssrSeconds": 47.82,
+      "notes": "Local production compilation only; existing module-directive/bundle warnings remain. No deployment."
+    },
+    {
+      "stage": "Normal source commit hooks",
+      "status": "passed",
+      "reproduceCommand": "git commit -m 'fix: fence generated element reference publication'",
+      "result": {
+        "elapsedSeconds": 66.0904825,
+        "exitCode": 0
+      },
+      "notes": "Normal hooks retained: typecheck, staged lint/format, knip and 17 client/server boundary tests; irrelevant migration/typegen/workflow-trigger steps skipped by their configured globs."
+    }
+  ],
+  "originalCodeRedProof": {
+    "baseline": "23ee5a756a76b72c0dce0c9f44f82c09c60e443b",
+    "restoredPath": "src/cast/server/workflows/element-sheet-workflow.ts",
+    "originalBlobSha256": "5e13cbc3edd6097133aa779c92a29fe81b8866cd804cb32b8593b7b88022f9be",
+    "fixedWorkingSha256": "4eb75fc8a95cb320031b735c8a1bc40b308704443afc6b399a37f0b8cf2efb87",
+    "testArguments": [
+      "run",
+      "test",
+      "src/cast/server/workflows/element-sheet-publication.test.ts",
+      "-t",
+      "preserves an upload arriving|reuses a token uploaded|refuses a root lost|rejects a lost root before|records spent usage|rejects a tombstoned ID|validates sequence organization|rejects a foreign-sequence ID",
+      "--reporter=json",
+      "--outputFile=.codex/p3-element-original-red.json"
+    ],
+    "exitCode": 1,
+    "fixedBytesRestored": true
+  },
+  "originalSelectedTestBlobs": {
+    "unchanged": [
+      {
+        "path": "src/cast/server/db/sequence-elements.test.ts",
+        "beforeBlob": "7ceb68843e7f2f9508ffa901bdaf4bc968c865cf",
+        "currentBlob": "7ceb68843e7f2f9508ffa901bdaf4bc968c865cf"
+      },
+      {
+        "path": "src/cast/server/workflows/cast-records.test.ts",
+        "beforeBlob": "c7e2a4378bf3e0895ea52f0e94456d9f55d33290",
+        "currentBlob": "c7e2a4378bf3e0895ea52f0e94456d9f55d33290"
+      },
+      {
+        "path": "src/cast/server/workflows/cast-records-ownership.test.ts",
+        "beforeBlob": "c76416c6c78e7e53056e2a31b951a3fc005a7a8a",
+        "currentBlob": "c76416c6c78e7e53056e2a31b951a3fc005a7a8a"
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-workflow.test.ts",
+        "beforeBlob": "858de7a293df424588890c47285fc1d8338b524b",
+        "currentBlob": "858de7a293df424588890c47285fc1d8338b524b"
+      },
+      {
+        "path": "src/sequences/server/workflows/generation-workflow-owner.test.ts",
+        "beforeBlob": "5504e0e916dbede889e28bce59c9929291356f5f",
+        "currentBlob": "5504e0e916dbede889e28bce59c9929291356f5f"
+      },
+      {
+        "path": "src/shots/server/workflows/update-stale-shots-workflow.test.ts",
+        "beforeBlob": "60ab08227213d33c0861374374172f1631d405c4",
+        "currentBlob": "60ab08227213d33c0861374374172f1631d405c4"
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-content-errors.test.ts",
+        "beforeBlob": "f06e9452e6ee10cdee07ccb10dd5f16049228f52",
+        "currentBlob": "f06e9452e6ee10cdee07ccb10dd5f16049228f52"
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-content-ownership.test.ts",
+        "beforeBlob": "c1eb35e3b426d5d9511cc31c9e3d3910996d5046",
+        "currentBlob": "c1eb35e3b426d5d9511cc31c9e3d3910996d5046"
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-content-completion.test.ts",
+        "beforeBlob": "3c642960b0047bb871dc7007e9ba31d942319983",
+        "currentBlob": "3c642960b0047bb871dc7007e9ba31d942319983"
+      },
+      {
+        "path": "src/billing/server/workflow-deduction.test.ts",
+        "beforeBlob": "53e4d2dc75163089d2d6b90c3215a05921508ceb",
+        "currentBlob": "53e4d2dc75163089d2d6b90c3215a05921508ceb"
+      },
+      {
+        "path": "src/platform/server/compliance/provenance.test.ts",
+        "beforeBlob": "36544633d4a362ad9995f7a1d36c59736034a69a",
+        "currentBlob": "36544633d4a362ad9995f7a1d36c59736034a69a"
+      },
+      {
+        "path": "src/platform/server/compliance/provenance-wiring.test.ts",
+        "beforeBlob": "c79f4e17b770c3b38bf777ee769ca2561d943626",
+        "currentBlob": "c79f4e17b770c3b38bf777ee769ca2561d943626"
+      },
+      {
+        "path": "src/platform/server/db/db-access-allowlist.test.ts",
+        "beforeBlob": "f51a6d28526facb5d1b02298297fd969313dbdd1",
+        "currentBlob": "f51a6d28526facb5d1b02298297fd969313dbdd1"
+      },
+      {
+        "path": "src/platform/server/db/scoped-workflow-models.test.ts",
+        "beforeBlob": "bf0c24c3b2cccd20a005bb160e6262635650a42a",
+        "currentBlob": "bf0c24c3b2cccd20a005bb160e6262635650a42a"
+      },
+      {
+        "path": "src/platform/server/workflow/wiring-consistency.test.ts",
+        "beforeBlob": "4dec7791699e0810e400286d4016450bb9354b2e",
+        "currentBlob": "4dec7791699e0810e400286d4016450bb9354b2e"
+      },
+      {
+        "path": "src/platform/server/workflow/claim-discipline.test.ts",
+        "beforeBlob": "89fc305c4c137974b6cffe45293ac60c18a550d5",
+        "currentBlob": "89fc305c4c137974b6cffe45293ac60c18a550d5"
+      },
+      {
+        "path": "src/platform/server/workflow/base-workflow.test.ts",
+        "beforeBlob": "61f7b7f6824b358bc3c1466a04726eb5cdc23b3a",
+        "currentBlob": "61f7b7f6824b358bc3c1466a04726eb5cdc23b3a"
+      },
+      {
+        "path": "src/platform/domain-blind.test.ts",
+        "beforeBlob": "b0c2837ee487b9a92e9c630b3d27266953dbf764",
+        "currentBlob": "b0c2837ee487b9a92e9c630b3d27266953dbf764"
+      },
+      {
+        "path": "src/platform/client-server-boundary.test.ts",
+        "beforeBlob": "ea66fd3b3fea431b49a8563980dade7e42bfe3e9",
+        "currentBlob": "ea66fd3b3fea431b49a8563980dade7e42bfe3e9"
+      },
+      {
+        "path": "src/platform/server/db/no-bare-select-with-join.test.ts",
+        "beforeBlob": "8ad2d335a86aac1f6ba0e42e96f98eaf0c73bbef",
+        "currentBlob": "8ad2d335a86aac1f6ba0e42e96f98eaf0c73bbef"
+      },
+      {
+        "path": "src/cast/server/sequence-elements/attach-element-upload.test.ts",
+        "beforeBlob": "ad481f6db22c2786c45f989f93332bdf1e70ac01",
+        "currentBlob": "ad481f6db22c2786c45f989f93332bdf1e70ac01"
+      },
+      {
+        "path": "src/cast/server/sequence-elements/copy-sequence-elements.test.ts",
+        "beforeBlob": "6f3c0fa74316212828f51bd8a786bf1a701a41ac",
+        "currentBlob": "6f3c0fa74316212828f51bd8a786bf1a701a41ac"
+      },
+      {
+        "path": "src/cast/server/sequence-elements/media-duration.test.ts",
+        "beforeBlob": "7542dc636440b885bae40c42c0ee35c294e6484a",
+        "currentBlob": "7542dc636440b885bae40c42c0ee35c294e6484a"
+      },
+      {
+        "path": "src/cast/server/sequence-elements/storage-path.test.ts",
+        "beforeBlob": "7ea8fbfc9b43946bb1feac640a58fe6741bf30ad",
+        "currentBlob": "7ea8fbfc9b43946bb1feac640a58fe6741bf30ad"
+      }
+    ],
+    "changed": [
+      {
+        "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+        "beforeBlob": "9accdd99802bef9b309f02bdc4683c1f51bfc12f",
+        "currentBlob": "c27ed6e814bd9622ef27486d979f88d92f8c6213"
+      },
+      {
+        "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+        "beforeBlob": "24dfa0e303872475e586aea78f8589e8e51eda26",
+        "currentBlob": "53cc250448a4d7ba5f50df8279f0dbf76580a0b2"
+      },
+      {
+        "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "beforeBlob": "4a2880081e8ddc7e9f0b2386e4972b905bf40b59",
+        "currentBlob": "4daf4bf6d5c6abf2d84e381953d11856d6aa7bee"
+      }
+    ],
+    "new": [
+      "src/cast/server/db/element-sheet-publication.test.ts",
+      "src/sequences/server/db/storyboard-element-sheets.test.ts",
+      "src/cast/server/workflows/element-sheet-publication.test.ts",
+      "src/cast/server/workflows/element-sheet-errors.test.ts"
+    ]
+  },
+  "independentReview": {
+    "agentId": "01a1da30-4d25-7e00-a4c9-150c519a3b7b",
+    "role": "independent read-only source reviewer",
+    "finding": "No actionable bugs in requested scope",
+    "executedTests": false,
+    "reviewManifestSha256": "8d959f9867fc23c57b43178f1a27b0a3150ff266a132ec54c1197e7c4aeb2ca8",
+    "entries": [
+      {
+        "path": "D:/code/github/openstory/src/cast/server/db/element-sheet-publication.test.fixture.ts",
+        "reviewedSha256": "54085036448c2044113300e101b72371bd171a9baffcea893eca29d00af4b590",
+        "currentSha256": "54085036448c2044113300e101b72371bd171a9baffcea893eca29d00af4b590"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/db/element-sheet-publication.test.ts",
+        "reviewedSha256": "40ede29e24efb51d6de10f005e2149e9c7d3257976ed15ad1c3d845767726918",
+        "currentSha256": "40ede29e24efb51d6de10f005e2149e9c7d3257976ed15ad1c3d845767726918"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/db/element-sheet-publication.ts",
+        "reviewedSha256": "4da022a12020b9c814e30c06c68b283fe3fd3f6ef6ecd1d0569441dd2dfe804e",
+        "currentSha256": "4da022a12020b9c814e30c06c68b283fe3fd3f6ef6ecd1d0569441dd2dfe804e"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/workflows/element-sheet-entry.ts",
+        "reviewedSha256": "0bef0bd44f48d0321d9c2d558b60307f02282e8d4543fb69fa5866cd1db92b2a",
+        "currentSha256": "0bef0bd44f48d0321d9c2d558b60307f02282e8d4543fb69fa5866cd1db92b2a"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/workflows/element-sheet-errors.test.ts",
+        "reviewedSha256": "bf9a19f49cff54d7abb52386ed464a1b74fe212b69c8461aeb7849acf5bdb89c",
+        "currentSha256": "bf9a19f49cff54d7abb52386ed464a1b74fe212b69c8461aeb7849acf5bdb89c"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/workflows/element-sheet-output.ts",
+        "reviewedSha256": "41100e0f0b59b940cc492359cd5547453517c818e80e93c767dff37897cb71ac",
+        "currentSha256": "41100e0f0b59b940cc492359cd5547453517c818e80e93c767dff37897cb71ac"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/workflows/element-sheet-publication.test.ts",
+        "reviewedSha256": "82367337e4c4e331ca13e401ac0c6ebff408e41515a19029d5345a0afddbddb5",
+        "currentSha256": "82367337e4c4e331ca13e401ac0c6ebff408e41515a19029d5345a0afddbddb5"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/workflows/element-sheet-workflow.test.ts",
+        "reviewedSha256": "ee77af4e81854f3847ce1d6a35c776b78ae31644a53fcadad86976eb185348be",
+        "currentSha256": "ee77af4e81854f3847ce1d6a35c776b78ae31644a53fcadad86976eb185348be"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/workflows/element-sheet-workflow.ts",
+        "reviewedSha256": "4eb75fc8a95cb320031b735c8a1bc40b308704443afc6b399a37f0b8cf2efb87",
+        "currentSha256": "4eb75fc8a95cb320031b735c8a1bc40b308704443afc6b399a37f0b8cf2efb87"
+      },
+      {
+        "path": "D:/code/github/openstory/src/platform/server/db/scoped-workflow.ts",
+        "reviewedSha256": "6ab318347a32feb8184eacb2a4e627163a44f2c82454f5e79d0beadf12149b1a",
+        "currentSha256": "6ab318347a32feb8184eacb2a4e627163a44f2c82454f5e79d0beadf12149b1a"
+      },
+      {
+        "path": "D:/code/github/openstory/src/platform/server/db/scoped.ts",
+        "reviewedSha256": "f45535f6df869737cc1cfa4077bdc2ef9f58670b5dc0a1481e4cfbab277c0f33",
+        "currentSha256": "f45535f6df869737cc1cfa4077bdc2ef9f58670b5dc0a1481e4cfbab277c0f33"
+      },
+      {
+        "path": "D:/code/github/openstory/src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "reviewedSha256": "5a7d55dab8198d5c0807db45cda3dadd80332cf01639f314d8eca11d9fec9960",
+        "currentSha256": "5a7d55dab8198d5c0807db45cda3dadd80332cf01639f314d8eca11d9fec9960"
+      },
+      {
+        "path": "D:/code/github/openstory/src/platform/server/workflow/types.ts",
+        "reviewedSha256": "5461f02dc80d57a62809506c33da6adbf5f5dfd80c5d6cba1c3edcf96ad2d1d3",
+        "currentSha256": "5461f02dc80d57a62809506c33da6adbf5f5dfd80c5d6cba1c3edcf96ad2d1d3"
+      },
+      {
+        "path": "D:/code/github/openstory/src/sequences/server/db/storyboard-content-scope.ts",
+        "reviewedSha256": "8c82ea28987fc8c1964ee6f62a40d01cad387ed171bb2f2ac1f7752f3ee05dd5",
+        "currentSha256": "8c82ea28987fc8c1964ee6f62a40d01cad387ed171bb2f2ac1f7752f3ee05dd5"
+      },
+      {
+        "path": "D:/code/github/openstory/src/sequences/server/db/storyboard-content-writes.ts",
+        "reviewedSha256": "56f50d47e3adac2ee95b6f543cee428cbc35c2ee7b84bfb915e2c8788ba8913a",
+        "currentSha256": "56f50d47e3adac2ee95b6f543cee428cbc35c2ee7b84bfb915e2c8788ba8913a"
+      },
+      {
+        "path": "D:/code/github/openstory/src/sequences/server/db/storyboard-element-sheets.test.ts",
+        "reviewedSha256": "80e10c8db3dba9dd4167c88db7a162ff97e32f01326b9407f1320b073f57d1cb",
+        "currentSha256": "80e10c8db3dba9dd4167c88db7a162ff97e32f01326b9407f1320b073f57d1cb"
+      },
+      {
+        "path": "D:/code/github/openstory/src/sequences/server/db/storyboard-element-sheets.ts",
+        "reviewedSha256": "eada60ea70a04ac12049c0e5796c0af9483557164b9fb4563591b8579a82b05a",
+        "currentSha256": "eada60ea70a04ac12049c0e5796c0af9483557164b9fb4563591b8579a82b05a"
+      },
+      {
+        "path": "D:/code/github/openstory/src/sequences/server/db/storyboard-owner.ts",
+        "reviewedSha256": "1ac9d74b6d10898e43b53f2b4fd524cd6cea455b733b66556aeb638949939a4d",
+        "currentSha256": "1ac9d74b6d10898e43b53f2b4fd524cd6cea455b733b66556aeb638949939a4d"
+      },
+      {
+        "path": "D:/code/github/openstory/src/sequences/server/workflows/generation-workflow-owner.test.ts",
+        "reviewedSha256": "3e54348ee4473c694276fc14d3e2cfabc9dcfe4352a0315a5013fe409f2e52eb",
+        "currentSha256": "3e54348ee4473c694276fc14d3e2cfabc9dcfe4352a0315a5013fe409f2e52eb"
+      },
+      {
+        "path": "D:/code/github/openstory/src/sequences/server/workflows/generation-workflow-owner.ts",
+        "reviewedSha256": "a50abd91d5ccb8378e023bdc632b3c624252ff0d10b9751cde76335bc270de01",
+        "currentSha256": "a50abd91d5ccb8378e023bdc632b3c624252ff0d10b9751cde76335bc270de01"
+      },
+      {
+        "path": "D:/code/github/openstory/src/sequences/server/workflows/storyboard-content-errors.ts",
+        "reviewedSha256": "22852dc81b5b944b88d43684b712739d5e86ff8dd7acc37a0810158ea2eb2cb2",
+        "currentSha256": "22852dc81b5b944b88d43684b712739d5e86ff8dd7acc37a0810158ea2eb2cb2"
+      },
+      {
+        "path": "D:/code/github/openstory/src/shots/server/workflows/update-stale-plan-run.test.ts",
+        "reviewedSha256": "3092b4a18d462a140e5f3f5d440bf2fdca53400b59b4f4d32312d1f4f1df17a1",
+        "currentSha256": "3092b4a18d462a140e5f3f5d440bf2fdca53400b59b4f4d32312d1f4f1df17a1"
+      },
+      {
+        "path": "D:/code/github/openstory/src/shots/server/workflows/update-stale-shots-workflow.ts",
+        "reviewedSha256": "3c6fc3f61d86c4282c6e0e5c7e62ac367bbfd4462e0b2361d8a9677bccf6aca3",
+        "currentSha256": "3c6fc3f61d86c4282c6e0e5c7e62ac367bbfd4462e0b2361d8a9677bccf6aca3"
+      },
+      {
+        "path": "D:/code/github/openstory/src/cast/server/db/element-sheet-workflow.test.fixture.ts",
+        "reviewedSha256": "e9a5d539c5a2fd7425f26a6ded8f4f754cfd80a9aed9ad1fd472ee417b5865ce",
+        "currentSha256": "cd76b42827b8ef5aa57ed5520733b687d725e103d0f6e07ce3997c944f068b87"
+      }
+    ],
+    "matched": 23,
+    "changed": [
+      {
+        "path": "D:/code/github/openstory/src/cast/server/db/element-sheet-workflow.test.fixture.ts",
+        "reviewedSha256": "e9a5d539c5a2fd7425f26a6ded8f4f754cfd80a9aed9ad1fd472ee417b5865ce",
+        "currentSha256": "cd76b42827b8ef5aa57ed5520733b687d725e103d0f6e07ce3997c944f068b87"
+      }
+    ],
+    "postReviewChange": {
+      "path": "src/cast/server/db/element-sheet-workflow.test.fixture.ts",
+      "change": "Removed unused export keyword from synthetic ROOT_REPLACEMENT; restoring that keyword reproduces the exact reviewed hash.",
+      "exactReverseHashMatches": true
+    }
+  },
+  "quality": {
+    "parser": "Installed oxc-parser",
+    "scope": "All new TypeScript files, including callbacks; nested function bodies measured separately",
+    "results": [
+      {
+        "path": "src/cast/server/db/element-sheet-publication.test.fixture.ts",
+        "lines": 221,
+        "functions": 26,
+        "maxFunctionLines": 19,
+        "maxComplexity": 3,
+        "maxNesting": 2
+      },
+      {
+        "path": "src/cast/server/db/element-sheet-publication.test.ts",
+        "lines": 456,
+        "functions": 35,
+        "maxFunctionLines": 36,
+        "maxComplexity": 4,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/db/element-sheet-publication.ts",
+        "lines": 135,
+        "functions": 5,
+        "maxFunctionLines": 39,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/db/element-sheet-workflow.test.fixture.ts",
+        "lines": 288,
+        "functions": 30,
+        "maxFunctionLines": 44,
+        "maxComplexity": 6,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-entry.ts",
+        "lines": 146,
+        "functions": 9,
+        "maxFunctionLines": 33,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-errors.test.ts",
+        "lines": 75,
+        "functions": 10,
+        "maxFunctionLines": 47,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-output.ts",
+        "lines": 105,
+        "functions": 11,
+        "maxFunctionLines": 37,
+        "maxComplexity": 5,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-publication.test.ts",
+        "lines": 453,
+        "functions": 33,
+        "maxFunctionLines": 35,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-element-sheets.test.ts",
+        "lines": 440,
+        "functions": 53,
+        "maxFunctionLines": 20,
+        "maxComplexity": 3,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-element-sheets.ts",
+        "lines": 35,
+        "functions": 3,
+        "maxFunctionLines": 27,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      }
+    ],
+    "violations": []
+  },
+  "temporaryArtifacts": [
+    {
+      "path": ".codex/p3-element-boundaries.log",
+      "bytes": 3256,
+      "sha256": "59b324f09766d64195267fc1d97325e0029d3aeb2c85c1e6a848685552dd64a2"
+    },
+    {
+      "path": ".codex/p3-element-build.log",
+      "bytes": 130649,
+      "sha256": "6375e8ea687639172923cfa93f33187c9fb4b655eb47012ba4ba9e09dc7cb570"
+    },
+    {
+      "path": ".codex/p3-element-composition-2.log",
+      "bytes": 496,
+      "sha256": "2bc3dc9aed485d6183ceb2effe32409bee8955669923de354f4e8c11667ed332"
+    },
+    {
+      "path": ".codex/p3-element-composition-3.json",
+      "bytes": 40172,
+      "sha256": "5bafe4eefc1cc7077df18bc95417a5a7a3437dd85eb979afb41b460a0b2ab96a"
+    },
+    {
+      "path": ".codex/p3-element-composition-3.log",
+      "bytes": 510,
+      "sha256": "f2a130241ae22a8a8d130827bf1d66a40dc8ef5f28da1b7fa07c1f90c22ca13d"
+    },
+    {
+      "path": ".codex/p3-element-composition.log",
+      "bytes": 12116,
+      "sha256": "ce5f716e079cb217385ba31611d728654843e971811b38962257ab9b6b1df5ee"
+    },
+    {
+      "path": ".codex/p3-element-evidence.py",
+      "bytes": 22213,
+      "sha256": "048fb8730856ccc6851094e2110f597c1d038e931fbcf968c6398bc306b4322a"
+    },
+    {
+      "path": ".codex/p3-element-final-tests-2.json",
+      "bytes": 210860,
+      "sha256": "e0cc3f8845b3c628b1fe06fc0b7708d7267fef196c59b3a7d64947b367f5baa5"
+    },
+    {
+      "path": ".codex/p3-element-final-tests-2.log",
+      "bytes": 3090,
+      "sha256": "89893e175c3038fcf671ca1e16440ea09f29bb12cc7e4b1d085f1c9ebad0855c"
+    },
+    {
+      "path": ".codex/p3-element-final-tests.json",
+      "bytes": 212160,
+      "sha256": "3a16eed8299c2bad35acd4c1dd9164527d1c56b9d331a1f72b3cc0dceda27655"
+    },
+    {
+      "path": ".codex/p3-element-final-tests.log",
+      "bytes": 3127,
+      "sha256": "1d1b04616ea7acb8e36384dae585ca4e99f9bf3d6f58d33c598facb2e16b443c"
+    },
+    {
+      "path": ".codex/p3-element-format-check.log",
+      "bytes": 118,
+      "sha256": "19a7fdb1e1f2ea597ba992813b25b0897ae35dd0fa19cb8270ee73e06370fe73"
+    },
+    {
+      "path": ".codex/p3-element-format-paths.json",
+      "bytes": 1186,
+      "sha256": "42d442654ee1f7dce52079d76140e51e24ccff46c629eb6a9cbd8dd88d819807"
+    },
+    {
+      "path": ".codex/p3-element-initial.log",
+      "bytes": 619,
+      "sha256": "5563049d549db7b1b6d59d4b6b23c8360df3cba12ed9bd1583b859399d585f18"
+    },
+    {
+      "path": ".codex/p3-element-knip.log",
+      "bytes": 1066,
+      "sha256": "176bb77717316239c9abd5628e4d6b470e689a752e60d93629f090b18882a84b"
+    },
+    {
+      "path": ".codex/p3-element-lint-2.log",
+      "bytes": 53447,
+      "sha256": "258ae295860b6ec36fa5b320e9353db955aaa97ae4518897699447ba8d9d64b3"
+    },
+    {
+      "path": ".codex/p3-element-lint.log",
+      "bytes": 53850,
+      "sha256": "2377c1261cf9ca92a4f7975e7571d7cafdac287eb7c2cc05a4fd996bbb1427e2"
+    },
+    {
+      "path": ".codex/p3-element-original-red.json",
+      "bytes": 13520,
+      "sha256": "cbef804ad34311a9eee4acd240830ba7fbdf730694a33983e6258277b9f239a7"
+    },
+    {
+      "path": ".codex/p3-element-original-red.log",
+      "bytes": 646,
+      "sha256": "282ee5b1038d8372810d764e2eabec5c0a336bdc135149cdac2e2f1c6a6b9d26"
+    },
+    {
+      "path": ".codex/p3-element-original-tests.json",
+      "bytes": 6205,
+      "sha256": "00ab34960aed728f0d32f8e4016ff2ad3011912de8788f1364acaf5cdfb5ed2e"
+    },
+    {
+      "path": ".codex/p3-element-quality.json",
+      "bytes": 2232,
+      "sha256": "9b3cd9a861e2beabb11efebfc9b617543630a1b8551afe17231ee244e60787ad"
+    },
+    {
+      "path": ".codex/p3-element-quality.mjs",
+      "bytes": 3140,
+      "sha256": "62b01b750692b365d5c7039259046e8487e49e3bebe79ba953a241bdc937b4a1"
+    },
+    {
+      "path": ".codex/p3-element-red-restoration.json",
+      "bytes": 799,
+      "sha256": "2a5fc9456edb2a98d0ed7cfa0a6c959f51feb527026a4d6a3f9021a1e7652880"
+    },
+    {
+      "path": ".codex/p3-element-red.py",
+      "bytes": 1745,
+      "sha256": "c22dd4edcdc84111624a7ffaa415f724432fc6866de1a9a300fa50cee2d35897"
+    },
+    {
+      "path": ".codex/p3-element-review-check.json",
+      "bytes": 8008,
+      "sha256": "fc551fdf609ce647f11c652607e97fb7794cf74dec5fa4f8230750c96814e885"
+    },
+    {
+      "path": ".codex/p3-element-review-manifest.txt",
+      "bytes": 3454,
+      "sha256": "8d959f9867fc23c57b43178f1a27b0a3150ff266a132ec54c1197e7c4aeb2ca8"
+    },
+    {
+      "path": ".codex/p3-element-selected.json",
+      "bytes": 1897,
+      "sha256": "dbc4e59ea796375785f04885adb80d3446d6d672ccf7d7b992db379413d00af6"
+    },
+    {
+      "path": ".codex/p3-element-source-commit-result.json",
+      "bytes": 56,
+      "sha256": "75302794f90ed07346999d4e5baf4b5d84987de90ddc95a9e1162d7849f3b259"
+    },
+    {
+      "path": ".codex/p3-element-source-commit.log",
+      "bytes": 2983,
+      "sha256": "a5a5f72df6d67b3b7282bb07f201029adf2461115a3ed5f46b7229ff1ef7b473"
+    },
+    {
+      "path": ".codex/p3-element-start.json",
+      "bytes": 1705,
+      "sha256": "72bf41d3545ed2e5694767e78863a285b67e4fe4d28f4bc2a8b1f7f937317f7d"
+    },
+    {
+      "path": ".codex/p3-element-typecheck-2.log",
+      "bytes": 837,
+      "sha256": "178c460f702aff7ce847946f565b50ef475378512026631c1a8a661f02376d3c"
+    },
+    {
+      "path": ".codex/p3-element-typecheck-3.log",
+      "bytes": 17,
+      "sha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+    },
+    {
+      "path": ".codex/p3-element-typecheck-4.log",
+      "bytes": 17,
+      "sha256": "b87e65da9b27ca3bf63162dc8617a0e7d3c7bdf0c5a77e1bbf1ec1f490b2ccd3"
+    },
+    {
+      "path": ".codex/p3-element-typecheck.log",
+      "bytes": 446,
+      "sha256": "1abf920ae3738675a94ae7fc7d72b6783ab726085ca4e7333bac8bc07b5b3e06"
+    }
+  ],
+  "remainingActions": [
+    "Other descendant character/look/location/voice/render writers and independent edit/upload entry points need their own complete ownership contract.",
+    "Whole-root cancellation and complete descendant selection/event/phase/preview/parent-notification ownership remain open.",
+    "Already admitted batches, incurred usage/debit/provenance and stored objects are not undone by a later takeover.",
+    "Durable cached checks do not become fresh reads; fully cached old tasks, cached completion success and descendants without a trusted root are not repaired.",
+    "Other shared-eligibility check/write windows and later independent element edits remain outside this publisher contract.",
+    "Standalone AnalyzeScript CLI, independent Update all roots, email delivery and legacy raw claims remain separate open work.",
+    "Deployed Workerd/D1 restart/replay, multiple instances, browser convergence, actual provider termination and wallet settlement remain unverified."
+  ],
+  "reproducibilityScripts": [
+    {
+      "path": ".codex/p3-element-red.py",
+      "source": "from pathlib import Path\nimport subprocess\nimport json\nimport hashlib\n\nbase = '23ee5a756a76b72c0dce0c9f44f82c09c60e443b'\nrelative = 'src/cast/server/workflows/element-sheet-workflow.ts'\ntarget = Path(relative)\nfixed = target.read_bytes()\noriginal = subprocess.check_output(['git', 'show', base + ':' + relative])\nregex = 'preserves an upload arriving|reuses a token uploaded|refuses a root lost|rejects a lost root before|records spent usage|rejects a tombstoned ID|validates sequence organization|rejects a foreign-sequence ID'\nargs = ['run', 'test', 'src/cast/server/workflows/element-sheet-publication.test.ts', '-t', regex, '--reporter=json', '--outputFile=.codex/p3-element-original-red.json']\ncommand = '$testArgs = @(' + ','.join(\"'\" + item.replace(\"'\", \"''\") + \"'\" for item in args) + '); & bun @testArgs; exit $LASTEXITCODE'\nrecord = {'baseline': base, 'restoredPath': relative, 'originalBlobSha256': hashlib.sha256(original).hexdigest(), 'fixedWorkingSha256': hashlib.sha256(fixed).hexdigest(), 'testArguments': args}\ntry:\n    target.write_bytes(original)\n    with Path('.codex/p3-element-original-red.log').open('wb') as output:\n        result = subprocess.run(['pwsh', '-NoProfile', '-Command', command], stdout=output, stderr=subprocess.STDOUT)\n    record['exitCode'] = result.returncode\nfinally:\n    target.write_bytes(fixed)\n    record['fixedBytesRestored'] = target.read_bytes() == fixed\n    Path('.codex/p3-element-red-restoration.json').write_text(json.dumps(record, indent=2) + '\\n', encoding='utf-8')\nprint(json.dumps(record))\nif not record.get('fixedBytesRestored'):\n    raise SystemExit('Fixed source restoration failed')\nif record.get('exitCode') != 1:\n    raise SystemExit('Original-code proof did not fail as expected')\n"
+    },
+    {
+      "path": ".codex/p3-element-quality.mjs",
+      "source": "import fs from 'node:fs';\nimport cp from 'node:child_process';\nimport { parseSync } from 'oxc-parser';\n\nconst introduced = cp.execFileSync('git', ['diff', '--name-only', '--diff-filter=A', '23ee5a756a76b72c0dce0c9f44f82c09c60e443b', 'HEAD', '--', 'src'], { encoding: 'utf8' }).trim().split('\\n');\nconst untracked = cp.execFileSync('git', ['ls-files', '--others', '--exclude-standard', 'src'], { encoding: 'utf8' }).trim().split('\\n');\nconst paths = [...new Set([...introduced, ...untracked])].filter((p) => p.endsWith('.ts')).sort();\nconst functions = new Set(['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']);\nconst controls = new Set(['IfStatement', 'ForStatement', 'ForInStatement', 'ForOfStatement', 'WhileStatement', 'DoWhileStatement', 'SwitchStatement', 'TryStatement']);\nconst decisions = new Set([...controls].filter((s) => !['TryStatement', 'SwitchStatement'].includes(s)).concat(['CatchClause', 'ConditionalExpression', 'SwitchCase']));\nconst violations = [];\nconst children = (node) => Object.values(node).flatMap((value) => Array.isArray(value) ? value : [value]).filter((value) => value && typeof value === 'object' && typeof value.type === 'string');\nconst results = paths.map((path) => {\n  const code = fs.readFileSync(path, 'utf8');\n  const parsed = parseSync(path, code);\n  if (parsed.errors.length) throw new Error(JSON.stringify(parsed.errors));\n  const found = [];\n  const line = (offset) => code.slice(0, offset).split('\\n').length;\n  const walk = (node) => {\n    if (functions.has(node.type) && node.body) {\n      let complexity = 1;\n      let nesting = 0;\n      const bodyWalk = (child, depth) => {\n        if (functions.has(child.type)) return;\n        if (decisions.has(child.type) && (child.type !== 'SwitchCase' || child.test)) complexity++;\n        if (child.type === 'LogicalExpression') complexity++;\n        const next = depth + (controls.has(child.type) ? 1 : 0);\n        nesting = Math.max(nesting, next);\n        children(child).forEach((part) => bodyWalk(part, next));\n      };\n      bodyWalk(node.body, 0);\n      const detail = { start: line(node.start), lines: line(node.end) - line(node.start) + 1, complexity, nesting };\n      found.push(detail);\n      if (detail.lines > 50 || complexity > 10 || nesting > 3) violations.push({ path, ...detail });\n    }\n    children(node).forEach(walk);\n  };\n  walk(parsed.program);\n  const lines = code.trimEnd().split(/\\r?\\n/).length;\n  if (lines > 800) violations.push({ path, lines });\n  return { path, lines, functions: found.length, maxFunctionLines: Math.max(0, ...found.map((f) => f.lines)), maxComplexity: Math.max(0, ...found.map((f) => f.complexity)), maxNesting: Math.max(0, ...found.map((f) => f.nesting)) };\n});\nfs.writeFileSync('.codex/p3-element-quality.json', JSON.stringify({ parser: 'Installed oxc-parser', scope: 'All new TypeScript files, including callbacks; nested function bodies measured separately', results, violations }, null, 2) + '\\n');\nprocess.stdout.write(JSON.stringify({ files: results.length, violations }) + '\\n');\nprocess.exitCode = violations.length ? 1 : 0;\n"
+    }
+  ],
+  "workerHandoff": {
+    "role": "DB worker",
+    "preliminaryIssuesReported": [
+      "Synthetic logger fixture configuration",
+      "Duplicate trigger name in a fault fixture",
+      "Ordinal counter inference in a fixture",
+      "Two read-site registration failures in the main-owned workflow gate"
+    ],
+    "resolution": "Fixed within assigned DB files, or integrated by main in the read-site gate. Preliminary worker run grouping is not used as the final test count. Main final 31-file/624-test report is authoritative.",
+    "rawPreliminaryReportAvailable": false
+  },
+  "lintWarningLineAudit": {
+    "warnings": 147,
+    "warningsOnChangedLines": 0,
+    "warningsInModifiedFiles": [
+      {
+        "path": "src/shots/server/workflows/update-stale-shots-workflow.ts",
+        "line": 1685,
+        "column": 17
+      },
+      {
+        "path": "src/shots/server/workflows/update-stale-shots-workflow.ts",
+        "line": 1690,
+        "column": 32
+      },
+      {
+        "path": "src/shots/server/workflows/update-stale-shots-workflow.ts",
+        "line": 1782,
+        "column": 15
+      }
+    ],
+    "method": "Match actual warning locations against added-line ranges in git diff --unified=0 from sourceBefore to sourceAfter. Existing warnings within the touched UpdateStale file are outside changed lines."
+  },
+  "auditCorrections": [
+    "A preliminary audit incorrectly required every warning to be outside all touched files. It detected an inherited warning in the large UpdateStale file. The evidence wording was corrected to changed lines, then actual source hunks verified all 147 warnings are outside those lines. No source code or assertion changed."
+  ],
+  "appendOnlyHistoryPrefixes": {
+    "docs/secondary-development/preservation/p3-implementation-log.jsonl": {
+      "bytes": 92940,
+      "sha256": "ebc2e76436899c2636436c97ee62c9c9552d22d3f027b26c436d02125476f434",
+      "lines": 59
+    },
+    "docs/secondary-development/upstream-preservation-plan.md": {
+      "bytes": 105609,
+      "sha256": "297e36a263970c48744d65bbe65c5bd9df222408909ef453fad3e7b81211c4be",
+      "lines": 368
+    }
+  }
+}

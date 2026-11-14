@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-element-sheet-publication",
+  "responsibilityId": "GC-03",
+  "status": "completed",
+  "sourceBefore": "23ee5a756a76b72c0dce0c9f44f82c09c60e443b",
+  "sourceAfter": "ae478f5b288fa973fe02161ead9ab69ff8381175",
+  "p3Status": "in-progress",
+  "p4Status": "not-started",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Propagate the trusted Storyboard root to generated element references and atomically publish or reuse the live identity without overwriting uploaded media.",
+  "upstreamExisting": [
+    "Element bible/placeholder discovery, image generation, in-step storage and per-entry concurrent durable execution.",
+    "Organization wallet reservations, usage, idempotent deduction and provenance.",
+    "Immutable element IDs, renameable per-sequence unique tokens, soft deletion and upload/media metadata."
+  ],
+  "implemented": [
+    "UpdateStale overwrites a stale reference payload owner with the explicit resolved root/claim, or an actual Storyboard parent instance-only fallback.",
+    "A narrow publisher validates the actual organization/sequence and, when bound, current root or explicitly trusted raw claim plus processing in actual SQL.",
+    "Conditional placeholder UPDATE, identity-absent INSERT and final availability SELECT share one atomic D1 batch with rollback on unavailable final result.",
+    "ID-first rename behavior, uploaded-media winner precedence, tombstone reservation, initial defaults and placeholder metadata are preserved.",
+    "Preflight validates sequence access and actual row relationship through existing named existence hatches; read-site registration follows the extracted helper.",
+    "Original generation/storage/accounting/provenance step names, identifiers, metadata, models, language, cap and allSettled behavior remain intact.",
+    "Incurred accounting and provenance precede publication refusal. Confirmed root loss is nonretryable inside steps; unknown checks preserve causes; engine abort takes priority across siblings.",
+    "A root-bound final durable completion check covers empty output and cached element steps first reaching that check, with explicit cache limits."
+  ],
+  "schemaChanges": false,
+  "migrationsAdded": false,
+  "dependenciesChanged": false,
+  "newCronOrBindings": false,
+  "newWorkflowReadHatch": false,
+  "newBoundaryExceptions": false,
+  "modifiedProductionFiles": 9,
+  "modifiedTestFiles": 7,
+  "newTestFiles": 4,
+  "newTestFixtures": 2,
+  "addedBehaviorTests": 135,
+  "addedDynamicReadGateCases": 2,
+  "addedTests": 137,
+  "originalTestFilesUnchanged": 24,
+  "assertionChanges": {
+    "removedTests": 0,
+    "weakenedAssertions": false,
+    "notes": [
+      "Existing provenance fixture switches its element persistence substitute to publishGenerated and adds an explicit sequence-access substitute; all original assertions retained.",
+      "UpdateStale adds eight cases with no mock weakening.",
+      "Read-gate sanctions move to element-sheet-output and add one existing-hatch access check; two new production helper files add generated scan cases."
+    ]
+  },
+  "frozenInventory": {
+    "files": 5,
+    "items": 1219,
+    "pending": 1219,
+    "approved": 0,
+    "modified": false,
+    "entries": [
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-01.jsonl",
+        "items": 400,
+        "pending": 400,
+        "sha256": "ea08df4afbab6b90fb5c6291cc21b93b56292cf220c4550e25966378d51da145"
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-added-02.jsonl",
+        "items": 11,
+        "pending": 11,
+        "sha256": "f1181344dcbddf97c86624576e87c9f173c88b8e248d9208d58d750b5d3b9e7a"
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-01.jsonl",
+        "items": 400,
+        "pending": 400,
+        "sha256": "0200433309e1d75aee51354453827b74dbfbf4100e64037ad98c8b23a8872288"
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-src-existing-02.jsonl",
+        "items": 206,
+        "pending": 206,
+        "sha256": "b69c66c3ac7ddf76030f0188e54d834a605666daac144b7fcf8bf43266c8f6d2"
+      },
+      {
+        "path": "docs/secondary-development/preservation/20261109-p3-global-design/inventory-support-01.jsonl",
+        "items": 202,
+        "pending": 202,
+        "sha256": "fcbe45cf4e127518d801c65619f57e421f6f1d7abb6ae19f07be91d34f43c771"
+      }
+    ]
+  },
+  "productionPaths": [
+    "src/cast/server/db/element-sheet-publication.ts",
+    "src/cast/server/workflows/element-sheet-entry.ts",
+    "src/cast/server/workflows/element-sheet-output.ts",
+    "src/cast/server/workflows/element-sheet-workflow.ts",
+    "src/platform/server/db/scoped.ts",
+    "src/platform/server/workflow/types.ts",
+    "src/sequences/server/db/storyboard-element-sheets.ts",
+    "src/sequences/server/workflows/generation-workflow-owner.ts",
+    "src/shots/server/workflows/update-stale-shots-workflow.ts"
+  ],
+  "newSourcePaths": [
+    "src/cast/server/db/element-sheet-publication.test.fixture.ts",
+    "src/cast/server/db/element-sheet-publication.test.ts",
+    "src/cast/server/db/element-sheet-publication.ts",
+    "src/cast/server/db/element-sheet-workflow.test.fixture.ts",
+    "src/cast/server/workflows/element-sheet-entry.ts",
+    "src/cast/server/workflows/element-sheet-errors.test.ts",
+    "src/cast/server/workflows/element-sheet-output.ts",
+    "src/cast/server/workflows/element-sheet-publication.test.ts",
+    "src/sequences/server/db/storyboard-element-sheets.test.ts",
+    "src/sequences/server/db/storyboard-element-sheets.ts"
+  ],
+  "fingerprints": [
+    {
+      "path": "docs/architecture/generation-plan.md",
+      "gitBlob": "eaede89d45b6463b6545d59fa173dd42ac796f5f",
+      "sha256": "088daf40ee6b114b4bd9f649871edb730c58761708ac0e6e82b5bc7e26654c57",
+      "bytes": 60371
+    },
+    {
+      "path": "docs/architecture/workflow-snapshots-and-content-hash-staleness.md",
+      "gitBlob": "2443685bac9d6568a616720412fe7e144b320b9d",
+      "sha256": "fe1956e9731500973705c936fbe13e47c9a3bd65091d8d1efab086cd1054f4eb",
+      "bytes": 97445
+    },
+    {
+      "path": "src/cast/server/db/element-sheet-publication.test.fixture.ts",
+      "gitBlob": "ea90a204ee46a9e9a10feebf96045c2566fc3c72",
+      "sha256": "54085036448c2044113300e101b72371bd171a9baffcea893eca29d00af4b590",
+      "bytes": 7151
+    },
+    {
+      "path": "src/cast/server/db/element-sheet-publication.test.ts",
+      "gitBlob": "0de587d5d48f8e35a253653a0c686eba0ff328b6",
+      "sha256": "40ede29e24efb51d6de10f005e2149e9c7d3257976ed15ad1c3d845767726918",
+      "bytes": 14442
+    },
+    {
+      "path": "src/cast/server/db/element-sheet-publication.ts",
+      "gitBlob": "6aa16e082586bc363b171895264654e90e730766",
+      "sha256": "4da022a12020b9c814e30c06c68b283fe3fd3f6ef6ecd1d0569441dd2dfe804e",
+      "bytes": 3980
+    },
+    {
+      "path": "src/cast/server/db/element-sheet-workflow.test.fixture.ts",
+      "gitBlob": "71a8b371bce4154f7454cdf1cd65bc82d12450b8",
+      "sha256": "cd76b42827b8ef5aa57ed5520733b687d725e103d0f6e07ce3997c944f068b87",
+      "bytes": 8649
+    },
+    {
+      "path": "src/cast/server/workflows/element-sheet-entry.ts",
+      "gitBlob": "ea75ecdc620f5b15632195a74f939033fd21e748",
+      "sha256": "0bef0bd44f48d0321d9c2d558b60307f02282e8d4543fb69fa5866cd1db92b2a",
+      "bytes": 4924
+    },
+    {
+      "path": "src/cast/server/workflows/element-sheet-errors.test.ts",
+      "gitBlob": "6547db4d5c002c850e588277a4bcb67f66494e14",
+      "sha256": "bf9a19f49cff54d7abb52386ed464a1b74fe212b69c8461aeb7849acf5bdb89c",
+      "bytes": 2434
+    },
+    {
+      "path": "src/cast/server/workflows/element-sheet-output.ts",
+      "gitBlob": "0379028b8473deab876edf463b9cb46af980c5d7",
+      "sha256": "41100e0f0b59b940cc492359cd5547453517c818e80e93c767dff37897cb71ac",
+      "bytes": 3480
+    },
+    {
+      "path": "src/cast/server/workflows/element-sheet-publication.test.ts",
+      "gitBlob": "17a3c2731482a4d12df450e0348660bbf8922b52",
+      "sha256": "82367337e4c4e331ca13e401ac0c6ebff408e41515a19029d5345a0afddbddb5",
+      "bytes": 15675
+    },
+    {
+      "path": "src/cast/server/workflows/element-sheet-workflow.ts",
+      "gitBlob": "9b1001235f54c4b3e2e0b308d2bbecc87b6a5785",
+      "sha256": "4eb75fc8a95cb320031b735c8a1bc40b308704443afc6b399a37f0b8cf2efb87",
+      "bytes": 4854
+    },
+    {
+      "path": "src/cast/server/workflows/sheet-provenance-contract.test.ts",
+      "gitBlob": "c27ed6e814bd9622ef27486d979f88d92f8c6213",
+      "sha256": "6c2753207c4568019287875265258ce03386d22d4b1848d42ac9ef4a2cd4ec4b",
+      "bytes": 14068
+    },
+    {
+      "path": "src/platform/server/db/scoped.ts",
+      "gitBlob": "5d9c036573484bf2680286ff33c513a8bcdb9d44",
+      "sha256": "f45535f6df869737cc1cfa4077bdc2ef9f58670b5dc0a1481e4cfbab277c0f33",
+      "bytes": 23290
+    },
+    {
+      "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "gitBlob": "4daf4bf6d5c6abf2d84e381953d11856d6aa7bee",
+      "sha256": "5a7d55dab8198d5c0807db45cda3dadd80332cf01639f314d8eca11d9fec9960",
+      "bytes": 33085
+    },
+    {
+      "path": "src/platform/server/workflow/types.ts",
+      "gitBlob": "5ee070e5b08e6bcad11c9ac18140c7bb549ba66a",
+      "sha256": "5461f02dc80d57a62809506c33da6adbf5f5dfd80c5d6cba1c3edcf96ad2d1d3",
+      "bytes": 77900
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-element-sheets.test.ts",
+      "gitBlob": "af634cf3e0c1863a01c3aa5668d01000167249d1",
+      "sha256": "80e10c8db3dba9dd4167c88db7a162ff97e32f01326b9407f1320b073f57d1cb",
+      "bytes": 15009
+    },
+    {
+      "path": "src/sequences/server/db/storyboard-element-sheets.ts",
+      "gitBlob": "c3341487f429107742b5891f6855fd7fa9166160",
+      "sha256": "eada60ea70a04ac12049c0e5796c0af9483557164b9fb4563591b8579a82b05a",
+      "bytes": 1318
+    },
+    {
+      "path": "src/sequences/server/workflows/generation-workflow-owner.ts",
+      "gitBlob": "70c68ca3a947b273f7c59b1e458f04cbb9043f62",
+      "sha256": "a50abd91d5ccb8378e023bdc632b3c624252ff0d10b9751cde76335bc270de01",
+      "bytes": 528
+    },
+    {
+      "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+      "gitBlob": "53cc250448a4d7ba5f50df8279f0dbf76580a0b2",
+      "sha256": "3092b4a18d462a140e5f3f5d440bf2fdca53400b59b4f4d32312d1f4f1df17a1",
+      "bytes": 41684
+    },
+    {
+      "path": "src/shots/server/workflows/update-stale-shots-workflow.ts",
+      "gitBlob": "de79b6447acae6b5c843deeaddaa72464355182c",
+      "sha256": "3c6fc3f61d86c4282c6e0e5c7e62ac367bbfd4462e0b2361d8a9677bccf6aca3",
+      "bytes": 100180
+    }
+  ],
+  "quality": {
+    "parser": "Installed oxc-parser",
+    "scope": "All new TypeScript files, including callbacks; nested function bodies measured separately",
+    "results": [
+      {
+        "path": "src/cast/server/db/element-sheet-publication.test.fixture.ts",
+        "lines": 221,
+        "functions": 26,
+        "maxFunctionLines": 19,
+        "maxComplexity": 3,
+        "maxNesting": 2
+      },
+      {
+        "path": "src/cast/server/db/element-sheet-publication.test.ts",
+        "lines": 456,
+        "functions": 35,
+        "maxFunctionLines": 36,
+        "maxComplexity": 4,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/db/element-sheet-publication.ts",
+        "lines": 135,
+        "functions": 5,
+        "maxFunctionLines": 39,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/db/element-sheet-workflow.test.fixture.ts",
+        "lines": 288,
+        "functions": 30,
+        "maxFunctionLines": 44,
+        "maxComplexity": 6,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-entry.ts",
+        "lines": 146,
+        "functions": 9,
+        "maxFunctionLines": 33,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-errors.test.ts",
+        "lines": 75,
+        "functions": 10,
+        "maxFunctionLines": 47,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-output.ts",
+        "lines": 105,
+        "functions": 11,
+        "maxFunctionLines": 37,
+        "maxComplexity": 5,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/cast/server/workflows/element-sheet-publication.test.ts",
+        "lines": 453,
+        "functions": 33,
+        "maxFunctionLines": 35,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-element-sheets.test.ts",
+        "lines": 440,
+        "functions": 53,
+        "maxFunctionLines": 20,
+        "maxComplexity": 3,
+        "maxNesting": 1
+      },
+      {
+        "path": "src/sequences/server/db/storyboard-element-sheets.ts",
+        "lines": 35,
+        "functions": 3,
+        "maxFunctionLines": 27,
+        "maxComplexity": 2,
+        "maxNesting": 1
+      }
+    ],
+    "violations": []
+  },
+  "existingBaselineExceptions": [
+    {
+      "path": "src/platform/server/workflow/no-mid-run-reads.test.ts",
+      "baselineLines": 831,
+      "sourceLines": 836,
+      "treatment": "Existing large module; narrow integration/test-registration seam only, no unrelated restructuring."
+    },
+    {
+      "path": "src/platform/server/workflow/types.ts",
+      "baselineLines": 1946,
+      "sourceLines": 1948,
+      "treatment": "Existing large module; narrow integration/test-registration seam only, no unrelated restructuring."
+    },
+    {
+      "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+      "baselineLines": 1240,
+      "sourceLines": 1332,
+      "treatment": "Existing large module; narrow integration/test-registration seam only, no unrelated restructuring."
+    },
+    {
+      "path": "src/shots/server/workflows/update-stale-shots-workflow.ts",
+      "baselineLines": 2388,
+      "sourceLines": 2390,
+      "treatment": "Existing large module; narrow integration/test-registration seam only, no unrelated restructuring."
+    }
+  ],
+  "selectedFiles": 31,
+  "selectedTests": 624,
+  "verificationBatchClosed": true,
+  "responsibilityClosed": false,
+  "acceptanceComplete": false,
+  "remainingActions": [
+    "Other descendant character/look/location/voice/render writers and independent edit/upload entry points need their own complete ownership contract.",
+    "Whole-root cancellation and complete descendant selection/event/phase/preview/parent-notification ownership remain open.",
+    "Already admitted batches, incurred usage/debit/provenance and stored objects are not undone by a later takeover.",
+    "Durable cached checks do not become fresh reads; fully cached old tasks, cached completion success and descendants without a trusted root are not repaired.",
+    "Other shared-eligibility check/write windows and later independent element edits remain outside this publisher contract.",
+    "Standalone AnalyzeScript CLI, independent Update all roots, email delivery and legacy raw claims remain separate open work.",
+    "Deployed Workerd/D1 restart/replay, multiple instances, browser convergence, actual provider termination and wallet settlement remain unverified."
+  ],
+  "nextImplementation": [
+    "G03-descendant-asset-event-ownership",
+    "G03-shared-eligibility-concurrency",
+    "G03-email-delivery-contract"
+  ]
+}
