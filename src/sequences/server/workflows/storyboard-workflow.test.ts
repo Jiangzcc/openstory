@@ -106,7 +106,7 @@ function makeEvent(
   extras: Partial<
     Pick<
       StoryboardWorkflowInput,
-      'notify' | 'stopAt' | 'resume' | 'userCountry' | 'plan'
+      'notify' | 'stopAt' | 'resume' | 'userCountry' | 'plan' | 'reservationId'
     >
   > = {}
 ): Readonly<WorkflowEvent<StoryboardWorkflowInput>> {
@@ -157,17 +157,19 @@ function makeEvent(
 }
 
 function makeScopedDb(status: 'processing' | 'failed' | 'completed') {
+  const zeroReservation = vi.fn(async () => undefined);
   const updateStatus = vi.fn();
   const getForUser = vi.fn(async () => ({ id: 'seq_1', status }));
   const stub = {
     models: DEFAULT_MODEL_CONFIGURATION,
+    billing: { zeroReservation },
     // The existence guard is a sanctioned live read (#1067).
     liveRead: { sequences: { getForUser } },
     sequence: vi.fn(() => ({ updateStatus })),
   };
   // minimal WorkflowScopedDb stub exposing only what onFailure touches
   const scopedDb = asStub<WorkflowScopedDb>(stub);
-  return { scopedDb, updateStatus, getForUser };
+  return { scopedDb, updateStatus, getForUser, zeroReservation };
 }
 
 describe('StoryboardWorkflow.onFailure', () => {
@@ -195,7 +197,8 @@ describe('StoryboardWorkflow.onFailure', () => {
   test('still emits failure when sequence status persistence fails', async () => {
     emit.mockReset();
     const { scopedDb, updateStatus } = makeScopedDb('processing');
-    updateStatus.mockRejectedValueOnce(new Error('database down'));
+    const persistenceError = new Error('database down');
+    updateStatus.mockRejectedValueOnce(persistenceError);
 
     await expect(
       makeWorkflow().invokeOnFailure({
@@ -203,7 +206,7 @@ describe('StoryboardWorkflow.onFailure', () => {
         error: 'Child workflow analyze-script timed out',
         scopedDb,
       })
-    ).resolves.toBeUndefined();
+    ).rejects.toBe(persistenceError);
 
     expect(emit).toHaveBeenCalledWith('generation.failed', {
       message: 'Child workflow analyze-script timed out',
@@ -251,6 +254,90 @@ describe('StoryboardWorkflow.onFailure', () => {
 
     expect(updateStatus).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();
+  });
+
+  test('does not overwrite a completed sequence when its status read fails', async () => {
+    emit.mockReset();
+    const { scopedDb, updateStatus, getForUser } = makeScopedDb('completed');
+    const readError = new Error('status read unavailable');
+    getForUser.mockRejectedValueOnce(readError);
+
+    await expect(
+      makeWorkflow().invokeOnFailure({
+        event: makeEvent('seq_1'),
+        error: 'trailing step failed',
+        scopedDb,
+      })
+    ).rejects.toBe(readError);
+
+    expect(updateStatus).not.toHaveBeenCalled();
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      message: 'trailing step failed',
+    });
+  });
+
+  test('keeps reservation release best effort for ordinary errors', async () => {
+    emit.mockReset();
+    const { scopedDb, updateStatus, zeroReservation } =
+      makeScopedDb('processing');
+    zeroReservation.mockRejectedValueOnce(new Error('reservation unavailable'));
+
+    await expect(
+      makeWorkflow().invokeOnFailure({
+        event: makeEvent('seq_1', { reservationId: 'reservation-1' }),
+        error: 'boom',
+        scopedDb,
+      })
+    ).resolves.toBeUndefined();
+
+    expect(updateStatus).toHaveBeenCalledWith('failed', 'boom');
+    expect(emit).toHaveBeenCalledWith('generation.failed', { message: 'boom' });
+  });
+
+  test.each(['zeroReservation', 'getForUser', 'updateStatus'] as const)(
+    'stops later actions when %s aborts',
+    async (phase) => {
+      emit.mockReset();
+      const db = makeScopedDb('processing');
+      const abort = new Error(
+        'Durable Object reset because its code was updated'
+      );
+      db[phase].mockRejectedValueOnce(abort);
+
+      await expect(
+        makeWorkflow().invokeOnFailure({
+          event: makeEvent('seq_1', { reservationId: 'reservation-1' }),
+          error: 'boom',
+          scopedDb: db.scopedDb,
+        })
+      ).rejects.toBe(abort);
+
+      if (phase === 'zeroReservation')
+        expect(db.getForUser).not.toHaveBeenCalled();
+      if (phase !== 'updateStatus')
+        expect(db.updateStatus).not.toHaveBeenCalled();
+      expect(emit).not.toHaveBeenCalled();
+    }
+  );
+
+  test.each([
+    'channel unavailable',
+    'Aborting engine: Grace period complete',
+    'Durable Object reset because its code was updated',
+  ])('propagates notification error: %s', async (message) => {
+    emit.mockReset();
+    const { scopedDb, updateStatus } = makeScopedDb('processing');
+    const notificationError = new Error(message);
+    emit.mockRejectedValueOnce(notificationError);
+
+    await expect(
+      makeWorkflow().invokeOnFailure({
+        event: makeEvent('seq_1'),
+        error: 'boom',
+        scopedDb,
+      })
+    ).rejects.toBe(notificationError);
+    expect(updateStatus).toHaveBeenCalledWith('failed', 'boom');
   });
 });
 

@@ -5,7 +5,11 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { getGenerationChannel } from '@/platform/realtime';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { WorkflowValidationError } from '@/platform/server/workflow/errors';
+import { runFailureActions } from '@/platform/server/workflow/failure-actions';
+import {
+  isEngineAbortError,
+  WorkflowValidationError,
+} from '@/platform/server/workflow/errors';
 import {
   queuedBeforeCast,
   queuedBeforeLooks,
@@ -365,6 +369,22 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     await recordDuration('script');
   }
 
+  private async releaseFailureReservation(
+    scopedDb: WorkflowScopedDb,
+    reservationId: string | undefined
+  ): Promise<void> {
+    if (!reservationId) return;
+    try {
+      await scopedDb.billing.zeroReservation(reservationId);
+    } catch (releaseError) {
+      if (isEngineAbortError(releaseError)) throw releaseError;
+      logger.error(
+        `[AnalyzeScriptWorkflow:cf] Failed to zero reservation ${reservationId}:`,
+        { err: releaseError }
+      );
+    }
+  }
+
   protected override async onFailure({
     event,
     error,
@@ -375,52 +395,30 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     scopedDb: WorkflowScopedDb;
   }): Promise<void> {
     const { sequenceId, reservationId } = event.payload;
-    if (reservationId) {
-      try {
-        await scopedDb.billing.zeroReservation(reservationId);
-      } catch (releaseError) {
-        logger.error(
-          `[AnalyzeScriptWorkflow:cf] Failed to zero reservation ${reservationId}:`,
-          { err: releaseError }
-        );
-      }
-    }
-    if (!sequenceId) return;
-
     const sanitized = sanitizeFailResponse(error);
-    logger.error('[AnalyzeScriptWorkflow:cf] Failure:', {
-      sanitized,
-    });
+    let userMessage = llmAuthFailureMessage(sanitized);
+    if (sequenceId)
+      logger.error('[AnalyzeScriptWorkflow:cf] Failure:', { sanitized });
 
-    const fallbackMessage = llmAuthFailureMessage(sanitized);
-    let userMessage = fallbackMessage;
-    try {
-      userMessage =
-        (await handleLlmAuthFailure(scopedDb, sanitized)) ?? fallbackMessage;
-    } catch (authError) {
-      logger.error(
-        `[AnalyzeScriptWorkflow:cf] Failed to classify the LLM auth failure for sequence ${sequenceId}:`,
-        { err: authError }
-      );
-    }
-
-    try {
-      await scopedDb.sequence(sequenceId).updateStatus('failed', userMessage);
-    } catch (statusError) {
-      logger.error(
-        `[AnalyzeScriptWorkflow:cf] Failed to persist failure status for sequence ${sequenceId}:`,
-        { err: statusError }
-      );
-    }
-    try {
-      await getGenerationChannel(sequenceId).emit('generation.failed', {
-        message: userMessage,
-      });
-    } catch (emitError) {
-      logger.error(
-        `[AnalyzeScriptWorkflow:cf] Failed to emit failure event for sequence ${sequenceId}:`,
-        { err: emitError }
-      );
-    }
+    await runFailureActions([
+      () => this.releaseFailureReservation(scopedDb, reservationId),
+      async () => {
+        if (!sequenceId) return;
+        userMessage =
+          (await handleLlmAuthFailure(scopedDb, sanitized)) ?? userMessage;
+      },
+      async () => {
+        if (sequenceId)
+          await scopedDb
+            .sequence(sequenceId)
+            .updateStatus('failed', userMessage);
+      },
+      async () => {
+        if (!sequenceId) return;
+        await getGenerationChannel(sequenceId).emit('generation.failed', {
+          message: userMessage,
+        });
+      },
+    ]);
   }
 }

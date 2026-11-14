@@ -162,7 +162,11 @@ describe('RecastLocationWorkflow', () => {
     });
   });
 
-  it('does not let a failed notification throw from the failure hook', async () => {
+  it.each([
+    'channel unavailable',
+    'Aborting engine: Grace period complete',
+    'Durable Object reset because its code was updated',
+  ])('propagates notification error: %s', async (message) => {
     const event = asStub<WorkflowEvent<RecastLocationWorkflowInput>>({
       instanceId: 'recast-parent-1',
       payload: asStub<RecastLocationWorkflowInput>({
@@ -171,7 +175,8 @@ describe('RecastLocationWorkflow', () => {
         locationName: 'Rooftop',
       }),
     });
-    emit.mockRejectedValueOnce(new Error('channel unavailable'));
+    const notificationError = new Error(message);
+    emit.mockRejectedValueOnce(notificationError);
 
     await expect(
       new Probe(asStub(undefined), asStub({})).failBody(
@@ -179,6 +184,6 @@ describe('RecastLocationWorkflow', () => {
         'child unavailable',
         asStub<WorkflowScopedDb>({})
       )
-    ).resolves.toBeUndefined();
+    ).rejects.toBe(notificationError);
   });
 });

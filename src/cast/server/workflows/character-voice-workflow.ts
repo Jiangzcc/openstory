@@ -44,6 +44,7 @@ import {
 } from '@/platform/server/storage/buckets';
 import { uploadFile } from '#storage';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
+import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import type {
   CharacterVoiceWorkflowInput,
   CharacterVoiceWorkflowResult,
@@ -502,30 +503,21 @@ export class CharacterVoiceWorkflow extends OpenStoryWorkflowEntrypoint<Characte
     logger.error(
       `[CharacterVoiceWorkflow:cf] Voice design failed for ${characterDbId}: ${error}`
     );
-    if (targetVersionId) {
-      try {
-        await scopedDb.characters.markVoiceClaimTerminal(
-          targetVersionId,
-          'failed',
-          error
-        );
-      } catch (cleanupError) {
-        logger.error(
-          `[CharacterVoiceWorkflow:cf] Failed to clear voice claim for character ${characterDbId}:`,
-          { err: cleanupError }
-        );
-      }
-    }
-    try {
-      await getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
-        'generation.character-voice:progress',
-        { characterId: characterDbId, status: 'failed', error }
-      );
-    } catch (emitError) {
-      logger.error(
-        `[CharacterVoiceWorkflow:cf] Failed to emit failure event for character ${characterDbId}:`,
-        { err: emitError }
-      );
-    }
+    await runFailureActions([
+      async () => {
+        if (targetVersionId) {
+          await scopedDb.characters.markVoiceClaimTerminal(
+            targetVersionId,
+            'failed',
+            error
+          );
+        }
+      },
+      () =>
+        getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
+          'generation.character-voice:progress',
+          { characterId: characterDbId, status: 'failed', error }
+        ),
+    ]);
   }
 }

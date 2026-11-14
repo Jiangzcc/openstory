@@ -40,6 +40,8 @@ import { getGenerationChannel } from '@/platform/realtime';
 import { computeVideoManifestInputHash } from '@/shots/input-hash';
 import { ensureExternallyFetchableUrl } from '@/platform/server/storage/external-url';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
+import { runFailureActions } from '@/platform/server/workflow/failure-actions';
+import { isEngineAbortError } from '@/platform/server/workflow/errors';
 import type { OpenStoryFailureContext } from '@/platform/server/workflow/base-workflow';
 import type { LipsyncWorkflowInput } from '@/platform/server/workflow/types';
 import { fal } from '@fal-ai/client';
@@ -77,71 +79,79 @@ function providerVideoUrl(data: unknown): string | null {
   return typeof video.url === 'string' ? video.url : null;
 }
 
+async function clearLipsyncPromotion(
+  scopedDb: WorkflowScopedDb,
+  renderSegmentId: string,
+  workflowRunId: string
+): Promise<void> {
+  const segment =
+    await scopedDb.liveRead.renderSegments.getById(renderSegmentId);
+  if (!segment?.pendingPromoteVersionId) return;
+  const pending = await scopedDb.claims.videoVariants.getById(
+    segment.pendingPromoteVersionId
+  );
+  if (pending?.workflowRunId === workflowRunId) {
+    await scopedDb.renderSegments.clearPendingPromoteVersionIdIf(
+      renderSegmentId,
+      pending.id
+    );
+  }
+}
+
 async function persistLipsyncFailure(opts: {
   scopedDb: WorkflowScopedDb;
-  sequenceId: string;
   shotId: string;
   videoModel: string | undefined;
   error: string;
   workflowRunId: string;
 }): Promise<void> {
-  const { scopedDb, sequenceId, shotId, error, workflowRunId } = opts;
-  try {
-    const shot = await scopedDb.liveRead.shots.getById(shotId);
-    if (shot?.renderSegmentId) {
-      const segment = await scopedDb.liveRead.renderSegments.getById(
-        shot.renderSegmentId
-      );
-      if (segment?.pendingPromoteVersionId) {
-        const pending = await scopedDb.claims.videoVariants.getById(
-          segment.pendingPromoteVersionId
-        );
-        if (pending?.workflowRunId === workflowRunId) {
-          await scopedDb.renderSegments.clearPendingPromoteVersionIdIf(
-            shot.renderSegmentId,
-            pending.id
-          );
-        }
-      }
-    }
-    const marked = await scopedDb.videoVariants.markFailedByWorkflowRun(
-      workflowRunId,
-      error
-    );
-    if (
-      marked === 0 &&
-      shot?.renderSegmentId &&
-      isValidImageToVideoModel(opts.videoModel)
-    ) {
-      await scopedDb.videoVariants.appendVersion({
-        renderSegmentId: shot.renderSegmentId,
-        sequenceId: shot.sequenceId,
-        model: opts.videoModel,
-        source: 'lipsync',
-        manifest: [],
-        status: 'failed',
-        error,
-        workflowRunId,
-        isPrimary: true,
-      });
-    }
-  } catch (cleanupError) {
-    logger.error(
-      `[LipsyncWorkflow] Failed to persist failure state for sequence ${sequenceId} shot ${shotId}:`,
-      { err: cleanupError }
-    );
+  const { scopedDb, shotId, error, workflowRunId } = opts;
+  const shot = await scopedDb.liveRead.shots.getById(shotId);
+  if (shot?.renderSegmentId) {
+    await clearLipsyncPromotion(scopedDb, shot.renderSegmentId, workflowRunId);
   }
-  try {
-    await getGenerationChannel(sequenceId).emit('generation.video:progress', {
-      shotId,
+  const marked = await scopedDb.videoVariants.markFailedByWorkflowRun(
+    workflowRunId,
+    error
+  );
+  if (
+    marked === 0 &&
+    shot?.renderSegmentId &&
+    isValidImageToVideoModel(opts.videoModel)
+  ) {
+    await scopedDb.videoVariants.appendVersion({
+      renderSegmentId: shot.renderSegmentId,
+      sequenceId: shot.sequenceId,
+      model: opts.videoModel,
+      source: 'lipsync',
+      manifest: [],
       status: 'failed',
-      ...(isValidImageToVideoModel(opts.videoModel)
-        ? { model: opts.videoModel }
-        : {}),
       error,
+      workflowRunId,
+      isPrimary: true,
     });
+  }
+}
+
+async function emitLipsyncFailure(
+  input: LipsyncWorkflowInput,
+  error: string
+): Promise<void> {
+  try {
+    await getGenerationChannel(input.sequenceId).emit(
+      'generation.video:progress',
+      {
+        shotId: input.shotId,
+        status: 'failed',
+        ...(isValidImageToVideoModel(input.videoModel)
+          ? { model: input.videoModel }
+          : {}),
+        error,
+      }
+    );
   } catch (emitError) {
-    logger.error('[LipsyncWorkflow] failed to emit failure', {
+    if (isEngineAbortError(emitError)) throw emitError;
+    logger.error('[LipsyncWorkflow] Failed to emit failure', {
       err: emitError,
     });
   }
@@ -153,14 +163,19 @@ export class LipsyncWorkflow extends OpenStoryWorkflowEntrypoint<LipsyncWorkflow
   protected override async onFailure(
     failure: OpenStoryFailureContext<LipsyncWorkflowInput>
   ): Promise<void> {
-    await persistLipsyncFailure({
-      scopedDb: failure.scopedDb,
-      sequenceId: failure.event.payload.sequenceId,
-      shotId: failure.event.payload.shotId,
-      videoModel: failure.event.payload.videoModel,
-      error: failure.error,
-      workflowRunId: failure.event.instanceId,
-    });
+    const { event, error, scopedDb } = failure;
+    const input = event.payload;
+    await runFailureActions([
+      () =>
+        persistLipsyncFailure({
+          scopedDb,
+          shotId: input.shotId,
+          videoModel: input.videoModel,
+          error,
+          workflowRunId: event.instanceId,
+        }),
+      () => emitLipsyncFailure(input, error),
+    ]);
   }
 
   protected override async runImpl(

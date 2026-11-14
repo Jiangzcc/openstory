@@ -46,20 +46,75 @@ describe('ShotVariantWorkflow failure notification', () => {
   });
 
   it('still emits failure when marking the run failed cannot be written', async () => {
+    const persistenceError = new Error('database down');
     const markFailedByWorkflowRun = vi.fn(async () => {
-      throw new Error('database down');
+      throw persistenceError;
     });
     const scopedDb = asStub<WorkflowScopedDb>({
       frameVariants: { markFailedByWorkflowRun },
     });
 
-    await expect(
-      makeWorkflow().failBody(makeEvent(), scopedDb)
-    ).resolves.toBeUndefined();
+    await expect(makeWorkflow().failBody(makeEvent(), scopedDb)).rejects.toBe(
+      persistenceError
+    );
 
     expect(emit).toHaveBeenCalledWith(
       'generation.variant-image:progress',
       expect.objectContaining({ shotId: 'shot-1', status: 'failed' })
+    );
+  });
+  it.each([
+    'Aborting engine: Grace period complete',
+    'Durable Object reset because its code was updated',
+  ])('stops cleanup on engine abort: %s', async (message) => {
+    const abort = new Error(message);
+    const markFailedByWorkflowRun = vi.fn(async () => {
+      throw abort;
+    });
+    const scopedDb = asStub<WorkflowScopedDb>({
+      frameVariants: { markFailedByWorkflowRun },
+    });
+
+    await expect(makeWorkflow().failBody(makeEvent(), scopedDb)).rejects.toBe(
+      abort
+    );
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'Aborting engine: Grace period complete',
+    'Durable Object reset because its code was updated',
+  ])('propagates notification engine abort: %s', async (message) => {
+    const notificationError = new Error(message);
+    const markFailedByWorkflowRun = vi.fn(async () => 1);
+    const scopedDb = asStub<WorkflowScopedDb>({
+      frameVariants: { markFailedByWorkflowRun },
+    });
+    emit.mockRejectedValueOnce(notificationError);
+
+    await expect(makeWorkflow().failBody(makeEvent(), scopedDb)).rejects.toBe(
+      notificationError
+    );
+    expect(markFailedByWorkflowRun).toHaveBeenCalledExactlyOnceWith(
+      'run-1',
+      'boom'
+    );
+  });
+
+  it('keeps ordinary notification errors best effort', async () => {
+    const notificationError = new Error('channel unavailable');
+    const markFailedByWorkflowRun = vi.fn(async () => 1);
+    const scopedDb = asStub<WorkflowScopedDb>({
+      frameVariants: { markFailedByWorkflowRun },
+    });
+    emit.mockRejectedValueOnce(notificationError);
+
+    await expect(
+      makeWorkflow().failBody(makeEvent(), scopedDb)
+    ).resolves.toBeUndefined();
+    expect(markFailedByWorkflowRun).toHaveBeenCalledExactlyOnceWith(
+      'run-1',
+      'boom'
     );
   });
 });

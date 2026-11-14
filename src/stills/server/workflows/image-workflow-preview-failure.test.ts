@@ -56,8 +56,10 @@ describe('ImageWorkflow onFailure skipStorage', () => {
         workflowName: 'image',
         timestamp: new Date(0),
       },
-      // skipStorage path does not touch db
-      asStub<WorkflowScopedDb>({})
+      // Mock the preview row's terminal write.
+      asStub<WorkflowScopedDb>({
+        frameVariants: { markFailedByWorkflowRun: vi.fn(async () => 0) },
+      })
     );
     expect(emit).toHaveBeenCalledWith('generation.image:progress', {
       shotId: 'shot_1',

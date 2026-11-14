@@ -20,8 +20,10 @@ import type { SheetPayload } from './sheet-snapshots';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { contentRejectionSummary } from '@/models/content-rejection';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
+import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import {
   isChildFailureError,
+  isEngineAbortError,
   WorkflowValidationError,
 } from '@/platform/server/workflow/errors';
 import type {
@@ -49,20 +51,29 @@ async function emitCharacterSheetFailure(
   lookId: string,
   error: string
 ): Promise<void> {
+  await getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
+    'generation.character-sheet:progress',
+    {
+      characterId: characterDbId,
+      lookId,
+      status: 'failed',
+      error,
+    }
+  );
+}
+
+async function runParentFailureActions(
+  step: WorkflowStep,
+  stepName: string,
+  actions: ReadonlyArray<() => Promise<unknown>>
+): Promise<void> {
   try {
-    await getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
-      'generation.character-sheet:progress',
-      {
-        characterId: characterDbId,
-        lookId,
-        status: 'failed',
-        error,
-      }
-    );
-  } catch (emitError) {
+    await step.do(stepName, () => runFailureActions(actions));
+  } catch (cleanupError) {
+    if (isEngineAbortError(cleanupError)) throw cleanupError;
     logger.error(
-      `[CharacterBibleWorkflow:cf] Failed to emit failure event for character ${characterDbId}:`,
-      { err: emitError }
+      '[CharacterBibleWorkflow:cf] Failure actions {stepName} exhausted retries',
+      { stepName, err: cleanupError }
     );
   }
 }
@@ -285,28 +296,27 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
           childResult,
         };
       } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
+        if (isEngineAbortError(error)) throw error;
         if (sheetClaim === null || sheetClaim.held) {
-          try {
-            await scopedDb.characterLooks.failSheetClaim(
-              unclaimedFields.lookId,
-              sheetClaim?.versionId ?? null,
-              reason
-            );
-          } catch (cleanupError) {
-            logger.error(
-              `[CharacterBibleWorkflow:cf] Failed to clear sheet claim for character ${characterDbId}:`,
-              { err: cleanupError }
-            );
-          }
-          if (!isChildFailureError(error)) {
-            await emitCharacterSheetFailure(
-              sheetSequenceId,
-              characterDbId,
-              unclaimedFields.lookId,
-              reason
-            );
-          }
+          const reason = error instanceof Error ? error.message : String(error);
+          await runParentFailureActions(step, `fail-character-sheet-${index}`, [
+            () =>
+              scopedDb.characterLooks.failSheetClaim(
+                unclaimedFields.lookId,
+                sheetClaim?.versionId ?? null,
+                reason
+              ),
+            async () => {
+              if (!isChildFailureError(error)) {
+                await emitCharacterSheetFailure(
+                  sheetSequenceId,
+                  characterDbId,
+                  unclaimedFields.lookId,
+                  reason
+                );
+              }
+            },
+          ]);
         }
         throw error;
       }
@@ -388,6 +398,7 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
             voiceByCharacterId.set(row.characterId, result.voiceId);
           }
         } catch (err) {
+          if (isEngineAbortError(err)) throw err;
           logger.error(
             `[CharacterBibleWorkflow:cf] Child character-voice failed for ${character.name}:`,
             { err }
@@ -395,22 +406,33 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
           // Spawn never started → child onFailure will not run. Fail the
           // husk so the unique live claim does not block Generate.
           if (huskId && !isChildFailureError(err)) {
-            await scopedDb.characters.markVoiceClaimTerminal(
-              huskId,
-              'failed',
-              err instanceof Error ? err.message : String(err)
+            const failedVersionId = huskId;
+            await runParentFailureActions(
+              step,
+              `fail-character-voice-${row.characterId}`,
+              [
+                () =>
+                  scopedDb.characters.markVoiceClaimTerminal(
+                    failedVersionId,
+                    'failed',
+                    err instanceof Error ? err.message : String(err)
+                  ),
+              ]
             );
           }
         }
       });
 
-    const settled = await Promise.allSettled(spawnPromises);
-    await Promise.all(voicePromises);
+    const [settled] = await Promise.all([
+      Promise.allSettled(spawnPromises),
+      Promise.all(voicePromises),
+    ]);
 
     const seqCharacters: CharacterMinimal[] = [];
     const failures: { name: string; reason: string }[] = [];
     for (const [index, outcome] of settled.entries()) {
       if (outcome.status === 'rejected') {
+        if (isEngineAbortError(outcome.reason)) throw outcome.reason;
         // Keep the sibling sheets and let the parent stay at Casting so the
         // user can retry the misses (#1727). The child's `onFailure` already
         // wrote `failed` on the row and emitted the realtime event.

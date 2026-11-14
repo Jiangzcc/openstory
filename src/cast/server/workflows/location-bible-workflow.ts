@@ -20,8 +20,10 @@ import { computeLocationSheetHashFromDto } from './sheet-snapshots';
 import type { SheetPayload } from './sheet-snapshots';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
+import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import {
   isChildFailureError,
+  isEngineAbortError,
   WorkflowValidationError,
 } from '@/platform/server/workflow/errors';
 import type {
@@ -43,18 +45,28 @@ async function emitLocationSheetFailure(
   locationDbId: string,
   error: string
 ): Promise<void> {
-  try {
-    await getGenerationChannel(
-      locationChannelId(sequenceId, locationDbId)
-    ).emit('generation.location-sheet:progress', {
+  await getGenerationChannel(locationChannelId(sequenceId, locationDbId)).emit(
+    'generation.location-sheet:progress',
+    {
       locationId: locationDbId,
       status: 'failed',
       error,
-    });
-  } catch (emitError) {
+    }
+  );
+}
+
+async function runParentFailureActions(
+  step: WorkflowStep,
+  stepName: string,
+  actions: ReadonlyArray<() => Promise<unknown>>
+): Promise<void> {
+  try {
+    await step.do(stepName, () => runFailureActions(actions));
+  } catch (cleanupError) {
+    if (isEngineAbortError(cleanupError)) throw cleanupError;
     logger.error(
-      `[LocationBibleWorkflow:cf] Failed to emit failure event for location ${locationDbId}:`,
-      { err: emitError }
+      '[LocationBibleWorkflow:cf] Failure actions {stepName} exhausted retries',
+      { stepName, err: cleanupError }
     );
   }
 }
@@ -251,21 +263,31 @@ export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationB
             timeout: '30 minutes',
           });
         } catch (error) {
-          // The child's onFailure does not run when the spawn never starts,
-          // or the await times out while the child is still queued.
-          // createBulk already left the row `generating`, and a taken claim
-          // keeps the generation plan waiting.
+          if (isEngineAbortError(error)) throw error;
           if (claimed === null || claimed.held) {
             const reason =
               error instanceof Error ? error.message : String(error);
-            await scopedDb.locations.failReferenceClaim(
-              locationDbId,
-              claimed?.versionId ?? null,
-              reason
+            await runParentFailureActions(
+              step,
+              `fail-location-sheet-${index}`,
+              [
+                () =>
+                  scopedDb.locations.failReferenceClaim(
+                    locationDbId,
+                    claimed?.versionId ?? null,
+                    reason
+                  ),
+                async () => {
+                  if (!isChildFailureError(error)) {
+                    await emitLocationSheetFailure(
+                      sequenceId,
+                      locationDbId,
+                      reason
+                    );
+                  }
+                },
+              ]
             );
-            if (!isChildFailureError(error)) {
-              await emitLocationSheetFailure(sequenceId, locationDbId, reason);
-            }
           }
           throw error;
         }
@@ -319,6 +341,7 @@ export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationB
         }
 
         const rejectionReason = outcome?.reason;
+        if (isEngineAbortError(rejectionReason)) throw rejectionReason;
         const reason =
           rejectionReason instanceof Error
             ? rejectionReason.message

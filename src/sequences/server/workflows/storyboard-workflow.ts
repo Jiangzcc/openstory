@@ -30,6 +30,7 @@ import { generateId } from '@/platform/id';
 import { validateSequenceAuth } from '@/platform/server/workflow/auth';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
+import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import {
   isEngineAbortError,
   WorkflowLoggedError,
@@ -410,6 +411,22 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
     }
   }
 
+  private async releaseFailureReservation(
+    scopedDb: WorkflowScopedDb,
+    reservationId: string | undefined
+  ): Promise<void> {
+    if (!reservationId) return;
+    try {
+      await scopedDb.billing.zeroReservation(reservationId);
+    } catch (releaseError) {
+      if (isEngineAbortError(releaseError)) throw releaseError;
+      logger.error(
+        `[StoryboardWorkflow:cf] Failed to zero reservation ${reservationId}:`,
+        { err: releaseError }
+      );
+    }
+  }
+
   protected override async onFailure({
     event,
     error,
@@ -422,65 +439,28 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
     logger.error(
       `[StoryboardWorkflow:cf] Storyboard generation failed: ${error}`
     );
-
-    // Mark the sequence failed so the user sees the failure summary + retry
-    // UI instead of an eternal 'processing' spinner. A log-only handler here
-    // left ~20 sequences stranded when await-analyze-script timed out on
-    // 2026-06-06 (issue #839).
-    //
-    // Skip the write when the analyze-script child already marked the
-    // sequence failed — its message ("Your OpenRouter API key is invalid…")
-    // is the one written for the user; the parent only has what came back
-    // through the await.
     const { sequenceId, reservationId } = event.payload;
-    if (reservationId) {
-      try {
-        await scopedDb.billing.zeroReservation(reservationId);
-      } catch (releaseError) {
-        logger.error(
-          `[StoryboardWorkflow:cf] Failed to zero reservation ${reservationId}:`,
-          { err: releaseError }
-        );
-      }
-    }
-    if (!sequenceId) return;
-
-    let currentStatus: string | null = null;
-    try {
-      currentStatus = (
-        await scopedDb.liveRead.sequences.getForUser({
+    let shouldNotify = Boolean(sequenceId);
+    await runFailureActions([
+      () => this.releaseFailureReservation(scopedDb, reservationId),
+      async () => {
+        if (!sequenceId) return;
+        const sequence = await scopedDb.liveRead.sequences.getForUser({
           sequenceId,
-        })
-      ).status;
-    } catch (readError) {
-      logger.error(
-        `[StoryboardWorkflow:cf] Failed to read current status for sequence ${sequenceId}:`,
-        { err: readError }
-      );
-    }
-    // Trailing steps (email-ready) run AFTER mark-completed. A send failure
-    // must not un-complete a successful generation.
-    if (currentStatus === 'failed' || currentStatus === 'completed') {
-      return;
-    }
-
-    try {
-      await scopedDb.sequence(sequenceId).updateStatus('failed', error);
-    } catch (statusError) {
-      logger.error(
-        `[StoryboardWorkflow:cf] Failed to persist failure status for sequence ${sequenceId}:`,
-        { err: statusError }
-      );
-    }
-    try {
-      await getGenerationChannel(sequenceId).emit('generation.failed', {
-        message: error,
-      });
-    } catch (emitError) {
-      logger.error(
-        `[StoryboardWorkflow:cf] Failed to emit failure event for sequence ${sequenceId}:`,
-        { err: emitError }
-      );
-    }
+        });
+        // Preserve a child's failure message and a completed generation.
+        if (sequence.status === 'failed' || sequence.status === 'completed') {
+          shouldNotify = false;
+          return;
+        }
+        await scopedDb.sequence(sequenceId).updateStatus('failed', error);
+      },
+      async () => {
+        if (!sequenceId || !shouldNotify) return;
+        await getGenerationChannel(sequenceId).emit('generation.failed', {
+          message: error,
+        });
+      },
+    ]);
   }
 }

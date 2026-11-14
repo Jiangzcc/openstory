@@ -47,20 +47,85 @@ describe('MusicWorkflow failure notification', () => {
   });
 
   it('still emits failure when music claim cleanup cannot be written', async () => {
+    const persistenceError = new Error('database down');
     const failMusicClaim = vi.fn(async () => {
-      throw new Error('database down');
+      throw persistenceError;
     });
     const scopedDb = asStub<WorkflowScopedDb>({
       sequenceVariants: { failMusicClaim },
     });
 
-    await expect(
-      makeWorkflow().failBody(makeEvent(), scopedDb)
-    ).resolves.toBeUndefined();
+    await expect(makeWorkflow().failBody(makeEvent(), scopedDb)).rejects.toBe(
+      persistenceError
+    );
 
     expect(emit).toHaveBeenCalledWith(
       'generation.audio:progress',
       expect.objectContaining({ status: 'failed', primary: true })
     );
+  });
+  it.each([
+    'Aborting engine: Grace period complete',
+    'Durable Object reset because its code was updated',
+  ])('stops cleanup on engine abort: %s', async (message) => {
+    const abort = new Error(message);
+    const failMusicClaim = vi.fn(async () => {
+      throw abort;
+    });
+    const scopedDb = asStub<WorkflowScopedDb>({
+      sequenceVariants: { failMusicClaim },
+    });
+
+    await expect(makeWorkflow().failBody(makeEvent(), scopedDb)).rejects.toBe(
+      abort
+    );
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'Aborting engine: Grace period complete',
+    'Durable Object reset because its code was updated',
+  ])('propagates notification engine abort: %s', async (message) => {
+    const notificationError = new Error(message);
+    const failMusicClaim = vi.fn(async () => undefined);
+    const scopedDb = asStub<WorkflowScopedDb>({
+      sequenceVariants: { failMusicClaim },
+    });
+    emit.mockRejectedValueOnce(notificationError);
+
+    await expect(makeWorkflow().failBody(makeEvent(), scopedDb)).rejects.toBe(
+      notificationError
+    );
+    expect(failMusicClaim).toHaveBeenCalledOnce();
+  });
+
+  it('keeps ordinary notification errors best effort', async () => {
+    const notificationError = new Error('channel unavailable');
+    const failMusicClaim = vi.fn(async () => undefined);
+    const scopedDb = asStub<WorkflowScopedDb>({
+      sequenceVariants: { failMusicClaim },
+    });
+    emit.mockRejectedValueOnce(notificationError);
+
+    await expect(
+      makeWorkflow().failBody(makeEvent(), scopedDb)
+    ).resolves.toBeUndefined();
+    expect(failMusicClaim).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the cleanup error when notification also fails', async () => {
+    const persistenceError = new Error('database down');
+    const failMusicClaim = vi.fn(async () => {
+      throw persistenceError;
+    });
+    const scopedDb = asStub<WorkflowScopedDb>({
+      sequenceVariants: { failMusicClaim },
+    });
+    emit.mockRejectedValueOnce(new Error('channel unavailable'));
+
+    await expect(makeWorkflow().failBody(makeEvent(), scopedDb)).rejects.toBe(
+      persistenceError
+    );
+    expect(emit).toHaveBeenCalledOnce();
   });
 });

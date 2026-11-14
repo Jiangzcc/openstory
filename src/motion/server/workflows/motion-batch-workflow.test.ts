@@ -316,4 +316,27 @@ describe('MotionBatchWorkflow', () => {
     expect(spawnAndAwaitChild).toHaveBeenCalledTimes(2);
     expect(zeroReservation).toHaveBeenCalledWith('reservation-1');
   });
+  it('propagates blocked-dialogue persistence errors for the durable step to retry', async () => {
+    const failure = new Error('D1 unavailable');
+    missingDialogueAudioShotIds.mockReturnValueOnce(['shot-1']);
+    persistMotionFailure.mockRejectedValueOnce(failure);
+    const inputEvent = asStub<WorkflowEvent<BatchMotionMusicWorkflowInput>>({
+      instanceId: 'motion-batch-dialogue-1',
+      payload: makeInput(),
+    });
+    const scopedDb = asStub<WorkflowScopedDb>({
+      models: {},
+      liveRead: {
+        shots: {
+          getById: vi.fn(async () => ({ renderSegmentId: 'segment-1' })),
+        },
+      },
+    });
+    const workflow = new Probe(asStub(undefined), asStub({}));
+    await expect(
+      workflow.runBody(inputEvent, makeStep(), scopedDb)
+    ).rejects.toBe(failure);
+    expect(persistMotionFailure).toHaveBeenCalledOnce();
+    expect(spawnAndAwaitChild).not.toHaveBeenCalled();
+  });
 });

@@ -17,7 +17,11 @@ import {
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { getGenerationChannel } from '@/platform/realtime';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { WorkflowValidationError } from '@/platform/server/workflow/errors';
+import { runFailureActions } from '@/platform/server/workflow/failure-actions';
+import {
+  isEngineAbortError,
+  WorkflowValidationError,
+} from '@/platform/server/workflow/errors';
 import type {
   MusicWorkflowInput,
   MusicWorkflowResult,
@@ -26,6 +30,26 @@ import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { getLogger } from '@/platform/logger';
 
 const logger = getLogger(['openstory', 'workflow', 'music']);
+
+async function emitMusicFailure(
+  sequenceId: string,
+  model: NonNullable<MusicWorkflowInput['model']>,
+  primary: boolean
+): Promise<void> {
+  try {
+    await getGenerationChannel(sequenceId).emit('generation.audio:progress', {
+      status: 'failed',
+      model,
+      primary,
+    });
+  } catch (emitError) {
+    if (isEngineAbortError(emitError)) throw emitError;
+    logger.error(
+      '[MusicWorkflow:cf] Failed to emit failure for sequence {sequenceId}',
+      { sequenceId, err: emitError }
+    );
+  }
+}
 
 export class MusicWorkflow extends OpenStoryWorkflowEntrypoint<MusicWorkflowInput> {
   protected override readonly failureLabel = 'Music generation';
@@ -291,39 +315,20 @@ export class MusicWorkflow extends OpenStoryWorkflowEntrypoint<MusicWorkflowInpu
     const model = input.model || DEFAULT_MUSIC_MODEL;
     const isPrimary = input.isPrimary ?? true;
     if (input.sequenceId) {
-      // Fail this run's row (the trigger's, or the one it opened) and clear
-      // the claim only while it still names it (#1130 rule 5). A primary run
-      // that died before any row existed records the failure as one.
-      try {
-        await scopedDb.sequenceVariants.failMusicClaim(
-          {
-            sequenceId: input.sequenceId,
-            variantId: input.variantId,
-            workflowRunId: event.instanceId,
-            recordIfMissing: isPrimary ? { model } : undefined,
-          },
-          error
-        );
-      } catch (cleanupError) {
-        logger.error(
-          `[MusicWorkflow:cf] Failed to clear music failure claim for sequence ${input.sequenceId}:`,
-          { err: cleanupError }
-        );
-      }
-
-      try {
-        await getGenerationChannel(input.sequenceId).emit(
-          'generation.audio:progress',
-          { status: 'failed', model, primary: isPrimary }
-        );
-      } catch (emitError) {
-        logger.error(
-          `[MusicWorkflow:cf] Failed to emit failure event for sequence ${input.sequenceId}:`,
-          {
-            err: emitError,
-          }
-        );
-      }
+      const sequenceId = input.sequenceId;
+      await runFailureActions([
+        () =>
+          scopedDb.sequenceVariants.failMusicClaim(
+            {
+              sequenceId,
+              variantId: input.variantId,
+              workflowRunId: event.instanceId,
+              recordIfMissing: isPrimary ? { model } : undefined,
+            },
+            error
+          ),
+        () => emitMusicFailure(sequenceId, model, isPrimary),
+      ]);
     }
     logger.error(
       `[MusicWorkflow:cf] Music generation failed for sequence ${input.sequenceId}: ${error}`

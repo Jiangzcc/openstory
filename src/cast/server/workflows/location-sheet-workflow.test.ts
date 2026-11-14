@@ -5,6 +5,11 @@ import type { LocationSheetWorkflowInput } from '@/platform/server/workflow/type
 import { asStub } from '@/test/as-stub';
 import { locationChannelId } from '@/cast/cast-channel';
 
+const ENGINE_ABORT_MESSAGES = [
+  'Aborting engine: Grace period complete',
+  'Durable Object reset because its code was updated',
+] as const;
+
 const mockFailReferenceClaim = vi.fn();
 const mockEmit = vi.fn();
 const mockGetGenerationChannel = vi.fn();
@@ -125,11 +130,46 @@ describe('LocationSheetWorkflow failure ownership', () => {
 
     await expect(
       makeWorkflow().failBody(makeEvent(), 'provider failed', makeScopedDb())
-    ).resolves.toBeUndefined();
+    ).rejects.toThrow('database down');
 
     expect(mockEmit).toHaveBeenCalledWith(
       'generation.location-sheet:progress',
       expect.objectContaining({ status: 'failed', error: 'provider failed' })
     );
+  });
+  it('rejects with the cleanup error when both failure actions fail', async () => {
+    const cleanupError = new Error('database down');
+    mockFailReferenceClaim.mockRejectedValueOnce(cleanupError);
+    mockEmit.mockRejectedValueOnce(new Error('realtime unavailable'));
+
+    await expect(
+      makeWorkflow().failBody(makeEvent(), 'provider failed', makeScopedDb())
+    ).rejects.toBe(cleanupError);
+    expect(mockEmit).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(ENGINE_ABORT_MESSAGES)(
+    'stops before notification when cleanup aborts: %s',
+    async (message) => {
+      const abort = new Error(message);
+      mockFailReferenceClaim.mockRejectedValueOnce(abort);
+
+      await expect(
+        makeWorkflow().failBody(makeEvent(), 'provider failed', makeScopedDb())
+      ).rejects.toBe(abort);
+      expect(mockGetGenerationChannel).not.toHaveBeenCalled();
+    }
+  );
+
+  it('propagates a notification abort over an earlier cleanup error', async () => {
+    const abort = new Error(ENGINE_ABORT_MESSAGES[0]);
+    mockFailReferenceClaim.mockRejectedValueOnce(new Error('database down'));
+    mockEmit.mockRejectedValueOnce(abort);
+
+    await expect(
+      makeWorkflow().failBody(makeEvent(), 'provider failed', makeScopedDb())
+    ).rejects.toBe(abort);
+    expect(mockFailReferenceClaim).toHaveBeenCalledTimes(1);
+    expect(mockEmit).toHaveBeenCalledTimes(1);
   });
 });

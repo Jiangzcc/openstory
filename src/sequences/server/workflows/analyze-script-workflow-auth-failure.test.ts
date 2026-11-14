@@ -68,7 +68,10 @@ function childFailure(error: unknown) {
 }
 
 describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', () => {
-  beforeEach(() => emit.mockClear());
+  beforeEach(() => {
+    emit.mockReset();
+    emit.mockResolvedValue(undefined);
+  });
 
   test('uses a child split credential rather than the parent analysis model', async () => {
     const {
@@ -132,15 +135,90 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
 
   test('still emits failure when sequence status persistence fails', async () => {
     const { scopedDb, updateStatus } = makeDb();
-    updateStatus.mockRejectedValueOnce(new Error('database down'));
+    const persistenceError = new Error('database down');
+    updateStatus.mockRejectedValueOnce(persistenceError);
     emit.mockClear();
 
-    await expect(
-      makeWorkflow().failed('boom', scopedDb)
-    ).resolves.toBeUndefined();
+    await expect(makeWorkflow().failed('boom', scopedDb)).rejects.toBe(
+      persistenceError
+    );
 
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
       message: 'boom',
     });
+  });
+  test('keeps reservation release best effort for ordinary errors', async () => {
+    const { scopedDb, zeroReservation, updateStatus } = makeDb();
+    zeroReservation.mockRejectedValueOnce(new Error('reservation unavailable'));
+
+    await expect(
+      makeWorkflow().failed('boom', scopedDb)
+    ).resolves.toBeUndefined();
+    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('failed', 'boom');
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      message: 'boom',
+    });
+  });
+
+  test('propagates key invalidation errors after persisting and emitting the fallback', async () => {
+    const { scopedDb, markKeyInvalid, updateStatus } = makeDb();
+    const authError = new Error('key invalidation unavailable');
+    markKeyInvalid.mockRejectedValueOnce(authError);
+    const failure = withLlmAuthFailureSource(new Error('401 Unauthorized'), {
+      model: 'google/gemini-3-flash-preview',
+      source: 'organization',
+      via: 'google',
+    });
+
+    await expect(
+      makeWorkflow().failed(childFailure(failure), scopedDb)
+    ).rejects.toBe(authError);
+    expect(updateStatus).toHaveBeenCalledExactlyOnceWith(
+      'failed',
+      '401 Unauthorized'
+    );
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      message: '401 Unauthorized',
+    });
+  });
+
+  test.each(['zeroReservation', 'markKeyInvalid', 'updateStatus'] as const)(
+    'stops later actions when %s aborts',
+    async (phase) => {
+      const db = makeDb();
+      const abort = new Error(
+        'Durable Object reset because its code was updated'
+      );
+      db[phase].mockRejectedValueOnce(abort);
+      const failure = withLlmAuthFailureSource(new Error('401 Unauthorized'), {
+        model: 'google/gemini-3-flash-preview',
+        source: 'organization',
+        via: 'google',
+      });
+
+      await expect(
+        makeWorkflow().failed(childFailure(failure), db.scopedDb)
+      ).rejects.toBe(abort);
+      if (phase === 'zeroReservation')
+        expect(db.markKeyInvalid).not.toHaveBeenCalled();
+      if (phase !== 'updateStatus')
+        expect(db.updateStatus).not.toHaveBeenCalled();
+      expect(emit).not.toHaveBeenCalled();
+    }
+  );
+
+  test.each([
+    'channel unavailable',
+    'Aborting engine: Grace period complete',
+    'Durable Object reset because its code was updated',
+  ])('propagates notification error: %s', async (message) => {
+    const { scopedDb, updateStatus } = makeDb();
+    const notificationError = new Error(message);
+    emit.mockRejectedValueOnce(notificationError);
+
+    await expect(makeWorkflow().failed('boom', scopedDb)).rejects.toBe(
+      notificationError
+    );
+    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('failed', 'boom');
   });
 });
