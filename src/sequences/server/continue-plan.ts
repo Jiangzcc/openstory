@@ -1,4 +1,3 @@
-import { WorkflowLaunchPendingError } from '@/platform/server/workflow/launch-pending';
 import { partitionPlanImageEstimate } from '@/billing/configured-image-plan-billing';
 import { computePlan } from '@/shots/server/update-stale-plan';
 import type { Locale } from '@/platform/i18n/locale';
@@ -38,11 +37,7 @@ import {
   switchStopAt,
   type PlanUnit,
 } from '@/sequences/generation-plan';
-import {
-  resolveStopAt,
-  sliderStopLabel,
-  type GenerationStage,
-} from '@/sequences/pipeline';
+import { sliderStopLabel, type GenerationStage } from '@/sequences/pipeline';
 
 type Flags = { generateStartFrames: boolean; generateVoices: boolean };
 
@@ -250,42 +245,6 @@ export async function prepareContinue(args: {
   });
   const prepared = await prepareContinueEstimate({ ...args, work });
   return { work, stopAt, ...prepared };
-}
-
-/**
- * Save a Continue's switches, run it, and put them back if it refuses (a run
- * already in flight, no style): the trigger snapshots them off the row, and a
- * rejected click must not leave its switches on a sequence nothing ran with.
- * Shared by the editor and MCP so both save the same four.
- */
-export async function withContinueSwitches<T>(
-  scopedDb: ScopedDb,
-  sequence: Sequence,
-  settings: {
-    generationStopAt: GenerationStage;
-    generateStartFrames: boolean;
-    generateVoices: boolean;
-    draftMotion: boolean;
-  },
-  run: () => Promise<T>
-): Promise<T> {
-  const before = {
-    generationStopAt: resolveStopAt({
-      generationStopAt: sequence.generationStopAt,
-    }),
-    generateStartFrames: sequence.generateStartFrames,
-    generateVoices: sequence.generateVoices,
-    draftMotion: sequence.draftMotion,
-  };
-  await scopedDb.sequences.update({ id: sequence.id, ...settings });
-  try {
-    return await run();
-  } catch (error) {
-    if (!(error instanceof WorkflowLaunchPendingError)) {
-      await scopedDb.sequences.update({ id: sequence.id, ...before });
-    }
-    throw error;
-  }
 }
 
 /** Whose keys waive Continue's balance check (script analysis + renders). */

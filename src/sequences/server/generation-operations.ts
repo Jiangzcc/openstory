@@ -52,11 +52,7 @@ import { UPDATE_STALE_DEPTHS } from '@/shots/update-stale-depth';
 import { GENERATION_STAGES } from '@/sequences/pipeline';
 import { productionAccess } from './production-access';
 import { computeGenerationPlan } from './generation-plan';
-import {
-  CONTINUE_CREDIT_PROVIDERS,
-  prepareContinue,
-  withContinueSwitches,
-} from './continue-plan';
+import { CONTINUE_CREDIT_PROVIDERS, prepareContinue } from './continue-plan';
 import {
   GenerationInProgressError,
   GenerationStatusUnknownError,
@@ -379,26 +375,20 @@ async function prepareGeneration(
     // The storyboard mutex is the launch-once guard here: a repeat while the
     // run is live is GENERATION_IN_PROGRESS, and after it PLAN_CHANGED.
     launch: async (_runKey, onLaunched) => {
-      const { workflowRunId } = await withContinueSwitches(
-        scopedDb,
+      const { workflowRunId } = await triggerContinue(scopedDb, {
+        promptLocale: actor.promptLocale,
+        userId: actor.userId,
+        organizationId: actor.organizationId,
         sequence,
-        {
+        plan,
+        settings: {
           generationStopAt: stopAt,
           generateStartFrames,
           generateVoices,
           draftMotion,
         },
-        () =>
-          triggerContinue(scopedDb, {
-            promptLocale: actor.promptLocale,
-            userId: actor.userId,
-            organizationId: actor.organizationId,
-            sequence,
-            plan,
-            stopAt,
-            modelConfiguration,
-          })
-      );
+        modelConfiguration,
+      });
       await onLaunched(workflowRunId);
     },
   };

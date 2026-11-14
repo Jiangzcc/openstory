@@ -47,7 +47,6 @@ import {
   CONTINUE_CREDIT_PROVIDERS,
   prepareContinueEstimate,
   prepareContinue,
-  withContinueSwitches,
 } from '@/sequences/server/continue-plan';
 import { switchStopAt } from '@/sequences/generation-plan';
 import type { StoryboardTriggerInput } from '@/platform/server/workflow/types';
@@ -226,8 +225,7 @@ export const continueGenerationFn = createServerFn({ method: 'POST' })
       generateStartFrames: data.generateStartFrames,
       generateVoices: data.generateVoices,
     };
-    // Refuses a running sequence before anything saves: the switches below
-    // are written onto the row the trigger snapshots.
+    // Check the work and estimate before checking the balance or launching.
     const { plan, stopAt, estimate, modelConfiguration } =
       await prepareContinue({
         promptLocale: context.promptLocale,
@@ -247,28 +245,21 @@ export const continueGenerationFn = createServerFn({ method: 'POST' })
       errorMessage: 'Insufficient credits to continue generation',
     });
 
-    // The trigger snapshots these off the row, so they save first.
-    return withContinueSwitches(
-      scopedDb,
+    return triggerContinue(scopedDb, {
+      promptLocale: context.promptLocale,
+      userId: context.user.id,
+      organizationId: context.organizationId,
       sequence,
-      {
+      plan,
+      settings: {
         generationStopAt: stopAt,
         generateStartFrames: requested.generateStartFrames,
         generateVoices: requested.generateVoices,
         draftMotion: data.draftMotion,
       },
-      async () =>
-        triggerContinue(context.scopedDb, {
-          promptLocale: context.promptLocale,
-          userId: context.user.id,
-          organizationId: context.organizationId,
-          sequence,
-          plan,
-          stopAt,
-          leftoverGrokShotIds: data.leftoverGrokShotIds,
-          modelConfiguration,
-        })
-    );
+      leftoverGrokShotIds: data.leftoverGrokShotIds,
+      modelConfiguration,
+    });
   });
 
 // There is no general update fn: a script, style, aspect ratio or analysis

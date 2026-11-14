@@ -3,13 +3,9 @@
  * units a click would run. The #1816 scenario table, from the server's side.
  */
 
-import { describe, expect, it, vi } from 'vitest';
-import { asStub } from '@/test/as-stub';
-import type { ScopedDb } from '@/platform/server/db/scoped';
-import type { Sequence } from '@/platform/server/db/schema';
-import { WorkflowLaunchPendingError } from '@/platform/server/workflow/launch-pending';
+import { describe, expect, it } from 'vitest';
 import type { PlanUnit } from '@/sequences/generation-plan';
-import { continueFromPlan, withContinueSwitches } from './continue-plan';
+import { continueFromPlan } from './continue-plan';
 
 const u = (
   kind: PlanUnit['kind'],
@@ -199,51 +195,4 @@ describe('continueFromPlan (#1817)', () => {
       decide([], 'references', { saved: OFF, requested: ON, next }).stopAt
     ).toBe('references');
   });
-});
-
-describe('Continue settings after durable startup acquisition', () => {
-  it.each([true, false])(
-    'retains switches only for a pending launch: %s',
-    async (pending) => {
-      const update = vi.fn().mockResolvedValue(undefined);
-      const scopedDb = asStub<ScopedDb>({ sequences: { update } });
-      const sequence = asStub<Sequence>({
-        id: 'synthetic-sequence',
-        generationStopAt: 'images',
-        generateStartFrames: true,
-        generateVoices: false,
-        draftMotion: false,
-      });
-      const switches = {
-        generationStopAt: 'motion' as const,
-        generateStartFrames: false,
-        generateVoices: false,
-        draftMotion: true,
-      };
-      const failure = pending
-        ? new WorkflowLaunchPendingError({
-            workflowRunId: 'local_storyboard_synthetic',
-            cause: new Error('Synthetic publication failed'),
-          })
-        : new Error('Synthetic preparation rejected');
-      await expect(
-        withContinueSwitches(scopedDb, sequence, switches, async () => {
-          throw failure;
-        })
-      ).rejects.toBe(failure);
-      expect(update).toHaveBeenNthCalledWith(1, {
-        id: sequence.id,
-        ...switches,
-      });
-      expect(update).toHaveBeenCalledTimes(pending ? 1 : 2);
-      if (!pending)
-        expect(update).toHaveBeenLastCalledWith({
-          id: sequence.id,
-          generationStopAt: 'images',
-          generateStartFrames: true,
-          generateVoices: false,
-          draftMotion: false,
-        });
-    }
-  );
 });

@@ -27,11 +27,7 @@ import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { Sequence } from '@/platform/server/db/schema';
 import { resolveSequenceStyleConfig } from '@/look/style-config';
 import { sequenceScenesUrl } from './notify-sequence-ready';
-import {
-  flagsFromStopAt,
-  resolveStopAt,
-  type GenerationStage,
-} from '@/sequences/pipeline';
+import { flagsFromStopAt, resolveStopAt } from '@/sequences/pipeline';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import {
   prepareWorkflowRun,
@@ -43,6 +39,7 @@ import type {
   StoryboardWorkflowInput,
 } from '@/platform/server/workflow/types';
 
+import type { ContinueSettings } from '@/sequences/continue-settings';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
 
@@ -302,7 +299,8 @@ async function resolveStoryboardPayload(
 export async function triggerStoryboard(
   scopedDb: ScopedDb,
   input: StoryboardTriggerInput,
-  modelConfiguration?: ModelRuntimeConfiguration
+  modelConfiguration?: ModelRuntimeConfiguration,
+  continueSettings?: ContinueSettings
 ): Promise<{ workflowRunId: string }> {
   const { sequenceId } = input;
   if (!sequenceId) {
@@ -311,7 +309,10 @@ export async function triggerStoryboard(
 
   // Mutex step 1: reject while the previous run is still in flight (or its
   // state can't be verified).
-  const sequence = await getSequenceRejectingActiveRun(scopedDb, sequenceId);
+  const current = await getSequenceRejectingActiveRun(scopedDb, sequenceId);
+  const sequence = continueSettings
+    ? { ...current, ...continueSettings }
+    : current;
 
   const configuration =
     modelConfiguration ?? (await loadStoryboardModelConfiguration(scopedDb));
@@ -327,14 +328,21 @@ export async function triggerStoryboard(
     analysisModelId
   );
 
-  return reserveStoryboardLaunch(scopedDb, sequence, payload, configuration);
+  return reserveStoryboardLaunch(
+    scopedDb,
+    sequence,
+    payload,
+    configuration,
+    continueSettings
+  );
 }
 
 async function reserveStoryboardLaunch(
   scopedDb: ScopedDb,
   sequence: Sequence,
   payload: StoryboardWorkflowInput,
-  configuration: ModelRuntimeConfiguration
+  configuration: ModelRuntimeConfiguration,
+  settings?: ContinueSettings
 ) {
   const prepared = await prepareWorkflowRun('/storyboard', payload, {
     deduplicationId: generateId(),
@@ -350,6 +358,7 @@ async function reserveStoryboardLaunch(
     expectedRunId: sequence.workflowRunId,
     claimId: workflowRunId,
     launch,
+    settings,
     activity: {
       summary: payload.resume
         ? 'Continued generation'
@@ -412,12 +421,14 @@ export function triggerContinue(
     organizationId: string;
     sequence: Pick<Sequence, 'id' | 'imageModel' | 'videoModel' | 'musicModel'>;
     plan: UpdateStalePlan;
-    stopAt: GenerationStage;
+    settings: ContinueSettings;
     leftoverGrokShotIds?: string[];
     modelConfiguration?: ModelRuntimeConfiguration;
   }
 ): Promise<{ workflowRunId: string }> {
-  const { sequence, stopAt } = input;
+  const { sequence } = input;
+  const settings = { ...input.settings };
+  const stopAt = settings.generationStopAt;
   const { autoGenerateMotion, autoGenerateMusic } = flagsFromStopAt(stopAt);
   return triggerStoryboard(
     scopedDb,
@@ -442,6 +453,7 @@ export function triggerContinue(
         : undefined,
       leftoverGrokShotIds: input.leftoverGrokShotIds,
     },
-    input.modelConfiguration
+    input.modelConfiguration,
+    settings
   );
 }

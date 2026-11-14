@@ -1,11 +1,16 @@
-import { and, eq, exists, isNull, sql } from 'drizzle-orm';
+import { and, eq, exists, isNull, ne, or, sql } from 'drizzle-orm';
 import type { Database } from '@/platform/server/db/client';
 import { sequences, storyboardLaunches } from '@/platform/server/db/schema';
 import { generateId } from '@/platform/id';
 import { ValidationError } from '@/platform/errors';
 import type { PreparedWorkflowRun } from '@/platform/server/workflow/prepared-trigger';
 import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
-import { buildEventInsertIfPresent } from './sequence-events';
+import type { ContinueSettings } from '@/sequences/continue-settings';
+import { generationStopChangedSummary } from '@/sequences/model-label';
+import {
+  buildEventInsertIfPresent,
+  SETTINGS_CHANGED_EVENT,
+} from './sequence-events';
 
 const MILLISECONDS_PER_SECOND = 1000;
 const PROCESSING_STATUS = 'processing';
@@ -17,6 +22,7 @@ type LaunchClaim = {
   claimId: string;
   activity: { summary: string } | null;
   launch: PreparedWorkflowRun<StoryboardWorkflowInput>;
+  settings?: ContinueSettings;
 };
 
 function sequenceOwner(organizationId: string, id: string, runId: string) {
@@ -24,6 +30,30 @@ function sequenceOwner(organizationId: string, id: string, runId: string) {
     eq(sequences.id, id),
     eq(sequences.organizationId, organizationId),
     eq(sequences.workflowRunId, runId)
+  );
+}
+
+function matchesContinueSettings(params: LaunchClaim) {
+  const {
+    settings,
+    launch: { body },
+  } = params;
+  return (
+    !settings ||
+    (body.stopAt === settings.generationStopAt &&
+      body.referenceOnly === !settings.generateStartFrames &&
+      body.generateVoices === settings.generateVoices &&
+      body.draftMotion === settings.draftMotion)
+  );
+}
+
+function availableSlot(organizationId: string, params: LaunchClaim) {
+  return and(
+    eq(sequences.id, params.id),
+    eq(sequences.organizationId, organizationId),
+    params.expectedRunId === null
+      ? isNull(sequences.workflowRunId)
+      : eq(sequences.workflowRunId, params.expectedRunId)
   );
 }
 
@@ -39,6 +69,7 @@ function assertLaunchOwner(
     launch.body.sequenceId !== params.id ||
     launch.body.organizationId !== organizationId ||
     launch.body.userId !== userId ||
+    !matchesContinueSettings(params) ||
     (launch.body.workflowClaimId !== undefined &&
       launch.body.workflowClaimId !== params.claimId)
   ) {
@@ -56,20 +87,13 @@ function buildSlotClaim(
   return db
     .update(sequences)
     .set({
+      ...params.settings,
       workflowRunId: params.claimId,
       status: PROCESSING_STATUS,
       statusError: null,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(sequences.id, params.id),
-        eq(sequences.organizationId, organizationId),
-        params.expectedRunId === null
-          ? isNull(sequences.workflowRunId)
-          : eq(sequences.workflowRunId, params.expectedRunId)
-      )
-    )
+    .where(availableSlot(organizationId, params))
     .returning({ id: sequences.id });
 }
 
@@ -100,14 +124,51 @@ function buildLaunchInsert(
   );
 }
 
-async function claimSlot(
+function buildContinueSettingsEvent(
+  db: Database,
+  organizationId: string,
+  userId: string,
+  params: LaunchClaim,
+  settings: ContinueSettings
+) {
+  const stopAt = settings.generationStopAt;
+  return buildEventInsertIfPresent(
+    db,
+    {
+      id: generateId(),
+      sequenceId: params.id,
+      actorId: userId,
+      kind: SETTINGS_CHANGED_EVENT,
+      targetType: 'sequence',
+      targetId: params.id,
+      summary: generationStopChangedSummary(stopAt),
+    },
+    sequences,
+    and(
+      availableSlot(organizationId, params),
+      or(
+        isNull(sequences.generationStopAt),
+        ne(sequences.generationStopAt, stopAt)
+      )
+    ),
+    sql`json_object(
+      'fields', json_array('generationStopAt'),
+      'changes', json_array(json_object(
+        'field', 'generationStopAt',
+        'from', ${sequences.generationStopAt},
+        'to', ${stopAt}
+      ))
+    )`
+  );
+}
+
+function buildStartActivity(
   db: Database,
   organizationId: string,
   userId: string,
   params: LaunchClaim
 ) {
-  assertLaunchOwner(organizationId, userId, params);
-  const activity = params.activity
+  return params.activity
     ? [
         buildEventInsertIfPresent(
           db,
@@ -125,11 +186,35 @@ async function claimSlot(
         ),
       ]
     : [];
-  const [claimed] = await db.batch([
+}
+
+async function claimSlot(
+  db: Database,
+  organizationId: string,
+  userId: string,
+  params: LaunchClaim
+) {
+  assertLaunchOwner(organizationId, userId, params);
+  const settingsEvent = params.settings
+    ? buildContinueSettingsEvent(
+        db,
+        organizationId,
+        userId,
+        params,
+        params.settings
+      )
+    : null;
+  const activity = buildStartActivity(db, organizationId, userId, params);
+  const mutations = [
     buildSlotClaim(db, organizationId, params),
     buildLaunchInsert(db, organizationId, params),
     ...activity,
-  ]);
+  ] as const;
+  if (settingsEvent) {
+    const [, claimed] = await db.batch([settingsEvent, ...mutations]);
+    return claimed.length > 0;
+  }
+  const [claimed] = await db.batch(mutations);
   return claimed.length > 0;
 }
 

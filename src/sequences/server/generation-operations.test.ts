@@ -36,6 +36,7 @@ import { asStub } from '@/test/as-stub';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import { InsufficientCreditsError } from '@/platform/errors';
 import { micros } from '@/billing/money';
+import type { prepareContinue } from './continue-plan';
 
 vi.mock('#db-client', () => ({ getDb: vi.fn() }));
 
@@ -88,16 +89,13 @@ vi.doMock('@/billing/cost-estimation', () => ({
   gateEstimate: (micros: number) => micros,
 }));
 // prepareContinue is the lock check, the work list and the estimate.
-const realContinuePlan =
-  await vi.importActual<typeof import('./continue-plan')>('./continue-plan');
 let mockContinueEstimate: Awaited<
-  ReturnType<typeof realContinuePlan.prepareContinue>
+  ReturnType<typeof prepareContinue>
 >['estimate'] = { micros: micros(1_000_000), priced: true };
 vi.doMock('./continue-plan', () => ({
   CONTINUE_CREDIT_PROVIDERS: ['fal', 'openrouter'],
-  withContinueSwitches: realContinuePlan.withContinueSwitches,
   prepareContinue: vi.fn(
-    async (args: Parameters<typeof realContinuePlan.prepareContinue>[0]) => {
+    async (args: Parameters<typeof prepareContinue>[0]) => {
       await getSequenceRejectingActiveRun(undefined, args.sequence.id);
       const { work, stopAt } = continueFromPlan(args);
       const modelConfiguration = {
@@ -235,7 +233,6 @@ beforeEach(async () => {
     title: 'S',
     styleId,
     status: 'completed',
-    // Every real row has one (#1118); Continue restores it on a refusal.
     generationStopAt: 'images',
   });
   await db
@@ -474,7 +471,9 @@ describe('execute_generation', () => {
     });
     expect(triggerContinue).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ stopAt: 'images' })
+      expect.objectContaining({
+        settings: expect.objectContaining({ generationStopAt: 'images' }),
+      })
     );
     expect(requireCredits).toHaveBeenCalledTimes(2);
     expect(requireCredits).toHaveBeenLastCalledWith(
@@ -492,38 +491,47 @@ describe('execute_generation', () => {
     expect(triggerContinue).toHaveBeenCalledTimes(1);
   });
 
-  it('plans Continue under the switches sent and saves them at launch', async () => {
-    const plan = await planGeneration(scoped(), actor(), sequenceId, {
-      ...missing,
-      generateStartFrames: true,
-      draftMotion: true,
-    });
-    const saved = () =>
-      db
-        .select({
-          generateStartFrames: sequences.generateStartFrames,
-          draftMotion: sequences.draftMotion,
-        })
-        .from(sequences)
+  it.each([true, false])(
+    'passes Continue settings to the launcher without saving early (start frames: %s)',
+    async (generateStartFrames) => {
+      await db
+        .update(sequences)
+        .set({ generateVoices: true })
         .where(eq(sequences.id, sequenceId));
-    const before = await saved();
-    await execute(plan.planToken);
-    expect(await saved()).toEqual([
-      { generateStartFrames: true, draftMotion: true },
-    ]);
-    // Planning alone saved nothing.
-    expect(before).not.toEqual([
-      { generateStartFrames: true, draftMotion: true },
-    ]);
-    expect(computePlan).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        sequenceOverrides: expect.objectContaining({
-          generateStartFrames: true,
-          draftMotion: true,
-        }),
-      })
-    );
-  });
+      const scopedDb = scoped();
+      const update = vi.spyOn(scopedDb.sequences, 'update');
+      const before = await scopedDb.sequences.getById(sequenceId);
+      const settings = {
+        generationStopAt: 'images',
+        generateStartFrames,
+        generateVoices: true,
+        draftMotion: !generateStartFrames,
+      };
+      const plan = await planGeneration(scopedDb, actor(), sequenceId, {
+        ...missing,
+        generateStartFrames,
+        draftMotion: settings.draftMotion,
+      });
+      expect(await scopedDb.sequences.getById(sequenceId)).toEqual(before);
+      await execute(plan.planToken, scopedDb);
+      expect(triggerContinue).toHaveBeenCalledWith(
+        scopedDb,
+        expect.objectContaining({ settings })
+      );
+      expect(triggerContinue.mock.calls[0]?.[1]).not.toHaveProperty('stopAt');
+      expect(update).not.toHaveBeenCalled();
+      expect(await scopedDb.sequences.getById(sequenceId)).toEqual(before);
+      expect(computePlan).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          sequenceOverrides: expect.objectContaining({
+            generateStartFrames,
+            generateVoices: settings.generateVoices,
+            draftMotion: settings.draftMotion,
+          }),
+        })
+      );
+    }
+  );
 });
 
 describe('get_operation_status', () => {

@@ -106,7 +106,6 @@ vi.doMock('@tanstack/react-start/server', () => ({
   getRequestHeader: vi.fn(() => undefined),
 }));
 const { triggerStoryboard, triggerContinue } = await import('./launchers');
-const { withContinueSwitches } = await import('./continue-plan');
 
 let db: Database;
 let closeDb: () => Promise<void>;
@@ -691,18 +690,16 @@ it('keeps Continue switches and its created instance id when publication loses o
     return createdRunId();
   });
 
-  const result = await withContinueSwitches(scopedDb, sequence, settings, () =>
-    triggerContinue(scopedDb, {
-      promptLocale: 'en',
-      userId: fixture.actorId,
-      organizationId: fixture.organizationId,
-      sequence,
-      stopAt: settings.generationStopAt,
-      // This plan is only carried through the launcher; the mocked workflow engine never executes it.
-      plan: asStub<UpdateStalePlan>({}),
-      modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
-    })
-  );
+  const result = await triggerContinue(scopedDb, {
+    promptLocale: 'en',
+    userId: fixture.actorId,
+    organizationId: fixture.organizationId,
+    sequence,
+    settings,
+    // This plan is only carried through the launcher; the mocked workflow engine never executes it.
+    plan: asStub<UpdateStalePlan>({}),
+    modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
+  });
 
   expect(result).toEqual({ workflowRunId: createdRunId() });
   expect(await stored()).toMatchObject({

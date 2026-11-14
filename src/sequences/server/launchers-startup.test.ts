@@ -128,7 +128,6 @@ const {
   GenerationInProgressError,
   GenerationStatusUnknownError,
 } = await import('./launchers');
-const { withContinueSwitches } = await import('./continue-plan');
 
 let db: Database;
 let closeDb: () => Promise<void>;
@@ -669,18 +668,16 @@ describe('Storyboard preparation and atomic acquisition boundaries', () => {
     } as const;
     const lostReply = new Error('Synthetic Continue response was lost');
     create.mockRejectedValueOnce(lostReply);
-    const pending = withContinueSwitches(scopedDb, sequence, settings, () =>
-      triggerContinue(scopedDb, {
-        promptLocale: 'en',
-        userId: fixture.actorId,
-        organizationId: fixture.organizationId,
-        sequence,
-        stopAt: settings.generationStopAt,
-        // The substituted engine never executes this plan.
-        plan: asStub<UpdateStalePlan>({}),
-        modelConfiguration: configuration,
-      })
-    );
+    const pending = triggerContinue(scopedDb, {
+      promptLocale: 'en',
+      userId: fixture.actorId,
+      organizationId: fixture.organizationId,
+      sequence,
+      settings,
+      // The substituted engine never executes this plan.
+      plan: asStub<UpdateStalePlan>({}),
+      modelConfiguration: configuration,
+    });
     await expect(pending).rejects.toBeInstanceOf(WorkflowLaunchPendingError);
     const original = await onlyLaunch();
     await expect(pending).rejects.toMatchObject({
