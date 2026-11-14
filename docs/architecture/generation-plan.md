@@ -188,8 +188,16 @@ numeric subtotal for the credit gate; they never become a free estimate.
 ### Storyboard mutex and failure ownership (secondary development, 2026-11-14)
 
 The launcher checks the previous run and compare-and-swaps the sequence's
-workflow slot to a raw `claimId`. It overwrites `workflowClaimId` on the trigger
-payload with that trusted claim; `StoryboardTriggerInput` omits the field.
+workflow slot to a raw `claimId`. `claimWorkflowSlot` keeps its signature;
+the same `UPDATE` takes the claim, sets `status = 'processing'` and clears
+`statusError`. With a start activity, the update and the conditional
+`storyboard.started` insert commit or roll back together in the existing D1
+batch; the insert condition also checks organization. With `activity: null`,
+it is one atomic `UPDATE`. The launcher no longer writes `processing`
+separately.
+
+It overwrites `workflowClaimId` on the trigger payload with that trusted claim;
+`StoryboardTriggerInput` omits the field.
 The actual Cloudflare instance ID may differ after namespacing, sanitization
 or truncation and may not yet have been written back to the sequence.
 
@@ -203,10 +211,33 @@ catch uses the same guard with only the raw claim as `workflowRunId`. An
 ordinary failure of that write retains the existing status-error log; the
 catch still records `run.failed` and rethrows the original trigger error.
 
-Startup and success status writes and the launcher's final instance-ID
-write-back remain unconditional. The failure `UPDATE` and realtime emit are
-separate operations; the [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14)
-records the remaining lifecycle and event-consistency limits.
+After creation,
+`scopedDb.sequences.publishWorkflowInstance({ id, claimId, workflowRunId })`
+returns `Promise<boolean>` from one `UPDATE` scoped to sequence, organization
+and a stored owner still equal to this raw claim. `false` leaves the row
+untouched; the launcher still returns the created instance ID. `true` changes
+only `workflowRunId` and `updatedAt`, preserving any `failed` / `completed`
+result written before the create response. SQL errors reject unchanged,
+rather than returning `false`. Publication is outside the trigger catch, so
+it neither repeats creation nor fabricates a trigger-failure `run.failed`.
+
+The startup protocol is still not strictly exclusive.
+`getSequenceRejectingActiveRun` asks `resolveRunState` about the stored owner;
+an unpublished raw claim matches no CF binding and is treated as `failed`.
+Another request can therefore take over while the first `create` is still in
+flight. These guards protect their state and ID writes after takeover; they
+neither prevent takeover nor stop the older workflow. No lease, TTL or schema
+change is added.
+
+This batch covers launcher claim/processing and instance publication only.
+`StoryboardWorkflow.runImpl` startup and success writes remain unconditional.
+Analyze-script child failure handling, Continue settings save/refusal
+rollback, the independent Update all preflight race, and realtime/old-event
+handling remain outside it. Creation followed by a publication SQL error
+still has its existing recovery gap. The failure `UPDATE` and realtime emit
+remain separate operations; the [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14)
+records the event-consistency limits. See the [launcher ownership batch](../secondary-development/preservation/20261114-p3-g03-launcher-ownership/README.md)
+for the implementation and verification record.
 
 ## Shot specs and prompts (#1923, #1929)
 

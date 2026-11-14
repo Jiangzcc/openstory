@@ -36,3 +36,7 @@
 - 真实 Workerd HTTP、Cloudflare replay/restart、多实例并发、浏览器送达、供应商和钱包结算未验收；本批未 push、部署或执行远程 D1/R2 写入、真实模型调用。
 
 后续按生命周期写入和事件契约继续核对，GC-03/P3 保持 in-progress；本批不批准 1,219 项冻结路径的全量处置。
+
+## 后续批次
+
+2026-11-14 的 [launcher ownership 批次](../20261114-p3-g03-launcher-ownership/README.md)将启动器 claim、processing 和启动 activity 收敛为原子操作，并把最终实例 ID 发布改为匹配本次 raw claim 的条件更新。本记录保留当时测试成绩；后续批次不关闭未发布 claim 的在途接管、runImpl/子失败、设置回滚和事件送达等边界，GC-03/P3 仍未验收。
