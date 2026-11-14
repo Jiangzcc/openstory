@@ -7,6 +7,11 @@ import { withSequencePosters } from './sequence-poster';
 import { createStoryboardLifecycleMethods } from './storyboard-lifecycle';
 import { createStoryboardNotificationMethods } from './storyboard-notifications';
 import { createStoryboardLaunchMethods } from './storyboard-launches';
+import {
+  createAutoStyleSnapshotWriter,
+  insertStyleVersion,
+  snapshotConfigForStyleId,
+} from './sequence-style-writes';
 import { DEFAULT_ANALYSIS_MODEL } from '@/models/models.config';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '@/models/models';
 import { type AspectRatio, DEFAULT_ASPECT_RATIO } from '@/models/aspect-ratios';
@@ -36,7 +41,6 @@ import {
 import type {
   NewSequence,
   Sequence,
-  SequenceStyleSource,
   Shot,
   StoredStyleConfig,
 } from '@/platform/server/db/schema';
@@ -217,19 +221,6 @@ export const selectSequencesWithCreatorFrom = (db: Database) =>
     )
     .leftJoin(latestMusic, eq(latestMusic.id, newestPrimaryMusicId))
     .leftJoin(user, eq(sequences.createdBy, user.id));
-
-/** The statement that records a style snapshot as a version row. */
-const insertStyleVersion = (
-  db: Database,
-  row: {
-    id: string;
-    sequenceId: string;
-    styleId: string;
-    config: StoredStyleConfig;
-    source: SequenceStyleSource;
-    createdBy: string | null;
-  }
-) => db.insert(sequenceStyleVersions).values(row);
 
 // D1 caps a single query at 100 bound parameters. `listShotsByIds` binds one
 // param per sequence id plus the organizationId filter, so each query must stay under
@@ -599,21 +590,6 @@ function createSequencesReadMethods(db: Database, organizationId: string) {
   };
 }
 
-async function snapshotConfigForStyleId(
-  db: Database,
-  styleId: string
-): Promise<ReturnType<typeof parseStyleConfig>> {
-  const [style] = await db
-    .select({ config: styles.config })
-    .from(styles)
-    .where(eq(styles.id, styleId))
-    .limit(1);
-  if (!style) {
-    throw new ValidationError(`Style ${styleId} not found`);
-  }
-  return parseStyleConfig(style.config);
-}
-
 export function createSequencesMethods(
   db: Database,
   organizationId: string,
@@ -896,46 +872,7 @@ export function createSequencesMethods(
      * but only while the sequence still points at that style — a library pick
      * made mid-run must not be overwritten. Returns false when it no longer does.
      */
-    snapshotAutoStyle: async (params: {
-      id: string;
-      styleId: string;
-    }): Promise<boolean> => {
-      const styleConfig = await snapshotConfigForStyleId(db, params.styleId);
-      const still = and(
-        eq(sequences.id, params.id),
-        eq(sequences.organizationId, organizationId),
-        eq(sequences.styleId, params.styleId)
-      );
-      const [current] = await db
-        .select({ id: sequences.id })
-        .from(sequences)
-        .where(still);
-      if (!current) return false;
-      // The derived recipe is a snapshot like any other (#1600). The pointer
-      // moves only while the sequence still points at this style; a pick that
-      // lands between the read and the batch leaves the row as history.
-      // Like a style switch, it revokes no sheet claim: a sheet reads no style.
-      const styleVersionId = generateId();
-      const [, rows] = await db.batch([
-        insertStyleVersion(db, {
-          id: styleVersionId,
-          sequenceId: params.id,
-          styleId: params.styleId,
-          config: styleConfig,
-          source: 'derived',
-          createdBy: null,
-        }),
-        db
-          .update(sequences)
-          .set({
-            selectedStyleVersionId: styleVersionId,
-            updatedAt: new Date(),
-          })
-          .where(still)
-          .returning({ id: sequences.id }),
-      ]);
-      return rows.length > 0;
-    },
+    snapshotAutoStyle: createAutoStyleSnapshotWriter(db, organizationId),
 
     /**
      * The saved voices a hard delete of this sequence would strand: release

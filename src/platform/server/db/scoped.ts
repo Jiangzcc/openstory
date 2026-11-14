@@ -63,6 +63,7 @@ import { createGeneratedAssetsMethods } from '@/models/server/db/generated-asset
 import { createScenesMethods } from '@/shots/server/db/scenes';
 import { createStoryboardContentMethods } from '@/sequences/server/db/storyboard-content';
 import { createStoryboardAnalysisOutputMethods } from '@/sequences/server/db/storyboard-analysis-output';
+import { createStoryboardAutoStyleMethods } from '@/sequences/server/db/storyboard-auto-style';
 import type { StoryboardOwner } from '@/sequences/server/db/storyboard-owner';
 import { createProductionReadMethods } from '@/shots/server/db/production-reads';
 import { createSceneScriptVersionsMethods } from '@/shots/server/db/scene-script-versions';
@@ -415,6 +416,8 @@ export function createScopedDb(organizationId: string, userId: string) {
       createStoryboardContentMethods(db, organizationId, owner),
     storyboardAnalysisOutput: (owner: StoryboardOwner) =>
       createStoryboardAnalysisOutputMethods(db, organizationId, owner),
+    storyboardAutoStyle: (owner: StoryboardOwner) =>
+      createStoryboardAutoStyleMethods(db, organizationId, owner),
 
     styles: createStylesMethods(db, organizationId, userId),
     locations: createLocationsMethods(db, organizationId),

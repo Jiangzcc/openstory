@@ -372,7 +372,9 @@ const emit = vi.fn(async () => undefined);
 vi.doMock('@/platform/realtime', () => ({
   getGenerationChannel: vi.fn(() => ({ emit })),
 }));
-const deriveAutoStyle = vi.fn(async () => {
+const deriveAutoStyle = vi.fn<
+  typeof import('@/look/server/workflows/auto-style-step').deriveAutoStyle
+>(async () => {
   throw new Error('Unexpected mock style call');
 });
 vi.doMock('@/look/server/workflows/auto-style-step', () => ({
@@ -672,5 +674,46 @@ describe('AnalyzeScriptWorkflow output binding with synthetic runtime edges', ()
   test(
     'factory refusal stops the real run before steps, child work or unguarded writes',
     verifyFactoryRefusal
+  );
+  test.each([
+    {
+      storyboardOwner: OWNER,
+      _parent: {
+        bindingName: 'MOTION_BATCH_WORKFLOW',
+        parentInstanceId: 'mock-notify-parent',
+        eventType: 'mock-analysis-done',
+      },
+      expected: OWNER,
+    },
+    {
+      _parent: {
+        bindingName: 'STORYBOARD_WORKFLOW',
+        parentInstanceId: OWNER.workflowRunId,
+        eventType: 'mock-analysis-done',
+      },
+      expected: { workflowRunId: OWNER.workflowRunId },
+    },
+  ] satisfies Array<
+    Partial<AnalyzeScriptWorkflowInput> & { expected: GenerationWorkflowOwner }
+  >)(
+    'passes the resolved root to automatic-style publication: $expected',
+    async ({ expected, ...context }) => {
+      const run = makeRuntimeHarness();
+      const event = makeRuntimeEvent({
+        ...context,
+        pendingAutoStyleId: 'mock-auto-style',
+      });
+      deriveAutoStyle.mockResolvedValueOnce(event.payload.styleConfig);
+      await run.workflow.invokeRunImpl(event, run.step, run.db);
+      expect(deriveAutoStyle).toHaveBeenCalledExactlyOnceWith(
+        run.step,
+        expect.objectContaining({
+          storyboardOwner: expected,
+          workflowRunId: event.instanceId,
+          scopedDb: expect.objectContaining({ models: run.db.models }),
+          sequenceId: SEQUENCE_ID,
+        })
+      );
+    }
   );
 });

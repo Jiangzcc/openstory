@@ -14,6 +14,7 @@ import {
 import { stripServerManagedColumns } from '@/platform/server/db/scoped/server-managed';
 import { styleSlug } from '@/look/style-slug';
 import type { AutoStyleDraft } from '@/look/auto-style';
+import { createAutomaticStyleWriter } from './automatic-style-write';
 import {
   and,
   asc,
@@ -279,24 +280,7 @@ export function createStylesMethods(
      * the binding so a stale run can never rewrite a promoted (library) row.
      * Returns false when the row is no longer bound to that sequence.
      */
-    setGeneratedForSequence: async (params: {
-      styleId: string;
-      sequenceId: string;
-      draft: AutoStyleDraft;
-    }): Promise<boolean> => {
-      const rows = await db
-        .update(styles)
-        .set({ ...params.draft, updatedAt: new Date() })
-        .where(
-          and(
-            eq(styles.id, params.styleId),
-            eq(styles.sequenceId, params.sequenceId),
-            eq(styles.organizationId, organizationId)
-          )
-        )
-        .returning({ id: styles.id });
-      return rows.length > 0;
-    },
+    setGeneratedForSequence: createAutomaticStyleWriter(db, organizationId),
 
     /**
      * Promote a sequence-bound style into the organization library: clears the

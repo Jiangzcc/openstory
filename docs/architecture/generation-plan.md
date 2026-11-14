@@ -7,6 +7,35 @@ run and Update all. There is no stored stage and no checkpoint: the old
 ~80 edits that never moved it, and every mismatch was a refused click. The
 columns are gone (#1819).
 
+## Automatic-style ownership (secondary development, 2026-11-14)
+
+AnalyzeScript passes its resolved Storyboard root to automatic-style
+publication. `scopedDb.storyboardAutoStyle(owner)` exposes only the existing
+recipe update and sequence snapshot writes. The style UPDATE, style-history
+INSERT and selection-pointer UPDATE each check organization, sequence,
+current root or explicitly trusted launcher claim, and `processing` at SQL
+execution time. A precheck alone cannot authorize a later mutation.
+
+The same shared method checks and step error adapter as analysis output
+cover early returns and failures. Confirmed ownership loss becomes
+non-retryable inside `save-automatic-style`; unknown verification retains
+retryability and causes. The analysis child instance and notification parent
+are not inferred as root authority. Ownerless callers retain their ordinary
+writers, and the LLM request, model snapshot and reservation are unchanged.
+
+Library promotion still blocks rewriting a formerly bound style. A user
+style switch still preserves their selected pointer; a switch between the
+snapshot read and batch can leave the original historical version while the
+root remains active. This is the existing history contract. The recipe
+update remains separate from the atomic version-and-pointer batch: an
+authorized recipe can remain if ownership is lost before snapshotting.
+
+This fences persistence, not model spending or all external events. A root
+can still change after the final check and before `generation.style:ready`.
+Cached checkpoints, casting/shared resources, complete descendant/event
+ownership, root cancellation and deployed acceptance remain open. Exact
+local evidence is in the [automatic-style batch](../secondary-development/preservation/20261114-p3-g03-auto-style/README.md).
+
 ## Analysis output ownership (secondary development, 2026-11-14)
 
 AnalyzeScript resolves its trusted Storyboard root through the existing
@@ -36,9 +65,9 @@ by a processing-only content fence. Existing per-method batch boundaries,
 and rewrite-claim behavior remain. The full spec/prompt publication loop is
 not one transaction; earlier authorized writes can remain after failure.
 
-Casting, organization-shared looks/locations, generated element creation,
-automatic style writes and every other descendant are still outside this
-slice. A takeover after a successful write/check can still precede a shot
+Casting, organization-shared looks/locations, generated element creation
+and every other descendant are still outside this slice; automatic style
+has the separate contract above. A takeover after a successful write/check can still precede a shot
 event, phase signal or callback. Ownerless standalone calls, old cached
 steps, root cancellation and deployed Cloudflare/provider acceptance remain
 open. Exact local evidence is in the [analysis output batch](../secondary-development/preservation/20261114-p3-g03-analysis-output/README.md).

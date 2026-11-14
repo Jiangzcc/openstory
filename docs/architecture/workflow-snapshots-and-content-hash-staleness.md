@@ -24,7 +24,7 @@ with SceneSplit. Lost ownership escapes as non-retryable inside the step;
 unknown ownership and engine restarts retain their existing retry/abort
 semantics and original causes. Existing atomic method batches are preserved;
 the entire analysis output is not atomic. The [generation-plan contract](generation-plan.md#analysis-output-ownership-secondary-development-2026-11-14)
-records successful-path coverage and the still-open casting, style,
+records successful-path coverage and the still-open casting,
 descendant event, standalone and deployed acceptance boundaries.
 
 ## Scene-split write fences (secondary development, 2026-11-14)
@@ -278,7 +278,7 @@ A sequence's style recipe is a snapshot of its catalog style. Each snapshot
 is a `sequence_style_versions` row — `created` with the sequence,
 `switched` on a style change, `derived` when an automatic style's recipe
 lands (#1213) — and `sequences.selectedStyleVersionId` points at the live
-one. The three writers are in `src/sequences/server/db/sequences.ts`; a
+one. The three entry points remain in `src/sequences/server/db/sequences.ts`; a
 switch appends the row and moves the pointer in one batch. It revokes no
 character or location sheet claim: those sheets read their own bible's
 `rendering`, not the sequence style. Every sequence read resolves `styleConfig` from the
@@ -287,6 +287,17 @@ recipe as a `backfill` row keyed to the sequence's own id; a sequence with
 no snapshot (an automatic style still deriving) stays pointer-less.
 `sequences.style_config` survives as `legacyStyleConfig`, read only for a
 sequence with no version and never written.
+
+Automatic-style persistence is extracted to `sequence-style-writes.ts` and
+`look/server/db/automatic-style-write.ts`, reused by the original ordinary
+methods and the narrow `storyboardAutoStyle` facade. A root-bound run checks
+organization/sequence/root-or-explicit-claim/processing in each actual recipe,
+history and pointer mutation. The existing config-read order, history/pointer
+batch and selector-switch semantics are retained. Earlier authorized recipe
+updates are not rolled back when a later snapshot loses ownership. No style
+hash input, recipe schema or sheet-claim policy changes. See the
+[automatic-style ownership contract](generation-plan.md#automatic-style-ownership-secondary-development-2026-11-14)
+for retry, standalone and external-effect boundaries.
 
 A stale artifact's cause names the knobs that moved between the snapshot live
 when it was made and the live one, over the same body the hashes read:

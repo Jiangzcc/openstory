@@ -210,6 +210,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
             promptLocale: input.promptLocale,
             scopedDb,
             workflowRunId: parentInstanceId,
+            storyboardOwner: workflowOwner,
             sequenceId,
             styleId: pendingAutoStyleId,
             script,
