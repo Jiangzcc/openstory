@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-failure-notification-ownership",
+  "responsibilityId": "GC-03",
+  "status": "implemented-with-bounded-evidence",
+  "p3Status": "in-progress",
+  "sourceBefore": "cf1e48793b5aa500f3c6db6b5a71b9513d490a1c",
+  "upstreamBase": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "frozenDesignSource": "db3ea57b5f419f69c51369c28819de17515b21f5",
+  "scope": "Bind six sequence lifecycle signals to the actual Storyboard root/claim, the queried slot, a shared pending launch, and ordered history/live session state.",
+  "productionPaths": [
+    "src/platform/realtime/schema.ts",
+    "src/platform/server/workflow/types.ts",
+    "src/sequences/server/workflows/analyze-script-workflow.ts",
+    "src/sequences/server/workflows/generation-workflow-owner.ts",
+    "src/sequences/server/workflows/scene-split-workflow.ts",
+    "src/sequences/server/workflows/storyboard-workflow.ts",
+    "src/sequences/ui/generation-stream.delivery.ts",
+    "src/sequences/ui/generation-stream.events.ts",
+    "src/sequences/ui/generation-stream.launch.ts",
+    "src/sequences/ui/generation-stream.reconcile.ts",
+    "src/sequences/ui/generation-stream.session.ts",
+    "src/sequences/ui/use-generation-launch.ts",
+    "src/sequences/ui/use-generation-stream.ts",
+    "src/shots/server/workflows/update-stale-shots-workflow.ts",
+    "src/shots/ui/scene-music-facet.tsx",
+    "src/shots/ui/scenes-view.tsx"
+  ],
+  "testFilesChanged": [
+    "src/platform/realtime/emit.test.ts",
+    "src/platform/server/realtime/realtime-channel.do.test.ts",
+    "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+    "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+    "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+    "src/sequences/server/workflows/generation-workflow-owner.test.ts",
+    "src/sequences/server/workflows/scene-split-workflow.test.ts",
+    "src/sequences/server/workflows/storyboard-failure-status.test.ts",
+    "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+    "src/sequences/server/workflows/storyboard-workflow.test.ts",
+    "src/sequences/ui/generation-stream.delivery.test.ts",
+    "src/sequences/ui/generation-stream.events.test.ts",
+    "src/sequences/ui/generation-stream.launch.test.ts",
+    "src/sequences/ui/generation-stream.reconcile.test.ts",
+    "src/sequences/ui/generation-stream.session.test.ts",
+    "src/shots/server/workflows/update-stale-plan-run.test.ts"
+  ],
+  "newSourcePaths": [
+    "src/sequences/server/workflows/generation-workflow-owner.test.ts",
+    "src/sequences/server/workflows/generation-workflow-owner.ts",
+    "src/sequences/ui/generation-stream.delivery.test.ts",
+    "src/sequences/ui/generation-stream.delivery.ts",
+    "src/sequences/ui/generation-stream.events.test.ts",
+    "src/sequences/ui/generation-stream.events.ts",
+    "src/sequences/ui/generation-stream.launch.test.ts",
+    "src/sequences/ui/generation-stream.launch.ts",
+    "src/sequences/ui/generation-stream.reconcile.test.ts",
+    "src/sequences/ui/generation-stream.reconcile.ts",
+    "src/sequences/ui/generation-stream.session.test.ts",
+    "src/sequences/ui/generation-stream.session.ts",
+    "src/sequences/ui/use-generation-launch.ts"
+  ],
+  "newRegressionTests": 109,
+  "workflowPayloadChanged": true,
+  "workflowPayloadChange": "Reuse optional transport GenerationWorkflowOwner for AnalyzeScript, SceneSplit and UpdateStaleShots storyboardOwner; keep direct-parent _parent envelopes unchanged.",
+  "migrationsChanged": false,
+  "realtimeSchemaChanged": true,
+  "realtimeSchemaChange": "Optional workflowOwner on six existing lifecycle leaves; unowned independent batch events remain valid wire payloads and keep existing cache refreshes, but carry no Storyboard transition authority.",
+  "producerCensus": {
+    "lifecycleEvents": 6,
+    "allProductionEmitSites": 13,
+    "rootAwareEmitSites": 12,
+    "independentMotionBatchEmitSitesUnchanged": 1
+  },
+  "beforeAfter": [
+    {
+      "before": "Typed emits and the leaf parser had no root identity. Live/history mapping accepted any lifecycle event on the channel.",
+      "after": "Root owner snapshots survive parser/SSE/history and must match the actual current slot or explicit raw claim before lifecycle reduction."
+    },
+    {
+      "before": "Continue retained old identity while creating a new run and discarded its response; late callbacks could restore old cache after another run.",
+      "after": "A shared per-sequence QueryClient launch token covers both subscriptions; rollback is token/observed-owner guarded and confirmation uses a real post-cancellation detail read, not an instance-return or invalidation receipt."
+    },
+    {
+      "before": "History could arrive after live and regress state, including after a new owner or terminal transition.",
+      "after": "Session/request identity rejects stale responses, replays live after history, and preserves an accepted same-owner terminal receipt across hydration and raw-claim publication."
+    }
+  ],
+  "preservedContracts": [
+    "Independent MotionBatch failed emission and existing data invalidations remain; it does not own the Storyboard sequence slot.",
+    "SceneSplit boundary merging remains a non-fatal generation.error; no failure semantic is added.",
+    "Server DB lifecycle guards, original activity text, AI/provider calls, reservation cleanup, REST/MCP request interfaces, organization authorization and model snapshots remain as before.",
+    "Direct-parent notify metadata is not rewritten to the root. Explicit root owner and raw claim travel separately.",
+    "The original progress reducer and all its existing tests remain unchanged. Existing action values and user-facing toast/credits-short text are retained in the extracted mapper."
+  ],
+  "originalAssertionTreatment": "Backend fixtures and exact emit assertions now include workflowOwner without removing old reservation, terminal, auth-message or direct-parent assertions. Existing child/executor cases also assert root propagation. The original progress reducer file/tests and independent motion-batch tests were not modified. Wire parser baseline was rerun with its actual three-argument signature before recording the 24-failure result.",
+  "reviewFindings": [
+    {
+      "issue": "Awaited invalidateQueries can resolve without a successful detail read, including with no active observer or a read error.",
+      "resolution": "Force getSequenceFn through fetchQuery after cancellation. Only non-manual exact-detail success confirms; failed reads keep a token-scoped watcher for later real success.",
+      "status": "fixed-and-tested"
+    },
+    {
+      "issue": "Rehydration could clear an accepted terminal or let historical terminal block a previously accepted live terminal.",
+      "resolution": "Retain terminalEvent per owner, filter conflicting historical terminal during hydration and reapply the receipt after progress/live replay.",
+      "status": "fixed-and-tested"
+    },
+    {
+      "issue": "The first pending guard swallowed independent batch cache refreshes.",
+      "resolution": "Only root-owned lifecycle cache side effects are paused. Unowned independent notices retain the original updater; they never acquire root reducer authority.",
+      "status": "fixed-and-tested"
+    },
+    {
+      "issue": "A resolved retryer can still have an old cache success queued at the cancellation boundary.",
+      "resolution": "Confirmation watcher only cleans up tokens before cancellation completes; it is armed for success afterward. A real microtask regression first reproduced a skipped forced read.",
+      "status": "fixed-and-tested"
+    }
+  ],
+  "clientOnlyState": "Pending tokens, confirmation subscriptions, history queues and terminal receipts stay in the existing QueryClient/session. No database fields, leases or persistent delivery protocol are added.",
+  "bufferLimit": {
+    "pendingLiveEvents": 2000,
+    "onOverflow": "Discard this hydration request and preserve already displayed live state."
+  },
+  "alternativeAssessment": "A DB guard or outer reread cannot authorize a later external emit. Parsing instance names, trusting the returned instance, accepting the first foreign event, or adding waits cannot establish ownership. Use explicit root snapshots and the existing authoritative detail query, then preserve ordering in a domain session wrapper.",
+  "providerCallsRun": false,
+  "originalInventoryApproved": false,
+  "followUpOf": ["G03-lifecycle-branches"],
+  "remainingActions": [
+    "Strict startup exclusion/cancellation for unpublished claims remains open.",
+    "Root protection for all content writes, scene/shot/media notifications and every descendant is not complete.",
+    "Failure/short notification retries after terminal DB writes, swallowed adapter errors, actual delivery and ready-email side effects remain open.",
+    "Server Continue settings/refusal rollback, independent Update all preflight and create-success/publication-SQL-failure recovery remain open.",
+    "Standalone AnalyzeScript CLI still has no slot protocol and existing incomplete required payloads; it was not run.",
+    "Cloudflare durable replay/restart, real Workerd multi-instance behavior, browser delivery, paid providers and wallet settlement remain unverified. GC-03/P3 remain in progress and P4 has not started."
+  ],
+  "databaseSchemaChanged": false,
+  "upgradeWatchpoints": [
+    "Recheck any new sequence-lifecycle emit, schema leaf or mapping against root owner propagation and the client lifecycle classification; file overlap alone is insufficient.",
+    "Recheck the actual sequence slot, launcher publication result, payload builders and direct-parent notify contract if upstream changes trigger/executor architecture.",
+    "Recheck QueryClient cancelQueries/fetchQuery and QueryCache success/manual semantics on TanStack Query upgrades; preserve the resolved-retryer microtask regression.",
+    "If upstream adds its own run-scoped replay or startup protocol, integrate at the existing hook/query composition boundary rather than layering a second authority."
+  ],
+  "sourceAfter": "ba86136d8a041e2e01494184f857798788405032"
+}
