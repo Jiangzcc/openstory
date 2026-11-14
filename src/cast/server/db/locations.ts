@@ -74,6 +74,8 @@ import {
   buildEventInsertIfPresent,
 } from '@/sequences/server/db/sequence-events';
 import { LOCATION_SHEET_BIBLE_FIELDS } from '@/shots/input-hash';
+import type { StoryboardCastScope } from '@/sequences/server/db/storyboard-cast-scope';
+import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
 
 /** A new location's bible where the caller left a field out. */
 const NEW_LOCATION_BIBLE: Omit<LocationBible, 'name' | 'rendering'> = {
@@ -290,8 +292,20 @@ export const locationsOnlyIn = async (
   return inArray(locations.id, sql`(SELECT value FROM json_each(${ids}))`);
 };
 
-export function createLocationsMethods(db: Database, organizationId: string) {
+export function createLocationsMethods(
+  db: Database,
+  organizationId: string,
+  scope?: StoryboardCastScope
+) {
   const inOrganization = eq(locations.organizationId, organizationId);
+  const linkWriteScope = (sequenceId: string, locationId: string) =>
+    scope &&
+    and(
+      scope.sequence(sequenceId),
+      scope.sequence(sequenceLocationLinks.sequenceId),
+      scope.organizationLocation(sequenceLocationLinks.locationId),
+      eq(sequenceLocationLinks.locationId, locationId)
+    );
 
   /** A location from no sequence: `select(ownColumns)` + its joins. */
   const selectOwn = () =>
@@ -457,7 +471,8 @@ export function createLocationsMethods(db: Database, organizationId: string) {
   const bibleWrite = (
     existing: Location,
     patch: Partial<LocationBible>,
-    opts: { source: BibleVersionSource; createdBy: string | null }
+    opts: { source: BibleVersionSource; createdBy: string | null },
+    guard?: SQL
   ) => {
     const before = pickLocationBible(existing);
     const after = mergeBible(before, patch);
@@ -469,13 +484,20 @@ export function createLocationsMethods(db: Database, organizationId: string) {
     return {
       moved,
       statements: [
-        db.insert(locationBibleVersions).values({
-          id: versionId,
-          locationId: existing.id,
-          ...after,
-          source: opts.source,
-          createdBy: opts.createdBy,
-        }),
+        insertWithStoryboardGuard(
+          db,
+          locationBibleVersions,
+          [
+            {
+              id: versionId,
+              locationId: existing.id,
+              ...after,
+              source: opts.source,
+              createdBy: opts.createdBy,
+            },
+          ],
+          guard
+        ),
         db
           .update(locations)
           .set({
@@ -485,7 +507,7 @@ export function createLocationsMethods(db: Database, organizationId: string) {
               : {}),
             updatedAt: new Date(),
           })
-          .where(and(eq(locations.id, existing.id), inOrganization)),
+          .where(and(eq(locations.id, existing.id), inOrganization, guard)),
       ],
     };
   };
@@ -498,24 +520,39 @@ export function createLocationsMethods(db: Database, organizationId: string) {
       source: BibleVersionSource;
       createdBy: string | null;
       referenceStatus: ReferenceStatus;
-    }
+    },
+    guard?: SQL
   ) => {
     const versionId = generateId();
     return [
-      db.insert(locations).values({
-        id,
-        organizationId,
-        selectedBibleVersionId: versionId,
-        legacyName: bible.name,
-        referenceStatus: opts.referenceStatus,
-      }),
-      db.insert(locationBibleVersions).values({
-        id: versionId,
-        locationId: id,
-        ...bible,
-        source: opts.source,
-        createdBy: opts.createdBy,
-      }),
+      insertWithStoryboardGuard(
+        db,
+        locations,
+        [
+          {
+            id,
+            organizationId,
+            selectedBibleVersionId: versionId,
+            legacyName: bible.name,
+            referenceStatus: opts.referenceStatus,
+          },
+        ],
+        guard
+      ),
+      insertWithStoryboardGuard(
+        db,
+        locationBibleVersions,
+        [
+          {
+            id: versionId,
+            locationId: id,
+            ...bible,
+            source: opts.source,
+            createdBy: opts.createdBy,
+          },
+        ],
+        guard && and(guard, scope?.organizationLocation(id))
+      ),
     ] as const;
   };
 
@@ -564,12 +601,24 @@ export function createLocationsMethods(db: Database, organizationId: string) {
       const update = db
         .update(sequenceLocationLinks)
         .set(bound)
-        .where(eq(sequenceLocationLinks.id, own.id));
+        .where(
+          and(
+            eq(sequenceLocationLinks.id, own.id),
+            linkWriteScope(sequenceId, own.locationId),
+            scope?.organizationLocation(id)
+          )
+        );
       if (holder && holder.id !== own.id) {
         await db.batch([
           db
             .delete(sequenceLocationLinks)
-            .where(eq(sequenceLocationLinks.id, holder.id)),
+            .where(
+              and(
+                eq(sequenceLocationLinks.id, holder.id),
+                linkWriteScope(sequenceId, holder.locationId),
+                scope?.location(id)
+              )
+            ),
           update,
         ]);
       } else {
@@ -579,9 +628,20 @@ export function createLocationsMethods(db: Database, organizationId: string) {
       await db
         .update(sequenceLocationLinks)
         .set(bound)
-        .where(eq(sequenceLocationLinks.id, holder.id));
+        .where(
+          and(
+            eq(sequenceLocationLinks.id, holder.id),
+            linkWriteScope(sequenceId, holder.locationId),
+            scope?.organizationLocation(id)
+          )
+        );
     } else {
-      await db.insert(sequenceLocationLinks).values({ sequenceId, ...bound });
+      await insertWithStoryboardGuard(
+        db,
+        sequenceLocationLinks,
+        [{ sequenceId, ...bound }],
+        scope && and(scope.sequence(sequenceId), scope.organizationLocation(id))
+      );
     }
     // The place analysis made here for this script id has lost its only
     // link to the writer's pick. Nothing uses it, so it leaves the organization's
@@ -594,6 +654,8 @@ export function createLocationsMethods(db: Database, organizationId: string) {
           and(
             eq(locations.id, holder.locationId),
             inOrganization,
+            scope?.sequence(sequenceId),
+            scope?.organizationLocation(locations.id),
             isNull(locations.deletedAt),
             sql`NOT EXISTS (SELECT 1 FROM sequence_location_links o WHERE o.location_id = ${holder.locationId})`
           )
@@ -639,20 +701,33 @@ export function createLocationsMethods(db: Database, organizationId: string) {
       await requireSequence(data.sequenceId);
       const id = data.id ?? generateId();
       await db.batch([
-        ...insertLocation(id, firstBible(data), {
-          ...opts,
-          referenceStatus: data.referenceStatus ?? 'pending',
-        }),
-        db.insert(sequenceLocationLinks).values({
-          sequenceId: data.sequenceId,
-          locationId: id,
-          scriptLocationId: data.locationId,
-          ...firstMention,
-          // A location the writer added (`source: 'edit'`) is attached, so a
-          // later analysis that reuses the script id cannot rewrite it.
-          // Analysis-made locations stay unattached.
-          attached: opts.source === 'edit',
-        }),
+        ...insertLocation(
+          id,
+          firstBible(data),
+          {
+            ...opts,
+            referenceStatus: data.referenceStatus ?? 'pending',
+          },
+          scope?.sequence(data.sequenceId)
+        ),
+        insertWithStoryboardGuard(
+          db,
+          sequenceLocationLinks,
+          [
+            {
+              sequenceId: data.sequenceId,
+              locationId: id,
+              scriptLocationId: data.locationId,
+              ...firstMention,
+              // A location the writer added (`source: 'edit'`) is attached, so a
+              // later analysis that reuses the script id cannot rewrite it.
+              // Analysis-made locations stay unattached.
+              attached: opts.source === 'edit',
+            },
+          ],
+          scope &&
+            and(scope.sequence(data.sequenceId), scope.organizationLocation(id))
+        ),
       ]);
       return { ...(await requireLinked(data.sequenceId, id)), held: false };
     }
@@ -663,7 +738,12 @@ export function createLocationsMethods(db: Database, organizationId: string) {
       db
         .update(sequenceLocationLinks)
         .set({ removedAt: null, ...(opts.bulk ? firstMention : {}) })
-        .where(eq(sequenceLocationLinks.id, existing.linkId)),
+        .where(
+          and(
+            eq(sequenceLocationLinks.id, existing.linkId),
+            linkWriteScope(data.sequenceId, existing.id)
+          )
+        ),
       db
         .update(locations)
         .set({ deletedAt: null, updatedAt: new Date() })
@@ -671,7 +751,9 @@ export function createLocationsMethods(db: Database, organizationId: string) {
           and(
             eq(locations.id, existing.id),
             inOrganization,
-            isNotNull(locations.deletedAt)
+            isNotNull(locations.deletedAt),
+            scope?.sequence(data.sequenceId),
+            scope?.location(locations.id)
           )
         ),
     ] as const;
@@ -689,7 +771,8 @@ export function createLocationsMethods(db: Database, organizationId: string) {
     const { statements } = bibleWrite(
       await ownOf(existing.id),
       bibleOf(data),
-      opts
+      opts,
+      scope && and(scope.sequence(data.sequenceId), scope.location(existing.id))
     );
     await db.batch([
       ...link,
@@ -700,7 +783,14 @@ export function createLocationsMethods(db: Database, organizationId: string) {
             db
               .update(locations)
               .set({ referenceStatus: data.referenceStatus })
-              .where(and(eq(locations.id, existing.id), inOrganization)),
+              .where(
+                and(
+                  eq(locations.id, existing.id),
+                  inOrganization,
+                  scope?.sequence(data.sequenceId),
+                  scope?.location(locations.id)
+                )
+              ),
           ]),
     ]);
     return {

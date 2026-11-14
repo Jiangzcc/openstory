@@ -7,6 +7,39 @@ run and Update all. There is no stored stage and no checkpoint: the old
 ~80 edits that never moved it, and every mismatch was a refused click. The
 columns are gone (#1819).
 
+## Analysis cast ownership (secondary development, 2026-11-14)
+
+AnalyzeScript passes its resolved Storyboard root to `createCastRecords`.
+The service binds only `characters.create`, the two analysis-look writers,
+`locations.createBulk` and `sequenceElements.create` through
+`storyboardCast(owner)`. Its `withOwnership` bracket checks empty and reused
+results too; it is not a transaction or a replacement for SQL predicates.
+Each method first rejects a supplied sequence outside that immutable owner.
+
+Actual mutations check organization, sequence, root or explicitly trusted
+claim, and `processing`. Existing character/look/location targets follow
+real organization and cast/link relationships. Initial internally allocated
+rows are admitted by their root sequence with organization injected; they
+can precede their link inside the existing creation batch. Matched location
+binding and orphan cleanup need organization-plus-root admission because
+the link may not exist yet or may already have been removed.
+
+The fence includes nested identity/history/link writes, pointers, status and
+claim changes, default-look backfill, legacy look/bible moves, voice-description
+fill, look retirement, activity inserts and location cleanup. Shared/attached
+bible policy, removed links, archived sequences, stable identities, uploaded
+element precedence, the element cap and existing per-method batches retain
+their original contracts. Previously authorized batches are not rolled back.
+
+Confirmed ownership loss is converted inside `create-cast-records` to a
+non-retryable error; unavailable checks and engine aborts retain the shared
+error protocol. Ownerless callers use ordinary writers. No model, payload
+language, recipe hash, schema or named workflow read hatch is added here.
+Complete descendant/event ownership, changes to sharing eligibility during
+an existing check/write window, cached steps, root cancellation and deployed
+acceptance remain separate. Exact local evidence is in the
+[analysis-cast batch](../secondary-development/preservation/20261114-p3-g03-analysis-cast/README.md).
+
 ## Automatic-style ownership (secondary development, 2026-11-14)
 
 AnalyzeScript passes its resolved Storyboard root to automatic-style
@@ -32,7 +65,7 @@ authorized recipe can remain if ownership is lost before snapshotting.
 
 This fences persistence, not model spending or all external events. A root
 can still change after the final check and before `generation.style:ready`.
-Cached checkpoints, casting/shared resources, complete descendant/event
+Cached checkpoints, other shared-resource writers, complete descendant/event
 ownership, root cancellation and deployed acceptance remain open. Exact
 local evidence is in the [automatic-style batch](../secondary-development/preservation/20261114-p3-g03-auto-style/README.md).
 
@@ -65,9 +98,8 @@ by a processing-only content fence. Existing per-method batch boundaries,
 and rewrite-claim behavior remain. The full spec/prompt publication loop is
 not one transaction; earlier authorized writes can remain after failure.
 
-Casting, organization-shared looks/locations, generated element creation
-and every other descendant are still outside this slice; automatic style
-has the separate contract above. A takeover after a successful write/check can still precede a shot
+Cast and automatic-style writes have the separate contracts above; every
+other descendant remains outside this slice. A takeover after a successful write/check can still precede a shot
 event, phase signal or callback. Ownerless standalone calls, old cached
 steps, root cancellation and deployed Cloudflare/provider acceptance remain
 open. Exact local evidence is in the [analysis output batch](../secondary-development/preservation/20261114-p3-g03-analysis-output/README.md).

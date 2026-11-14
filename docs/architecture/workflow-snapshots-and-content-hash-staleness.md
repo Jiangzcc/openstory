@@ -1,5 +1,23 @@
 # Workflow snapshots and content-hash staleness
 
+## Analysis cast write fences (secondary development, 2026-11-14)
+
+The `createCastRecords` service binds its five writers through
+`storyboardCast` when AnalyzeScript supplies its trusted root. Root-aware
+SQL guards extend into character/look/location initialization and histories,
+selection/claim writes, voice-description fill, look backfill and legacy
+features, activity and cleanup. Generated element INSERTs use the same
+root predicate and keep schema defaults and encoding.
+
+The shared organization/cast/link predicates distinguish an existing parent
+from an initial row or an orphan eligible for cleanup. A method-boundary
+check cannot authorize later SQL; an outer `withOwnership` bracket only adds
+checks for empty/reused results and failures. Existing atomic batches remain
+atomic, but the whole cast loop is not. Ordinary ownerless entry points and
+all hashes retain their original behavior. See the
+[cast ownership contract](generation-plan.md#analysis-cast-ownership-secondary-development-2026-11-14)
+for sharing, retry and remaining concurrency/acceptance boundaries.
+
 ## Analysis output write fences (secondary development, 2026-11-14)
 
 `storyboardAnalysisOutput` extends the root-owned write contract to
@@ -24,7 +42,7 @@ with SceneSplit. Lost ownership escapes as non-retryable inside the step;
 unknown ownership and engine restarts retain their existing retry/abort
 semantics and original causes. Existing atomic method batches are preserved;
 the entire analysis output is not atomic. The [generation-plan contract](generation-plan.md#analysis-output-ownership-secondary-development-2026-11-14)
-records successful-path coverage and the still-open casting,
+records successful-path coverage and the still-open
 descendant event, standalone and deployed acceptance boundaries.
 
 ## Scene-split write fences (secondary development, 2026-11-14)

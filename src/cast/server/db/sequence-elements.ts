@@ -58,6 +58,8 @@ import {
 import { pageOf } from '@/platform/server/db/read-page';
 import type { PageOptions } from '@/platform/server/db/read-page';
 import { buildEventInsert } from '@/sequences/server/db/sequence-events';
+import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
+import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 
 /** Selected visual prompt text for each shot's anchor frame, keyed by shot id. */
 async function loadVisualPromptsByShotId(
@@ -75,7 +77,10 @@ async function loadVisualPromptsByShotId(
   return new Map(rows.map((r) => [r.shotId, r.text]));
 }
 
-export function createSequenceElementsMethods(db: Database) {
+export function createSequenceElementsMethods(
+  db: Database,
+  scope?: StoryboardContentScope
+) {
   const update = async (
     id: string,
     data: Partial<NewSequenceElement>
@@ -230,10 +235,12 @@ export function createSequenceElementsMethods(db: Database) {
     },
 
     create: async (data: NewSequenceElement): Promise<SequenceElement> => {
-      const [element] = await db
-        .insert(sequenceElements)
-        .values(data)
-        .returning();
+      const [element] = await insertWithStoryboardGuard(
+        db,
+        sequenceElements,
+        [data],
+        scope?.sequence(data.sequenceId)
+      ).returning();
       // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- DB may return undefined
       if (!element) {
         throw new Error('Failed to insert sequence element');

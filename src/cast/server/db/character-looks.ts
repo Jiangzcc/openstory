@@ -44,6 +44,7 @@ import {
   characterSheetVariants,
   characters,
   sequenceCast,
+  sequenceEvents,
   sequences,
 } from '@/platform/server/db/schema';
 import {
@@ -58,6 +59,8 @@ import {
 } from './bible-versions';
 import { analysisMayNotRewrite } from './sequence-cast';
 import { demoteCharacterSheetClaims } from './sheet-claims';
+import type { StoryboardCastScope } from '@/sequences/server/db/storyboard-cast-scope';
+import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
 
 /**
  * A look's live sheet version: its explicit selection, else — for a default
@@ -169,7 +172,8 @@ const lookOrder = [
 const backfillDefaultLook = async (
   db: Database,
   organizationId: string,
-  characterId: string
+  characterId: string,
+  scope?: StoryboardCastScope
 ): Promise<void> => {
   const rows = await db
     .select({
@@ -198,32 +202,40 @@ const backfillDefaultLook = async (
   const [legacy] = rows;
   if (!legacy) return;
   await db.batch([
-    db
-      .insert(characterLooks)
-      .values({
-        id: legacy.id,
-        characterId: legacy.id,
-        isDefault: true,
-        sortOrder: 0,
-        selectedLookVersionId: legacy.id,
-        selectedSheetVersionId: legacy.selectedSheetVersionId,
-        pendingPromoteSheetVersionId: legacy.pendingPromoteSheetVersionId,
-        sheetStatus: legacy.sheetStatus,
-        sheetError: legacy.sheetError,
-      })
-      .onConflictDoNothing(),
-    db
-      .insert(characterLookVersions)
-      .values({
-        id: legacy.id,
-        lookId: legacy.id,
-        name: DEFAULT_LOOK_NAME,
-        clothing: legacy.clothing,
-        styling: null,
-        source: 'backfill',
-        createdBy: null,
-      })
-      .onConflictDoNothing(),
+    insertWithStoryboardGuard(
+      db,
+      characterLooks,
+      [
+        {
+          id: legacy.id,
+          characterId: legacy.id,
+          isDefault: true,
+          sortOrder: 0,
+          selectedLookVersionId: legacy.id,
+          selectedSheetVersionId: legacy.selectedSheetVersionId,
+          pendingPromoteSheetVersionId: legacy.pendingPromoteSheetVersionId,
+          sheetStatus: legacy.sheetStatus,
+          sheetError: legacy.sheetError,
+        },
+      ],
+      scope?.character(legacy.id)
+    ).onConflictDoNothing(),
+    insertWithStoryboardGuard(
+      db,
+      characterLookVersions,
+      [
+        {
+          id: legacy.id,
+          lookId: legacy.id,
+          name: DEFAULT_LOOK_NAME,
+          clothing: legacy.clothing,
+          styling: null,
+          source: 'backfill',
+          createdBy: null,
+        },
+      ],
+      scope?.look(legacy.id)
+    ).onConflictDoNothing(),
   ]);
 };
 
@@ -242,11 +254,12 @@ const getLook = async (
 export const requireLook = async (
   db: Database,
   organizationId: string,
-  id: string
+  id: string,
+  scope?: StoryboardCastScope
 ): Promise<CharacterLook> => {
   const found = await getLook(db, organizationId, id);
   if (found) return found;
-  await backfillDefaultLook(db, organizationId, id);
+  await backfillDefaultLook(db, organizationId, id, scope);
   const look = await getLook(db, organizationId, id);
   if (!look) throw new NotFoundError(`Look ${id} not found`);
   return look;
@@ -325,16 +338,24 @@ const newLookRow = (
     versionId: string;
     characterId: string;
     sortOrder: number;
-  }
+  },
+  scope?: StoryboardCastScope
 ) =>
-  db.insert(characterLooks).values({
-    id: look.id,
-    characterId: look.characterId,
-    isDefault: false,
-    sortOrder: look.sortOrder,
-    selectedLookVersionId: look.versionId,
-    sheetStatus: 'pending',
-  });
+  insertWithStoryboardGuard(
+    db,
+    characterLooks,
+    [
+      {
+        id: look.id,
+        characterId: look.characterId,
+        isDefault: false,
+        sortOrder: look.sortOrder,
+        selectedLookVersionId: look.versionId,
+        sheetStatus: 'pending',
+      },
+    ],
+    scope?.character(look.characterId)
+  );
 
 /**
  * The one writer of a look's definition: the statements that append a
@@ -364,8 +385,10 @@ export const lookDefinitionWrite = async (
     source: LookVersionSource;
     createdBy: string | null;
     sequenceId: string | null;
-  }
+  },
+  scope?: StoryboardCastScope
 ) => {
+  const guard = scope?.look(look.id);
   const before: LookDefinition = {
     name: look.name,
     clothing: look.clothing,
@@ -383,7 +406,7 @@ export const lookDefinitionWrite = async (
   const stylingMoved = moved.includes('styling');
   const legacyMove =
     stylingMoved && look.isDefault
-      ? await legacyFeaturesMove(db, look, opts)
+      ? await legacyFeaturesMove(db, look, opts, scope)
       : [];
   return {
     moved,
@@ -391,14 +414,21 @@ export const lookDefinitionWrite = async (
     /** The version appended. */
     versionId,
     statements: [
-      db.insert(characterLookVersions).values({
-        id: versionId,
-        lookId: look.id,
-        ...after,
-        styling: stylingMoved ? after.styling : look.storedStyling,
-        source: opts.source,
-        createdBy: opts.createdBy,
-      }),
+      insertWithStoryboardGuard(
+        db,
+        characterLookVersions,
+        [
+          {
+            id: versionId,
+            lookId: look.id,
+            ...after,
+            styling: stylingMoved ? after.styling : look.storedStyling,
+            source: opts.source,
+            createdBy: opts.createdBy,
+          },
+        ],
+        guard
+      ),
       db
         .update(characterLooks)
         .set({
@@ -406,7 +436,9 @@ export const lookDefinitionWrite = async (
           ...(touchesSheet ? { pendingPromoteSheetVersionId: null } : {}),
           updatedAt: new Date(),
         })
-        .where(eq(characterLooks.id, look.id)),
+        .where(
+          and(eq(characterLooks.id, look.id), scope?.look(characterLooks.id))
+        ),
       ...legacyMove,
     ],
   };
@@ -428,7 +460,8 @@ const legacyFeaturesMove = async (
     source: LookVersionSource;
     createdBy: string | null;
     sequenceId: string | null;
-  }
+  },
+  scope?: StoryboardCastScope
 ): Promise<BatchItem<'sqlite'>[]> => {
   // ponytail: a character an older worker wrote before #1600 has no bible version to append to, so its legacy features stay joined; give it a version first if one ever turns up.
   const [current] = await db
@@ -443,35 +476,55 @@ const legacyFeaturesMove = async (
   if (!current?.version.legacyDistinguishingFeatures?.trim()) return [];
   const { version } = current;
   const versionId = generateId();
+  const guard = scope
+    ? and(scope.look(look.id), scope.character(version.characterId))
+    : undefined;
   return [
-    db.insert(characterBibleVersions).values({
-      ...version,
-      id: versionId,
-      legacyDistinguishingFeatures: null,
-      source: opts.source,
-      createdBy: opts.createdBy,
-      createdAt: new Date(),
-    }),
+    insertWithStoryboardGuard(
+      db,
+      characterBibleVersions,
+      [
+        {
+          ...version,
+          id: versionId,
+          legacyDistinguishingFeatures: null,
+          source: opts.source,
+          createdBy: opts.createdBy,
+          createdAt: new Date(),
+        },
+      ],
+      guard
+    ),
     db
       .update(characters)
       .set({ selectedBibleVersionId: versionId, updatedAt: new Date() })
-      .where(eq(characters.id, version.characterId)),
-    demoteCharacterSheetClaims(db, eq(characters.id, version.characterId)),
+      .where(and(eq(characters.id, version.characterId), guard)),
+    demoteCharacterSheetClaims(
+      db,
+      sql`${eq(characters.id, version.characterId)} and ${guard ?? sql`true`}`
+    ),
     ...(opts.sequenceId === null
       ? []
       : [
-          buildEventInsert(db, {
-            sequenceId: opts.sequenceId,
-            actorId: opts.createdBy,
-            kind: 'character.updated',
-            targetType: 'character',
-            targetId: version.characterId,
-            summary: `Moved the features of ${version.name} to the default look`,
-            data: {
-              prevState: {},
-              bibleVersion: { from: version.id, to: versionId },
-            },
-          }),
+          insertWithStoryboardGuard(
+            db,
+            sequenceEvents,
+            [
+              {
+                sequenceId: opts.sequenceId,
+                actorId: opts.createdBy,
+                kind: 'character.updated',
+                targetType: 'character',
+                targetId: version.characterId,
+                summary: `Moved the features of ${version.name} to the default look`,
+                data: {
+                  prevState: {},
+                  bibleVersion: { from: version.id, to: versionId },
+                },
+              },
+            ],
+            scope ? and(guard, scope.sequence(opts.sequenceId)) : undefined
+          ),
         ]),
   ];
 };
@@ -536,7 +589,8 @@ export const deleteLooksOfCharacters = (
 
 export function createCharacterLooksMethods(
   db: Database,
-  organizationId: string
+  organizationId: string,
+  scope?: StoryboardCastScope
 ) {
   type LookWriteOpts = { source: LookVersionSource; actorId: string | null };
 
@@ -737,7 +791,12 @@ export function createCharacterLooksMethods(
         );
       }
       const opts = { source: 'analysis' as const, createdBy: null };
-      const defaultLook = await requireLook(db, organizationId, characterId);
+      const defaultLook = await requireLook(
+        db,
+        organizationId,
+        characterId,
+        scope
+      );
       const owner = await ownerOf(db, organizationId, sequenceId, characterId);
       const others = (
         await selectLooks(
@@ -754,25 +813,35 @@ export function createCharacterLooksMethods(
           db,
           look,
           patch,
-          { ...opts, sequenceId }
+          { ...opts, sequenceId },
+          scope
         );
         const [first, ...rest] = statements;
         if (!first || versionId === null) return;
         await db.batch([
           first,
           ...rest,
-          buildEventInsert(db, {
-            sequenceId,
-            actorId: null,
-            kind: 'look.updated',
-            targetType: 'character',
-            targetId: characterId,
-            summary: `Re-analysed look ${patch.name ?? look.name} of ${owner.name}`,
-            data: {
-              lookId: look.id,
-              lookVersion: { from: look.lookVersionId, to: versionId },
-            },
-          }),
+          insertWithStoryboardGuard(
+            db,
+            sequenceEvents,
+            [
+              {
+                sequenceId,
+                actorId: null,
+                kind: 'look.updated',
+                targetType: 'character',
+                targetId: characterId,
+                summary: `Re-analysed look ${patch.name ?? look.name} of ${owner.name}`,
+                data: {
+                  lookId: look.id,
+                  lookVersion: { from: look.lookVersionId, to: versionId },
+                },
+              },
+            ],
+            scope
+              ? and(scope.sequence(sequenceId), scope.character(characterId))
+              : undefined
+          ),
         ]);
       };
       const key = (name: string) => name.trim().toLowerCase();
@@ -805,7 +874,12 @@ export function createCharacterLooksMethods(
             await db
               .update(characterLooks)
               .set({ deletedAt: null, updatedAt: new Date() })
-              .where(eq(characterLooks.id, existing.id));
+              .where(
+                and(
+                  eq(characterLooks.id, existing.id),
+                  scope?.look(characterLooks.id)
+                )
+              );
           }
           ids[look.lookId] = existing.id;
           continue;
@@ -813,18 +887,29 @@ export function createCharacterLooksMethods(
         const id = generateId();
         const versionId = generateId();
         await db.batch([
-          newLookRow(db, {
-            id,
-            versionId,
-            characterId,
-            sortOrder: others.length + index,
-          }),
-          db.insert(characterLookVersions).values({
-            id: versionId,
-            lookId: id,
-            ...definition,
-            ...opts,
-          }),
+          newLookRow(
+            db,
+            {
+              id,
+              versionId,
+              characterId,
+              sortOrder: others.length + index,
+            },
+            scope
+          ),
+          insertWithStoryboardGuard(
+            db,
+            characterLookVersions,
+            [
+              {
+                id: versionId,
+                lookId: id,
+                ...definition,
+                ...opts,
+              },
+            ],
+            scope?.look(id)
+          ),
         ]);
         matched.add(id);
         ids[look.lookId] = id;
@@ -864,16 +949,30 @@ export function createCharacterLooksMethods(
             db
               .update(characterLooks)
               .set({ deletedAt, updatedAt: deletedAt })
-              .where(eq(characterLooks.id, row.id)),
-            buildEventInsert(db, {
-              sequenceId,
-              actorId: null,
-              kind: 'look.removed',
-              targetType: 'character',
-              targetId: characterId,
-              summary: `Removed look ${row.name} of ${owner.name}: the script no longer has it`,
-              data: { lookId: row.id, name: row.name, by: 'analysis' },
-            }),
+              .where(
+                and(
+                  eq(characterLooks.id, row.id),
+                  scope?.look(characterLooks.id)
+                )
+              ),
+            insertWithStoryboardGuard(
+              db,
+              sequenceEvents,
+              [
+                {
+                  sequenceId,
+                  actorId: null,
+                  kind: 'look.removed',
+                  targetType: 'character',
+                  targetId: characterId,
+                  summary: `Removed look ${row.name} of ${owner.name}: the script no longer has it`,
+                  data: { lookId: row.id, name: row.name, by: 'analysis' },
+                },
+              ],
+              scope
+                ? and(scope.sequence(sequenceId), scope.look(row.id))
+                : undefined
+            ),
           ]);
         }
       }
@@ -932,21 +1031,32 @@ export function createCharacterLooksMethods(
         const id = generateId();
         const versionId = generateId();
         statements.push(
-          newLookRow(db, {
-            id,
-            versionId,
-            characterId,
-            sortOrder: nextSort++,
-          }),
-          db.insert(characterLookVersions).values({
-            id: versionId,
-            lookId: id,
-            name: look.name.trim() || DEFAULT_LOOK_NAME,
-            clothing: look.clothing.trim() || null,
-            styling: look.styling.trim() || null,
-            source: 'analysis',
-            createdBy: null,
-          })
+          newLookRow(
+            db,
+            {
+              id,
+              versionId,
+              characterId,
+              sortOrder: nextSort++,
+            },
+            scope
+          ),
+          insertWithStoryboardGuard(
+            db,
+            characterLookVersions,
+            [
+              {
+                id: versionId,
+                lookId: id,
+                name: look.name.trim() || DEFAULT_LOOK_NAME,
+                clothing: look.clothing.trim() || null,
+                styling: look.styling.trim() || null,
+                source: 'analysis',
+                createdBy: null,
+              },
+            ],
+            scope?.look(id)
+          )
         );
         own.push({ id, sortOrder: nextSort, name: look.name });
         ids[look.lookId] = id;

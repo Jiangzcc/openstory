@@ -59,6 +59,7 @@ import {
   characterVoiceVersions,
   characters,
   sequenceCast,
+  sequenceEvents,
   sequences,
   shots,
 } from '@/platform/server/db/schema';
@@ -110,6 +111,8 @@ import {
   eventNotLogged,
 } from '@/sequences/server/db/sequence-events';
 import { CHARACTER_SHEET_BIBLE_FIELDS } from '@/shots/input-hash';
+import type { StoryboardCastScope } from '@/sequences/server/db/storyboard-cast-scope';
+import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
 
 /** A new character's bible where the caller left a field out. */
 const NEW_CHARACTER_BIBLE: Omit<CharacterBible, 'name'> = {
@@ -480,7 +483,11 @@ export const deleteCharactersStatements = (db: Database, where: SQL) => {
   ] as const;
 };
 
-export function createCharactersMethods(db: Database, organizationId: string) {
+export function createCharactersMethods(
+  db: Database,
+  organizationId: string,
+  scope?: StoryboardCastScope
+) {
   const looks = createCharacterLooksMethods(db, organizationId);
   const inOrganization = eq(characters.organizationId, organizationId);
   const voiceInOrganization = () =>
@@ -738,7 +745,8 @@ export function createCharactersMethods(db: Database, organizationId: string) {
     opts: {
       source: BibleVersionSource;
       createdBy: string | null;
-    }
+    },
+    guard?: SQL
   ) => {
     const before = pickCharacterBible(existing);
     const after = mergeBible(before, patch);
@@ -752,23 +760,35 @@ export function createCharactersMethods(db: Database, organizationId: string) {
       /** The version appended; the event names the move from → to. */
       versionId,
       statements: [
-        db.insert(characterBibleVersions).values({
-          id: versionId,
-          characterId: existing.id,
-          ...after,
-          legacyDistinguishingFeatures:
-            existing.legacyDistinguishingFeatures === null
-              ? null
-              : sql`CASE WHEN EXISTS (SELECT 1 FROM ${characters} c JOIN ${characterBibleVersions} cur ON cur.id = c.selected_bible_version_id WHERE c.id = ${existing.id} AND cur.distinguishing_features IS NULL) THEN NULL ELSE ${existing.legacyDistinguishingFeatures} END`,
-          source: opts.source,
-          createdBy: opts.createdBy,
-        }),
+        insertWithStoryboardGuard(
+          db,
+          characterBibleVersions,
+          [
+            {
+              id: versionId,
+              characterId: existing.id,
+              ...after,
+              legacyDistinguishingFeatures:
+                existing.legacyDistinguishingFeatures === null
+                  ? null
+                  : sql`CASE WHEN EXISTS (SELECT 1 FROM ${characters} c JOIN ${characterBibleVersions} cur ON cur.id = c.selected_bible_version_id WHERE c.id = ${existing.id} AND cur.distinguishing_features IS NULL) THEN NULL ELSE ${existing.legacyDistinguishingFeatures} END`,
+              source: opts.source,
+              createdBy: opts.createdBy,
+            },
+          ],
+          guard
+        ),
         db
           .update(characters)
           .set({ selectedBibleVersionId: versionId, updatedAt: new Date() })
-          .where(eq(characters.id, existing.id)),
+          .where(and(eq(characters.id, existing.id), guard)),
         ...(touchesSheet(moved)
-          ? [demoteCharacterSheetClaims(db, eq(characters.id, existing.id))]
+          ? [
+              demoteCharacterSheetClaims(
+                db,
+                sql`${eq(characters.id, existing.id)} and ${guard ?? sql`true`}`
+              ),
+            ]
           : []),
       ],
     };
@@ -812,26 +832,35 @@ export function createCharactersMethods(db: Database, organizationId: string) {
     /** Who did this — required so no writer forgets; null when nobody did. */
     createdBy: string | null,
     /** The history line. Null for a write made from no sequence. */
-    activity: { sequenceId: string; summary: string } | null
+    activity: { sequenceId: string; summary: string } | null,
+    guard?: SQL
   ): Promise<CharacterVoiceState> => {
     const existing = await voiceOf(id);
     const versionId = generateId();
-    const writeVersion = db.insert(characterVoiceVersions).values({
-      id: versionId,
-      characterId: id,
-      voiceId: data.voiceId === undefined ? existing.voiceId : data.voiceId,
-      description:
-        data.voiceDescription === undefined
-          ? existing.voiceDescription
-          : data.voiceDescription,
-      previews:
-        data.voicePreviews === undefined
-          ? existing.voicePreviews
-          : data.voicePreviews,
-      enabled: data.useVoice === undefined ? existing.useVoice : data.useVoice,
-      source,
-      createdBy,
-    });
+    const writeVersion = insertWithStoryboardGuard(
+      db,
+      characterVoiceVersions,
+      [
+        {
+          id: versionId,
+          characterId: id,
+          voiceId: data.voiceId === undefined ? existing.voiceId : data.voiceId,
+          description:
+            data.voiceDescription === undefined
+              ? existing.voiceDescription
+              : data.voiceDescription,
+          previews:
+            data.voicePreviews === undefined
+              ? existing.voicePreviews
+              : data.voicePreviews,
+          enabled:
+            data.useVoice === undefined ? existing.useVoice : data.useVoice,
+          source,
+          createdBy,
+        },
+      ],
+      guard
+    );
     const point = db
       .update(characters)
       .set({
@@ -840,7 +869,7 @@ export function createCharactersMethods(db: Database, organizationId: string) {
         pendingPromoteVoiceVersionId: null,
         updatedAt: new Date(),
       })
-      .where(eq(characters.id, id));
+      .where(and(eq(characters.id, id), guard));
     if (activity) {
       await db.batch([
         writeVersion,
@@ -1508,12 +1537,19 @@ export function createCharactersMethods(db: Database, organizationId: string) {
           const defaultLook = await requireLook(
             db,
             organizationId,
-            found.lookId
+            found.lookId,
+            scope
           );
           await db
             .update(characterLooks)
             .set({ sheetStatus: data.sheetStatus, updatedAt: new Date() })
-            .where(eq(characterLooks.id, defaultLook.id));
+            .where(
+              and(
+                eq(characterLooks.id, defaultLook.id),
+                scope?.look(characterLooks.id),
+                scope?.sequence(data.sequenceId)
+              )
+            );
           return await reread(data.sequenceId, found.id);
         }
         return found;
@@ -1556,14 +1592,16 @@ export function createCharactersMethods(db: Database, organizationId: string) {
         const defaultLook = await requireLook(
           db,
           organizationId,
-          existing.lookId
+          existing.lookId,
+          scope
         );
         const now = new Date();
         const clothingWrite = await lookDefinitionWrite(
           db,
           defaultLook,
           { clothing },
-          { ...look, sequenceId }
+          { ...look, sequenceId },
+          scope
         );
         // A field left out keeps its value, as the column upsert did.
         // A re-analysis may turn not-a-person into a person, never the
@@ -1577,7 +1615,10 @@ export function createCharactersMethods(db: Database, organizationId: string) {
             ...bibleOf(data),
             ...(existing.isPerson ? { isPerson: true } : {}),
           },
-          opts
+          opts,
+          scope
+            ? and(scope.character(id), scope.sequence(sequenceId))
+            : undefined
         );
         await db.batch([
           // A re-analysis re-extracting a removed character revives it — the
@@ -1586,30 +1627,51 @@ export function createCharactersMethods(db: Database, organizationId: string) {
           db
             .update(sequenceCast)
             .set({ removedAt: null })
-            .where(eq(sequenceCast.id, existing.castId)),
+            .where(
+              and(
+                eq(sequenceCast.id, existing.castId),
+                scope?.sequence(sequenceCast.sequenceId),
+                scope?.character(sequenceCast.characterId)
+              )
+            ),
           // Cast again, so back in the organization too, as `restore` does (#2065).
           db
             .update(characters)
             .set({ updatedAt: now, deletedAt: null })
-            .where(eq(characters.id, id)),
+            .where(
+              and(
+                eq(characters.id, id),
+                scope?.character(characters.id),
+                scope?.sequence(sequenceId)
+              )
+            ),
           ...bible.statements,
           ...(bible.versionId === null
             ? []
             : [
-                buildEventInsert(db, {
-                  sequenceId,
-                  actorId: opts.createdBy,
-                  kind: 'character.updated',
-                  targetType: 'character',
-                  targetId: id,
-                  summary: `Re-analysed character ${existing.name}`,
-                  data: {
-                    bibleVersion: {
-                      from: existing.selectedBibleVersionId,
-                      to: bible.versionId,
+                insertWithStoryboardGuard(
+                  db,
+                  sequenceEvents,
+                  [
+                    {
+                      sequenceId,
+                      actorId: opts.createdBy,
+                      kind: 'character.updated',
+                      targetType: 'character',
+                      targetId: id,
+                      summary: `Re-analysed character ${existing.name}`,
+                      data: {
+                        bibleVersion: {
+                          from: existing.selectedBibleVersionId,
+                          to: bible.versionId,
+                        },
+                      },
                     },
-                  },
-                }),
+                  ],
+                  scope
+                    ? and(scope.sequence(sequenceId), scope.character(id))
+                    : undefined
+                ),
               ]),
           // `sheetStatus` is the default look's: both callers pass an
           // explicit lifecycle value ('generating' for re-analysis,
@@ -1620,7 +1682,13 @@ export function createCharactersMethods(db: Database, organizationId: string) {
                 db
                   .update(characterLooks)
                   .set({ sheetStatus, updatedAt: now })
-                  .where(eq(characterLooks.id, defaultLook.id)),
+                  .where(
+                    and(
+                      eq(characterLooks.id, defaultLook.id),
+                      scope?.look(characterLooks.id),
+                      scope?.sequence(data.sequenceId)
+                    )
+                  ),
               ]),
           ...clothingWrite.statements,
         ]);
@@ -1632,43 +1700,84 @@ export function createCharactersMethods(db: Database, organizationId: string) {
         const versionId = generateId();
         const lookVersionId = generateId();
         await db.batch([
-          db.insert(characters).values({
-            ...row,
-            id,
-            organizationId,
-            selectedBibleVersionId: versionId,
-            legacyName: bible.name,
-          }),
-          db.insert(characterBibleVersions).values({
-            id: versionId,
-            characterId: id,
-            ...bible,
-            source: opts.source,
-            createdBy: opts.createdBy,
-          }),
-          db.insert(sequenceCast).values({
-            sequenceId,
-            characterId: id,
-            scriptCharacterId,
-          }),
+          insertWithStoryboardGuard(
+            db,
+            characters,
+            [
+              {
+                ...row,
+                id,
+                organizationId,
+                selectedBibleVersionId: versionId,
+                legacyName: bible.name,
+              },
+            ],
+            scope?.sequence(sequenceId)
+          ),
+          insertWithStoryboardGuard(
+            db,
+            characterBibleVersions,
+            [
+              {
+                id: versionId,
+                characterId: id,
+                ...bible,
+                source: opts.source,
+                createdBy: opts.createdBy,
+              },
+            ],
+            scope
+              ? and(scope.sequence(sequenceId), scope.organizationCharacter(id))
+              : undefined
+          ),
+          insertWithStoryboardGuard(
+            db,
+            sequenceCast,
+            [
+              {
+                sequenceId,
+                characterId: id,
+                scriptCharacterId,
+              },
+            ],
+            scope
+              ? and(scope.sequence(sequenceId), scope.organizationCharacter(id))
+              : undefined
+          ),
           // The default look reuses the character's id, as the backfill's
           // do, so a character has one whoever wrote it.
-          db.insert(characterLooks).values({
-            id,
-            characterId: id,
-            isDefault: true,
-            sortOrder: 0,
-            selectedLookVersionId: lookVersionId,
-            sheetStatus: sheetStatus ?? 'pending',
-          }),
-          db.insert(characterLookVersions).values({
-            id: lookVersionId,
-            lookId: id,
-            name: DEFAULT_LOOK_NAME,
-            clothing: clothing ?? null,
-            styling: null,
-            ...look,
-          }),
+          insertWithStoryboardGuard(
+            db,
+            characterLooks,
+            [
+              {
+                id,
+                characterId: id,
+                isDefault: true,
+                sortOrder: 0,
+                selectedLookVersionId: lookVersionId,
+                sheetStatus: sheetStatus ?? 'pending',
+              },
+            ],
+            scope
+              ? and(scope.sequence(sequenceId), scope.character(id))
+              : undefined
+          ),
+          insertWithStoryboardGuard(
+            db,
+            characterLookVersions,
+            [
+              {
+                id: lookVersionId,
+                lookId: id,
+                name: DEFAULT_LOOK_NAME,
+                clothing: clothing ?? null,
+                styling: null,
+                ...look,
+              },
+            ],
+            scope ? and(scope.sequence(sequenceId), scope.look(id)) : undefined
+          ),
         ]);
       }
       const character = await reread(sequenceId, id);
@@ -1692,7 +1801,10 @@ export function createCharactersMethods(db: Database, organizationId: string) {
           voicePatch.voiceId ? 'library' : 'analysis',
           // Seeded by the cast-records step, not by a person.
           null,
-          null
+          null,
+          scope
+            ? and(scope.sequence(sequenceId), scope.character(character.id))
+            : undefined
         );
         return await reread(sequenceId, id);
       }

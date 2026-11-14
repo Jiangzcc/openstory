@@ -188,6 +188,58 @@ on that row, and the sheet fan-out draws nothing for it. A location
 analysis made here, that only this sequence has ever used, is re-analysed
 as before: a new bible version when a field moved, and `held` is false.
 
+## Storyboard cast ownership (GC-03, secondary development)
+
+`createLocationsMethods` accepts an optional `StoryboardCastScope`. The
+Storyboard cast facade exposes only `locations.createBulk`, validates every
+entry's sequence against the immutable owner, and uses
+`checkedStoryboardContentWrite` for its precheck, postcheck and error protocol.
+Ordinary organization-scoped callers keep the existing two-argument factory
+and empty-input behavior.
+
+The precheck alone cannot authorize a later write: a newer Storyboard can
+replace the root while analysis is reading locations. Every mutation reached
+through `createBulk`, `upsertOne`, `bind` and `bibleWrite` therefore checks the
+active processing root in SQL. This includes identity and bible inserts,
+bible pointers, claim revocation, location revival, link insert/update/delete
+and repointing, and the separate orphan soft-delete. These paths currently
+append no sequence events.
+
+Existing location writes require the organization's location and its actual
+link to the owner's sequence. Link mutations check the row's current sequence
+and parent location, rather than trusting a previously loaded link id. New
+identity inserts use the owner root and injected organization; their first
+bible and link inserts also check the newly inserted organization parent.
+Conditional inserts use `insertWithStoryboardGuard`, retaining schema
+defaults and column encoders.
+
+A matched organization location need not have an owner link yet, so admission
+checks its organization and the active root. Repointing and conflict removal
+also check the old link's actual parent. When the destination already has a
+link, conflict removal requires that destination still be linked to the
+owner. Orphan cleanup happens after that
+link has gone: it checks the organization and active root without requiring
+the vanished link, together with the existing unattached-holder and
+no-remaining-links eligibility rules.
+
+The existing one-location batches and separate bind cleanup remain intact.
+A batch committed while authorized stays committed if ownership is lost
+before the next batch or cleanup; the shared checker reports that loss.
+Replay identities, held bibles, removed-link revival, matching tags, sheet
+outputs/statuses and ordinary errors retain their existing contracts.
+`analysisMayNotRewrite` still makes its sharing/attachment decision from the
+existing read; this fence does not make that decision atomic with a concurrent
+attach or change the sharing policy.
+
+`storyboard-location-writes.test.ts` exercises the optional-scope factory with
+the shared checker and `createTestDb`'s real SQLite-backed D1 driver. Synthetic
+fixtures cover ordinary and bound invariants, successful-precheck owner loss
+at statement and whole-batch boundaries, parent changes, matching and orphan
+cleanup, and authorized partial commits. Timing spies delay transport only;
+they never interleave statements inside an atomic D1 batch. The test driver
+enforces D1's 100-bind limit. This is local SQL evidence, not workflow,
+HTTP, remote D1 or provider acceptance.
+
 ## Reference photos
 
 Photos are input to the sheet (`listPhotos`, `addPhotos`, `removePhoto`).

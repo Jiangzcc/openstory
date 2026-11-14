@@ -15,6 +15,8 @@ import type {
 } from '@/shots/scene-analysis.schema';
 import { generateId } from '@/platform/id';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
+import type { GenerationWorkflowOwner } from '@/platform/realtime/schema';
+import { bindCastRecordsOutput } from './cast-records-output';
 import type {
   NewCharacter,
   ReferenceStatus,
@@ -141,74 +143,108 @@ export function findMissingElementEntries(
  * are guarded by a token lookup (a step retry must not trip the unique
  * (sequenceId, token) index).
  */
-export async function createCastRecords(
-  scopedDb: WorkflowScopedDb,
-  args: {
-    sequenceId: string;
-    /** The trigger's cast snapshot (#2050): which entries are shared characters. */
-    cast: readonly AttachedCastSnapshot[];
-    characterBible: CharacterBibleEntry[];
-    locationBible: LocationBibleEntry[];
-    locationMatches: LibraryLocationMatch[];
-    elementBible: ElementBibleEntry[];
-    existingElements: Array<
-      Pick<SequenceElementMinimal, 'id' | 'token' | 'imageUrl'>
-    >;
-  }
-): Promise<{
+type CastRecordsInput = {
+  sequenceId: string;
+  /** The trigger's cast snapshot (#2050): which entries are shared characters. */
+  cast: readonly AttachedCastSnapshot[];
+  characterBible: CharacterBibleEntry[];
+  locationBible: LocationBibleEntry[];
+  locationMatches: LibraryLocationMatch[];
+  elementBible: ElementBibleEntry[];
+  existingElements: Array<
+    Pick<SequenceElementMinimal, 'id' | 'token' | 'imageUrl'>
+  >;
+  storyboardOwner?: GenerationWorkflowOwner;
+};
+type CastRecordsResult = {
   elements: SequenceElementMinimal[];
   /** Each bible look id → the `character_looks.id` it landed on (#2015). */
   lookIds: Record<string, string>;
-}> {
+};
+
+export async function createCastRecords(
+  scopedDb: WorkflowScopedDb,
+  args: CastRecordsInput
+): Promise<CastRecordsResult> {
+  if (!args.storyboardOwner) return persistCastRecords(scopedDb, args);
+  const bound = bindCastRecordsOutput(
+    scopedDb,
+    args.sequenceId,
+    args.storyboardOwner
+  );
+  return bound.run(() => persistCastRecords(bound.db, args));
+}
+
+async function persistCastRecords(
+  scopedDb: WorkflowScopedDb,
+  args: CastRecordsInput
+): Promise<CastRecordsResult> {
   const { sequenceId } = args;
   const sharedById = new Map(
     args.cast.filter((c) => c.shared).map((c) => [c.entry.characterId, c.id])
   );
   const lookIds: Record<string, string> = {};
   for (const character of args.characterBible) {
-    // A character the library or another sequence holds (#2050) is linked,
-    // never rewritten: no bible version, no look edit, no look removed. Her
-    // looks are matched by name and a new one is added for a name she lacks.
-    const sharedId = sharedById.get(character.characterId);
-    if (sharedId) {
-      if (character.voiceOnly) continue;
-      Object.assign(
-        lookIds,
-        await scopedDb.characterLooks.linkFromAnalysis(
-          sequenceId,
-          sharedId,
-          withBibleLooks(character).looks
-        )
-      );
-      continue;
-    }
-    const created = await scopedDb.characters.create(
-      buildCharacterInsert({
-        sequenceId,
-        character,
-        sheetStatus: 'pending',
-      }),
-      { source: 'analysis', createdBy: null }
-    );
-    // A voice-only character is never seen, so it wears nothing to track.
-    if (character.voiceOnly) continue;
     Object.assign(
       lookIds,
-      await scopedDb.characterLooks.syncFromAnalysis(
+      await persistCharacter(
+        scopedDb,
         sequenceId,
-        created.id,
-        withBibleLooks(character).looks
+        character,
+        sharedById.get(character.characterId)
       )
     );
   }
+  await persistLocations(scopedDb, args);
+  const elements = await persistElements(scopedDb, args);
+  return { elements, lookIds };
+}
 
+async function persistCharacter(
+  scopedDb: WorkflowScopedDb,
+  sequenceId: string,
+  character: CharacterBibleEntry,
+  sharedId: string | undefined
+): Promise<Record<string, string>> {
+  // A character the library or another sequence holds (#2050) is linked,
+  // never rewritten: no bible version, no look edit, no look removed. Her
+  // looks are matched by name and a new one is added for a name she lacks.
+  if (sharedId) {
+    if (character.voiceOnly) return {};
+    return scopedDb.characterLooks.linkFromAnalysis(
+      sequenceId,
+      sharedId,
+      withBibleLooks(character).looks
+    );
+  }
+  const created = await scopedDb.characters.create(
+    buildCharacterInsert({
+      sequenceId,
+      character,
+      sheetStatus: 'pending',
+    }),
+    { source: 'analysis', createdBy: null }
+  );
+  // A voice-only character is never seen, so it wears nothing to track.
+  if (character.voiceOnly) return {};
+  return scopedDb.characterLooks.syncFromAnalysis(
+    sequenceId,
+    created.id,
+    withBibleLooks(character).looks
+  );
+}
+
+async function persistLocations(
+  scopedDb: WorkflowScopedDb,
+  args: CastRecordsInput
+) {
   const libraryByLocation = new Map(
     args.locationMatches.map((m) => [m.locationId, m])
   );
   await scopedDb.locations.createBulk(
     args.locationBible.map((location) =>
       buildLocationInsert({
-        sequenceId,
+        sequenceId: args.sequenceId,
         location,
         libraryMatch: libraryByLocation.get(location.locationId),
         referenceStatus: 'pending',
@@ -216,7 +252,13 @@ export async function createCastRecords(
     ),
     { source: 'analysis', createdBy: null }
   );
+}
 
+async function persistElements(
+  scopedDb: WorkflowScopedDb,
+  args: CastRecordsInput
+): Promise<SequenceElementMinimal[]> {
+  const { sequenceId } = args;
   const elements: SequenceElementMinimal[] = [];
   for (const entry of findMissingElementEntries(
     args.elementBible,
@@ -244,16 +286,20 @@ export async function createCastRecords(
         firstMentionText: entry.firstMention.text,
         firstMentionLine: entry.firstMention.lineNumber,
       }));
-    elements.push({
-      id: row.id,
-      token: row.token,
-      description: row.description,
-      imageUrl: row.imageUrl,
-      consistencyTag: row.consistencyTag,
-      kind: row.kind,
-      durationSeconds: row.durationSeconds,
-      personInMedia: row.personInMedia,
-    });
+    elements.push(elementMinimal(row));
   }
-  return { elements, lookIds };
+  return elements;
+}
+
+function elementMinimal(row: SequenceElementMinimal): SequenceElementMinimal {
+  return {
+    id: row.id,
+    token: row.token,
+    description: row.description,
+    imageUrl: row.imageUrl,
+    consistencyTag: row.consistencyTag,
+    kind: row.kind,
+    durationSeconds: row.durationSeconds,
+    personInMedia: row.personInMedia,
+  };
 }

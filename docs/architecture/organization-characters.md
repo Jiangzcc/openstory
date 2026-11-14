@@ -389,6 +389,50 @@ the script then names her like any cast member.
   hard-deletes a sequence today. The ids are read before the batch, because
   the links that say so go first. See § Hard deletes.
 
+## Secondary development: GC-03 storyboard cast ownership (2026-11-14)
+
+The organization/link model and sharing policy above are upstream behavior. GC-03
+adds an optional `StoryboardCastScope` to `createCharactersMethods` for the
+storyboard facade's `characters.create` only. Ordinary callers, organization-page
+creation, edits, voice selection and sheet workflows keep their existing paths.
+Previously the analysis path read the cast link before writing by id; replacing
+the storyboard run after that read could still append history or move pointers.
+
+Every reachable INSERT now uses `insertWithStoryboardGuard`, preserving schema
+defaults and encoders, and every reachable UPDATE has an SQL ownership predicate.
+The predicate requires the organization's active processing sequence and its run
+id, plus the actual cast link for an existing character or the look's actual
+character/link chain. This includes bible versions and pointers, cast/character
+revival, sheet status and claim demotions, events, legacy default-look backfill,
+clothing versions, and the separate incoming-voice history/pointer/claim batch.
+The facade checks the supplied sequence id against its immutable owner; child ids
+never establish root authority.
+
+The original new-character batch order stays character → bible → link → default
+look → look version. The character INSERT injects `organizationId` and checks the
+root. Its first bible and link use `organizationCharacter` because the link does
+not exist yet; subsequent look/voice writes require the real link. These INSERTs
+are single-row statements under D1's 100-parameter limit. No schema or migration
+changes are involved.
+
+`checkedStoryboardContentWrite` supplies pre/post/error checks; SQL predicates
+close the gap between those checks and execution, including nested batches.
+Batches committed before ownership changed remain authorized history. Later
+mutations stop; this does not turn the whole service into a transaction or undo
+earlier batches. Sharing is still decided by `analysisMayNotRewrite` at its
+existing read boundaries: attached characters and links from any other sequence,
+including removed/archived links, retain upstream treatment. GC-03 adds no new
+serialization guarantee for a concurrent attach.
+
+`src/cast/server/db/storyboard-character-writes.test.ts` and its fixture exercise
+real migrated SQL through `createTestDb` with a synthetic valid cast graph. The
+scheduler replaces ownership before a complete D1 transport batch or a standalone
+statement, never between statements of an atomic batch, and never fabricates SQL
+results. Coverage includes late voice writes, legacy backfill, actual-parent and
+organization checks, sharing, changed-only histories, monotonic `isPerson`, and
+retention of already-authorized history. Cloudflare durable replay, remote D1,
+providers and deployment remain outside this local evidence.
+
 ## Hard deletes
 
 Nothing cascades from a sequence to a character, or from a character to its

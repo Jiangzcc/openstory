@@ -714,6 +714,13 @@ describe('AnalyzeScriptWorkflow output binding with synthetic runtime edges', ()
           sequenceId: SEQUENCE_ID,
         })
       );
+      expect(createCastRecords).toHaveBeenCalledExactlyOnceWith(
+        expect.anything(),
+        expect.objectContaining({
+          sequenceId: SEQUENCE_ID,
+          storyboardOwner: expected,
+        })
+      );
     }
   );
 });

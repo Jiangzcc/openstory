@@ -310,6 +310,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       if (!sequenceId) return { elements: [], lookIds: {} };
       return createCastRecords(scopedDb, {
         sequenceId,
+        storyboardOwner: workflowOwner,
         cast: input.cast,
         characterBible,
         locationBible,
