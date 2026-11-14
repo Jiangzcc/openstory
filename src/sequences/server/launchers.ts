@@ -26,8 +26,9 @@ import { toImageModelCatalog } from '@/models/image-channels';
  *   2. Claim it with a compare-and-swap (`scopedDb.sequences
  *      .claimWorkflowSlot`) — exactly one of two racing requests wins, even
  *      when both passed step 1.
- *   3. Trigger with the claim id as `deduplicationId`, then overwrite the
- *      column with the real instance id. If the trigger crashes in between,
+ *   3. Trigger with the claim id as `deduplicationId`, then replace the
+ *      claim with the real instance id only while it still owns the slot.
+ *      If the trigger crashes in between,
  *      the stranded claim resolves as 'failed' on the next acquire (it
  *      matches no workflow binding), so the slot recovers — never wedges.
  *
@@ -371,10 +372,6 @@ export async function triggerStoryboard(
   });
   if (!claimed) throw new GenerationInProgressError();
 
-  // Eager status write so the UI flips immediately; the workflow's first
-  // step re-asserts 'processing' either way. Clears any prior statusError.
-  await scopedDb.sequence(sequenceId).updateStatus('processing');
-
   // Mutex step 3: the claim id IS the deduplication id — if this call
   // crashes after create() but the caller retries the whole launcher, the
   // fresh claim produces a fresh instance; a stranded claim resolves as
@@ -413,7 +410,11 @@ export async function triggerStoryboard(
     });
     throw error;
   }
-  await scopedDb.sequences.update({ id: sequenceId, workflowRunId });
+  await scopedDb.sequences.publishWorkflowInstance({
+    id: sequenceId,
+    claimId,
+    workflowRunId,
+  });
 
   return { workflowRunId };
 }

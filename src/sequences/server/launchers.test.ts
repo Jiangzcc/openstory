@@ -1,15 +1,4 @@
-/**
- * Tests for the storyboard launcher + generation mutex (#839).
- *
- * The mutex contract: a storyboard can never start while the sequence's
- * previous run is still in flight, two racing requests can't both win the
- * CAS claim, and the launcher owns the side effects (status write, run-id
- * persistence, deduplication id) so call sites can't drift apart.
- *
- * The launcher also owns the trigger-time content snapshot: the payload the
- * workflow runs on is resolved HERE, from the same row the mutex read, so no
- * step can re-derive it from a row the user edited in the meantime.
- */
+// Storyboard launch ownership and immutable request snapshots.
 
 import { migrateStyleConfigV1ToV2 } from '@/look/style-config';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
@@ -115,13 +104,12 @@ function makeScopedDb(opts: {
   const updateStatus = vi.fn();
   const failWorkflowIfCurrent = vi.fn(async () => true);
   const recordSequenceEvent = vi.fn(async () => undefined);
-  const claimWorkflowSlot = vi.fn<
-    (params: {
-      id: string;
-      expectedRunId: string | null;
-      claimId: string;
-    }) => Promise<boolean>
-  >(async () => opts.claimSucceeds ?? true);
+  const claimWorkflowSlot = vi.fn<ScopedDb['sequences']['claimWorkflowSlot']>(
+    async () => opts.claimSucceeds ?? true
+  );
+  const publishWorkflowInstance = vi.fn<
+    ScopedDb['sequences']['publishWorkflowInstance']
+  >(async () => true);
   const update = vi.fn();
   const getForUser = vi.fn(async () => ({
     id: 'seq_1',
@@ -156,7 +144,13 @@ function makeScopedDb(opts: {
     modelConfiguration: { get: async () => DEFAULT_MODEL_CONFIGURATION },
     textChannels: { getSnapshot: vi.fn(async () => opts.routing ?? []) },
     imageChannels: { getSnapshot: vi.fn(async () => []) },
-    sequences: { getForUser, claimWorkflowSlot, failWorkflowIfCurrent, update },
+    sequences: {
+      getForUser,
+      claimWorkflowSlot,
+      publishWorkflowInstance,
+      failWorkflowIfCurrent,
+      update,
+    },
     styles: { getById: getStyleById },
     sequenceElements: { list: listElements },
     characters: { list: listCharacters, getHeldElsewhere },
@@ -165,7 +159,7 @@ function makeScopedDb(opts: {
     sequence: () => ({ updateStatus }),
     sequenceEvents: { record: recordSequenceEvent },
   };
-  // minimal ScopedDb stub exposing only what the launcher touches
+  // Mock launcher DB; legacy writes remain visible to regression assertions.
   const scopedDb = asStub<ScopedDb>(stub);
   return {
     scopedDb,
@@ -173,6 +167,7 @@ function makeScopedDb(opts: {
     recordSequenceEvent,
     failWorkflowIfCurrent,
     claimWorkflowSlot,
+    publishWorkflowInstance,
     update,
     getForUser,
     getStyleById,
@@ -237,36 +232,62 @@ describe('triggerStoryboard', () => {
     expect(triggerWorkflowMock).not.toHaveBeenCalled();
   });
 
-  test('terminal previous run → claims, triggers with the claim as dedup id, persists instance id', async () => {
-    runStateResult = 'failed';
-    triggerWorkflowMock.mockReset();
-    triggerWorkflowMock.mockResolvedValue('openstory-so_storyboard_new-run');
-    const { scopedDb, claimWorkflowSlot, update, updateStatus } = makeScopedDb({
-      workflowRunId: 'openstory-so_storyboard_old',
-    });
+  test.each([true, false])(
+    'returns the created instance after publishing its claim (publisher: %s)',
+    async (published) => {
+      runStateResult = 'failed';
+      const workflowRunId = 'openstory-so_storyboard_new-run';
+      triggerWorkflowMock.mockReset().mockResolvedValue(workflowRunId);
+      const db = makeScopedDb({ workflowRunId: 'openstory-so_storyboard_old' });
+      db.publishWorkflowInstance.mockResolvedValueOnce(published);
 
-    const result = await triggerStoryboard(scopedDb, INPUT);
+      const result = await triggerStoryboard(db.scopedDb, INPUT);
 
-    expect(claimWorkflowSlot).toHaveBeenCalledWith({
-      id: 'seq_1',
-      expectedRunId: 'openstory-so_storyboard_old',
-      claimId: expect.stringMatching(/^storyboard-seq_1-/),
-      activity: { summary: 'Started the storyboard' },
-    });
-    expect(updateStatus).toHaveBeenCalledWith('processing');
-    const claimId = claimWorkflowSlot.mock.calls[0]?.[0]?.claimId;
-    expect(triggerWorkflowMock).toHaveBeenCalledWith(
-      '/storyboard',
-      expect.objectContaining({ ...INPUT, workflowClaimId: claimId }),
-      expect.objectContaining({ deduplicationId: claimId })
+      expect(db.claimWorkflowSlot).toHaveBeenCalledExactlyOnceWith({
+        id: 'seq_1',
+        expectedRunId: 'openstory-so_storyboard_old',
+        claimId: expect.stringMatching(/^storyboard-seq_1-/),
+        activity: { summary: 'Started the storyboard' },
+      });
+      const claimId = db.claimWorkflowSlot.mock.calls[0]?.[0].claimId;
+      expect(triggerWorkflowMock).toHaveBeenCalledExactlyOnceWith(
+        '/storyboard',
+        expect.objectContaining({ ...INPUT, workflowClaimId: claimId }),
+        expect.objectContaining({ deduplicationId: claimId })
+      );
+      expect(db.publishWorkflowInstance).toHaveBeenCalledExactlyOnceWith({
+        id: 'seq_1',
+        claimId,
+        workflowRunId,
+      });
+      expect(db.updateStatus).not.toHaveBeenCalled();
+      expect(db.update).not.toHaveBeenCalled();
+      expect(db.failWorkflowIfCurrent).not.toHaveBeenCalled();
+      expect(result).toEqual({ workflowRunId });
+    }
+  );
+
+  test('publication errors propagate without retrying or marking a created run failed', async () => {
+    triggerWorkflowMock.mockReset().mockResolvedValue('created-run');
+    const db = makeScopedDb({ workflowRunId: null });
+    const publicationError = new Error('synthetic publication SQL failure');
+    db.publishWorkflowInstance.mockRejectedValueOnce(publicationError);
+
+    await expect(triggerStoryboard(db.scopedDb, INPUT)).rejects.toBe(
+      publicationError
     );
-    expect(update).toHaveBeenCalledWith({
+
+    expect(db.claimWorkflowSlot).toHaveBeenCalledTimes(1);
+    expect(triggerWorkflowMock).toHaveBeenCalledTimes(1);
+    expect(db.publishWorkflowInstance).toHaveBeenCalledExactlyOnceWith({
       id: 'seq_1',
-      workflowRunId: 'openstory-so_storyboard_new-run',
+      claimId: db.claimWorkflowSlot.mock.calls[0]?.[0].claimId,
+      workflowRunId: 'created-run',
     });
-    expect(result).toEqual({
-      workflowRunId: 'openstory-so_storyboard_new-run',
-    });
+    expect(db.updateStatus).not.toHaveBeenCalled();
+    expect(db.update).not.toHaveBeenCalled();
+    expect(db.failWorkflowIfCurrent).not.toHaveBeenCalled();
+    expect(db.recordSequenceEvent).not.toHaveBeenCalled();
   });
 
   test('snapshots the sequence row onto the payload so no step re-derives it', async () => {
@@ -317,9 +338,10 @@ describe('triggerStoryboard', () => {
     runStateResult = 'failed';
     triggerWorkflowMock.mockReset();
     triggerWorkflowMock.mockResolvedValue('run-1');
-    const { scopedDb, claimWorkflowSlot } = makeScopedDb({
-      workflowRunId: null,
-    });
+    const { scopedDb, claimWorkflowSlot, publishWorkflowInstance } =
+      makeScopedDb({
+        workflowRunId: null,
+      });
     const input = { ...INPUT, workflowClaimId: 'synthetic-untrusted-claim' };
 
     await triggerStoryboard(scopedDb, input);
@@ -331,6 +353,11 @@ describe('triggerStoryboard', () => {
       expect.objectContaining({ workflowClaimId: claimId }),
       expect.objectContaining({ deduplicationId: claimId })
     );
+    expect(publishWorkflowInstance).toHaveBeenCalledExactlyOnceWith({
+      id: 'seq_1',
+      claimId,
+      workflowRunId: 'run-1',
+    });
   });
 
   test('pins an explicit stopAt over the sequence snapshot', async () => {
@@ -607,78 +634,42 @@ describe('triggerStoryboard', () => {
     expect(triggerWorkflowMock).not.toHaveBeenCalled();
   });
 
-  test('a trigger failure marks only its claimed run failed and logs it', async () => {
-    runStateResult = 'failed';
-    triggerWorkflowMock.mockReset();
-    triggerWorkflowMock.mockRejectedValue(new Error('workflow down'));
-    const {
-      scopedDb,
-      updateStatus,
-      failWorkflowIfCurrent,
-      claimWorkflowSlot,
-      recordSequenceEvent,
-    } = makeScopedDb({ workflowRunId: null });
+  test.each(['updated', 'superseded', 'write-error'] as const)(
+    'preserves the trigger error and logs failure when cleanup is %s',
+    async (cleanup) => {
+      runStateResult = 'failed';
+      const original = new Error('workflow down');
+      triggerWorkflowMock.mockReset().mockRejectedValue(original);
+      const db = makeScopedDb({ workflowRunId: null });
+      if (cleanup === 'superseded')
+        db.failWorkflowIfCurrent.mockResolvedValueOnce(false);
+      if (cleanup === 'write-error')
+        db.failWorkflowIfCurrent.mockRejectedValueOnce(
+          new Error('synthetic status write failure')
+        );
 
-    await expect(triggerStoryboard(scopedDb, INPUT)).rejects.toThrow(
-      'workflow down'
-    );
+      await expect(triggerStoryboard(db.scopedDb, INPUT)).rejects.toBe(
+        original
+      );
 
-    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('processing');
-    expect(failWorkflowIfCurrent).toHaveBeenCalledWith({
-      id: 'seq_1',
-      workflowRunId: claimWorkflowSlot.mock.calls[0]?.[0]?.claimId,
-      error: 'workflow down',
-    });
-    expect(recordSequenceEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sequenceId: 'seq_1',
-        actorId: INPUT.userId,
-        kind: 'run.failed',
-        summary: 'Storyboard failed',
-      })
-    );
-  });
-
-  test('keeps the original trigger failure when its claim no longer owns the sequence', async () => {
-    runStateResult = 'failed';
-    triggerWorkflowMock.mockReset();
-    const original = new Error('workflow down');
-    triggerWorkflowMock.mockRejectedValue(original);
-    const {
-      scopedDb,
-      updateStatus,
-      failWorkflowIfCurrent,
-      recordSequenceEvent,
-    } = makeScopedDb({ workflowRunId: null });
-    failWorkflowIfCurrent.mockResolvedValueOnce(false);
-
-    await expect(triggerStoryboard(scopedDb, INPUT)).rejects.toBe(original);
-
-    expect(failWorkflowIfCurrent).toHaveBeenCalledTimes(1);
-    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('processing');
-    expect(recordSequenceEvent).toHaveBeenCalledTimes(1);
-  });
-
-  test('keeps failure-status persistence best effort in the launcher', async () => {
-    runStateResult = 'failed';
-    triggerWorkflowMock.mockReset();
-    const original = new Error('workflow down');
-    triggerWorkflowMock.mockRejectedValue(original);
-    const {
-      scopedDb,
-      updateStatus,
-      failWorkflowIfCurrent,
-      recordSequenceEvent,
-    } = makeScopedDb({ workflowRunId: null });
-    failWorkflowIfCurrent.mockRejectedValueOnce(
-      new Error('synthetic status write failure')
-    );
-
-    await expect(triggerStoryboard(scopedDb, INPUT)).rejects.toBe(original);
-
-    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('processing');
-    expect(recordSequenceEvent).toHaveBeenCalledTimes(1);
-  });
+      expect(db.updateStatus).not.toHaveBeenCalled();
+      expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
+        id: 'seq_1',
+        workflowRunId: db.claimWorkflowSlot.mock.calls[0]?.[0].claimId,
+        error: 'workflow down',
+      });
+      expect(db.recordSequenceEvent).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          sequenceId: 'seq_1',
+          actorId: INPUT.userId,
+          kind: 'run.failed',
+          summary: 'Storyboard failed',
+        })
+      );
+      expect(db.publishWorkflowInstance).not.toHaveBeenCalled();
+      expect(db.update).not.toHaveBeenCalled();
+    }
+  );
 
   test('missing sequenceId → throws before touching the db', async () => {
     const { scopedDb, getForUser } = makeScopedDb({ workflowRunId: null });

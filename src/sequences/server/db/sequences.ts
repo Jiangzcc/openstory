@@ -751,12 +751,7 @@ export function createSequencesMethods(
       return Boolean(updated);
     },
 
-    /**
-     * Compare-and-swap `workflowRunId` — the storyboard generation mutex
-     * (#839). Writes `claimId` only if the column still holds `expectedRunId`
-     * (the value the caller just read). D1 is single-writer, so exactly one
-     * of two racing claims sees `true`; the loser must not trigger.
-     */
+    // Acquire the storyboard slot and processing state together.
     claimWorkflowSlot: async (params: {
       id: string;
       expectedRunId: string | null;
@@ -773,7 +768,12 @@ export function createSequencesMethods(
       );
       const claim = db
         .update(sequences)
-        .set({ workflowRunId: params.claimId, updatedAt: new Date() })
+        .set({
+          workflowRunId: params.claimId,
+          status: 'processing',
+          statusError: null,
+          updatedAt: new Date(),
+        })
         .where(where)
         .returning({ id: sequences.id });
       if (!params.activity) {
@@ -796,11 +796,32 @@ export function createSequencesMethods(
           sequences,
           and(
             eq(sequences.id, params.id),
+            eq(sequences.organizationId, organizationId),
             eq(sequences.workflowRunId, params.claimId)
           )
         ),
       ]);
       return claimed.length > 0;
+    },
+
+    // Replace only this launcher's claim; a fast terminal result keeps its state.
+    publishWorkflowInstance: async (params: {
+      id: string;
+      claimId: string;
+      workflowRunId: string;
+    }): Promise<boolean> => {
+      const [published] = await db
+        .update(sequences)
+        .set({ workflowRunId: params.workflowRunId, updatedAt: new Date() })
+        .where(
+          and(
+            eq(sequences.id, params.id),
+            eq(sequences.organizationId, organizationId),
+            eq(sequences.workflowRunId, params.claimId)
+          )
+        )
+        .returning({ id: sequences.id });
+      return Boolean(published);
     },
 
     /**
