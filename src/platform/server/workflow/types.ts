@@ -272,6 +272,8 @@ export interface ShotVariantWorkflowResult {
  * asked for. Call sites build the smaller {@link StoryboardTriggerInput}.
  */
 export interface StoryboardWorkflowInput extends SequenceWorkflowContext {
+  /** The launcher's slot claim, before its instance id is persisted. */
+  workflowClaimId?: string;
   title: string;
   script: string;
   /** Request country captured at launch; only a fallback for character background. */
@@ -389,6 +391,7 @@ export interface StoryboardWorkflowInput extends SequenceWorkflowContext {
  */
 export type StoryboardTriggerInput = Omit<
   StoryboardWorkflowInput,
+  | 'workflowClaimId'
   | 'stopAt'
   | 'includeMusic'
   | 'title'

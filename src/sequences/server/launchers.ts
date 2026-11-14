@@ -381,14 +381,22 @@ export async function triggerStoryboard(
   // 'failed' on the next acquire and the slot recovers.
   let workflowRunId: string;
   try {
-    workflowRunId = await triggerWorkflow('/storyboard', payload, {
-      deduplicationId: claimId,
-      modelConfiguration: configuration,
-    });
+    workflowRunId = await triggerWorkflow(
+      '/storyboard',
+      { ...payload, workflowClaimId: claimId },
+      {
+        deduplicationId: claimId,
+        modelConfiguration: configuration,
+      }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     try {
-      await scopedDb.sequence(sequenceId).updateStatus('failed', message);
+      await scopedDb.sequences.failWorkflowIfCurrent({
+        id: sequenceId,
+        workflowRunId: claimId,
+        error: message,
+      });
     } catch (statusError) {
       logger.error('Storyboard trigger status was not marked failed', {
         err: statusError,

@@ -610,6 +610,11 @@ async function snapshotConfigForStyleId(
   return parseStyleConfig(style.config);
 }
 
+const STORYBOARD_FAILURE_TERMINAL_STATUSES = [
+  'failed',
+  'completed',
+] as const satisfies readonly SequenceStatus[];
+
 export function createSequencesMethods(
   db: Database,
   organizationId: string,
@@ -713,6 +718,37 @@ export function createSequencesMethods(
       }
 
       return data;
+    },
+
+    failWorkflowIfCurrent: async (params: {
+      id: string;
+      workflowRunId: string;
+      workflowClaimId?: string;
+      error: string;
+    }): Promise<boolean> => {
+      const runIds = [params.workflowRunId];
+      if (params.workflowClaimId) runIds.push(params.workflowClaimId);
+      const [updated] = await db
+        .update(sequences)
+        .set({
+          status: 'failed',
+          statusError: params.error,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(sequences.id, params.id),
+            eq(sequences.organizationId, organizationId),
+            inArray(sequences.workflowRunId, runIds),
+            not(
+              inArray(sequences.status, [
+                ...STORYBOARD_FAILURE_TERMINAL_STATUSES,
+              ])
+            )
+          )
+        )
+        .returning({ id: sequences.id });
+      return Boolean(updated);
     },
 
     /**

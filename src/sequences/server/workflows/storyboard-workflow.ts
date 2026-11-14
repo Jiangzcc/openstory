@@ -445,15 +445,12 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       () => this.releaseFailureReservation(scopedDb, reservationId),
       async () => {
         if (!sequenceId) return;
-        const sequence = await scopedDb.liveRead.sequences.getForUser({
-          sequenceId,
+        shouldNotify = await scopedDb.sequences.failWorkflowIfCurrent({
+          id: sequenceId,
+          workflowRunId: event.instanceId,
+          workflowClaimId: event.payload.workflowClaimId,
+          error,
         });
-        // Preserve a child's failure message and a completed generation.
-        if (sequence.status === 'failed' || sequence.status === 'completed') {
-          shouldNotify = false;
-          return;
-        }
-        await scopedDb.sequence(sequenceId).updateStatus('failed', error);
       },
       async () => {
         if (!sequenceId || !shouldNotify) return;

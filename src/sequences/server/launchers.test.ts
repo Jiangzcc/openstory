@@ -113,6 +113,7 @@ function makeScopedDb(opts: {
   cast?: never[];
 }) {
   const updateStatus = vi.fn();
+  const failWorkflowIfCurrent = vi.fn(async () => true);
   const recordSequenceEvent = vi.fn(async () => undefined);
   const claimWorkflowSlot = vi.fn<
     (params: {
@@ -155,7 +156,7 @@ function makeScopedDb(opts: {
     modelConfiguration: { get: async () => DEFAULT_MODEL_CONFIGURATION },
     textChannels: { getSnapshot: vi.fn(async () => opts.routing ?? []) },
     imageChannels: { getSnapshot: vi.fn(async () => []) },
-    sequences: { getForUser, claimWorkflowSlot, update },
+    sequences: { getForUser, claimWorkflowSlot, failWorkflowIfCurrent, update },
     styles: { getById: getStyleById },
     sequenceElements: { list: listElements },
     characters: { list: listCharacters, getHeldElsewhere },
@@ -170,6 +171,7 @@ function makeScopedDb(opts: {
     scopedDb,
     updateStatus,
     recordSequenceEvent,
+    failWorkflowIfCurrent,
     claimWorkflowSlot,
     update,
     getForUser,
@@ -255,7 +257,7 @@ describe('triggerStoryboard', () => {
     const claimId = claimWorkflowSlot.mock.calls[0]?.[0]?.claimId;
     expect(triggerWorkflowMock).toHaveBeenCalledWith(
       '/storyboard',
-      expect.objectContaining(INPUT),
+      expect.objectContaining({ ...INPUT, workflowClaimId: claimId }),
       expect.objectContaining({ deduplicationId: claimId })
     );
     expect(update).toHaveBeenCalledWith({
@@ -271,7 +273,7 @@ describe('triggerStoryboard', () => {
     runStateResult = 'failed';
     triggerWorkflowMock.mockReset();
     triggerWorkflowMock.mockResolvedValue('run-1');
-    const { scopedDb, listElements } = makeScopedDb({
+    const { scopedDb, listElements, claimWorkflowSlot } = makeScopedDb({
       workflowRunId: null,
       elementIds: ['el_1', 'el_2'],
     });
@@ -281,6 +283,7 @@ describe('triggerStoryboard', () => {
     expect(listElements).toHaveBeenCalledWith('seq_1');
     expect(triggerWorkflowMock.mock.calls[0]?.[1]).toEqual({
       ...INPUT,
+      workflowClaimId: claimWorkflowSlot.mock.calls[0]?.[0]?.claimId,
       title: 'The Long Walk',
       script: 'INT. HALLWAY — NIGHT',
       // The sequence default, inverted into the payload's render vocabulary.
@@ -308,6 +311,26 @@ describe('triggerStoryboard', () => {
       // collapse to images (legacy stills-only).
       stopAt: 'images',
     });
+  });
+
+  test('overwrites a caller-supplied workflow claim with the acquired slot', async () => {
+    runStateResult = 'failed';
+    triggerWorkflowMock.mockReset();
+    triggerWorkflowMock.mockResolvedValue('run-1');
+    const { scopedDb, claimWorkflowSlot } = makeScopedDb({
+      workflowRunId: null,
+    });
+    const input = { ...INPUT, workflowClaimId: 'synthetic-untrusted-claim' };
+
+    await triggerStoryboard(scopedDb, input);
+
+    const claimId = claimWorkflowSlot.mock.calls[0]?.[0]?.claimId;
+    expect(claimId).toEqual(expect.stringMatching(/^storyboard-seq_1-/));
+    expect(triggerWorkflowMock).toHaveBeenCalledExactlyOnceWith(
+      '/storyboard',
+      expect.objectContaining({ workflowClaimId: claimId }),
+      expect.objectContaining({ deduplicationId: claimId })
+    );
   });
 
   test('pins an explicit stopAt over the sequence snapshot', async () => {
@@ -584,19 +607,28 @@ describe('triggerStoryboard', () => {
     expect(triggerWorkflowMock).not.toHaveBeenCalled();
   });
 
-  test('a trigger that throws after the claim marks the sequence failed and logs it', async () => {
+  test('a trigger failure marks only its claimed run failed and logs it', async () => {
     runStateResult = 'failed';
     triggerWorkflowMock.mockReset();
     triggerWorkflowMock.mockRejectedValue(new Error('workflow down'));
-    const { scopedDb, updateStatus, recordSequenceEvent } = makeScopedDb({
-      workflowRunId: null,
-    });
+    const {
+      scopedDb,
+      updateStatus,
+      failWorkflowIfCurrent,
+      claimWorkflowSlot,
+      recordSequenceEvent,
+    } = makeScopedDb({ workflowRunId: null });
 
     await expect(triggerStoryboard(scopedDb, INPUT)).rejects.toThrow(
       'workflow down'
     );
-    expect(updateStatus).toHaveBeenCalledWith('processing');
-    expect(updateStatus).toHaveBeenCalledWith('failed', 'workflow down');
+
+    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('processing');
+    expect(failWorkflowIfCurrent).toHaveBeenCalledWith({
+      id: 'seq_1',
+      workflowRunId: claimWorkflowSlot.mock.calls[0]?.[0]?.claimId,
+      error: 'workflow down',
+    });
     expect(recordSequenceEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         sequenceId: 'seq_1',
@@ -605,6 +637,47 @@ describe('triggerStoryboard', () => {
         summary: 'Storyboard failed',
       })
     );
+  });
+
+  test('keeps the original trigger failure when its claim no longer owns the sequence', async () => {
+    runStateResult = 'failed';
+    triggerWorkflowMock.mockReset();
+    const original = new Error('workflow down');
+    triggerWorkflowMock.mockRejectedValue(original);
+    const {
+      scopedDb,
+      updateStatus,
+      failWorkflowIfCurrent,
+      recordSequenceEvent,
+    } = makeScopedDb({ workflowRunId: null });
+    failWorkflowIfCurrent.mockResolvedValueOnce(false);
+
+    await expect(triggerStoryboard(scopedDb, INPUT)).rejects.toBe(original);
+
+    expect(failWorkflowIfCurrent).toHaveBeenCalledTimes(1);
+    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('processing');
+    expect(recordSequenceEvent).toHaveBeenCalledTimes(1);
+  });
+
+  test('keeps failure-status persistence best effort in the launcher', async () => {
+    runStateResult = 'failed';
+    triggerWorkflowMock.mockReset();
+    const original = new Error('workflow down');
+    triggerWorkflowMock.mockRejectedValue(original);
+    const {
+      scopedDb,
+      updateStatus,
+      failWorkflowIfCurrent,
+      recordSequenceEvent,
+    } = makeScopedDb({ workflowRunId: null });
+    failWorkflowIfCurrent.mockRejectedValueOnce(
+      new Error('synthetic status write failure')
+    );
+
+    await expect(triggerStoryboard(scopedDb, INPUT)).rejects.toBe(original);
+
+    expect(updateStatus).toHaveBeenCalledExactlyOnceWith('processing');
+    expect(recordSequenceEvent).toHaveBeenCalledTimes(1);
   });
 
   test('missing sequenceId → throws before touching the db', async () => {

@@ -1,19 +1,4 @@
-/**
- * Tests for `StoryboardWorkflow.onFailure` (#839).
- *
- * The June 6 incident: an earlier log-only onFailure left ~20 sequences
- * stranded in 'processing' when await-analyze-script timed out. These tests
- * pin the rewritten hook's three branches:
- *
- *   1. Normal failure → sequence marked 'failed' with the error message and
- *      'generation.failed' emitted (failure summary + retry UI, not an
- *      eternal spinner).
- *   2. The analyze-script child already marked the sequence failed → no
- *      write, no emit — the child's specific message ("Your OpenRouter API
- *      key is invalid…") must not be clobbered by the parent's generic
- *      wrapper ("Child workflow analyze-script… failed").
- *   3. Payload without a sequenceId → no DB access at all.
- */
+// Storyboard failure ownership, cleanup propagation, and generation orchestration.
 
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import { migrateStyleConfigV1ToV2 } from '@/look/style-config';
@@ -106,7 +91,13 @@ function makeEvent(
   extras: Partial<
     Pick<
       StoryboardWorkflowInput,
-      'notify' | 'stopAt' | 'resume' | 'userCountry' | 'plan' | 'reservationId'
+      | 'notify'
+      | 'stopAt'
+      | 'resume'
+      | 'userCountry'
+      | 'plan'
+      | 'reservationId'
+      | 'workflowClaimId'
     >
   > = {}
 ): Readonly<WorkflowEvent<StoryboardWorkflowInput>> {
@@ -147,7 +138,7 @@ function makeEvent(
       regenerateAll: true,
     },
   };
-  // minimal WorkflowEvent stub: onFailure only reads payload
+  // Minimal WorkflowEvent mock: failure ownership uses payload and instanceId.
   return {
     payload,
     instanceId: 'storyboard_run_A',
@@ -156,80 +147,129 @@ function makeEvent(
   };
 }
 
-function makeScopedDb(status: 'processing' | 'failed' | 'completed') {
+function makeScopedDb(updated = true) {
   const zeroReservation = vi.fn(async () => undefined);
+  const failWorkflowIfCurrent = vi.fn(async () => updated);
   const updateStatus = vi.fn();
-  const getForUser = vi.fn(async () => ({ id: 'seq_1', status }));
+  const getForUser = vi.fn(async () => ({ id: 'seq_1', status: 'processing' }));
   const stub = {
     models: DEFAULT_MODEL_CONFIGURATION,
     billing: { zeroReservation },
-    // The existence guard is a sanctioned live read (#1067).
+    sequences: { failWorkflowIfCurrent },
     liveRead: { sequences: { getForUser } },
     sequence: vi.fn(() => ({ updateStatus })),
   };
-  // minimal WorkflowScopedDb stub exposing only what onFailure touches
+  // Mock failure writes and retain legacy accessors to catch accidental use.
   const scopedDb = asStub<WorkflowScopedDb>(stub);
-  return { scopedDb, updateStatus, getForUser, zeroReservation };
+  return {
+    scopedDb,
+    failWorkflowIfCurrent,
+    updateStatus,
+    getForUser,
+    zeroReservation,
+  };
 }
 
 describe('StoryboardWorkflow.onFailure', () => {
-  test('marks the sequence failed and emits generation.failed', async () => {
-    emit.mockReset();
-    getGenerationChannel.mockClear();
-    const { scopedDb, updateStatus } = makeScopedDb('processing');
+  test.each([undefined, 'storyboard_claim_A'])(
+    'marks the current sequence failed with workflow claim %s',
+    async (workflowClaimId) => {
+      emit.mockReset();
+      getGenerationChannel.mockClear();
+      const { scopedDb, failWorkflowIfCurrent } = makeScopedDb();
+      const event = makeEvent(
+        'seq_1',
+        workflowClaimId === undefined ? {} : { workflowClaimId }
+      );
 
-    await makeWorkflow().invokeOnFailure({
-      event: makeEvent('seq_1'),
-      error: 'Child workflow analyze-script timed out',
-      scopedDb,
-    });
-
-    expect(updateStatus).toHaveBeenCalledWith(
-      'failed',
-      'Child workflow analyze-script timed out'
-    );
-    expect(getGenerationChannel).toHaveBeenCalledWith('seq_1');
-    expect(emit).toHaveBeenCalledWith('generation.failed', {
-      message: 'Child workflow analyze-script timed out',
-    });
-  });
-
-  test('still emits failure when sequence status persistence fails', async () => {
-    emit.mockReset();
-    const { scopedDb, updateStatus } = makeScopedDb('processing');
-    const persistenceError = new Error('database down');
-    updateStatus.mockRejectedValueOnce(persistenceError);
-
-    await expect(
-      makeWorkflow().invokeOnFailure({
-        event: makeEvent('seq_1'),
+      await makeWorkflow().invokeOnFailure({
+        event,
         error: 'Child workflow analyze-script timed out',
         scopedDb,
-      })
-    ).rejects.toBe(persistenceError);
+      });
 
-    expect(emit).toHaveBeenCalledWith('generation.failed', {
-      message: 'Child workflow analyze-script timed out',
-    });
-  });
+      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
+        id: 'seq_1',
+        workflowRunId: 'storyboard_run_A',
+        workflowClaimId,
+        error: 'Child workflow analyze-script timed out',
+      });
+      expect(getGenerationChannel).toHaveBeenCalledExactlyOnceWith('seq_1');
+      expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+        message: 'Child workflow analyze-script timed out',
+      });
+    }
+  );
 
-  test('child already marked the sequence failed → no write, no emit', async () => {
-    emit.mockReset();
-    const { scopedDb, updateStatus } = makeScopedDb('failed');
+  test.each([false, true])(
+    'preserves the guard error after attempting notification (notification fails: %s)',
+    async (notificationFails) => {
+      emit.mockReset();
+      const { scopedDb, failWorkflowIfCurrent } = makeScopedDb();
+      const persistenceError = new Error('database down');
+      failWorkflowIfCurrent.mockRejectedValueOnce(persistenceError);
+      if (notificationFails)
+        emit.mockRejectedValueOnce(new Error('channel unavailable'));
 
-    await makeWorkflow().invokeOnFailure({
-      event: makeEvent('seq_1'),
-      error: 'Child workflow analyze-script… failed',
-      scopedDb,
-    });
+      await expect(
+        makeWorkflow().invokeOnFailure({
+          event: makeEvent('seq_1'),
+          error: 'Child workflow analyze-script timed out',
+          scopedDb,
+        })
+      ).rejects.toBe(persistenceError);
 
-    expect(updateStatus).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
-  });
+      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
+        id: 'seq_1',
+        workflowRunId: 'storyboard_run_A',
+        workflowClaimId: undefined,
+        error: 'Child workflow analyze-script timed out',
+      });
+      expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+        message: 'Child workflow analyze-script timed out',
+      });
+    }
+  );
+
+  test.each([undefined, 'storyboard_claim_A'])(
+    'guard miss preserves terminal or newer runs with workflow claim %s',
+    async (workflowClaimId) => {
+      emit.mockReset();
+      getGenerationChannel.mockClear();
+      const { scopedDb, failWorkflowIfCurrent, updateStatus, zeroReservation } =
+        makeScopedDb(false);
+
+      await makeWorkflow().invokeOnFailure({
+        event: makeEvent('seq_1', {
+          reservationId: 'reservation-1',
+          ...(workflowClaimId === undefined ? {} : { workflowClaimId }),
+        }),
+        error: 'Child workflow analyze-script… failed',
+        scopedDb,
+      });
+
+      expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('reservation-1');
+      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
+        id: 'seq_1',
+        workflowRunId: 'storyboard_run_A',
+        workflowClaimId,
+        error: 'Child workflow analyze-script… failed',
+      });
+      expect(updateStatus).not.toHaveBeenCalled();
+      expect(getGenerationChannel).not.toHaveBeenCalled();
+      expect(emit).not.toHaveBeenCalled();
+    }
+  );
 
   test('missing sequenceId → no DB access', async () => {
     emit.mockReset();
-    const { scopedDb, updateStatus, getForUser } = makeScopedDb('processing');
+    const {
+      scopedDb,
+      failWorkflowIfCurrent,
+      updateStatus,
+      getForUser,
+      zeroReservation,
+    } = makeScopedDb();
 
     await makeWorkflow().invokeOnFailure({
       event: makeEvent(undefined),
@@ -237,49 +277,44 @@ describe('StoryboardWorkflow.onFailure', () => {
       scopedDb,
     });
 
+    expect(failWorkflowIfCurrent).not.toHaveBeenCalled();
     expect(getForUser).not.toHaveBeenCalled();
     expect(updateStatus).not.toHaveBeenCalled();
+    expect(zeroReservation).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();
   });
 
-  test('completed sequence is not un-completed if a trailing step fails', async () => {
-    emit.mockReset();
-    const { scopedDb, updateStatus } = makeScopedDb('completed');
+  test.each([true, false])(
+    'does not read mutable status when the guard returns %s',
+    async (updated) => {
+      emit.mockReset();
+      const { scopedDb, failWorkflowIfCurrent, updateStatus, getForUser } =
+        makeScopedDb(updated);
+      getForUser.mockRejectedValueOnce(new Error('status read unavailable'));
 
-    await makeWorkflow().invokeOnFailure({
-      event: makeEvent('seq_1'),
-      error: 'email-ready failed',
-      scopedDb,
-    });
+      await expect(
+        makeWorkflow().invokeOnFailure({
+          event: makeEvent('seq_1'),
+          error: 'trailing step failed',
+          scopedDb,
+        })
+      ).resolves.toBeUndefined();
 
-    expect(updateStatus).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
-  });
-
-  test('does not overwrite a completed sequence when its status read fails', async () => {
-    emit.mockReset();
-    const { scopedDb, updateStatus, getForUser } = makeScopedDb('completed');
-    const readError = new Error('status read unavailable');
-    getForUser.mockRejectedValueOnce(readError);
-
-    await expect(
-      makeWorkflow().invokeOnFailure({
-        event: makeEvent('seq_1'),
+      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
+        id: 'seq_1',
+        workflowRunId: 'storyboard_run_A',
+        workflowClaimId: undefined,
         error: 'trailing step failed',
-        scopedDb,
-      })
-    ).rejects.toBe(readError);
-
-    expect(updateStatus).not.toHaveBeenCalled();
-    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      message: 'trailing step failed',
-    });
-  });
+      });
+      expect(getForUser).not.toHaveBeenCalled();
+      expect(updateStatus).not.toHaveBeenCalled();
+      expect(emit).toHaveBeenCalledTimes(updated ? 1 : 0);
+    }
+  );
 
   test('keeps reservation release best effort for ordinary errors', async () => {
     emit.mockReset();
-    const { scopedDb, updateStatus, zeroReservation } =
-      makeScopedDb('processing');
+    const { scopedDb, failWorkflowIfCurrent, zeroReservation } = makeScopedDb();
     zeroReservation.mockRejectedValueOnce(new Error('reservation unavailable'));
 
     await expect(
@@ -290,15 +325,24 @@ describe('StoryboardWorkflow.onFailure', () => {
       })
     ).resolves.toBeUndefined();
 
-    expect(updateStatus).toHaveBeenCalledWith('failed', 'boom');
-    expect(emit).toHaveBeenCalledWith('generation.failed', { message: 'boom' });
+    expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('reservation-1');
+    expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
+      id: 'seq_1',
+      workflowRunId: 'storyboard_run_A',
+      workflowClaimId: undefined,
+      error: 'boom',
+    });
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      message: 'boom',
+    });
   });
 
-  test.each(['zeroReservation', 'getForUser', 'updateStatus'] as const)(
+  test.each(['zeroReservation', 'failWorkflowIfCurrent'] as const)(
     'stops later actions when %s aborts',
     async (phase) => {
       emit.mockReset();
-      const db = makeScopedDb('processing');
+      getGenerationChannel.mockClear();
+      const db = makeScopedDb();
       const abort = new Error(
         'Durable Object reset because its code was updated'
       );
@@ -312,10 +356,21 @@ describe('StoryboardWorkflow.onFailure', () => {
         })
       ).rejects.toBe(abort);
 
+      expect(db.zeroReservation).toHaveBeenCalledExactlyOnceWith(
+        'reservation-1'
+      );
       if (phase === 'zeroReservation')
-        expect(db.getForUser).not.toHaveBeenCalled();
-      if (phase !== 'updateStatus')
-        expect(db.updateStatus).not.toHaveBeenCalled();
+        expect(db.failWorkflowIfCurrent).not.toHaveBeenCalled();
+      else
+        expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
+          id: 'seq_1',
+          workflowRunId: 'storyboard_run_A',
+          workflowClaimId: undefined,
+          error: 'boom',
+        });
+      expect(db.getForUser).not.toHaveBeenCalled();
+      expect(db.updateStatus).not.toHaveBeenCalled();
+      expect(getGenerationChannel).not.toHaveBeenCalled();
       expect(emit).not.toHaveBeenCalled();
     }
   );
@@ -326,7 +381,7 @@ describe('StoryboardWorkflow.onFailure', () => {
     'Durable Object reset because its code was updated',
   ])('propagates notification error: %s', async (message) => {
     emit.mockReset();
-    const { scopedDb, updateStatus } = makeScopedDb('processing');
+    const { scopedDb, failWorkflowIfCurrent } = makeScopedDb();
     const notificationError = new Error(message);
     emit.mockRejectedValueOnce(notificationError);
 
@@ -337,7 +392,12 @@ describe('StoryboardWorkflow.onFailure', () => {
         scopedDb,
       })
     ).rejects.toBe(notificationError);
-    expect(updateStatus).toHaveBeenCalledWith('failed', 'boom');
+    expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
+      id: 'seq_1',
+      workflowRunId: 'storyboard_run_A',
+      workflowClaimId: undefined,
+      error: 'boom',
+    });
   });
 });
 
