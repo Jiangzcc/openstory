@@ -22,6 +22,12 @@ const DESCRIPTION =
 const GENERATED_VOICE_ID = 'gv_aimock_1';
 const VOICE_ID = 'voice_aimock_1';
 
+// Warm SDK modules before timing the actual local HTTP round trips.
+await Promise.all([
+  import('@tanstack/ai-elevenlabs'),
+  import('@elevenlabs/elevenlabs-js'),
+]);
+
 const mock = new LLMock({ port: 4098, strict: true, logLevel: 'silent' });
 let baseURL = '';
 

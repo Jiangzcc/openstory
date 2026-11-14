@@ -123,6 +123,7 @@ import { triggerWorkflow } from '@/platform/server/workflow/client';
 import { shotVariantDedupId } from '@/platform/server/workflow/dedup-ids';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { resolveStoryboardOwner } from '@/sequences/server/workflows/generation-workflow-owner';
+import { bindReferenceSheetOutput } from '@/cast/server/workflows/reference-sheet-output';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
 import {
   isEngineAbortError,
@@ -453,7 +454,10 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             `claim-character-sheet-${id}`,
             async () =>
               (
-                await scopedDb.characterLooks.claimSheet(
+                await bindReferenceSheetOutput(
+                  scopedDb,
+                  input
+                ).characterLooks.claimSheet(
                   id,
                   {
                     lookVersionId: payload.lookVersionId,
@@ -500,6 +504,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             childId: `character-sheet:${id}`,
             childPayload: {
               ...payload,
+              storyboardOwner: resolveStoryboardOwner(input),
               promptLocale: input.promptLocale,
               sheetVersionId,
               reservationId: input.reservationId,
@@ -517,7 +522,10 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           // A child that never started has no onFailure to clear the
           // claim; the guarded clear is a no-op when one did.
           await step.do(`fail-character-sheet-claim-${id}`, () =>
-            scopedDb.characterLooks.failSheetClaim(
+            bindReferenceSheetOutput(
+              scopedDb,
+              input
+            ).characterLooks.failSheetClaim(
               id,
               sheetVersionId,
               sanitizeFailResponse(error)
@@ -554,7 +562,10 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             referenceVersionId = await step.do(
               `claim-location-sheet-${id}`,
               () =>
-                scopedDb.locations.claimReference(id, {
+                bindReferenceSheetOutput(
+                  scopedDb,
+                  input
+                ).locations.claimReference(id, {
                   markGenerating: true,
                   activity: {
                     sequenceId,
@@ -582,6 +593,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
               childId: `location-sheet:${id}`,
               childPayload: {
                 ...payload,
+                storyboardOwner: resolveStoryboardOwner(input),
                 promptLocale: input.promptLocale,
                 referenceVersionId,
                 reservationId: input.reservationId,
@@ -597,7 +609,10 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           } catch (error) {
             failReference(id, 'reference', error);
             await step.do(`fail-location-sheet-claim-${id}`, () =>
-              scopedDb.locations.failReferenceClaim(
+              bindReferenceSheetOutput(
+                scopedDb,
+                input
+              ).locations.failReferenceClaim(
                 id,
                 referenceVersionId,
                 sanitizeFailResponse(error)
@@ -711,7 +726,10 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             // Its claim was taken at kickoff; no child holds it, so clear it
             // here (a no-op once a newer run took it).
             await step.do(`fail-character-sheet-claim-${draft.lookId}`, () =>
-              scopedDb.characterLooks.failSheetClaim(
+              bindReferenceSheetOutput(
+                scopedDb,
+                input
+              ).characterLooks.failSheetClaim(
                 draft.lookId,
                 sheetVersionId,
                 sanitizeFailResponse(error)

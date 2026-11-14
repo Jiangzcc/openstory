@@ -66,6 +66,7 @@ import { createStoryboardAnalysisOutputMethods } from '@/sequences/server/db/sto
 import { createStoryboardAutoStyleMethods } from '@/sequences/server/db/storyboard-auto-style';
 import { createStoryboardCastMethods } from '@/sequences/server/db/storyboard-cast';
 import { createStoryboardElementSheetsMethods } from '@/sequences/server/db/storyboard-element-sheets';
+import { createStoryboardReferenceSheetsMethods } from '@/sequences/server/db/storyboard-reference-sheets';
 import type { StoryboardOwner } from '@/sequences/server/db/storyboard-owner';
 import { createProductionReadMethods } from '@/shots/server/db/production-reads';
 import { createSceneScriptVersionsMethods } from '@/shots/server/db/scene-script-versions';
@@ -425,6 +426,8 @@ export function createScopedDb(organizationId: string, userId: string) {
       createStoryboardCastMethods(db, organizationId, owner),
     storyboardElementSheets: (owner: StoryboardOwner) =>
       createStoryboardElementSheetsMethods(db, organizationId, owner),
+    storyboardReferenceSheets: (owner: StoryboardOwner) =>
+      createStoryboardReferenceSheetsMethods(db, organizationId, owner),
 
     styles: createStylesMethods(db, organizationId, userId),
     locations: createLocationsMethods(db, organizationId),

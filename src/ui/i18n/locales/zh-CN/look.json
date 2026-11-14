@@ -1,6 +1,6 @@
 {
   "Select aspect ratio": "选择画面比例",
-  "Match script: derive a style from the script": "根据剧本推荐视觉风格",
+  "Match script: derive a style from the script": "根据剧本提炼视觉风格",
   "Derive a style from the script. It stays with this sequence until you add it to your library.": "根据剧本提炼适合的视觉风格。保存到风格库后，才能在其他作品中使用。",
   "Match script": "根据剧本匹配",
   "{{value1}} style details": "{{value1}}风格详情",

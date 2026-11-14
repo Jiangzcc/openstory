@@ -77,6 +77,11 @@ import { LOCATION_SHEET_BIBLE_FIELDS } from '@/shots/input-hash';
 import type { StoryboardCastScope } from '@/sequences/server/db/storyboard-cast-scope';
 import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
 
+const REFERENCE_CLAIM_STATUS = {
+  generating: 'generating',
+  failed: 'failed',
+} as const;
+
 /** A new location's bible where the caller left a field out. */
 const NEW_LOCATION_BIBLE: Omit<LocationBible, 'name' | 'rendering'> = {
   type: null,
@@ -1348,17 +1353,21 @@ export function createLocationsMethods(
         } | null;
       }
     ): Promise<string> => {
+      const guard = scope?.location(id);
       const versionId = generateId();
       const claim = db
         .update(locations)
         .set({
           pendingPromoteReferenceVersionId: versionId,
           ...(opts.markGenerating
-            ? { referenceStatus: 'generating' as const, referenceError: null }
+            ? {
+                referenceStatus: REFERENCE_CLAIM_STATUS.generating,
+                referenceError: null,
+              }
             : {}),
           updatedAt: new Date(),
         })
-        .where(and(eq(locations.id, id), inOrganization));
+        .where(and(eq(locations.id, id), inOrganization, guard));
       if (!opts.activity) {
         const [row] = await claim.returning({ id: locations.id });
         if (!row) throw new NotFoundError('Location not found');
@@ -1380,6 +1389,7 @@ export function createLocationsMethods(
           locations,
           and(
             eq(locations.id, id),
+            guard,
             eq(locations.pendingPromoteReferenceVersionId, versionId)
           )
         ),
@@ -1455,7 +1465,7 @@ export function createLocationsMethods(
         .update(locations)
         .set({
           pendingPromoteReferenceVersionId: null,
-          referenceStatus: 'failed',
+          referenceStatus: REFERENCE_CLAIM_STATUS.failed,
           referenceError: error,
           updatedAt: new Date(),
         })
@@ -1463,12 +1473,14 @@ export function createLocationsMethods(
           and(
             eq(locations.id, id),
             inOrganization,
-            versionId === null
-              ? isNull(locations.pendingPromoteReferenceVersionId)
-              : or(
-                  eq(locations.pendingPromoteReferenceVersionId, versionId),
-                  isNull(locations.pendingPromoteReferenceVersionId)
-                )
+            scope
+              ? sql`${locations.pendingPromoteReferenceVersionId} = ${versionId}`
+              : versionId === null
+                ? isNull(locations.pendingPromoteReferenceVersionId)
+                : or(
+                    eq(locations.pendingPromoteReferenceVersionId, versionId),
+                    isNull(locations.pendingPromoteReferenceVersionId)
+                  )
           )
         );
     },

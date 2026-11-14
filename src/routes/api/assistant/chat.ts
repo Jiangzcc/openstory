@@ -16,7 +16,7 @@ import { authWithOrganizationRequestMiddleware } from '@/platform/middleware.fn'
 
 type RouteContext = Pick<
   AssistantCaller,
-  'user' | 'organizationId' | 'scopedDb'
+  'promptLocale' | 'user' | 'organizationId' | 'scopedDb'
 >;
 
 async function callerFrom(
@@ -24,6 +24,7 @@ async function callerFrom(
   context: RouteContext
 ): Promise<AssistantCaller> {
   return {
+    promptLocale: context.promptLocale,
     scopedDb: context.scopedDb,
     user: context.user,
     organizationId: context.organizationId,

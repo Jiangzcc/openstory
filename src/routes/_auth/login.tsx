@@ -4,7 +4,7 @@
  */
 
 import { AuthForm } from '@/platform/ui/auth/auth-form';
-import { usePageTitle } from '@/ui/i18n/use-page-title';
+import { localizeMeta } from '@/ui/i18n/head';
 import { useTranslation } from 'react-i18next';
 import { OpenStoryLogo } from '@/ui/icons/openstory-logo';
 import { PageContainer } from '@/ui/layout/page-container';
@@ -21,16 +21,15 @@ const searchSchema = z.object({
 export const Route = createFileRoute('/_auth/login')({
   validateSearch: searchSchema,
   head: ({ match }) => ({
-    meta: [
-      { title: match.context.i18n.t('Sign in · OpenStory', { ns: 'auth' }) },
-    ],
+    meta: localizeMeta(match.context.i18n, 'auth', [
+      { title: 'Sign in · OpenStory' },
+    ]),
   }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const { t } = useTranslation('auth');
-  usePageTitle(t('Sign in · OpenStory'));
   const search = Route.useSearch();
   const { authOptions } = Route.useRouteContext();
   const hydrated = useHydrated();

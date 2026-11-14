@@ -16,6 +16,12 @@ const {
   retryOnRateLimit,
 } = await import('./elevenlabs-config');
 
+// Module evaluation is test preparation, not the loader call's five-second deadline.
+await Promise.all([
+  import('@tanstack/ai-elevenlabs'),
+  import('@elevenlabs/elevenlabs-js'),
+]);
+
 describe('isElevenLabsConfigured', () => {
   beforeEach(() => {
     env.ELEVENLABS_API_KEY = undefined;

@@ -35,6 +35,7 @@ import type {
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { landSheetRun } from './sheet-divergence';
 import { triggerSheetPortrait } from '@/cast/server/sheets/sheet-portrait-trigger';
+import { bindReferenceSheetOutput } from './reference-sheet-output';
 import type { SheetRunOutcome } from './sheet-divergence';
 import {
   assertQueuedWithLocationRendering,
@@ -245,7 +246,10 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
         const versionId = input.referenceVersionId ?? generateId();
         return landSheetRun({
           land: () =>
-            scopedDb.locationSheetVariants.promoteIfPending({
+            bindReferenceSheetOutput(
+              scopedDb,
+              input
+            ).locationSheetVariants.promoteIfPending({
               locationId: locationDbId,
               versionId,
               claimed,
@@ -370,7 +374,10 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
     if (input.locationDbId && input.organizationId) {
       await runFailureActions([
         () =>
-          scopedDb.locations.failReferenceClaim(
+          bindReferenceSheetOutput(
+            scopedDb,
+            input
+          ).locations.failReferenceClaim(
             input.locationDbId,
             // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
             input.referenceVersionId ?? null,

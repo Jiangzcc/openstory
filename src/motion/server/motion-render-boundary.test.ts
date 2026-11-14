@@ -1,5 +1,19 @@
 import { globSync, readFileSync } from 'node:fs';
-import { expect, it } from 'vitest';
+import { beforeAll, expect, it } from 'vitest';
+
+const SCAN_PREPARATION_TIMEOUT_MS = 60_000;
+let renderSources: Array<{ path: string; source: string }> = [];
+
+beforeAll(() => {
+  renderSources = globSync('src/**/*.ts')
+    .map((path) => path.replaceAll('\\', '/'))
+    .filter(
+      (path) =>
+        !path.endsWith('.test.ts') &&
+        path !== 'src/motion/server/build-motion-render.ts'
+    )
+    .map((path) => ({ path, source: readFileSync(path, 'utf8') }));
+}, SCAN_PREPARATION_TIMEOUT_MS);
 
 /** Pin the construction boundary, including local aliases and contextual object types. */
 function violationsIn(text: string): string[] {
@@ -55,18 +69,9 @@ function violationsIn(text: string): string[] {
 }
 
 it('render paths use the canonical prompt builder and construct inputs centrally', () => {
-  const violations = globSync('src/**/*.ts')
-    .map((path) => path.replaceAll('\\', '/'))
-    .filter(
-      (path) =>
-        !path.endsWith('.test.ts') &&
-        path !== 'src/motion/server/build-motion-render.ts'
-    )
-    .flatMap((path) =>
-      violationsIn(readFileSync(path, 'utf8')).map(
-        (reason) => `${path}: ${reason}`
-      )
-    );
+  const violations = renderSources.flatMap(({ path, source }) =>
+    violationsIn(source).map((reason) => `${path}: ${reason}`)
+  );
   expect(violations).toEqual([]);
 });
 

@@ -94,6 +94,7 @@ export const callMcpReadToolFn = createServerFn({ method: 'POST' })
     }
     const request = getRequest();
     const caller: AssistantCaller = {
+      promptLocale: context.promptLocale,
       scopedDb: context.scopedDb,
       user: context.user,
       organizationId: context.organizationId,

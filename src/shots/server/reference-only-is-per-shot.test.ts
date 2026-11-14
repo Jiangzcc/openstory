@@ -19,7 +19,29 @@
  */
 
 import { globSync, readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+const SCAN_PREPARATION_TIMEOUT_MS = 60_000;
+let sources = new Map<string, string>();
+
+beforeAll(() => {
+  const files = globSync('src/**/*.{ts,tsx}')
+    .map((file) => file.replaceAll('\\', '/'))
+    .filter((file) => !file.includes('.test.') && !file.includes('.stories.'));
+  sources = new Map(files.map((file) => [file, readSource(file)]));
+}, SCAN_PREPARATION_TIMEOUT_MS);
+
+function readSource(file: string): string {
+  return readFileSync(file, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
+}
+
+function sourceOf(file: string): string {
+  const source = sources.get(file);
+  if (source === undefined) throw new Error(`Missing guarded source: ${file}`);
+  return source;
+}
 
 // `?.` is part of the read: `sequence?.referenceOnly` slipped the guard
 // entirely until it was noticed, and every UI holder of the row spells it that
@@ -44,6 +66,10 @@ const SEQUENCE_LEVEL_BY_DESIGN: Record<string, string> = {
   // A full storyboard run starts in the sequence's mode; per-shot overrides
   // are applied later, per shot, by the render paths.
   'src/sequences/server/launchers.ts': 'sequence-wide storyboard launch',
+  'src/sequences/server/db/storyboard-launches.ts':
+    'checks the whole-run Continue snapshot against the sequence defaults',
+  'src/sequences/ui/use-generation-stream.ts':
+    'builds whole-run progress phases, never a per-shot render decision',
   // Pre-flight credit envelopes for a WHOLE run. An override shifts one shot
   // between two similarly-priced routes; the envelope is an estimate.
   'src/sequences/server/smart-retry.ts': 'whole-run credit estimate',
@@ -106,16 +132,10 @@ const SEQUENCE_LEVEL_BY_DESIGN: Record<string, string> = {
 
 describe('reference-only is resolved per shot', () => {
   it('reads the sequence flag only where a sequence-level answer is right', () => {
-    const files = globSync('src/**/*.{ts,tsx}').filter(
-      (f) => !f.includes('.test.') && !f.includes('.stories.')
-    );
-
-    const offenders = files.filter((file) => {
-      const source = readFileSync(file, 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '');
+    const offenders = [...sources.keys()].filter((file) => {
+      const source = sourceOf(file);
       if (!SEQUENCE_READ.test(source)) return false;
-      return !(file.replaceAll('\\', '/') in SEQUENCE_LEVEL_BY_DESIGN);
+      return !(file in SEQUENCE_LEVEL_BY_DESIGN);
     });
 
     expect(
@@ -133,10 +153,7 @@ describe('reference-only is resolved per shot', () => {
     // An entry that no longer reads the flag is stale documentation; it would
     // also silently re-permit the file if a future edit reintroduced a read.
     const stale = Object.keys(SEQUENCE_LEVEL_BY_DESIGN).filter((file) => {
-      const source = readFileSync(file, 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '');
-      return !SEQUENCE_READ.test(source);
+      return !SEQUENCE_READ.test(sourceOf(file));
     });
     expect(stale).toEqual([]);
   });

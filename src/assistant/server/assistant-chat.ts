@@ -47,10 +47,8 @@ import {
 } from '../page-context';
 import { REPLACE_UNSAVED_TEXT } from '../unsaved-text-tool';
 import { toVisionImageSource } from '@/platform/server/storage/external-url';
-import {
-  localizedPrompt,
-  promptLocaleFromRequest,
-} from '@/platform/i18n/prompt-locale';
+import { localizedPrompt } from '@/platform/i18n/prompt-locale';
+import type { PromptLocaleContext } from '@/platform/i18n/prompt-locale';
 import { ASSISTANT_SYSTEM_ZH, ASSISTANT_WEB_ZH } from './assistant-prompts';
 
 /** How many context stills ride on one message; each costs vision tokens. */
@@ -115,7 +113,7 @@ const logger = getLogger(['openstory', 'assistant']);
 /** Model turns per user message; tool calls are not counted. */
 const MAX_TURNS = 24;
 
-export type AssistantCaller = {
+export type AssistantCaller = PromptLocaleContext & {
   scopedDb: ScopedDb;
   user: User;
   organizationId: string;
@@ -158,7 +156,7 @@ function systemPrompts(
   pageContext: PageContextItem[],
   web: boolean
 ): string[] {
-  const locale = promptLocaleFromRequest(caller.request);
+  const locale = caller.promptLocale;
   const date = new Date().toISOString().slice(0, 10);
   const prompts = [
     localizedPrompt(locale, SYSTEM_PROMPT, ASSISTANT_SYSTEM_ZH),
@@ -177,7 +175,7 @@ function systemPrompts(
 /** The tool context: a session caller has every scope. */
 export function toolContext(caller: AssistantCaller): OpenStoryMcpContext {
   const readContext = {
-    promptLocale: promptLocaleFromRequest(caller.request),
+    promptLocale: caller.promptLocale,
     scopedDb: caller.scopedDb,
     origin: caller.origin,
     userId: caller.user.id,

@@ -868,6 +868,8 @@ export interface CharacterSheetWorkflowInput extends Omit<
   SequenceWorkflowContext,
   'sequenceId'
 > {
+  storyboardOwner?: GenerationWorkflowOwner;
+  _parent?: ParentNotifyHint;
   /**
    * The sequence the sheet was asked from, for its events and the run's
    * storage path; null from the Characters page (#2017), where the run
@@ -1279,6 +1281,8 @@ export interface LocationSheetWorkflowInput extends Omit<
   SequenceWorkflowContext,
   'sequenceId'
 > {
+  storyboardOwner?: GenerationWorkflowOwner;
+  _parent?: ParentNotifyHint;
   sequenceId: string | null;
   /** locations.id */
   locationDbId: string;

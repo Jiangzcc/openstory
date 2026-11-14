@@ -314,10 +314,15 @@ look at the image and talk about it at once. A click in the panel is not
 Tool approval cards resolve through `ui/assistant-approvals.ts`. Server tools
 are not registered as browser tools, so the client can expose their approval
 as a generic interrupt. Read its original binding with the public
-`@tanstack/ai/client` entry, match the tool call and current run/generation,
-and resolve it with `{ approved }`; registered tool approvals keep the boolean
-API. Only pending or failed resolutions can be answered, so a repeated click
-does not resubmit a staged response. The same path handles restored approvals.
+`@tanstack/ai/client` entry, match its tool call, interrupt id, interrupted run
+and generation, and resolve it with `{ approved }`. A registered
+`tool-approval` interrupt keeps the boolean API. Approval is required for
+`upload_media` and non-read-only tools marked `destructiveHint`, including
+deletes and character merges; ordinary spending starts without approval.
+Both shapes must be resolvable and pending or failed, including after history
+hydration. A repeated answer to the same object is ignored; a fresh SDK error
+snapshot can retry a failed submission. Execution and resume identity remain
+the SDK and run store's responsibility.
 
 `assistant-panel.stories.tsx` sends scripted AG-UI events through the real
 browser chat client (`scripted-connection.ts`). It seeds mock model defaults

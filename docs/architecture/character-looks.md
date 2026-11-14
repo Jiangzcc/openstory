@@ -426,6 +426,26 @@ per-look batches; linking retains its single batch across all missing looks.
   A scene's look picker labels the default "(default look)".
   MCP: see `mcp-capability-map.md`.
 
+## Storyboard sheet publication
+
+Sheet jobs carrying a trusted `storyboardOwner` (or a direct Storyboard parent)
+use `storyboardReferenceSheets`. The root must still own the processing sequence,
+and the character and look must remain live through its cast link. Attached or
+shared organization characters remain valid sheet targets; this does not give
+analysis permission to rewrite their bibles.
+
+The landing batch guards the version insert, pointer, divergent parking, status
+and generated event together. A lost root or mismatched parent/version rolls
+the batch back. An input edit still parks the result, and a newer sheet claim
+still wins. Failure cleanup matches only that run's non-null claim and the
+organization, so it may release its own claim after the root stops without
+failing a newer or demoted claim. Standalone jobs retain their existing path.
+
+Portraits remain independent enrichment of the stored sheet version. They do not
+inherit this processing-root gate or the parent's reservation. Local D1 tests
+cover publication races and cleanup; they do not establish a deployed engine's
+restart, provider termination or every later progress-event interleaving.
+
 ## Traps
 
 - `continuity.characterLooks` is optional in the type: scenes stored before

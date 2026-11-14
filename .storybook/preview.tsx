@@ -14,7 +14,8 @@ import { setupWorker } from 'msw/browser';
 import { handlers } from '../src/mocks/handlers';
 
 import '../src/styles/global.css';
-import { useMemo } from 'react';
+import type { ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { createApplicationI18n } from '../src/ui/i18n/runtime';
 import { resolveLocale } from '../src/platform/i18n/locale';
@@ -35,16 +36,6 @@ const withI18n: Decorator = function WithI18n(Story, context) {
  * to learn how to customize it
  */
 
-// Create a client for Storybook
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 // Components render <Link> (e.g. SceneListItem), which needs a router context.
 // A root-only memory router is enough: links resolve, nothing navigates.
 const withRouter: Decorator = (Story) => {
@@ -55,15 +46,32 @@ const withRouter: Decorator = (Story) => {
   return <RouterProvider router={router} />;
 };
 
-const withProviders: Decorator = (Story) => (
-  <QueryClientProvider client={queryClient}>
-    <RealtimeProvider>
-      {/* Radix Tooltip needs a provider (same as src/components/providers.tsx). */}
-      <TooltipProvider>
-        <Story />
-      </TooltipProvider>
-    </RealtimeProvider>
-  </QueryClientProvider>
+function StoryProviders({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RealtimeProvider>
+        {/* Radix Tooltip needs a provider (same as src/components/providers.tsx). */}
+        <TooltipProvider>{children}</TooltipProvider>
+      </RealtimeProvider>
+    </QueryClientProvider>
+  );
+}
+
+const withProviders: Decorator = (Story, context) => (
+  <StoryProviders key={context.id}>
+    <Story />
+  </StoryProviders>
 );
 
 const preview: Preview = {

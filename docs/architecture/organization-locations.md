@@ -114,6 +114,22 @@ What follows from one location in two sequences:
   parked as divergent by a run from one sequence is listed for every
   sequence.
 
+## Storyboard reference publication
+
+A sheet job carrying a trusted Storyboard root uses `storyboardReferenceSheets`:
+its processing root and live organization/location link guard the version,
+selection pointer, divergent parking, status and generated event in one D1 batch.
+A mismatched existing version or lost target aborts the batch; an edited input
+still parks the result without taking a newer claim. Attached/shared locations
+remain valid reference targets. This changes no bible ownership rule.
+
+Bound failure cleanup only clears the exact non-null reference claim within the
+organization, including after the root stops. It cannot fail a newer or demoted
+claim. Jobs without a root keep their original behavior. Portraits remain
+independently charged version enrichment, so normal parent completion does not
+prevent them from landing. Tests use migrated local test D1 with synthetic
+race/fault triggers; deployed restart and provider behavior remain separate.
+
 ## Attach
 
 `locations.attach(sequenceId, id)` writes one link. Nothing is copied and

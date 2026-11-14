@@ -397,17 +397,17 @@
   "Pick characters to cast. The script adds any others.": "选择要出演的角色，剧本中的其他角色会自动添加。",
   "{{name}} created, image not added": "已创建 {{name}}，但未添加图片",
   "Reference photo": "参考照片",
-  "This sheet is drawn from this photo.": "此参考表根据这张照片生成。",
+  "This sheet is drawn from this photo.": "此设定图根据这张照片生成。",
   "Remove photo": "移除照片",
   "Replaced {{characterName}} with {{withCharacterName}}": "已将 {{characterName}} 替换为 {{withCharacterName}}",
   "Failed to replace character": "替换角色失败",
   "In {{title}}": "用于 {{title}}",
   "Used in {{count}} sequences": "用于 {{count}} 个剧集",
   "Replace character": "替换角色",
-  "The character you pick supplies the sheet, looks and voice. If they are already in this sequence, this card is dropped.": "所选角色将提供参考表、造型和声音。如果该角色已在此剧集中，当前卡片会被移除。",
+  "The character you pick supplies the sheet, looks and voice. If they are already in this sequence, this card is dropped.": "所选角色将提供设定图、造型和声音。如果该角色已在此剧集中，当前卡片会被移除。",
   "No character matches": "没有匹配的角色",
   "No other characters": "没有其他角色",
   "Replace {{characterName}} with {{withCharacterName}}?": "将 {{characterName}} 替换为 {{withCharacterName}}？",
   "This card is dropped. {{withCharacterName}} stays, and this script id, name and tag are remembered there. Scenes are not rewritten. Shots go stale. Nothing is copied.": "此卡片会被移除。保留 {{withCharacterName}}，并在该角色下保留当前剧本 ID、名称和标签。场景不会被改写，相关镜头会标记为过期，不会复制任何内容。",
-  "Scenes stay on this slot and use {{withCharacterName}}'s sheet, looks and voice. Shots that used this slot go stale. Nothing is copied.": "场景保留当前角色位置，并使用 {{withCharacterName}} 的参考表、造型和声音。使用此角色位置的镜头会标记为过期，不会复制任何内容。"
+  "Scenes stay on this slot and use {{withCharacterName}}'s sheet, looks and voice. Shots that used this slot go stale. Nothing is copied.": "场景保留当前角色位置，并使用 {{withCharacterName}} 的设定图、造型和声音。使用此角色位置的镜头会标记为过期，不会复制任何内容。"
 }

@@ -47,6 +47,7 @@ import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { getLogger } from '@/platform/logger';
 import { castChannelId } from '@/cast/cast-channel';
 import { triggerSheetPortrait } from '@/cast/server/sheets/sheet-portrait-trigger';
+import { bindReferenceSheetOutput } from './reference-sheet-output';
 
 const logger = getLogger(['openstory', 'workflow', 'character-sheet']);
 
@@ -69,7 +70,10 @@ async function landSheet(
   const versionId = input.sheetVersionId ?? generateId();
   return landSheetRun({
     land: () =>
-      scopedDb.characterSheetVariants.promoteIfPending({
+      bindReferenceSheetOutput(
+        scopedDb,
+        input
+      ).characterSheetVariants.promoteIfPending({
         characterId: input.characterDbId,
         lookId: input.lookId,
         lookVersionId: input.lookVersionId,
@@ -427,7 +431,7 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
 
     await runFailureActions([
       () =>
-        scopedDb.characterLooks.failSheetClaim(
+        bindReferenceSheetOutput(scopedDb, input).characterLooks.failSheetClaim(
           input.lookId,
           // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
           input.sheetVersionId ?? null,

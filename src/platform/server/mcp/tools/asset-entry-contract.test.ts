@@ -15,7 +15,7 @@ import { createScopedDb } from '@/platform/server/db/scoped';
 import { generateId } from '@/platform/id';
 import { dbSceneId } from '@/shots/scene-id';
 import type { Locale } from '@/platform/i18n/locale';
-import { LOCALE_COOKIE } from '@/platform/i18n/locale';
+import { LOCALE_COOKIE, resolveLocale } from '@/platform/i18n/locale';
 import { createTestDb } from '@/platform/server/db/test-d1';
 import {
   frames,
@@ -381,6 +381,7 @@ async function assistantCall(name: string, args: unknown, locale?: string) {
   if (locale !== undefined) headers.set('cookie', LOCALE_COOKIE + '=' + locale);
   return tool.execute(args, {
     context: toolContext({
+      promptLocale: resolveLocale(locale),
       user: principal().user,
       scopedDb,
       organizationId: actor.organizationId,

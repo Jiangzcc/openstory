@@ -125,6 +125,30 @@ export type LookSheetSnapshot = {
   bibleVersionId: string | null;
 };
 
+const SHEET_CLAIM_STATUS = {
+  generating: 'generating',
+  failed: 'failed',
+} as const;
+
+function ownedLookSheetClaim(
+  db: Database,
+  organizationId: string,
+  versionId: string | null
+) {
+  return and(
+    sql`${characterLooks.pendingPromoteSheetVersionId} = ${versionId}`,
+    sql`EXISTS ${db
+      .select({ id: characters.id })
+      .from(characters)
+      .where(
+        and(
+          eq(characters.id, characterLooks.characterId),
+          eq(characters.organizationId, organizationId)
+        )
+      )}`
+  );
+}
+
 /**
  * The looks of the organization's characters, each at its current version with its
  * sheet.
@@ -1423,20 +1447,22 @@ export function createCharacterLooksMethods(
         } | null;
       }
     ): Promise<{ versionId: string; held: boolean }> => {
-      const look = await requireLook(db, organizationId, lookId);
+      const look = await requireLook(db, organizationId, lookId, scope);
+      const guard = scope?.look(look.id);
       const versionId = generateId();
       const claim = db
         .update(characterLooks)
         .set({
           pendingPromoteSheetVersionId: versionId,
           ...(opts.markGenerating
-            ? { sheetStatus: 'generating' as const, sheetError: null }
+            ? { sheetStatus: SHEET_CLAIM_STATUS.generating, sheetError: null }
             : {}),
           updatedAt: new Date(),
         })
         .where(
           and(
             eq(characterLooks.id, look.id),
+            guard,
             eq(characterLooks.selectedLookVersionId, snapshot.lookVersionId),
             sql`EXISTS ${db
               .select({ one: sql`1` })
@@ -1455,29 +1481,48 @@ export function createCharacterLooksMethods(
               )}`
           )
         );
-      if (!opts.activity) {
+      if (!opts.activity && !scope) {
         const claimed = await claim.returning({ id: characterLooks.id });
+        return { versionId, held: claimed.length > 0 };
+      }
+      const started = opts.activity
+        ? [
+            buildEventInsertIfPresent(
+              db,
+              {
+                id: generateId(),
+                sequenceId: opts.activity.sequenceId,
+                actorId: opts.activity.actorId,
+                kind: 'sheet.started',
+                targetType: 'character',
+                targetId: look.characterId,
+                summary: opts.activity.summary,
+              },
+              characterLooks,
+              and(
+                eq(characterLooks.id, look.id),
+                guard,
+                eq(characterLooks.pendingPromoteSheetVersionId, versionId)
+              )
+            ),
+          ]
+        : [];
+      if (scope) {
+        const [target, claimed] = await db.batch([
+          db
+            .select({ id: characterLooks.id })
+            .from(characterLooks)
+            .where(and(eq(characterLooks.id, look.id), guard)),
+          claim.returning({ id: characterLooks.id }),
+          ...started,
+        ]);
+        if (target.length === 0)
+          throw new NotFoundError(`Look ${lookId} not found`);
         return { versionId, held: claimed.length > 0 };
       }
       const [claimed] = await db.batch([
         claim.returning({ id: characterLooks.id }),
-        buildEventInsertIfPresent(
-          db,
-          {
-            id: generateId(),
-            sequenceId: opts.activity.sequenceId,
-            actorId: opts.activity.actorId,
-            kind: 'sheet.started',
-            targetType: 'character',
-            targetId: look.characterId,
-            summary: opts.activity.summary,
-          },
-          characterLooks,
-          and(
-            eq(characterLooks.id, look.id),
-            eq(characterLooks.pendingPromoteSheetVersionId, versionId)
-          )
-        ),
+        ...started,
       ]);
       return { versionId, held: claimed.length > 0 };
     },
@@ -1513,21 +1558,25 @@ export function createCharacterLooksMethods(
       versionId: string | null,
       error: string
     ): Promise<void> => {
-      const look = await requireLook(db, organizationId, lookId);
+      const id = scope
+        ? lookId
+        : (await requireLook(db, organizationId, lookId)).id;
       await db
         .update(characterLooks)
         .set({
           pendingPromoteSheetVersionId: null,
-          sheetStatus: 'failed',
+          sheetStatus: SHEET_CLAIM_STATUS.failed,
           sheetError: error,
           updatedAt: new Date(),
         })
         .where(
           and(
-            eq(characterLooks.id, look.id),
-            versionId === null
-              ? sql`${characterLooks.pendingPromoteSheetVersionId} IS NULL`
-              : sql`(${characterLooks.pendingPromoteSheetVersionId} = ${versionId} OR ${characterLooks.pendingPromoteSheetVersionId} IS NULL)`
+            eq(characterLooks.id, id),
+            scope
+              ? ownedLookSheetClaim(db, organizationId, versionId)
+              : versionId === null
+                ? sql`${characterLooks.pendingPromoteSheetVersionId} IS NULL`
+                : sql`(${characterLooks.pendingPromoteSheetVersionId} = ${versionId} OR ${characterLooks.pendingPromoteSheetVersionId} IS NULL)`
           )
         );
     },

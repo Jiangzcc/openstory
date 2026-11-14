@@ -99,7 +99,9 @@ dist/
 
 .tmp/
 .idea
-testing/
+# Local verification artifacts; keep future testing sources visible.
+/testing/model-channel-assessment-20261104/
+/testing/model-configuration-20261104/
 
 # doppler
 doppler.json

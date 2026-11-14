@@ -180,6 +180,13 @@ const claimSheet = vi.fn(async (lookId: string) => ({
 }));
 const failSheetClaim = vi.fn(async () => undefined);
 const claimReference = vi.fn(async (id: string) => `lrv-${id}`);
+const bindReferenceSheets = vi.fn(
+  (_owner: Parameters<WorkflowScopedDb['storyboardReferenceSheets']>[0]) =>
+    asStub<ReturnType<WorkflowScopedDb['storyboardReferenceSheets']>>({
+      characterLooks: { claimSheet, failSheetClaim },
+      locations: { claimReference },
+    })
+);
 const claimMusic = vi.fn(async (): Promise<string | null> => 'music-claim');
 const failMusicClaim = vi.fn(async () => undefined);
 const createPendingVoiceClaim = vi.fn(async (id: string) => ({
@@ -192,6 +199,7 @@ function makeScopedDb(): WorkflowScopedDb {
   return asStub<WorkflowScopedDb>({
     models: workflowModels,
     characterLooks: { claimSheet, failSheetClaim },
+    storyboardReferenceSheets: bindReferenceSheets,
     characters: {
       createPendingVoiceClaim,
       markVoiceClaimTerminal: vi.fn(),
@@ -400,7 +408,36 @@ describe('UpdateStaleShotsWorkflow — a continue (#1818)', () => {
     triggerWorkflow.mockClear();
     emit.mockClear();
     failCharacter.clear();
+    bindReferenceSheets.mockClear();
   });
+
+  it.each([STORYBOARD_OWNER, undefined])(
+    'hands trusted root identity to both sheet children: %s',
+    async (storyboardOwner) => {
+      const result = await run(
+        plan({ references: asStub<never>(references) }),
+        { storyboardOwner }
+      );
+      expect(result.failures).toEqual([]);
+      for (const child of [
+        'spawn-character-sheet-ravi',
+        'spawn-location-sheet-hall',
+      ]) {
+        expect(payloadOf(child)).toHaveProperty(
+          'storyboardOwner',
+          storyboardOwner
+        );
+      }
+      if (storyboardOwner) {
+        expect(bindReferenceSheets).toHaveBeenCalledWith({
+          id: 'seq-1',
+          ...storyboardOwner,
+        });
+      } else {
+        expect(bindReferenceSheets).not.toHaveBeenCalled();
+      }
+    }
+  );
 
   it.each([
     undefined,

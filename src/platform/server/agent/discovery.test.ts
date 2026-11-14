@@ -1,4 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+
+vi.stubEnv('VITE_APP_NAME', 'OpenStory');
+afterAll(() => vi.unstubAllEnvs());
 
 vi.doMock('content-collections', () => ({
   allDocs: [

@@ -18,7 +18,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { convertSchemaToJsonSchema } from '@tanstack/ai';
-import { describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 import type { z } from 'zod';
 import { elementVisionResponseSchema } from '@/cast/server/element-vision';
 import { talentMediaAnalysisSchema } from '@/cast/server/talent-vision';
@@ -72,6 +72,32 @@ const MEASURED_SCHEMAS: Record<string, z.ZodType> = {
   voiceRangeScriptSchema,
 };
 
+const SCAN_PREPARATION_TIMEOUT_MS = 60_000;
+let schemaSources: string[] = [];
+
+beforeAll(() => {
+  const srcRoot = join(__dirname, '..', '..');
+  const files: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === '__tests__') continue;
+        // MCP tool outputSchema is not sent to Anthropic (#1035).
+        if (entry.name === 'mcp') continue;
+        walk(full);
+      } else if (
+        entry.name.endsWith('.ts') &&
+        !entry.name.endsWith('.test.ts')
+      ) {
+        files.push(full);
+      }
+    }
+  };
+  walk(srcRoot);
+  schemaSources = files.map((file) => readFileSync(file, 'utf8'));
+}, SCAN_PREPARATION_TIMEOUT_MS);
+
 describe('structured-output schema budget', () => {
   test.each(Object.entries(MEASURED_SCHEMAS))(
     '%s fits the Anthropic grammar budget',
@@ -89,29 +115,8 @@ describe('structured-output schema budget', () => {
   );
 
   test('every responseSchema/outputSchema call site is measured here', () => {
-    const srcRoot = join(__dirname, '..', '..');
-    const files: string[] = [];
-    const walk = (dir: string) => {
-      for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        const full = join(dir, entry.name);
-        if (entry.isDirectory()) {
-          if (entry.name === '__tests__') continue;
-          // MCP tool outputSchema is not sent to Anthropic (#1035).
-          if (entry.name === 'mcp') continue;
-          walk(full);
-        } else if (
-          entry.name.endsWith('.ts') &&
-          !entry.name.endsWith('.test.ts')
-        ) {
-          files.push(full);
-        }
-      }
-    };
-    walk(srcRoot);
-
     const referenced = new Set<string>();
-    for (const file of files) {
-      const source = readFileSync(file, 'utf8');
+    for (const source of schemaSources) {
       for (const match of source.matchAll(
         /(?:responseSchema|outputSchema):\s*([A-Za-z_$][\w$]*)/g
       )) {

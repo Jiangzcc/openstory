@@ -7,7 +7,10 @@
  */
 
 import { globSync, readFileSync } from 'node:fs';
-import { describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
+
+const SCAN_PREPARATION_TIMEOUT_MS = 60_000;
+let requestSources: Array<{ file: string; source: string }> = [];
 
 const GATE =
   /requireGenerationAllowed|requireUploadAttestation|assertCanGenerate/;
@@ -24,6 +27,23 @@ const NOT_REQUEST_PATH = new Set([
   'src/shots/server/shot-image-input.ts',
 ]);
 const CREDITS_CALL = /(?:requireCredits|reserveRunCredits)\s*\(/;
+
+beforeAll(() => {
+  const files = [
+    ...globSync('src/**/*.fn.ts'),
+    ...globSync('src/**/server/**/*.ts', {
+      exclude: (path) =>
+        path.replaceAll('\\', '/').includes('/workflows') ||
+        path.endsWith('.test.ts'),
+    }),
+  ]
+    .map((path) => path.replaceAll('\\', '/'))
+    .filter((file) => !NOT_REQUEST_PATH.has(file));
+  requestSources = files.map((file) => ({
+    file,
+    source: readFileSync(file, 'utf8'),
+  }));
+}, SCAN_PREPARATION_TIMEOUT_MS);
 
 describe('generation-gate wiring', () => {
   test('triggerWorkflow runs the generation gate', () => {
@@ -51,19 +71,7 @@ describe('generation-gate wiring', () => {
     // Request-path only: mid-run `requireCredits` inside a workflow is a
     // spawn-time billing guard, and the parent already passed the trigger gate.
     const missing: string[] = [];
-    const files = [
-      ...globSync('src/**/*.fn.ts'),
-      ...globSync('src/**/server/**/*.ts', {
-        // Node glob passes the directory as `…/workflows` (no trailing slash).
-        exclude: (path) =>
-          path.replaceAll('\\', '/').includes('/workflows') ||
-          path.endsWith('.test.ts'),
-      }),
-    ]
-      .map((path) => path.replaceAll('\\', '/'))
-      .filter((file) => !NOT_REQUEST_PATH.has(file));
-    for (const file of files) {
-      const source = readFileSync(file, 'utf8');
+    for (const { file, source } of requestSources) {
       if (!CREDITS_CALL.test(source)) continue;
       if (GATE.test(source) || TRIGGER.test(source)) continue;
       missing.push(file);

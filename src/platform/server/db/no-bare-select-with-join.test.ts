@@ -13,7 +13,16 @@
  */
 
 import { globSync, readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+const SCAN_PREPARATION_TIMEOUT_MS = 60_000;
+let selectSources: Array<{ file: string; source: string }> = [];
+
+beforeAll(() => {
+  selectSources = globSync('src/**/*.ts')
+    .filter((file) => !file.includes('.test.'))
+    .map((file) => ({ file, source: readFileSync(file, 'utf8') }));
+}, SCAN_PREPARATION_TIMEOUT_MS);
 
 const JOIN = /\.(left|inner|right|full)Join\(/i;
 const BARE_SELECT = /\.select\(\s*\)/g;
@@ -85,12 +94,8 @@ describe('findBareSelectWithJoin', () => {
 });
 
 it('no bare select joins anywhere in src', () => {
-  const offenders = globSync('src/**/*.ts')
-    .filter((file) => !file.includes('.test.'))
-    .flatMap((file) =>
-      findBareSelectWithJoin(readFileSync(file, 'utf8')).map(
-        (chain) => `${file}: ${chain}`
-      )
-    );
+  const offenders = selectSources.flatMap(({ file, source }) =>
+    findBareSelectWithJoin(source).map((chain) => `${file}: ${chain}`)
+  );
   expect(offenders).toEqual([]);
 });

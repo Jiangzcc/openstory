@@ -95,6 +95,7 @@ function caller(snapshot: TextModelRoutingSnapshot) {
   const hasUsableKey = vi.fn(async (_provider: string) => false);
   const ensureThread = vi.fn(async () => ({ id: params.threadId }));
   const context = asStub<AssistantCaller>({
+    promptLocale: 'zh-CN',
     user: { id: 'u', name: 'Writer' },
     organizationId: 't',
     organizationName: 'Test team',
@@ -148,9 +149,10 @@ it('uses one routing snapshot and no OpenRouter native search options', async ()
   expect(await response.text()).not.toContain(c.llmKey.key);
 });
 
-it('selects each request language for the final system messages and internal tools', async () => {
+it('uses each captured request language for the final system messages and internal tools', async () => {
   const chinese = caller([CUSTOM_ROUTE]);
   const english = caller([CUSTOM_ROUTE]);
+  english.context.promptLocale = 'en';
   english.context.request = new Request('https://example.test/assistant', {
     method: 'POST',
     headers: { cookie: 'openstory_locale=en' },
@@ -186,6 +188,32 @@ it('selects each request language for the final system messages and internal too
   expect(zh?.context.scoped('sequences:read').promptLocale).toBe('zh-CN');
   expect(en?.context.scoped('sequences:read').promptLocale).toBe('en');
 });
+
+it.each(['zh-CN', 'en'] as const)(
+  'uses captured %s for prompts and tools without re-reading request cookies',
+  async (promptLocale) => {
+    const c = caller([CUSTOM_ROUTE]);
+    c.context.promptLocale = promptLocale;
+    c.context.request.headers.set(
+      'cookie',
+      `openstory_locale=${promptLocale === 'en' ? 'zh-CN' : 'en'}`
+    );
+    c.context.request.headers.set('cf-connecting-ip', '192.0.2.12');
+    c.context.request.headers.set('user-agent', 'mock-assistant-browser');
+    await handleAssistantChat(c.context);
+    const options = mockChat.mock.calls[0]?.[0];
+    expect(options?.systemPrompts[0]).toMatch(
+      promptLocale === 'en' ? /^You are the OpenStory/ : /^你是 OpenStory/
+    );
+    const scoped = options?.context.scoped('sequences:read');
+    expect(scoped?.promptLocale).toBe(promptLocale);
+    expect(scoped?.request).toEqual({
+      ipAddress: '192.0.2.12',
+      userAgent: 'mock-assistant-browser',
+    });
+    expect(JSON.stringify(scoped?.request)).not.toContain('cookie');
+  }
+);
 
 it('passes full key info to usage billing without putting it in charge metadata', async () => {
   const c = caller([CUSTOM_ROUTE]);
