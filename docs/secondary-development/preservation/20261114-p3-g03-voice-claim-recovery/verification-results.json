@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "sourceBefore": "d8c9081b8151add0d9f72219679de9abe9d17676",
+  "selectedRegression": {
+    "command": "bun run test src/cast/server/db src/cast/server/workflows/character-voice-workflow.test.ts src/cast/server/workflows/character-bible-workflow.test.ts src/cast/server/voice/enqueue-character-voice.test.ts src/platform/server/workflow/reconcile.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/failure-actions.test.ts src/platform/server/workflow/failure-actions-workflow.test.ts src/platform/server/db/scoped.test.ts src/platform/server/db/scoped-workflow-models.test.ts",
+    "files": 21,
+    "tests": 426,
+    "passed": 426,
+    "failed": 0,
+    "skipped": 0,
+    "claim": "The selected real DB lifecycle and existing workflow/scoping contracts pass under Vitest; SQLite fault injection does not establish real Cloudflare replay or browser delivery."
+  },
+  "newRegression": {
+    "command": "bun run test src/cast/server/db/voice-claim-terminal.test.ts",
+    "files": 1,
+    "tests": 12,
+    "passed": 12,
+    "failed": 0,
+    "finalCoverage": "The final expanded 426-test run includes these twelve tests and the corrected typed fixture."
+  },
+  "earlierAttempts": [
+    {
+      "phase": "test preparation against unchanged production code",
+      "command": "bun run test src/cast/server/db/voice-claim-terminal.test.ts",
+      "files": 1,
+      "tests": 12,
+      "passed": 5,
+      "failed": 7,
+      "observations": [
+        "Three injected SQL errors were wrapped in Drizzle causes, so direct message assertions did not match.",
+        "The user-selection fixture passed updateVoice an options object instead of its real five-argument signature.",
+        "Residual recovery and foreign-organization expectations also failed."
+      ],
+      "resolution": "Correct the test-only error assertion and method signature, then rerun the unchanged production baseline."
+    },
+    {
+      "phase": "corrected behavioral reproduction before production fix",
+      "command": "bun run test src/cast/server/db/voice-claim-terminal.test.ts",
+      "files": 1,
+      "tests": 12,
+      "passed": 7,
+      "failed": 5,
+      "observations": [
+        "Both live statuses remained failed after the separate pointer write rejected, instead of rolling back.",
+        "An already-failed claim with a residual pointer returned null without attempting cleanup.",
+        "A foreign organization live claim was updated and returned a row."
+      ],
+      "resolution": "Use an atomic, scoped D1 batch with a failed-owner guard for pointer cleanup."
+    },
+    {
+      "phase": "first expanded integration",
+      "command": "bun run test src/cast/server/db src/cast/server/workflows/character-voice-workflow.test.ts src/cast/server/workflows/character-bible-workflow.test.ts src/cast/server/voice/enqueue-character-voice.test.ts src/platform/server/workflow/reconcile.test.ts src/platform/server/workflow/claim-discipline.test.ts src/platform/server/workflow/no-mid-run-reads.test.ts src/platform/server/workflow/failure-actions.test.ts src/platform/server/workflow/failure-actions-workflow.test.ts src/platform/server/db/scoped.test.ts src/platform/server/db/scoped-workflow-models.test.ts",
+      "files": 21,
+      "tests": 426,
+      "passed": 422,
+      "failed": 4,
+      "observations": [
+        "claim-discipline introspection failed because ownership query construction was eager in the scoped DB factory.",
+        "Two reconcile dynamic imports timed out at 5000 ms; a subsequent mock-state expectation returned unknown. Typecheck and full lint were running concurrently."
+      ],
+      "resolution": "Delay the ownership query until the method is called. Rerun the identical regression command without competing quality jobs: 21 files and 426 tests passed, without changing reconcile code, assertions or timeouts."
+    },
+    {
+      "phase": "first typecheck",
+      "command": "bun typecheck",
+      "status": "failed",
+      "exitCode": 1,
+      "observations": [
+        "The new createForOrganization fixture omitted required standardClothing."
+      ],
+      "resolution": "Provide the real required field; do not use a type assertion."
+    },
+    {
+      "phase": "second typecheck",
+      "command": "bun typecheck",
+      "status": "failed",
+      "exitCode": 1,
+      "observations": [
+        "createForOrganization requires a non-null createdBy string."
+      ],
+      "resolution": "Use a real ULID user row and its actor id in the fixture; no production signature change or type assertion."
+    }
+  ],
+  "checks": {
+    "typecheck": {
+      "command": "bun typecheck",
+      "status": "passed",
+      "resolution": "Final fixture uses standardClothing and a real ULID createdBy user; no type assertions."
+    },
+    "repositoryLint": {
+      "command": "bun lint",
+      "status": "passed",
+      "stage": "Earlier integration attempt, before the lazy ownership query and final fixture corrections.",
+      "warningNote": "Existing repository warnings; final targeted lint and source commit hooks recheck the final changed files."
+    },
+    "targetedLint": {
+      "command": "bun run lint src/cast/server/db/characters.ts src/cast/server/db/voice-claim-terminal.test.ts",
+      "status": "passed",
+      "warningNote": "One existing no-unnecessary-condition warning at characters.ts:1271, outside the two production diff hunks."
+    },
+    "sourceFormat": {
+      "command": "bun run format:check src/cast/server/db/characters.ts src/cast/server/db/voice-claim-terminal.test.ts",
+      "status": "passed",
+      "files": 2
+    },
+    "diffCheck": {
+      "command": "git diff --check and git diff --cached --check",
+      "status": "passed"
+    },
+    "build": {
+      "command": "bun run build",
+      "status": "passed",
+      "client": true,
+      "ssr": true,
+      "warningNote": "Proxy/punycode notices, client chunk-size advisory and plugin timing messages were emitted."
+    },
+    "preCommitHooks": {
+      "command": "git commit -m \"fix: make voice claim failure recovery atomic\"",
+      "status": "passed",
+      "bypassed": false,
+      "checks": [
+        "client-server-boundary",
+        "dead-code",
+        "format",
+        "lint",
+        "typecheck"
+      ],
+      "boundaryTests": 17
+    },
+    "documentation": {
+      "command": "bun run format:check on six changed Markdown/JSON files; local JSON/JSONL/link/source-path/inventory checks",
+      "status": "passed",
+      "formatFiles": 6,
+      "jsonFiles": 2,
+      "jsonlFiles": 1,
+      "jsonlRecords": 44,
+      "duplicateBatchRecords": 0,
+      "localLinksChecked": 153,
+      "brokenLinks": 0,
+      "sourceCommitPathsMatched": 2,
+      "frozenInventory": {
+        "files": 5,
+        "records": 1219,
+        "pending": 1219,
+        "approved": 0
+      },
+      "method": "JSON.parse on both new JSON records and all nonblank implementation-log rows, unique batch ids, filesystem resolution of Markdown links, exact committed source path comparison and frozen p3Disposition counts."
+    }
+  },
+  "boundaries": [
+    "createTestDb runs actual migrations and real scoped methods over in-process SQLite with an explicitly implemented D1 batch transaction. SQL triggers inject synthetic write errors only in tests.",
+    "The sequenced retry/new-claim tests verify the listed interleavings; they do not exercise real concurrent Cloudflare requests or durable replay.",
+    "Existing workflow tests use their declared mocks. The read-only production call audit is not an end-to-end cancellation event-delivery test.",
+    "No schema/migration, paid call, remote D1/R2 write, push or deployment.",
+    "GC-03/P3 and the frozen inventory remain open; P4 has not started."
+  ],
+  "codeCommit": "c0675044683df059ce597f5b3ceb654f98c8ebf5"
+}

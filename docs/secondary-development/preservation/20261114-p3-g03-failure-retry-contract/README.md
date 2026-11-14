@@ -30,3 +30,7 @@ LocationSheet、Image、ShotVariant、Music 和 Lipsync 原有的普通通知失
 ## 未关闭边界
 
 本批不是全仓 failure hook 验收。其它历史 best-effort 与必要清理需分别核对，不能机械改变其外部行为。已确认 `src/cast/server/db/characters.ts` 的 `markVoiceClaimTerminal` 分两次更新 version 和 pending voice pointer；若第二次写入失败，重试可能因 version 已终态而跳过清指针。本批未修改该 DB helper，恢复 hook 错误传播不能证明这个部分写入窗口已关闭。真实 Cloudflare durable replay/restart、Workerd authenticated HTTP、真实供应商、远程 D1/R2、浏览器通知送达和钱包结算未验证。GC-03/P3 仍在进行中，1,219 项冻结 inventory 不因此获得批量批准，P4 未开始。没有 push、部署、远程写入或真实模型调用。
+
+## 后续跟进：voice claim
+
+上述两次写入窗口随后由 [G03-voice-claim-recovery](../20261114-p3-g03-voice-claim-recovery/README.md) 修复并补充真实 SQLite/D1 模拟器故障注入回归。本批原测试成绩和未修改 DB helper 的历史边界保持；后续结果不扩展为真实 Cloudflare replay、其它失败分支或 GC-03 整体完成。
