@@ -43,6 +43,8 @@ import {
 import type { SQL } from 'drizzle-orm';
 import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { buildEventInsert } from '@/sequences/server/db/sequence-events';
+import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
+import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 
 /**
  * The version's value, or the legacy column's for a scene whose selected row
@@ -129,7 +131,10 @@ type SceneFilters = {
  */
 export type SceneNarrativeUpdate = Partial<SceneNarrative>;
 
-export function createScenesMethods(db: Database) {
+export function createScenesMethods(
+  db: Database,
+  contentScope?: StoryboardContentScope
+) {
   const selectScenes = () =>
     db
       .select(sceneColumns)
@@ -322,9 +327,12 @@ export function createScenesMethods(db: Database) {
       // The narrative is not on the row (#1600): scene split writes it with
       // the split script version (`sceneScriptVersions.seedSplitVersions` /
       // `updateSplitContent`).
-      const [scene] = await db
-        .insert(scenes)
-        .values(data)
+      const [scene] = await insertWithStoryboardGuard(
+        db,
+        scenes,
+        [data],
+        contentScope?.sequence(data.sequenceId)
+      )
         .onConflictDoUpdate({
           target: [scenes.sequenceId, scenes.orderIndex],
           set: {
@@ -442,7 +450,8 @@ export function createScenesMethods(db: Database) {
         .where(
           and(
             eq(scenes.sequenceId, sequenceId),
-            gte(scenes.orderIndex, minOrderIndex)
+            gte(scenes.orderIndex, minOrderIndex),
+            contentScope?.sequence(scenes.sequenceId)
           )
         )
         .returning({ id: scenes.id });

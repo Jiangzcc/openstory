@@ -7,6 +7,48 @@ run and Update all. There is no stored stage and no checkpoint: the old
 ~80 edits that never moved it, and every mismatch was a refused click. The
 columns are gone (#1819).
 
+## Scene-split descendant content ownership (secondary development, 2026-11-14)
+
+A Storyboard's SceneSplit descendant binds its existing write methods through
+`scopedDb.storyboardContent` using the explicit root owner in its payload.
+Every affected INSERT, UPDATE and DELETE checks the organization, sequence,
+root instance or explicitly supplied launcher claim, and `processing` status
+inside the mutation. Failure retains the instance id, so identity alone is
+insufficient. Scene, shot, script and dialogue targets must belong to that
+sequence. No root id is inferred from a child instance name or its direct
+AnalyzeScript parent.
+
+The bound surface covers streamed and final titles, scenes, shot upserts and
+anchor frames, shot links and trimming, split scripts and their selection
+pointers, authored dialogue and its claim demotion, element first mentions,
+and the scene-split completion activity. Conditional inserts retain schema
+defaults and column encoders; smaller chunks stay within D1's parameter limit.
+A split seed and its selection pointer now commit in one D1 batch, so a failed
+pointer update cannot leave a seed that retry skips. Existing dialogue and
+script fallback batches retain their atomic boundary.
+
+Checks around each method stop stale follow-on work even when the method
+returns an unchanged or already-seeded result. Write safety comes from SQL,
+including after an earlier check passed. Confirmed loss becomes a non-retryable
+error inside the step callback, including when a guarded write returned no
+row. Completion logging propagates both confirmed loss and an unavailable
+ownership check; ordinary activity-write failures with a confirmed active
+owner keep their best-effort behavior. Underlying write/check causes are kept.
+Previously committed chunks remain;
+the entire split is not a transaction. Unbound standalone analysis keeps its
+existing behavior. Payloads lacking an explicit root do not gain this fence.
+
+This bounded slice does not fence AnalyzeScript's later cast, location,
+continuity, specification or derived-prompt writes, or every other descendant.
+Ownership can change after a successful write/check and before a realtime
+event or preview dispatch; those external effects still need their own
+protocol. Old cached workflow steps, root cancellation, email and deployed
+Cloudflare replay/concurrency acceptance remain open. Exact local evidence is
+recorded in the [scene-split content batch](../secondary-development/preservation/20261114-p3-g03-scene-split-content/README.md).
+The existing separate tail-shot and tail-scene deletes are each fenced, not
+one atomic trim. Existing unchunked reads of more than 100 scene ids retain
+their previous D1 parameter-limit boundary; this batch only bounds inserts.
+
 - Pure half (units, requires graph, cascade, Update all's filter, footer
   copy): `src/sequences/generation-plan.ts`.
 - Loader (rows + verdicts, one read per table): `src/sequences/server/generation-plan.ts`.

@@ -30,6 +30,8 @@ import {
 } from '@/sequences/server/db/sequence-events';
 import type { Database } from '@/platform/server/db/client';
 import { NotFoundError } from '@/platform/errors';
+import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
+import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 import {
   dialogueSpeeches,
   shotDialogueClaims,
@@ -119,7 +121,10 @@ function sameLines(
   );
 }
 
-export function createShotDialogueMethods(db: Database) {
+export function createShotDialogueMethods(
+  db: Database,
+  contentScope?: StoryboardContentScope
+) {
   const clearSelectedVersion = (shotId: string) =>
     db
       .update(shotDialogueVersions)
@@ -127,7 +132,8 @@ export function createShotDialogueMethods(db: Database) {
       .where(
         and(
           eq(shotDialogueVersions.shotId, shotId),
-          isNotNull(shotDialogueVersions.selectedAt)
+          isNotNull(shotDialogueVersions.selectedAt),
+          contentScope?.shot(shotDialogueVersions.shotId)
         )
       );
 
@@ -160,7 +166,8 @@ export function createShotDialogueMethods(db: Database) {
         and(
           eq(shotDialogueClaims.shotId, shotId),
           eq(shotDialogueClaims.status, 'generating'),
-          isNotNull(shotDialogueClaims.pendingSourceKey)
+          isNotNull(shotDialogueClaims.pendingSourceKey),
+          contentScope?.shot(shotDialogueClaims.shotId)
         )
       );
 
@@ -374,16 +381,20 @@ export function createShotDialogueMethods(db: Database) {
         // The words moved: a speech in flight speaks the old ones.
         demoteLiveClaims(shotId),
         clearSelectedVersion(shotId),
-        db
-          .insert(shotDialogueVersions)
-          .values({
-            shotId,
-            lines,
-            source,
-            createdBy: opts?.createdBy ?? null,
-            selectedAt: new Date(),
-          })
-          .returning(),
+        insertWithStoryboardGuard(
+          db,
+          shotDialogueVersions,
+          [
+            {
+              shotId,
+              lines,
+              source,
+              createdBy: opts?.createdBy ?? null,
+              selectedAt: new Date(),
+            },
+          ],
+          contentScope?.shot(shotId)
+        ).returning(),
       ]);
       const [row] = inserted;
       if (!row) throw new Error('Failed to insert shot dialogue version');

@@ -27,6 +27,11 @@ import {
 } from 'drizzle-orm';
 import type { PageOptions } from '@/platform/server/db/read-page';
 import { buildEventInsert } from '@/sequences/server/db/sequence-events';
+import {
+  insertWithStoryboardGuard,
+  STORYBOARD_CONTENT_INSERT_BATCH,
+} from '@/sequences/server/db/storyboard-content-scope';
+import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 
 /**
  * Every shot owns an anchor frame (orderIndex 0, role 'first') — the i2v anchor
@@ -103,7 +108,10 @@ type ShotFilters = {
   page?: PageOptions;
 };
 
-export function createShotsMethods(db: Database) {
+export function createShotsMethods(
+  db: Database,
+  contentScope?: StoryboardContentScope
+) {
   // Idempotently materialize the anchor frame for each created/upserted shot and
   // return each shot's anchor frame id keyed by shotId. A no-op `onConflictDoUpdate`
   // (re-setting `orderIndex` to its own value) keeps an existing frame — and its
@@ -123,11 +131,24 @@ export function createShotsMethods(db: Database) {
   ): Promise<Map<string, string>> => {
     if (rows.length === 0) return new Map();
     const result = new Map<string, string>();
-    for (let i = 0; i < rows.length; i += ANCHOR_FRAMES_BATCH) {
-      const batch = rows.slice(i, i + ANCHOR_FRAMES_BATCH);
-      const anchors = await db
-        .insert(frames)
-        .values(batch.map(anchorFrameValues))
+    const batchSize = contentScope
+      ? STORYBOARD_CONTENT_INSERT_BATCH
+      : ANCHOR_FRAMES_BATCH;
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize);
+      const anchors = await insertWithStoryboardGuard(
+        db,
+        frames,
+        batch.map(anchorFrameValues),
+        contentScope &&
+          batch.map(
+            (row) =>
+              and(
+                contentScope.sequence(row.sequenceId),
+                contentScope.shot(row.id)
+              ) ?? sql`false`
+          )
+      )
         .onConflictDoUpdate({
           target: [frames.shotId, frames.orderIndex],
           set: { orderIndex: sql.raw(`excluded."order_index"`) },
@@ -252,7 +273,16 @@ export function createShotsMethods(db: Database) {
       const [shot] = await db
         .update(shots)
         .set({ ...data, updatedAt: new Date() })
-        .where(eq(shots.id, shotId))
+        .where(
+          and(
+            eq(shots.id, shotId),
+            contentScope?.shot(shots.id),
+            data.sequenceId === undefined
+              ? undefined
+              : contentScope?.sequence(data.sequenceId),
+            data.sceneId == null ? undefined : contentScope?.scene(data.sceneId)
+          )
+        )
         .returning();
 
       if (!shot && options?.throwOnMissing !== false) {
@@ -296,7 +326,7 @@ export function createShotsMethods(db: Database) {
     delete: async (shotId: string): Promise<boolean> => {
       const result = await db
         .delete(shots)
-        .where(eq(shots.id, shotId))
+        .where(and(eq(shots.id, shotId), contentScope?.shot(shots.id)))
         .returning({ id: shots.id });
       return result.length > 0;
     },
@@ -564,17 +594,20 @@ export function createShotsMethods(db: Database) {
       const result = await db
         .delete(shots)
         .where(
-          inArray(
-            shots.sceneId,
-            db
-              .select({ id: scenes.id })
-              .from(scenes)
-              .where(
-                and(
-                  eq(scenes.sequenceId, sequenceId),
-                  gte(scenes.orderIndex, minOrderIndex)
+          and(
+            contentScope?.sequence(shots.sequenceId),
+            inArray(
+              shots.sceneId,
+              db
+                .select({ id: scenes.id })
+                .from(scenes)
+                .where(
+                  and(
+                    eq(scenes.sequenceId, sequenceId),
+                    gte(scenes.orderIndex, minOrderIndex)
+                  )
                 )
-              )
+            )
           )
         )
         .returning({ id: shots.id });
@@ -593,7 +626,11 @@ export function createShotsMethods(db: Database) {
       const result = await db
         .delete(shots)
         .where(
-          and(eq(shots.sceneId, sceneId), gte(shots.shotNumber, minShotNumber))
+          and(
+            eq(shots.sceneId, sceneId),
+            gte(shots.shotNumber, minShotNumber),
+            contentScope?.shot(shots.id)
+          )
         )
         .returning({ id: shots.id });
       return result.length;
@@ -616,14 +653,26 @@ export function createShotsMethods(db: Database) {
     bulkUpsert: async (
       shotInserts: NewShot[]
     ): Promise<ShotWithAnchorFrame[]> => {
-      const BATCH_SIZE = 5;
+      const BATCH_SIZE = contentScope ? STORYBOARD_CONTENT_INSERT_BATCH : 5;
       const results: ShotWithAnchorFrame[] = [];
 
       for (let i = 0; i < shotInserts.length; i += BATCH_SIZE) {
         const batch = shotInserts.slice(i, i + BATCH_SIZE);
-        const batchResults = await db
-          .insert(shots)
-          .values(batch)
+        const batchResults = await insertWithStoryboardGuard(
+          db,
+          shots,
+          batch,
+          contentScope &&
+            batch.map(
+              (row) =>
+                and(
+                  contentScope.sequence(row.sequenceId),
+                  row.sceneId == null
+                    ? undefined
+                    : contentScope.scene(row.sceneId)
+                ) ?? sql`false`
+            )
+        )
           .onConflictDoUpdate({
             target: [shots.sceneId, shots.shotNumber],
             targetWhere: sql`${shots.sceneId} IS NOT NULL`,

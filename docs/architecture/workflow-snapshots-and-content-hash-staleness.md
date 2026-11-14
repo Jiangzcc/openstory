@@ -1,5 +1,33 @@
 # Workflow snapshots and content-hash staleness
 
+## Scene-split write fences (secondary development, 2026-11-14)
+
+Immutable input snapshots do not authorize a descendant to overwrite a newer
+root's content. SceneSplit now binds a narrow write surface to its explicit
+Storyboard owner. All mutations on that surface include the current
+organization/sequence/root and `processing` predicate in SQL; a successful
+preflight check is never the write authorization. Referenced scene and shot
+ids are constrained to the owned sequence, including INSERT conflict paths,
+anchor creation, script selection/fallbacks and dialogue demotion/selection.
+
+The SQL fence applies on each newly executed mutation, including in a retried
+step. Before/after method checks also reject stale no-op returns. Seeds and
+their initial script pointer share one D1 batch; existing script fallback and
+dialogue batches retain their commit/rollback boundary. Earlier committed
+streaming chunks are kept, and completed cached steps do not execute a new
+write. This does not provide a transaction over the entire workflow.
+Confirmed ownership loss is converted to a non-retryable error before it
+leaves a step callback. Completion history cannot swallow lost or unknown
+ownership and report success to the old parent. A write failure with a
+confirmed active owner retains its original cause and normal retry policy.
+
+The [generation-plan contract](generation-plan.md#scene-split-descendant-content-ownership-secondary-development-2026-11-14)
+lists the complete bounded write surface. Standalone calls and payloads with
+no explicit root retain the existing behavior. Later AnalyzeScript and other
+descendant writes remain open, as do event/preview dispatch after takeover,
+email, root cancellation and deployed runtime acceptance. This is a local
+source/database contract, not proof that an old provider job has stopped.
+
 > **Scene → Shot → Frame.** The still-image surface, version pointers, and retired image `divergedAt` path are defined in [scene-shot-frame-redesign.md](./scene-shot-frame-redesign.md) (#989). This doc covers input-hash staleness and workflow snapshots on top of that model.
 
 This is the companion to [managing-complex-dependency-graphs-in-collaborative-ai-video-platforms.md](./managing-complex-dependency-graphs-in-collaborative-ai-video-platforms.md). The original doc proposed a general-purpose versioned-DAG architecture with branching, XState lifecycles, Inngest, Postgres MVCC, Redis pub/sub, and Linear-style transaction sync. A review against the codebase shows that most of that infrastructure is already solved differently on our stack (Cloudflare Workflows, Durable Object-backed SSE realtime, Cloudflare D1, Drizzle, and scoped DB access from workflow payload `organizationId`/`userId`) — and most of what remains unsolved reduces to a critical path of three ideas. This doc is the stack-specific subset we intend to ship.

@@ -319,7 +319,19 @@ function makeScopedDb(
     sequenceElements: { updateFirstMention: () => Promise.resolve() },
   };
   // stub covering only the scoped-db surface runImpl touches
-  return asStub<WorkflowScopedDb>(scopedDb);
+  return asStub<WorkflowScopedDb>({
+    ...scopedDb,
+    // Local owner-factory substitute reuses the existing write stubs.
+    storyboardContent: vi.fn(() => ({
+      sequences: scopedDb.sequences,
+      scenes: scopedDb.scenes,
+      shots: scopedDb.shots,
+      sceneScriptVersions: scopedDb.sceneScriptVersions,
+      shotDialogue: scopedDb.shotDialogue,
+      sequenceElements: scopedDb.sequenceElements,
+      sequenceEvents: { recordOnce: vi.fn(async () => {}) },
+    })),
+  });
 }
 
 function makeEvent(
@@ -390,6 +402,63 @@ beforeEach(() => {
   authFailureStage = undefined;
   shotListPartials = [];
   beforeShotListDone = () => {};
+});
+
+test('binds the trusted storyboard root before steps and uses its title writer', async () => {
+  streamChunks = singleDoneChunk();
+  feed.mockReset();
+  const scopedDb = makeScopedDb();
+  const unboundTitle = vi.spyOn(scopedDb.sequences, 'updateTitle');
+  const ownedTitle = vi.fn<WorkflowScopedDb['sequences']['updateTitle']>(
+    async () => {}
+  );
+  // This owner-bound substitute replaces one writer; all others reuse the fixture.
+  const storyboardContent = vi
+    .spyOn(scopedDb, 'storyboardContent')
+    .mockReturnValue({
+      sequences: { ...scopedDb.sequences, updateTitle: ownedTitle },
+      scenes: scopedDb.scenes,
+      shots: scopedDb.shots,
+      sceneScriptVersions: scopedDb.sceneScriptVersions,
+      shotDialogue: scopedDb.shotDialogue,
+      sequenceElements: scopedDb.sequenceElements,
+      sequenceEvents: { recordOnce: vi.fn(async () => {}) },
+    });
+  const step = makeStep();
+  const stepDo = vi.spyOn(step, 'do');
+  const result = await makeWorkflow().split(
+    makeEvent({ ...INPUT, storyboardOwner: STORYBOARD_OWNER }),
+    step,
+    scopedDb
+  );
+  expect(storyboardContent).toHaveBeenCalledExactlyOnceWith({
+    id: INPUT.sequenceId,
+    ...STORYBOARD_OWNER,
+  });
+  expect(stepDo).toHaveBeenCalled();
+  expect(storyboardContent.mock.invocationCallOrder[0]).toBeLessThan(
+    Math.min(...stepDo.mock.invocationCallOrder)
+  );
+  expect(ownedTitle).toHaveBeenCalledWith(INPUT.sequenceId, 'Test Film');
+  expect(unboundTitle).not.toHaveBeenCalled();
+  expect(result.title).toBe('Test Film');
+});
+
+test('a rejected content binding stops the workflow before any step', async () => {
+  const scopedDb = makeScopedDb();
+  const failure = new Error('Mock storyboard binding rejected');
+  vi.spyOn(scopedDb, 'storyboardContent').mockImplementation(() => {
+    throw failure;
+  });
+  const step = makeStep();
+  await expect(
+    makeWorkflow().split(
+      makeEvent({ ...INPUT, storyboardOwner: STORYBOARD_OWNER }),
+      step,
+      scopedDb
+    )
+  ).rejects.toBe(failure);
+  expect(lastDoMock).not.toHaveBeenCalled();
 });
 
 describe('SceneSplitWorkflow preview fan-out', () => {

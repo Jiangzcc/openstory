@@ -155,6 +155,7 @@ import type {
 import { NonRetryableError } from 'cloudflare:workflows';
 import type { z } from 'zod';
 import { getLogger } from '@/platform/logger';
+import { bindSceneSplitContent } from './scene-split-content';
 
 const logger = getLogger(['openstory', 'workflow', 'scene-split']);
 
@@ -566,9 +567,10 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
   protected override async runImpl(
     event: Readonly<WorkflowEvent<SceneSplitWorkflowInput>>,
     step: WorkflowStep,
-    scopedDb: WorkflowScopedDb
+    workflowDb: WorkflowScopedDb
   ): Promise<SceneSplitWorkflowResult> {
     const input = event.payload;
+    const scopedDb = bindSceneSplitContent(workflowDb, input);
     const { sequenceId, modelId, elements = [] } = input;
     const script = input.script;
     // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a payload queued before #2050
