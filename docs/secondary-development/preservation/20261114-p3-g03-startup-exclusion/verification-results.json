@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "batchId": "G03-startup-exclusion",
+  "evidenceScope": "Host Vitest logic and real Node SQLite migrated through the D1-compatible adapter. Workflow creation/status/enforcement/network are explicit mocks; no deployed Cloudflare, browser, provider or wallet settlement acceptance.",
+  "checks": [
+    {
+      "stage": "Original startup gap before implementation",
+      "command": "bun run test src/sequences/server/launchers-workflow-ownership.test.ts --reporter=json --outputFile=.codex/p3-startup-red.json",
+      "status": "failed-as-expected",
+      "files": 1,
+      "tests": 23,
+      "passed": 21,
+      "failed": 2,
+      "reason": "An in-flight raw claim could be taken over; lost create replies were written as definitive failed."
+    },
+    {
+      "stage": "Reservation and Continue pending ownership before correction",
+      "status": "failed-as-expected",
+      "files": 2,
+      "tests": 49,
+      "passed": 47,
+      "failed": 2,
+      "reason": "Pending startup released its own hold and rolled back its accepted Continue switches."
+    },
+    {
+      "stage": "Platform exact-ID trigger and billing/Continue first green",
+      "status": "passed",
+      "files": 7,
+      "tests": 137,
+      "failed": 0
+    },
+    {
+      "stage": "Initial DB integration during fixture adaptation",
+      "status": "failed-before-fixture-corrections",
+      "files": 7,
+      "tests": 187,
+      "passed": 170,
+      "failed": 17,
+      "reason": "Synthetic final IDs were reused across independent fixtures; raw SQL cause nesting and real settings activity expectations needed correction."
+    },
+    {
+      "stage": "Independent-review committed claim reply loss before correction",
+      "status": "failed-as-expected",
+      "files": 1,
+      "testsCollected": 22,
+      "testsRun": 1,
+      "skipped": 21,
+      "failed": 1,
+      "reason": "A committed claim threw outside the pending error wrapper and the generic error cleanup could release its reservation."
+    },
+    {
+      "stage": "First broad integration before final fixture/inventory corrections",
+      "status": "failed-before-correction",
+      "files": 57,
+      "tests": 1014,
+      "passed": 1004,
+      "failed": 10,
+      "reason": "Seven eager expected-ID evaluations preceded asynchronous preparation, one direct-claim fixture lacked its launch, the infrastructure journal needed an explicit claim-inventory classification, and one repository-wide scanner timed out under default worker concurrency."
+    },
+    {
+      "stage": "Final integrated startup and preservation regression",
+      "command": "bun run test <testFiles> --maxWorkers=4 --reporter=json --outputFile=.codex/p3-startup-final.json",
+      "status": "passed",
+      "files": 57,
+      "tests": 1014,
+      "failed": 0,
+      "durationSeconds": 103.8,
+      "testFiles": [
+        "src/billing/server/preflight.test.ts",
+        "src/billing/server/storyboard-envelope.wiring.test.ts",
+        "src/motion/server/workflows/motion-batch-workflow.test.ts",
+        "src/platform/client-server-boundary.test.ts",
+        "src/platform/domain-blind.test.ts",
+        "src/platform/realtime/emit.test.ts",
+        "src/platform/realtime/schema.test.ts",
+        "src/platform/realtime/sse-session.test.ts",
+        "src/platform/server/compliance/generation-gate.wiring.test.ts",
+        "src/platform/server/cron/reconcile-all.test.ts",
+        "src/platform/server/cron/reconcile-look-claims.test.ts",
+        "src/platform/server/cron/reconcile-storyboard-launches.test.ts",
+        "src/platform/server/db/db-access-allowlist.test.ts",
+        "src/platform/server/db/scoped-workflow-models.test.ts",
+        "src/platform/server/realtime/merged-sse.test.ts",
+        "src/platform/server/realtime/realtime-channel.do.test.ts",
+        "src/platform/server/workflow/await-child.test.ts",
+        "src/platform/server/workflow/base-workflow.test.ts",
+        "src/platform/server/workflow/child-snapshot-composition.test.ts",
+        "src/platform/server/workflow/claim-discipline.test.ts",
+        "src/platform/server/workflow/client.compliance.test.ts",
+        "src/platform/server/workflow/client.test.ts",
+        "src/platform/server/workflow/instance-id.test.ts",
+        "src/platform/server/workflow/model-snapshot-composition.test.ts",
+        "src/platform/server/workflow/no-mid-run-reads.test.ts",
+        "src/platform/server/workflow/prepared-trigger.test.ts",
+        "src/platform/server/workflow/trigger-bindings.test.ts",
+        "src/platform/server/workflow/wiring-consistency.test.ts",
+        "src/platform/ui/realtime/__tests__/query-cache-updater.test.ts",
+        "src/sequences/server/continue-plan.test.ts",
+        "src/sequences/server/create-sequences.test.ts",
+        "src/sequences/server/db/sequence-events.test.ts",
+        "src/sequences/server/generation-operations.test.ts",
+        "src/sequences/server/launchers-startup.test.ts",
+        "src/sequences/server/launchers-workflow-ownership.test.ts",
+        "src/sequences/server/launchers.test.ts",
+        "src/sequences/server/sequence-creation-entry.test.ts",
+        "src/sequences/server/smart-retry-billing.test.ts",
+        "src/sequences/server/smart-retry-snapshot.test.ts",
+        "src/sequences/server/workflows/analyze-script-child-context.test.ts",
+        "src/sequences/server/workflows/analyze-script-failure-ownership.test.ts",
+        "src/sequences/server/workflows/analyze-script-workflow-auth-failure.test.ts",
+        "src/sequences/server/workflows/analyze-script-workflow.test.ts",
+        "src/sequences/server/workflows/generation-workflow-owner.test.ts",
+        "src/sequences/server/workflows/scene-split-workflow.test.ts",
+        "src/sequences/server/workflows/storyboard-failure-status.test.ts",
+        "src/sequences/server/workflows/storyboard-lifecycle-ownership.test.ts",
+        "src/sequences/server/workflows/storyboard-workflow.test.ts",
+        "src/sequences/smart-retry.test.ts",
+        "src/sequences/ui/generation-stream.delivery.test.ts",
+        "src/sequences/ui/generation-stream.events.test.ts",
+        "src/sequences/ui/generation-stream.launch.test.ts",
+        "src/sequences/ui/generation-stream.reconcile.test.ts",
+        "src/sequences/ui/generation-stream.reducer.test.ts",
+        "src/sequences/ui/generation-stream.session.test.ts",
+        "src/sequences/ui/use-generation-plan.test.ts",
+        "src/shots/server/workflows/update-stale-plan-run.test.ts"
+      ],
+      "note": "Lower worker concurrency addresses host contention for existing synchronous repository scans. No timeout or assertion was weakened."
+    },
+    {
+      "stage": "Generated migration D1 safety",
+      "command": "bun scripts/check-migrations.ts drizzle/migrations/20261114050707_storyboard_launches/migration.sql",
+      "status": "passed",
+      "persistentDatabaseApplied": false,
+      "remoteApplied": false
+    },
+    {
+      "stage": "Typecheck",
+      "command": "bun typecheck",
+      "status": "passed"
+    },
+    {
+      "stage": "Targeted lint",
+      "command": "bunx --no-install oxlint --type-aware <sourceFiles>",
+      "status": "passed",
+      "files": 29,
+      "errors": 0,
+      "warnings": 1,
+      "note": "Existing no-unnecessary-condition warning at src/platform/server/test/seed.ts:406; the condition is outside this batch diff."
+    },
+    {
+      "stage": "Source formatting",
+      "command": "bunx --no-install oxfmt --check <sourceFiles>",
+      "status": "passed",
+      "files": 29
+    },
+    {
+      "stage": "Schema and generated migration agree",
+      "command": "bun db:generate --explain --output json",
+      "status": "passed",
+      "result": "no_changes",
+      "wroteMigration": false
+    },
+    {
+      "stage": "Client and SSR build",
+      "command": "bun run build",
+      "status": "passed",
+      "note": "Vite client and server builds completed; no deployment. Existing dependency/directive and build timing warnings were non-fatal."
+    },
+    {
+      "stage": "Normal source commit hooks",
+      "status": "passed",
+      "checks": [
+        "client-server-boundary",
+        "dead-code",
+        "format",
+        "lint",
+        "migration-safety",
+        "typecheck"
+      ],
+      "durationSeconds": 118.14,
+      "clientServerBoundaryTests": 17,
+      "deadCodeErrors": 0,
+      "existingKnipConfigurationHints": 6
+    },
+    {
+      "stage": "Documentation and source identity audit",
+      "status": "passed",
+      "sourceAfter": "dbfa4a0e49af50bbe4ce8836271130e3fc2dabfc",
+      "sourceFingerprints": 28,
+      "generatedSnapshotSemanticSha256": "fda37900f97074fd9dda778e7c2173c403694df17d2de03f5282cda777914b27",
+      "jsonlRecords": 49,
+      "localMarkdownFiles": 5,
+      "brokenLocalLinks": 0,
+      "frozenInventoryFiles": 5,
+      "frozenInventoryPending": 1219,
+      "note": "Both new JSON records parse without unfinished statuses; the last implementation-log record identifies this source commit. Frozen inventory files match sourceBefore. No source test rerun was needed for this documentation audit."
+    }
+  ],
+  "frozenInventory": {
+    "files": 5,
+    "items": 1219,
+    "pending": 1219,
+    "approved": 0,
+    "modified": false
+  },
+  "unverified": [
+    "Cloudflare create/already_exists semantics in a deployed multi-instance environment and engine replay/restart.",
+    "Browser confirmation and error UX, actual SSE/email delivery.",
+    "Paid model providers, real provider key routing and final wallet capture/settlement.",
+    "Existing database migration rollout, production binding selection and deployment."
+  ],
+  "notes": [
+    "Exactly one reserved root identity is the launch contract; it does not promise one provider call across Workflow retries or cancel descendants.",
+    "Generic trigger generation retries are unchanged.",
+    "Legacy raw claims without a prepared request remain outside the new recovery protocol."
+  ],
+  "sourceAfter": "dbfa4a0e49af50bbe4ce8836271130e3fc2dabfc",
+  "failureEvidence": [
+    {
+      "stage": "Original startup gap",
+      "assertions": [
+        {
+          "name": "Storyboard startup exclusion regressions retains the same slot while the first create response is in flight",
+          "message": "Error: promise resolved \"{ workflowRunId: 'synthetic-created-…' }\" instead of rejecting"
+        },
+        {
+          "name": "Storyboard startup exclusion regressions keeps an uncertain create result pending instead of recording a definitive failure",
+          "message": "AssertionError: expected { …(34) } to match object { status: 'processing', …(1) }"
+        }
+      ]
+    },
+    {
+      "stage": "Pending reservation and Continue rollback",
+      "assertions": [
+        {
+          "name": "reservation ownership while a workflow launch is unconfirmed only preserves the pending launch reservation res_1",
+          "message": "AssertionError: expected \"vi.fn()\" to not be called at all, but actually been called 1 times"
+        },
+        {
+          "name": "Continue settings after durable startup acquisition retains switches only for a pending launch: true",
+          "message": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        }
+      ]
+    },
+    {
+      "stage": "Committed claim receipt uncertainty",
+      "assertions": [
+        {
+          "name": "Storyboard preparation and atomic acquisition boundaries keeps the reservation when a committed claim loses its response",
+          "message": "AssertionError: expected Error: Synthetic committed claim response… to be an instance of WorkflowLaunchPendingError"
+        }
+      ]
+    }
+  ],
+  "temporaryReportsPolicy": "The .codex/p3-startup-* reports were read and summarized here with actual totals, failure messages and the final test-file list; transient reports are removed before delivery."
+}

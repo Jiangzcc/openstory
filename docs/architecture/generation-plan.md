@@ -187,51 +187,60 @@ numeric subtotal for the credit gate; they never become a free estimate.
 
 ### Storyboard mutex and failure ownership (secondary development, 2026-11-14)
 
-The launcher checks the previous run and compare-and-swaps the sequence's
-workflow slot to a raw `claimId`. `claimWorkflowSlot` keeps its signature;
-the same `UPDATE` takes the claim, sets `status = 'processing'` and clears
-`statusError`. With a start activity, the update and the conditional
-`storyboard.started` insert commit or roll back together in the existing D1
-batch; the insert condition also checks organization. With `activity: null`,
-it is one atomic `UPDATE`. The launcher no longer writes `processing`
-separately.
+The launcher prepares one environment-scoped final instance ID and its complete
+request before acquiring the sequence slot. Preparation resolves enforcement,
+binding validity and the packed model configuration. The scoped DB then
+compare-and-swaps the previous owner to that final ID, sets processing, clears
+the previous error, persists the prepared request in `storyboard_launches`, and
+writes the start activity in one D1 batch. The launch record is mandatory even
+when no activity was requested. A losing claim or failed insert commits none
+of those changes. The payload's trusted `workflowClaimId` equals this reserved
+instance ID; the launcher does not publish a second identity.
 
-It overwrites `workflowClaimId` on the trigger payload with that trusted claim;
-`StoryboardTriggerInput` omits the field.
-The actual Cloudflare instance ID may differ after namespacing, sanitization
-or truncation and may not yet have been written back to the sequence.
+A prepared trigger only calls create with that exact reserved ID. An
+already-existing instance acknowledges the same request, including when it
+has already finished; it never mints a new generation for an errored ID.
+The generic trigger's deduplication retry policy remains unchanged. Original
+creation and every recovery use the stored payload, packed model routes and
+request locale, and each dispatch rechecks current enforcement.
 
-`failWorkflowIfCurrent`, exposed by `createSequencesMethods`, returns
-`Promise<boolean>` from one conditional `UPDATE`: sequence and organization
-must match, the stored `workflowRunId` must equal the actual instance ID or the
-trusted snapshotted claim, and status must be neither `failed` nor `completed`.
-Storyboard passes
-both identities; `false` skips `generation.failed`. The launcher's trigger
-catch uses the same guard with only the raw claim as `workflowRunId`. An
-ordinary failure of that write retains the existing status-error log; the
-catch still records `run.failed` and rethrows the original trigger error.
+An unconfirmed launch with no instance is pending. A request-side mutex check
+can redeliver that prepared request and still refuses to open a second slot.
+The cron sweep also redelivers pending current-owner requests, covering a
+request that stopped after D1 commit but before create. Unknown or unreadable
+status never authorizes another launch. A known terminal instance allows the
+next user-requested generation; an acknowledged instance that has disappeared
+continues to use the existing retention/reconciliation policy. Legacy owners
+with no durable launch record keep their previous resolver behavior.
 
-After creation,
-`scopedDb.sequences.publishWorkflowInstance({ id, claimId, workflowRunId })`
-returns `Promise<boolean>` from one `UPDATE` scoped to sequence, organization
-and a stored owner still equal to this raw claim. `false` leaves the row
-untouched; the launcher still returns the created instance ID. `true` changes
-only `workflowRunId` and `updatedAt`, preserving any `failed` / `completed`
-result written before the create response. SQL errors reject unchanged,
-rather than returning `false`. Publication is outside the trigger catch, so
-it neither repeats creation nor fabricates a trigger-failure `run.failed`.
+`publishWorkflowInstance` conditionally acknowledges the launch in a D1
+batch while preserving any completed/failed result that arrived before the
+create response. A missed owner guard never rewrites a newer owner's state.
+Errors returned by the claim call, creation or acknowledgment become
+`WorkflowLaunchPendingError` with the original cause, instance and reservation
+identity; they leave the request recoverable instead of writing a definitive
+failed event. Reservation cleanup preserves only the matching pending
+reservation. Continue keeps its saved switches for its own pending launch;
+a preparation refusal or a returned lost-CAS result still uses the existing
+rollback. A claim-call exception does not prove rollback: an uncommitted hold
+remains subject to its existing reservation expiry rather than an unsafe
+immediate release. Full concurrent
+Continue-settings ownership remains a separate follow-up.
 
-The startup protocol is still not strictly exclusive.
-`getSequenceRejectingActiveRun` asks `resolveRunState` about the stored owner;
-an unpublished raw claim matches no CF binding and is treated as `failed`.
-Another request can therefore take over while the first `create` is still in
-flight. These guards protect their state and ID writes after takeover; they
-neither prevent takeover nor stop the older workflow. No lease, TTL or schema
-change is added.
+The launch table is an independent internal dispatch journal. Current-owner
+joins gate reads and dispatch; sequence deletion removes its records in the
+same batch, and post-delete orphan cleanup preserves upstream organization
+deletion without a new foreign-key dependency or an eager destructive hook.
+Pending requests rotate by last attempted dispatch, so a failed older batch
+cannot indefinitely hide later requests. Its additive migration is generated
+through Drizzle and checked for D1 safety. Local
+SQLite migration tests do not establish deployed D1 or Cloudflare behavior.
+The [startup exclusion record](../secondary-development/preservation/20261114-p3-g03-startup-exclusion/README.md)
+records deterministic races, recovery and the remaining acceptance boundaries.
 
 The [launcher ownership batch](../secondary-development/preservation/20261114-p3-g03-launcher-ownership/README.md) covers claim/processing and instance publication. The [lifecycle branches follow-up](../secondary-development/preservation/20261114-p3-g03-lifecycle-branches/README.md) guards the selected runImpl startup, shot clearing, stop-at/settings activity, credits-short and completion/activity operations, plus parented AnalyzeScript failure using an explicit root owner snapshot. Completion has a stable DB event receipt for retry; a missed start returns before poster/child work and releases only the payload reservation.
 
-Other content writes and descendant notifications, the standalone AnalyzeScript CLI without a slot protocol, Continue settings save/refusal rollback, independent Update all preflight and create-success/publication-SQL-failure recovery remain open. Database commits do not make realtime or email delivery atomic; a takeover after a successful guard or replay of an already-cached successful step still needs event-level ownership. The [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14) records the complete bounded contract and notification/replay limits.
+Other content writes and descendant notifications, the standalone AnalyzeScript CLI without a slot protocol, complete Continue settings save/refusal rollback and independent Update all preflight remain open. The durable startup recovery above covers new launches; cancellation and legacy raw claims without a launch record remain outside that protocol. Database commits do not make realtime or email delivery atomic; a takeover after a successful guard or replay of an already-cached successful step still needs event-level ownership. The [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14) records the complete bounded contract and notification/replay limits.
 
 ### Sequence lifecycle signal ownership (secondary development, 2026-11-14)
 
@@ -241,7 +250,7 @@ A Continue has a sequence-specific pending token shared by its QueryClient subsc
 
 History is parsed through the same leaf schemas, scoped to the current session/request, then followed by live events received while it was pending. An accepted terminal event is retained across hydration and claim-to-instance publication; history and late phases cannot reopen that same owner. A new confirmed owner or explicit launch establishes a new session. The pending live replay buffer is bounded to 2,000 events; overflow abandons hydration and keeps displayed live state.
 
-The [lifecycle notification batch](../secondary-development/preservation/20261114-p3-g03-notification-ownership/README.md) records the source changes, deterministic races and real QueryClient/SQLite/SSE host evidence. This does not make realtime/email transactional, repair failure-after-terminal-write notification retries, guard every content write or event, or prove Cloudflare/browser delivery. Startup exclusion, server Continue settings, independent Update all preflight and publication-failure recovery remain open.
+The [lifecycle notification batch](../secondary-development/preservation/20261114-p3-g03-notification-ownership/README.md) records the source changes, deterministic races and real QueryClient/SQLite/SSE host evidence. This does not make realtime/email transactional, repair failure-after-terminal-write notification retries, guard every content write or event, or prove Cloudflare/browser delivery. New-launch startup exclusion and publication-error recovery use the durable protocol above. Server Continue settings ownership, independent Update all preflight, cancellation and legacy raw claims without durable requests remain open.
 
 ## Shot specs and prompts (#1923, #1929)
 
