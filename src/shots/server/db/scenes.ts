@@ -195,7 +195,8 @@ export function createScenesMethods(
     // selected row INSIDE the batch, not from `existing`: a script or
     // narrative edit landing between the read and this write must survive.
     const versionId = opts.versionId ?? generateId();
-    const guard =
+    const guard = and(
+      contentScope?.scene(scenes.id),
       opts.expectedScriptVersionId === undefined
         ? eq(scenes.id, existing.id)
         : and(
@@ -203,7 +204,8 @@ export function createScenesMethods(
             opts.expectedScriptVersionId === null
               ? isNull(scenes.selectedScriptVersionId)
               : eq(scenes.selectedScriptVersionId, opts.expectedScriptVersionId)
-          );
+          )
+    );
     const script = sql`coalesce(${sceneScriptVersions.content}, ${JSON.stringify(EMPTY_SCRIPT)})`;
     const field = (key: keyof SceneNarrative, value: SQL) => {
       const patched: SceneNarrativeUpdate[keyof SceneNarrative] = patch[key];
@@ -382,7 +384,9 @@ export function createScenesMethods(
       continuity: NonNullable<SceneNarrative['continuity']>,
       opts: { actorId: string | null }
     ): Promise<void> => {
-      const [existing] = await selectScenes().where(eq(scenes.id, sceneId));
+      const [existing] = await selectScenes().where(
+        and(eq(scenes.id, sceneId), contentScope?.scene(scenes.id))
+      );
       // Loud: a write addressed to a row that is not there is a wrong id,
       // and returning quietly hid one (#2015).
       if (!existing) throw new NotFoundError(`Scene ${sceneId} not found`);

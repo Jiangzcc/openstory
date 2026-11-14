@@ -7,6 +7,42 @@ run and Update all. There is no stored stage and no checkpoint: the old
 ~80 edits that never moved it, and every mismatch was a refused click. The
 columns are gone (#1819).
 
+## Analysis output ownership (secondary development, 2026-11-14)
+
+AnalyzeScript resolves its trusted Storyboard root through the existing
+`resolveStoryboardOwner` and binds `storyboardAnalysisOutput` before running
+steps. The bounded surface covers scene-look continuity, initial shot specs,
+derived visual/motion prompts, completion activity and analysis duration.
+All underlying mutations require the current organization, sequence,
+root instance or explicitly supplied claim, and `processing` status in SQL.
+Spec, shot and frame relationships are checked through their actual rows;
+a frame's denormalized sequence id cannot authorize a different shot's spec.
+
+This includes internal writes: continuity's script version and selection,
+the spec's selection, both prompt selections and claim demotions, and legacy
+motion dialogue promotion. A derived motion write with an invalid spec
+cannot migrate dialogue before its prompt admission fails. Bound derived
+dedupe requires the same source and exact spec version as well as the
+existing text/hash/audio match. Otherwise identical text could select an old
+spec's provenance. Ordinary unbound writers retain their existing dedupe.
+The new facade exposes only the required write methods.
+
+No-op returns and errors use the same ownership checks and workflow error
+adapter as SceneSplit. Confirmed loss is non-retryable inside the step;
+unavailable verification remains retryable, with causes retained. Failure
+hooks receive their original DB surface, so terminal cleanup is not blocked
+by a processing-only content fence. Existing per-method batch boundaries,
+`select: false`, reference-only omission of visual prompts, legacy dialogue
+and rewrite-claim behavior remain. The full spec/prompt publication loop is
+not one transaction; earlier authorized writes can remain after failure.
+
+Casting, organization-shared looks/locations, generated element creation,
+automatic style writes and every other descendant are still outside this
+slice. A takeover after a successful write/check can still precede a shot
+event, phase signal or callback. Ownerless standalone calls, old cached
+steps, root cancellation and deployed Cloudflare/provider acceptance remain
+open. Exact local evidence is in the [analysis output batch](../secondary-development/preservation/20261114-p3-g03-analysis-output/README.md).
+
 ## Scene-split descendant content ownership (secondary development, 2026-11-14)
 
 A Storyboard's SceneSplit descendant binds its existing write methods through

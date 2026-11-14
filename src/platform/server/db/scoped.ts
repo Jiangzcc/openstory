@@ -62,6 +62,7 @@ import { createArtifactCancellationMethods } from '@/shots/server/db/artifact-ca
 import { createGeneratedAssetsMethods } from '@/models/server/db/generated-assets';
 import { createScenesMethods } from '@/shots/server/db/scenes';
 import { createStoryboardContentMethods } from '@/sequences/server/db/storyboard-content';
+import { createStoryboardAnalysisOutputMethods } from '@/sequences/server/db/storyboard-analysis-output';
 import type { StoryboardOwner } from '@/sequences/server/db/storyboard-owner';
 import { createProductionReadMethods } from '@/shots/server/db/production-reads';
 import { createSceneScriptVersionsMethods } from '@/shots/server/db/scene-script-versions';
@@ -412,6 +413,8 @@ export function createScopedDb(organizationId: string, userId: string) {
     sequence: (sequenceId: string) => createSequenceMethods(db, sequenceId),
     storyboardContent: (owner: StoryboardOwner) =>
       createStoryboardContentMethods(db, organizationId, owner),
+    storyboardAnalysisOutput: (owner: StoryboardOwner) =>
+      createStoryboardAnalysisOutputMethods(db, organizationId, owner),
 
     styles: createStylesMethods(db, organizationId, userId),
     locations: createLocationsMethods(db, organizationId),

@@ -1,5 +1,32 @@
 # Workflow snapshots and content-hash staleness
 
+## Analysis output write fences (secondary development, 2026-11-14)
+
+`storyboardAnalysisOutput` extends the root-owned write contract to
+AnalyzeScript's scene-look continuity, shot specs, derived visual/motion
+prompts, completion activity and duration. Its facade carries no model or
+bible reads. The real mutation predicates check organization, sequence,
+root/explicit claim and processing status; actual frame/shot/spec relations
+also constrain derived prompts. Nested continuity, selection, claim demotion
+and legacy-dialogue writes are included, rather than relying on a check at
+the public method boundary.
+
+For this bound surface, a derived prompt dedupes only against the same source
+and exact spec version. Prompt text and hashes can be identical for different
+spec revisions, so their equality alone cannot establish provenance. This
+does not change any digest algorithm, hash inputs or the ordinary unbound
+dedupe behavior. Spec writes keep existing canonical equality and do not
+clear rewrite claims. History-only prompt writes still retain the existing
+legacy-dialogue side effect, under the same admission guard.
+
+The shared DB checker and workflow error adapter are extracted for reuse
+with SceneSplit. Lost ownership escapes as non-retryable inside the step;
+unknown ownership and engine restarts retain their existing retry/abort
+semantics and original causes. Existing atomic method batches are preserved;
+the entire analysis output is not atomic. The [generation-plan contract](generation-plan.md#analysis-output-ownership-secondary-development-2026-11-14)
+records successful-path coverage and the still-open casting, style,
+descendant event, standalone and deployed acceptance boundaries.
+
 ## Scene-split write fences (secondary development, 2026-11-14)
 
 Immutable input snapshots do not authorize a descendant to overwrite a newer

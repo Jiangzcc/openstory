@@ -13,6 +13,8 @@ import {
   type ShotSpecVersion,
 } from '@/platform/server/db/schema';
 import { generateId } from '@/platform/id';
+import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
+import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 import {
   canonicalStoredShotSpec,
   type StoredShotSpec,
@@ -28,7 +30,10 @@ const canonical = (value: unknown): string =>
       : v
   );
 
-export function createShotSpecVersionsMethods(db: Database) {
+export function createShotSpecVersionsMethods(
+  db: Database,
+  contentScope?: StoryboardContentScope
+) {
   return {
     /**
      * Append a spec and select it, in one batch. A replayed step that sends
@@ -50,7 +55,13 @@ export function createShotSpecVersionsMethods(db: Database) {
           shotSpecVersions,
           eq(shotSpecVersions.id, shots.selectedSpecVersionId)
         )
-        .where(eq(shots.id, input.shotId))
+        .where(
+          and(
+            eq(shots.id, input.shotId),
+            contentScope?.shot(shots.id),
+            contentScope ? eq(shotSpecVersions.shotId, shots.id) : undefined
+          )
+        )
         .limit(1);
       if (
         selected &&
@@ -63,21 +74,25 @@ export function createShotSpecVersionsMethods(db: Database) {
 
       const id = generateId();
       const [[version]] = await db.batch([
-        db
-          .insert(shotSpecVersions)
-          .values({
-            id,
-            shotId: input.shotId,
-            spec,
-            source: input.source,
-            inputHash: input.inputHash,
-            createdBy: input.createdBy,
-          })
-          .returning(),
+        insertWithStoryboardGuard(
+          db,
+          shotSpecVersions,
+          [
+            {
+              id,
+              shotId: input.shotId,
+              spec,
+              source: input.source,
+              inputHash: input.inputHash,
+              createdBy: input.createdBy,
+            },
+          ],
+          contentScope?.shot(input.shotId)
+        ).returning(),
         db
           .update(shots)
           .set({ selectedSpecVersionId: id, updatedAt: new Date() })
-          .where(eq(shots.id, input.shotId)),
+          .where(and(eq(shots.id, input.shotId), contentScope?.shot(shots.id))),
       ]);
       if (!version)
         throw new Error(

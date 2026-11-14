@@ -7,7 +7,13 @@ import type {
 import { alias } from 'drizzle-orm/sqlite-core';
 import type { Database } from '@/platform/server/db/client';
 import { isEngineAbortError } from '@/platform/server/workflow/errors';
-import { scenes, sequences, shots } from '@/platform/server/db/schema';
+import {
+  frames,
+  scenes,
+  sequences,
+  shots,
+  shotSpecVersions,
+} from '@/platform/server/db/schema';
 import {
   storyboardOwnerWhere,
   STORYBOARD_WORKFLOW_STATUS,
@@ -89,7 +95,79 @@ export function createStoryboardContentScope(
     );
   };
   const assert = () => assertStoryboardOwner(db, active());
-  return { sequence, scene, shot, assert };
+  const frame = (target: Target) => frameWhere(db, sequence, shot, target);
+  const specForShot = (specId: string, target: Target) =>
+    specShotWhere(db, shot, specId, target);
+  const specForFrame = (specId: string, target: Target) =>
+    specFrameWhere(db, sequence, specForShot, specId, target);
+  return { sequence, scene, shot, frame, specForShot, specForFrame, assert };
+}
+
+type Target = string | AnySQLiteColumn;
+type ParentWhere = (target: Target) => SQL | undefined;
+
+function frameWhere(
+  db: Database,
+  sequence: ParentWhere,
+  shot: ParentWhere,
+  target: Target
+) {
+  const row = alias(frames, 'storyboard_content_frame');
+  return exists(
+    db
+      .select({ id: row.id })
+      .from(row)
+      .where(
+        and(
+          sql`${row.id} = ${target}`,
+          sequence(row.sequenceId),
+          shot(row.shotId)
+        )
+      )
+  );
+}
+
+function specShotWhere(
+  db: Database,
+  shot: ParentWhere,
+  specId: string,
+  target: Target
+) {
+  const row = alias(shotSpecVersions, 'storyboard_content_spec');
+  return exists(
+    db
+      .select({ id: row.id })
+      .from(row)
+      .where(
+        and(
+          eq(row.id, specId),
+          sql`${row.shotId} = ${target}`,
+          shot(row.shotId)
+        )
+      )
+  );
+}
+
+function specFrameWhere(
+  db: Database,
+  sequence: ParentWhere,
+  specForShot: (specId: string, target: Target) => SQL,
+  specId: string,
+  target: Target
+) {
+  const row = alias(frames, 'storyboard_spec_frame');
+  return exists(
+    db
+      .select({ id: row.id })
+      .from(row)
+      .where(
+        and(
+          sql`${row.id} = ${target}`,
+          sequence(row.sequenceId),
+          specForShot(specId, row.shotId)
+        )
+      )
+  );
 }
 
 async function assertStoryboardOwner(db: Database, where: SQL | undefined) {

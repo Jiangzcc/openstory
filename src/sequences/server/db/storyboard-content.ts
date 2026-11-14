@@ -1,6 +1,5 @@
 import { and, eq } from 'drizzle-orm';
 import type { Database } from '@/platform/server/db/client';
-import { isEngineAbortError } from '@/platform/server/workflow/errors';
 import {
   sequences,
   sequenceElements,
@@ -15,46 +14,9 @@ import type { StoryboardOwner } from './storyboard-owner';
 import {
   createStoryboardContentScope,
   insertWithStoryboardGuard,
-  StoryboardContentOwnershipError,
-  StoryboardContentOwnershipCheckError,
 } from './storyboard-content-scope';
 import type { StoryboardContentScope } from './storyboard-content-scope';
-
-function checked<Args extends unknown[], Result>(
-  assert: () => Promise<void>,
-  write: (...args: Args) => Promise<Result>
-) {
-  return async (...args: Args): Promise<Result> => {
-    await assert();
-    const result = await write(...args).catch((error: unknown) =>
-      rethrowContentWriteFailure(assert, error)
-    );
-    await assert();
-    return result;
-  };
-}
-
-async function rethrowContentWriteFailure(
-  assert: () => Promise<void>,
-  error: unknown
-): Promise<never> {
-  if (isEngineAbortError(error)) throw error;
-  try {
-    await assert();
-  } catch (ownershipError) {
-    if (isEngineAbortError(ownershipError)) throw ownershipError;
-    if (ownershipError instanceof StoryboardContentOwnershipError) {
-      throw new StoryboardContentOwnershipError({ cause: error });
-    }
-    throw new StoryboardContentOwnershipCheckError(
-      new AggregateError(
-        [error, ownershipError],
-        'Content write failed and ownership could not be verified'
-      )
-    );
-  }
-  throw error;
-}
+import { checkedStoryboardContentWrite } from './storyboard-content-writes';
 
 export function createStoryboardContentMethods(
   db: Database,
@@ -68,7 +30,7 @@ export function createStoryboardContentMethods(
   const dialogue = createShotDialogueMethods(db, scope);
   const check = <Args extends unknown[], Result>(
     write: (...args: Args) => Promise<Result>
-  ) => checked(scope.assert, write);
+  ) => checkedStoryboardContentWrite(scope, write);
   return {
     scenes: {
       upsert: check(scenes.upsert),
@@ -95,8 +57,8 @@ function createSequenceContentMethods(
   scope: StoryboardContentScope
 ) {
   const sequenceUpdate = (field: 'title' | 'workflow') =>
-    checked(
-      scope.assert,
+    checkedStoryboardContentWrite(
+      scope,
       async (sequenceId: string, value: string): Promise<void> => {
         await db
           .update(sequences)
@@ -119,8 +81,8 @@ function createSequenceContentMethods(
 }
 
 function createFirstMentionWriter(db: Database, scope: StoryboardContentScope) {
-  return checked(
-    scope.assert,
+  return checkedStoryboardContentWrite(
+    scope,
     async (
       id: string,
       firstMention: { sceneId: string; text: string; lineNumber: number }
@@ -147,8 +109,8 @@ function createFirstMentionWriter(db: Database, scope: StoryboardContentScope) {
 }
 
 function createCompletionWriter(db: Database, scope: StoryboardContentScope) {
-  return checked(
-    scope.assert,
+  return checkedStoryboardContentWrite(
+    scope,
     async (input: RecordEventInput & { id: string }): Promise<void> => {
       await insertWithStoryboardGuard(
         db,
