@@ -186,6 +186,7 @@ const sequenceResultSchema = z.array(
     createdBy: z.string(),
     analysisModel: z.string(),
     script: z.string(),
+    draftMotion: z.boolean(),
   })
 );
 
@@ -340,6 +341,28 @@ describe('web sequence creation trusted preparation and capture', () => {
         textModelRouting: [],
         imageModelRouting: [],
       });
+    }
+  );
+
+  it.each([
+    { label: 'enabled', settings: { draftMotion: true }, expected: true },
+    { label: 'disabled', settings: { draftMotion: false }, expected: false },
+    { label: 'omitted', settings: {}, expected: false },
+  ])(
+    'persists draftMotion=$label through web creation',
+    async ({ settings, expected }) => {
+      const outcome = await execute(input(settings));
+      expect(outcome.error).toBeUndefined();
+      const created = sequenceResultSchema.parse(outcome.result)[0];
+      if (!created) throw new Error('Expected a created sequence');
+      expect(created.draftMotion).toBe(expected);
+      const [stored] = await database.db
+        .select({ draftMotion: sequences.draftMotion })
+        .from(sequences)
+        .where(eq(sequences.id, created.id));
+      expect(stored?.draftMotion).toBe(expected);
+      expect(runtime.trigger).toHaveBeenCalledOnce();
+      expect(runtime.trigger.mock.calls[0]?.[1].sequenceId).toBe(created?.id);
     }
   );
 

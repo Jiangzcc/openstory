@@ -141,6 +141,7 @@ function makeScopedDb(opts: {
   linkedLocations?: Array<{ id: string; attached: boolean }>;
   musicPrompt?: string | null;
   generationStopAt?: GenerationStage;
+  draftMotion?: boolean;
   cast?: never[];
 }) {
   const updateStatus = vi.fn();
@@ -157,6 +158,7 @@ function makeScopedDb(opts: {
     id: 'seq_1',
     title: 'The Long Walk',
     generateStartFrames: true,
+    draftMotion: opts.draftMotion,
     script: opts.script === undefined ? 'INT. HALLWAY — NIGHT' : opts.script,
     aspectRatio: '16:9',
     styleId: opts.styleId === undefined ? 'style_1' : opts.styleId,
@@ -431,6 +433,13 @@ describe('triggerStoryboard', () => {
     expect(trigger.mock.calls[0]?.[0]?.body).toEqual(
       expect.objectContaining({ stopAt: 'references' })
     );
+  });
+
+  test.each([false, true])('snapshots draftMotion=%s', async (draftMotion) => {
+    const { scopedDb } = makeScopedDb({ workflowRunId: null, draftMotion });
+    await triggerStoryboard(scopedDb, INPUT);
+    expect(prepare.mock.calls[0]?.[1].draftMotion).toBe(draftMotion);
+    expect(trigger.mock.calls[0]?.[0]?.body.draftMotion).toBe(draftMotion);
   });
 
   test('uses the sequence-owned style snapshot, not the live catalog row', async () => {

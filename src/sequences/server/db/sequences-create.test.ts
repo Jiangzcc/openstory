@@ -104,6 +104,24 @@ describe('sequences.create persists the chosen settings', () => {
     expect(created.generateStartFrames).toBe(false);
   });
 
+  it.each([
+    { label: 'enabled', settings: { draftMotion: true }, expected: true },
+    { label: 'disabled', settings: { draftMotion: false }, expected: false },
+    { label: 'omitted', settings: {}, expected: false },
+  ])('persists draftMotion when $label', async ({ settings, expected }) => {
+    const methods = createSequencesMethods(db, organizationId, userId);
+    const created = await methods.create({
+      title: 'Draft motion setting',
+      styleId,
+      generationStopAt: 'script',
+      ...settings,
+    });
+
+    expect(created.draftMotion).toBe(expected);
+    const [stored] = await db.select().from(sequences);
+    expect(stored?.draftMotion).toBe(expected);
+  });
+
   it('carries every generation setting through, not just some', async () => {
     const methods = createSequencesMethods(db, organizationId, userId);
     const created = await methods.create({

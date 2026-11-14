@@ -687,6 +687,7 @@ export function createSequencesMethods(
         generationStopAt: params.generationStopAt,
         generateStartFrames: params.generateStartFrames ?? false,
         generateVoices: params.generateVoices ?? false,
+        draftMotion: params.draftMotion ?? false,
         targetDurationSeconds: params.targetDurationSeconds ?? null,
         suggestedLocationIds: params.suggestedLocationIds ?? null,
         status: 'draft',
