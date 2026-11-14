@@ -1,5 +1,6 @@
 /** Analyze and cast the script, then persist each shot's spec and derived prompts. */
 import { sanitizeScriptContent } from '@/sequences/prompt-validation';
+import { resolveStoryboardOwner } from './generation-workflow-owner';
 import { resolveVideoModels } from '@/models/resolve-video-models';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { getGenerationChannel } from '@/platform/realtime';
@@ -54,6 +55,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     scopedDb: WorkflowScopedDb
   ): Promise<void> {
     const input = event.payload;
+    const workflowOwner = resolveStoryboardOwner(input);
     const parentInstanceId = event.instanceId;
     const {
       sequenceId,
@@ -91,7 +93,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       await step.do(`persist-pipeline-${stage}`, async () => {
         await getGenerationChannel(sequenceId).emit(
           'generation.phase:complete',
-          { phase: GENERATION_STAGE_META[stage].phase }
+          { phase: GENERATION_STAGE_META[stage].phase, workflowOwner }
         );
       });
     };
@@ -112,6 +114,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     await step.do('phase-1-start', async () => {
       await getGenerationChannel(sequenceId).emit('generation.phase:start', {
         phase: 1,
+        workflowOwner,
         phaseName: pendingAutoStyleId
           ? 'Analyzing script & deriving a style…'
           : 'Analyzing script…',
@@ -149,6 +152,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
               {
                 phase: 1,
                 phaseName: 'Analyzing elements…',
+                workflowOwner,
               }
             );
           },
@@ -219,6 +223,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       parentInstanceId: event.instanceId,
       childId: `scene-split:${sequenceId ?? 'no-seq'}`,
       childPayload: {
+        storyboardOwner: workflowOwner,
         promptLocale: input.promptLocale,
         userId: input.userId,
         organizationId: input.organizationId,
@@ -259,6 +264,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       await getGenerationChannel(sequenceId).emit('generation.phase:start', {
         phase: GENERATION_STAGE_META.script.phase,
         phaseName: 'Casting characters & locations…',
+        workflowOwner,
       });
     });
     const locationMatch = await spawnAndAwaitChild<
@@ -395,13 +401,8 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     scopedDb: WorkflowScopedDb;
   }): Promise<void> {
     const { sequenceId, reservationId } = event.payload;
-    const { storyboardOwner, _parent } = event.payload;
-    const owner =
-      storyboardOwner ??
-      (_parent?.bindingName === 'STORYBOARD_WORKFLOW'
-        ? { workflowRunId: _parent.parentInstanceId }
-        : undefined);
-    let shouldNotify = Boolean(owner) || !_parent;
+    const owner = resolveStoryboardOwner(event.payload);
+    let shouldNotify = Boolean(owner) || !event.payload._parent;
     const sanitized = sanitizeFailResponse(error);
     let userMessage = llmAuthFailureMessage(sanitized);
     if (sequenceId)
@@ -430,6 +431,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       async () => {
         if (!sequenceId || !shouldNotify) return;
         await getGenerationChannel(sequenceId).emit('generation.failed', {
+          workflowOwner: owner,
           message: userMessage,
         });
       },

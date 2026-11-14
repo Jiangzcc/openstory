@@ -210,6 +210,11 @@ const BIBLES_RESULT = {
   elementBible: [],
 };
 
+const STORYBOARD_OWNER = {
+  workflowRunId: 'synthetic-storyboard-root',
+  workflowClaimId: 'synthetic-storyboard-claim',
+};
+
 const INPUT: SceneSplitWorkflowInput = {
   promptLocale: 'en' as const,
   userId: 'u1',
@@ -358,8 +363,12 @@ class Probe extends SceneSplitWorkflow {
     return this.runImpl(event, step, scopedDb);
   }
 
-  failed(error: string, scopedDb: WorkflowScopedDb) {
-    return this.onFailure({ event: makeEvent(), error, scopedDb });
+  failed(
+    error: string,
+    scopedDb: WorkflowScopedDb,
+    input: SceneSplitWorkflowInput = INPUT
+  ) {
+    return this.onFailure({ event: makeEvent(input), error, scopedDb });
   }
 }
 
@@ -753,28 +762,32 @@ describe('SceneSplitWorkflow degraded boundary retry', () => {
     expect(result.title).toBe('Test Film');
   });
 
-  test('retries when quotes are dropped, then keeps first-pass LLM scenes if still degraded', async () => {
-    const result = await makeWorkflow().split(
-      makeEvent(),
-      makeStep(),
-      makeScopedDb()
-    );
+  test.each([undefined, STORYBOARD_OWNER])(
+    'retries dropped quotes and retains the error owner %j if still degraded',
+    async (storyboardOwner) => {
+      const result = await makeWorkflow().split(
+        makeEvent({ ...INPUT, storyboardOwner }),
+        makeStep(),
+        makeScopedDb()
+      );
 
-    expect(sceneSplittingLlmCalls()).toHaveLength(2);
-    // Two unresolvable quotes merge into scene 1; the LLM title stays.
-    expect(result.scenes).toHaveLength(1);
-    expect(result.title).toBe('Test Film');
-    const scene = result.scenes[0];
-    expect(scene?.originalScript.extract).toBe(SCRIPT);
-    expect(scene?.metadata?.title).toBe('Scene 1 action');
-    expect(emit).toHaveBeenCalledWith(
-      'generation.error',
-      expect.objectContaining({
-        message: expect.stringMatching(/merged/i),
-        phase: 1,
-      })
-    );
-  });
+      expect(sceneSplittingLlmCalls()).toHaveLength(2);
+      // Two unresolvable quotes merge into scene 1; the LLM title stays.
+      expect(result.scenes).toHaveLength(1);
+      expect(result.title).toBe('Test Film');
+      const scene = result.scenes[0];
+      expect(scene?.originalScript.extract).toBe(SCRIPT);
+      expect(scene?.metadata?.title).toBe('Scene 1 action');
+      expect(emit).toHaveBeenCalledWith(
+        'generation.error',
+        expect.objectContaining({
+          message: expect.stringMatching(/merged/i),
+          phase: 1,
+          workflowOwner: storyboardOwner,
+        })
+      );
+    }
+  );
 });
 
 function shotSpec(shotNumber: number, action: string) {
@@ -1252,9 +1265,25 @@ describe('SceneSplitWorkflow credential attribution (local mock streams)', () =>
       } else {
         expect(markKeyInvalid).not.toHaveBeenCalled();
         expect(emit).toHaveBeenCalledWith('generation.error', {
+          workflowOwner: undefined,
           message: 'Scene splitting failed',
         });
       }
     }
   );
 });
+
+test.each([undefined, STORYBOARD_OWNER])(
+  'keeps the terminal split error notification with root owner %j',
+  async (storyboardOwner) => {
+    emit.mockClear();
+    await makeWorkflow().failed('Synthetic split failure', makeScopedDb(), {
+      ...INPUT,
+      storyboardOwner,
+    });
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.error', {
+      message: 'Scene splitting failed',
+      workflowOwner: storyboardOwner,
+    });
+  }
+);

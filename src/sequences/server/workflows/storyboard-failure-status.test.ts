@@ -211,6 +211,7 @@ describe('Storyboard failure status with real database writes', () => {
     });
     expect(fixture.getForUser).not.toHaveBeenCalled();
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
       message: FAILURE_MESSAGE,
     });
   });
@@ -229,6 +230,7 @@ describe('Storyboard failure status with real database writes', () => {
       workflowRunId: CLAIM_A,
     });
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
       message: FAILURE_MESSAGE,
     });
   });
@@ -241,6 +243,7 @@ describe('Storyboard failure status with real database writes', () => {
       statusError: FAILURE_MESSAGE,
     });
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: { workflowRunId: RUN_A, workflowClaimId: undefined },
       message: FAILURE_MESSAGE,
     });
   });
@@ -276,6 +279,7 @@ describe('Storyboard failure status with real database writes', () => {
     await expect(operation).rejects.toThrow(WRITE_FAILURE);
     expect(await storedSequence()).toEqual(before);
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
       message: FAILURE_MESSAGE,
     });
   });

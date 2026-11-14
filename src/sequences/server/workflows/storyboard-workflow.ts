@@ -64,11 +64,11 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         'Sequence ID, organization ID, and user ID are required'
       );
     }
-    const owner = {
-      id: sequenceId,
+    const workflowOwner = {
       workflowRunId: event.instanceId,
       workflowClaimId: input.workflowClaimId,
     };
+    const owner = { id: sequenceId, ...workflowOwner };
 
     // Everything this run generates from was snapshotted onto the payload by
     // `triggerStoryboard`. The step below re-reads the row only to re-assert
@@ -243,10 +243,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         parentInstanceId: event.instanceId,
         childId: `analyze-script:${sequenceId}`,
         childPayload: {
-          storyboardOwner: {
-            workflowRunId: event.instanceId,
-            workflowClaimId: input.workflowClaimId,
-          },
+          storyboardOwner: workflowOwner,
           promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
@@ -323,6 +320,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
           await getGenerationChannel(sequenceId).emit(
             'generation.reservation:short',
             {
+              workflowOwner,
               neededUsd: microsToUsd(short.neededMicros),
               remainingUsd: microsToUsd(short.remainingMicros),
               sceneCount: short.sceneCount,
@@ -353,6 +351,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         parentInstanceId: event.instanceId,
         childId: `continue:${sequenceId}:${event.instanceId}`,
         childPayload: {
+          storyboardOwner: workflowOwner,
           promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
@@ -397,6 +396,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
 
     await step.do('emit-complete', async () => {
       await getGenerationChannel(sequenceId).emit('generation.complete', {
+        workflowOwner,
         sequenceId,
       });
     });
@@ -456,6 +456,10 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       `[StoryboardWorkflow:cf] Storyboard generation failed: ${error}`
     );
     const { sequenceId, reservationId } = event.payload;
+    const workflowOwner = {
+      workflowRunId: event.instanceId,
+      workflowClaimId: event.payload.workflowClaimId,
+    };
     let shouldNotify = Boolean(sequenceId);
     await runFailureActions([
       () => this.releaseFailureReservation(scopedDb, reservationId),
@@ -463,14 +467,14 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         if (!sequenceId) return;
         shouldNotify = await scopedDb.sequences.failWorkflowIfCurrent({
           id: sequenceId,
-          workflowRunId: event.instanceId,
-          workflowClaimId: event.payload.workflowClaimId,
+          ...workflowOwner,
           error,
         });
       },
       async () => {
         if (!sequenceId || !shouldNotify) return;
         await getGenerationChannel(sequenceId).emit('generation.failed', {
+          workflowOwner,
           message: error,
         });
       },

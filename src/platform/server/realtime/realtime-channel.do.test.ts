@@ -21,6 +21,7 @@ import {
   SSE_MAX_BUFFERED_CHUNKS,
 } from './realtime-channel.do';
 import { asStub } from '@/test/as-stub';
+import { parseLeafPayload } from '@/platform/realtime/schema';
 
 const channelLogger = getLogger(['openstory', 'realtime', 'channel']);
 
@@ -930,5 +931,45 @@ describe('RealtimeChannel open runs (#2113)', () => {
     await triggerAlarm(harness);
 
     expect(await listRuns(harness.channel)).toEqual([RUN]);
+  });
+});
+
+describe('generation lifecycle identity round trip', () => {
+  it('keeps the same owner in live SSE and persisted SQLite history', async () => {
+    const { channel } = createHarness();
+    const controller = new AbortController();
+    abortControllers.push(controller);
+    const response = await channel.fetch(
+      new Request('https://realtime.do/subscribe?channel=sequence', {
+        signal: controller.signal,
+      })
+    );
+    const reader = requireBody(response.body).getReader();
+    await reader.read();
+    const data = {
+      message: 'failed A',
+      workflowOwner: {
+        workflowRunId: 'actual-A',
+        workflowClaimId: 'raw/claim:A',
+      },
+    };
+    await emit(channel, data, 'generation.failed');
+    const chunk = await reader.read();
+    const frames = parseSse(new TextDecoder().decode(chunk.value)).frames;
+    const live = frames.find(isUserEvent);
+    expect(live?.data).toEqual(data);
+    expect(
+      parseLeafPayload('generation.failed', 'sequence', live?.data)?.data
+    ).toEqual(data);
+    controller.abort();
+    reader.releaseLock();
+    const rows = await history(channel);
+    expect(rows).toHaveLength(1);
+    const stored = requireValue(rows[0], 'generation history row');
+    expect(JSON.parse(stored.data)).toEqual(data);
+    expect(
+      parseLeafPayload('generation.failed', 'sequence', JSON.parse(stored.data))
+        ?.data
+    ).toEqual(data);
   });
 });

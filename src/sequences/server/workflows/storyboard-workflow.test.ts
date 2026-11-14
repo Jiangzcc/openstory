@@ -21,6 +21,11 @@ vi.doMock('@/stills/server/image-generation', () => ({
   generateImageWithProvider: vi.fn(),
 }));
 
+const storyboardOwner = (workflowClaimId?: string) => ({
+  workflowRunId: 'storyboard_run_A',
+  workflowClaimId,
+});
+
 const emit = vi.fn();
 const getGenerationChannel = vi.fn(() => ({ emit }));
 vi.doMock('@/platform/realtime', () => ({ getGenerationChannel }));
@@ -190,12 +195,12 @@ describe('StoryboardWorkflow.onFailure', () => {
 
       expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
         id: 'seq_1',
-        workflowRunId: 'storyboard_run_A',
-        workflowClaimId,
+        ...storyboardOwner(workflowClaimId),
         error: 'Child workflow analyze-script timed out',
       });
       expect(getGenerationChannel).toHaveBeenCalledExactlyOnceWith('seq_1');
       expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+        workflowOwner: storyboardOwner(workflowClaimId),
         message: 'Child workflow analyze-script timed out',
       });
     }
@@ -221,11 +226,11 @@ describe('StoryboardWorkflow.onFailure', () => {
 
       expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
         id: 'seq_1',
-        workflowRunId: 'storyboard_run_A',
-        workflowClaimId: undefined,
+        ...storyboardOwner(),
         error: 'Child workflow analyze-script timed out',
       });
       expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+        workflowOwner: storyboardOwner(),
         message: 'Child workflow analyze-script timed out',
       });
     }
@@ -251,8 +256,7 @@ describe('StoryboardWorkflow.onFailure', () => {
       expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('reservation-1');
       expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
         id: 'seq_1',
-        workflowRunId: 'storyboard_run_A',
-        workflowClaimId,
+        ...storyboardOwner(workflowClaimId),
         error: 'Child workflow analyze-script… failed',
       });
       expect(updateStatus).not.toHaveBeenCalled();
@@ -302,8 +306,7 @@ describe('StoryboardWorkflow.onFailure', () => {
 
       expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
         id: 'seq_1',
-        workflowRunId: 'storyboard_run_A',
-        workflowClaimId: undefined,
+        ...storyboardOwner(),
         error: 'trailing step failed',
       });
       expect(getForUser).not.toHaveBeenCalled();
@@ -328,11 +331,11 @@ describe('StoryboardWorkflow.onFailure', () => {
     expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('reservation-1');
     expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
       id: 'seq_1',
-      workflowRunId: 'storyboard_run_A',
-      workflowClaimId: undefined,
+      ...storyboardOwner(),
       error: 'boom',
     });
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: storyboardOwner(),
       message: 'boom',
     });
   });
@@ -364,8 +367,7 @@ describe('StoryboardWorkflow.onFailure', () => {
       else
         expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
           id: 'seq_1',
-          workflowRunId: 'storyboard_run_A',
-          workflowClaimId: undefined,
+          ...storyboardOwner(),
           error: 'boom',
         });
       expect(db.getForUser).not.toHaveBeenCalled();
@@ -394,8 +396,7 @@ describe('StoryboardWorkflow.onFailure', () => {
     ).rejects.toBe(notificationError);
     expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith({
       id: 'seq_1',
-      workflowRunId: 'storyboard_run_A',
-      workflowClaimId: undefined,
+      ...storyboardOwner(),
       error: 'boom',
     });
   });
@@ -451,8 +452,7 @@ function expectCurrentCompletion(
 ) {
   expect(complete).toHaveBeenCalledWith({
     id: 'seq_1',
-    workflowRunId: 'storyboard_run_A',
-    workflowClaimId: undefined,
+    ...storyboardOwner(),
     eventId: expect.any(String),
   });
 }
@@ -628,8 +628,7 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
 
     expect(startWorkflowIfCurrent).toHaveBeenCalledWith({
       id: 'seq_1',
-      workflowRunId: 'storyboard_run_A',
-      workflowClaimId: undefined,
+      ...storyboardOwner(),
       stopAt: 'music',
       resume: false,
     });
@@ -650,10 +649,7 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
         spawnStepName: 'spawn-analyze-script',
         childPayload: expect.objectContaining({
           userCountry: 'AU',
-          storyboardOwner: {
-            workflowRunId: 'storyboard_run_A',
-            workflowClaimId: 'storyboard_claim_A',
-          },
+          storyboardOwner: storyboardOwner('storyboard_claim_A'),
         }),
       })
     );
@@ -668,8 +664,7 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
     expect(deleteBySequence).not.toHaveBeenCalled();
     expect(startWorkflowIfCurrent).toHaveBeenCalledWith({
       id: 'seq_1',
-      workflowRunId: 'storyboard_run_A',
-      workflowClaimId: undefined,
+      ...storyboardOwner(),
       stopAt: 'images',
       resume: true,
     });
@@ -683,13 +678,11 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
       music: null,
     };
     freezeFreshGenerationPlan.mockResolvedValueOnce({
-      // only forwarding is tested here
       plan: asStub<never>(freshPlan),
       remainingCost: 0,
     });
-    await run({ stopAt: 'motion' });
-    const freshCalls = spawnAndAwaitChild.mock.calls;
-    expect(freshCalls).toHaveLength(2);
+    await run({ stopAt: 'motion', workflowClaimId: 'storyboard_claim_A' });
+    expect(spawnAndAwaitChild).toHaveBeenCalledTimes(2);
     expect(spawnAndAwaitChild).toHaveBeenNthCalledWith(
       2,
       expect.anything(),
@@ -699,13 +692,14 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
           plan: freshPlan,
           announcePhases: true,
           freshRun: true,
+          storyboardOwner: storyboardOwner('storyboard_claim_A'),
         }),
       })
     );
-    // only forwarding is tested here
     await run({
       stopAt: 'motion',
       resume: true,
+      workflowClaimId: 'storyboard_claim_A',
       plan: asStub<never>(freshPlan),
     });
     expect(spawnAndAwaitChild).toHaveBeenCalledTimes(1);
@@ -717,6 +711,7 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
           plan: freshPlan,
           announcePhases: true,
           freshRun: false,
+          storyboardOwner: storyboardOwner('storyboard_claim_A'),
         }),
       })
     );
@@ -787,8 +782,7 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
 
     expect(failWorkflowIfCurrent).toHaveBeenCalledWith({
       id: 'seq_1',
-      workflowRunId: 'storyboard_run_A',
-      workflowClaimId: undefined,
+      ...storyboardOwner(),
       error: expect.stringMatching(/not enough credits to generate/i),
     });
     expect(names).toContain('emit-reservation-short');

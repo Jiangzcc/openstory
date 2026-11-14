@@ -11,6 +11,8 @@ import {
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '@/models/models';
 import type { Locale } from '@/platform/i18n/locale';
+import type { GenerationWorkflowOwner } from '@/platform/realtime/schema';
+import type { waitForElementVision as WaitForElementVision } from '@/cast/server/workflows/wait-for-sheets';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { buildChildInstanceId } from '@/platform/server/workflow/await-child';
 import type { ParentNotifyHint } from '@/platform/server/workflow/await-child';
@@ -43,15 +45,17 @@ const createCastRecords = vi.fn(async () => ({ elements: [], lookIds: {} }));
 vi.doMock('@/cast/server/workflows/cast-records', () => ({
   createCastRecords,
 }));
-vi.doMock('@/cast/server/workflows/wait-for-sheets', () => ({
-  waitForElementVision: vi.fn(async () => ({
-    ready: true,
-    pendingIds: [],
-    rows: [],
-  })),
+const waitForElementVision = vi.fn<typeof WaitForElementVision>(async () => ({
+  ready: true,
+  pendingIds: [],
+  rows: [],
 }));
+vi.doMock('@/cast/server/workflows/wait-for-sheets', () => ({
+  waitForElementVision,
+}));
+const emit = vi.fn(async (_name: string, _payload: unknown) => undefined);
 vi.doMock('@/platform/realtime', () => ({
-  getGenerationChannel: vi.fn(() => ({ emit: vi.fn(async () => undefined) })),
+  getGenerationChannel: vi.fn(() => ({ emit })),
 }));
 vi.doMock('@/look/server/workflows/auto-style-step', () => ({
   deriveAutoStyle: vi.fn(async () => {
@@ -482,3 +486,73 @@ describe('AnalyzeScriptWorkflow child context at the real binding.create boundar
     }
   );
 });
+
+const STORYBOARD_OWNER: GenerationWorkflowOwner = {
+  workflowRunId: 'synthetic-storyboard-root',
+  workflowClaimId: 'synthetic-storyboard-claim',
+};
+const STORYBOARD_PARENT: ParentNotifyHint = {
+  bindingName: 'STORYBOARD_WORKFLOW',
+  parentInstanceId: STORYBOARD_OWNER.workflowRunId,
+  eventType: 'synthetic-analysis-done',
+};
+const MOTION_PARENT: ParentNotifyHint = {
+  ...STORYBOARD_PARENT,
+  bindingName: 'MOTION_BATCH_WORKFLOW',
+  parentInstanceId: 'synthetic-motion-root',
+};
+
+function expectScriptPhaseOwner(owner: GenerationWorkflowOwner | undefined) {
+  expect(emit.mock.calls.map(([name]) => name)).toEqual([
+    'generation.phase:start',
+    'generation.phase:start',
+    'generation.phase:start',
+    'generation.phase:complete',
+  ]);
+  for (const [, payload] of emit.mock.calls)
+    expect(payload).toHaveProperty('workflowOwner', owner);
+}
+
+test.each([
+  {
+    name: 'explicit root ahead of another notify parent',
+    context: { storyboardOwner: STORYBOARD_OWNER, _parent: MOTION_PARENT },
+    owner: STORYBOARD_OWNER,
+  },
+  {
+    name: 'legacy direct Storyboard parent',
+    context: { _parent: STORYBOARD_PARENT },
+    owner: { workflowRunId: STORYBOARD_PARENT.parentInstanceId },
+  },
+  { name: 'standalone analysis', context: {}, owner: undefined },
+  {
+    name: 'independent MotionBatch parent',
+    context: { _parent: MOTION_PARENT },
+    owner: undefined,
+  },
+] satisfies Array<{
+  name: string;
+  context: Pick<AnalyzeScriptWorkflowInput, 'storyboardOwner' | '_parent'>;
+  owner: GenerationWorkflowOwner | undefined;
+}>)(
+  'stamps and passes the root snapshot for $name',
+  async ({ context, owner }) => {
+    waitForElementVision.mockImplementationOnce(
+      async (_step, _scopedDb, _ids, options) => {
+        await options?.onWaitNeeded?.(1);
+        return { ready: true, pendingIds: [], rows: [] };
+      }
+    );
+    const bindings = mockBindings();
+    const run = mockRun(bindings, 'en', 'owner');
+    Object.assign(run.event.payload, context);
+    const completed = run.execute();
+    await run.splitWaiting.promise;
+    const child = childrenFor(bindings, run)[0];
+    expect(child?.params).toHaveProperty('storyboardOwner', owner);
+    run.splitOutcome.resolve({ status: 'ok', output: run.splitResult });
+    await completed;
+    expectCompletedRun(bindings, run);
+    expectScriptPhaseOwner(owner);
+  }
+);

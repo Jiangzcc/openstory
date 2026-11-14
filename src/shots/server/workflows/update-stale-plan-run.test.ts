@@ -23,6 +23,11 @@ import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
 import { createImageModelRoutingSnapshot } from '@/models/image-channels';
 
+const STORYBOARD_OWNER = {
+  workflowRunId: 'synthetic-storyboard-root',
+  workflowClaimId: 'synthetic-storyboard-claim',
+};
+
 const workflowModels = {
   ...DEFAULT_MODEL_CONFIGURATION,
   imageModelRouting: createImageModelRoutingSnapshot(
@@ -382,6 +387,39 @@ describe('UpdateStaleShotsWorkflow — a continue (#1818)', () => {
     emit.mockClear();
     failCharacter.clear();
   });
+
+  it.each([
+    { freshRun: true, storyboardOwner: STORYBOARD_OWNER },
+    { freshRun: true, storyboardOwner: undefined },
+    { freshRun: false, storyboardOwner: STORYBOARD_OWNER },
+    { freshRun: false, storyboardOwner: undefined },
+  ])(
+    'preserves reference phase notifications for owner $storyboardOwner, fresh=$freshRun',
+    async (options) => {
+      await run(plan({ references: asStub<never>(references) }), options);
+      const phases = emit.mock.calls.filter(([event]) =>
+        event.startsWith('generation.phase:')
+      );
+      expect(phases).toEqual([
+        [
+          'generation.phase:start',
+          {
+            phase: 2,
+            phaseName: 'Generating sheets & voices…',
+            workflowOwner: options.storyboardOwner,
+          },
+        ],
+        ...(options.freshRun
+          ? [
+              [
+                'generation.phase:complete',
+                { phase: 2, workflowOwner: options.storyboardOwner },
+              ],
+            ]
+          : []),
+      ]);
+    }
+  );
 
   it('spawns only the owed references, each behind its claim', async () => {
     const result = await run(

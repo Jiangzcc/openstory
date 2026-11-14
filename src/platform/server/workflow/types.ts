@@ -4,6 +4,7 @@
 
 import type { WorkflowModelConfiguration } from '@/models/model-runtime-configuration';
 import type { Locale } from '@/platform/i18n/locale';
+import type { GenerationWorkflowOwner } from '@/platform/realtime/schema';
 import type { ParentNotifyHint } from './await-child';
 import type { VoiceProvider } from '@/cast/seed-voice';
 import type { AspectRatio, ImageSize } from '@/models/aspect-ratios';
@@ -421,10 +422,7 @@ export type StoryboardTriggerInput = Omit<
  */
 export interface AnalyzeScriptWorkflowInput extends SequenceWorkflowContext {
   /** Server-snapshotted Storyboard owner, including its unpublished launcher claim. */
-  storyboardOwner?: {
-    workflowRunId: string;
-    workflowClaimId?: string;
-  };
+  storyboardOwner?: GenerationWorkflowOwner;
   /** Direct-parent notification metadata injected by spawnAndAwaitChild. */
   _parent?: ParentNotifyHint;
   // Required inputs
@@ -482,6 +480,7 @@ export interface AnalyzeScriptWorkflowInput extends SequenceWorkflowContext {
  * Scene split workflow input
  */
 export type SceneSplitWorkflowInput = SequenceWorkflowContext & {
+  storyboardOwner?: GenerationWorkflowOwner;
   promptName: string;
   modelId: AnalysisModelId;
   aspectRatio: AspectRatio;
@@ -1008,6 +1007,7 @@ export type RegenerateShotSnapshot = {
  * gap on the same terms.
  */
 export interface UpdateStaleShotsWorkflowInput extends SequenceWorkflowContext {
+  storyboardOwner?: GenerationWorkflowOwner;
   /** Fresh handoff announces each phase in order; existing continue keeps its schedule. */
   freshRun?: boolean;
   sequenceId: string;

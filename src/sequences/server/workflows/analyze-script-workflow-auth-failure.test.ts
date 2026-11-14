@@ -112,6 +112,7 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
     );
     expect(updateStatus).toHaveBeenCalledExactlyOnceWith('failed', message);
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: undefined,
       message,
     });
     expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('mock-reservation');
@@ -147,6 +148,7 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
       '401 Unauthorized'
     );
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: undefined,
       message: '401 Unauthorized',
     });
   });
@@ -162,6 +164,7 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
     );
 
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: undefined,
       message: 'boom',
     });
   });
@@ -174,6 +177,7 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
     ).resolves.toBeUndefined();
     expect(updateStatus).toHaveBeenCalledExactlyOnceWith('failed', 'boom');
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: undefined,
       message: 'boom',
     });
   });
@@ -196,6 +200,7 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
       '401 Unauthorized'
     );
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: undefined,
       message: '401 Unauthorized',
     });
   });
@@ -295,6 +300,7 @@ async function verifyRootAuthFailure() {
     'mock-reservation'
   );
   expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+    workflowOwner: STORYBOARD_OWNER,
     message: AUTH_MESSAGE,
   });
 }
@@ -327,6 +333,7 @@ async function verifyGuardFailure() {
   ).rejects.toBe(failure);
   expect(db.updateStatus).not.toHaveBeenCalled();
   expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+    workflowOwner: STORYBOARD_OWNER,
     message: AUTH_MESSAGE,
   });
 }

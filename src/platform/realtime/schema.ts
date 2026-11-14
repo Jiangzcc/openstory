@@ -1,6 +1,14 @@
 import type { EventPaths } from '@/platform/server/realtime/shared-types';
 import { z } from 'zod';
 
+export const generationWorkflowOwnerSchema = z.object({
+  workflowRunId: z.string().min(1),
+  workflowClaimId: z.string().min(1).optional(),
+});
+export type GenerationWorkflowOwner = z.infer<
+  typeof generationWorkflowOwnerSchema
+>;
+
 /** Which sheet render a progress event is about; the wire shape lives with the transport. */
 export const sheetProgressActivitySchema = z.enum(['sheet', 'portrait']);
 export type SheetProgressActivity = z.infer<typeof sheetProgressActivitySchema>;
@@ -71,10 +79,12 @@ export const realtimeSchema = {
   generation: {
     // Phase lifecycle events
     'phase:start': z.object({
+      workflowOwner: generationWorkflowOwnerSchema.optional(),
       phase: z.number(),
       phaseName: z.string(),
     }),
     'phase:complete': z.object({
+      workflowOwner: generationWorkflowOwnerSchema.optional(),
       phase: z.number(),
     }),
 
@@ -410,6 +420,7 @@ export const realtimeSchema = {
       title: z.string().optional(),
     }),
     failed: z.object({
+      workflowOwner: generationWorkflowOwnerSchema.optional(),
       message: z.string(),
     }),
     /**
@@ -417,15 +428,18 @@ export const realtimeSchema = {
      * Split/bibles/prompts stay; stills and motion do not spawn (#1310).
      */
     'reservation:short': z.object({
+      workflowOwner: generationWorkflowOwnerSchema.optional(),
       neededUsd: z.number(),
       remainingUsd: z.number(),
       sceneCount: z.number(),
     }),
     // Terminal events
     complete: z.object({
+      workflowOwner: generationWorkflowOwnerSchema.optional(),
       sequenceId: z.string(),
     }),
     error: z.object({
+      workflowOwner: generationWorkflowOwnerSchema.optional(),
       message: z.string(),
       phase: z.number().optional(),
     }),

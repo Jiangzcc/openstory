@@ -14,7 +14,7 @@ vi.doMock('#env', () => ({
 }));
 
 // Dynamic import so the mock applies (vi.doMock is not hoisted).
-const { getShotPromptChannel } = await import('./index');
+const { getShotPromptChannel, getGenerationChannel } = await import('./index');
 
 function lastBody() {
   const body = fetchMock.mock.calls.at(-1)?.[1]?.body;
@@ -41,5 +41,25 @@ describe('realtimeChannel emit', () => {
       promptType: 'visual',
     });
     expect(lastBody()).not.toHaveProperty('transient');
+  });
+});
+
+describe('generation lifecycle owner transport', () => {
+  it('posts the explicit instance and claim in the durable event payload', async () => {
+    const workflowOwner = {
+      workflowRunId: 'actual-instance',
+      workflowClaimId: 'raw/claim',
+    };
+    await getGenerationChannel('sequence').emit('generation.failed', {
+      message: 'failure',
+      workflowOwner,
+    });
+    expect(lastBody()).toEqual({
+      event: 'generation.failed',
+      data: { message: 'failure', workflowOwner },
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toBe(
+      'https://realtime.do/emit?channel=sequence'
+    );
   });
 });

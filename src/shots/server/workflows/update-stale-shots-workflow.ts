@@ -293,13 +293,17 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
         await getGenerationChannel(sequenceId).emit('generation.phase:start', {
           phase: GENERATION_STAGE_META[stage].phase,
           phaseName: GENERATION_STAGE_META[stage].name,
+          workflowOwner: input.storyboardOwner,
         });
       });
     const completePhase = (stage: GenerationStage) =>
       step.do(`phase-complete-${stage}`, async () => {
         await getGenerationChannel(sequenceId).emit(
           'generation.phase:complete',
-          { phase: GENERATION_STAGE_META[stage].phase }
+          {
+            phase: GENERATION_STAGE_META[stage].phase,
+            workflowOwner: input.storyboardOwner,
+          }
         );
       });
     const freshPhases = input.freshRun && input.announcePhases;

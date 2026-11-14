@@ -113,6 +113,13 @@ import { isBatchMotionEligible, type ShotView } from '@/shots/shot-view';
 import { analyzeLoadedFailures } from '@/sequences/failure-analysis';
 import type { GenerationPhaseConfig } from '@/sequences/ui/generation-stream.reducer';
 import { useGenerationStream } from '@/sequences/ui/use-generation-stream';
+import { useGenerationLaunchState } from '@/sequences/ui/use-generation-launch';
+import { reconcileGenerationLaunch } from '@/sequences/ui/generation-stream.reconcile';
+import {
+  beginGenerationLaunch,
+  canRestoreGenerationLaunch,
+  finishGenerationLaunch,
+} from '@/sequences/ui/generation-stream.launch';
 import { useStaleDetected } from './use-stale-detected';
 import { cn } from '@/ui/utils';
 import { useIsMobile } from '@/ui/use-mobile';
@@ -416,7 +423,10 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
   // No stills are ever rendered in this mode, so every motion-eligibility
   // check has to stop requiring one (`isBatchMotionEligible`).
   const generateStartFrames = sequence?.generateStartFrames ?? false;
-  const isProcessing = sequence?.status === 'processing';
+  const generationLaunch = useGenerationLaunchState(sequenceId);
+  const isProcessing =
+    sequence !== undefined &&
+    (generationLaunch.pending || sequence.status === 'processing');
   const processingRef = useRef(isProcessing);
   processingRef.current = isProcessing;
   const leftCapturedRef = useRef(false);
@@ -1460,6 +1470,11 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
       // processing write and hide the chip for a frame (#1641).
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<Sequence>(key);
+      const launchToken = beginGenerationLaunch(
+        queryClient,
+        sequenceId,
+        previous?.workflowRunId ?? null
+      );
       // Reset the stream before the status flip so the chip's first paint is
       // a new run, not the leftover COMPLETE that would exit it (#1641).
       resetGenerationStream({
@@ -1496,7 +1511,16 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
       } catch (error) {
         // Continue reserves credits like any other run, so it hits the same
         // toast as batch motion — not a generic error.
-        queryClient.setQueryData<Sequence>(key, previous);
+        const current = queryClient.getQueryData<Sequence>(key);
+        const restore = canRestoreGenerationLaunch(
+          queryClient,
+          sequenceId,
+          launchToken,
+          current?.workflowRunId ?? null
+        );
+        if (restore) queryClient.setQueryData<Sequence>(key, previous);
+        finishGenerationLaunch(queryClient, sequenceId, launchToken);
+        if (restore) resetGenerationStream();
         if (!isInsufficientCreditsError(error)) {
           refetchAfterRefusedContinue(queryClient, sequenceId);
           throw error;
@@ -1505,9 +1529,7 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
         void queryClient.invalidateQueries({ queryKey: BILLING_BALANCE_KEY });
         return;
       }
-      void queryClient.invalidateQueries({
-        queryKey: sequenceKeys.detail(sequenceId),
-      });
+      await reconcileGenerationLaunch(queryClient, sequenceId, launchToken);
       void queryClient.invalidateQueries({
         queryKey: generationPlanKeys.bySequence(sequenceId),
       });

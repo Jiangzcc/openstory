@@ -216,7 +216,7 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
 
   const queryClient = useQueryClient();
   const posthog = usePostHog();
-  useGenerationStream(sequenceId);
+  useGenerationStream(sequenceId, undefined, { replayHistory: false });
   useSequenceStaleDetected(sequenceId);
 
   const videoDuration = useMemo(() => {

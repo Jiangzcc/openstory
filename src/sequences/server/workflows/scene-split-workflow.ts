@@ -537,7 +537,8 @@ async function persistSceneShots({
 async function reportDroppedBoundaries(
   sequenceId: string | undefined,
   resolution: ResolvedBoundaries,
-  boundaries: ReadonlyArray<{ quote: string }>
+  boundaries: ReadonlyArray<{ quote: string }>,
+  workflowOwner?: SceneSplitWorkflowInput['storyboardOwner']
 ): Promise<void> {
   if (resolution.dropped.length === 0) return;
   const quotes = resolution.dropped
@@ -550,6 +551,7 @@ async function reportDroppedBoundaries(
   if (!sequenceId) return;
   const n = resolution.dropped.length;
   await getGenerationChannel(sequenceId).emit('generation.error', {
+    workflowOwner,
     message:
       n === 1
         ? 'One scene boundary could not be found in the script and was merged into the previous scene.'
@@ -840,7 +842,8 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
         await reportDroppedBoundaries(
           sequenceId,
           assembled.resolution,
-          finalBoundaries
+          finalBoundaries,
+          input.storyboardOwner
         );
 
         // Slices are adjacent substrings from the first resolved quote to
@@ -1411,6 +1414,7 @@ export class SceneSplitWorkflow extends OpenStoryWorkflowEntrypoint<SceneSplitWo
     if (sequenceId) {
       try {
         await getGenerationChannel(sequenceId).emit('generation.error', {
+          workflowOwner: event.payload.storyboardOwner,
           message: userMessage,
         });
       } catch (emitError) {

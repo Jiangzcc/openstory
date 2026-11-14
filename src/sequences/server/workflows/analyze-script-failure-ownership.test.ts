@@ -222,6 +222,7 @@ test('uses the Storyboard root and raw claim rather than the child instance id',
   });
   expect(fixture.sequenceMethod).not.toHaveBeenCalled();
   expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+    workflowOwner: STORYBOARD_OWNER,
     message: FAILURE_MESSAGE,
   });
 });
@@ -235,6 +236,7 @@ test('recognizes the raw claim before the launcher publishes its root instance i
     statusError: FAILURE_MESSAGE,
   });
   expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+    workflowOwner: STORYBOARD_OWNER,
     message: FAILURE_MESSAGE,
   });
 });
@@ -314,7 +316,10 @@ test('a legacy Storyboard child guards its real parent without inventing a raw c
   });
   expect((await storedSequence()).status).toBe(STATUS.failed);
   expect(fixture.sequenceMethod).not.toHaveBeenCalled();
-  expect(emit).toHaveBeenCalledOnce();
+  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+    message: FAILURE_MESSAGE,
+    workflowOwner: { workflowRunId: ROOT_RUN },
+  });
 });
 
 test('a legacy child cannot claim the unpublished raw slot without a snapshot', async () => {
@@ -357,6 +362,7 @@ test('preserves standalone CLI failure behavior without proving concurrent owner
     statusError: FAILURE_MESSAGE,
   });
   expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+    workflowOwner: undefined,
     message: FAILURE_MESSAGE,
   });
 });
@@ -408,6 +414,7 @@ test('propagates a real SQL guard failure after attempting the notification', as
   expect(fixture.guard).toHaveBeenCalledOnce();
   expect(fixture.sequenceMethod).not.toHaveBeenCalled();
   expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+    workflowOwner: STORYBOARD_OWNER,
     message: FAILURE_MESSAGE,
   });
 });
