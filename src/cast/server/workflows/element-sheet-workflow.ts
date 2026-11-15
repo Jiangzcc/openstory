@@ -48,7 +48,6 @@ import type {
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { getLogger } from '@/platform/logger';
 import { isEngineAbortError } from '@/platform/server/workflow/errors';
-import { isStoryboardContentOwnershipFailure } from '@/sequences/server/db/storyboard-content-scope';
 import { bindElementSheetOutput } from './element-sheet-output';
 
 const logger = getLogger(['openstory', 'workflow', 'element-sheet']);
@@ -71,9 +70,6 @@ export function collectElementResults(
   const elements: SequenceElementMinimal[] = [];
   for (const [index, outcome] of settled.entries()) {
     if (outcome.status === 'rejected') {
-      if (isStoryboardContentOwnershipFailure(outcome.reason)) {
-        throw outcome.reason;
-      }
       failures.push({
         name: entries[index]?.token ?? `index ${index}`,
         reason: rejectionReasonMessage(outcome.reason),
@@ -111,7 +107,6 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
       );
     }
     if (entries.length === 0) {
-      await output.verifyCompletion(step);
       return { elements: [] };
     }
 
@@ -241,7 +236,6 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
       }
     }
     const elements = collectElementResults(settled, entries);
-    await output.verifyCompletion(step);
 
     logger.info(
       `[ElementSheetWorkflow:cf] Completed: ${elements.length}/${entries.length} element reference(s) for sequence ${sequenceId}`

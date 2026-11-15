@@ -20,12 +20,7 @@ import type { SheetPayload } from './sheet-snapshots';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { contentRejectionSummary } from '@/models/content-rejection';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
-import {
-  isChildFailureError,
-  isEngineAbortError,
-  WorkflowValidationError,
-} from '@/platform/server/workflow/errors';
+import { WorkflowValidationError } from '@/platform/server/workflow/errors';
 import type {
   CharacterBibleWorkflowInput,
   CharacterSheetWorkflowInput,
@@ -37,46 +32,11 @@ import { SEED_VOICE_DEFAULT_TAKES } from '@/cast/seed-voice';
 import { usesVoice } from '@/cast/voice';
 import { newVoiceProvider } from '@/models/server/seed-speech-config';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
-import { castChannelId } from '@/cast/cast-channel';
 import { getLogger } from '@/platform/logger';
-import { getGenerationChannel } from '@/platform/realtime';
 
 const logger = getLogger(['openstory', 'workflow', 'character-bible']);
 
 const PARENT_BINDING_NAME = 'CHARACTER_BIBLE_WORKFLOW';
-
-async function emitCharacterSheetFailure(
-  sequenceId: string,
-  characterDbId: string,
-  lookId: string,
-  error: string
-): Promise<void> {
-  await getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
-    'generation.character-sheet:progress',
-    {
-      characterId: characterDbId,
-      lookId,
-      status: 'failed',
-      error,
-    }
-  );
-}
-
-async function runParentFailureActions(
-  step: WorkflowStep,
-  stepName: string,
-  actions: ReadonlyArray<() => Promise<unknown>>
-): Promise<void> {
-  try {
-    await step.do(stepName, () => runFailureActions(actions));
-  } catch (cleanupError) {
-    if (isEngineAbortError(cleanupError)) throw cleanupError;
-    logger.error(
-      '[CharacterBibleWorkflow:cf] Failure actions {stepName} exhausted retries',
-      { stepName, err: cleanupError }
-    );
-  }
-}
 
 export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<CharacterBibleWorkflowInput> {
   protected override readonly failureLabel = 'Character design';
@@ -251,73 +211,50 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
       const stamp = await stampCharacterSheetFromDto(unclaimedFields);
       const unclaimed = { ...unclaimedFields, snapshotInputHash: stamp.hash };
       await scopedDb.inputManifests.record([stamp]);
-      let sheetClaim: { versionId: string; held: boolean } | null = null;
-      try {
-        sheetClaim = await step.do(`claim-character-sheet-${index}`, async () =>
-          scopedDb.characterLooks.claimSheet(
-            unclaimedFields.lookId,
-            unclaimedFields,
-            {
-              markGenerating: false,
-              activity: {
-                sequenceId: sheetSequenceId,
-                actorId: input.userId,
-                summary: sheetStartedSummary(character.name, imageModel),
-              },
-            }
-          )
-        );
-        const childPayload: CharacterSheetWorkflowInput = {
-          promptLocale: input.promptLocale,
-          ...unclaimed,
-          sheetVersionId: sheetClaim.versionId,
-        };
-
-        const childResult = await spawnAndAwaitChild<
-          CharacterSheetWorkflowInput,
-          CharacterSheetWorkflowResult
-        >(step, {
-          binding: characterSheetBinding,
-          modelConfiguration: scopedDb.models,
-          parentBindingName: PARENT_BINDING_NAME,
-          parentInstanceId: event.instanceId,
-          childId: `character-sheet:${characterDbId}`,
-          childPayload,
-          spawnStepName: `spawn-character-sheet-${index}`,
-          awaitStepName: `await-character-sheet-${index}`,
-          timeout: '30 minutes',
-        });
-
-        return {
-          character,
-          characterDbId,
-          childResult,
-        };
-      } catch (error) {
-        if (isEngineAbortError(error)) throw error;
-        if (sheetClaim === null || sheetClaim.held) {
-          const reason = error instanceof Error ? error.message : String(error);
-          await runParentFailureActions(step, `fail-character-sheet-${index}`, [
-            () =>
-              scopedDb.characterLooks.failSheetClaim(
-                unclaimedFields.lookId,
-                sheetClaim?.versionId ?? null,
-                reason
-              ),
-            async () => {
-              if (!isChildFailureError(error)) {
-                await emitCharacterSheetFailure(
-                  sheetSequenceId,
-                  characterDbId,
-                  unclaimedFields.lookId,
-                  reason
-                );
+      const sheetVersionId = await step.do(
+        `claim-character-sheet-${index}`,
+        async () =>
+          (
+            await scopedDb.characterLooks.claimSheet(
+              unclaimedFields.lookId,
+              unclaimedFields,
+              {
+                markGenerating: false,
+                activity: {
+                  sequenceId: sheetSequenceId,
+                  actorId: input.userId,
+                  summary: sheetStartedSummary(character.name, imageModel),
+                },
               }
-            },
-          ]);
-        }
-        throw error;
-      }
+            )
+          ).versionId
+      );
+      const childPayload: CharacterSheetWorkflowInput = {
+        promptLocale: input.promptLocale,
+        ...unclaimed,
+        sheetVersionId,
+      };
+
+      const childResult = await spawnAndAwaitChild<
+        CharacterSheetWorkflowInput,
+        CharacterSheetWorkflowResult
+      >(step, {
+        binding: characterSheetBinding,
+        modelConfiguration: scopedDb.models,
+        parentBindingName: PARENT_BINDING_NAME,
+        parentInstanceId: event.instanceId,
+        childId: `character-sheet:${characterDbId}`,
+        childPayload,
+        spawnStepName: `spawn-character-sheet-${index}`,
+        awaitStepName: `await-character-sheet-${index}`,
+        timeout: '30 minutes',
+      });
+
+      return {
+        character,
+        characterDbId,
+        childResult,
+      };
     });
 
     // Voices (#1553 / #1715) ride alongside the sheets: insert a generating
@@ -396,41 +333,29 @@ export class CharacterBibleWorkflow extends OpenStoryWorkflowEntrypoint<Characte
             voiceByCharacterId.set(row.characterId, result.voiceId);
           }
         } catch (err) {
-          if (isEngineAbortError(err)) throw err;
           logger.error(
             `[CharacterBibleWorkflow:cf] Child character-voice failed for ${character.name}:`,
             { err }
           );
           // Spawn never started → child onFailure will not run. Fail the
           // husk so the unique live claim does not block Generate.
-          if (huskId && !isChildFailureError(err)) {
-            const failedVersionId = huskId;
-            await runParentFailureActions(
-              step,
-              `fail-character-voice-${row.characterId}`,
-              [
-                () =>
-                  scopedDb.characters.markVoiceClaimTerminal(
-                    failedVersionId,
-                    'failed',
-                    err instanceof Error ? err.message : String(err)
-                  ),
-              ]
+          if (huskId) {
+            await scopedDb.characters.markVoiceClaimTerminal(
+              huskId,
+              'failed',
+              err instanceof Error ? err.message : String(err)
             );
           }
         }
       });
 
-    const [settled] = await Promise.all([
-      Promise.allSettled(spawnPromises),
-      Promise.all(voicePromises),
-    ]);
+    const settled = await Promise.allSettled(spawnPromises);
+    await Promise.all(voicePromises);
 
     const seqCharacters: CharacterMinimal[] = [];
     const failures: { name: string; reason: string }[] = [];
     for (const [index, outcome] of settled.entries()) {
       if (outcome.status === 'rejected') {
-        if (isEngineAbortError(outcome.reason)) throw outcome.reason;
         // Keep the sibling sheets and let the parent stay at Casting so the
         // user can retry the misses (#1727). The child's `onFailure` already
         // wrote `failed` on the row and emitted the realtime event.

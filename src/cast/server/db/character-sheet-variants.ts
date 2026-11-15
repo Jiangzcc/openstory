@@ -39,7 +39,6 @@ import { insertDivergentRaceTolerant } from '@/platform/server/db/scoped/diverge
 import { buildEventInsert } from '@/sequences/server/db/sequence-events';
 import type { CharacterSheetInputHash } from '@/shots/input-hash';
 import { landCharacterSheet } from './sheet-claims';
-import type { StoryboardCastScope } from '@/sequences/server/db/storyboard-cast-scope';
 
 /**
  * The sheets of one look (#2015). A row with no `lookId` is one an older
@@ -57,8 +56,7 @@ const ofLook = (lookId: string) =>
 
 export function createCharacterSheetVariantsMethods(
   db: Database,
-  organizationId: string,
-  scope?: StoryboardCastScope
+  organizationId: string
 ) {
   /** Sheets of the organization's characters: every read and write here carries it. */
   const ofOrganization = () =>
@@ -408,8 +406,8 @@ export function createCharacterSheetVariantsMethods(
       args: Parameters<typeof landCharacterSheet>[1]
     ) => {
       // A character an older worker wrote gets its look row first.
-      await requireLook(db, organizationId, args.lookId, scope);
-      return await landCharacterSheet(db, args, scope);
+      await requireLook(db, organizationId, args.lookId);
+      return await landCharacterSheet(db, args);
     },
 
     insert: async (

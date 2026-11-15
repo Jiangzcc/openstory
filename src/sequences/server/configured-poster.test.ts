@@ -13,6 +13,16 @@ const uploadPoster = vi.fn();
 vi.doMock('@/stills/server/image-generation', () => ({
   generateImageWithProvider: generateImage,
 }));
+// Mock paid generation while retaining configured quotes.
+vi.doMock(
+  '@/stills/server/configured-image-generation',
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import('@/stills/server/configured-image-generation')
+    >()),
+    generateConfiguredImage: generateImage,
+  })
+);
 vi.doMock('@/stills/server/image-storage', () => ({
   uploadPosterToStorage: uploadPoster,
 }));

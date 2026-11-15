@@ -13,12 +13,10 @@
 import {
   and,
   eq,
-  exists,
   inArray,
   isNotNull,
   isNull,
   notExists,
-  or,
   sql,
 } from 'drizzle-orm';
 import type { SQL, SQLWrapper } from 'drizzle-orm';
@@ -30,8 +28,6 @@ import type {
   SQLiteUpdateSetSource,
 } from 'drizzle-orm/sqlite-core';
 import type { Database } from '@/platform/server/db/client';
-import type { StoryboardCastScope } from '@/sequences/server/db/storyboard-cast-scope';
-import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
 import { generateId } from '@/platform/id';
 import {
   buildEventInsertIfPresent,
@@ -117,99 +113,7 @@ type SheetLandSpec<P extends SQLiteTable, V extends SQLiteTable> = {
   park: SQLiteUpdateSetSource<V>;
   /** An identical divergent twin already parked (the partial unique index allows one). */
   twinParked: SQLWrapper;
-  publication?: { target: SQL | undefined; version: SQL | undefined };
 };
-
-const SHEET_PUBLICATION_UNAVAILABLE =
-  'Generated reference sheet is unavailable';
-const SINGLE_PUBLICATION = 1;
-
-function sheetPublication<P extends SQLiteTable, V extends SQLiteTable>(
-  db: Database,
-  spec: SheetLandSpec<P, V>,
-  versionId: string
-) {
-  if (!spec.publication) return undefined;
-  const target = exists(
-    db
-      .select({ one: sql`1` })
-      .from(spec.parent)
-      .where(and(spec.isParent, spec.publication.target))
-  );
-  const version = (relation?: SQL) =>
-    db
-      .select({ one: sql`1` })
-      .from(spec.variants)
-      .where(and(eq(spec.versionIdColumn, versionId), relation));
-  const ownedVersion = exists(version(spec.publication.version));
-  return {
-    insert: and(target, or(notExists(version()), ownedVersion)),
-    mutation: and(target, ownedVersion),
-  };
-}
-
-function sheetPublicationAvailability(
-  db: Database,
-  available: SQL | undefined
-) {
-  return db
-    .select({
-      // Invalid JSON aborts every write in the batch when the target was lost.
-      available: sql<number>`case when ${available} then 1
-        else json(${SHEET_PUBLICATION_UNAVAILABLE}) end`,
-    })
-    .from(sql`(select 1) as sheet_publication_result`)
-    .limit(SINGLE_PUBLICATION);
-}
-
-function sheetActivityWhere(
-  scope: StoryboardCastScope,
-  activity: LandArgs<unknown>['activity'],
-  targetId: string,
-  targetType: 'character' | 'location'
-) {
-  if (!activity) return undefined;
-  return and(
-    scope.sequence(activity.sequenceId),
-    sql`${activity.targetId} = ${targetId}`,
-    sql`${activity.targetType} = ${targetType}`
-  );
-}
-
-function sheetGeneratedActivity<P extends SQLiteTable, V extends SQLiteTable>(
-  db: Database,
-  spec: SheetLandSpec<P, V>,
-  args: Pick<LandArgs<unknown>, 'versionId' | 'activity'>,
-  publication?: SQL
-) {
-  const { activity, versionId } = args;
-  if (!activity) return undefined;
-  return buildEventInsertIfPresent(
-    db,
-    {
-      id: generateId(),
-      sequenceId: activity.sequenceId,
-      actorId: activity.actorId,
-      kind: 'sheet.generated',
-      targetType: activity.targetType,
-      targetId: activity.targetId,
-      summary: activity.summary,
-      data: { sheetVersionId: versionId },
-    },
-    spec.parent,
-    and(
-      spec.isParent,
-      publication,
-      eventNotLogged(
-        db,
-        activity.sequenceId,
-        'sheet.generated',
-        'sheetVersionId',
-        versionId
-      )
-    )
-  );
-}
 
 /**
  * The one sheet landing batch (#1113, #1865): append the version row under the
@@ -226,21 +130,17 @@ async function landSheetVersion<P extends SQLiteTable, V extends SQLiteTable>(
   spec: SheetLandSpec<P, V>,
   args: Pick<LandArgs<unknown>, 'versionId' | 'claimed' | 'activity'>
 ): Promise<SheetLanding> {
-  const { versionId, claimed } = args;
-  const publication = sheetPublication(db, spec, versionId);
-  const insertVersion = insertWithStoryboardGuard(
-    db,
-    spec.variants,
-    [spec.version],
-    publication?.insert
-  ).onConflictDoNothing();
+  const { versionId, claimed, activity } = args;
+  const insertVersion = db
+    .insert(spec.variants)
+    .values(spec.version)
+    .onConflictDoNothing();
   const promote = db
     .update(spec.parent)
     .set(spec.promote)
     .where(
       and(
         spec.isParent,
-        publication?.mutation,
         claimed ? eq(spec.claim, versionId) : isNull(spec.claim)
       )
     );
@@ -250,7 +150,6 @@ async function landSheetVersion<P extends SQLiteTable, V extends SQLiteTable>(
     .where(
       and(
         eq(spec.versionIdColumn, versionId),
-        publication?.mutation,
         isNull(spec.divergedAt),
         notExists(
           db
@@ -264,35 +163,44 @@ async function landSheetVersion<P extends SQLiteTable, V extends SQLiteTable>(
   const settle = db
     .update(spec.parent)
     .set(spec.settle)
-    .where(
-      and(
-        spec.isParent,
-        publication?.mutation,
-        isNull(spec.claim),
-        spec.isGenerating
-      )
-    );
+    .where(and(spec.isParent, isNull(spec.claim), spec.isGenerating));
   const read = db
     .select({ selected: spec.selected })
     .from(spec.parent)
     .where(spec.isParent);
-  const activity = sheetGeneratedActivity(
-    db,
-    spec,
-    args,
-    publication?.mutation
-  );
-  const results = await db.batch([
-    insertVersion,
-    promote,
-    park,
-    settle,
-    read,
-    ...(activity ? [activity] : []),
-    ...(publication
-      ? [sheetPublicationAvailability(db, publication.mutation)]
-      : []),
-  ]);
+  const results = activity
+    ? await db.batch([
+        insertVersion,
+        promote,
+        park,
+        settle,
+        read,
+        buildEventInsertIfPresent(
+          db,
+          {
+            id: generateId(),
+            sequenceId: activity.sequenceId,
+            actorId: activity.actorId,
+            kind: 'sheet.generated',
+            targetType: activity.targetType,
+            targetId: activity.targetId,
+            summary: activity.summary,
+            data: { sheetVersionId: versionId },
+          },
+          spec.parent,
+          and(
+            spec.isParent,
+            eventNotLogged(
+              db,
+              activity.sequenceId,
+              'sheet.generated',
+              'sheetVersionId',
+              versionId
+            )
+          )
+        ),
+      ])
+    : await db.batch([insertVersion, promote, park, settle, read]);
   const row = results[4][0];
   if (!row) throw new Error(`${spec.entity} not found`);
   return row.selected === versionId ? 'promoted' : 'parked';
@@ -323,8 +231,7 @@ export function landCharacterSheet(
     lookId: string;
     /** The look version the run read; null when unknown. */
     lookVersionId: string | null;
-  },
-  scope?: StoryboardCastScope
+  }
 ): Promise<SheetLanding> {
   const { characterId, lookId, versionId } = args;
   const now = new Date();
@@ -334,19 +241,7 @@ export function landCharacterSheet(
     {
       entity: `Look ${lookId}`,
       parent: characterLooks,
-      isParent: scope
-        ? sql`${eq(characterLooks.id, lookId)} and ${eq(characterLooks.characterId, characterId)}`
-        : eq(characterLooks.id, lookId),
-      publication: scope && {
-        target: and(
-          scope.look(lookId),
-          sheetActivityWhere(scope, args.activity, characterId, 'character')
-        ),
-        version: and(
-          eq(characterSheetVariants.characterId, characterId),
-          eq(characterSheetVariants.lookId, lookId)
-        ),
-      },
+      isParent: eq(characterLooks.id, lookId),
       selected: characterLooks.selectedSheetVersionId,
       claim: characterLooks.pendingPromoteSheetVersionId,
       isGenerating: eq(characterLooks.sheetStatus, 'generating'),
@@ -388,8 +283,7 @@ export function landCharacterSheet(
 export function landLocationReference(
   db: Database,
   organizationId: string,
-  args: LandArgs<LocationSheetInputHash> & { locationId: string },
-  scope?: StoryboardCastScope
+  args: LandArgs<LocationSheetInputHash> & { locationId: string }
 ): Promise<SheetLanding> {
   const { locationId, versionId } = args;
   const now = new Date();
@@ -400,13 +294,6 @@ export function landLocationReference(
       entity: `Location ${locationId}`,
       parent: locations,
       isParent: sql`${eq(locations.id, locationId)} and ${eq(locations.organizationId, organizationId)}`,
-      publication: scope && {
-        target: and(
-          scope.location(locationId),
-          sheetActivityWhere(scope, args.activity, locationId, 'location')
-        ),
-        version: eq(locationSheetVariants.locationId, locationId),
-      },
       selected: locations.selectedReferenceVersionId,
       claim: locations.pendingPromoteReferenceVersionId,
       isGenerating: eq(locations.referenceStatus, 'generating'),

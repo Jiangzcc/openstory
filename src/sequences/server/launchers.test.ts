@@ -283,7 +283,6 @@ describe('triggerStoryboard', () => {
     expect(listElements).toHaveBeenCalledWith('seq_1');
     expect(triggerWorkflowMock.mock.calls[0]?.[1]).toEqual({
       ...INPUT,
-      workflowClaimId: expect.stringMatching(/^storyboard-seq_1-/),
       title: 'The Long Walk',
       script: 'INT. HALLWAY — NIGHT',
       // The sequence default, inverted into the payload's render vocabulary.
@@ -351,25 +350,6 @@ describe('triggerStoryboard', () => {
     await triggerStoryboard(scopedDb, INPUT);
     expect(triggerWorkflowMock.mock.calls[0]?.[1].draftMotion).toBe(
       draftMotion
-    );
-  });
-
-  test('overwrites a caller-supplied workflow claim with the acquired slot', async () => {
-    triggerWorkflowMock.mockReset().mockResolvedValue('run-claim');
-    const { scopedDb, claimWorkflowSlot } = makeScopedDb({
-      workflowRunId: null,
-    });
-    const input = {
-      ...INPUT,
-      workflowClaimId: 'synthetic-untrusted-claim',
-    };
-    await triggerStoryboard(scopedDb, input);
-    const claimId = claimWorkflowSlot.mock.calls[0]?.[0]?.claimId;
-    expect(claimId).toEqual(expect.stringMatching(/^storyboard-seq_1-/));
-    expect(triggerWorkflowMock).toHaveBeenCalledExactlyOnceWith(
-      '/storyboard',
-      expect.objectContaining({ workflowClaimId: claimId }),
-      expect.objectContaining({ deduplicationId: claimId })
     );
   });
 

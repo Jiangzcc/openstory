@@ -2,16 +2,18 @@ import { eq, sql } from 'drizzle-orm';
 import { vi } from 'vitest';
 import { generateId } from '@/platform/id';
 import type { Database } from '@/platform/server/db/client';
-import { sequenceElements, sequences } from '@/platform/server/db/schema';
+import {
+  organization,
+  sequenceElements,
+  sequences,
+  styles,
+} from '@/platform/server/db/schema';
+import { DEFAULT_STYLE_TEMPLATES } from '@/look/style-templates';
 import type { NewSequenceElement, Sequence } from '@/platform/server/db/schema';
-import { seedCastGraph } from '@/sequences/server/db/storyboard-cast.test.fixture';
-import { STORYBOARD_WORKFLOW_STATUS } from '@/sequences/server/db/storyboard-owner';
-import type { StoryboardOwner } from '@/sequences/server/db/storyboard-owner';
 import type { GeneratedElementPublication } from './element-sheet-publication';
 
 // Synthetic payloads and boundary faults; rows and batches execute on migrated test D1.
-export { seedCastGraph as seedPublicationGraph };
-export type Graph = Awaited<ReturnType<typeof seedCastGraph>>;
+export type Graph = Awaited<ReturnType<typeof seedPublicationGraph>>;
 export const COUNT = {
   none: 0,
   one: 1,
@@ -20,7 +22,9 @@ export const COUNT = {
   boundLimit: 100,
 } as const;
 export const STATUS = {
-  ...STORYBOARD_WORKFLOW_STATUS,
+  processing: 'processing',
+  failed: 'failed',
+  completed: 'completed',
   draft: 'draft',
   archived: 'archived',
 } as const;
@@ -42,7 +46,6 @@ export const MEDIA = {
   competing: '/r2/synthetic/competing.png',
   competingPath: 'synthetic/competing.png',
 } as const;
-export const REPLACEMENT_RUN = 'synthetic-element-replacement-root';
 export const SQL_TARGET = {
   ownership: /^select "id" from "sequences" where /i,
   update: /^update "sequence_elements"/i,
@@ -53,31 +56,6 @@ export const SQL_FAULT = {
   trigger: 'synthetic_element_publication_fault',
   message: 'Synthetic element publication refused',
 } as const;
-export const ENGINE_ABORT = 'Aborting engine: Grace period complete';
-
-export const ROOT_LOSSES = [
-  {
-    name: 'replacement root',
-    patch: () => ({ workflowRunId: REPLACEMENT_RUN }),
-  },
-  { name: 'cleared root', patch: () => ({ workflowRunId: null }) },
-  {
-    name: 'undeclared raw claim',
-    patch: (g: Graph) => ({ workflowRunId: g.rawClaimId }),
-  },
-  { name: 'failed root', patch: () => ({ status: STATUS.failed }) },
-  { name: 'completed root', patch: () => ({ status: STATUS.completed }) },
-  { name: 'draft root', patch: () => ({ status: STATUS.draft }) },
-  { name: 'archived root', patch: () => ({ status: STATUS.archived }) },
-  {
-    name: 'foreign organization',
-    patch: (g: Graph) => ({ organizationId: g.foreign.organizationId }),
-  },
-] satisfies Array<{ name: string; patch: (graph: Graph) => Partial<Sequence> }>;
-
-export function ownerFor(graph: Graph, patch: Partial<StoryboardOwner> = {}) {
-  return { id: graph.sequenceId, workflowRunId: graph.workflowRunId, ...patch };
-}
 
 export function publicationInput(
   graph: Pick<Graph, 'sequenceId'>
@@ -203,19 +181,48 @@ export async function failureFrom(
   throw new Error('Expected synthetic element publication to reject');
 }
 
-// The transport substitute injects only ownership-read failures, never query results.
-export function failOwnershipRead(
-  db: Database,
-  failure: Error,
-  ordinal: number = COUNT.one
-) {
-  const prepare = db.$client.prepare.bind(db.$client);
-  let reads: number = COUNT.none;
-  return vi.spyOn(db.$client, 'prepare').mockImplementation((query) => {
-    if (SQL_TARGET.ownership.test(query)) {
-      reads += COUNT.one;
-      if (reads === ordinal) throw failure;
-    }
-    return prepare(query);
+async function seedSpace(db: Database) {
+  const organizationId = generateId();
+  const styleId = generateId();
+  const [template] = DEFAULT_STYLE_TEMPLATES;
+  if (!template) throw new Error('Synthetic cast fixture needs a style');
+  await db.insert(organization).values({
+    id: organizationId,
+    slug: organizationId,
+    name: 'Synthetic cast organization',
   });
+  await db.insert(styles).values({
+    id: styleId,
+    organizationId,
+    name: 'Synthetic cast style',
+    config: template.config,
+  });
+  return { organizationId, styleId };
+}
+
+async function seedPublicationSequence(
+  db: Database,
+  space: Awaited<ReturnType<typeof seedSpace>>
+) {
+  const sequenceId = generateId();
+  const workflowRunId = 'synthetic-storyboard-' + generateId();
+  await db.insert(sequences).values({
+    ...space,
+    id: sequenceId,
+    workflowRunId,
+    title: 'Synthetic cast sequence',
+    status: STATUS.processing,
+    createdAt: MOMENT.original,
+    updatedAt: MOMENT.original,
+  });
+  return { ...space, sequenceId, workflowRunId, rawClaimId: generateId() };
+}
+
+export async function seedPublicationGraph(db: Database) {
+  const space = await seedSpace(db);
+  const foreignSpace = await seedSpace(db);
+  const own = await seedPublicationSequence(db, space);
+  const sibling = await seedPublicationSequence(db, space);
+  const foreign = await seedPublicationSequence(db, foreignSpace);
+  return { ...own, sibling, foreign, userId: generateId() };
 }

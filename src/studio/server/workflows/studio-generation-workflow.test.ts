@@ -33,6 +33,16 @@ const mockIngestArkAssets = vi.fn(
 vi.doMock('@/stills/server/image-generation', () => ({
   generateImageWithProvider: mockGenerateImageWithProvider,
 }));
+// Mock paid generation while retaining configured quotes.
+vi.doMock(
+  '@/stills/server/configured-image-generation',
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import('@/stills/server/configured-image-generation')
+    >()),
+    generateConfiguredImage: mockGenerateImageWithProvider,
+  })
+);
 vi.doMock('@/billing/server/workflow-deduction', () => ({
   deductWorkflowCredits: mockDeductWorkflowCredits,
   recordFalUsageStep: vi.fn(async () => ({})),

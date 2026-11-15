@@ -44,7 +44,6 @@ import {
   characterSheetVariants,
   characters,
   sequenceCast,
-  sequenceEvents,
   sequences,
 } from '@/platform/server/db/schema';
 import {
@@ -59,8 +58,6 @@ import {
 } from './bible-versions';
 import { analysisMayNotRewrite } from './sequence-cast';
 import { demoteCharacterSheetClaims } from './sheet-claims';
-import type { StoryboardCastScope } from '@/sequences/server/db/storyboard-cast-scope';
-import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
 
 /**
  * A look's live sheet version: its explicit selection, else — for a default
@@ -125,30 +122,6 @@ export type LookSheetSnapshot = {
   bibleVersionId: string | null;
 };
 
-const SHEET_CLAIM_STATUS = {
-  generating: 'generating',
-  failed: 'failed',
-} as const;
-
-function ownedLookSheetClaim(
-  db: Database,
-  organizationId: string,
-  versionId: string | null
-) {
-  return and(
-    sql`${characterLooks.pendingPromoteSheetVersionId} = ${versionId}`,
-    sql`EXISTS ${db
-      .select({ id: characters.id })
-      .from(characters)
-      .where(
-        and(
-          eq(characters.id, characterLooks.characterId),
-          eq(characters.organizationId, organizationId)
-        )
-      )}`
-  );
-}
-
 /**
  * The looks of the organization's characters, each at its current version with its
  * sheet.
@@ -196,8 +169,7 @@ const lookOrder = [
 const backfillDefaultLook = async (
   db: Database,
   organizationId: string,
-  characterId: string,
-  scope?: StoryboardCastScope
+  characterId: string
 ): Promise<void> => {
   const rows = await db
     .select({
@@ -226,40 +198,32 @@ const backfillDefaultLook = async (
   const [legacy] = rows;
   if (!legacy) return;
   await db.batch([
-    insertWithStoryboardGuard(
-      db,
-      characterLooks,
-      [
-        {
-          id: legacy.id,
-          characterId: legacy.id,
-          isDefault: true,
-          sortOrder: 0,
-          selectedLookVersionId: legacy.id,
-          selectedSheetVersionId: legacy.selectedSheetVersionId,
-          pendingPromoteSheetVersionId: legacy.pendingPromoteSheetVersionId,
-          sheetStatus: legacy.sheetStatus,
-          sheetError: legacy.sheetError,
-        },
-      ],
-      scope?.character(legacy.id)
-    ).onConflictDoNothing(),
-    insertWithStoryboardGuard(
-      db,
-      characterLookVersions,
-      [
-        {
-          id: legacy.id,
-          lookId: legacy.id,
-          name: DEFAULT_LOOK_NAME,
-          clothing: legacy.clothing,
-          styling: null,
-          source: 'backfill',
-          createdBy: null,
-        },
-      ],
-      scope?.look(legacy.id)
-    ).onConflictDoNothing(),
+    db
+      .insert(characterLooks)
+      .values({
+        id: legacy.id,
+        characterId: legacy.id,
+        isDefault: true,
+        sortOrder: 0,
+        selectedLookVersionId: legacy.id,
+        selectedSheetVersionId: legacy.selectedSheetVersionId,
+        pendingPromoteSheetVersionId: legacy.pendingPromoteSheetVersionId,
+        sheetStatus: legacy.sheetStatus,
+        sheetError: legacy.sheetError,
+      })
+      .onConflictDoNothing(),
+    db
+      .insert(characterLookVersions)
+      .values({
+        id: legacy.id,
+        lookId: legacy.id,
+        name: DEFAULT_LOOK_NAME,
+        clothing: legacy.clothing,
+        styling: null,
+        source: 'backfill',
+        createdBy: null,
+      })
+      .onConflictDoNothing(),
   ]);
 };
 
@@ -278,12 +242,11 @@ const getLook = async (
 export const requireLook = async (
   db: Database,
   organizationId: string,
-  id: string,
-  scope?: StoryboardCastScope
+  id: string
 ): Promise<CharacterLook> => {
   const found = await getLook(db, organizationId, id);
   if (found) return found;
-  await backfillDefaultLook(db, organizationId, id, scope);
+  await backfillDefaultLook(db, organizationId, id);
   const look = await getLook(db, organizationId, id);
   if (!look) throw new NotFoundError(`Look ${id} not found`);
   return look;
@@ -362,24 +325,16 @@ const newLookRow = (
     versionId: string;
     characterId: string;
     sortOrder: number;
-  },
-  scope?: StoryboardCastScope
+  }
 ) =>
-  insertWithStoryboardGuard(
-    db,
-    characterLooks,
-    [
-      {
-        id: look.id,
-        characterId: look.characterId,
-        isDefault: false,
-        sortOrder: look.sortOrder,
-        selectedLookVersionId: look.versionId,
-        sheetStatus: 'pending',
-      },
-    ],
-    scope?.character(look.characterId)
-  );
+  db.insert(characterLooks).values({
+    id: look.id,
+    characterId: look.characterId,
+    isDefault: false,
+    sortOrder: look.sortOrder,
+    selectedLookVersionId: look.versionId,
+    sheetStatus: 'pending',
+  });
 
 /**
  * The one writer of a look's definition: the statements that append a
@@ -409,10 +364,8 @@ export const lookDefinitionWrite = async (
     source: LookVersionSource;
     createdBy: string | null;
     sequenceId: string | null;
-  },
-  scope?: StoryboardCastScope
+  }
 ) => {
-  const guard = scope?.look(look.id);
   const before: LookDefinition = {
     name: look.name,
     clothing: look.clothing,
@@ -430,7 +383,7 @@ export const lookDefinitionWrite = async (
   const stylingMoved = moved.includes('styling');
   const legacyMove =
     stylingMoved && look.isDefault
-      ? await legacyFeaturesMove(db, look, opts, scope)
+      ? await legacyFeaturesMove(db, look, opts)
       : [];
   return {
     moved,
@@ -438,21 +391,14 @@ export const lookDefinitionWrite = async (
     /** The version appended. */
     versionId,
     statements: [
-      insertWithStoryboardGuard(
-        db,
-        characterLookVersions,
-        [
-          {
-            id: versionId,
-            lookId: look.id,
-            ...after,
-            styling: stylingMoved ? after.styling : look.storedStyling,
-            source: opts.source,
-            createdBy: opts.createdBy,
-          },
-        ],
-        guard
-      ),
+      db.insert(characterLookVersions).values({
+        id: versionId,
+        lookId: look.id,
+        ...after,
+        styling: stylingMoved ? after.styling : look.storedStyling,
+        source: opts.source,
+        createdBy: opts.createdBy,
+      }),
       db
         .update(characterLooks)
         .set({
@@ -460,9 +406,7 @@ export const lookDefinitionWrite = async (
           ...(touchesSheet ? { pendingPromoteSheetVersionId: null } : {}),
           updatedAt: new Date(),
         })
-        .where(
-          and(eq(characterLooks.id, look.id), scope?.look(characterLooks.id))
-        ),
+        .where(eq(characterLooks.id, look.id)),
       ...legacyMove,
     ],
   };
@@ -484,8 +428,7 @@ const legacyFeaturesMove = async (
     source: LookVersionSource;
     createdBy: string | null;
     sequenceId: string | null;
-  },
-  scope?: StoryboardCastScope
+  }
 ): Promise<BatchItem<'sqlite'>[]> => {
   // ponytail: a character an older worker wrote before #1600 has no bible version to append to, so its legacy features stay joined; give it a version first if one ever turns up.
   const [current] = await db
@@ -500,55 +443,35 @@ const legacyFeaturesMove = async (
   if (!current?.version.legacyDistinguishingFeatures?.trim()) return [];
   const { version } = current;
   const versionId = generateId();
-  const guard = scope
-    ? and(scope.look(look.id), scope.character(version.characterId))
-    : undefined;
   return [
-    insertWithStoryboardGuard(
-      db,
-      characterBibleVersions,
-      [
-        {
-          ...version,
-          id: versionId,
-          legacyDistinguishingFeatures: null,
-          source: opts.source,
-          createdBy: opts.createdBy,
-          createdAt: new Date(),
-        },
-      ],
-      guard
-    ),
+    db.insert(characterBibleVersions).values({
+      ...version,
+      id: versionId,
+      legacyDistinguishingFeatures: null,
+      source: opts.source,
+      createdBy: opts.createdBy,
+      createdAt: new Date(),
+    }),
     db
       .update(characters)
       .set({ selectedBibleVersionId: versionId, updatedAt: new Date() })
-      .where(and(eq(characters.id, version.characterId), guard)),
-    demoteCharacterSheetClaims(
-      db,
-      sql`${eq(characters.id, version.characterId)} and ${guard ?? sql`true`}`
-    ),
+      .where(eq(characters.id, version.characterId)),
+    demoteCharacterSheetClaims(db, eq(characters.id, version.characterId)),
     ...(opts.sequenceId === null
       ? []
       : [
-          insertWithStoryboardGuard(
-            db,
-            sequenceEvents,
-            [
-              {
-                sequenceId: opts.sequenceId,
-                actorId: opts.createdBy,
-                kind: 'character.updated',
-                targetType: 'character',
-                targetId: version.characterId,
-                summary: `Moved the features of ${version.name} to the default look`,
-                data: {
-                  prevState: {},
-                  bibleVersion: { from: version.id, to: versionId },
-                },
-              },
-            ],
-            scope ? and(guard, scope.sequence(opts.sequenceId)) : undefined
-          ),
+          buildEventInsert(db, {
+            sequenceId: opts.sequenceId,
+            actorId: opts.createdBy,
+            kind: 'character.updated',
+            targetType: 'character',
+            targetId: version.characterId,
+            summary: `Moved the features of ${version.name} to the default look`,
+            data: {
+              prevState: {},
+              bibleVersion: { from: version.id, to: versionId },
+            },
+          }),
         ]),
   ];
 };
@@ -613,8 +536,7 @@ export const deleteLooksOfCharacters = (
 
 export function createCharacterLooksMethods(
   db: Database,
-  organizationId: string,
-  scope?: StoryboardCastScope
+  organizationId: string
 ) {
   type LookWriteOpts = { source: LookVersionSource; actorId: string | null };
 
@@ -815,12 +737,7 @@ export function createCharacterLooksMethods(
         );
       }
       const opts = { source: 'analysis' as const, createdBy: null };
-      const defaultLook = await requireLook(
-        db,
-        organizationId,
-        characterId,
-        scope
-      );
+      const defaultLook = await requireLook(db, organizationId, characterId);
       const owner = await ownerOf(db, organizationId, sequenceId, characterId);
       const others = (
         await selectLooks(
@@ -837,35 +754,25 @@ export function createCharacterLooksMethods(
           db,
           look,
           patch,
-          { ...opts, sequenceId },
-          scope
+          { ...opts, sequenceId }
         );
         const [first, ...rest] = statements;
         if (!first || versionId === null) return;
         await db.batch([
           first,
           ...rest,
-          insertWithStoryboardGuard(
-            db,
-            sequenceEvents,
-            [
-              {
-                sequenceId,
-                actorId: null,
-                kind: 'look.updated',
-                targetType: 'character',
-                targetId: characterId,
-                summary: `Re-analysed look ${patch.name ?? look.name} of ${owner.name}`,
-                data: {
-                  lookId: look.id,
-                  lookVersion: { from: look.lookVersionId, to: versionId },
-                },
-              },
-            ],
-            scope
-              ? and(scope.sequence(sequenceId), scope.character(characterId))
-              : undefined
-          ),
+          buildEventInsert(db, {
+            sequenceId,
+            actorId: null,
+            kind: 'look.updated',
+            targetType: 'character',
+            targetId: characterId,
+            summary: `Re-analysed look ${patch.name ?? look.name} of ${owner.name}`,
+            data: {
+              lookId: look.id,
+              lookVersion: { from: look.lookVersionId, to: versionId },
+            },
+          }),
         ]);
       };
       const key = (name: string) => name.trim().toLowerCase();
@@ -898,12 +805,7 @@ export function createCharacterLooksMethods(
             await db
               .update(characterLooks)
               .set({ deletedAt: null, updatedAt: new Date() })
-              .where(
-                and(
-                  eq(characterLooks.id, existing.id),
-                  scope?.look(characterLooks.id)
-                )
-              );
+              .where(eq(characterLooks.id, existing.id));
           }
           ids[look.lookId] = existing.id;
           continue;
@@ -911,29 +813,18 @@ export function createCharacterLooksMethods(
         const id = generateId();
         const versionId = generateId();
         await db.batch([
-          newLookRow(
-            db,
-            {
-              id,
-              versionId,
-              characterId,
-              sortOrder: others.length + index,
-            },
-            scope
-          ),
-          insertWithStoryboardGuard(
-            db,
-            characterLookVersions,
-            [
-              {
-                id: versionId,
-                lookId: id,
-                ...definition,
-                ...opts,
-              },
-            ],
-            scope?.look(id)
-          ),
+          newLookRow(db, {
+            id,
+            versionId,
+            characterId,
+            sortOrder: others.length + index,
+          }),
+          db.insert(characterLookVersions).values({
+            id: versionId,
+            lookId: id,
+            ...definition,
+            ...opts,
+          }),
         ]);
         matched.add(id);
         ids[look.lookId] = id;
@@ -973,30 +864,16 @@ export function createCharacterLooksMethods(
             db
               .update(characterLooks)
               .set({ deletedAt, updatedAt: deletedAt })
-              .where(
-                and(
-                  eq(characterLooks.id, row.id),
-                  scope?.look(characterLooks.id)
-                )
-              ),
-            insertWithStoryboardGuard(
-              db,
-              sequenceEvents,
-              [
-                {
-                  sequenceId,
-                  actorId: null,
-                  kind: 'look.removed',
-                  targetType: 'character',
-                  targetId: characterId,
-                  summary: `Removed look ${row.name} of ${owner.name}: the script no longer has it`,
-                  data: { lookId: row.id, name: row.name, by: 'analysis' },
-                },
-              ],
-              scope
-                ? and(scope.sequence(sequenceId), scope.look(row.id))
-                : undefined
-            ),
+              .where(eq(characterLooks.id, row.id)),
+            buildEventInsert(db, {
+              sequenceId,
+              actorId: null,
+              kind: 'look.removed',
+              targetType: 'character',
+              targetId: characterId,
+              summary: `Removed look ${row.name} of ${owner.name}: the script no longer has it`,
+              data: { lookId: row.id, name: row.name, by: 'analysis' },
+            }),
           ]);
         }
       }
@@ -1055,32 +932,21 @@ export function createCharacterLooksMethods(
         const id = generateId();
         const versionId = generateId();
         statements.push(
-          newLookRow(
-            db,
-            {
-              id,
-              versionId,
-              characterId,
-              sortOrder: nextSort++,
-            },
-            scope
-          ),
-          insertWithStoryboardGuard(
-            db,
-            characterLookVersions,
-            [
-              {
-                id: versionId,
-                lookId: id,
-                name: look.name.trim() || DEFAULT_LOOK_NAME,
-                clothing: look.clothing.trim() || null,
-                styling: look.styling.trim() || null,
-                source: 'analysis',
-                createdBy: null,
-              },
-            ],
-            scope?.look(id)
-          )
+          newLookRow(db, {
+            id,
+            versionId,
+            characterId,
+            sortOrder: nextSort++,
+          }),
+          db.insert(characterLookVersions).values({
+            id: versionId,
+            lookId: id,
+            name: look.name.trim() || DEFAULT_LOOK_NAME,
+            clothing: look.clothing.trim() || null,
+            styling: look.styling.trim() || null,
+            source: 'analysis',
+            createdBy: null,
+          })
         );
         own.push({ id, sortOrder: nextSort, name: look.name });
         ids[look.lookId] = id;
@@ -1447,22 +1313,20 @@ export function createCharacterLooksMethods(
         } | null;
       }
     ): Promise<{ versionId: string; held: boolean }> => {
-      const look = await requireLook(db, organizationId, lookId, scope);
-      const guard = scope?.look(look.id);
+      const look = await requireLook(db, organizationId, lookId);
       const versionId = generateId();
       const claim = db
         .update(characterLooks)
         .set({
           pendingPromoteSheetVersionId: versionId,
           ...(opts.markGenerating
-            ? { sheetStatus: SHEET_CLAIM_STATUS.generating, sheetError: null }
+            ? { sheetStatus: 'generating' as const, sheetError: null }
             : {}),
           updatedAt: new Date(),
         })
         .where(
           and(
             eq(characterLooks.id, look.id),
-            guard,
             eq(characterLooks.selectedLookVersionId, snapshot.lookVersionId),
             sql`EXISTS ${db
               .select({ one: sql`1` })
@@ -1481,48 +1345,29 @@ export function createCharacterLooksMethods(
               )}`
           )
         );
-      if (!opts.activity && !scope) {
+      if (!opts.activity) {
         const claimed = await claim.returning({ id: characterLooks.id });
-        return { versionId, held: claimed.length > 0 };
-      }
-      const started = opts.activity
-        ? [
-            buildEventInsertIfPresent(
-              db,
-              {
-                id: generateId(),
-                sequenceId: opts.activity.sequenceId,
-                actorId: opts.activity.actorId,
-                kind: 'sheet.started',
-                targetType: 'character',
-                targetId: look.characterId,
-                summary: opts.activity.summary,
-              },
-              characterLooks,
-              and(
-                eq(characterLooks.id, look.id),
-                guard,
-                eq(characterLooks.pendingPromoteSheetVersionId, versionId)
-              )
-            ),
-          ]
-        : [];
-      if (scope) {
-        const [target, claimed] = await db.batch([
-          db
-            .select({ id: characterLooks.id })
-            .from(characterLooks)
-            .where(and(eq(characterLooks.id, look.id), guard)),
-          claim.returning({ id: characterLooks.id }),
-          ...started,
-        ]);
-        if (target.length === 0)
-          throw new NotFoundError(`Look ${lookId} not found`);
         return { versionId, held: claimed.length > 0 };
       }
       const [claimed] = await db.batch([
         claim.returning({ id: characterLooks.id }),
-        ...started,
+        buildEventInsertIfPresent(
+          db,
+          {
+            id: generateId(),
+            sequenceId: opts.activity.sequenceId,
+            actorId: opts.activity.actorId,
+            kind: 'sheet.started',
+            targetType: 'character',
+            targetId: look.characterId,
+            summary: opts.activity.summary,
+          },
+          characterLooks,
+          and(
+            eq(characterLooks.id, look.id),
+            eq(characterLooks.pendingPromoteSheetVersionId, versionId)
+          )
+        ),
       ]);
       return { versionId, held: claimed.length > 0 };
     },
@@ -1558,25 +1403,21 @@ export function createCharacterLooksMethods(
       versionId: string | null,
       error: string
     ): Promise<void> => {
-      const id = scope
-        ? lookId
-        : (await requireLook(db, organizationId, lookId)).id;
+      const look = await requireLook(db, organizationId, lookId);
       await db
         .update(characterLooks)
         .set({
           pendingPromoteSheetVersionId: null,
-          sheetStatus: SHEET_CLAIM_STATUS.failed,
+          sheetStatus: 'failed',
           sheetError: error,
           updatedAt: new Date(),
         })
         .where(
           and(
-            eq(characterLooks.id, id),
-            scope
-              ? ownedLookSheetClaim(db, organizationId, versionId)
-              : versionId === null
-                ? sql`${characterLooks.pendingPromoteSheetVersionId} IS NULL`
-                : sql`(${characterLooks.pendingPromoteSheetVersionId} = ${versionId} OR ${characterLooks.pendingPromoteSheetVersionId} IS NULL)`
+            eq(characterLooks.id, look.id),
+            versionId === null
+              ? sql`${characterLooks.pendingPromoteSheetVersionId} IS NULL`
+              : sql`(${characterLooks.pendingPromoteSheetVersionId} = ${versionId} OR ${characterLooks.pendingPromoteSheetVersionId} IS NULL)`
           )
         );
     },

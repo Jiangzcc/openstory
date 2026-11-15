@@ -20,12 +20,7 @@ import { stampLocationSheetFromDto } from './sheet-snapshots';
 import type { SheetPayload } from './sheet-snapshots';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
-import {
-  isChildFailureError,
-  isEngineAbortError,
-  WorkflowValidationError,
-} from '@/platform/server/workflow/errors';
+import { WorkflowValidationError } from '@/platform/server/workflow/errors';
 import type {
   LibraryLocationMatch,
   LocationBibleWorkflowInput,
@@ -34,42 +29,9 @@ import type {
 } from '@/platform/server/workflow/types';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { NonRetryableError } from 'cloudflare:workflows';
-import { locationChannelId } from '@/cast/cast-channel';
 import { getLogger } from '@/platform/logger';
-import { getGenerationChannel } from '@/platform/realtime';
 
 const logger = getLogger(['openstory', 'workflow', 'location-bible']);
-
-async function emitLocationSheetFailure(
-  sequenceId: string,
-  locationDbId: string,
-  error: string
-): Promise<void> {
-  await getGenerationChannel(locationChannelId(sequenceId, locationDbId)).emit(
-    'generation.location-sheet:progress',
-    {
-      locationId: locationDbId,
-      status: 'failed',
-      error,
-    }
-  );
-}
-
-async function runParentFailureActions(
-  step: WorkflowStep,
-  stepName: string,
-  actions: ReadonlyArray<() => Promise<unknown>>
-): Promise<void> {
-  try {
-    await step.do(stepName, () => runFailureActions(actions));
-  } catch (cleanupError) {
-    if (isEngineAbortError(cleanupError)) throw cleanupError;
-    logger.error(
-      '[LocationBibleWorkflow:cf] Failure actions {stepName} exhausted retries',
-      { stepName, err: cleanupError }
-    );
-  }
-}
 
 export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationBibleWorkflowInput> {
   protected override readonly failureLabel = 'Location design';
@@ -264,30 +226,17 @@ export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationB
             timeout: '30 minutes',
           });
         } catch (error) {
-          if (isEngineAbortError(error)) throw error;
+          // The child's onFailure does not run when the spawn never starts,
+          // or the await times out while the child is still queued.
+          // createBulk already left the row `generating`, and a taken claim
+          // keeps the generation plan waiting.
           if (claimed === null || claimed.held) {
             const reason =
               error instanceof Error ? error.message : String(error);
-            await runParentFailureActions(
-              step,
-              `fail-location-sheet-${index}`,
-              [
-                () =>
-                  scopedDb.locations.failReferenceClaim(
-                    locationDbId,
-                    claimed?.versionId ?? null,
-                    reason
-                  ),
-                async () => {
-                  if (!isChildFailureError(error)) {
-                    await emitLocationSheetFailure(
-                      sequenceId,
-                      locationDbId,
-                      reason
-                    );
-                  }
-                },
-              ]
+            await scopedDb.locations.failReferenceClaim(
+              locationDbId,
+              claimed?.versionId ?? null,
+              reason
             );
           }
           throw error;
@@ -342,7 +291,6 @@ export class LocationBibleWorkflow extends OpenStoryWorkflowEntrypoint<LocationB
         }
 
         const rejectionReason = outcome?.reason;
-        if (isEngineAbortError(rejectionReason)) throw rejectionReason;
         const reason =
           rejectionReason instanceof Error
             ? rejectionReason.message

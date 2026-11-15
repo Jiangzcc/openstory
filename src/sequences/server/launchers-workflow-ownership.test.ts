@@ -26,7 +26,6 @@ import { createSequenceEventsMethods } from './db/sequence-events';
 
 const WORKFLOW_RUN = 'synthetic-created-storyboard';
 const PRIOR_ERROR = 'Synthetic previous failure';
-const POSTER = '/r2/synthetic-launcher-poster.png';
 const MODES = ['fresh', 'continue'] as const;
 const STATUS = { failed: 'failed', processing: 'processing' } as const;
 const CONFIGURATION: ModelRuntimeConfiguration = {
@@ -46,7 +45,7 @@ const STYLE_CONFIG: StyleConfig = {
   references: [],
 };
 
-// Workflows is substituted; sequence claims, status and owner fences use real test D1.
+// Workflows is substituted; sequence claims and status use real test D1.
 const trigger = vi.fn(
   async (
     _path: string,
@@ -170,14 +169,13 @@ function launch(mode: (typeof MODES)[number]) {
 }
 
 it.each(MODES)(
-  '%s passes its raw claim to dispatch and the remaining owner fence',
+  '%s uses its raw claim as the dispatch deduplication ID',
   async (mode) => {
     trigger.mockImplementationOnce(async (path, payload, options) => {
       const row = await stored();
       expect(row).toMatchObject({
         status: STATUS.processing,
         statusError: null,
-        workflowRunId: payload.workflowClaimId,
       });
       expect(row.workflowRunId).not.toBe(fixture.previousRun);
       expect(path).toBe('/storyboard');
@@ -192,14 +190,6 @@ it.each(MODES)(
         deduplicationId: row.workflowRunId,
         modelConfiguration: CONFIGURATION,
       });
-      expect(
-        await fixture.methods.setPosterIfCurrent({
-          id: fixture.sequence.id,
-          workflowRunId: WORKFLOW_RUN,
-          workflowClaimId: payload.workflowClaimId,
-          posterUrl: POSTER,
-        })
-      ).toBe(true);
       return WORKFLOW_RUN;
     });
     await expect(launch(mode)).resolves.toEqual({
@@ -208,7 +198,6 @@ it.each(MODES)(
     expect(await stored()).toMatchObject({
       workflowRunId: WORKFLOW_RUN,
       status: STATUS.processing,
-      posterUrl: POSTER,
     });
     expect(trigger).toHaveBeenCalledOnce();
   }

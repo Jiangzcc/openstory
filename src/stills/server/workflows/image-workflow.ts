@@ -39,12 +39,7 @@ import { getGenerationChannel } from '@/platform/realtime';
 import { simpleHash } from '@/platform/hash';
 import { generateIdAt } from '@/platform/id';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
-import type { OpenStoryFailureContext } from '@/platform/server/workflow/base-workflow';
-import {
-  isEngineAbortError,
-  WorkflowValidationError,
-} from '@/platform/server/workflow/errors';
+import { WorkflowValidationError } from '@/platform/server/workflow/errors';
 import type { WorkflowFailureActivity } from '@/platform/server/workflow/errors';
 import type { ImageWorkflowInput } from '@/platform/server/workflow/types';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
@@ -612,34 +607,76 @@ export class ImageWorkflow extends OpenStoryWorkflowEntrypoint<ImageWorkflowInpu
     return { imageUrl, shotId, sequenceId, frameVersionId };
   }
 
-  private async clearFailurePromotion(
-    scopedDb: WorkflowScopedDb,
-    anchor: Frame,
-    workflowRunId: string
-  ): Promise<void> {
-    if (!anchor.pendingPromoteVersionId) return;
-    const pending = await scopedDb.claims.frameVariants.getById(
-      anchor.pendingPromoteVersionId
-    );
-    if (pending?.workflowRunId === workflowRunId) {
-      await scopedDb.frames.clearPendingPromoteVersionIdIf(
-        anchor.id,
-        pending.id
-      );
-    }
-  }
-
-  private async persistFailure({
+  protected override async onFailure({
     event,
     error,
     scopedDb,
-  }: OpenStoryFailureContext<ImageWorkflowInput>): Promise<void> {
+  }: {
+    event: Readonly<WorkflowEvent<ImageWorkflowInput>>;
+    error: string;
+    scopedDb: WorkflowScopedDb;
+  }): Promise<void> {
     const input = event.payload;
-    const anchor = await this.resolveFrame(scopedDb, input);
-    if (!input.variantOnly && anchor) {
-      await this.clearFailurePromotion(scopedDb, anchor, event.instanceId);
+    if (input.skipStorage) {
+      // The preview's row fails with the run (#1152): a record, not a gap.
+      // The reconciler sweeps it too, so a failed write here stays logged.
+      try {
+        await scopedDb.frameVariants.markFailedByWorkflowRun(
+          event.instanceId,
+          error
+        );
+      } catch (markError) {
+        logger.error(
+          `[ImageWorkflow] Failed to fail preview row for run ${event.instanceId}:`,
+          { err: markError }
+        );
+      }
+      // Parent swallows the *trigger* (#1149). The child still has to tell
+      // the rail the tile failed — including after a billed generate + R2
+      // miss — or it sits empty forever.
+      if (input.sequenceId && input.shotId) {
+        try {
+          await getGenerationChannel(input.sequenceId).emit(
+            'generation.image:progress',
+            {
+              shotId: input.shotId,
+              status: 'failed',
+              model: input.model ?? DEFAULT_IMAGE_MODEL,
+              error,
+            }
+          );
+        } catch (emitError) {
+          logger.error(
+            `[ImageWorkflow] Failed to emit preview failure for sequence ${input.sequenceId} shot ${input.shotId}:`,
+            { err: emitError }
+          );
+        }
+      }
+      return;
     }
-    // A trigger's claim can fail before the first step stamps this run id.
+    if (!input.shotId || !input.organizationId) return;
+
+    // The run's rows fail below; a primary one is the frame's failure
+    // (#1942). Variant-only rows never speak for the frame.
+    const anchor = await this.resolveFrame(scopedDb, input);
+    if (!input.variantOnly) {
+      if (anchor) {
+        // Drop auto-promote if this run owned it (#1070).
+        if (anchor.pendingPromoteVersionId) {
+          const pending = await scopedDb.claims.frameVariants.getById(
+            anchor.pendingPromoteVersionId
+          );
+          if (pending?.workflowRunId === event.instanceId) {
+            await scopedDb.frames.clearPendingPromoteVersionIdIf(
+              anchor.id,
+              pending.id
+            );
+          }
+        }
+      }
+    }
+    // A claim row the trigger opened carries no run id (or its parent's)
+    // until this run's first step stamps it, so it is failed by its own id.
     if (input.targetVariantId) {
       await scopedDb.frameVariants.markTerminal(
         input.targetVariantId,
@@ -651,80 +688,45 @@ export class ImageWorkflow extends OpenStoryWorkflowEntrypoint<ImageWorkflowInpu
       event.instanceId,
       error
     );
+
+    const model = input.model ?? DEFAULT_IMAGE_MODEL;
     if (marked === 0 && !input.targetVariantId && anchor) {
-      // Sort a rowless failure at the click so a newer run stays newer.
+      // The run died before `set-generating-status` opened its row. Record
+      // the failure as its own terminal row, or the shot reads as if nothing
+      // had happened (#1942). The id sorts at the click: a run clicked since
+      // stays newer, so this failure never masks it.
       await scopedDb.frameVariants.appendVersion({
         id: generateIdAt(event.timestamp.getTime()),
         frameId: anchor.id,
         sequenceId: anchor.sequenceId,
         kind: 'model',
-        model: input.model ?? DEFAULT_IMAGE_MODEL,
+        model,
         status: 'failed',
         error,
         workflowRunId: event.instanceId,
         isPrimary: !input.variantOnly,
       });
     }
-  }
-
-  private async persistPreviewFailure({
-    event,
-    error,
-    scopedDb,
-  }: OpenStoryFailureContext<ImageWorkflowInput>): Promise<void> {
-    try {
-      await scopedDb.frameVariants.markFailedByWorkflowRun(
-        event.instanceId,
-        error
-      );
-    } catch (markError) {
-      if (isEngineAbortError(markError)) throw markError;
-      logger.error(
-        `[ImageWorkflow] Failed to fail preview row for run ${event.instanceId}:`,
-        { err: markError }
-      );
+    if (input.sequenceId) {
+      try {
+        await getGenerationChannel(input.sequenceId).emit(
+          'generation.image:progress',
+          {
+            shotId: input.shotId,
+            status: 'failed',
+            model,
+            ...(input.variantOnly ? {} : { error }),
+            variantOnly: input.variantOnly,
+          }
+        );
+      } catch (emitError) {
+        logger.error(
+          `[ImageWorkflow] Failed to emit failure event for sequence ${input.sequenceId} shot ${input.shotId}:`,
+          { err: emitError }
+        );
+      }
     }
-  }
 
-  private async emitFailure(
-    input: ImageWorkflowInput,
-    error: string
-  ): Promise<void> {
-    if (!input.sequenceId || !input.shotId) return;
-    const { sequenceId, shotId } = input;
-    try {
-      await getGenerationChannel(sequenceId).emit('generation.image:progress', {
-        shotId,
-        status: 'failed',
-        model: input.model ?? DEFAULT_IMAGE_MODEL,
-        ...(!input.variantOnly || input.skipStorage ? { error } : {}),
-        ...(input.skipStorage ? {} : { variantOnly: input.variantOnly }),
-      });
-    } catch (emitError) {
-      if (isEngineAbortError(emitError)) throw emitError;
-      logger.error('[ImageWorkflow] Failed to emit failure for shot {shotId}', {
-        shotId,
-        err: emitError,
-      });
-    }
-  }
-
-  protected override async onFailure(
-    failure: OpenStoryFailureContext<ImageWorkflowInput>
-  ): Promise<void> {
-    const { event, error } = failure;
-    const input = event.payload;
-    if (!input.skipStorage && (!input.shotId || !input.organizationId)) return;
-    await runFailureActions([
-      () =>
-        input.skipStorage
-          ? this.persistPreviewFailure(failure)
-          : this.persistFailure(failure),
-      () => this.emitFailure(input, error),
-    ]);
-    if (input.skipStorage) return;
-
-    const model = input.model ?? DEFAULT_IMAGE_MODEL;
     if (isContentRejectionError(error)) {
       logger.warn(
         `[ImageWorkflow] frame ${input.shotId} failed a content checker`,
@@ -738,6 +740,7 @@ export class ImageWorkflow extends OpenStoryWorkflowEntrypoint<ImageWorkflowInpu
         }
       );
     }
+
     logger.error(
       `[ImageWorkflow] Image generation failed for frame ${input.shotId}: ${error}`
     );

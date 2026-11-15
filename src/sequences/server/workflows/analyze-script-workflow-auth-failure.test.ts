@@ -3,10 +3,6 @@ import type { WorkflowEvent } from 'cloudflare:workers';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { AnalyzeScriptWorkflowInput } from '@/platform/server/workflow/types';
 import { asStub } from '@/test/as-stub';
-import {
-  createStoryboardLifecycleStub,
-  storyboardFailureInput,
-} from './storyboard-workflow.test.fixture';
 import { withLlmAuthFailureSource } from '@/platform/server/workflow/llm-auth-failure-source';
 import { sanitizeFailResponse } from '@/platform/server/workflow/sanitize-fail-response';
 
@@ -17,11 +13,6 @@ vi.mock('@/platform/realtime', () => ({
 
 const { AnalyzeScriptWorkflow } = await import('./analyze-script-workflow');
 const ANALYZE_INSTANCE_ID = 'synthetic-analyze-auth-instance';
-const STORYBOARD_OWNER = {
-  workflowRunId: 'synthetic-storyboard-auth-instance',
-  workflowClaimId: 'synthetic-storyboard-auth-claim',
-};
-const AUTH_MESSAGE = 'Your Google API key is invalid — update it in Settings.';
 
 class Probe extends AnalyzeScriptWorkflow {
   failed(
@@ -49,7 +40,6 @@ function makeWorkflow() {
 }
 
 function makeDb() {
-  const methods = createStoryboardLifecycleStub();
   const updateStatus = vi.fn(async () => undefined);
   const markKeyInvalid = vi.fn(async () => undefined);
   const zeroReservation = vi.fn(async () => undefined);
@@ -60,14 +50,12 @@ function makeDb() {
   }));
   const scopedDb = asStub<WorkflowScopedDb>({
     sequence: () => ({ updateStatus }),
-    sequences: methods,
     apiKeys: { markKeyInvalid },
     billing: { zeroReservation },
     credentials: { resolveLlmKey },
   });
   return {
     scopedDb,
-    ...methods,
     updateStatus,
     markKeyInvalid,
     zeroReservation,
@@ -114,7 +102,6 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
     );
     expect(updateStatus).toHaveBeenCalledExactlyOnceWith('failed', message);
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      workflowOwner: undefined,
       message,
     });
     expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('mock-reservation');
@@ -150,12 +137,11 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
       '401 Unauthorized'
     );
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      workflowOwner: undefined,
       message: '401 Unauthorized',
     });
   });
 
-  test('still emits failure when sequence status persistence fails', async () => {
+  test('does not emit failure when sequence status persistence fails', async () => {
     const { scopedDb, updateStatus } = makeDb();
     const persistenceError = new Error('database down');
     updateStatus.mockRejectedValueOnce(persistenceError);
@@ -165,10 +151,7 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
       persistenceError
     );
 
-    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      workflowOwner: undefined,
-      message: 'boom',
-    });
+    expect(emit).not.toHaveBeenCalled();
   });
   test('keeps reservation release best effort for ordinary errors', async () => {
     const { scopedDb, zeroReservation, updateStatus } = makeDb();
@@ -179,12 +162,11 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
     ).resolves.toBeUndefined();
     expect(updateStatus).toHaveBeenCalledExactlyOnceWith('failed', 'boom');
     expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      workflowOwner: undefined,
       message: 'boom',
     });
   });
 
-  test('propagates key invalidation errors after persisting and emitting the fallback', async () => {
+  test('stops before persisting and notifying when key invalidation fails', async () => {
     const { scopedDb, markKeyInvalid, updateStatus } = makeDb();
     const authError = new Error('key invalidation unavailable');
     markKeyInvalid.mockRejectedValueOnce(authError);
@@ -197,17 +179,11 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
     await expect(
       makeWorkflow().failed(childFailure(failure), scopedDb)
     ).rejects.toBe(authError);
-    expect(updateStatus).toHaveBeenCalledExactlyOnceWith(
-      'failed',
-      '401 Unauthorized'
-    );
-    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      workflowOwner: undefined,
-      message: '401 Unauthorized',
-    });
+    expect(updateStatus).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
   });
 
-  test.each(['zeroReservation', 'markKeyInvalid', 'updateStatus'] as const)(
+  test.each(['markKeyInvalid', 'updateStatus'] as const)(
     'stops later actions when %s aborts',
     async (phase) => {
       const db = makeDb();
@@ -224,8 +200,6 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
       await expect(
         makeWorkflow().failed(childFailure(failure), db.scopedDb)
       ).rejects.toBe(abort);
-      if (phase === 'zeroReservation')
-        expect(db.markKeyInvalid).not.toHaveBeenCalled();
       if (phase !== 'updateStatus')
         expect(db.updateStatus).not.toHaveBeenCalled();
       expect(emit).not.toHaveBeenCalled();
@@ -247,132 +221,3 @@ describe('AnalyzeScriptWorkflow sanitized child auth failures (local mocks)', ()
     expect(updateStatus).toHaveBeenCalledExactlyOnceWith('failed', 'boom');
   });
 });
-
-function taggedAuthFailure() {
-  return childFailure(
-    withLlmAuthFailureSource(new Error('401 Unauthorized'), {
-      model: 'google/gemini-3-flash-preview',
-      source: 'organization',
-      via: 'google',
-    })
-  );
-}
-
-// Credential, reservation, guard and realtime services are explicit substitutes here.
-describe('AnalyzeScriptWorkflow parented auth failure actions (service substitutes)', () => {
-  beforeEach(() => {
-    emit.mockReset();
-    emit.mockResolvedValue(undefined);
-  });
-  test(
-    'guards the root owner while preserving the credential-specific message',
-    verifyRootAuthFailure
-  );
-  test(
-    'still handles credentials and reservations after ownership has moved',
-    verifyLostOwnerAuthFailure
-  );
-  test(
-    'does not notify an unpersisted failure and preserves the guard error',
-    verifyGuardFailure
-  );
-  test.each([
-    'Aborting engine: Grace period complete',
-    'Durable Object reset because its code was updated',
-  ])('stops notification when the guard aborts: %s', verifyGuardAbort);
-  test(
-    'an unknown parent still handles credentials and reservations without a terminal write',
-    verifyUnknownParentAuthFailure
-  );
-});
-
-async function verifyRootAuthFailure() {
-  const db = makeDb();
-  await makeWorkflow().failed(taggedAuthFailure(), db.scopedDb, {
-    storyboardOwner: STORYBOARD_OWNER,
-  });
-  expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
-    storyboardFailureInput(
-      { id: 'mock-sequence', ...STORYBOARD_OWNER },
-      AUTH_MESSAGE
-    )
-  );
-  expect(db.updateStatus).not.toHaveBeenCalled();
-  expect(db.markKeyInvalid).toHaveBeenCalledExactlyOnceWith(
-    'google',
-    '401 Unauthorized'
-  );
-  expect(db.zeroReservation).toHaveBeenCalledExactlyOnceWith(
-    'mock-reservation'
-  );
-  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-    workflowOwner: STORYBOARD_OWNER,
-    message: AUTH_MESSAGE,
-  });
-}
-
-async function verifyLostOwnerAuthFailure() {
-  const db = makeDb();
-  db.failWorkflowIfCurrent.mockResolvedValueOnce(false);
-  await makeWorkflow().failed(taggedAuthFailure(), db.scopedDb, {
-    storyboardOwner: STORYBOARD_OWNER,
-  });
-  expect(db.markKeyInvalid).toHaveBeenCalledExactlyOnceWith(
-    'google',
-    '401 Unauthorized'
-  );
-  expect(db.zeroReservation).toHaveBeenCalledExactlyOnceWith(
-    'mock-reservation'
-  );
-  expect(db.updateStatus).not.toHaveBeenCalled();
-  expect(emit).not.toHaveBeenCalled();
-}
-
-async function verifyGuardFailure() {
-  const db = makeDb();
-  const failure = new Error('Synthetic ownership persistence failure');
-  db.failWorkflowIfCurrent.mockRejectedValueOnce(failure);
-  await expect(
-    makeWorkflow().failed(taggedAuthFailure(), db.scopedDb, {
-      storyboardOwner: STORYBOARD_OWNER,
-    })
-  ).rejects.toBe(failure);
-  expect(db.updateStatus).not.toHaveBeenCalled();
-  expect(emit).not.toHaveBeenCalled();
-}
-
-async function verifyGuardAbort(message: string) {
-  const db = makeDb();
-  const failure = new Error(message);
-  db.failWorkflowIfCurrent.mockRejectedValueOnce(failure);
-  await expect(
-    makeWorkflow().failed(taggedAuthFailure(), db.scopedDb, {
-      storyboardOwner: STORYBOARD_OWNER,
-    })
-  ).rejects.toBe(failure);
-  expect(db.markKeyInvalid).toHaveBeenCalledOnce();
-  expect(db.zeroReservation).toHaveBeenCalledOnce();
-  expect(db.updateStatus).not.toHaveBeenCalled();
-  expect(emit).not.toHaveBeenCalled();
-}
-
-async function verifyUnknownParentAuthFailure() {
-  const db = makeDb();
-  await makeWorkflow().failed(taggedAuthFailure(), db.scopedDb, {
-    _parent: {
-      bindingName: 'MOTION_BATCH_WORKFLOW',
-      parentInstanceId: 'synthetic-unknown-parent',
-      eventType: 'synthetic-unknown-parent-done',
-    },
-  });
-  expect(db.markKeyInvalid).toHaveBeenCalledExactlyOnceWith(
-    'google',
-    '401 Unauthorized'
-  );
-  expect(db.zeroReservation).toHaveBeenCalledExactlyOnceWith(
-    'mock-reservation'
-  );
-  expect(db.failWorkflowIfCurrent).not.toHaveBeenCalled();
-  expect(db.updateStatus).not.toHaveBeenCalled();
-  expect(emit).not.toHaveBeenCalled();
-}

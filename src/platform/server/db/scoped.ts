@@ -58,14 +58,8 @@ import { createCharactersMethods } from '@/cast/server/db/characters';
 import { createFramePromptVersionsMethods } from '@/shots/server/db/frame-prompt-versions';
 import { createFrameVariantsMethods } from '@/stills/server/db/frame-variants';
 import { createFramesMethods } from '@/shots/server/db/frames';
-import { createArtifactCancellationMethods } from '@/shots/server/db/artifact-cancellations';
 import { createGeneratedAssetsMethods } from '@/models/server/db/generated-assets';
 import { createScenesMethods } from '@/shots/server/db/scenes';
-import { createStoryboardAutoStyleMethods } from '@/sequences/server/db/storyboard-auto-style';
-import { createStoryboardCastMethods } from '@/sequences/server/db/storyboard-cast';
-import { createStoryboardElementSheetsMethods } from '@/sequences/server/db/storyboard-element-sheets';
-import { createStoryboardReferenceSheetsMethods } from '@/sequences/server/db/storyboard-reference-sheets';
-import type { StoryboardOwner } from '@/sequences/server/db/storyboard-owner';
 import { createProductionReadMethods } from '@/shots/server/db/production-reads';
 import { createSceneScriptVersionsMethods } from '@/shots/server/db/scene-script-versions';
 import { createShotDialogueMethods } from '@/shots/server/db/shot-dialogue';
@@ -415,14 +409,6 @@ export function createScopedDb(organizationId: string, userId: string) {
 
     sequences: createSequencesMethods(db, organizationId, userId),
     sequence: (sequenceId: string) => createSequenceMethods(db, sequenceId),
-    storyboardAutoStyle: (owner: StoryboardOwner) =>
-      createStoryboardAutoStyleMethods(db, organizationId, owner),
-    storyboardCast: (owner: StoryboardOwner) =>
-      createStoryboardCastMethods(db, organizationId, owner),
-    storyboardElementSheets: (owner: StoryboardOwner) =>
-      createStoryboardElementSheetsMethods(db, organizationId, owner),
-    storyboardReferenceSheets: (owner: StoryboardOwner) =>
-      createStoryboardReferenceSheetsMethods(db, organizationId, owner),
 
     styles: createStylesMethods(db, organizationId, userId),
     locations: createLocationsMethods(db, organizationId),
@@ -448,10 +434,6 @@ export function createScopedDb(organizationId: string, userId: string) {
     frames: createFramesMethods(db),
     frameVariants: createFrameVariantsMethods(db),
     framePromptVersions: createFramePromptVersionsMethods(db),
-    artifactCancellations: createArtifactCancellationMethods(
-      db,
-      organizationId
-    ),
     sequenceEvents: createSequenceEventsMethods(db),
     characterSheetVariants: createCharacterSheetVariantsMethods(
       db,

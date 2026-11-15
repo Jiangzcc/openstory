@@ -62,7 +62,6 @@ import {
   type SQL,
 } from 'drizzle-orm';
 import { LIVE_PENDING_STATUSES } from '@/shots/server/db/frame-prompt-versions';
-import { pendingImageDependencyState } from '@/shots/server/db/pending-image-dependency';
 import {
   buildFrameImageSelection,
   type PromotableFrameVariant,
@@ -71,6 +70,7 @@ import { mediaModelName } from '@/sequences/model-label';
 import {
   buildEventInsert,
   buildEventInsertIfPresent,
+  buildEventInsertOnce,
   eventNotLogged,
 } from '@/sequences/server/db/sequence-events';
 
@@ -879,31 +879,24 @@ export function createFrameVariantsMethods(db: Database) {
             sequenceId: input.sequenceId,
             kind: 'model',
             model: input.model,
-            ...pendingImageDependencyState(db, input),
+            status: 'pending',
+            isPrimary: input.isPrimary,
             pendingInputHash: input.pendingInputHash ?? null,
             dependsOnVersionId: input.dependsOnVersionId ?? null,
             workflowRunId: input.workflowRunId ?? null,
             promptVersionId: input.promptVersionId ?? null,
           })
           .returning(),
-        buildEventInsertIfPresent(
-          db,
-          {
-            id,
-            sequenceId: input.sequenceId,
-            actorId: input.actorId,
-            kind: 'image.started',
-            targetType: 'frame',
-            targetId: input.frameId,
-            summary: `Started an image with ${mediaModelName(input.model)}`,
-            data: { model: input.model },
-          },
-          frameVariants,
-          and(
-            eq(frameVariants.id, id),
-            inArray(frameVariants.status, [...LIVE_PENDING_STATUSES])
-          )
-        ),
+        buildEventInsertOnce(db, {
+          id,
+          sequenceId: input.sequenceId,
+          actorId: input.actorId,
+          kind: 'image.started',
+          targetType: 'frame',
+          targetId: input.frameId,
+          summary: `Started an image with ${mediaModelName(input.model)}`,
+          data: { model: input.model },
+        }),
       ]);
       const row = rows[0];
       if (!row) {

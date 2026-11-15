@@ -542,9 +542,6 @@ it('releases the captured hold and preserves the original binding failure', asyn
     { originalAmount: holdAmount('A'), remainingAmount: 0 },
   ]);
   expect(dispatched().params.reservationId).toBe(state.holds[0]?.id);
-  expect(dispatched().params.workflowClaimId).toBe(
-    state.rows[0]?.workflowRunId
-  );
   expect(dispatched().models).toEqual(prepared.modelConfiguration);
   expect(state.funds[0]?.balance).toBe(CAPTURE.startingBalance);
   expect(state.ledger).toEqual([]);

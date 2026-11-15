@@ -1,3 +1,4 @@
+import type { ParentNotifyHint } from '@/platform/server/workflow/await-child';
 /**
  * A continue runs the generation plan's units through the Update-all
  * executor (#1818). These pin the references wave: only the owed sheets,
@@ -12,7 +13,6 @@ import type {
 } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
-import type { ParentNotifyHint } from '@/platform/server/workflow/await-child';
 import type { UpdateStaleShotsWorkflowInput } from '@/platform/server/workflow/types';
 import type { PlanTarget, UpdateStalePlan } from '../update-stale-plan';
 import { DEFAULT_ANALYSIS_MODEL } from '@/models/models.config';
@@ -23,11 +23,6 @@ import { asStub } from '@/test/as-stub';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
 import { createImageModelRoutingSnapshot } from '@/models/image-channels';
-
-const STORYBOARD_OWNER = {
-  workflowRunId: 'synthetic-storyboard-root',
-  workflowClaimId: 'synthetic-storyboard-claim',
-};
 
 const workflowModels = {
   ...DEFAULT_MODEL_CONFIGURATION,
@@ -180,13 +175,6 @@ const claimSheet = vi.fn(async (lookId: string) => ({
 }));
 const failSheetClaim = vi.fn(async () => undefined);
 const claimReference = vi.fn(async (id: string) => `lrv-${id}`);
-const bindReferenceSheets = vi.fn(
-  (_owner: Parameters<WorkflowScopedDb['storyboardReferenceSheets']>[0]) =>
-    asStub<ReturnType<WorkflowScopedDb['storyboardReferenceSheets']>>({
-      characterLooks: { claimSheet, failSheetClaim },
-      locations: { claimReference },
-    })
-);
 const claimMusic = vi.fn(async (): Promise<string | null> => 'music-claim');
 const failMusicClaim = vi.fn(async () => undefined);
 const createPendingVoiceClaim = vi.fn(async (id: string) => ({
@@ -203,7 +191,6 @@ function makeScopedDb(): WorkflowScopedDb {
       getByHashes: async () => new Map(),
     },
     characterLooks: { claimSheet, failSheetClaim },
-    storyboardReferenceSheets: bindReferenceSheets,
     characters: {
       createPendingVoiceClaim,
       markVoiceClaimTerminal: vi.fn(),
@@ -395,161 +382,27 @@ const references = {
   cost: { sheets: 0, voices: 0 },
 };
 
-const referencesWithStaleElementOwner = {
-  ...references,
-  elementSheets: {
-    ...references.elementSheets,
-    storyboardOwner: {
-      workflowRunId: 'synthetic-stale-root',
-      workflowClaimId: 'synthetic-stale-claim',
-    },
-  },
-};
-
 describe('UpdateStaleShotsWorkflow — a continue (#1818)', () => {
   beforeEach(() => {
     spawnAndAwaitChild.mockClear();
     triggerWorkflow.mockClear();
     emit.mockClear();
     failCharacter.clear();
-    bindReferenceSheets.mockClear();
   });
 
-  it.each([STORYBOARD_OWNER, undefined])(
-    'hands trusted root identity to both sheet children: %s',
-    async (storyboardOwner) => {
-      const result = await run(
-        plan({ references: asStub<never>(references) }),
-        { storyboardOwner }
-      );
-      expect(result.failures).toEqual([]);
-      for (const child of [
-        'spawn-character-sheet-ravi',
-        'spawn-location-sheet-hall',
-      ]) {
-        expect(payloadOf(child)).toHaveProperty(
-          'storyboardOwner',
-          storyboardOwner
-        );
-      }
-      if (storyboardOwner) {
-        expect(bindReferenceSheets).toHaveBeenCalledWith({
-          id: 'seq-1',
-          ...storyboardOwner,
-        });
-      } else {
-        expect(bindReferenceSheets).not.toHaveBeenCalled();
-      }
-    }
-  );
-
-  it.each([
-    undefined,
-    'STORYBOARD_WORKFLOW',
-    'UPDATE_STALE_SHOTS_WORKFLOW',
-    'MOTION_WORKFLOW',
-  ] as const)(
-    'passes the explicit root and raw claim to the element child over parent %s and stale payload owner',
-    async (bindingName) => {
-      const result = await run(
-        plan({ references: asStub<never>(referencesWithStaleElementOwner) }),
-        {
-          storyboardOwner: STORYBOARD_OWNER,
-          _parent: bindingName
-            ? {
-                bindingName,
-                parentInstanceId: 'synthetic-other-parent',
-                eventType: 'update-stale-done:synthetic-child',
-              }
-            : undefined,
-        }
-      );
-      expect(result.failures).toEqual([]);
-      expect(payloadOf('spawn-element-sheets')).toHaveProperty(
-        'storyboardOwner',
-        STORYBOARD_OWNER
-      );
-    }
-  );
-
-  it('falls back to the actual Storyboard parent for the element child without inferring a raw claim', async () => {
-    const parent: ParentNotifyHint = {
-      bindingName: 'STORYBOARD_WORKFLOW',
-      parentInstanceId: 'synthetic-storyboard-parent',
-      eventType: 'update-stale-done:synthetic-child',
-    };
-    const result = await run(
-      plan({ references: asStub<never>(referencesWithStaleElementOwner) }),
-      { _parent: parent }
-    );
-    expect(result.failures).toEqual([]);
-    expect(payloadOf('spawn-element-sheets')).toHaveProperty(
-      'storyboardOwner',
-      {
-        workflowRunId: parent.parentInstanceId,
-      }
-    );
-    expect(payloadOf('spawn-element-sheets')).not.toHaveProperty(
-      'storyboardOwner.workflowClaimId'
-    );
-  });
-
-  it.each([
-    undefined,
-    'UPDATE_STALE_SHOTS_WORKFLOW',
-    'MOTION_WORKFLOW',
-  ] as const)(
-    'does not invent an element child root from parent %s or a stale payload owner',
-    async (bindingName) => {
-      const result = await run(
-        plan({ references: asStub<never>(referencesWithStaleElementOwner) }),
-        {
-          _parent: bindingName
-            ? {
-                bindingName,
-                parentInstanceId: 'synthetic-other-parent',
-                eventType: 'update-stale-done:synthetic-child',
-              }
-            : undefined,
-        }
-      );
-      expect(result.failures).toEqual([]);
-      expect(payloadOf('spawn-element-sheets')).toHaveProperty(
-        'storyboardOwner',
-        undefined
-      );
-    }
-  );
-
-  it.each([
-    { freshRun: true, storyboardOwner: STORYBOARD_OWNER },
-    { freshRun: true, storyboardOwner: undefined },
-    { freshRun: false, storyboardOwner: STORYBOARD_OWNER },
-    { freshRun: false, storyboardOwner: undefined },
-  ])(
-    'preserves reference phase notifications for owner $storyboardOwner, fresh=$freshRun',
-    async (options) => {
-      await run(plan({ references: asStub<never>(references) }), options);
+  it.each([true, false])(
+    'preserves reference phase notifications, fresh=%s',
+    async (freshRun) => {
+      await run(plan({ references: asStub<never>(references) }), { freshRun });
       const phases = emit.mock.calls.filter(([event]) =>
         event.startsWith('generation.phase:')
       );
       expect(phases).toEqual([
         [
           'generation.phase:start',
-          {
-            phase: 2,
-            phaseName: 'Generating sheets & voices…',
-            workflowOwner: options.storyboardOwner,
-          },
+          { phase: 2, phaseName: 'Generating sheets & voices…' },
         ],
-        ...(options.freshRun
-          ? [
-              [
-                'generation.phase:complete',
-                { phase: 2, workflowOwner: options.storyboardOwner },
-              ],
-            ]
-          : []),
+        ...(freshRun ? [['generation.phase:complete', { phase: 2 }]] : []),
       ]);
     }
   );

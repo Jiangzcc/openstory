@@ -57,26 +57,6 @@ describe('realtimeChannel emit', () => {
   });
 });
 
-describe('generation lifecycle owner transport', () => {
-  it('posts the explicit instance and claim in the durable event payload', async () => {
-    const workflowOwner = {
-      workflowRunId: 'actual-instance',
-      workflowClaimId: 'raw/claim',
-    };
-    await getGenerationChannel('sequence').emit('generation.failed', {
-      message: 'failure',
-      workflowOwner,
-    });
-    expect(lastBody()).toEqual({
-      event: 'generation.failed',
-      data: { message: 'failure', workflowOwner },
-    });
-    expect(fetchMock.mock.calls.at(-1)?.[0]).toBe(
-      'https://realtime.do/emit?channel=sequence'
-    );
-  });
-});
-
 describe('best-effort emit failures', () => {
   it.each([HTTP_STATUS.badRequest, HTTP_STATUS.serviceUnavailable])(
     'resolves for an HTTP %i response',

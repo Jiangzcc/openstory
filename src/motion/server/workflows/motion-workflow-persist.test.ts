@@ -16,7 +16,7 @@
  *     to `shots`.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { NewShot, NewVideoVariant } from '@/platform/server/db/schema';
 import type { RecordEventInput } from '@/sequences/server/db/sequence-events';
 import {
@@ -61,8 +61,6 @@ function buildScopedDbSpy(
      * `set-generating-status` appended its version.
      */
     markFailedRows?: number;
-    /** Simulate a failed write while persisting the failure state. */
-    markFailedError?: Error;
     /** Simulate a user cancel winning the race against completion (#1108). */
     completionCancelled?: boolean;
     /** The shot's live motion-prompt pointer, for the rescue CAS. */
@@ -157,7 +155,6 @@ function buildScopedDbSpy(
       },
       markFailedByWorkflowRun: async (runId, error) => {
         callOrder.push('videoVariants.markFailedByWorkflowRun');
-        if (opts.markFailedError) throw opts.markFailedError;
         markFailed.push({ runId, error });
         return opts.markFailedRows ?? 1;
       },
@@ -567,135 +564,4 @@ describe('persistMotionFailure', () => {
     expect(spy.markFailed).toEqual([{ runId: 'run-9', error: 'fal 500' }]);
     expect(spy.appended).toEqual([]);
   });
-
-  it('attempts failure notification and rejects a persistence error for retry', async () => {
-    const failure = new Error('database down');
-    const spy = buildScopedDbSpy({ markFailedError: failure });
-    const emits: Array<{ event: string; payload: MotionVideoProgressPayload }> =
-      [];
-    await expect(
-      persistMotionFailure({
-        scopedDb: spy.scopedDb,
-        shotId: 'f1',
-        model: 'veo3',
-        error: 'fal 500',
-        workflowRunId: 'run-9',
-        emit: async (event, payload) => {
-          emits.push({ event, payload });
-        },
-      })
-    ).rejects.toBe(failure);
-    expect(emits).toEqual([
-      {
-        event: 'generation.video:progress',
-        payload: {
-          shotId: 'f1',
-          status: 'failed',
-          model: 'veo3',
-          error: 'fal 500',
-        },
-      },
-    ]);
-  });
-
-  it('does not notify after an engine interruption during failure persistence', async () => {
-    const abort = new Error('Aborting engine: Grace period complete');
-    const spy = buildScopedDbSpy({ markFailedError: abort });
-    const emits: MotionVideoProgressPayload[] = [];
-    await expect(
-      persistMotionFailure({
-        scopedDb: spy.scopedDb,
-        shotId: 'f1',
-        model: 'veo3',
-        error: 'fal 500',
-        workflowRunId: 'run-9',
-        emit: async (_event, payload) => {
-          emits.push(payload);
-        },
-      })
-    ).rejects.toBe(abort);
-    expect(emits).toEqual([]);
-  });
-
-  it('propagates a notification failure after recording the failed version', async () => {
-    const notifyError = new Error('channel unavailable');
-    const spy = buildScopedDbSpy();
-    await expect(
-      persistMotionFailure({
-        scopedDb: spy.scopedDb,
-        shotId: 'f1',
-        model: 'veo3',
-        error: 'fal 500',
-        workflowRunId: 'run-9',
-        emit: async () => {
-          throw notifyError;
-        },
-      })
-    ).rejects.toBe(notifyError);
-    expect(spy.markFailed).toEqual([{ runId: 'run-9', error: 'fal 500' }]);
-  });
-  it.each([
-    {
-      label: 'shot lookup',
-      fail: (db: PersistMotionScopedDb, error: Error) => {
-        db.liveRead.shots.getById = async () => {
-          throw error;
-        };
-      },
-    },
-    {
-      label: 'segment lookup',
-      fail: (db: PersistMotionScopedDb, error: Error) => {
-        db.liveRead.renderSegments.getById = async () => {
-          throw error;
-        };
-      },
-    },
-    {
-      label: 'claim lookup',
-      fail: (db: PersistMotionScopedDb, error: Error) => {
-        db.claims.videoVariants.getById = async () => {
-          throw error;
-        };
-      },
-    },
-    {
-      label: 'promotion cleanup',
-      fail: (db: PersistMotionScopedDb, error: Error) => {
-        db.renderSegments.clearPendingPromoteVersionIdIf = async () => {
-          throw error;
-        };
-      },
-    },
-    {
-      label: 'terminal version append',
-      fail: (db: PersistMotionScopedDb, error: Error) => {
-        db.videoVariants.appendVersion = async () => {
-          throw error;
-        };
-      },
-    },
-  ])(
-    'attempts notification and propagates a failed $label',
-    async ({ fail }) => {
-      const failure = new Error('D1 unavailable');
-      const spy = buildScopedDbSpy({ markFailedRows: 0 });
-      fail(spy.scopedDb, failure);
-      const emit = vi.fn(async () => undefined);
-      await expect(
-        persistMotionFailure({
-          scopedDb: spy.scopedDb,
-          shotId: 'f1',
-          model: 'veo3',
-          error: 'fal 500',
-          workflowRunId: 'run-1',
-          emit,
-        })
-      ).rejects.toBe(failure);
-      expect(emit).toHaveBeenCalledWith(
-        'generation.video:progress',
-        expect.objectContaining({ shotId: 'f1', status: 'failed' })
-      );
-    }
-  );
 });

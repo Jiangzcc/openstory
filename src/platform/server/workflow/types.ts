@@ -4,8 +4,6 @@
 
 import type { WorkflowModelConfiguration } from '@/models/model-runtime-configuration';
 import type { Locale } from '@/platform/i18n/locale';
-import type { GenerationWorkflowOwner } from '@/platform/realtime/schema';
-import type { ParentNotifyHint } from './await-child';
 import type { VoiceProvider } from '@/cast/seed-voice';
 import type { AspectRatio, ImageSize } from '@/models/aspect-ratios';
 import type {
@@ -276,8 +274,6 @@ export interface ShotVariantWorkflowResult {
  * asked for. Call sites build the smaller {@link StoryboardTriggerInput}.
  */
 export interface StoryboardWorkflowInput extends SequenceWorkflowContext {
-  /** Trusted alias for the slot reserved by this root's launcher. */
-  workflowClaimId?: string;
   title: string;
   script: string;
   /** Request country captured at launch; only a fallback for character background. */
@@ -395,7 +391,6 @@ export interface StoryboardWorkflowInput extends SequenceWorkflowContext {
  */
 export type StoryboardTriggerInput = Omit<
   StoryboardWorkflowInput,
-  | 'workflowClaimId'
   | 'stopAt'
   | 'includeMusic'
   | 'title'
@@ -423,10 +418,6 @@ export type StoryboardTriggerInput = Omit<
  * Analyze scenes workflow input
  */
 export interface AnalyzeScriptWorkflowInput extends SequenceWorkflowContext {
-  /** Server-snapshotted Storyboard owner, including its unpublished launcher claim. */
-  storyboardOwner?: GenerationWorkflowOwner;
-  /** Direct-parent notification metadata injected by spawnAndAwaitChild. */
-  _parent?: ParentNotifyHint;
   // Required inputs
   script: string;
   /** @see StoryboardWorkflowInput.userCountry — passed straight through. */
@@ -482,7 +473,6 @@ export interface AnalyzeScriptWorkflowInput extends SequenceWorkflowContext {
  * Scene split workflow input
  */
 export type SceneSplitWorkflowInput = SequenceWorkflowContext & {
-  storyboardOwner?: GenerationWorkflowOwner;
   promptName: string;
   modelId: AnalysisModelId;
   aspectRatio: AspectRatio;
@@ -549,8 +539,6 @@ export type ElementSheetEntry = ElementBibleEntry & {
 
 export interface ElementSheetWorkflowInput extends UserWorkflowContext {
   sequenceId: string;
-  storyboardOwner?: GenerationWorkflowOwner;
-  _parent?: ParentNotifyHint;
   /** Element bible entries with no matching uploaded element */
   entries: ElementSheetEntry[];
   /** Image model to use (defaults to DEFAULT_IMAGE_MODEL) */
@@ -870,8 +858,6 @@ export interface CharacterSheetWorkflowInput extends Omit<
   SequenceWorkflowContext,
   'sequenceId'
 > {
-  storyboardOwner?: GenerationWorkflowOwner;
-  _parent?: ParentNotifyHint;
   /**
    * The sequence the sheet was asked from, for its events and the run's
    * storage path; null from the Characters page (#2017), where the run
@@ -1013,7 +999,6 @@ export type RegenerateShotSnapshot = {
  * gap on the same terms.
  */
 export interface UpdateStaleShotsWorkflowInput extends SequenceWorkflowContext {
-  storyboardOwner?: GenerationWorkflowOwner;
   /** Fresh handoff announces each phase in order; existing continue keeps its schedule. */
   freshRun?: boolean;
   sequenceId: string;
@@ -1283,8 +1268,6 @@ export interface LocationSheetWorkflowInput extends Omit<
   SequenceWorkflowContext,
   'sequenceId'
 > {
-  storyboardOwner?: GenerationWorkflowOwner;
-  _parent?: ParentNotifyHint;
   sequenceId: string | null;
   /** locations.id */
   locationDbId: string;

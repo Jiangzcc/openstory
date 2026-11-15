@@ -1,14 +1,23 @@
-import { and, eq, exists, isNull, notExists, or, sql } from 'drizzle-orm';
-import type { SQL } from 'drizzle-orm';
+import {
+  and,
+  eq,
+  exists,
+  getTableColumns,
+  is,
+  isNull,
+  notExists,
+  or,
+  SQL,
+  sql,
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
+import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 import type { Database } from '@/platform/server/db/client';
 import { sequenceElements, sequences } from '@/platform/server/db/schema';
 import type {
   NewSequenceElement,
   SequenceElement,
 } from '@/platform/server/db/schema';
-import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
-import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 
 export type GeneratedElementPublication = Pick<
   NewSequenceElement,
@@ -54,8 +63,7 @@ function publicationIdentity(db: Database, data: GeneratedElementPublication) {
 function publicationTarget(
   db: Database,
   organizationId: string,
-  data: GeneratedElementPublication,
-  scope?: StoryboardContentScope
+  data: GeneratedElementPublication
 ) {
   const parent = exists(
     db
@@ -69,11 +77,10 @@ function publicationTarget(
       )
   );
   const identity = publicationIdentity(db, data);
-  const admission = and(parent, scope?.sequence(data.sequenceId));
   return {
-    insert: and(admission, identity.absent),
+    insert: and(parent, identity.absent),
     candidate: and(
-      admission,
+      parent,
       eq(sequenceElements.sequenceId, data.sequenceId),
       isNull(sequenceElements.deletedAt),
       identity.candidate
@@ -83,14 +90,13 @@ function publicationTarget(
 
 export function createElementSheetPublicationMethods(
   db: Database,
-  organizationId: string,
-  scope?: StoryboardContentScope
+  organizationId: string
 ) {
   return {
     publishGenerated: async (
       data: GeneratedElementPublication
     ): Promise<SequenceElement> => {
-      const target = publicationTarget(db, organizationId, data, scope);
+      const target = publicationTarget(db, organizationId, data);
       const update = db
         .update(sequenceElements)
         .set({
@@ -107,11 +113,17 @@ export function createElementSheetPublicationMethods(
             )
           )
         );
-      const insert = insertWithStoryboardGuard(
-        db,
-        sequenceElements,
-        [data],
-        target.insert
+      const values = new Map<string, unknown>(Object.entries(data));
+      const columns = Object.entries(getTableColumns(sequenceElements)).filter(
+        ([, column]) => !column.generated
+      );
+      const insert = db.insert(sequenceElements).select(
+        sql`select ${sql.join(
+          columns.map(([key, column]) =>
+            publicationValue(column, values.get(key))
+          ),
+          sql`, `
+        )} where ${target.insert}`
       );
       const read = publicationRead(db, target.candidate);
       const [, , [result]] = await db.batch([update, insert, read]);
@@ -119,6 +131,16 @@ export function createElementSheetPublicationMethods(
       return result.element;
     },
   };
+}
+
+function publicationValue(column: AnySQLiteColumn, supplied: unknown): SQL {
+  let value = supplied;
+  if (value === undefined) {
+    value = column.defaultFn ? column.defaultFn() : column.default;
+    if (value == null) value = column.onUpdateFn?.() ?? null;
+    if (value === null) return sql`null`;
+  }
+  return is(value, SQL) ? value : sql`${sql.param(value, column)}`;
 }
 
 function publicationRead(db: Database, candidate: SQL | undefined) {

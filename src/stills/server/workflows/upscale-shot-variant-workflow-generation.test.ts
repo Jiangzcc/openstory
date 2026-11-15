@@ -30,6 +30,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../image-generation', () => ({
   generateImageWithProvider: mocks.generate,
 }));
+// Mock paid generation while retaining configured quotes.
+vi.mock('../configured-image-generation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../configured-image-generation')>()),
+  generateConfiguredImage: mocks.generate,
+}));
 vi.mock('../image-storage', () => ({ uploadImageToStorage: mocks.upload }));
 vi.mock('@/billing/server/preflight', () => ({
   requireCredits: mocks.requireCredits,

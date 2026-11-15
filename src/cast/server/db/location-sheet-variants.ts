@@ -31,12 +31,10 @@ import { buildEventInsert } from '@/sequences/server/db/sequence-events';
 import type { LocationSheetInputHash } from '@/shots/input-hash';
 import { landLocationReference } from './sheet-claims';
 import { locationBibleColumns } from './bible-versions';
-import type { StoryboardCastScope } from '@/sequences/server/db/storyboard-cast-scope';
 
 export function createLocationSheetVariantsMethods(
   db: Database,
-  organizationId: string,
-  scope?: StoryboardCastScope
+  organizationId: string
 ) {
   /** The row belongs to one of this organization's locations. */
   const ofOrganization = sql`EXISTS (SELECT 1 FROM sequence_locations l WHERE l.id = ${locationSheetVariants.locationId} AND l.organization_id = ${organizationId})`;
@@ -357,7 +355,7 @@ export function createLocationSheetVariantsMethods(
       args: Parameters<typeof landLocationReference>[2]
     ) => {
       await requireLocation(args.locationId);
-      return landLocationReference(db, organizationId, args, scope);
+      return landLocationReference(db, organizationId, args);
     },
 
     /**

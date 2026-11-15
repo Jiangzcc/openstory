@@ -27,7 +27,7 @@ import {
   type SelectableFrameVariantKind,
   isSelectableFrameVariantKind,
 } from '@/platform/server/db/schema/frame-variants';
-import { and, asc, desc, eq, exists, inArray, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { pageOf } from '@/platform/server/db/read-page';
 import type { PageOptions } from '@/platform/server/db/read-page';
 
@@ -113,22 +113,6 @@ export type FrameUpdateInput = Omit<Partial<NewFrame>, FrameMirrorColumn>;
 // ceiling (#1322). Unit tests enforce the
 // same cap (`src/platform/server/db/test-d1.ts`).
 const FRAMES_BY_IDS_BATCH = 90;
-
-const CANCELLED_IMAGE_CLAIM_STATUS = 'cancelled';
-
-function imageClaimAvailable(db: Database, versionId: string) {
-  return exists(
-    db
-      .select({ id: frameVariants.id })
-      .from(frameVariants)
-      .where(
-        and(
-          eq(frameVariants.id, versionId),
-          ne(frameVariants.status, CANCELLED_IMAGE_CLAIM_STATUS)
-        )
-      )
-  );
-}
 
 export function createFramesMethods(db: Database) {
   return {
@@ -313,12 +297,7 @@ export function createFramesMethods(db: Database) {
       await db
         .update(frames)
         .set({ pendingPromoteVersionId: versionId, updatedAt: new Date() })
-        .where(
-          and(
-            eq(frames.id, frameId),
-            versionId === null ? undefined : imageClaimAvailable(db, versionId)
-          )
-        );
+        .where(eq(frames.id, frameId));
     },
 
     /**
@@ -358,7 +337,6 @@ export function createFramesMethods(db: Database) {
         .where(
           and(
             eq(frames.id, frameId),
-            imageClaimAvailable(db, toVersionId),
             inArray(frames.pendingPromoteVersionId, [
               fromVersionId,
               toVersionId,

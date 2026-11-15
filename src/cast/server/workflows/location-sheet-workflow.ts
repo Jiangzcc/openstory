@@ -21,13 +21,9 @@ import {
   STORAGE_BUCKETS,
 } from '@/platform/server/storage/buckets';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import { storeGeneratedPng } from '@/stills/server/image-storage';
 import { generateImageSoftening } from '@/stills/server/workflows/content-soften';
-import {
-  isEngineAbortError,
-  WorkflowValidationError,
-} from '@/platform/server/workflow/errors';
+import { WorkflowValidationError } from '@/platform/server/workflow/errors';
 import type {
   LocationSheetWorkflowInput,
   LocationSheetWorkflowResult,
@@ -35,7 +31,6 @@ import type {
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { landSheetRun } from './sheet-divergence';
 import { triggerSheetPortrait } from '@/cast/server/sheets/sheet-portrait-trigger';
-import { bindReferenceSheetOutput } from './reference-sheet-output';
 import type { SheetRunOutcome } from './sheet-divergence';
 import {
   assertQueuedWithLocationRendering,
@@ -46,27 +41,6 @@ import { locationChannelId } from '@/cast/cast-channel';
 import { getLogger } from '@/platform/logger';
 
 const logger = getLogger(['openstory', 'workflow', 'location-sheet']);
-
-async function emitLocationSheetFailure(
-  input: LocationSheetWorkflowInput,
-  error: string
-): Promise<void> {
-  try {
-    await getGenerationChannel(
-      locationChannelId(input.sequenceId, input.locationDbId)
-    ).emit('generation.location-sheet:progress', {
-      locationId: input.locationDbId,
-      status: 'failed',
-      error,
-    });
-  } catch (emitError) {
-    if (isEngineAbortError(emitError)) throw emitError;
-    logger.error(
-      '[LocationSheetWorkflow:cf] Failed to emit failure event for location {locationDbId}',
-      { locationDbId: input.locationDbId, err: emitError }
-    );
-  }
-}
 
 export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationSheetWorkflowInput> {
   protected override readonly failureLabel = 'Location sheet';
@@ -246,10 +220,7 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
         const versionId = input.referenceVersionId ?? generateId();
         return landSheetRun({
           land: () =>
-            bindReferenceSheetOutput(
-              scopedDb,
-              input
-            ).locationSheetVariants.promoteIfPending({
+            scopedDb.locationSheetVariants.promoteIfPending({
               locationId: locationDbId,
               versionId,
               claimed,
@@ -372,19 +343,32 @@ export class LocationSheetWorkflow extends OpenStoryWorkflowEntrypoint<LocationS
 
     // Mark location reference as failed — through the claim (#1113).
     if (input.locationDbId && input.organizationId) {
-      await runFailureActions([
-        () =>
-          bindReferenceSheetOutput(
-            scopedDb,
-            input
-          ).locations.failReferenceClaim(
-            input.locationDbId,
-            // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
-            input.referenceVersionId ?? null,
-            error
-          ),
-        () => emitLocationSheetFailure(input, error),
-      ]);
+      await scopedDb.locations.failReferenceClaim(
+        input.locationDbId,
+        // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
+        input.referenceVersionId ?? null,
+        error
+      );
+
+      // Emit failure event for realtime UI update
+      {
+        try {
+          await getGenerationChannel(
+            locationChannelId(input.sequenceId, input.locationDbId)
+          ).emit('generation.location-sheet:progress', {
+            locationId: input.locationDbId,
+            status: 'failed',
+            error,
+          });
+        } catch (emitError) {
+          logger.error(
+            `[LocationSheetWorkflow:cf] Failed to emit failure event for location ${input.locationDbId}:`,
+            {
+              err: emitError,
+            }
+          );
+        }
+      }
 
       logger.error(
         `[LocationSheetWorkflow:cf] Reference generation failed for location ${input.locationName}: ${error}`

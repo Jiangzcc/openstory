@@ -32,7 +32,6 @@ import type {
 } from '@/platform/server/db/schema';
 import type { RecordEventInput } from '@/sequences/server/db/sequence-events';
 import type { VideoManifestInputHash } from '@/shots/input-hash';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 
 export type MotionStorageResult = { url: string; path: string };
 
@@ -345,7 +344,7 @@ export function rescuedMotionPromptOf(
  * refetch. When the mark matches nothing, a terminal `failed` row is appended
  * so the failure survives.
  */
-type MotionFailureOptions = {
+export async function persistMotionFailure(opts: {
   scopedDb: PersistMotionScopedDb;
   shotId: string;
   model: string;
@@ -354,45 +353,42 @@ type MotionFailureOptions = {
   emit: MotionEmit;
   /** Variant-only (#547): an added-model render, not the shot's primary. */
   variantOnly?: boolean;
-};
+}): Promise<void> {
+  const { scopedDb, shotId, model, error, workflowRunId, emit, variantOnly } =
+    opts;
 
-async function clearFailedMotionPromotion(
-  scopedDb: PersistMotionScopedDb,
-  renderSegmentId: string,
-  workflowRunId: string
-): Promise<void> {
-  const segment =
-    await scopedDb.liveRead.renderSegments.getById(renderSegmentId);
-  if (!segment?.pendingPromoteVersionId) return;
-  const pending = await scopedDb.claims.videoVariants.getById(
-    segment.pendingPromoteVersionId
-  );
-  if (pending?.workflowRunId === workflowRunId) {
-    await scopedDb.renderSegments.clearPendingPromoteVersionIdIf(
-      renderSegmentId,
-      pending.id
-    );
-  }
-}
-
-async function persistMotionFailureState(
-  opts: MotionFailureOptions
-): Promise<void> {
-  const { scopedDb, shotId, model, error, workflowRunId, variantOnly } = opts;
+  // Needed for the auto-promote drop below AND to append a terminal row if the
+  // run failed before it had one, so fetch once regardless of `variantOnly`.
   const shot = await scopedDb.liveRead.shots.getById(shotId);
+
   if (!variantOnly && shot?.renderSegmentId) {
-    await clearFailedMotionPromotion(
-      scopedDb,
-      shot.renderSegmentId,
-      workflowRunId
+    // Drop auto-promote if this run owned it (#1070).
+    const segment = await scopedDb.liveRead.renderSegments.getById(
+      shot.renderSegmentId
     );
+    if (segment?.pendingPromoteVersionId) {
+      const pending = await scopedDb.claims.videoVariants.getById(
+        segment.pendingPromoteVersionId
+      );
+      if (pending?.workflowRunId === workflowRunId) {
+        await scopedDb.renderSegments.clearPendingPromoteVersionIdIf(
+          shot.renderSegmentId,
+          pending.id
+        );
+      }
+    }
   }
+
   const marked = await scopedDb.videoVariants.markFailedByWorkflowRun(
     workflowRunId,
     error
   );
+
   if (marked === 0 && shot?.renderSegmentId) {
-    // A run with no version still needs a terminal row, with no consumed inputs.
+    // The run died before `set-generating-status` appended its version
+    // (insufficient credits, "shot has no scene"). Record the failure as its
+    // own terminal row so the shot doesn't silently revert to 'pending'.
+    // An empty manifest is honest: this render consumed no inputs.
     await scopedDb.videoVariants.appendVersion({
       renderSegmentId: shot.renderSegmentId,
       sequenceId: shot.sequenceId,
@@ -404,21 +400,15 @@ async function persistMotionFailureState(
       isPrimary: !variantOnly,
     });
   }
-}
 
-export async function persistMotionFailure(
-  opts: MotionFailureOptions
-): Promise<void> {
-  const { shotId, model, error, emit, variantOnly } = opts;
-  await runFailureActions([
-    () => persistMotionFailureState(opts),
-    () =>
-      emit('generation.video:progress', {
-        shotId,
-        status: 'failed',
-        model,
-        ...(variantOnly ? {} : { error }),
-        variantOnly,
-      }),
-  ]);
+  await emit('generation.video:progress', {
+    shotId,
+    status: 'failed',
+    model,
+    // Carry the reason so the cache updater writes `videoError` live (skip for
+    // variant-only — the primary row isn't touched). (#881)
+    ...(variantOnly ? {} : { error }),
+    // A failed alternate must not flip the primary video to `failed` in cache.
+    variantOnly,
+  });
 }

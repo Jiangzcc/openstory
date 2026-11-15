@@ -1,14 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { NonRetryableError } from 'cloudflare:workflows';
 import { generateId } from '@/platform/id';
 import { sequenceElements, sequences } from '@/platform/server/db/schema';
 import { STORAGE_BUCKETS } from '@/platform/server/storage/buckets';
-import {
-  StoryboardContentOwnershipCheckError,
-  StoryboardContentOwnershipError,
-} from '@/sequences/server/db/storyboard-content-scope';
-import { bindElementSheetOutput } from './element-sheet-output';
 import { MAX_AUTO_ELEMENTS } from './cast-records';
 import {
   COST,
@@ -125,7 +119,6 @@ it('publishes a new reference with original generation, durable steps and accoun
     'deduct-credits-0',
     'record-provenance-0',
     'ingest-element-0',
-    'check-element-sheet-completion',
   ]);
   expectGenerationContract();
 });
@@ -205,55 +198,6 @@ it.each(['id', 'token'] as const)(
   }
 );
 
-it('admits the explicitly trusted raw claim without treating the child ID as its owner', async () => {
-  await fixture.db
-    .update(sequences)
-    .set({ workflowRunId: fixture.owner.workflowClaimId })
-    .where(eq(sequences.id, fixture.sequenceId));
-  await expect(fixture.run()).resolves.toEqual({
-    elements: [expect.objectContaining({ imageUrl: STORED.url })],
-  });
-});
-
-it('rejects a lost root before generation inside the existing preflight step', async () => {
-  await changeRoot(fixture);
-  await expect(fixture.run()).rejects.toBeInstanceOf(NonRetryableError);
-  expect(fixture.errors.get('check-existing-element-0')).toBeInstanceOf(
-    NonRetryableError
-  );
-  expect(generation).not.toHaveBeenCalled();
-  expect(debit).not.toHaveBeenCalled();
-});
-
-it('records spent usage and provenance before rejecting publication after a takeover', async () => {
-  faults.afterGeneration = async () => {
-    await changeRoot(fixture);
-  };
-  await expect(fixture.run()).rejects.toBeInstanceOf(NonRetryableError);
-  const error = fixture.errors.get('ingest-element-0');
-  expect(error).toBeInstanceOf(NonRetryableError);
-  expect(error).toHaveProperty(
-    'cause',
-    expect.any(StoryboardContentOwnershipError)
-  );
-  const facts = await elementFacts(fixture);
-  expect(facts.elements).toEqual([]);
-  expectCostAndProvenance(facts);
-});
-
-it('does not lose accounting when replay resumes from a cached generation after takeover', async () => {
-  debit.mockRejectedValueOnce(new Error('Synthetic debit interruption'));
-  await expect(fixture.run()).rejects.toThrow('Synthetic debit interruption');
-  await changeRoot(fixture);
-  debit.mockClear();
-  await expect(fixture.run()).rejects.toBeInstanceOf(NonRetryableError);
-  expect(generation).toHaveBeenCalledTimes(2);
-  expect(store).toHaveBeenCalledTimes(1);
-  const facts = await elementFacts(fixture);
-  expect(facts.elements).toEqual([]);
-  expectCostAndProvenance(facts);
-});
-
 it('rejects a deleted identity after spend without resurrecting it', async () => {
   await seedElement(fixture);
   faults.afterGeneration = async () => {
@@ -281,7 +225,6 @@ it('rejects a tombstoned ID rather than falling back to an uploaded token', asyn
 it('validates sequence organization before returning an uploaded element', async () => {
   await seedElement(fixture, UPLOADED);
   fixture.input.sequenceId = generateId();
-  delete fixture.input.storyboardOwner;
   await expect(fixture.run()).rejects.toThrow('Sequence not found');
   expect(generation).not.toHaveBeenCalled();
   expect(debit).not.toHaveBeenCalled();
@@ -304,53 +247,11 @@ it('rejects a foreign-sequence ID even when the requested token exists locally',
 });
 
 it('keeps the ownerless standalone entry point while using atomic publication', async () => {
-  delete fixture.input.storyboardOwner;
   await changeRoot(fixture);
   await expect(fixture.run()).resolves.toEqual({
     elements: [expect.objectContaining({ imageUrl: STORED.url })],
   });
   expect(fixture.steps).not.toContain('check-element-sheet-completion');
-});
-
-it('checks an empty root-bound completion without manufacturing generation or cost', async () => {
-  fixture.input.entries = [];
-  await changeRoot(fixture);
-  await expect(fixture.run()).rejects.toBeInstanceOf(NonRetryableError);
-  expect(fixture.steps).toEqual(['check-element-sheet-completion']);
-  expect(generation).not.toHaveBeenCalled();
-  expect(debit).not.toHaveBeenCalled();
-});
-
-it('checks a root after cached element steps without writing their old result again', async () => {
-  const original = await fixture.run();
-  fixture.cache.delete('check-element-sheet-completion');
-  await changeRoot(fixture);
-  await expect(fixture.run()).rejects.toBeInstanceOf(NonRetryableError);
-  expect(debit).toHaveBeenCalledTimes(1);
-  expect((await elementFacts(fixture)).elements[0]?.id).toBe(
-    original.elements[0]?.id
-  );
-});
-
-it('preserves retryable ownership-check causes and engine-abort identity across allSettled', async () => {
-  const bound = fixture.scope.storyboardElementSheets({
-    id: fixture.sequenceId,
-    ...fixture.owner,
-  });
-  const cause = new Error('Synthetic ownership read outage');
-  const errors = [
-    new StoryboardContentOwnershipCheckError(cause),
-    new Error('Aborting engine: Grace period complete'),
-  ];
-  vi.spyOn(fixture.scope, 'storyboardElementSheets').mockReturnValue(bound);
-  const check = vi.spyOn(bound, 'withOwnership');
-  for (const error of errors) {
-    check.mockRejectedValueOnce(error);
-    await expect(fixture.run()).rejects.toBe(error);
-    expect(fixture.errors.get('check-existing-element-0')).toBe(error);
-  }
-  expect(errors[0]).toHaveProperty('cause', cause);
-  expect(generation).not.toHaveBeenCalled();
 });
 
 it('stops publication when provenance fails after debit', async () => {
@@ -383,25 +284,6 @@ it('caps entries and lets sibling pipelines finish before ordinary failure aggre
     MAX_AUTO_ELEMENTS - 1
   );
   expect(debit).toHaveBeenCalledTimes(MAX_AUTO_ELEMENTS - 1);
-});
-
-it('binds only explicit owners or real Storyboard parent metadata', async () => {
-  delete fixture.input.storyboardOwner;
-  const bind = vi.spyOn(fixture.scope, 'storyboardElementSheets');
-  fixture.input._parent = {
-    bindingName: 'STORYBOARD_WORKFLOW',
-    parentInstanceId: fixture.owner.workflowRunId,
-    eventType: 'synthetic-child-done',
-  };
-  bindElementSheetOutput(fixture.scope, fixture.input);
-  expect(bind).toHaveBeenCalledExactlyOnceWith({
-    id: fixture.sequenceId,
-    workflowRunId: fixture.owner.workflowRunId,
-  });
-  bind.mockClear();
-  fixture.input._parent.bindingName = 'UPDATE_STALE_SHOTS_WORKFLOW';
-  bindElementSheetOutput(fixture.scope, fixture.input);
-  expect(bind).not.toHaveBeenCalled();
 });
 
 it('preserves an upload arriving after the last empty read at publication SQL', async () => {
@@ -437,17 +319,5 @@ it('reuses a token uploaded after the last missing read at publication SQL', asy
   const facts = await elementFacts(fixture);
   expect(facts.elements).toHaveLength(1);
   expect(facts.elements[0]?.imageUrl).toBe(UPLOADED.imageUrl);
-  expectCostAndProvenance(facts);
-});
-
-it('refuses a root lost after all prechecks at publication SQL', async () => {
-  await seedElement(fixture);
-  const boundary = beforeElementPublicationSql(fixture, () =>
-    changeRoot(fixture)
-  );
-  await expect(fixture.run()).rejects.toBeInstanceOf(NonRetryableError);
-  expect(boundary.fired).toBe(true);
-  const facts = await elementFacts(fixture);
-  expect(facts.elements[0]?.imageUrl).toBeNull();
   expectCostAndProvenance(facts);
 });

@@ -15,7 +15,6 @@ import type { SequenceElement } from '@/platform/server/db/schema';
 import { createTestDb } from '@/platform/server/db/test-d1';
 import type { GeneratedElementPublication } from './element-sheet-publication';
 import { createElementSheetPublicationMethods } from './element-sheet-publication';
-import { createStoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 import {
   COUNT,
   KIND,
@@ -33,7 +32,6 @@ import {
   failSql,
   failureFrom,
   observeStatements,
-  ownerFor,
   publicationInput,
   seedElement,
   seedPublicationGraph,
@@ -348,34 +346,23 @@ it('preserves the generated winner on concurrent placeholder fills', async () =>
   expect(a.imageUrl).toBe(first.imageUrl);
 });
 
-it.each([false, true])(
-  'uses one three-statement D1 batch within the bound limit (guarded=%s)',
-  async (guarded) => {
-    const scope = guarded
-      ? createStoryboardContentScope(
-          db,
-          graph.organizationId,
-          ownerFor(graph, { workflowClaimId: graph.rawClaimId })
-        )
-      : undefined;
-    const calls = observeStatements(db);
-    const batch = vi.spyOn(db.$client, 'batch');
-    await createElementSheetPublicationMethods(
-      db,
-      graph.organizationId,
-      scope
-    ).publishGenerated(publicationInput(graph));
-    expect(batch).toHaveBeenCalledTimes(COUNT.one);
-    expect(calls).toHaveLength(COUNT.statements);
-    expect(calls.map((call) => call.sql)).toEqual([
-      expect.stringMatching(SQL_TARGET.update),
-      expect.stringMatching(SQL_TARGET.insert),
-      expect.stringMatching(SQL_TARGET.read),
-    ]);
-    for (const call of calls)
-      expect(call.params.length).toBeLessThanOrEqual(COUNT.boundLimit);
-  }
-);
+it('uses one three-statement D1 batch within the bound limit', async () => {
+  const calls = observeStatements(db);
+  const batch = vi.spyOn(db.$client, 'batch');
+  await createElementSheetPublicationMethods(
+    db,
+    graph.organizationId
+  ).publishGenerated(publicationInput(graph));
+  expect(batch).toHaveBeenCalledTimes(COUNT.one);
+  expect(calls).toHaveLength(COUNT.statements);
+  expect(calls.map((call) => call.sql)).toEqual([
+    expect.stringMatching(SQL_TARGET.update),
+    expect.stringMatching(SQL_TARGET.insert),
+    expect.stringMatching(SQL_TARGET.read),
+  ]);
+  for (const call of calls)
+    expect(call.params.length).toBeLessThanOrEqual(COUNT.boundLimit);
+});
 
 it.each(['INSERT', 'UPDATE'] as const)(
   'propagates %s failures without fabricated output',

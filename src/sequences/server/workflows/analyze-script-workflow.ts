@@ -1,16 +1,11 @@
 /** Analyze and cast the script, then persist each shot's spec and derived prompts. */
 import { sanitizeScriptContent } from '@/sequences/prompt-validation';
-import { resolveStoryboardOwner } from './generation-workflow-owner';
 import { resolveVideoModels } from '@/models/resolve-video-models';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { getGenerationChannel } from '@/platform/realtime';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
-import {
-  isEngineAbortError,
-  WorkflowValidationError,
-} from '@/platform/server/workflow/errors';
+import { WorkflowValidationError } from '@/platform/server/workflow/errors';
 import {
   queuedBeforeCast,
   queuedBeforeLooks,
@@ -55,7 +50,6 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     scopedDb: WorkflowScopedDb
   ): Promise<void> {
     const input = event.payload;
-    const workflowOwner = resolveStoryboardOwner(input);
     const parentInstanceId = event.instanceId;
     const {
       sequenceId,
@@ -93,7 +87,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       await step.do(`persist-pipeline-${stage}`, async () => {
         await getGenerationChannel(sequenceId).emit(
           'generation.phase:complete',
-          { phase: GENERATION_STAGE_META[stage].phase, workflowOwner }
+          { phase: GENERATION_STAGE_META[stage].phase }
         );
       });
     };
@@ -114,7 +108,6 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     await step.do('phase-1-start', async () => {
       await getGenerationChannel(sequenceId).emit('generation.phase:start', {
         phase: 1,
-        workflowOwner,
         phaseName: pendingAutoStyleId
           ? 'Analyzing script & deriving a style…'
           : 'Analyzing script…',
@@ -152,7 +145,6 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
               {
                 phase: 1,
                 phaseName: 'Analyzing elements…',
-                workflowOwner,
               }
             );
           },
@@ -203,7 +195,6 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
             promptLocale: input.promptLocale,
             scopedDb,
             workflowRunId: parentInstanceId,
-            storyboardOwner: workflowOwner,
             sequenceId,
             styleId: pendingAutoStyleId,
             script,
@@ -224,7 +215,6 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       parentInstanceId: event.instanceId,
       childId: `scene-split:${sequenceId ?? 'no-seq'}`,
       childPayload: {
-        storyboardOwner: workflowOwner,
         promptLocale: input.promptLocale,
         userId: input.userId,
         organizationId: input.organizationId,
@@ -265,7 +255,6 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       await getGenerationChannel(sequenceId).emit('generation.phase:start', {
         phase: GENERATION_STAGE_META.script.phase,
         phaseName: 'Casting characters & locations…',
-        workflowOwner,
       });
     });
     const locationMatch = await spawnAndAwaitChild<
@@ -303,7 +292,6 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       if (!sequenceId) return { elements: [], lookIds: {} };
       return createCastRecords(scopedDb, {
         sequenceId,
-        storyboardOwner: workflowOwner,
         cast: input.cast,
         characterBible,
         locationBible,
@@ -377,22 +365,6 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     await recordDuration('script');
   }
 
-  private async releaseFailureReservation(
-    scopedDb: WorkflowScopedDb,
-    reservationId: string | undefined
-  ): Promise<void> {
-    if (!reservationId) return;
-    try {
-      await scopedDb.billing.zeroReservation(reservationId);
-    } catch (releaseError) {
-      if (isEngineAbortError(releaseError)) throw releaseError;
-      logger.error(
-        `[AnalyzeScriptWorkflow:cf] Failed to zero reservation ${reservationId}:`,
-        { err: releaseError }
-      );
-    }
-  }
-
   protected override async onFailure({
     event,
     error,
@@ -403,42 +375,30 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     scopedDb: WorkflowScopedDb;
   }): Promise<void> {
     const { sequenceId, reservationId } = event.payload;
-    const owner = resolveStoryboardOwner(event.payload);
-    const shouldNotify = Boolean(owner) || !event.payload._parent;
-    let shouldEmitFailure = !owner;
-    const sanitized = sanitizeFailResponse(error);
-    let userMessage = llmAuthFailureMessage(sanitized);
-    if (sequenceId)
-      logger.error('[AnalyzeScriptWorkflow:cf] Failure:', { sanitized });
+    if (reservationId) {
+      try {
+        await scopedDb.billing.zeroReservation(reservationId);
+      } catch (releaseError) {
+        logger.error(
+          `[AnalyzeScriptWorkflow:cf] Failed to zero reservation ${reservationId}:`,
+          { err: releaseError }
+        );
+      }
+    }
+    if (!sequenceId) return;
 
-    await runFailureActions([
-      () => this.releaseFailureReservation(scopedDb, reservationId),
-      async () => {
-        if (!sequenceId) return;
-        userMessage =
-          (await handleLlmAuthFailure(scopedDb, sanitized)) ?? userMessage;
-      },
-      async () => {
-        if (!sequenceId || !shouldNotify) return;
-        if (owner) {
-          shouldEmitFailure = await scopedDb.sequences.failWorkflowIfCurrent({
-            id: sequenceId,
-            ...owner,
-            error: userMessage,
-          });
-        } else {
-          await scopedDb
-            .sequence(sequenceId)
-            .updateStatus('failed', userMessage);
-        }
-      },
-      async () => {
-        if (!sequenceId || !shouldNotify || !shouldEmitFailure) return;
-        await getGenerationChannel(sequenceId).emit('generation.failed', {
-          workflowOwner: owner,
-          message: userMessage,
-        });
-      },
-    ]);
+    const sanitized = sanitizeFailResponse(error);
+    logger.error('[AnalyzeScriptWorkflow:cf] Failure:', {
+      sanitized,
+    });
+
+    const userMessage =
+      (await handleLlmAuthFailure(scopedDb, sanitized)) ??
+      llmAuthFailureMessage(sanitized);
+
+    await scopedDb.sequence(sequenceId).updateStatus('failed', userMessage);
+    await getGenerationChannel(sequenceId).emit('generation.failed', {
+      message: userMessage,
+    });
   }
 }

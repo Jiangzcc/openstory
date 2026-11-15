@@ -25,7 +25,6 @@ import {
   STORAGE_BUCKETS,
 } from '@/platform/server/storage/buckets';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import { storeGeneratedPng } from '@/stills/server/image-storage';
 import { generateImageSoftening } from '@/stills/server/workflows/content-soften';
 import { WorkflowValidationError } from '@/platform/server/workflow/errors';
@@ -47,7 +46,6 @@ import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { getLogger } from '@/platform/logger';
 import { castChannelId } from '@/cast/cast-channel';
 import { triggerSheetPortrait } from '@/cast/server/sheets/sheet-portrait-trigger';
-import { bindReferenceSheetOutput } from './reference-sheet-output';
 
 const logger = getLogger(['openstory', 'workflow', 'character-sheet']);
 
@@ -70,10 +68,7 @@ async function landSheet(
   const versionId = input.sheetVersionId ?? generateId();
   return landSheetRun({
     land: () =>
-      bindReferenceSheetOutput(
-        scopedDb,
-        input
-      ).characterSheetVariants.promoteIfPending({
+      scopedDb.characterSheetVariants.promoteIfPending({
         characterId: input.characterDbId,
         lookId: input.lookId,
         lookVersionId: input.lookVersionId,
@@ -106,28 +101,6 @@ async function landSheet(
     storagePath: stored.path,
     snapshotInputHash: input.snapshotInputHash,
   });
-}
-
-function logSheetFailure(
-  input: CharacterSheetWorkflowInput,
-  error: string
-): void {
-  if (isContentRejectionError(error)) {
-    logger.warn(
-      `[CharacterSheetWorkflow:cf] character ${input.characterDbId} sheet failed a content checker`,
-      {
-        event: CONTENT_REJECTION_EVENT,
-        kind: 'character-sheet',
-        model: input.imageModel ?? DEFAULT_IMAGE_MODEL,
-        characterDbId: input.characterDbId,
-        sequenceId: input.sequenceId,
-        error,
-      }
-    );
-  }
-  logger.error(
-    `[CharacterSheetWorkflow:cf] Sheet generation failed for character ${input.characterName}: ${error}`
-  );
 }
 
 export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<CharacterSheetWorkflowInput> {
@@ -418,35 +391,54 @@ export class CharacterSheetWorkflow extends OpenStoryWorkflowEntrypoint<Characte
   }): Promise<void> {
     const input = event.payload;
 
-    // A legacy run locates only its own claim by version.
-    // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: the run assertQueuedWithLooks just failed names no look
+    // Mark the look's sheet as failed — through the claim, so a newer run's
+    // claim and `generating` status survive this one's failure (#1113).
+    // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: the run `assertQueuedWithLooks` just failed names no look
     if (!input.lookId) {
+      // Its claim is found by the claim's own id, never by a guessed look.
       await scopedDb.characterLooks.failSheetClaimByVersion(
         input.sheetVersionId,
         error
       );
       return;
     }
-    if (!input.characterDbId) return;
+    if (input.characterDbId) {
+      await scopedDb.characterLooks.failSheetClaim(
+        input.lookId,
+        // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
+        input.sheetVersionId ?? null,
+        error
+      );
 
-    await runFailureActions([
-      () =>
-        bindReferenceSheetOutput(scopedDb, input).characterLooks.failSheetClaim(
-          input.lookId,
-          // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: a run queued before #1113 has no claim
-          input.sheetVersionId ?? null,
-          error
-        ),
-      () =>
-        getGenerationChannel(
-          castChannelId(input.sequenceId, input.characterDbId)
-        ).emit('generation.character-sheet:progress', {
-          characterId: input.characterDbId,
-          lookId: input.lookId,
-          status: 'failed',
-          error,
-        }),
-    ]);
-    logSheetFailure(input, error);
+      // Emit failure event for realtime UI update
+      await getGenerationChannel(
+        castChannelId(input.sequenceId, input.characterDbId)
+      ).emit('generation.character-sheet:progress', {
+        characterId: input.characterDbId,
+        lookId: input.lookId,
+        status: 'failed',
+        error,
+      });
+
+      if (isContentRejectionError(error)) {
+        // Mirror image/motion `onFailure` so "how many sheets failed a content
+        // checker" is one queryable PostHog Logs metric across all three paths.
+        logger.warn(
+          `[CharacterSheetWorkflow:cf] character ${input.characterDbId} sheet failed a content checker`,
+          {
+            event: CONTENT_REJECTION_EVENT,
+            kind: 'character-sheet',
+            model: input.imageModel ?? DEFAULT_IMAGE_MODEL,
+            characterDbId: input.characterDbId,
+            sequenceId: input.sequenceId,
+            error,
+          }
+        );
+      }
+
+      logger.error(
+        `[CharacterSheetWorkflow:cf] Sheet generation failed for character ${input.characterName}: ${error}`
+      );
+    }
   }
 }

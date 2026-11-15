@@ -1,6 +1,21 @@
-// Storyboard failure ownership, cleanup propagation, and generation orchestration.
-
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
+/**
+ * Tests for `StoryboardWorkflow.onFailure` (#839).
+ *
+ * The June 6 incident: an earlier log-only onFailure left ~20 sequences
+ * stranded in 'processing' when await-analyze-script timed out. These tests
+ * pin the rewritten hook's three branches:
+ *
+ *   1. Normal failure → sequence marked 'failed' with the error message and
+ *      'generation.failed' emitted (failure summary + retry UI, not an
+ *      eternal spinner).
+ *   2. The analyze-script child already marked the sequence failed → no
+ *      write, no emit — the child's specific message ("Your OpenRouter API
+ *      key is invalid…") must not be clobbered by the parent's generic
+ *      wrapper ("Child workflow analyze-script… failed").
+ *   3. Payload without a sequenceId → no DB access at all.
+ */
+
 import { migrateStyleConfigV1ToV2 } from '@/look/style-config';
 import { describe, expect, test, vi } from 'vitest';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL } from '@/models/models';
@@ -10,12 +25,6 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
 import { WorkflowLoggedError } from '@/platform/server/workflow/errors';
 import { asStub } from '@/test/as-stub';
-import { makeStoryboardRunImplDb as makeRunImplDb } from './storyboard-workflow.test.fixture';
-import {
-  createStoryboardLifecycleStub,
-  makeStep,
-  storyboardFailureInput,
-} from './storyboard-workflow.test.fixture';
 
 vi.doMock('@/platform/server/db/scoped', () => ({
   createScopedDb: vi.fn(),
@@ -26,11 +35,6 @@ vi.doMock('@/models/server/fal-config', () => ({
 vi.doMock('@/stills/server/image-generation', () => ({
   generateImageWithProvider: vi.fn(),
 }));
-
-const storyboardOwner = (workflowClaimId?: string) => ({
-  workflowRunId: 'storyboard_run_A',
-  workflowClaimId,
-});
 
 const emit = vi.fn();
 const getGenerationChannel = vi.fn(() => ({ emit }));
@@ -102,18 +106,12 @@ function makeEvent(
   extras: Partial<
     Pick<
       StoryboardWorkflowInput,
-      | 'notify'
-      | 'stopAt'
-      | 'resume'
-      | 'userCountry'
-      | 'plan'
-      | 'reservationId'
-      | 'workflowClaimId'
+      'notify' | 'stopAt' | 'resume' | 'userCountry' | 'plan'
     >
   > = {}
 ): Readonly<WorkflowEvent<StoryboardWorkflowInput>> {
   const payload: StoryboardWorkflowInput = {
-    promptLocale: 'en' as const,
+    promptLocale: 'en',
     userId: 'u1',
     organizationId: 't1',
     includeMusic: true,
@@ -149,7 +147,7 @@ function makeEvent(
       regenerateAll: true,
     },
   };
-  // Minimal WorkflowEvent mock: failure ownership uses payload and instanceId.
+  // minimal WorkflowEvent stub: onFailure only reads payload
   return {
     payload,
     instanceId: 'storyboard_run_A',
@@ -158,129 +156,59 @@ function makeEvent(
   };
 }
 
-function makeScopedDb(updated = true) {
-  const zeroReservation = vi.fn(async () => undefined);
-  const methods = createStoryboardLifecycleStub();
-  if (!updated) methods.failWorkflowIfCurrent.mockResolvedValue(false);
+function makeScopedDb(status: 'processing' | 'failed' | 'completed') {
   const updateStatus = vi.fn();
-  const getForUser = vi.fn(async () => ({ id: 'seq_1', status: 'processing' }));
+  const getForUser = vi.fn(async () => ({ id: 'seq_1', status }));
   const stub = {
     models: DEFAULT_MODEL_CONFIGURATION,
-    billing: { zeroReservation },
-    sequences: methods,
+    // The existence guard is a sanctioned live read (#1067).
     liveRead: { sequences: { getForUser } },
     sequence: vi.fn(() => ({ updateStatus })),
   };
-  // Mock failure writes and retain legacy accessors to catch accidental use.
+  // minimal WorkflowScopedDb stub exposing only what onFailure touches
   const scopedDb = asStub<WorkflowScopedDb>(stub);
-  return {
-    scopedDb,
-    ...methods,
-    updateStatus,
-    getForUser,
-    zeroReservation,
-  };
+  return { scopedDb, updateStatus, getForUser };
 }
 
 describe('StoryboardWorkflow.onFailure', () => {
-  test.each([undefined, 'storyboard_claim_A'])(
-    'marks the current sequence failed with workflow claim %s',
-    async (workflowClaimId) => {
-      emit.mockReset();
-      getGenerationChannel.mockClear();
-      const { scopedDb, failWorkflowIfCurrent } = makeScopedDb();
-      const event = makeEvent(
-        'seq_1',
-        workflowClaimId === undefined ? {} : { workflowClaimId }
-      );
+  test('marks the sequence failed and emits generation.failed', async () => {
+    emit.mockReset();
+    getGenerationChannel.mockClear();
+    const { scopedDb, updateStatus } = makeScopedDb('processing');
 
-      await makeWorkflow().invokeOnFailure({
-        event,
-        error: 'Child workflow analyze-script timed out',
-        scopedDb,
-      });
+    await makeWorkflow().invokeOnFailure({
+      event: makeEvent('seq_1'),
+      error: 'Child workflow analyze-script timed out',
+      scopedDb,
+    });
 
-      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
-        storyboardFailureInput(
-          { id: 'seq_1', ...storyboardOwner(workflowClaimId) },
-          'Child workflow analyze-script timed out'
-        )
-      );
-      expect(getGenerationChannel).toHaveBeenCalledExactlyOnceWith('seq_1');
-      expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-        workflowOwner: storyboardOwner(workflowClaimId),
-        message: 'Child workflow analyze-script timed out',
-      });
-    }
-  );
+    expect(updateStatus).toHaveBeenCalledWith(
+      'failed',
+      'Child workflow analyze-script timed out'
+    );
+    expect(getGenerationChannel).toHaveBeenCalledWith('seq_1');
+    expect(emit).toHaveBeenCalledWith('generation.failed', {
+      message: 'Child workflow analyze-script timed out',
+    });
+  });
 
-  test.each([false, true])(
-    'preserves the guard error without sending an unpersisted failure (transport fails: %s)',
-    async (notificationFails) => {
-      emit.mockReset();
-      const { scopedDb, failWorkflowIfCurrent } = makeScopedDb();
-      const persistenceError = new Error('database down');
-      failWorkflowIfCurrent.mockRejectedValueOnce(persistenceError);
-      if (notificationFails)
-        emit.mockRejectedValueOnce(new Error('channel unavailable'));
+  test('child already marked the sequence failed → no write, no emit', async () => {
+    emit.mockReset();
+    const { scopedDb, updateStatus } = makeScopedDb('failed');
 
-      await expect(
-        makeWorkflow().invokeOnFailure({
-          event: makeEvent('seq_1'),
-          error: 'Child workflow analyze-script timed out',
-          scopedDb,
-        })
-      ).rejects.toBe(persistenceError);
+    await makeWorkflow().invokeOnFailure({
+      event: makeEvent('seq_1'),
+      error: 'Child workflow analyze-script… failed',
+      scopedDb,
+    });
 
-      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
-        storyboardFailureInput(
-          { id: 'seq_1', ...storyboardOwner() },
-          'Child workflow analyze-script timed out'
-        )
-      );
-      expect(emit).not.toHaveBeenCalled();
-    }
-  );
-
-  test.each([undefined, 'storyboard_claim_A'])(
-    'guard miss preserves terminal or newer runs with workflow claim %s',
-    async (workflowClaimId) => {
-      emit.mockReset();
-      getGenerationChannel.mockClear();
-      const { scopedDb, failWorkflowIfCurrent, updateStatus, zeroReservation } =
-        makeScopedDb(false);
-
-      await makeWorkflow().invokeOnFailure({
-        event: makeEvent('seq_1', {
-          reservationId: 'reservation-1',
-          ...(workflowClaimId === undefined ? {} : { workflowClaimId }),
-        }),
-        error: 'Child workflow analyze-script… failed',
-        scopedDb,
-      });
-
-      expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('reservation-1');
-      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
-        storyboardFailureInput(
-          { id: 'seq_1', ...storyboardOwner(workflowClaimId) },
-          'Child workflow analyze-script… failed'
-        )
-      );
-      expect(updateStatus).not.toHaveBeenCalled();
-      expect(getGenerationChannel).not.toHaveBeenCalled();
-      expect(emit).not.toHaveBeenCalled();
-    }
-  );
+    expect(updateStatus).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
+  });
 
   test('missing sequenceId → no DB access', async () => {
     emit.mockReset();
-    const {
-      scopedDb,
-      failWorkflowIfCurrent,
-      updateStatus,
-      getForUser,
-      zeroReservation,
-    } = makeScopedDb();
+    const { scopedDb, updateStatus, getForUser } = makeScopedDb('processing');
 
     await makeWorkflow().invokeOnFailure({
       event: makeEvent(undefined),
@@ -288,163 +216,57 @@ describe('StoryboardWorkflow.onFailure', () => {
       scopedDb,
     });
 
-    expect(failWorkflowIfCurrent).not.toHaveBeenCalled();
     expect(getForUser).not.toHaveBeenCalled();
     expect(updateStatus).not.toHaveBeenCalled();
-    expect(zeroReservation).not.toHaveBeenCalled();
     expect(emit).not.toHaveBeenCalled();
   });
 
-  test.each([true, false])(
-    'does not read mutable status when the guard returns %s',
-    async (updated) => {
-      emit.mockReset();
-      const { scopedDb, failWorkflowIfCurrent, updateStatus, getForUser } =
-        makeScopedDb(updated);
-      getForUser.mockRejectedValueOnce(new Error('status read unavailable'));
-
-      await expect(
-        makeWorkflow().invokeOnFailure({
-          event: makeEvent('seq_1'),
-          error: 'trailing step failed',
-          scopedDb,
-        })
-      ).resolves.toBeUndefined();
-
-      expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
-        storyboardFailureInput(
-          { id: 'seq_1', ...storyboardOwner() },
-          'trailing step failed'
-        )
-      );
-      expect(getForUser).not.toHaveBeenCalled();
-      expect(updateStatus).not.toHaveBeenCalled();
-      expect(emit).toHaveBeenCalledTimes(updated ? 1 : 0);
-    }
-  );
-
-  test('keeps reservation release best effort for ordinary errors', async () => {
+  test('completed sequence is not un-completed if a trailing step fails', async () => {
     emit.mockReset();
-    const { scopedDb, failWorkflowIfCurrent, zeroReservation } = makeScopedDb();
-    zeroReservation.mockRejectedValueOnce(new Error('reservation unavailable'));
+    const { scopedDb, updateStatus } = makeScopedDb('completed');
 
-    await expect(
-      makeWorkflow().invokeOnFailure({
-        event: makeEvent('seq_1', { reservationId: 'reservation-1' }),
-        error: 'boom',
-        scopedDb,
-      })
-    ).resolves.toBeUndefined();
-
-    expect(zeroReservation).toHaveBeenCalledExactlyOnceWith('reservation-1');
-    expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
-      storyboardFailureInput({ id: 'seq_1', ...storyboardOwner() }, 'boom')
-    );
-    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
-      workflowOwner: storyboardOwner(),
-      message: 'boom',
+    await makeWorkflow().invokeOnFailure({
+      event: makeEvent('seq_1'),
+      error: 'email-ready failed',
+      scopedDb,
     });
-  });
 
-  test.each(['zeroReservation', 'failWorkflowIfCurrent'] as const)(
-    'stops later actions when %s aborts',
-    async (phase) => {
-      emit.mockReset();
-      getGenerationChannel.mockClear();
-      const db = makeScopedDb();
-      const abort = new Error(
-        'Durable Object reset because its code was updated'
-      );
-      db[phase].mockRejectedValueOnce(abort);
-
-      await expect(
-        makeWorkflow().invokeOnFailure({
-          event: makeEvent('seq_1', { reservationId: 'reservation-1' }),
-          error: 'boom',
-          scopedDb: db.scopedDb,
-        })
-      ).rejects.toBe(abort);
-
-      expect(db.zeroReservation).toHaveBeenCalledExactlyOnceWith(
-        'reservation-1'
-      );
-      if (phase === 'zeroReservation')
-        expect(db.failWorkflowIfCurrent).not.toHaveBeenCalled();
-      else
-        expect(db.failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
-          storyboardFailureInput({ id: 'seq_1', ...storyboardOwner() }, 'boom')
-        );
-      expect(db.getForUser).not.toHaveBeenCalled();
-      expect(db.updateStatus).not.toHaveBeenCalled();
-      expect(getGenerationChannel).not.toHaveBeenCalled();
-      expect(emit).not.toHaveBeenCalled();
-    }
-  );
-
-  test.each([
-    'channel unavailable',
-    'Aborting engine: Grace period complete',
-    'Durable Object reset because its code was updated',
-  ])('propagates notification error: %s', async (message) => {
-    emit.mockReset();
-    const { scopedDb, failWorkflowIfCurrent } = makeScopedDb();
-    const notificationError = new Error(message);
-    emit.mockRejectedValueOnce(notificationError);
-
-    await expect(
-      makeWorkflow().invokeOnFailure({
-        event: makeEvent('seq_1'),
-        error: 'boom',
-        scopedDb,
-      })
-    ).rejects.toBe(notificationError);
-    expect(failWorkflowIfCurrent).toHaveBeenCalledExactlyOnceWith(
-      storyboardFailureInput({ id: 'seq_1', ...storyboardOwner() }, 'boom')
-    );
+    expect(updateStatus).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
   });
 });
 
-function expectCurrentCompletion(
-  complete: ReturnType<typeof makeRunImplDb>['completeWorkflowIfCurrent']
-) {
-  expect(complete).toHaveBeenCalledWith({
-    id: 'seq_1',
-    ...storyboardOwner(),
-    eventId: expect.any(String),
+function makeStep() {
+  const names: string[] = [];
+  // minimal WorkflowStep stub: runImpl only uses `do`
+  const step = asStub<WorkflowStep>({
+    do: vi.fn((_name: string, fn: () => Promise<unknown>) => {
+      names.push(_name);
+      return fn();
+    }),
   });
+  return { step, names };
+}
+
+function makeRunImplDb() {
+  const updateStatus = vi.fn();
+  const deleteBySequence = vi.fn();
+  const getForUser = vi.fn(async () => ({ id: 'seq_1', status: 'processing' }));
+  const update = vi.fn();
+  const stub = {
+    models: DEFAULT_MODEL_CONFIGURATION,
+    liveRead: { sequences: { getForUser } },
+    sequence: vi.fn(() => ({ updateStatus })),
+    shots: { deleteBySequence },
+    credentials: {},
+    sequences: { update },
+  };
+  // stub covering only the runImpl surface
+  const scopedDb = asStub<WorkflowScopedDb>(stub);
+  return { scopedDb, updateStatus, deleteBySequence, update };
 }
 
 describe('StoryboardWorkflow email-ready', () => {
-  test('restores a legacy native poster checkpoint without generating or charging again', async () => {
-    const { generateImageWithProvider } =
-      await import('@/stills/server/image-generation');
-    vi.mocked(generateImageWithProvider).mockClear();
-    spawnAndAwaitChild.mockReset().mockResolvedValue(undefined);
-    const poster = {
-      url: '/r2/thumbnails/mock-legacy-poster.png',
-      metadata: { endpointId: 'mock-native', usedOwnKey: false },
-    };
-    const { scopedDb, setPosterIfCurrent } = makeRunImplDb();
-    const { step, names } = makeStep(
-      new Map<string, unknown>([
-        ['generate-poster', poster],
-        ['record-fal-usage-poster', undefined],
-        ['deduct-poster-credits', undefined],
-      ])
-    );
-
-    await makeWorkflow().invokeRunImpl(makeEvent('seq_1'), step, scopedDb);
-
-    expect(setPosterIfCurrent).toHaveBeenCalledWith({
-      id: 'seq_1',
-      ...storyboardOwner(),
-      posterUrl: poster.url,
-    });
-    expect(generateImageWithProvider).not.toHaveBeenCalled();
-    expect(names).toContain('generate-poster');
-    expect(names).not.toContain('generate-poster:record');
-  });
-
   test('uses the snapshotted poster model and inherits configuration in analysis', async () => {
     const { generateImageWithProvider } =
       await import('@/stills/server/image-generation');
@@ -478,8 +300,9 @@ describe('StoryboardWorkflow email-ready', () => {
     spawnAndAwaitChild.mockResolvedValue(undefined);
     emit.mockReset();
 
-    const { scopedDb, completeWorkflowIfCurrent } = makeRunImplDb();
+    const { scopedDb, updateStatus } = makeRunImplDb();
     const { step, names } = makeStep();
+
     await makeWorkflow().invokeRunImpl(makeEvent('seq_1'), step, scopedDb);
 
     expect(names).toEqual(
@@ -491,7 +314,15 @@ describe('StoryboardWorkflow email-ready', () => {
     expect(names.indexOf('email-ready')).toBeGreaterThan(
       names.indexOf('emit-complete')
     );
-    expectCurrentCompletion(completeWorkflowIfCurrent);
+    expect(updateStatus).toHaveBeenCalledWith(
+      'completed',
+      null,
+      expect.objectContaining({
+        kind: 'storyboard.completed',
+        summary: 'Finished the storyboard',
+        id: expect.any(String),
+      })
+    );
     expect(notifySequenceReady).toHaveBeenCalledTimes(1);
     expect(notifySequenceReady).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -528,8 +359,7 @@ describe('StoryboardWorkflow email-ready', () => {
     notifySequenceReady.mockRejectedValue(new Error('smtp down'));
     spawnAndAwaitChild.mockReset();
     spawnAndAwaitChild.mockResolvedValue(undefined);
-    const { scopedDb, completeWorkflowIfCurrent, failWorkflowIfCurrent } =
-      makeRunImplDb();
+    const { scopedDb, updateStatus } = makeRunImplDb();
 
     await expect(
       makeWorkflow().invokeRunImpl(
@@ -539,8 +369,16 @@ describe('StoryboardWorkflow email-ready', () => {
       )
     ).resolves.toBeUndefined();
 
-    expectCurrentCompletion(completeWorkflowIfCurrent);
-    expect(failWorkflowIfCurrent).not.toHaveBeenCalled();
+    expect(updateStatus).toHaveBeenCalledWith(
+      'completed',
+      null,
+      expect.objectContaining({ kind: 'storyboard.completed' })
+    );
+    expect(updateStatus).not.toHaveBeenCalledWith(
+      'failed',
+      expect.anything(),
+      expect.anything()
+    );
   });
 
   test('an engine abort during the ready email still aborts', async () => {
@@ -583,51 +421,38 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
   };
 
   test('a fresh run wipes shots', async () => {
-    const { startWorkflowIfCurrent, deleteBySequence, names } = await run({
-      stopAt: 'music',
-    });
+    const { deleteBySequence, update, names } = await run({ stopAt: 'music' });
 
-    expect(startWorkflowIfCurrent).toHaveBeenCalledWith({
+    expect(deleteBySequence).toHaveBeenCalledWith('seq_1');
+    expect(update).toHaveBeenCalledWith({
       id: 'seq_1',
-      ...storyboardOwner(),
-      stopAt: 'music',
-      resume: false,
+      generationStopAt: 'music',
     });
-    expect(deleteBySequence).not.toHaveBeenCalled();
     expect(names).toContain('generate-poster');
   });
 
-  test('passes captured country and root ownership to script analysis', async () => {
-    await run({
-      stopAt: 'script',
-      userCountry: 'AU',
-      workflowClaimId: 'storyboard_claim_A',
-    });
+  test('passes the captured user country to script analysis', async () => {
+    await run({ stopAt: 'script', userCountry: 'AU' });
 
     expect(spawnAndAwaitChild).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         spawnStepName: 'spawn-analyze-script',
-        childPayload: expect.objectContaining({
-          userCountry: 'AU',
-          storyboardOwner: storyboardOwner('storyboard_claim_A'),
-        }),
+        childPayload: expect.objectContaining({ userCountry: 'AU' }),
       })
     );
   });
 
   test('a resume keeps shots and poster', async () => {
-    const { startWorkflowIfCurrent, deleteBySequence, names } = await run({
+    const { deleteBySequence, update, names } = await run({
       stopAt: 'images',
       resume: true,
     });
 
     expect(deleteBySequence).not.toHaveBeenCalled();
-    expect(startWorkflowIfCurrent).toHaveBeenCalledWith({
+    expect(update).toHaveBeenCalledWith({
       id: 'seq_1',
-      ...storyboardOwner(),
-      stopAt: 'images',
-      resume: true,
+      generationStopAt: 'images',
     });
     expect(names).not.toContain('generate-poster');
   });
@@ -639,11 +464,13 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
       music: null,
     };
     freezeFreshGenerationPlan.mockResolvedValueOnce({
+      // only forwarding is tested here
       plan: asStub<never>(freshPlan),
       remainingCost: 0,
     });
-    await run({ stopAt: 'motion', workflowClaimId: 'storyboard_claim_A' });
-    expect(spawnAndAwaitChild).toHaveBeenCalledTimes(2);
+    await run({ stopAt: 'motion' });
+    const freshCalls = spawnAndAwaitChild.mock.calls;
+    expect(freshCalls).toHaveLength(2);
     expect(spawnAndAwaitChild).toHaveBeenNthCalledWith(
       2,
       expect.anything(),
@@ -653,14 +480,13 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
           plan: freshPlan,
           announcePhases: true,
           freshRun: true,
-          storyboardOwner: storyboardOwner('storyboard_claim_A'),
         }),
       })
     );
+    // only forwarding is tested here
     await run({
       stopAt: 'motion',
       resume: true,
-      workflowClaimId: 'storyboard_claim_A',
       plan: asStub<never>(freshPlan),
     });
     expect(spawnAndAwaitChild).toHaveBeenCalledTimes(1);
@@ -672,7 +498,6 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
           plan: freshPlan,
           announcePhases: true,
           freshRun: false,
-          storyboardOwner: storyboardOwner('storyboard_claim_A'),
         }),
       })
     );
@@ -700,28 +525,37 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
     const plan = asStub<NonNullable<StoryboardWorkflowInput['plan']>>({
       targets: [],
     });
-    const { completeWorkflowIfCurrent, failWorkflowIfCurrent, names } =
-      await run(
-        { stopAt: 'motion', resume: true, plan },
-        {
-          failures: [
-            { shotId: 'shot_1', stage: 'video', error: 'Insufficient credits' },
-          ],
-        }
-      );
+    const { updateStatus, names } = await run(
+      { stopAt: 'motion', resume: true, plan },
+      {
+        failures: [
+          { shotId: 'shot_1', stage: 'video', error: 'Insufficient credits' },
+        ],
+      }
+    );
 
-    expectCurrentCompletion(completeWorkflowIfCurrent);
-    expect(failWorkflowIfCurrent).not.toHaveBeenCalled();
+    expect(updateStatus).toHaveBeenCalledWith(
+      'completed',
+      null,
+      expect.objectContaining({ kind: 'storyboard.completed' })
+    );
+    expect(updateStatus).not.toHaveBeenCalledWith(
+      'failed',
+      expect.anything(),
+      expect.anything()
+    );
     expect(names).toContain('emit-complete');
     expect(names).not.toContain('email-ready');
   });
 
   test('an early stop completes without spending the ready email', async () => {
-    const { completeWorkflowIfCurrent, names } = await run({
-      stopAt: 'script',
-    });
+    const { updateStatus, names } = await run({ stopAt: 'script' });
 
-    expectCurrentCompletion(completeWorkflowIfCurrent);
+    expect(updateStatus).toHaveBeenCalledWith(
+      'completed',
+      null,
+      expect.objectContaining({ kind: 'storyboard.completed' })
+    );
     expect(names).toContain('emit-complete');
     expect(names).not.toContain('email-ready');
     expect(notifySequenceReady).not.toHaveBeenCalled();
@@ -734,22 +568,18 @@ describe('StoryboardWorkflow stop-at + resume (#1408)', () => {
       remainingMicros: 0,
     });
     emit.mockReset();
-    const { scopedDb, failWorkflowIfCurrent } = makeRunImplDb();
+    const { scopedDb, updateStatus } = makeRunImplDb();
     const { step, names } = makeStep();
 
     await expect(
       makeWorkflow().invokeRunImpl(makeEvent('seq_1'), step, scopedDb)
     ).rejects.toBeInstanceOf(WorkflowLoggedError);
 
-    expect(failWorkflowIfCurrent).toHaveBeenCalledWith({
-      id: 'seq_1',
-      ...storyboardOwner(),
-      error: expect.stringMatching(/not enough credits to generate/i),
-    });
-    expect(names).toContain('mark-reservation-short');
-    expect(names.indexOf('emit-reservation-short')).toBeGreaterThan(
-      names.indexOf('mark-reservation-short')
+    expect(updateStatus).toHaveBeenCalledWith(
+      'failed',
+      expect.stringMatching(/not enough credits to generate/i)
     );
+    expect(names).toContain('emit-reservation-short');
     expect(names).not.toContain('mark-completed');
     expect(names).not.toContain('email-ready');
   });

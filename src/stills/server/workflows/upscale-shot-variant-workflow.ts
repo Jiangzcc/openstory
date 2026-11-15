@@ -37,8 +37,6 @@ import { buildReferenceImagePrompt } from '@/stills/reference-image-prompt';
 import { getGenerationChannel } from '@/platform/realtime';
 import { buildR2Key, STORAGE_BUCKETS } from '@/platform/server/storage/buckets';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
-import type { OpenStoryFailureContext } from '@/platform/server/workflow/base-workflow';
 import { WorkflowValidationError } from '@/platform/server/workflow/errors';
 import type {
   UpscaleShotVariantWorkflowInput,
@@ -541,12 +539,26 @@ export class UpscaleShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<Upsc
     } satisfies UpscaleShotVariantWorkflowResult;
   }
 
-  private async markFailure({
+  protected override async onFailure({
     event,
     error,
     scopedDb,
-  }: OpenStoryFailureContext<UpscaleShotVariantWorkflowInput>): Promise<void> {
+  }: {
+    event: Readonly<WorkflowEvent<UpscaleShotVariantWorkflowInput>>;
+    error: string;
+    scopedDb: WorkflowScopedDb;
+  }): Promise<void> {
     const input = event.payload;
+    logger.error(
+      `[UpscaleShotVariantWorkflow] Upscale failed for shot ${input.shotId}: ${error}`
+    );
+    if (!input.shotId || !input.organizationId) return;
+
+    // Mark the in-flight framing version failed AND out of the status race
+    // (#1942): the frame's PRIOR selection is untouched, so the shot reads the
+    // real selected still rather than a false failure on a good image. Prefer
+    // the snapshotted version id so a run that dies before `workflowRunId` is
+    // stamped still settles.
     if (input.versionId) {
       const minted = await scopedDb.claims.frameVariants.getById(
         input.versionId
@@ -558,68 +570,46 @@ export class UpscaleShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<Upsc
           error,
         });
       }
-      return;
-    }
-    await scopedDb.frameVariants.markFailedByWorkflowRun(
-      event.instanceId,
-      error,
-      { isPrimary: false }
-    );
-  }
-
-  private async clearFailurePromotion(
-    input: UpscaleShotVariantWorkflowInput,
-    scopedDb: WorkflowScopedDb,
-    workflowRunId: string
-  ): Promise<void> {
-    const frame = await scopedDb.liveRead.frames.getById(input.frameId);
-    if (!frame?.pendingPromoteVersionId) return;
-    const pending = await scopedDb.claims.frameVariants.getById(
-      frame.pendingPromoteVersionId
-    );
-    if (pending?.workflowRunId === workflowRunId) {
-      await scopedDb.frames.clearPendingPromoteVersionIdIf(
-        frame.id,
-        pending.id
+    } else {
+      await scopedDb.frameVariants.markFailedByWorkflowRun(
+        event.instanceId,
+        error,
+        { isPrimary: false }
       );
     }
-  }
 
-  protected override async onFailure(
-    failure: OpenStoryFailureContext<UpscaleShotVariantWorkflowInput>
-  ): Promise<void> {
-    const { event, error, scopedDb } = failure;
-    const input = event.payload;
-    logger.error(
-      `[UpscaleShotVariantWorkflow] Upscale failed for shot ${input.shotId}: ${error}`
-    );
-    if (!input.shotId || !input.organizationId) return;
-
-    let thumbnailUrl: string | null = null;
-    await runFailureActions([
-      () => this.markFailure(failure),
-      () => this.clearFailurePromotion(input, scopedDb, event.instanceId),
-      async () => {
-        if (input.sequenceId) {
-          thumbnailUrl = await getAnchorImageUrl(
-            scopedDb.liveRead,
-            input.shotId
-          );
-        }
-      },
-      async () => {
-        if (!input.sequenceId) return;
-        // The failed upscale leaves the prior selected still intact.
-        await getGenerationChannel(input.sequenceId).emit(
-          'generation.image:progress',
-          {
-            shotId: input.shotId,
-            status: 'completed',
-            ...(thumbnailUrl ? { thumbnailUrl } : {}),
-            upscaleError: error,
-          }
+    // Drop the auto-promote claim, but only if THIS run still owns it (#1129) —
+    // a newer kickoff's claim must survive an older upscale's failure.
+    const frame = await scopedDb.liveRead.frames.getById(input.frameId);
+    if (frame?.pendingPromoteVersionId) {
+      const pending = await scopedDb.claims.frameVariants.getById(
+        frame.pendingPromoteVersionId
+      );
+      if (pending?.workflowRunId === event.instanceId) {
+        await scopedDb.frames.clearPendingPromoteVersionIdIf(
+          frame.id,
+          pending.id
         );
-      },
-    ]);
+      }
+    }
+
+    if (input.sequenceId) {
+      // A failed upscale never promoted, so the frame still points at whatever
+      // it did before; read that still off the selected version rather than a
+      // frame column (#1067).
+      const thumbnailUrl = await getAnchorImageUrl(
+        scopedDb.liveRead,
+        input.shotId
+      );
+      await getGenerationChannel(input.sequenceId).emit(
+        'generation.image:progress',
+        {
+          shotId: input.shotId,
+          status: 'completed',
+          ...(thumbnailUrl ? { thumbnailUrl } : {}),
+          upscaleError: error,
+        }
+      );
+    }
   }
 }

@@ -170,7 +170,6 @@ export async function elementWorkflowFixture() {
     imageModel: 'nano_banana_2',
     entries: [entry],
     reservationId: generateId(),
-    storyboardOwner: graph.owner,
   };
   const execution = checkpoints();
   const instanceId = 'synthetic-element-child-' + generateId();

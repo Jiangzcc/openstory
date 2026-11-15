@@ -123,8 +123,6 @@ import { bindPendingVoices } from '@/shots/server/pending-voices';
 import { triggerWorkflow } from '@/platform/server/workflow/client';
 import { shotVariantDedupId } from '@/platform/server/workflow/dedup-ids';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
-import { resolveStoryboardOwner } from '@/sequences/server/workflows/generation-workflow-owner';
-import { bindReferenceSheetOutput } from '@/cast/server/workflows/reference-sheet-output';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
 import {
   isEngineAbortError,
@@ -296,7 +294,6 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
         await getGenerationChannel(sequenceId).emit('generation.phase:start', {
           phase: GENERATION_STAGE_META[stage].phase,
           phaseName: GENERATION_STAGE_META[stage].name,
-          workflowOwner: input.storyboardOwner,
         });
       });
     const completePhase = (stage: GenerationStage) =>
@@ -305,7 +302,6 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           'generation.phase:complete',
           {
             phase: GENERATION_STAGE_META[stage].phase,
-            workflowOwner: input.storyboardOwner,
           }
         );
       });
@@ -455,10 +451,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             `claim-character-sheet-${id}`,
             async () =>
               (
-                await bindReferenceSheetOutput(
-                  scopedDb,
-                  input
-                ).characterLooks.claimSheet(
+                await scopedDb.characterLooks.claimSheet(
                   id,
                   {
                     lookVersionId: payload.lookVersionId,
@@ -505,7 +498,6 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             childId: `character-sheet:${id}`,
             childPayload: {
               ...payload,
-              storyboardOwner: resolveStoryboardOwner(input),
               promptLocale: input.promptLocale,
               sheetVersionId,
               reservationId: input.reservationId,
@@ -523,10 +515,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           // A child that never started has no onFailure to clear the
           // claim; the guarded clear is a no-op when one did.
           await step.do(`fail-character-sheet-claim-${id}`, () =>
-            bindReferenceSheetOutput(
-              scopedDb,
-              input
-            ).characterLooks.failSheetClaim(
+            scopedDb.characterLooks.failSheetClaim(
               id,
               sheetVersionId,
               sanitizeFailResponse(error)
@@ -563,10 +552,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             referenceVersionId = await step.do(
               `claim-location-sheet-${id}`,
               () =>
-                bindReferenceSheetOutput(
-                  scopedDb,
-                  input
-                ).locations.claimReference(id, {
+                scopedDb.locations.claimReference(id, {
                   markGenerating: true,
                   activity: {
                     sequenceId,
@@ -594,7 +580,6 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
               childId: `location-sheet:${id}`,
               childPayload: {
                 ...payload,
-                storyboardOwner: resolveStoryboardOwner(input),
                 promptLocale: input.promptLocale,
                 referenceVersionId,
                 reservationId: input.reservationId,
@@ -610,10 +595,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
           } catch (error) {
             failReference(id, 'reference', error);
             await step.do(`fail-location-sheet-claim-${id}`, () =>
-              bindReferenceSheetOutput(
-                scopedDb,
-                input
-              ).locations.failReferenceClaim(
+              scopedDb.locations.failReferenceClaim(
                 id,
                 referenceVersionId,
                 sanitizeFailResponse(error)
@@ -638,7 +620,6 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
                     childId: `element-sheets:${sequenceId}:${parentInstanceId}`,
                     childPayload: {
                       ...payload,
-                      storyboardOwner: resolveStoryboardOwner(input),
                       promptLocale: input.promptLocale,
                       reservationId: input.reservationId,
                     },
@@ -727,10 +708,7 @@ export class UpdateStaleShotsWorkflow extends OpenStoryWorkflowEntrypoint<Update
             // Its claim was taken at kickoff; no child holds it, so clear it
             // here (a no-op once a newer run took it).
             await step.do(`fail-character-sheet-claim-${draft.lookId}`, () =>
-              bindReferenceSheetOutput(
-                scopedDb,
-                input
-              ).characterLooks.failSheetClaim(
+              scopedDb.characterLooks.failSheetClaim(
                 draft.lookId,
                 sheetVersionId,
                 sanitizeFailResponse(error)

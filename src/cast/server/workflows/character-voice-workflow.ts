@@ -44,7 +44,6 @@ import {
 } from '@/platform/server/storage/buckets';
 import { uploadFile } from '#storage';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import type {
   CharacterVoiceWorkflowInput,
   CharacterVoiceWorkflowResult,
@@ -503,21 +502,16 @@ export class CharacterVoiceWorkflow extends OpenStoryWorkflowEntrypoint<Characte
     logger.error(
       `[CharacterVoiceWorkflow:cf] Voice design failed for ${characterDbId}: ${error}`
     );
-    await runFailureActions([
-      async () => {
-        if (targetVersionId) {
-          await scopedDb.characters.markVoiceClaimTerminal(
-            targetVersionId,
-            'failed',
-            error
-          );
-        }
-      },
-      () =>
-        getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
-          'generation.character-voice:progress',
-          { characterId: characterDbId, status: 'failed', error }
-        ),
-    ]);
+    if (targetVersionId) {
+      await scopedDb.characters.markVoiceClaimTerminal(
+        targetVersionId,
+        'failed',
+        error
+      );
+    }
+    await getGenerationChannel(castChannelId(sequenceId, characterDbId)).emit(
+      'generation.character-voice:progress',
+      { characterId: characterDbId, status: 'failed', error }
+    );
   }
 }

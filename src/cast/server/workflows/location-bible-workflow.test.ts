@@ -4,34 +4,22 @@
  * only links to (#1695).
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getLogger } from '@/platform/logger';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationBibleEntry } from '@/shots/scene-analysis.schema';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { LocationBibleWorkflowInput } from '@/platform/server/workflow/types';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { asStub } from '@/test/as-stub';
 import { PHOTOREAL_RENDERING } from '@/cast/rendering';
-import { locationChannelId } from '@/cast/cast-channel';
 import {
   locationSheetHashMatchesStored,
   NO_LEGACY_LOCATION_SHEET,
 } from './sheet-snapshots';
 
-const ENGINE_ABORT_MESSAGES = [
-  'Aborting engine: Grace period complete',
-  'Durable Object reset because its code was updated',
-] as const;
-
 const mockSpawnAndAwaitChild = vi.fn();
-const mockEmit = vi.fn();
-const mockGetGenerationChannel = vi.fn();
 
 vi.doMock('@/platform/server/workflow/await-child', () => ({
   spawnAndAwaitChild: mockSpawnAndAwaitChild,
-}));
-vi.doMock('@/platform/realtime', () => ({
-  getGenerationChannel: mockGetGenerationChannel,
 }));
 
 const { LocationBibleWorkflow } = await import('./location-bible-workflow');
@@ -59,16 +47,6 @@ function makeWorkflow(): Probe {
 const step = asStub<WorkflowStep>({
   do: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
 });
-
-function makeRetryingStep(stepName: string, firstError: Error): WorkflowStep {
-  // Mock one engine retry after the durable failure callback rejects.
-  return asStub<WorkflowStep>({
-    do: vi.fn(async (name: string, fn: () => Promise<unknown>) => {
-      if (name === stepName) await expect(fn()).rejects.toBe(firstError);
-      return fn();
-    }),
-  });
-}
 
 const claimReference = vi.fn(async () => 'unguarded');
 const claimReferenceIfUnmoved = vi.fn(async () => ({
@@ -170,11 +148,7 @@ beforeEach(() => {
     referenceImageUrl: '/r2/locations/diner.png',
     sheetVersionId: 'guarded',
   });
-  mockEmit.mockResolvedValue(undefined);
-  mockGetGenerationChannel.mockReturnValue({ emit: mockEmit });
 });
-
-afterEach(() => vi.restoreAllMocks());
 
 describe('LocationBibleWorkflow sheet claim', () => {
   it('claims against the bible version the upsert returned', async () => {
@@ -227,81 +201,10 @@ describe('LocationBibleWorkflow sheet claim', () => {
     expect(mockSpawnAndAwaitChild.mock.calls[0]?.[1]).toMatchObject({
       childPayload: { referenceVersionId: 'missed' },
     });
-    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
   });
 
   it('fails the claim when the sheet child never starts', async () => {
     mockSpawnAndAwaitChild.mockRejectedValueOnce(new Error('spawn refused'));
-    const result = await makeWorkflow().runBody(
-      event,
-      step,
-      makeScopedDb('bible-v1')
-    );
-
-    expect(failReferenceClaim).toHaveBeenCalledWith(
-      'loc-db-1',
-      'guarded',
-      'spawn refused'
-    );
-    expect(mockGetGenerationChannel).toHaveBeenCalledWith(
-      locationChannelId('seq-1', 'loc-db-1')
-    );
-    expect(mockEmit).toHaveBeenCalledWith(
-      'generation.location-sheet:progress',
-      {
-        locationId: 'loc-db-1',
-        status: 'failed',
-        error: 'spawn refused',
-      }
-    );
-    expect(result[0]).toMatchObject({ referenceStatus: 'failed' });
-  });
-
-  it('does not duplicate a failed event already owned by the child', async () => {
-    mockSpawnAndAwaitChild.mockRejectedValueOnce(
-      new Error(
-        'Child workflow location-sheet:loc-db-1 failed: Error: provider refused'
-      )
-    );
-
-    const result = await makeWorkflow().runBody(
-      event,
-      step,
-      makeScopedDb('bible-v1')
-    );
-
-    expect(failReferenceClaim).toHaveBeenCalledWith(
-      'loc-db-1',
-      'guarded',
-      'Child workflow location-sheet:loc-db-1 failed: Error: provider refused'
-    );
-    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
-    expect(result[0]).toMatchObject({ referenceStatus: 'failed' });
-  });
-
-  it('retries child-failure claim cleanup without repeating its broadcast', async () => {
-    const cleanupError = new Error('database down');
-    mockSpawnAndAwaitChild.mockRejectedValueOnce(
-      new Error(
-        'Child workflow location-sheet:loc-db-1 failed: provider refused'
-      )
-    );
-    failReferenceClaim.mockRejectedValueOnce(cleanupError);
-
-    await makeWorkflow().runBody(
-      event,
-      makeRetryingStep('fail-location-sheet-0', cleanupError),
-      makeScopedDb('bible-v1')
-    );
-
-    expect(failReferenceClaim).toHaveBeenCalledTimes(2);
-    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
-  });
-
-  it('keeps the original spawn failure when the failed event cannot be emitted', async () => {
-    mockSpawnAndAwaitChild.mockRejectedValueOnce(new Error('spawn refused'));
-    mockEmit.mockRejectedValueOnce(new Error('realtime unavailable'));
-
     const result = await makeWorkflow().runBody(
       event,
       step,
@@ -342,90 +245,7 @@ describe('LocationBibleWorkflow sheet claim', () => {
     await makeWorkflow().runBody(event, step, makeScopedDb('bible-v1'));
 
     expect(failReferenceClaim).not.toHaveBeenCalled();
-    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
   });
-
-  it('keeps the spawn failure distinct after durable cleanup retries are exhausted', async () => {
-    const logger = getLogger(['openstory', 'workflow', 'location-bible']);
-    const errorLog = vi.spyOn(logger, 'error');
-    const warningLog = vi.spyOn(logger, 'warn');
-    const spawnError = new Error('spawn refused');
-    const cleanupError = new Error('database down');
-    mockSpawnAndAwaitChild.mockRejectedValueOnce(spawnError);
-    failReferenceClaim.mockRejectedValueOnce(cleanupError);
-
-    const result = await makeWorkflow().runBody(
-      event,
-      step,
-      makeScopedDb('bible-v1')
-    );
-
-    expect(result[0]).toMatchObject({ referenceStatus: 'failed' });
-    expect(mockEmit).toHaveBeenCalledTimes(1);
-    expect(errorLog).toHaveBeenCalledWith(
-      expect.stringContaining('exhausted retries'),
-      { stepName: 'fail-location-sheet-0', err: cleanupError }
-    );
-    expect(warningLog).toHaveBeenCalledWith(
-      expect.stringContaining('did not complete: spawn refused')
-    );
-  });
-
-  it.each(['cleanup', 'notification'] as const)(
-    'retries durable sheet failure actions after a transient %s failure',
-    async (action) => {
-      const firstError = new Error('failure action unavailable');
-      mockSpawnAndAwaitChild.mockRejectedValueOnce(new Error('spawn refused'));
-      const failingAction =
-        action === 'cleanup' ? failReferenceClaim : mockEmit;
-      failingAction.mockRejectedValueOnce(firstError);
-
-      const result = await makeWorkflow().runBody(
-        event,
-        makeRetryingStep('fail-location-sheet-0', firstError),
-        makeScopedDb('bible-v1')
-      );
-
-      expect(failReferenceClaim).toHaveBeenCalledTimes(2);
-      expect(mockEmit).toHaveBeenCalledTimes(2);
-      expect(result[0]).toMatchObject({ referenceStatus: 'failed' });
-    }
-  );
-
-  it.each(
-    ENGINE_ABORT_MESSAGES.flatMap((message) =>
-      ['claim', 'spawn'].map((stage) => ({ message, stage }))
-    )
-  )('preserves a parent $stage abort: $message', async ({ message, stage }) => {
-    const abort = new Error(message);
-    const failingAction =
-      stage === 'claim' ? claimReferenceIfUnmoved : mockSpawnAndAwaitChild;
-    failingAction.mockRejectedValueOnce(abort);
-
-    await expect(
-      makeWorkflow().runBody(event, step, makeScopedDb('bible-v1'))
-    ).rejects.toBe(abort);
-    expect(failReferenceClaim).not.toHaveBeenCalled();
-    expect(mockGetGenerationChannel).not.toHaveBeenCalled();
-  });
-
-  it.each(['cleanup', 'notification'] as const)(
-    'propagates a durable %s abort through the settled children',
-    async (action) => {
-      const abort = new Error(ENGINE_ABORT_MESSAGES[0]);
-      mockSpawnAndAwaitChild.mockRejectedValueOnce(new Error('spawn refused'));
-      const failingAction =
-        action === 'cleanup' ? failReferenceClaim : mockEmit;
-      failingAction.mockRejectedValueOnce(abort);
-
-      await expect(
-        makeWorkflow().runBody(event, step, makeScopedDb('bible-v1'))
-      ).rejects.toBe(abort);
-      expect(failReferenceClaim).toHaveBeenCalledTimes(1);
-      if (action === 'cleanup')
-        expect(mockGetGenerationChannel).not.toHaveBeenCalled();
-    }
-  );
 
   it('fails a run whose upsert result names no bible version, claiming nothing', async () => {
     await expect(

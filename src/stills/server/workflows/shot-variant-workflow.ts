@@ -34,12 +34,8 @@ import {
 import { getVariantImagePrompt } from '@/stills/server/variant-image';
 import { getGenerationChannel } from '@/platform/realtime';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import { generateImageSoftening } from './content-soften';
-import {
-  isEngineAbortError,
-  WorkflowValidationError,
-} from '@/platform/server/workflow/errors';
+import { WorkflowValidationError } from '@/platform/server/workflow/errors';
 import type {
   ShotVariantWorkflowInput,
   ShotVariantWorkflowResult,
@@ -76,25 +72,6 @@ type PrepResult = {
   basePrompt: string;
   references: ReferenceImageDescription[];
 };
-
-async function emitVariantFailure(
-  input: ShotVariantWorkflowInput
-): Promise<void> {
-  if (!input.sequenceId || !input.shotId) return;
-  const { sequenceId, shotId } = input;
-  try {
-    await getGenerationChannel(sequenceId).emit(
-      'generation.variant-image:progress',
-      { shotId, status: 'failed' }
-    );
-  } catch (emitError) {
-    if (isEngineAbortError(emitError)) throw emitError;
-    logger.error(
-      '[ShotVariantWorkflow] Failed to emit failure for shot {shotId}',
-      { shotId, err: emitError }
-    );
-  }
-}
 
 export class ShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<ShotVariantWorkflowInput> {
   protected override readonly failureLabel = 'Image generation';
@@ -374,11 +351,22 @@ export class ShotVariantWorkflow extends OpenStoryWorkflowEntrypoint<ShotVariant
   }): Promise<void> {
     const input = event.payload;
     if (!input.shotId || !input.organizationId) return;
-    await runFailureActions([
-      () =>
-        scopedDb.frameVariants.markFailedByWorkflowRun(event.instanceId, error),
-      () => emitVariantFailure(input),
-    ]);
+
+    await scopedDb.frameVariants.markFailedByWorkflowRun(
+      event.instanceId,
+      error
+    );
+
+    if (input.sequenceId) {
+      try {
+        await getGenerationChannel(input.sequenceId).emit(
+          'generation.variant-image:progress',
+          { shotId: input.shotId, status: 'failed' }
+        );
+      } catch {
+        // Ignore emit errors
+      }
+    }
 
     logger.error(
       `[ShotVariantWorkflow] Variant grid generation failed for shot ${input.shotId}: ${error}`

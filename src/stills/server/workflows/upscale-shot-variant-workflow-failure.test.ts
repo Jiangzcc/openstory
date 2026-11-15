@@ -3,7 +3,7 @@
  * good, so the shot reads it; the user hears through `upscaleError`.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { UpscaleShotVariantWorkflowInput } from '@/platform/server/workflow/types';
 import type { WorkflowEvent } from 'cloudflare:workers';
@@ -13,8 +13,9 @@ const emit = vi.fn((_event: string, _data: unknown) => Promise.resolve());
 vi.doMock('@/platform/realtime', () => ({
   getGenerationChannel: vi.fn(() => ({ emit })),
 }));
-const getAnchorImageUrl = vi.fn(() => Promise.resolve('https://r2/old.png'));
-vi.doMock('@/shots/server/frame-image', () => ({ getAnchorImageUrl }));
+vi.doMock('@/shots/server/frame-image', () => ({
+  getAnchorImageUrl: vi.fn(() => Promise.resolve('https://r2/old.png')),
+}));
 
 const { UpscaleShotVariantWorkflow } =
   await import('./upscale-shot-variant-workflow');
@@ -53,12 +54,12 @@ function makeDb() {
     liveRead: { frames: { getById: vi.fn(() => Promise.resolve(null)) } },
   };
   // stub of the surface onFailure touches
-  return { ...db, scopedDb: asStub<WorkflowScopedDb>(db) };
+  return { frameVariants, scopedDb: asStub<WorkflowScopedDb>(db) };
 }
 
 function fail(versionId: string | undefined, scopedDb: WorkflowScopedDb) {
   const payload: UpscaleShotVariantWorkflowInput = {
-    promptLocale: 'en' as const,
+    promptLocale: 'en',
     userId: 'u1',
     organizationId: 't1',
     sequenceId: 'seq_1',
@@ -81,11 +82,6 @@ function fail(versionId: string | undefined, scopedDb: WorkflowScopedDb) {
 }
 
 describe('UpscaleShotVariantWorkflow onFailure (#1942)', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    emit.mockResolvedValue(undefined);
-    getAnchorImageUrl.mockResolvedValue('https://r2/old.png');
-  });
   it('fails the minted version out of the race', async () => {
     const { frameVariants, scopedDb } = makeDb();
     await fail('ver_1', scopedDb);
@@ -116,107 +112,6 @@ describe('UpscaleShotVariantWorkflow onFailure (#1942)', () => {
         status: 'completed',
         upscaleError: 'boom',
       })
-    );
-  });
-
-  it('still tells the user when marking the version failed cannot be written', async () => {
-    emit.mockClear();
-    const { frameVariants, scopedDb } = makeDb();
-    const persistenceError = new Error('database down');
-    frameVariants.update.mockRejectedValueOnce(persistenceError);
-
-    await expect(fail('ver_1', scopedDb)).rejects.toBe(persistenceError);
-
-    expect(emit).toHaveBeenCalledWith(
-      'generation.image:progress',
-      expect.objectContaining({
-        shotId: 'shot_1',
-        status: 'completed',
-        upscaleError: 'boom',
-      })
-    );
-  });
-  it('propagates legacy run failure after attempting notification', async () => {
-    const { frameVariants, scopedDb } = makeDb();
-    const persistenceError = new Error('database down');
-    frameVariants.markFailedByWorkflowRun.mockRejectedValueOnce(
-      persistenceError
-    );
-
-    await expect(fail(undefined, scopedDb)).rejects.toBe(persistenceError);
-    expect(emit).toHaveBeenCalledOnce();
-  });
-
-  it('still reads the thumbnail and notifies after promotion cleanup fails', async () => {
-    const { liveRead, scopedDb } = makeDb();
-    const cleanupError = new Error('frame unavailable');
-    liveRead.frames.getById.mockRejectedValueOnce(cleanupError);
-
-    await expect(fail('ver_1', scopedDb)).rejects.toBe(cleanupError);
-    expect(getAnchorImageUrl).toHaveBeenCalledOnce();
-    expect(emit).toHaveBeenCalledOnce();
-  });
-
-  it('notifies without a thumbnail and rejects its read failure', async () => {
-    const thumbnailError = new Error('thumbnail unavailable');
-    getAnchorImageUrl.mockRejectedValueOnce(thumbnailError);
-
-    await expect(fail('ver_1', makeDb().scopedDb)).rejects.toBe(thumbnailError);
-    expect(emit).toHaveBeenCalledWith('generation.image:progress', {
-      shotId: 'shot_1',
-      status: 'completed',
-      upscaleError: 'boom',
-    });
-  });
-
-  it.each([
-    'Aborting engine: Grace period complete',
-    'Durable Object reset because its code was updated',
-  ])('stops marking a version on engine abort: %s', async (message) => {
-    const { frameVariants, liveRead, scopedDb } = makeDb();
-    const abort = new Error(message);
-    frameVariants.update.mockRejectedValueOnce(abort);
-
-    await expect(fail('ver_1', scopedDb)).rejects.toBe(abort);
-    expect(liveRead.frames.getById).not.toHaveBeenCalled();
-    expect(getAnchorImageUrl).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    'version read',
-    'legacy write',
-    'promotion read',
-    'thumbnail read',
-  ] as const)('stops later actions when %s aborts', async (phase) => {
-    const { claims, frameVariants, liveRead, scopedDb } = makeDb();
-    const abort = new Error('Aborting engine: Grace period complete');
-    const operation = {
-      'version read': claims.frameVariants.getById,
-      'legacy write': frameVariants.markFailedByWorkflowRun,
-      'promotion read': liveRead.frames.getById,
-      'thumbnail read': getAnchorImageUrl,
-    }[phase];
-    operation.mockRejectedValueOnce(abort);
-
-    await expect(
-      fail(phase === 'legacy write' ? undefined : 'ver_1', scopedDb)
-    ).rejects.toBe(abort);
-    if (phase === 'version read')
-      expect(frameVariants.update).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    'channel unavailable',
-    'Aborting engine: Grace period complete',
-    'Durable Object reset because its code was updated',
-  ])('propagates notification error: %s', async (message) => {
-    const notificationError = new Error(message);
-    emit.mockRejectedValueOnce(notificationError);
-
-    await expect(fail('ver_1', makeDb().scopedDb)).rejects.toBe(
-      notificationError
     );
   });
 });

@@ -10,7 +10,11 @@ import { gateStoryboardRenders } from '@/billing/server/storyboard-render-gate';
  * Runs surface in the Cloudflare Workflows dashboard by `event.instanceId`.
  */
 
-import { publishStoryboardPoster } from './storyboard-poster';
+import {
+  deductWorkflowCredits,
+  extractImageCost,
+  recordFalUsageStep,
+} from '@/billing/server/workflow-deduction';
 import { aspectRatioToImageSize } from '@/models/aspect-ratios';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { generateImageWithProvider } from '@/stills/server/image-generation';
@@ -26,7 +30,6 @@ import { generateId } from '@/platform/id';
 import { validateSequenceAuth } from '@/platform/server/workflow/auth';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
-import { runFailureActions } from '@/platform/server/workflow/failure-actions';
 import {
   isEngineAbortError,
   WorkflowLoggedError,
@@ -60,11 +63,7 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         'Sequence ID, organization ID, and user ID are required'
       );
     }
-    const workflowOwner = {
-      workflowRunId: event.instanceId,
-      workflowClaimId: input.workflowClaimId,
-    };
-    const owner = { id: sequenceId, ...workflowOwner };
+    const seq = scopedDb.sequence(sequenceId);
 
     // Everything this run generates from was snapshotted onto the payload by
     // `triggerStoryboard`. The step below re-reads the row only to re-assert
@@ -80,38 +79,30 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       elementIds,
     } = input;
 
-    const started = await step.do(
-      'verify-clear-and-start-processing',
-      async () => {
-        logger.info('[StoryboardWorkflow:cf] Input received:', {
-          sequenceId: input.sequenceId,
-          organizationId: input.organizationId,
-          userId: input.userId,
-          autoGenerateMotion: input.autoGenerateMotion,
-          stopAt: input.stopAt,
-          resume: input.resume,
-        });
-        validateSequenceAuth(input);
+    await step.do('verify-clear-and-start-processing', async () => {
+      logger.info('[StoryboardWorkflow:cf] Input received:', {
+        sequenceId: input.sequenceId,
+        organizationId: input.organizationId,
+        userId: input.userId,
+        autoGenerateMotion: input.autoGenerateMotion,
+        stopAt: input.stopAt,
+        resume: input.resume,
+      });
+      validateSequenceAuth(input);
 
-        // Throws if the sequence was deleted (or moved organization) since the trigger.
-        await scopedDb.liveRead.sequences.getForUser({ sequenceId });
+      // Throws if the sequence was deleted (or moved organization) since the trigger.
+      await scopedDb.liveRead.sequences.getForUser({ sequenceId });
 
-        return scopedDb.sequences.startWorkflowIfCurrent({
-          ...owner,
-          stopAt: input.stopAt,
-          resume: Boolean(input.resume),
-        });
+      if (!input.resume) {
+        await scopedDb.shots.deleteBySequence(sequenceId);
       }
-    );
-    if (!started) {
-      const reservationId = input.reservationId;
-      if (reservationId) {
-        await step.do('zero-reservation', async () => {
-          await scopedDb.billing.zeroReservation(reservationId);
-        });
-      }
-      return;
-    }
+
+      await seq.updateStatus('processing');
+      await scopedDb.sequences.update({
+        id: sequenceId,
+        generationStopAt: input.stopAt,
+      });
+    });
 
     // Pending automatic style (#1213): the poster renders from the script alone.
     // Continue-from-DAG skips the poster — the sequence already has one.
@@ -185,22 +176,47 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       const savedPosterUrl = posterResult.url;
       posterUrl = savedPosterUrl;
 
-      const published = await publishStoryboardPoster({
-        step,
-        scopedDb,
-        owner,
-        poster: posterResult,
-        reservationId: input.reservationId,
+      // Before the deduction guard — see recordFalUsageStep (#1069).
+      const posterUsage = usesConfiguredImageChannel(
+        scopedDb.models.poster,
+        scopedDb.models.imageModelRouting
+      )
+        ? {}
+        : await recordFalUsageStep(
+            step,
+            scopedDb,
+            posterResult.metadata,
+            'record-fal-usage-poster'
+          );
+
+      await step.do('deduct-poster-credits', async () => {
+        await deductWorkflowCredits({
+          scopedDb,
+          costMicros: extractImageCost(posterResult.metadata),
+          usedOwnKey: posterResult.metadata.usedOwnKey,
+          description: `Sequence poster (${scopedDb.models.poster})`,
+          idempotencyKey: `${event.instanceId}:poster`,
+          reservationId: input.reservationId,
+          metadata: {
+            ...posterUsage,
+            ...(posterResult.metadata.configuredPricing
+              ? { configuredPricing: posterResult.metadata.configuredPricing }
+              : {}),
+            model: scopedDb.models.poster,
+            sequenceId,
+          },
+          workflowName: 'StoryboardWorkflow',
+        });
       });
-      if (!published) {
-        const reservationId = input.reservationId;
-        if (reservationId) {
-          await step.do('zero-reservation', async () => {
-            await scopedDb.billing.zeroReservation(reservationId);
-          });
-        }
-        return;
-      }
+      await step.do('save-poster', async () => {
+        await scopedDb.sequences.update({
+          id: sequenceId,
+          posterUrl: savedPosterUrl,
+        });
+        await getGenerationChannel(sequenceId).emit('generation.poster:ready', {
+          posterUrl: savedPosterUrl,
+        });
+      });
     }
 
     let plan = input.plan;
@@ -213,7 +229,6 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         parentInstanceId: event.instanceId,
         childId: `analyze-script:${sequenceId}`,
         childPayload: {
-          storyboardOwner: workflowOwner,
           promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
@@ -280,25 +295,18 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       const { short } = frozen;
       if (short) {
         const message = creditsShortStatusError(short);
-        const failed = await step.do('mark-reservation-short', async () => {
-          return scopedDb.sequences.failWorkflowIfCurrent({
-            ...owner,
-            error: message,
-          });
+        await step.do('emit-reservation-short', async () => {
+          await seq.updateStatus('failed', message);
+          // A top-up prompt, not a failure toast (#1328).
+          await getGenerationChannel(sequenceId).emit(
+            'generation.reservation:short',
+            {
+              neededUsd: microsToUsd(short.neededMicros),
+              remainingUsd: microsToUsd(short.remainingMicros),
+              sceneCount: short.sceneCount,
+            }
+          );
         });
-        if (failed) {
-          await step.do('emit-reservation-short', async () => {
-            await getGenerationChannel(sequenceId).emit(
-              'generation.reservation:short',
-              {
-                workflowOwner,
-                neededUsd: microsToUsd(short.neededMicros),
-                remainingUsd: microsToUsd(short.remainingMicros),
-                sceneCount: short.sceneCount,
-              }
-            );
-          });
-        }
         throw new WorkflowLoggedError(message, {
           kind: 'run.failed',
           summary: message,
@@ -323,7 +331,6 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         parentInstanceId: event.instanceId,
         childId: `continue:${sequenceId}:${event.instanceId}`,
         childPayload: {
-          storyboardOwner: workflowOwner,
           promptLocale: input.promptLocale,
           userId: input.userId,
           organizationId: input.organizationId,
@@ -358,17 +365,20 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
       'storyboard-completed-event-id',
       async () => generateId()
     );
-    const completed = await step.do('mark-completed', async () => {
-      return scopedDb.sequences.completeWorkflowIfCurrent({
-        ...owner,
-        eventId: completedEventId,
+    await step.do('mark-completed', async () => {
+      await seq.updateStatus('completed', null, {
+        id: completedEventId,
+        sequenceId,
+        actorId: userId,
+        kind: 'storyboard.completed',
+        targetType: 'sequence',
+        targetId: sequenceId,
+        summary: 'Finished the storyboard',
       });
     });
-    if (!completed) return;
 
     await step.do('emit-complete', async () => {
       await getGenerationChannel(sequenceId).emit('generation.complete', {
-        workflowOwner,
         sequenceId,
       });
     });
@@ -399,22 +409,6 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
     }
   }
 
-  private async releaseFailureReservation(
-    scopedDb: WorkflowScopedDb,
-    reservationId: string | undefined
-  ): Promise<void> {
-    if (!reservationId) return;
-    try {
-      await scopedDb.billing.zeroReservation(reservationId);
-    } catch (releaseError) {
-      if (isEngineAbortError(releaseError)) throw releaseError;
-      logger.error(
-        `[StoryboardWorkflow:cf] Failed to zero reservation ${reservationId}:`,
-        { err: releaseError }
-      );
-    }
-  }
-
   protected override async onFailure({
     event,
     error,
@@ -427,26 +421,41 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
     logger.error(
       `[StoryboardWorkflow:cf] Storyboard generation failed: ${error}`
     );
+
+    // Mark the sequence failed so the user sees the failure summary + retry
+    // UI instead of an eternal 'processing' spinner. A log-only handler here
+    // left ~20 sequences stranded when await-analyze-script timed out on
+    // 2026-06-06 (issue #839).
+    //
+    // Skip the write when the analyze-script child already marked the
+    // sequence failed — its message ("Your OpenRouter API key is invalid…")
+    // is the one written for the user; the parent only has what came back
+    // through the await.
     const { sequenceId, reservationId } = event.payload;
-    const workflowOwner = {
-      workflowRunId: event.instanceId,
-      workflowClaimId: event.payload.workflowClaimId,
-    };
-    await runFailureActions([
-      () => this.releaseFailureReservation(scopedDb, reservationId),
-      async () => {
-        if (!sequenceId) return;
-        const failed = await scopedDb.sequences.failWorkflowIfCurrent({
-          id: sequenceId,
-          ...workflowOwner,
-          error,
-        });
-        if (!failed) return;
-        await getGenerationChannel(sequenceId).emit('generation.failed', {
-          workflowOwner,
-          message: error,
-        });
-      },
-    ]);
+    if (reservationId) {
+      try {
+        await scopedDb.billing.zeroReservation(reservationId);
+      } catch (releaseError) {
+        logger.error(
+          `[StoryboardWorkflow:cf] Failed to zero reservation ${reservationId}:`,
+          { err: releaseError }
+        );
+      }
+    }
+    if (!sequenceId) return;
+
+    const sequence = await scopedDb.liveRead.sequences.getForUser({
+      sequenceId,
+    });
+    // Trailing steps (email-ready) run AFTER mark-completed. A send failure
+    // must not un-complete a successful generation.
+    if (sequence.status === 'failed' || sequence.status === 'completed') {
+      return;
+    }
+
+    await scopedDb.sequence(sequenceId).updateStatus('failed', error);
+    await getGenerationChannel(sequenceId).emit('generation.failed', {
+      message: error,
+    });
   }
 }

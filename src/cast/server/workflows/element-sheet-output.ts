@@ -1,4 +1,3 @@
-import type { WorkflowStep } from 'cloudflare:workers';
 import { ValidationError } from '@/platform/errors';
 import type { SequenceElementMinimal } from '@/platform/server/db/schema';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -6,8 +5,6 @@ import type {
   ElementSheetEntry,
   ElementSheetWorkflowInput,
 } from '@/platform/server/workflow/types';
-import { resolveStoryboardOwner } from '@/sequences/server/workflows/generation-workflow-owner';
-import { stopStaleContent } from '@/sequences/server/workflows/storyboard-content-errors';
 import type { GenerateImageSofteningResult } from '@/stills/server/workflows/content-soften';
 
 function toMinimalElement(row: SequenceElementMinimal): SequenceElementMinimal {
@@ -68,36 +65,17 @@ export function bindElementSheetOutput(
   scopedDb: WorkflowScopedDb,
   input: ElementSheetWorkflowInput
 ) {
-  const owner = resolveStoryboardOwner(input);
-  const bound = owner
-    ? scopedDb.storyboardElementSheets({ id: input.sequenceId, ...owner })
-    : undefined;
-  const publisher = bound ?? scopedDb.sequenceElements;
-  const withOwnership = <Result>(read: () => Promise<Result>) =>
-    bound ? bound.withOwnership(read) : read();
   return {
-    readExisting: stopStaleContent((entry: ElementSheetEntry) =>
-      withOwnership(() =>
-        readExistingElement(scopedDb, input.sequenceId, entry)
-      )
-    ),
-    publish: stopStaleContent(
-      async (
-        entry: ElementSheetEntry,
-        stored: GenerateImageSofteningResult['stored']
-      ) =>
-        toMinimalElement(
-          await publisher.publishGenerated(
-            publicationInput(input.sequenceId, entry, stored)
-          )
+    readExisting: (entry: ElementSheetEntry) =>
+      readExistingElement(scopedDb, input.sequenceId, entry),
+    publish: async (
+      entry: ElementSheetEntry,
+      stored: GenerateImageSofteningResult['stored']
+    ) =>
+      toMinimalElement(
+        await scopedDb.sequenceElements.publishGenerated(
+          publicationInput(input.sequenceId, entry, stored)
         )
-    ),
-    verifyCompletion: async (step: WorkflowStep) => {
-      if (!bound) return;
-      await step.do(
-        'check-element-sheet-completion',
-        stopStaleContent(() => bound.withOwnership(async () => {}))
-      );
-    },
+      ),
   };
 }

@@ -15,11 +15,6 @@ import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { asStub } from '@/test/as-stub';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 
-const ENGINE_ABORT_MESSAGES = [
-  'Aborting engine: Grace period complete',
-  'Durable Object reset because its code was updated',
-] as const;
-
 const mockGenerateImageWithProvider = vi.fn();
 const mockStoreGeneratedPng = vi.fn();
 const mockDeductWorkflowCredits = vi.fn();
@@ -324,82 +319,6 @@ describe('CharacterSheetWorkflow sheet claim (#1113)', () => {
     expect(mockFailSheetClaim).toHaveBeenCalledWith('look-1', 'ver-1', 'boom');
     expect(mockUpdateSheetStatus).not.toHaveBeenCalled();
   });
-
-  it('still emits failure when claim cleanup cannot be written', async () => {
-    mockFailSheetClaim.mockRejectedValueOnce(new Error('database down'));
-
-    await expect(
-      makeWorkflow().failBody(await makeEvent(), makeScopedDb())
-    ).rejects.toThrow('database down');
-
-    expect(mockEmit).toHaveBeenCalledWith(
-      'generation.character-sheet:progress',
-      expect.objectContaining({ status: 'failed', error: 'boom' })
-    );
-  });
-
-  it('rejects when the failure notification fails after cleanup', async () => {
-    const emitError = new Error('realtime unavailable');
-    mockEmit.mockRejectedValueOnce(emitError);
-
-    await expect(
-      makeWorkflow().failBody(await makeEvent(), makeScopedDb())
-    ).rejects.toBe(emitError);
-    expect(mockFailSheetClaim).toHaveBeenCalledWith('look-1', 'ver-1', 'boom');
-  });
-
-  it('retains the first failure after trying both independent actions', async () => {
-    const cleanupError = new Error('database down');
-    mockFailSheetClaim.mockRejectedValueOnce(cleanupError);
-    mockEmit.mockRejectedValueOnce(new Error('realtime unavailable'));
-
-    await expect(
-      makeWorkflow().failBody(await makeEvent(), makeScopedDb())
-    ).rejects.toBe(cleanupError);
-    expect(mockEmit).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(ENGINE_ABORT_MESSAGES)(
-    'does not notify after a sheet cleanup abort: %s',
-    async (message) => {
-      const abort = new Error(message);
-      mockFailSheetClaim.mockRejectedValueOnce(abort);
-
-      await expect(
-        makeWorkflow().failBody(await makeEvent(), makeScopedDb())
-      ).rejects.toBe(abort);
-      expect(mockEmit).not.toHaveBeenCalled();
-    }
-  );
-
-  it('propagates a notification abort over an earlier cleanup error', async () => {
-    const abort = new Error(ENGINE_ABORT_MESSAGES[1]);
-    mockFailSheetClaim.mockRejectedValueOnce(new Error('database down'));
-    mockEmit.mockRejectedValueOnce(abort);
-
-    await expect(
-      makeWorkflow().failBody(await makeEvent(), makeScopedDb())
-    ).rejects.toBe(abort);
-    expect(mockFailSheetClaim).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(['database down', ...ENGINE_ABORT_MESSAGES])(
-    'rejects a legacy cleanup failure without guessing another look: %s',
-    async (message) => {
-      const legacy = await makeEvent();
-      delete asStub<Partial<CharacterSheetWorkflowInput>>(legacy.payload)
-        .lookId;
-      const cleanupError = new Error(message);
-      mockFailSheetClaimByVersion.mockRejectedValueOnce(cleanupError);
-
-      await expect(
-        makeWorkflow().failBody(legacy, makeScopedDb())
-      ).rejects.toBe(cleanupError);
-      expect(mockFailSheetClaimByVersion).toHaveBeenCalledWith('ver-1', 'boom');
-      expect(mockFailSheetClaim).not.toHaveBeenCalled();
-      expect(mockEmit).not.toHaveBeenCalled();
-    }
-  );
 
   it('lands on the look the payload names, stamping its version (#2015)', async () => {
     mockPromoteIfPending.mockResolvedValue('promoted');

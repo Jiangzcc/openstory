@@ -12,11 +12,6 @@ import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { VOICE_DESIGN_COST } from '@/billing/elevenlabs-pricing';
 import { asStub } from '@/test/as-stub';
 
-const ENGINE_ABORT_MESSAGES = [
-  'Aborting engine: Grace period complete',
-  'Durable Object reset because its code was updated',
-] as const;
-
 const mockDesign = vi.fn();
 const mockSave = vi.fn();
 const mockDeduct = vi.fn();
@@ -432,111 +427,6 @@ describe('CharacterVoiceWorkflow', () => {
       'ver-1',
       'failed',
       'Voice Design returned no previews'
-    );
-  });
-
-  it('still emits failure when husk cleanup cannot be written', async () => {
-    const { scopedDb, markVoiceClaimTerminal } = makeScopedDb();
-    markVoiceClaimTerminal.mockRejectedValueOnce(new Error('database down'));
-
-    await expect(
-      makeWorkflow().failBody(
-        makeEvent('Warm alto, unhurried.'),
-        'Voice Design returned no previews',
-        scopedDb
-      )
-    ).rejects.toThrow('database down');
-
-    expect(mockEmit).toHaveBeenCalledWith(
-      'generation.character-voice:progress',
-      expect.objectContaining({
-        status: 'failed',
-        error: 'Voice Design returned no previews',
-      })
-    );
-  });
-
-  it('rejects when notification fails after husk cleanup', async () => {
-    const { scopedDb, markVoiceClaimTerminal } = makeScopedDb();
-    const emitError = new Error('realtime unavailable');
-    mockEmit.mockRejectedValueOnce(emitError);
-
-    await expect(
-      makeWorkflow().failBody(
-        makeEvent('Warm alto'),
-        'provider failed',
-        scopedDb
-      )
-    ).rejects.toBe(emitError);
-    expect(markVoiceClaimTerminal).toHaveBeenCalledWith(
-      'ver-1',
-      'failed',
-      'provider failed'
-    );
-  });
-
-  it('retains the cleanup error after attempting a failed notification', async () => {
-    const { scopedDb, markVoiceClaimTerminal } = makeScopedDb();
-    const cleanupError = new Error('database down');
-    markVoiceClaimTerminal.mockRejectedValueOnce(cleanupError);
-    mockEmit.mockRejectedValueOnce(new Error('realtime unavailable'));
-
-    await expect(
-      makeWorkflow().failBody(
-        makeEvent('Warm alto'),
-        'provider failed',
-        scopedDb
-      )
-    ).rejects.toBe(cleanupError);
-    expect(mockEmit).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(ENGINE_ABORT_MESSAGES)(
-    'does not notify after a husk cleanup abort: %s',
-    async (message) => {
-      const { scopedDb, markVoiceClaimTerminal } = makeScopedDb();
-      const abort = new Error(message);
-      markVoiceClaimTerminal.mockRejectedValueOnce(abort);
-
-      await expect(
-        makeWorkflow().failBody(
-          makeEvent('Warm alto'),
-          'provider failed',
-          scopedDb
-        )
-      ).rejects.toBe(abort);
-      expect(mockEmit).not.toHaveBeenCalled();
-    }
-  );
-
-  it('propagates a notification abort over an earlier cleanup error', async () => {
-    const { scopedDb, markVoiceClaimTerminal } = makeScopedDb();
-    const abort = new Error(ENGINE_ABORT_MESSAGES[0]);
-    markVoiceClaimTerminal.mockRejectedValueOnce(new Error('database down'));
-    mockEmit.mockRejectedValueOnce(abort);
-
-    await expect(
-      makeWorkflow().failBody(
-        makeEvent('Warm alto'),
-        'provider failed',
-        scopedDb
-      )
-    ).rejects.toBe(abort);
-    expect(markVoiceClaimTerminal).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not guess a voice claim when the payload has none', async () => {
-    const { scopedDb, markVoiceClaimTerminal } = makeScopedDb();
-    await makeWorkflow().failBody(
-      makeEvent('Warm alto', { targetVersionId: undefined }),
-      'provider failed',
-      scopedDb
-    );
-
-    expect(markVoiceClaimTerminal).not.toHaveBeenCalled();
-    expect(mockEmit).toHaveBeenCalledWith(
-      'generation.character-voice:progress',
-      expect.objectContaining({ status: 'failed' })
     );
   });
 

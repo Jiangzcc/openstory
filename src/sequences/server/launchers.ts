@@ -373,11 +373,10 @@ export async function triggerStoryboard(
 
   let workflowRunId: string;
   try {
-    workflowRunId = await triggerWorkflow(
-      '/storyboard',
-      { ...payload, workflowClaimId: claimId },
-      { deduplicationId: claimId, modelConfiguration: configuration }
-    );
+    workflowRunId = await triggerWorkflow('/storyboard', payload, {
+      deduplicationId: claimId,
+      modelConfiguration: configuration,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     try {
