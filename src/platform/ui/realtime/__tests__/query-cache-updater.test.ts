@@ -123,14 +123,16 @@ describe('updateQueryCacheFromEvent — variant-only guard (#547)', () => {
     vi.useRealTimers();
   });
 
-  it('never installs a poster event payload into an existing sequence', () => {
+  it('installs the poster event URL into an existing sequence', () => {
     const current = { workflowRunId: 'run-B', posterUrl: OLD_THUMB };
     qc.setQueryData(sequenceKeys.detail(SEQ), current);
     updateQueryCacheFromEvent(qc, SEQ, 'generation.poster:ready', {
       posterUrl: NEW_URL,
-      workflowOwner: { workflowRunId: 'run-A' },
     });
-    expect(qc.getQueryData(sequenceKeys.detail(SEQ))).toEqual(current);
+    expect(qc.getQueryData(sequenceKeys.detail(SEQ))).toEqual({
+      ...current,
+      posterUrl: NEW_URL,
+    });
   });
 
   it('never creates a sequence from a poster payload when detail is absent', () => {

@@ -66,8 +66,6 @@ const SEQUENCE_LEVEL_BY_DESIGN: Record<string, string> = {
   // A full storyboard run starts in the sequence's mode; per-shot overrides
   // are applied later, per shot, by the render paths.
   'src/sequences/server/launchers.ts': 'sequence-wide storyboard launch',
-  'src/sequences/ui/use-generation-stream.ts':
-    'builds whole-run progress phases, never a per-shot render decision',
   // Pre-flight credit envelopes for a WHOLE run. An override shifts one shot
   // between two similarly-priced routes; the envelope is an estimate.
   'src/sequences/server/smart-retry.ts': 'whole-run credit estimate',
