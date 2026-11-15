@@ -1,3 +1,4 @@
+import type { TextToImageModel } from '@/models/models';
 import type { Resolution } from '@/models/resolutions';
 import type {
   ImageChannelParameterValues,
@@ -30,6 +31,17 @@ export type ConfiguredImageBillingInput = {
   aspectRatio?: AspectRatio;
   resolution?: Resolution;
 };
+
+export type ConfiguredImageEstimateOptions = {
+  imageModelRouting?: ImageModelRoutingSnapshot;
+  imageParameters?: ImageChannelParameterValues;
+};
+
+type ConfiguredImageRequestEstimateOptions = ConfiguredImageEstimateOptions &
+  Pick<
+    ConfiguredImageBillingInput,
+    'resolution' | 'referenceImageCount' | 'hasMask'
+  > & { edit?: boolean };
 
 const IMAGE_OPERATION_ERRORS = {
   [IMAGE_OPERATION_ISSUES.unavailable]: 'This image operation is unavailable.',
@@ -116,6 +128,31 @@ export function estimateConfiguredImageCost(
       'The configured image estimate exceeds wallet precision.'
     );
   return total;
+}
+
+export function estimateConfiguredImageRequestCost(
+  model: TextToImageModel,
+  aspectRatio: AspectRatio,
+  numImages: number,
+  opts: ConfiguredImageRequestEstimateOptions
+): Microdollars {
+  return estimateConfiguredImageCost(
+    {
+      model,
+      aspectRatio,
+      resolution: opts.resolution,
+      imageModelRouting: opts.imageModelRouting,
+      operation: opts.edit ? 'edit' : 'generate',
+      parameters: opts.imageParameters,
+      imageCount:
+        typeof opts.imageParameters?.n === 'number'
+          ? opts.imageParameters.n
+          : 1,
+      referenceImageCount: opts.referenceImageCount ?? (opts.edit ? 1 : 0),
+      hasMask: opts.hasMask,
+    },
+    numImages
+  );
 }
 
 export function configuredImageSource(

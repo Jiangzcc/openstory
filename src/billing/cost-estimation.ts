@@ -8,10 +8,9 @@
  */
 
 import { estimateFalCost, type EffectiveFalPricing } from './fal-cost';
-import { estimateConfiguredImageCost } from './configured-image-billing';
-import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
+import { estimateConfiguredImageRequestCost } from './configured-image-billing';
+import type { ConfiguredImageEstimateOptions } from './configured-image-billing';
 import { usesConfiguredImageChannel } from '@/models/image-channels';
-import type { ImageChannelParameterValues } from '@/models/image-channel-parameters';
 import {
   getEditEndpoint,
   isBuiltinTextToImageModel,
@@ -54,11 +53,6 @@ import { type Microdollars, addMicros, micros, multiplyMicros } from './money';
 const logger = getLogger(['openstory', 'billing', 'cost-estimation']);
 
 type FalPricingMap = Record<string, EffectiveFalPricing>;
-
-type ConfiguredImageEstimateOptions = {
-  imageModelRouting?: ImageModelRoutingSnapshot;
-  imageParameters?: ImageChannelParameterValues;
-};
 
 type ImageCostOptions = ConfiguredImageEstimateOptions & {
   pricing: FalPricingMap;
@@ -160,31 +154,6 @@ export function gateEstimate(
     );
   }
   return floored;
-}
-
-function estimateConfiguredImageRequestCost(
-  model: TextToImageModel,
-  aspectRatio: AspectRatio,
-  numImages: number,
-  opts: ImageCostOptions
-): Microdollars {
-  return estimateConfiguredImageCost(
-    {
-      model,
-      aspectRatio,
-      resolution: opts.resolution,
-      imageModelRouting: opts.imageModelRouting,
-      operation: opts.edit ? 'edit' : 'generate',
-      parameters: opts.imageParameters,
-      imageCount:
-        typeof opts.imageParameters?.n === 'number'
-          ? opts.imageParameters.n
-          : 1,
-      referenceImageCount: opts.referenceImageCount ?? (opts.edit ? 1 : 0),
-      hasMask: opts.hasMask,
-    },
-    numImages
-  );
 }
 
 /**
