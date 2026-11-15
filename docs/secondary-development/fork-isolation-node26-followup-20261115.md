@@ -83,6 +83,6 @@ R 额外一项为消费者 `git grep` 扫描超出原 5 秒预算，隔离原预
 
 用户确认不需要二开额外增加的 Storyboard 启动保护，授权恢复上游。起点 `b1ebfde16`、对照 U 不变：删除启动 journal、prepared trigger、pending 异常及请求/cron 重投，恢复 U 的 raw claim、独立 processing 写、普通 trigger 和实例 ID 更新；Continue 重新使用 U 的设置保存/失败回滚。语言、可信模型快照和传给其它既有归属保护的 raw claim 保留。历史表、registry 和迁移保留，表字段仅用本地静态类型解除已删除模块依赖，没有执行数据库迁移。
 
-`reconcile-all.ts`、`server.ts`、`trigger-bindings.ts`、`clear-version-rows.ts` 四个上游生产文件完整恢复 U；原 claim 方法和 sequence-events 测试恢复 U。生产代码净减 679 行，测试净减 3,229 行。额外的同 ID 自动恢复、启动/设置原子提交和 pending 预占保留保证已退出，不能再作为现有需求。恢复的 U 原函数结构保持，不为函数长度重新抽出执行包装。
+`reconcile-all.ts`、`server.ts`、`trigger-bindings.ts`、`clear-version-rows.ts` 四个上游生产文件完整恢复 U；原 claim 方法和 sequence-events 测试恢复 U。生产代码净减 679 行，测试净减 3,227 行。额外的同 ID 自动恢复、启动/设置原子提交和 pending 预占保留保证已退出，不能再作为现有需求。恢复的 U 原函数结构保持，不为函数长度重新抽出执行包装。
 
-当前证据为 23 文件、371 项通过（含最终两文件替换复验，0 失败/跳过），类型和全仓 lint 通过，测试 bindings 的客户端/SSR 生产构建通过；独立审查通过。首次类型引用错误及回滚测试使用不存在 API 字段导致的摘要不匹配均已修正，没有据此修改产品 API。未重跑全量，未执行网页 Continue 端到端、真实模型、远程数据库、持久引擎重启或部署验收；原始日志和机器统计保存在 `.tmp/launch-retirement-*`。
+源码提交 `65e9e201e`，正常提交 hooks 通过。当前证据为 23 文件、371 项通过（含最终两文件替换复验，0 失败/跳过），类型和全仓 lint 通过，测试 bindings 的客户端/SSR 生产构建通过；独立审查通过。首次类型引用错误及回滚测试使用不存在 API 字段导致的摘要不匹配均已修正，没有据此修改产品 API。未重跑全量，未执行网页 Continue 端到端、真实模型、远程数据库、持久引擎重启或部署验收；原始日志和机器统计保存在 `.tmp/launch-retirement-*`。
