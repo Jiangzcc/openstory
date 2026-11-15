@@ -70,7 +70,6 @@ type SequenceDispatch = (db: Database) => Promise<number>;
 type ReconcileAllOptions = {
   resolveSequenceState?: SequenceStateResolver;
   dispatchSequences?: SequenceDispatch;
-  dispatchSequenceNotifications?: SequenceDispatch;
 };
 
 /** Sentinel returned per pass in `ReconcileCounts` when the pass threw. */
@@ -97,11 +96,6 @@ export async function reconcileAllStuckJobs(
     ? [['sequences.dispatch', () => dispatchSequences(db)]]
     : [];
 
-  const dispatchNotifications = options.dispatchSequenceNotifications;
-  const notificationPass: Array<[string, () => Promise<number>]> =
-    dispatchNotifications
-      ? [['sequences.notifications', () => dispatchNotifications(db)]]
-      : [];
   const passes: Array<[string, () => Promise<number>]> = [
     // Image lives on frame_variants now (#989); a frame's status is its
     // newest primary row's (#1942), so sweeping the rows covers it.
@@ -140,7 +134,6 @@ export async function reconcileAllStuckJobs(
       'sequences.status',
       () => reconcileSequencesPass(db, options.resolveSequenceState),
     ],
-    ...notificationPass,
     ['sequence_music_variants.claims', () => reconcileMusicClaimsPass(db)],
     ['sequence_elements.vision', () => blindFailSequenceElementsPass(db)],
     // Direct model runs (#458) — verified pass plus an orphan pass for rows

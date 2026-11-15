@@ -201,20 +201,6 @@ describe('Storyboard failure status with real database writes', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
-  it('retries failure delivery after the terminal state already committed', async () => {
-    const deliveryFailure = new Error('Synthetic realtime delivery failure');
-    emit.mockRejectedValueOnce(deliveryFailure);
-    await expect(workflow().invoke(eventFor(), fixture.scopedDb)).rejects.toBe(
-      deliveryFailure
-    );
-    expect((await storedSequence()).status).toBe('failed');
-
-    await workflow().invoke(eventFor(), fixture.scopedDb);
-
-    expect(emit).toHaveBeenCalledTimes(2);
-    expect(emit.mock.calls[1]).toEqual(emit.mock.calls[0]);
-  });
-
   it('fails its current run without reading mutable status first', async () => {
     await workflow().invoke(eventFor(), fixture.scopedDb);
 
@@ -224,14 +210,10 @@ describe('Storyboard failure status with real database writes', () => {
       workflowRunId: RUN_A,
     });
     expect(fixture.getForUser).not.toHaveBeenCalled();
-    expect(emit).toHaveBeenCalledExactlyOnceWith(
-      'generation.failed',
-      {
-        workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
-        message: FAILURE_MESSAGE,
-      },
-      { requireAcknowledgement: true }
-    );
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
+      message: FAILURE_MESSAGE,
+    });
   });
 
   it('recognizes its snapshotted claim before the launcher persists the instance id', async () => {
@@ -247,14 +229,10 @@ describe('Storyboard failure status with real database writes', () => {
       statusError: FAILURE_MESSAGE,
       workflowRunId: CLAIM_A,
     });
-    expect(emit).toHaveBeenCalledExactlyOnceWith(
-      'generation.failed',
-      {
-        workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
-        message: FAILURE_MESSAGE,
-      },
-      { requireAcknowledgement: true }
-    );
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
+      message: FAILURE_MESSAGE,
+    });
   });
 
   it('accepts the actual instance id when an older payload has no claim snapshot', async () => {
@@ -264,14 +242,10 @@ describe('Storyboard failure status with real database writes', () => {
       status: 'failed',
       statusError: FAILURE_MESSAGE,
     });
-    expect(emit).toHaveBeenCalledExactlyOnceWith(
-      'generation.failed',
-      {
-        workflowOwner: { workflowRunId: RUN_A },
-        message: FAILURE_MESSAGE,
-      },
-      { requireAcknowledgement: true }
-    );
+    expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+      workflowOwner: { workflowRunId: RUN_A },
+      message: FAILURE_MESSAGE,
+    });
   });
 
   it('does not guess ownership of another claim for an older payload', async () => {

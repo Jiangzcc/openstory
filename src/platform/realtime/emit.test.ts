@@ -77,102 +77,34 @@ describe('generation lifecycle owner transport', () => {
   });
 });
 
-const bestEffortCases = [
-  ['omitted options', undefined],
-  ['explicit best-effort', { requireAcknowledgement: false }],
-] as const;
-
 describe('best-effort emit failures', () => {
-  it.each(bestEffortCases)(
-    '%s resolves for a non-2xx response',
-    async (_label, options) => {
-      fetchMock.mockResolvedValueOnce(
-        new Response(null, { status: HTTP_STATUS.serviceUnavailable })
-      );
-
-      await expect(
-        getGenerationChannel('sequence').emit(
-          'generation.failed',
-          { message: 'failure' },
-          options
-        )
-      ).resolves.toBeUndefined();
-      expect(fetchMock).toHaveBeenCalledOnce();
-    }
-  );
-
-  it.each(bestEffortCases)(
-    '%s resolves when fetch throws',
-    async (_label, options) => {
-      fetchMock.mockRejectedValueOnce(new Error('transport unavailable'));
-
-      await expect(
-        getGenerationChannel('sequence').emit(
-          'generation.failed',
-          { message: 'failure' },
-          options
-        )
-      ).resolves.toBeUndefined();
-      expect(fetchMock).toHaveBeenCalledOnce();
-    }
-  );
-});
-
-describe('required emit acknowledgement', () => {
   it.each([HTTP_STATUS.badRequest, HTTP_STATUS.serviceUnavailable])(
-    'rejects HTTP %i responses',
+    'resolves for an HTTP %i response',
     async (status) => {
       fetchMock.mockResolvedValueOnce(new Response(null, { status }));
 
       await expect(
-        getGenerationChannel('sequence').emit(
-          'generation.failed',
-          { message: 'failure' },
-          { requireAcknowledgement: true }
-        )
-      ).rejects.toThrow('HTTP ' + status);
+        getGenerationChannel('sequence').emit('generation.failed', {
+          message: 'failure',
+        })
+      ).resolves.toBeUndefined();
       expect(fetchMock).toHaveBeenCalledOnce();
     }
   );
 
   it.each([new Error('transport unavailable'), { reason: 'connection reset' }])(
-    'preserves the original fetch rejection %j',
+    'resolves when fetch throws %j',
     async (failure) => {
       fetchMock.mockRejectedValueOnce(failure);
 
       await expect(
-        getGenerationChannel('sequence').emit(
-          'generation.failed',
-          { message: 'failure' },
-          { requireAcknowledgement: true }
-        )
-      ).rejects.toBe(failure);
+        getGenerationChannel('sequence').emit('generation.failed', {
+          message: 'failure',
+        })
+      ).resolves.toBeUndefined();
       expect(fetchMock).toHaveBeenCalledOnce();
     }
   );
-});
-
-describe('acknowledged emit request', () => {
-  it('accepts a successful response without changing the HTTP request', async () => {
-    await expect(
-      getGenerationChannel('sequence').emit(
-        'generation.failed',
-        { message: 'failure' },
-        { requireAcknowledgement: true }
-      )
-    ).resolves.toBeUndefined();
-    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
-      'https://realtime.do/emit?channel=sequence',
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          event: 'generation.failed',
-          data: { message: 'failure' },
-        }),
-      }
-    );
-  });
 });
 
 describe.each([
@@ -180,21 +112,10 @@ describe.each([
   ['shot-prompt', getShotPromptChannel],
   ['billing', getBillingChannel],
 ] as const)('missing %s channel', (_label, getChannel) => {
-  it.each(bestEffortCases)('%s still resolves', async (_mode, options) => {
+  it('resolves without sending', async () => {
     await expect(
-      getChannel().emit('generation.failed', { message: 'failure' }, options)
+      getChannel().emit('generation.failed', { message: 'failure' })
     ).resolves.toBeUndefined();
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('rejects when acknowledgement is required', async () => {
-    await expect(
-      getChannel().emit(
-        'generation.failed',
-        { message: 'failure' },
-        { requireAcknowledgement: true }
-      )
-    ).rejects.toThrow('missing channel id');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

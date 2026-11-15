@@ -5,7 +5,6 @@ import { bindAnalyzeScriptOutput } from './analyze-script-output';
 import { resolveVideoModels } from '@/models/resolve-video-models';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { getGenerationChannel } from '@/platform/realtime';
-import { deliverStoryboardNotification } from '../storyboard-notifications';
 import { spawnAndAwaitChild } from '@/platform/server/workflow/await-child';
 import { OpenStoryWorkflowEntrypoint } from '@/platform/server/workflow/base-workflow';
 import { runFailureActions } from '@/platform/server/workflow/failure-actions';
@@ -412,6 +411,7 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
     const { sequenceId, reservationId } = event.payload;
     const owner = resolveStoryboardOwner(event.payload);
     const shouldNotify = Boolean(owner) || !event.payload._parent;
+    let shouldEmitFailure = !owner;
     const sanitized = sanitizeFailResponse(error);
     let userMessage = llmAuthFailureMessage(sanitized);
     if (sequenceId)
@@ -426,30 +426,20 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
       },
       async () => {
         if (!sequenceId || !shouldNotify) return;
-        if (owner)
-          await scopedDb.sequences.failWorkflowIfCurrent({
+        if (owner) {
+          shouldEmitFailure = await scopedDb.sequences.failWorkflowIfCurrent({
             id: sequenceId,
             ...owner,
             error: userMessage,
-            notification: {
-              event: 'generation.failed',
-              data: { workflowOwner: owner, message: userMessage },
-            },
           });
-        else
+        } else {
           await scopedDb
             .sequence(sequenceId)
             .updateStatus('failed', userMessage);
+        }
       },
       async () => {
-        if (!sequenceId || !shouldNotify) return;
-        if (owner) {
-          await deliverStoryboardNotification(scopedDb.sequences, {
-            id: sequenceId,
-            ...owner,
-          });
-          return;
-        }
+        if (!sequenceId || !shouldNotify || !shouldEmitFailure) return;
         await getGenerationChannel(sequenceId).emit('generation.failed', {
           workflowOwner: owner,
           message: userMessage,

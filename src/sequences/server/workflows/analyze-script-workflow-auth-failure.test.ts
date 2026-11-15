@@ -4,9 +4,9 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { AnalyzeScriptWorkflowInput } from '@/platform/server/workflow/types';
 import { asStub } from '@/test/as-stub';
 import {
-  createStoryboardNotificationStub,
+  createStoryboardLifecycleStub,
   storyboardFailureInput,
-} from './storyboard-notifications.test.fixture';
+} from './storyboard-workflow.test.fixture';
 import { withLlmAuthFailureSource } from '@/platform/server/workflow/llm-auth-failure-source';
 import { sanitizeFailResponse } from '@/platform/server/workflow/sanitize-fail-response';
 
@@ -49,7 +49,7 @@ function makeWorkflow() {
 }
 
 function makeDb() {
-  const { methods, receipts } = createStoryboardNotificationStub();
+  const methods = createStoryboardLifecycleStub();
   const updateStatus = vi.fn(async () => undefined);
   const markKeyInvalid = vi.fn(async () => undefined);
   const zeroReservation = vi.fn(async () => undefined);
@@ -68,7 +68,6 @@ function makeDb() {
   return {
     scopedDb,
     ...methods,
-    receipts,
     updateStatus,
     markKeyInvalid,
     zeroReservation,
@@ -306,20 +305,10 @@ async function verifyRootAuthFailure() {
   expect(db.zeroReservation).toHaveBeenCalledExactlyOnceWith(
     'mock-reservation'
   );
-  expect(emit).toHaveBeenCalledExactlyOnceWith(
-    'generation.failed',
-    {
-      workflowOwner: STORYBOARD_OWNER,
-      message: AUTH_MESSAGE,
-    },
-    { requireAcknowledgement: true }
-  );
-  expect(db.beginWorkflowNotificationAttempt).toHaveBeenCalledExactlyOnceWith({
-    id: 'mock-sequence',
-    ...STORYBOARD_OWNER,
+  expect(emit).toHaveBeenCalledExactlyOnceWith('generation.failed', {
+    workflowOwner: STORYBOARD_OWNER,
+    message: AUTH_MESSAGE,
   });
-  expect(db.confirmWorkflowNotificationDelivery).toHaveBeenCalledOnce();
-  expect([...db.receipts.values()][0]?.deliveredAt).toBeInstanceOf(Date);
 }
 
 async function verifyLostOwnerAuthFailure() {
@@ -336,8 +325,6 @@ async function verifyLostOwnerAuthFailure() {
     'mock-reservation'
   );
   expect(db.updateStatus).not.toHaveBeenCalled();
-  expect(db.receipts.size).toBe(0);
-  expect(db.confirmWorkflowNotificationDelivery).not.toHaveBeenCalled();
   expect(emit).not.toHaveBeenCalled();
 }
 
@@ -351,8 +338,6 @@ async function verifyGuardFailure() {
     })
   ).rejects.toBe(failure);
   expect(db.updateStatus).not.toHaveBeenCalled();
-  expect(db.receipts.size).toBe(0);
-  expect(db.confirmWorkflowNotificationDelivery).not.toHaveBeenCalled();
   expect(emit).not.toHaveBeenCalled();
 }
 

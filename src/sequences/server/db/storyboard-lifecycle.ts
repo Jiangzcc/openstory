@@ -20,8 +20,6 @@ import {
 } from './sequence-events';
 import { generationStopChangedSummary } from '@/sequences/model-label';
 
-import type { StoryboardNotification } from '@/sequences/storyboard-notification';
-import { buildStoryboardNotificationInsert } from './storyboard-notifications';
 import {
   STORYBOARD_WORKFLOW_STATUS as WORKFLOW_STATUS,
   storyboardOwnerWhere as ownerWhere,
@@ -137,13 +135,7 @@ export function createStoryboardLifecycleMethods(
     },
 
     failWorkflowIfCurrent: async (
-      params: StoryboardOwner & {
-        error: string;
-        notification?: Exclude<
-          StoryboardNotification,
-          { event: 'generation.complete' }
-        >;
-      }
+      params: StoryboardOwner & { error: string }
     ): Promise<boolean> => {
       const where = and(
         ownerWhere(organizationId, params),
@@ -154,7 +146,7 @@ export function createStoryboardLifecycleMethods(
           ])
         )
       );
-      const update = db
+      const updated = await db
         .update(sequences)
         .set({
           status: WORKFLOW_STATUS.failed,
@@ -163,32 +155,11 @@ export function createStoryboardLifecycleMethods(
         })
         .where(where)
         .returning({ id: sequences.id });
-      const updated = params.notification
-        ? (
-            await db.batch([
-              buildStoryboardNotificationInsert(
-                db,
-                organizationId,
-                params,
-                params.notification,
-                WORKFLOW_STATUS.failed,
-                where
-              ),
-              update,
-            ])
-          )[1]
-        : await update;
       return updated.length > 0;
     },
 
     completeWorkflowIfCurrent: async (
-      params: StoryboardOwner & {
-        eventId: string;
-        notification?: Extract<
-          StoryboardNotification,
-          { event: 'generation.complete' }
-        >;
-      }
+      params: StoryboardOwner & { eventId: string }
     ): Promise<boolean> => {
       const where = processingWhere(organizationId, params);
       const [, , completed] = await db.batch([
@@ -218,18 +189,6 @@ export function createStoryboardLifecycleMethods(
           .select({ id: sequences.id })
           .from(sequences)
           .where(completionWhere(db, organizationId, params)),
-        ...(params.notification
-          ? [
-              buildStoryboardNotificationInsert(
-                db,
-                organizationId,
-                params,
-                params.notification,
-                WORKFLOW_STATUS.completed,
-                completionWhere(db, organizationId, params)
-              ),
-            ]
-          : []),
       ]);
       return completed.length > 0;
     },

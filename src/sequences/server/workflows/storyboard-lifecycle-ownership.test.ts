@@ -410,14 +410,10 @@ describe('Storyboard runImpl start ownership with real D1 methods', () => {
     expect(spawnAndAwaitChild).toHaveBeenCalledOnce();
     expect(await completedEvents()).toHaveLength(1);
     expect(notifySequenceReady).toHaveBeenCalledOnce();
-    expect(emit).toHaveBeenCalledWith(
-      'generation.complete',
-      {
-        sequenceId: fixture.sequence.id,
-        workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
-      },
-      { requireAcknowledgement: true }
-    );
+    expect(emit).toHaveBeenCalledWith('generation.complete', {
+      sequenceId: fixture.sequence.id,
+      workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
+    });
   });
 
   it('retains real shots on current resume and dispatches only the frozen plan', async () => {
@@ -526,16 +522,12 @@ describe('Storyboard runImpl terminal interleavings with real D1 writes', () => 
       status: STATUS.failed,
       statusError: expect.stringContaining('Not enough credits'),
     });
-    expect(emit).toHaveBeenCalledWith(
-      'generation.reservation:short',
-      {
-        workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
-        neededUsd: 2,
-        remainingUsd: 0,
-        sceneCount: 0,
-      },
-      { requireAcknowledgement: true }
-    );
+    expect(emit).toHaveBeenCalledWith('generation.reservation:short', {
+      workflowOwner: { workflowRunId: RUN_A, workflowClaimId: CLAIM_A },
+      neededUsd: 2,
+      remainingUsd: 0,
+      sceneCount: 0,
+    });
     expect(emit.mock.calls.map(([name]) => name)).not.toContain(
       'generation.complete'
     );

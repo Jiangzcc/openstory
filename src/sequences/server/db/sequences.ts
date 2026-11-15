@@ -5,7 +5,6 @@
 
 import { withSequencePosters } from './sequence-poster';
 import { createStoryboardLifecycleMethods } from './storyboard-lifecycle';
-import { createStoryboardNotificationMethods } from './storyboard-notifications';
 import { createStoryboardLaunchMethods } from './storyboard-launches';
 import { createStoryboardPosterMethods } from './storyboard-poster';
 import {
@@ -31,7 +30,6 @@ import {
   sequenceMusicVariants,
   sequenceStyleVersions,
   storyboardLaunches,
-  storyboardNotifications,
   sequences,
   shotPromptVersions,
   shots,
@@ -608,7 +606,6 @@ export function createSequencesMethods(
   return {
     ...createSequencesReadMethods(db, organizationId),
     ...createStoryboardLifecycleMethods(db, organizationId, userId),
-    ...createStoryboardNotificationMethods(db, organizationId),
     ...createStoryboardLaunchMethods(db, organizationId, userId),
     ...createStoryboardPosterMethods(db, organizationId),
 
@@ -955,9 +952,6 @@ export function createSequencesMethods(
         db
           .delete(storyboardLaunches)
           .where(inArray(storyboardLaunches.sequenceId, mine)),
-        db
-          .delete(storyboardNotifications)
-          .where(inArray(storyboardNotifications.sequenceId, mine)),
         db
           .delete(sequenceStyleVersions)
           .where(inArray(sequenceStyleVersions.sequenceId, mine)),
