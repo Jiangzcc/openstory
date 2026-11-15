@@ -1,9 +1,18 @@
 import { QueryClient } from '@tanstack/react-query';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+import { sessionQueryOptions } from './session-query';
 import {
   AuthCacheGeneration,
   AUTH_SESSION_QUERY_KEY,
 } from './auth-cache-generation';
+
+// Server session reads are mocked; query options and generation tracking are real.
+vi.mock('@/platform/session.fn', () => ({
+  getSessionFn: async () => ({
+    user: { id: 'mock-admin' },
+    session: { id: 'mock-session' },
+  }),
+}));
 
 // Minimal mock sessions; no auth API or database is used.
 const clients: QueryClient[] = [];
@@ -74,4 +83,14 @@ it('isolates generations between separate clients, including SSR requests', () =
   first.clear();
   expect(firstGeneration.isCurrent()).toBe(false);
   expect(secondGeneration.isCurrent()).toBe(true);
+});
+
+it('tracks the session populated by the application query and its invalidation', async () => {
+  const client = new QueryClient();
+  clients.push(client);
+  await client.fetchQuery(sessionQueryOptions);
+  const generation = new AuthCacheGeneration(client);
+  expect(generation.isCurrent()).toBe(true);
+  client.setQueryData(sessionQueryOptions.queryKey, null);
+  expect(generation.isCurrent()).toBe(false);
 });
