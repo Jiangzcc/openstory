@@ -1,0 +1,687 @@
+{
+  "date": "2026-11-15",
+  "status": "P3-objective-not-met",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "versions": {
+    "beforeP3Pilots": "d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa",
+    "globalDesignStart": "db3ea57b5f419f69c51369c28819de17515b21f5",
+    "finalCode": "2827b099b69f32c9e6043a00be2e55f1586078e5",
+    "assessmentHead": "20375dd925c643600d0b726ecd1e6e68abbf55d3"
+  },
+  "upstream": {
+    "remote": "upstream",
+    "fetchedTarget": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+    "targetCommit": "2026-11-14T05:36:46+07:00 Front page in its own route with no sidebar (#2403)",
+    "previousTarget": "a7ad595ec41f717b57cbeace01342aae9d190719",
+    "firstParentNodes": 40,
+    "historyCommits": 48,
+    "merged": false
+  },
+  "method": {
+    "git": "git version 2.53.0.windows.2",
+    "merge": "git -c merge.conflictStyle=merge merge-tree --write-tree --name-only --no-messages -z <local> <target>",
+    "targets": "git rev-list --first-parent --reverse <base>..<fetchedTarget>",
+    "conflictBlocks": "Paired conflict markers matching the exact two endpoint SHA labels in the result tree. Binary/delete/rename conflicts stay in file counts even without markers. Marked lines include markers and both variants; this is not person-time.",
+    "controls": [
+      "All compared versions have the same fixed merge base B for every target.",
+      "Each comparison uses the same upstream target, Git version and options.",
+      "Every target is merged independently into each frozen local version; no intermediate conflict resolution.",
+      "Workspace, index and HEAD were unchanged during measurement. Only merge-tree objects were written; fetch updated upstream/main.",
+      "No conflict driver, ours/theirs override, function deletion, or upstream merge was used to reduce counts."
+    ],
+    "limitations": [
+      "The 40 cumulative targets are correlated, not 40 independent release windows. Counts are not summed as unique conflicts.",
+      "Textual merge results do not prove runtime compatibility or quantify human resolution time.",
+      "These results do not predict every future upstream change."
+    ]
+  },
+  "footprint": {
+    "before": {
+      "paths": 1197,
+      "byStatus": {
+        "A": 544,
+        "M": 653
+      },
+      "existingSrc": 606
+    },
+    "globalDesignStart": {
+      "paths": 1219,
+      "byStatus": {
+        "A": 566,
+        "M": 653
+      },
+      "existingSrc": 606
+    },
+    "after": {
+      "paths": 1712,
+      "byStatus": {
+        "A": 1004,
+        "M": 708
+      },
+      "existingSrc": 661
+    }
+  },
+  "outcomes": {
+    "files": {
+      "decreased": 0,
+      "equal": 8,
+      "increased": 32
+    },
+    "textBlocks": {
+      "decreased": 0,
+      "equal": 6,
+      "increased": 34
+    },
+    "pathUnion": {
+      "before": 47,
+      "after": 55,
+      "resolved": [],
+      "introduced": [
+        "src/cast/server/db/characters.ts",
+        "src/cast/server/db/locations.ts",
+        "src/cast/server/workflows/character-bible-workflow.ts",
+        "src/look/server/db/styles.ts",
+        "src/sequences/server/add-video-model.test.ts",
+        "src/sequences/server/smart-retry.ts",
+        "src/shots/server/shot-content-edit.ts",
+        "src/stills/server/shot-image-generation.ts"
+      ]
+    }
+  },
+  "endpointChecks": [
+    {
+      "target": "a7ad595ec41f717b57cbeace01342aae9d190719",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "6219dfe32398d8dc36df2011f8ba68aac7b2a666"
+      },
+      "globalDesignStart": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "b3d439e30c7eabf4167c027f16ef694440a6e6ba"
+      },
+      "after": {
+        "files": 24,
+        "textBlocks": 37,
+        "tree": "71e6a19b2d57feb29c5ee67faa87b36114a0d250"
+      }
+    },
+    {
+      "target": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+      "before": {
+        "files": 46,
+        "textBlocks": 79,
+        "tree": "b4125b15fc25cf6d3159ae906928b1a87f5a79fe"
+      },
+      "globalDesignStart": {
+        "files": 47,
+        "textBlocks": 80,
+        "tree": "f0ebaf38a9e7438b91dc4f35902dd7ce9f8472fb"
+      },
+      "after": {
+        "files": 54,
+        "textBlocks": 94,
+        "tree": "d3e3743c8609a2bdc4759a92edd3b6cc3b046025"
+      }
+    }
+  ],
+  "latestPathChanges": {
+    "resolved": [],
+    "introduced": [
+      "src/cast/server/db/characters.ts",
+      "src/cast/server/db/locations.ts",
+      "src/cast/server/workflows/character-bible-workflow.ts",
+      "src/look/server/db/styles.ts",
+      "src/sequences/server/add-video-model.test.ts",
+      "src/sequences/server/smart-retry.ts",
+      "src/shots/server/shot-content-edit.ts",
+      "src/stills/server/shot-image-generation.ts"
+    ],
+    "retainedCount": 46
+  },
+  "series": [
+    {
+      "target": "4470e2627aa6a2806c7c4936659cb31b8a7cc091",
+      "before": {
+        "files": 5,
+        "textBlocks": 5,
+        "tree": "f8a45926ee2dcf0e543a5d67722c701d3bd9c7a7"
+      },
+      "after": {
+        "files": 5,
+        "textBlocks": 5,
+        "tree": "abeee08f6828eec6f29e70820a6f442e5afa8287"
+      }
+    },
+    {
+      "target": "a20428facf319fc77df68eb3602aefe354d579c8",
+      "before": {
+        "files": 7,
+        "textBlocks": 7,
+        "tree": "8e9dfa1c20f5cd8d48c059f2bf318ce213543a70"
+      },
+      "after": {
+        "files": 7,
+        "textBlocks": 7,
+        "tree": "411b1d65a8c363699ace78c2d158e8249619fb89"
+      }
+    },
+    {
+      "target": "e5b95c453beb97d05a3f895cfbfdcb533ffb3bda",
+      "before": {
+        "files": 11,
+        "textBlocks": 12,
+        "tree": "427d9dceadab17afc24e3c14030a9ddac26eed5f"
+      },
+      "after": {
+        "files": 11,
+        "textBlocks": 12,
+        "tree": "4497059e4c8b9ee9fcd06b45b54f6b9f0182db77"
+      }
+    },
+    {
+      "target": "5603a43b3a82a6f88142fa950c9f1849dd642279",
+      "before": {
+        "files": 14,
+        "textBlocks": 19,
+        "tree": "a0db6277c236fa6277bea54d580dc86ae0fd2e10"
+      },
+      "after": {
+        "files": 14,
+        "textBlocks": 19,
+        "tree": "6e87355565fb26e2f27d693fdfeee63cae4405b1"
+      }
+    },
+    {
+      "target": "92f5bea2159d4e53d4ccedf7908a01c9b11a6ec0",
+      "before": {
+        "files": 14,
+        "textBlocks": 19,
+        "tree": "cc0ba6b6f6d8ef7064321f0667a105be7d8e4f69"
+      },
+      "after": {
+        "files": 14,
+        "textBlocks": 19,
+        "tree": "627a633fc12774265e9e506f61682fecbd0cc7e8"
+      }
+    },
+    {
+      "target": "66416dfa1dfa2da480b0bf3eadf3f26ad3188650",
+      "before": {
+        "files": 15,
+        "textBlocks": 20,
+        "tree": "715a3689bce289f08e3e909adf595a4a93a747e4"
+      },
+      "after": {
+        "files": 15,
+        "textBlocks": 20,
+        "tree": "447b300cf9783fbfae775fa5ecf6de983ffa8ccd"
+      }
+    },
+    {
+      "target": "6a9dcadb33d915fbedf80720a844968a6a8bea62",
+      "before": {
+        "files": 15,
+        "textBlocks": 20,
+        "tree": "8cc474e2f22b934b87c5e60f7b1f0d1cbe0eb838"
+      },
+      "after": {
+        "files": 15,
+        "textBlocks": 21,
+        "tree": "2e78984800208d31d5fd56d417f91e06b75b75a2"
+      }
+    },
+    {
+      "target": "ad0e7fbe6fd9e2d06905725e48a6296cef1abca7",
+      "before": {
+        "files": 16,
+        "textBlocks": 22,
+        "tree": "068639c90a60f8ab6800aed985ba4f0588cdb198"
+      },
+      "after": {
+        "files": 16,
+        "textBlocks": 23,
+        "tree": "133807c3f68f9b1a3396345c48b6d62c3efa4e27"
+      }
+    },
+    {
+      "target": "02ba7c7873e2f72327d5108d6cb51f67b37f41c0",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "0c21a86019ad80fcbbe2fa410ee2b0e12629b46c"
+      },
+      "after": {
+        "files": 21,
+        "textBlocks": 32,
+        "tree": "6439cbd28f53aac464e977c0b0cae28fdafc3fec"
+      }
+    },
+    {
+      "target": "83e522b63e15e47263d7fa8a59aab378ad3769f2",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "8fdf7094e425eac92fdb98ea92ba63e6cf8b168a"
+      },
+      "after": {
+        "files": 21,
+        "textBlocks": 32,
+        "tree": "0a4ebe8f81f0750e820d15836b2895125c81d868"
+      }
+    },
+    {
+      "target": "505f9535da05b82d04230138ae4089b00cff6204",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "74ef59d041667ba8c016ae183f67e5f3dc9156c4"
+      },
+      "after": {
+        "files": 21,
+        "textBlocks": 32,
+        "tree": "b36bbbfc2f0ce75e8374c7908566d30babe6968b"
+      }
+    },
+    {
+      "target": "b4d79df557e7b1a6bc7efd67ffb40070948c2673",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "05e1a22c39db120747c5f3d39c8c85c333280617"
+      },
+      "after": {
+        "files": 21,
+        "textBlocks": 32,
+        "tree": "2761ae2194bff1402399abbbbf44c7268785d166"
+      }
+    },
+    {
+      "target": "189c0b334c5aad0f1d0f1fbd0a624fe42f0dd1b4",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "15838d8a790c817f751ba19656d19f8d74f6639f"
+      },
+      "after": {
+        "files": 21,
+        "textBlocks": 32,
+        "tree": "2899d611ae8037d32c90a12c4ed2e6ff61da75a8"
+      }
+    },
+    {
+      "target": "afff085fc13c15d6d0f030ca8f09cb961ee1597a",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "66625f730242b264debd281b87d7e4c3ec946339"
+      },
+      "after": {
+        "files": 24,
+        "textBlocks": 37,
+        "tree": "a01aba177d0fb04ac1975ae349b0c40a735fa985"
+      }
+    },
+    {
+      "target": "5fa7ded6447464193294e2426a04d89aec2daca1",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "86231f2b1befc71dd7228fa831557bbe1fd47d87"
+      },
+      "after": {
+        "files": 24,
+        "textBlocks": 37,
+        "tree": "19a8d79bcf255fbac67e461491a3b402330d4bb1"
+      }
+    },
+    {
+      "target": "a7ad595ec41f717b57cbeace01342aae9d190719",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "6219dfe32398d8dc36df2011f8ba68aac7b2a666"
+      },
+      "after": {
+        "files": 24,
+        "textBlocks": 37,
+        "tree": "71e6a19b2d57feb29c5ee67faa87b36114a0d250"
+      }
+    },
+    {
+      "target": "d436445bc7906aa3914d8a7a7c7c813e028573d3",
+      "before": {
+        "files": 18,
+        "textBlocks": 25,
+        "tree": "22fd12a04a818e5ea6a55530dc061a8ded1bed84"
+      },
+      "after": {
+        "files": 24,
+        "textBlocks": 37,
+        "tree": "0a750dbbabb03b8546c32955ca062ecf1bb9931e"
+      }
+    },
+    {
+      "target": "27d8770f1c97125037e025bf95a4a6b8a857f370",
+      "before": {
+        "files": 28,
+        "textBlocks": 38,
+        "tree": "1427147d2a2cfe508f498f755abafb5f6cd35ee5"
+      },
+      "after": {
+        "files": 35,
+        "textBlocks": 52,
+        "tree": "7bf1bbc0da3ebdacb70506e46c10bfa71beb27cc"
+      }
+    },
+    {
+      "target": "a19a605c6aac1f446c0c22e8c9db1d3acde124f8",
+      "before": {
+        "files": 28,
+        "textBlocks": 38,
+        "tree": "0b673a89e9fc651cef36ad07ddaf748713453d51"
+      },
+      "after": {
+        "files": 35,
+        "textBlocks": 52,
+        "tree": "0ac7e57206528828cf0d5ba0852679d85e581346"
+      }
+    },
+    {
+      "target": "2fd2ff48ff11ceab11ec51dd55bdbdb9a61f09bd",
+      "before": {
+        "files": 36,
+        "textBlocks": 57,
+        "tree": "d802b4e6474d0b863e8699e76523f3bef4d4642e"
+      },
+      "after": {
+        "files": 44,
+        "textBlocks": 72,
+        "tree": "9f8c2ebebf9a721775a141ce5f7b46d97bb3d1e9"
+      }
+    },
+    {
+      "target": "8fef2925cfac9c04fc4d20eb148d6dc39ba0ce31",
+      "before": {
+        "files": 36,
+        "textBlocks": 57,
+        "tree": "f08d00ff86b83c35627cebee1f3c1998e08755d9"
+      },
+      "after": {
+        "files": 44,
+        "textBlocks": 72,
+        "tree": "4a0b216f702f0b3a79d5954c4368e4c8a1baad34"
+      }
+    },
+    {
+      "target": "756159c6f790daa9a0e3465caada70c2cd5c0f32",
+      "before": {
+        "files": 36,
+        "textBlocks": 57,
+        "tree": "3feecf8dfc56b696e2b5517b8e90a6b1f35071fb"
+      },
+      "after": {
+        "files": 44,
+        "textBlocks": 72,
+        "tree": "20db25b5c83e591af111ca9eb886a833bd74316a"
+      }
+    },
+    {
+      "target": "86599736b3864345717feb4b9557cd6e646cecd6",
+      "before": {
+        "files": 36,
+        "textBlocks": 57,
+        "tree": "c00f35970772205475b36635f9a44ca7e96a5f18"
+      },
+      "after": {
+        "files": 44,
+        "textBlocks": 72,
+        "tree": "b8401049fe92127529959e9255550364fa346405"
+      }
+    },
+    {
+      "target": "92990f10912f2f7b4762ebe9c04889413762dcdf",
+      "before": {
+        "files": 36,
+        "textBlocks": 57,
+        "tree": "fcff1ce5395fc5eb061f8e787bbdcf7ed3cd6acf"
+      },
+      "after": {
+        "files": 44,
+        "textBlocks": 72,
+        "tree": "7f0db58d7e6f243c3d9870b2fdbdf0041860561e"
+      }
+    },
+    {
+      "target": "729b3f512743c773c56ab327dc8b9fc0fb0e0241",
+      "before": {
+        "files": 37,
+        "textBlocks": 60,
+        "tree": "264c0bf4fb06d50967e5bea85c616c7d47ca8695"
+      },
+      "after": {
+        "files": 45,
+        "textBlocks": 75,
+        "tree": "0e44a75eaaf867d561d4caf61dea72dfdd41faf4"
+      }
+    },
+    {
+      "target": "7a1037539c51492a681703b3df24255c4d158258",
+      "before": {
+        "files": 38,
+        "textBlocks": 61,
+        "tree": "4c5b85f5e034933ee152bed3d3d241e9fd982465"
+      },
+      "after": {
+        "files": 46,
+        "textBlocks": 76,
+        "tree": "597bc2a7949973890645faed8bc5659c48e125e7"
+      }
+    },
+    {
+      "target": "10b99fa2db968405ad7b0bf796c40a64c8698eb6",
+      "before": {
+        "files": 38,
+        "textBlocks": 61,
+        "tree": "b9b0cd02bdf7098033a063e48beb2aa2946c6c3f"
+      },
+      "after": {
+        "files": 46,
+        "textBlocks": 76,
+        "tree": "ae706909c61c5915d3de3fb0c8cb1813ad5ffb14"
+      }
+    },
+    {
+      "target": "9c2d857734531479855d240bd4392c07c3830b4e",
+      "before": {
+        "files": 39,
+        "textBlocks": 62,
+        "tree": "033cde6f854aa954e8ea6ae3834dc580e90e8f7c"
+      },
+      "after": {
+        "files": 47,
+        "textBlocks": 77,
+        "tree": "863312eb2f703fa6ebbde3c07580e1b46d421148"
+      }
+    },
+    {
+      "target": "186f225983c5b013fb95688289321c856cc71bea",
+      "before": {
+        "files": 40,
+        "textBlocks": 68,
+        "tree": "54a12e96f8a9f27864172656731484672dbf1676"
+      },
+      "after": {
+        "files": 48,
+        "textBlocks": 83,
+        "tree": "c34c8d4eac41670e176752f24fcaddcb6f7768c1"
+      }
+    },
+    {
+      "target": "5ea49552c67ecbb45144ff9ffdc42a28eac35aed",
+      "before": {
+        "files": 42,
+        "textBlocks": 71,
+        "tree": "0b348107d58a5c5be2c7d62ad9a1e00f30ba9c93"
+      },
+      "after": {
+        "files": 50,
+        "textBlocks": 86,
+        "tree": "e90f926f2116447bbb2f8e321d0d171b9cff671a"
+      }
+    },
+    {
+      "target": "ea576885654b2971a3e89b7c696cf136eb084887",
+      "before": {
+        "files": 42,
+        "textBlocks": 71,
+        "tree": "9a70699bf2596aa2e1f5fecaeebbf0b8bb020cb7"
+      },
+      "after": {
+        "files": 50,
+        "textBlocks": 86,
+        "tree": "2ef10a0f6d825fc735224c849f5fbd36fb287b3a"
+      }
+    },
+    {
+      "target": "9d6e81e4bd74fe35c03df4e55c27f4e04013577b",
+      "before": {
+        "files": 42,
+        "textBlocks": 71,
+        "tree": "d854514f89b2245a2f28db364bd0286589315eef"
+      },
+      "after": {
+        "files": 50,
+        "textBlocks": 86,
+        "tree": "7dba6504cc85cb4037a2d18e7607960d68b6d749"
+      }
+    },
+    {
+      "target": "c0daa397965c0db0eb45699594c3aaf7b15bb475",
+      "before": {
+        "files": 42,
+        "textBlocks": 71,
+        "tree": "c72acda5e36cac210b81aac2fb8d1db534855881"
+      },
+      "after": {
+        "files": 50,
+        "textBlocks": 86,
+        "tree": "169eeb000eea656fba4585d05376a212d1031211"
+      }
+    },
+    {
+      "target": "c60a0e767f1d402fb04c77d7dbbe9cde0750f5b8",
+      "before": {
+        "files": 42,
+        "textBlocks": 71,
+        "tree": "2602edb7ed465408f4beee7b01e3fcba523feb1c"
+      },
+      "after": {
+        "files": 50,
+        "textBlocks": 86,
+        "tree": "0bb887b61df3e3c86328d6f90206b379154f715c"
+      }
+    },
+    {
+      "target": "69a9a5e850eb8bfd2a0416143a053e7ac3568852",
+      "before": {
+        "files": 42,
+        "textBlocks": 71,
+        "tree": "df3416fba3d33c654ecdfcf4dc403bfde1be8207"
+      },
+      "after": {
+        "files": 50,
+        "textBlocks": 86,
+        "tree": "d396668b03cc88f168f5935000264a41941323af"
+      }
+    },
+    {
+      "target": "edf79fc5d205e04465229582071634de953d4a8e",
+      "before": {
+        "files": 42,
+        "textBlocks": 71,
+        "tree": "630d2399fea3ee854eda0e42828cedb4791bf5bd"
+      },
+      "after": {
+        "files": 50,
+        "textBlocks": 86,
+        "tree": "9af0bb125de8fb5f81914f63bae493e9fbccb1aa"
+      }
+    },
+    {
+      "target": "bf11c4cbe76ce93e935cd1b4f2123c972f2cd134",
+      "before": {
+        "files": 42,
+        "textBlocks": 71,
+        "tree": "e7ba499997165aed5596cb967ae7d01d81869797"
+      },
+      "after": {
+        "files": 50,
+        "textBlocks": 86,
+        "tree": "e4e7f78abab9941f3add7960384c8d2210b3daaf"
+      }
+    },
+    {
+      "target": "e3ac7313df07a77828f0f50b3263067fe2acdfb6",
+      "before": {
+        "files": 44,
+        "textBlocks": 73,
+        "tree": "22031f1c627f7805f1ed477aad21d6b9edef6fc8"
+      },
+      "after": {
+        "files": 52,
+        "textBlocks": 88,
+        "tree": "5b2c368330e11307ab9253f04bd3678a32b48b91"
+      }
+    },
+    {
+      "target": "1672af37e796bdb09501e868f922678201b9c043",
+      "before": {
+        "files": 47,
+        "textBlocks": 80,
+        "tree": "dadb69dcc2b545a5338d06fe3dc519b641785fcc"
+      },
+      "after": {
+        "files": 55,
+        "textBlocks": 95,
+        "tree": "b51a2dbd1263dab5ac3b02c47a5f39a5d4363c9f"
+      }
+    },
+    {
+      "target": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+      "before": {
+        "files": 46,
+        "textBlocks": 79,
+        "tree": "b4125b15fc25cf6d3159ae906928b1a87f5a79fe"
+      },
+      "after": {
+        "files": 54,
+        "textBlocks": 94,
+        "tree": "d3e3743c8609a2bdc4759a92edd3b6cc3b046025"
+      }
+    }
+  ],
+  "rawEvidence": {
+    "directory": "D:\\code\\github\\openstory-p3-evidence-20261115\\conflict-review",
+    "files": [
+      {
+        "path": "comparison.json",
+        "sha256": "00a2c4522dac8d38346565a1679448e73846e04980ecd474903d848299b9d69a"
+      },
+      {
+        "path": "additional-comparison.json",
+        "sha256": "755fbd950ca90c5ffc086ac67bf75a600d0064afa25410a22f2411c3f41fab0b"
+      },
+      {
+        "path": "original-comparison.json",
+        "sha256": "4b767e2f94147523727ae2b8f807f2c9459844f15ab28d4ae8f7b26da16b832f"
+      },
+      {
+        "path": "measure_remaining.py",
+        "sha256": "f7a043a82a70777b9a5923b4f2961a67cba28fd3d441a156ab790894a96a69f3"
+      }
+    ],
+    "mergeOutputs": 136
+  }
+}

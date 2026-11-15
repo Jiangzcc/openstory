@@ -1,5 +1,12 @@
 {
   "sourceCommit": "2827b099b69f32c9e6043a00be2e55f1586078e5",
+  "p3Complete": false,
+  "objectiveAssessment": {
+    "status": "not-met-completion-claim-withdrawn",
+    "report": "../../p3-conflict-assessment-20261115.md",
+    "evidence": "../20261115-p3-conflict-assessment/comparison.json",
+    "historicalScope": "Package closures below record disposition and repair evidence only; they do not establish reduced merge conflicts or P3 completion."
+  },
   "packages": {
     "K0": "closed-at-original-structural-and-explicit-evidence-boundary",
     "K1": "closed-at-original-structural-and-explicit-evidence-boundary",
