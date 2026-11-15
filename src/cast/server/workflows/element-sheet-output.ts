@@ -101,5 +101,3 @@ export function bindElementSheetOutput(
     },
   };
 }
-
-export type ElementSheetOutput = ReturnType<typeof bindElementSheetOutput>;
