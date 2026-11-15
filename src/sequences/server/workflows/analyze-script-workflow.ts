@@ -1,7 +1,6 @@
 /** Analyze and cast the script, then persist each shot's spec and derived prompts. */
 import { sanitizeScriptContent } from '@/sequences/prompt-validation';
 import { resolveStoryboardOwner } from './generation-workflow-owner';
-import { bindAnalyzeScriptOutput } from './analyze-script-output';
 import { resolveVideoModels } from '@/models/resolve-video-models';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { getGenerationChannel } from '@/platform/realtime';
@@ -53,15 +52,10 @@ export class AnalyzeScriptWorkflow extends OpenStoryWorkflowEntrypoint<AnalyzeSc
   protected override async runImpl(
     event: Readonly<WorkflowEvent<AnalyzeScriptWorkflowInput>>,
     step: WorkflowStep,
-    workflowDb: WorkflowScopedDb
+    scopedDb: WorkflowScopedDb
   ): Promise<void> {
     const input = event.payload;
     const workflowOwner = resolveStoryboardOwner(input);
-    const scopedDb = bindAnalyzeScriptOutput(
-      workflowDb,
-      input.sequenceId,
-      workflowOwner
-    );
     const parentInstanceId = event.instanceId;
     const {
       sequenceId,

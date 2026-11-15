@@ -1,8 +1,9 @@
 import { expect, it, vi } from 'vitest';
 import type { Database } from '@/platform/server/db/client';
 import { asStub } from '@/test/as-stub';
-import { createStoryboardContentMethods } from './storyboard-content';
+import { checkedStoryboardContentWrite } from './storyboard-content-writes';
 import {
+  createStoryboardContentScope,
   StoryboardContentOwnershipError,
   StoryboardContentOwnershipCheckError,
 } from './storyboard-content-scope';
@@ -11,7 +12,7 @@ const OWNER = { id: 'synthetic-sequence', workflowRunId: 'synthetic-root' };
 const ACTIVE = [{ id: OWNER.id }];
 type Read = typeof ACTIVE | Error;
 
-// Explicit SQL execution substitutes isolate error classification; real mutations have separate D1 tests.
+// Ownership reads and writes are explicit substitutes; real mutations have D1 tests.
 function fixture(reads: Read[], writeError?: Error) {
   const read = vi.fn(async () => {
     const result = reads.shift();
@@ -30,9 +31,8 @@ function fixture(reads: Read[], writeError?: Error) {
         }),
       }),
     }),
-    update: () => ({ set: () => ({ where: write }) }),
   });
-  const content = createStoryboardContentMethods(
+  const scope = createStoryboardContentScope(
     db,
     'synthetic-organization',
     OWNER
@@ -40,7 +40,7 @@ function fixture(reads: Read[], writeError?: Error) {
   return {
     read,
     write,
-    run: () => content.sequences.updateTitle(OWNER.id, 'Synthetic title'),
+    run: checkedStoryboardContentWrite(scope, write),
   };
 }
 

@@ -30,7 +30,6 @@ import type {
   ShotPromptVersionComponents,
 } from '@/platform/server/db/schema';
 import { getLogger } from '@/platform/logger';
-import type { SQL } from 'drizzle-orm';
 import {
   and,
   desc,
@@ -48,8 +47,6 @@ import { pageOf } from '@/platform/server/db/read-page';
 import type { PageOptions } from '@/platform/server/db/read-page';
 import { LIVE_PENDING_STATUSES } from './frame-prompt-versions';
 import { buildEventInsert } from '@/sequences/server/db/sequence-events';
-import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
-import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 
 const logger = getLogger(['openstory', 'db', 'shot-prompt-versions']);
 
@@ -201,11 +198,8 @@ const assertMotionPromptType = (promptType: ShotPromptType): void => {
  */
 export async function promoteLegacyMotionDialogue(
   db: Database,
-  shotId: string,
-  contentScope?: StoryboardContentScope,
-  writeGuard?: SQL
+  shotId: string
 ): Promise<void> {
-  const guard = and(contentScope?.shot(shotId), writeGuard);
   const [row] = await db
     .select({ dialogue: shotPromptVersions.dialogue })
     .from(shots)
@@ -216,7 +210,6 @@ export async function promoteLegacyMotionDialogue(
     .where(
       and(
         eq(shots.id, shotId),
-        guard,
         notExists(
           db
             .select({ one: sql`1` })
@@ -232,39 +225,20 @@ export async function promoteLegacyMotionDialogue(
     )
     .limit(1);
   if (!row?.dialogue || row.dialogue.lines.length === 0) return;
-  await insertLegacyDialogue(db, shotId, row.dialogue, guard);
+  await db.insert(shotDialogueVersions).values({
+    shotId,
+    lines: row.dialogue.lines.map((line) => ({
+      character: line.character,
+      line: line.line,
+      tone: line.tone,
+      ...(line.voiceToken ? { voiceToken: line.voiceToken } : {}),
+    })),
+    source: 'prompt',
+    selectedAt: new Date(),
+  });
 }
 
-async function insertLegacyDialogue(
-  db: Database,
-  shotId: string,
-  dialogue: NonNullable<ShotPromptVersion['dialogue']>,
-  guard: SQL | undefined
-): Promise<void> {
-  await insertWithStoryboardGuard(
-    db,
-    shotDialogueVersions,
-    [
-      {
-        shotId,
-        lines: dialogue.lines.map((line) => ({
-          character: line.character,
-          line: line.line,
-          tone: line.tone,
-          ...(line.voiceToken ? { voiceToken: line.voiceToken } : {}),
-        })),
-        source: 'prompt',
-        selectedAt: new Date(),
-      },
-    ],
-    guard
-  );
-}
-
-export function createShotPromptVersionsMethods(
-  db: Database,
-  contentScope?: StoryboardContentScope
-) {
+export function createShotPromptVersionsMethods(db: Database) {
   /**
    * Point the shot at `version`. The render manifest references this pointer
    * (motion prompt version snapshot, #990), so a null here means the manifest
@@ -277,7 +251,7 @@ export function createShotPromptVersionsMethods(
         selectedMotionPromptVersionId: versionId,
         updatedAt: new Date(),
       })
-      .where(and(eq(shots.id, shotId), contentScope?.shot(shots.id)));
+      .where(eq(shots.id, shotId));
 
   /**
    * Revoke the mirror right of every live motion claim on this shot (#1085)
@@ -293,8 +267,7 @@ export function createShotPromptVersionsMethods(
         and(
           eq(shotPromptVersions.shotId, shotId),
           eq(shotPromptVersions.promptType, 'motion'),
-          inArray(shotPromptVersions.status, [...LIVE_PENDING_STATUSES]),
-          contentScope?.shot(shotPromptVersions.shotId)
+          inArray(shotPromptVersions.status, [...LIVE_PENDING_STATUSES])
         )
       );
 
@@ -339,21 +312,10 @@ export function createShotPromptVersionsMethods(
       input: WriteShotPromptVersionInput
     ): Promise<ShotPromptVersion> => {
       assertMotionPromptType(input.promptType);
-      const guard =
-        input.source === 'derived'
-          ? contentScope?.specForShot(input.specVersionId, input.shotId)
-          : contentScope?.shot(input.shotId);
-      await promoteLegacyMotionDialogue(db, input.shotId, contentScope, guard);
+      await promoteLegacyMotionDialogue(db, input.shotId);
 
       const nextHash = input.inputHash;
       const analysisModel = input.analysisModel;
-      const provenance =
-        contentScope && input.source === 'derived'
-          ? and(
-              eq(shotPromptVersions.source, 'derived'),
-              eq(shotPromptVersions.specVersionId, input.specVersionId)
-            )
-          : undefined;
 
       // A workflow step retry re-submits the same output for the same context.
       // Same context but NEW text is a force-regen and must append.
@@ -371,9 +333,7 @@ export function createShotPromptVersionsMethods(
               eq(shotPromptVersions.promptType, input.promptType),
               eq(shotPromptVersions.inputHash, nextHash),
               eq(shotPromptVersions.text, input.text),
-              ne(shotPromptVersions.source, 'restored'),
-              guard,
-              provenance
+              ne(shotPromptVersions.source, 'restored')
             )
           );
         const same = (a: unknown, b: unknown) =>
@@ -382,28 +342,24 @@ export function createShotPromptVersionsMethods(
       }
 
       if (!version) {
-        [version] = await insertWithStoryboardGuard(
-          db,
-          shotPromptVersions,
-          [
-            {
-              shotId: input.shotId,
-              promptType: input.promptType,
-              text: input.text,
-              components: input.components,
-              parameters: input.parameters,
-              audio: input.audio,
-              usesStartFrame: input.usesStartFrame,
-              source: input.source,
-              specVersionId:
-                input.source === 'derived' ? input.specVersionId : null,
-              inputHash: nextHash,
-              analysisModel,
-              createdBy: input.createdBy ?? null,
-            },
-          ],
-          guard
-        ).returning();
+        [version] = await db
+          .insert(shotPromptVersions)
+          .values({
+            shotId: input.shotId,
+            promptType: input.promptType,
+            text: input.text,
+            components: input.components,
+            parameters: input.parameters,
+            audio: input.audio,
+            usesStartFrame: input.usesStartFrame,
+            source: input.source,
+            specVersionId:
+              input.source === 'derived' ? input.specVersionId : null,
+            inputHash: nextHash,
+            analysisModel,
+            createdBy: input.createdBy ?? null,
+          })
+          .returning();
       }
 
       if (!version) {

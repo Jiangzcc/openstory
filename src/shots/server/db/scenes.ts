@@ -43,8 +43,6 @@ import {
 import type { SQL } from 'drizzle-orm';
 import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { buildEventInsert } from '@/sequences/server/db/sequence-events';
-import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
-import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 
 /**
  * The version's value, or the legacy column's for a scene whose selected row
@@ -131,10 +129,7 @@ type SceneFilters = {
  */
 export type SceneNarrativeUpdate = Partial<SceneNarrative>;
 
-export function createScenesMethods(
-  db: Database,
-  contentScope?: StoryboardContentScope
-) {
+export function createScenesMethods(db: Database) {
   const selectScenes = () =>
     db
       .select(sceneColumns)
@@ -195,8 +190,7 @@ export function createScenesMethods(
     // selected row INSIDE the batch, not from `existing`: a script or
     // narrative edit landing between the read and this write must survive.
     const versionId = opts.versionId ?? generateId();
-    const guard = and(
-      contentScope?.scene(scenes.id),
+    const guard =
       opts.expectedScriptVersionId === undefined
         ? eq(scenes.id, existing.id)
         : and(
@@ -204,8 +198,7 @@ export function createScenesMethods(
             opts.expectedScriptVersionId === null
               ? isNull(scenes.selectedScriptVersionId)
               : eq(scenes.selectedScriptVersionId, opts.expectedScriptVersionId)
-          )
-    );
+          );
     const script = sql`coalesce(${sceneScriptVersions.content}, ${JSON.stringify(EMPTY_SCRIPT)})`;
     const field = (key: keyof SceneNarrative, value: SQL) => {
       const patched: SceneNarrativeUpdate[keyof SceneNarrative] = patch[key];
@@ -329,12 +322,9 @@ export function createScenesMethods(
       // The narrative is not on the row (#1600): scene split writes it with
       // the split script version (`sceneScriptVersions.seedSplitVersions` /
       // `updateSplitContent`).
-      const [scene] = await insertWithStoryboardGuard(
-        db,
-        scenes,
-        [data],
-        contentScope?.sequence(data.sequenceId)
-      )
+      const [scene] = await db
+        .insert(scenes)
+        .values(data)
         .onConflictDoUpdate({
           target: [scenes.sequenceId, scenes.orderIndex],
           set: {
@@ -384,9 +374,7 @@ export function createScenesMethods(
       continuity: NonNullable<SceneNarrative['continuity']>,
       opts: { actorId: string | null }
     ): Promise<void> => {
-      const [existing] = await selectScenes().where(
-        and(eq(scenes.id, sceneId), contentScope?.scene(scenes.id))
-      );
+      const [existing] = await selectScenes().where(eq(scenes.id, sceneId));
       // Loud: a write addressed to a row that is not there is a wrong id,
       // and returning quietly hid one (#2015).
       if (!existing) throw new NotFoundError(`Scene ${sceneId} not found`);
@@ -454,8 +442,7 @@ export function createScenesMethods(
         .where(
           and(
             eq(scenes.sequenceId, sequenceId),
-            gte(scenes.orderIndex, minOrderIndex),
-            contentScope?.sequence(scenes.sequenceId)
+            gte(scenes.orderIndex, minOrderIndex)
           )
         )
         .returning({ id: scenes.id });

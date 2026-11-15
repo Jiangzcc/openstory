@@ -19,7 +19,6 @@
 import type { Database } from '@/platform/server/db/client';
 import { generateId } from '@/platform/id';
 import { isEngineAbortError } from '@/platform/server/workflow/errors';
-import { isStoryboardContentOwnershipFailure } from './storyboard-content-scope';
 import type { WorkflowStep } from 'cloudflare:workers';
 import { getLogger } from '@/platform/logger';
 import {
@@ -260,8 +259,7 @@ export async function logRunEvent(
       await events.recordOnce({ ...input, id });
     });
   } catch (error) {
-    if (isEngineAbortError(error) || isStoryboardContentOwnershipFailure(error))
-      throw error;
+    if (isEngineAbortError(error)) throw error;
     getLogger(['openstory', 'sequence-events']).error(
       'activity-log line was not written',
       { err: error, kind: input.kind, sequenceId: input.sequenceId }

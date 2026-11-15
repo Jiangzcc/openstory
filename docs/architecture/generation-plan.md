@@ -105,8 +105,8 @@ INSERT and selection-pointer UPDATE each check organization, sequence,
 current root or explicitly trusted launcher claim, and `processing` at SQL
 execution time. A precheck alone cannot authorize a later mutation.
 
-The same shared method checks and step error adapter as analysis output
-cover early returns and failures. Confirmed ownership loss becomes
+Shared method checks and the step error adapter cover early returns and
+failures. Confirmed ownership loss becomes
 non-retryable inside `save-automatic-style`; unknown verification retains
 retryability and causes. The analysis child instance and notification parent
 are not inferred as root authority. Ownerless callers retain their ordinary
@@ -125,82 +125,26 @@ Cached checkpoints, other shared-resource writers, complete descendant/event
 ownership, root cancellation and deployed acceptance remain open. Exact
 local evidence is in the [automatic-style batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-auto-style/README.md').
 
-## Analysis output ownership (secondary development, 2026-11-14)
+## Analysis output and scene splitting (secondary development, 2026-11-15)
 
-AnalyzeScript resolves its trusted Storyboard root through the existing
-`resolveStoryboardOwner` and binds `storyboardAnalysisOutput` before running
-steps. The bounded surface covers scene-look continuity, initial shot specs,
-derived visual/motion prompts, completion activity and analysis duration.
-All underlying mutations require the current organization, sequence,
-root instance or explicitly supplied claim, and `processing` status in SQL.
-Spec, shot and frame relationships are checked through their actual rows;
-a frame's denormalized sequence id cannot authorize a different shot's spec.
+The user chose to retire the extra Storyboard-root write fences from
+AnalyzeScript and SceneSplit. Both workflows now call their ordinary scoped
+writers directly. The two DB facades and two workflow adapters were deleted;
+the seven scene, shot, script, dialogue, spec and prompt DB modules match
+upstream `5da052c46` in full.
 
-This includes internal writes: continuity's script version and selection,
-the spec's selection, both prompt selections and claim demotions, and legacy
-motion dialogue promotion. A derived motion write with an invalid spec
-cannot migrate dialogue before its prompt admission fails. Bound derived
-dedupe requires the same source and exact spec version as well as the
-existing text/hash/audio match. Otherwise identical text could select an old
-spec's provenance. Ordinary unbound writers retain their existing dedupe.
-The new facade exposes only the required write methods.
+These paths use upstream mutation, version, selection and claim behavior.
+The additional root/processing predicates, bound derived-prompt provenance
+deduplication and split-seed/pointer batch are retired. Completion activity
+again uses upstream best-effort logging and engine-interruption propagation.
+An older descendant is no longer rejected by these extra root fences.
 
-No-op returns and errors use the same ownership checks and workflow error
-adapter as SceneSplit. Confirmed loss is non-retryable inside the step;
-unavailable verification remains retryable, with causes retained. Failure
-hooks receive their original DB surface, so terminal cleanup is not blocked
-by a processing-only content fence. Existing per-method batch boundaries,
-`select: false`, reference-only omission of visual prompts, legacy dialogue
-and rewrite-claim behavior remain. The full spec/prompt publication loop is
-not one transaction; earlier authorized writes can remain after failure.
-
-Cast and automatic-style writes have the separate contracts above; every
-other descendant remains outside this slice. A takeover after a successful write/check can still precede a shot
-event, phase signal or callback. Ownerless standalone calls, old cached
-steps, root cancellation and deployed Cloudflare/provider acceptance remain
-open. Exact local evidence is in the [analysis output batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-analysis-output/README.md').
-
-## Scene-split descendant content ownership (secondary development, 2026-11-14)
-
-A Storyboard's SceneSplit descendant binds its existing write methods through
-`scopedDb.storyboardContent` using the explicit root owner in its payload.
-Every affected INSERT, UPDATE and DELETE checks the organization, sequence,
-root instance or explicitly supplied launcher claim, and `processing` status
-inside the mutation. Failure retains the instance id, so identity alone is
-insufficient. Scene, shot, script and dialogue targets must belong to that
-sequence. No root id is inferred from a child instance name or its direct
-AnalyzeScript parent.
-
-The bound surface covers streamed and final titles, scenes, shot upserts and
-anchor frames, shot links and trimming, split scripts and their selection
-pointers, authored dialogue and its claim demotion, element first mentions,
-and the scene-split completion activity. Conditional inserts retain schema
-defaults and column encoders; smaller chunks stay within D1's parameter limit.
-A split seed and its selection pointer now commit in one D1 batch, so a failed
-pointer update cannot leave a seed that retry skips. Existing dialogue and
-script fallback batches retain their atomic boundary.
-
-Checks around each method stop stale follow-on work even when the method
-returns an unchanged or already-seeded result. Write safety comes from SQL,
-including after an earlier check passed. Confirmed loss becomes a non-retryable
-error inside the step callback, including when a guarded write returned no
-row. Completion logging propagates both confirmed loss and an unavailable
-ownership check; ordinary activity-write failures with a confirmed active
-owner keep their best-effort behavior. Underlying write/check causes are kept.
-Previously committed chunks remain;
-the entire split is not a transaction. Unbound standalone analysis keeps its
-existing behavior. Payloads lacking an explicit root do not gain this fence.
-
-This bounded slice does not fence AnalyzeScript's later cast, location,
-continuity, specification or derived-prompt writes, or every other descendant.
-Ownership can change after a successful write/check and before a realtime
-event or preview dispatch; those external effects still need their own
-protocol. Old cached workflow steps, root cancellation, email and deployed
-Cloudflare replay/concurrency acceptance remain open. Exact local evidence is
-recorded in the [scene-split content batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-scene-split-content/README.md').
-The existing separate tail-shot and tail-scene deletes are each fenced, not
-one atomic trim. Existing unchunked reads of more than 100 scene ids retain
-their previous D1 parameter-limit boundary; this batch only bounds inserts.
+Required promptLocale, frozen model/channel configuration and usage/cost
+attribution remain. Cast, automatic-style, reference/element/poster publication
+and root lifecycle have separate guards outside this retirement. Historical
+[analysis output](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-analysis-output/README.md')
+and [scene-split content](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-scene-split-content/README.md')
+records describe the retired guarantees.
 
 - Pure half (units, requires graph, cascade, Update all's filter, footer
   copy): `src/sequences/generation-plan.ts`.

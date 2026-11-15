@@ -29,8 +29,6 @@ import { pageOf } from '@/platform/server/db/read-page';
 import type { PageOptions } from '@/platform/server/db/read-page';
 import { getLogger } from '@/platform/logger';
 import { buildEventInsert } from '@/sequences/server/db/sequence-events';
-import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
-import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 
 const logger = getLogger(['openstory', 'db', 'frame-prompt-versions']);
 
@@ -161,10 +159,7 @@ async function latestCompletedByFrameIds(
   return byFrame;
 }
 
-export function createFramePromptVersionsMethods(
-  db: Database,
-  contentScope?: StoryboardContentScope
-) {
+export function createFramePromptVersionsMethods(db: Database) {
   /** Point the frame at `version`. */
   const selectVersion = (frameId: string, versionId: string) =>
     db
@@ -173,7 +168,7 @@ export function createFramePromptVersionsMethods(
         selectedImagePromptVersionId: versionId,
         updatedAt: new Date(),
       })
-      .where(and(eq(frames.id, frameId), contentScope?.frame(frames.id)));
+      .where(eq(frames.id, frameId));
 
   /**
    * Revoke the mirror right of every live claim on this frame (#1085): after
@@ -192,8 +187,7 @@ export function createFramePromptVersionsMethods(
       .where(
         and(
           eq(framePromptVersions.frameId, frameId),
-          inArray(framePromptVersions.status, [...LIVE_PENDING_STATUSES]),
-          contentScope?.frame(framePromptVersions.frameId)
+          inArray(framePromptVersions.status, [...LIVE_PENDING_STATUSES])
         )
       );
 
@@ -238,17 +232,6 @@ export function createFramePromptVersionsMethods(
     ): Promise<FramePromptVersion> => {
       const nextHash = input.inputHash;
       const analysisModel = input.analysisModel;
-      const guard =
-        input.source === 'derived'
-          ? contentScope?.specForFrame(input.specVersionId, input.frameId)
-          : contentScope?.frame(input.frameId);
-      const provenance =
-        contentScope && input.source === 'derived'
-          ? and(
-              eq(framePromptVersions.source, 'derived'),
-              eq(framePromptVersions.specVersionId, input.specVersionId)
-            )
-          : undefined;
 
       // A workflow step retry re-submits the same output for the same context.
       // Same context but NEW text is a force-regen and must append.
@@ -263,33 +246,27 @@ export function createFramePromptVersionsMethods(
               eq(framePromptVersions.frameId, input.frameId),
               eq(framePromptVersions.inputHash, nextHash),
               eq(framePromptVersions.text, input.text),
-              ne(framePromptVersions.source, 'restored'),
-              guard,
-              provenance
+              ne(framePromptVersions.source, 'restored')
             )
           )
           .limit(1);
       }
 
       if (!version) {
-        [version] = await insertWithStoryboardGuard(
-          db,
-          framePromptVersions,
-          [
-            {
-              frameId: input.frameId,
-              text: input.text,
-              components: input.components,
-              source: input.source,
-              specVersionId:
-                input.source === 'derived' ? input.specVersionId : null,
-              inputHash: nextHash,
-              analysisModel,
-              createdBy: input.createdBy ?? null,
-            },
-          ],
-          guard
-        ).returning();
+        [version] = await db
+          .insert(framePromptVersions)
+          .values({
+            frameId: input.frameId,
+            text: input.text,
+            components: input.components,
+            source: input.source,
+            specVersionId:
+              input.source === 'derived' ? input.specVersionId : null,
+            inputHash: nextHash,
+            analysisModel,
+            createdBy: input.createdBy ?? null,
+          })
+          .returning();
       }
 
       if (!version) {
@@ -302,7 +279,13 @@ export function createFramePromptVersionsMethods(
       // write (#1085 / #1095 TOCTOU). demote nulls pendingInputHash (and
       // frees the live-claim unique slot) while claims stay pending/generating.
       await db.batch([
-        selectVersion(input.frameId, version.id),
+        db
+          .update(frames)
+          .set({
+            selectedImagePromptVersionId: version.id,
+            updatedAt: new Date(),
+          })
+          .where(eq(frames.id, input.frameId)),
         demoteLiveClaims(input.frameId),
       ]);
 

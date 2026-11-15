@@ -26,11 +26,6 @@ import {
 } from '@/shots/scene-narrative';
 import { pageOf } from '@/platform/server/db/read-page';
 import type { PageOptions } from '@/platform/server/db/read-page';
-import {
-  insertWithStoryboardGuard,
-  STORYBOARD_CONTENT_INSERT_BATCH,
-} from '@/sequences/server/db/storyboard-content-scope';
-import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 
 type WriteSceneScriptVersionInput = {
   sceneId: DbSceneId;
@@ -54,10 +49,7 @@ type SeedSplitVersionInput = {
   createdAt: Date;
 };
 
-export function createSceneScriptVersionsMethods(
-  db: Database,
-  contentScope?: StoryboardContentScope
-) {
+export function createSceneScriptVersionsMethods(db: Database) {
   const mirrorSelection = (sceneId: DbSceneId, versionId: string) =>
     db
       .update(scenes)
@@ -230,44 +222,42 @@ export function createSceneScriptVersionsMethods(
       const toSeed = seeds.filter((seed) => !existingIds.has(seed.sceneId));
       if (toSeed.length === 0) return 0;
 
-      const BATCH_SIZE = contentScope ? STORYBOARD_CONTENT_INSERT_BATCH : 5;
+      const BATCH_SIZE = 5;
       let inserted = 0;
 
       for (let i = 0; i < toSeed.length; i += BATCH_SIZE) {
         const batch = toSeed.slice(i, i + BATCH_SIZE);
-        const insert = insertWithStoryboardGuard(
-          db,
-          sceneScriptVersions,
-          batch.map((seed) => ({
-            id: seed.sceneId,
-            sceneId: seed.sceneId,
-            content: seed.content,
-            ...seed.narrative,
-            source: 'split' as const,
-            createdAt: seed.createdAt,
-            createdBy: null,
-          })),
-          contentScope && batch.map((seed) => contentScope.scene(seed.sceneId))
-        ).returning();
-
-        const batchIds = batch.map((seed) => seed.sceneId);
-        const now = new Date();
-        const select = db
-          .update(scenes)
-          .set({
-            selectedScriptVersionId: sql`id`,
-            updatedAt: now,
-          })
-          .where(
-            and(inArray(scenes.id, batchIds), contentScope?.scene(scenes.id))
-          );
-        const [batchResults] = await db.batch([insert, select]);
+        const batchResults = await db
+          .insert(sceneScriptVersions)
+          .values(
+            batch.map((seed) => ({
+              id: seed.sceneId,
+              sceneId: seed.sceneId,
+              content: seed.content,
+              ...seed.narrative,
+              source: 'split' as const,
+              createdAt: seed.createdAt,
+              createdBy: null,
+            }))
+          )
+          .returning();
         inserted += batchResults.length;
+
         if (batchResults.length !== batch.length) {
           throw new Error(
             `seedSplitVersions inserted ${batchResults.length}/${batch.length} versions`
           );
         }
+
+        const batchIds = batch.map((seed) => seed.sceneId);
+        const now = new Date();
+        await db
+          .update(scenes)
+          .set({
+            selectedScriptVersionId: sql`id`,
+            updatedAt: now,
+          })
+          .where(inArray(scenes.id, batchIds));
       }
 
       return inserted;
@@ -303,8 +293,7 @@ export function createSceneScriptVersionsMethods(
           .where(
             and(
               eq(sceneScriptVersions.id, seed.sceneId),
-              eq(sceneScriptVersions.source, 'split'),
-              contentScope?.scene(sceneScriptVersions.sceneId)
+              eq(sceneScriptVersions.source, 'split')
             )
           )
           .returning({ id: sceneScriptVersions.id });
@@ -341,28 +330,20 @@ export function createSceneScriptVersionsMethods(
         }
         const id = generateId();
         await db.batch([
-          insertWithStoryboardGuard(
-            db,
-            sceneScriptVersions,
-            [
-              {
-                id,
-                sceneId: seed.sceneId,
-                content,
-                ...seed.narrative,
-                source: 'split',
-              },
-            ],
-            contentScope?.scene(seed.sceneId)
-          ),
+          db.insert(sceneScriptVersions).values({
+            id,
+            sceneId: seed.sceneId,
+            content,
+            ...seed.narrative,
+            source: 'split',
+          }),
           db
             .update(scenes)
             .set({ selectedScriptVersionId: id, updatedAt: new Date() })
             .where(
               and(
                 eq(scenes.id, seed.sceneId),
-                eq(scenes.selectedScriptVersionId, version.id),
-                contentScope?.scene(scenes.id)
+                eq(scenes.selectedScriptVersionId, version.id)
               )
             ),
         ]);
@@ -399,28 +380,20 @@ export function createSceneScriptVersionsMethods(
         }
         const id = generateId();
         await db.batch([
-          insertWithStoryboardGuard(
-            db,
-            sceneScriptVersions,
-            [
-              {
-                id,
-                sceneId,
-                content: version.content,
-                ...narrative,
-                source: 'split',
-              },
-            ],
-            contentScope?.scene(sceneId)
-          ),
+          db.insert(sceneScriptVersions).values({
+            id,
+            sceneId,
+            content: version.content,
+            ...narrative,
+            source: 'split',
+          }),
           db
             .update(scenes)
             .set({ selectedScriptVersionId: id, updatedAt: new Date() })
             .where(
               and(
                 eq(scenes.id, sceneId),
-                eq(scenes.selectedScriptVersionId, version.id),
-                contentScope?.scene(scenes.id)
+                eq(scenes.selectedScriptVersionId, version.id)
               )
             ),
         ]);

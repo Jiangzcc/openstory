@@ -30,8 +30,6 @@ import {
 } from '@/sequences/server/db/sequence-events';
 import type { Database } from '@/platform/server/db/client';
 import { NotFoundError } from '@/platform/errors';
-import { insertWithStoryboardGuard } from '@/sequences/server/db/storyboard-content-scope';
-import type { StoryboardContentScope } from '@/sequences/server/db/storyboard-content-scope';
 import {
   dialogueSpeeches,
   shotDialogueClaims,
@@ -121,10 +119,7 @@ function sameLines(
   );
 }
 
-export function createShotDialogueMethods(
-  db: Database,
-  contentScope?: StoryboardContentScope
-) {
+export function createShotDialogueMethods(db: Database) {
   const clearSelectedVersion = (shotId: string) =>
     db
       .update(shotDialogueVersions)
@@ -132,8 +127,7 @@ export function createShotDialogueMethods(
       .where(
         and(
           eq(shotDialogueVersions.shotId, shotId),
-          isNotNull(shotDialogueVersions.selectedAt),
-          contentScope?.shot(shotDialogueVersions.shotId)
+          isNotNull(shotDialogueVersions.selectedAt)
         )
       );
 
@@ -166,8 +160,7 @@ export function createShotDialogueMethods(
         and(
           eq(shotDialogueClaims.shotId, shotId),
           eq(shotDialogueClaims.status, 'generating'),
-          isNotNull(shotDialogueClaims.pendingSourceKey),
-          contentScope?.shot(shotDialogueClaims.shotId)
+          isNotNull(shotDialogueClaims.pendingSourceKey)
         )
       );
 
@@ -381,20 +374,16 @@ export function createShotDialogueMethods(
         // The words moved: a speech in flight speaks the old ones.
         demoteLiveClaims(shotId),
         clearSelectedVersion(shotId),
-        insertWithStoryboardGuard(
-          db,
-          shotDialogueVersions,
-          [
-            {
-              shotId,
-              lines,
-              source,
-              createdBy: opts?.createdBy ?? null,
-              selectedAt: new Date(),
-            },
-          ],
-          contentScope?.shot(shotId)
-        ).returning(),
+        db
+          .insert(shotDialogueVersions)
+          .values({
+            shotId,
+            lines,
+            source,
+            createdBy: opts?.createdBy ?? null,
+            selectedAt: new Date(),
+          })
+          .returning(),
       ]);
       const [row] = inserted;
       if (!row) throw new Error('Failed to insert shot dialogue version');

@@ -243,29 +243,6 @@ function mockBindings() {
   return { children, env };
 }
 
-// Factory substitute keeps the existing event/duration spies; DB fencing is not exercised.
-function mockAnalysisOutput(
-  recordOnce: WorkflowScopedDb['sequenceEvents']['recordOnce'],
-  updateAnalysisDurationMs: WorkflowScopedDb['sequences']['updateAnalysisDurationMs']
-) {
-  type Output = ReturnType<WorkflowScopedDb['storyboardAnalysisOutput']>;
-  return {
-    scenes: {
-      upsert: vi.fn<Output['scenes']['upsert']>(),
-      updateContinuity: vi.fn<Output['scenes']['updateContinuity']>(),
-    },
-    shotSpecVersions: { write: vi.fn<Output['shotSpecVersions']['write']>() },
-    framePromptVersions: {
-      write: vi.fn<Output['framePromptVersions']['write']>(),
-    },
-    shotPromptVersions: {
-      write: vi.fn<Output['shotPromptVersions']['write']>(),
-    },
-    sequences: { updateAnalysisDurationMs },
-    sequenceEvents: { recordOnce },
-  } satisfies Output;
-}
-
 function mockRun(
   bindings: ReturnType<typeof mockBindings>,
   promptLocale: Locale,
@@ -310,9 +287,6 @@ function mockRun(
     models,
     sequences: { updateAnalysisDurationMs },
     sequenceEvents: { recordOnce },
-    storyboardAnalysisOutput: vi.fn<
-      WorkflowScopedDb['storyboardAnalysisOutput']
-    >(() => mockAnalysisOutput(recordOnce, updateAnalysisDurationMs)),
     liveRead: {},
   });
   type Ctor = ConstructorParameters<typeof TestableAnalyzeScriptWorkflow>;

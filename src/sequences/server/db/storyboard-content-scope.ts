@@ -185,7 +185,6 @@ async function assertStoryboardOwner(db: Database, where: SQL | undefined) {
 export type StoryboardContentScope = ReturnType<
   typeof createStoryboardContentScope
 >;
-export const STORYBOARD_CONTENT_INSERT_BATCH = 3;
 
 function insertValue(column: AnySQLiteColumn, supplied: unknown): SQL {
   let value = supplied;

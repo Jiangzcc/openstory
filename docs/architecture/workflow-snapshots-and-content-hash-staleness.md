@@ -47,60 +47,20 @@ all hashes retain their original behavior. See the
 [cast ownership contract](generation-plan.md#analysis-cast-ownership-secondary-development-2026-11-14)
 for sharing, retry and remaining concurrency/acceptance boundaries.
 
-## Analysis output write fences (secondary development, 2026-11-14)
+## Analysis output and scene splitting (secondary development, 2026-11-15)
 
-`storyboardAnalysisOutput` extends the root-owned write contract to
-AnalyzeScript's scene-look continuity, shot specs, derived visual/motion
-prompts, completion activity and duration. Its facade carries no model or
-bible reads. The real mutation predicates check organization, sequence,
-root/explicit claim and processing status; actual frame/shot/spec relations
-also constrain derived prompts. Nested continuity, selection, claim demotion
-and legacy-dialogue writes are included, rather than relying on a check at
-the public method boundary.
+AnalyzeScript and SceneSplit again use ordinary scoped writers after the user
+chose to retire their additional root-owned output facades. Scene, shot,
+script, dialogue, spec and derived-prompt writes follow upstream behavior;
+completion history is best effort except for upstream engine interruptions.
+The extra root/processing SQL predicates, source/spec-bound prompt deduplication
+and split-seed/pointer batching are no longer active on these paths.
 
-For this bound surface, a derived prompt dedupes only against the same source
-and exact spec version. Prompt text and hashes can be identical for different
-spec revisions, so their equality alone cannot establish provenance. This
-does not change any digest algorithm, hash inputs or the ordinary unbound
-dedupe behavior. Spec writes keep existing canonical equality and do not
-clear rewrite claims. History-only prompt writes still retain the existing
-legacy-dialogue side effect, under the same admission guard.
-
-The shared DB checker and workflow error adapter are extracted for reuse
-with SceneSplit. Lost ownership escapes as non-retryable inside the step;
-unknown ownership and engine restarts retain their existing retry/abort
-semantics and original causes. Existing atomic method batches are preserved;
-the entire analysis output is not atomic. The [generation-plan contract](generation-plan.md#analysis-output-ownership-secondary-development-2026-11-14)
-records successful-path coverage and the still-open
-descendant event, standalone and deployed acceptance boundaries.
-
-## Scene-split write fences (secondary development, 2026-11-14)
-
-Immutable input snapshots do not authorize a descendant to overwrite a newer
-root's content. SceneSplit now binds a narrow write surface to its explicit
-Storyboard owner. All mutations on that surface include the current
-organization/sequence/root and `processing` predicate in SQL; a successful
-preflight check is never the write authorization. Referenced scene and shot
-ids are constrained to the owned sequence, including INSERT conflict paths,
-anchor creation, script selection/fallbacks and dialogue demotion/selection.
-
-The SQL fence applies on each newly executed mutation, including in a retried
-step. Before/after method checks also reject stale no-op returns. Seeds and
-their initial script pointer share one D1 batch; existing script fallback and
-dialogue batches retain their commit/rollback boundary. Earlier committed
-streaming chunks are kept, and completed cached steps do not execute a new
-write. This does not provide a transaction over the entire workflow.
-Confirmed ownership loss is converted to a non-retryable error before it
-leaves a step callback. Completion history cannot swallow lost or unknown
-ownership and report success to the old parent. A write failure with a
-confirmed active owner retains its original cause and normal retry policy.
-
-The [generation-plan contract](generation-plan.md#scene-split-descendant-content-ownership-secondary-development-2026-11-14)
-lists the complete bounded write surface. Standalone calls and payloads with
-no explicit root retain the existing behavior. Later AnalyzeScript and other
-descendant writes remain open, as do event/preview dispatch after takeover,
-email, root cancellation and deployed runtime acceptance. This is a local
-source/database contract, not proof that an old provider job has stopped.
+Input snapshots, required promptLocale, model/channel resolution and cost
+attribution are unchanged. Separate cast, automatic-style, reference/element/
+poster and root-lifecycle guards remain. The current
+[generation-plan contract](generation-plan.md#analysis-output-and-scene-splitting-secondary-development-2026-11-15)
+records this retirement; the earlier ownership records are historical.
 
 > **Scene → Shot → Frame.** The still-image surface, version pointers, and retired image `divergedAt` path are defined in [scene-shot-frame-redesign.md](./scene-shot-frame-redesign.md) (#989). This doc covers input-hash staleness and workflow snapshots on top of that model.
 

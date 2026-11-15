@@ -86,3 +86,13 @@ R 额外一项为消费者 `git grep` 扫描超出原 5 秒预算，隔离原预
 `reconcile-all.ts`、`server.ts`、`trigger-bindings.ts`、`clear-version-rows.ts` 四个上游生产文件完整恢复 U；原 claim 方法和 sequence-events 测试恢复 U。生产代码净减 679 行，测试净减 3,227 行。额外的同 ID 自动恢复、启动/设置原子提交和 pending 预占保留保证已退出，不能再作为现有需求。恢复的 U 原函数结构保持，不为函数长度重新抽出执行包装。
 
 源码提交 `65e9e201e`，正常提交 hooks 通过。当前证据为 23 文件、371 项通过（含最终两文件替换复验，0 失败/跳过），类型和全仓 lint 通过，测试 bindings 的客户端/SSR 生产构建通过；独立审查通过。首次类型引用错误及回滚测试使用不存在 API 字段导致的摘要不匹配均已修正，没有据此修改产品 API。未重跑全量，未执行网页 Continue 端到端、真实模型、远程数据库、持久引擎重启或部署验收；原始日志和机器统计保存在 `.tmp/launch-retirement-*`。
+
+## I：撤销分析结果额外写入围栏
+
+起点 `08fe00d5c`，对照 U `5da052c46d4a9ab232d865781f76e993a7667b2c` 不变。用户授权先处理分析结果写入保护，并确认项目未上线、不需要历史兼容；系统管理员唯一、管理配置不考虑并发；一般不额外设计服务异常停止后的重启恢复。三项原则已写入 AGENTS.md 和业务确认单。
+
+SceneSplit 和 AnalyzeScript 恢复直接使用原 scoped writers，删除两个 DB facade 和两个 workflow adapter，移除 ScopedDb 注册及完成日志的专属错误特判。`scenes.ts`、`shots.ts`、`scene-script-versions.ts`、`shot-dialogue.ts`、`shot-spec-versions.ts`、`frame-prompt-versions.ts`、`shot-prompt-versions.ts` 七个上游生产文件完整恢复 U。生产代码净减 501 行，测试和夹具净减 3,821 行；没有增加新的执行包装或生产文件。八份原上游 DB suite 与 U 一致，没有删除原断言；共享 fixture 只裁掉退役功能的数据，保留其余六个消费者所用 helper。
+
+本轮放弃额外的根任务/processing SQL 围栏、派生提示词 source/spec 专属去重和 split seed/初始指针额外批次保证，采用上游原有行为。上游组织访问、版本、选择及 claim 规则继续使用；必填 promptLocale、冻结模型/渠道快照、真实用量和费用归属保留。角色、自动样式、参考图/元素/海报发布和根生命周期仍有独立二开保护，本轮未撤；没有修改 schema、迁移、绑定、依赖或计费规则。
+
+整合回归 30 文件、700 项全部通过，覆盖八份原 DB suite、完成日志、共享 fixture 消费者、实际工作流、语言/模型快照及静态边界；类型检查通过，全仓 lint 无错误，保留 148 条既有警告。测试 bindings 的客户端/SSR 生产构建通过；独立源码闭包和文档审查通过。首次提交的 knip 检出失去全部消费者的批量常量，已删除该导出，没有放宽检查。未重跑全量，未执行真实供应商、邮件、支付、远程数据库或部署验收。原始日志及源码指纹位于 `.tmp/analysis-fence-retirement-*`，不新增永久机器台账。
