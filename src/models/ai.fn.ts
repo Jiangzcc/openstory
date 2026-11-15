@@ -19,7 +19,10 @@ import {
   isCustomAnalysisModelId,
   isValidAnalysisModelId,
 } from './models.config';
-import { textModelCatalogFromRouting } from './text-model-catalog';
+import {
+  textModelCatalogFromRouting,
+  isKnownTextModelId,
+} from './text-model-catalog';
 import { sanitizeScriptContent } from '@/sequences/prompt-validation';
 import {
   sceneDurationResponseSchema,
@@ -221,8 +224,7 @@ export const estimateSceneDurationFn = createServerFn({ method: 'POST' })
     const extraModels = textModelCatalogFromRouting(textModelRouting);
     const stored = context.sequence.analysisModel;
     const analysisModel =
-      isValidAnalysisModelId(stored, extraModels) ||
-      isCustomAnalysisModelId(stored)
+      isKnownTextModelId(stored, extraModels) || isCustomAnalysisModelId(stored)
         ? stored
         : (await context.scopedDb.modelConfiguration.get(extraModels))
             .defaultAnalysis;

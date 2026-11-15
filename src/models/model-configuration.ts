@@ -4,7 +4,10 @@ import {
   isSelectableImageModelId,
 } from './image-model-catalog';
 import type { AnalysisModelId, AnalysisModelDefinition } from './models.config';
-import { mergeTextModelCatalog } from './text-model-catalog';
+import {
+  mergeTextModelCatalog,
+  isSelectableTextModelId,
+} from './text-model-catalog';
 import type { AudioModel, TextToImageModel, ImageToVideoModel } from './models';
 import { z } from 'zod';
 import {
@@ -12,7 +15,6 @@ import {
   DEFAULT_ANALYSIS_MODEL,
   DEFAULT_VISION_MODEL,
   SCENE_SPLIT_MODEL,
-  isSelectableAnalysisModelId,
   isCustomAnalysisModelId,
 } from './models.config';
 import {
@@ -292,7 +294,7 @@ function analysisOptions(
           );
   return catalog
     .filter((model) => {
-      if (!isSelectableAnalysisModelId(model.id, extraModels)) return false;
+      if (!isSelectableTextModelId(model.id, extraModels)) return false;
       if (structured && model.structuredOutput === false) return false;
       if (kind === 'videoUnderstanding')
         return Boolean(nativeGeminiTextModel(model.id));

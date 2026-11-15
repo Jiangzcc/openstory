@@ -1,11 +1,13 @@
 import { resolutionSchema } from '@/models/resolutions';
 import { configuredImageSource } from '@/billing/configured-image-billing';
 import {
-  getAnalysisModelById,
   isCustomAnalysisModelId,
   isValidAnalysisModelId,
 } from '@/models/models.config';
-import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import {
+  textModelCatalogFromRouting,
+  getTextModelDefinition,
+} from '@/models/text-model-catalog';
 import { ValidationError } from '@/platform/errors';
 import {
   DEFAULT_IMAGE_MODEL,
@@ -346,7 +348,7 @@ export const setSequenceModelsFn = createServerFn({ method: 'POST' })
     const { sequence } = context;
     if (models.analysisModel !== undefined) {
       const snapshot = await context.scopedDb.textChannels.getSnapshot();
-      const model = getAnalysisModelById(
+      const model = getTextModelDefinition(
         models.analysisModel,
         textModelCatalogFromRouting(snapshot)
       );

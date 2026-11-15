@@ -1,8 +1,9 @@
 import {
   SCRIPT_ANALYSIS_MODELS,
   isCustomAnalysisModelId,
+  getAnalysisModelById,
 } from './models.config';
-import type { AnalysisModelDefinition } from './models.config';
+import type { AnalysisModelDefinition, AnalysisModelId } from './models.config';
 import { toTextModelCatalog } from './text-channels';
 import type {
   TextModelCatalogEntry,
@@ -54,4 +55,33 @@ export function textModelCatalogFromRouting(
   snapshot: TextModelRoutingSnapshot = []
 ): AnalysisModelDefinition[] {
   return toTextModelCatalog(snapshot).map(toAnalysisModel);
+}
+
+export function getTextModelDefinition(
+  id: string,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): AnalysisModelDefinition | undefined {
+  return (
+    extraModels.find((model) => model.id === id) ?? getAnalysisModelById(id)
+  );
+}
+
+export function isKnownTextModelId(
+  value: unknown,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): value is AnalysisModelId {
+  return (
+    typeof value === 'string' &&
+    getTextModelDefinition(value, extraModels) !== undefined
+  );
+}
+
+export function isSelectableTextModelId(
+  value: unknown,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): value is AnalysisModelId {
+  if (!isKnownTextModelId(value, extraModels)) return false;
+  const model = getTextModelDefinition(value, extraModels);
+  if (!model) return false;
+  return !('hidden' in model && model.hidden);
 }

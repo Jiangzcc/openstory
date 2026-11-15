@@ -16,10 +16,7 @@ import {
   safeImageToVideoModel,
   safeTextToImageModel,
 } from '@/models/models';
-import {
-  type AnalysisModelId,
-  getAnalysisModelById,
-} from '@/models/models.config';
+import type { AnalysisModelId } from '@/models/models.config';
 import { generateId } from '@/platform/id';
 import { isElevenLabsConfigured } from '@/models/server/elevenlabs-config';
 import { NotFoundError, ValidationError } from '@/platform/errors';
@@ -41,7 +38,10 @@ import type {
 
 import type { ContinueSettings } from '@/sequences/continue-settings';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
-import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import {
+  textModelCatalogFromRouting,
+  getTextModelDefinition,
+} from '@/models/text-model-catalog';
 
 export async function loadStoryboardModelConfiguration(
   scopedDb: ScopedDb
@@ -81,9 +81,9 @@ function storyboardAnalysisModel(
   );
   const modelId = stored?.startsWith('custom:')
     ? stored
-    : (getAnalysisModelById(stored ?? '', extraModels)?.id ??
+    : (getTextModelDefinition(stored ?? '', extraModels)?.id ??
       configuration.defaultAnalysis);
-  const model = getAnalysisModelById(modelId, extraModels);
+  const model = getTextModelDefinition(modelId, extraModels);
   if (!model || model.structuredOutput === false) {
     throw new ValidationError(
       'Select an available analysis model that supports structured output.'

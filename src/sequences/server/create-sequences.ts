@@ -20,8 +20,10 @@ import {
   safeTextToImageModel,
 } from '@/models/models';
 import { canRenderReferenceOnly } from '@/motion/server/motion-generation';
-import { getAnalysisModelById } from '@/models/models.config';
-import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import {
+  textModelCatalogFromRouting,
+  getTextModelDefinition,
+} from '@/models/text-model-catalog';
 import { resolveModelForCountry } from '@/models/region-policy';
 import { resolveAudioModels } from '@/models/resolve-audio-models';
 import { resolveImageModels } from '@/models/resolve-image-models';
@@ -139,7 +141,7 @@ export const createSequences = createServerOnlyFn(
     const analysisModels = [
       ...new Set(
         requestedAnalysisModels.map((id) => {
-          const model = getAnalysisModelById(id, extraModels);
+          const model = getTextModelDefinition(id, extraModels);
           if (!model || model.structuredOutput === false) {
             throw new ValidationError(
               'Select an available analysis model that supports structured output.'
@@ -149,7 +151,7 @@ export const createSequences = createServerOnlyFn(
             ? model.id
             : resolveModelForCountry(model.id, country);
           if (
-            getAnalysisModelById(resolved, extraModels)?.structuredOutput ===
+            getTextModelDefinition(resolved, extraModels)?.structuredOutput ===
             false
           ) {
             throw new ValidationError(

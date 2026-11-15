@@ -319,8 +319,8 @@ export const SCRIPT_ANALYSIS_MODELS = [
   },
 ] as const;
 
-type BuiltinAnalysisModel = (typeof SCRIPT_ANALYSIS_MODELS)[number];
-type BuiltinAnalysisModelId = BuiltinAnalysisModel['id'];
+type AnalysisModel = (typeof SCRIPT_ANALYSIS_MODELS)[number];
+type BuiltinAnalysisModelId = AnalysisModel['id'];
 export type CustomAnalysisModelId = `custom:${string}`;
 export type AnalysisModelId = BuiltinAnalysisModelId | CustomAnalysisModelId;
 
@@ -351,14 +351,8 @@ export function isCustomAnalysisModelId(
 /**
  * Get model by ID
  */
-export function getAnalysisModelById(
-  id: string,
-  extraModels: readonly AnalysisModelDefinition[] = []
-): AnalysisModelDefinition | undefined {
-  return (
-    extraModels.find((model) => model.id === id) ??
-    SCRIPT_ANALYSIS_MODELS.find((model) => model.id === id)
-  );
+export function getAnalysisModelById(id: string): AnalysisModel | undefined {
+  return SCRIPT_ANALYSIS_MODELS.find((model) => model.id === id);
 }
 
 /**
@@ -367,22 +361,20 @@ export function getAnalysisModelById(
  * @returns true if value is a valid model ID, false otherwise
  */
 export function isValidAnalysisModelId(
-  value: unknown,
-  extraModels: readonly AnalysisModelDefinition[] = []
+  value: unknown
 ): value is AnalysisModelId {
   return (
     typeof value === 'string' &&
-    getAnalysisModelById(value, extraModels) !== undefined
+    SCRIPT_ANALYSIS_MODELS.some((model) => model.id === value)
   );
 }
 
 /** Retired ids stay in the registry for old sequences; they are not pickable. */
 export function isSelectableAnalysisModelId(
-  value: unknown,
-  extraModels: readonly AnalysisModelDefinition[] = []
+  value: unknown
 ): value is AnalysisModelId {
-  if (!isValidAnalysisModelId(value, extraModels)) return false;
-  const model = getAnalysisModelById(value, extraModels);
+  if (!isValidAnalysisModelId(value)) return false;
+  const model = getAnalysisModelById(value);
   if (!model) return false;
   return !('hidden' in model && model.hidden);
 }
@@ -443,7 +435,10 @@ export function analysisModelSupportsVision(
   modelId: string,
   extraModels: readonly AnalysisModelDefinition[] = []
 ): boolean {
-  return getAnalysisModelById(modelId, extraModels)?.vision ?? false;
+  const model =
+    extraModels.find((entry) => entry.id === modelId) ??
+    getAnalysisModelById(modelId);
+  return model?.vision ?? false;
 }
 
 /**

@@ -20,8 +20,10 @@ import { deleteFile } from '@/platform/server/storage/storage-cloudflare';
 import type { StudioPromptDraftInput } from '@/studio/schema';
 import { draftStudioPrompt } from '@/studio/server/studio-prompt-draft';
 
-import { getAnalysisModelById } from '@/models/models.config';
-import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import {
+  textModelCatalogFromRouting,
+  getTextModelDefinition,
+} from '@/models/text-model-catalog';
 import type { TextModel } from '@/models/models';
 import type { TextModelRoutingSnapshot } from '@/models/text-channels';
 import type { Locale } from '@/platform/i18n/locale';
@@ -111,7 +113,7 @@ async function resolveStudioDraftKey(
   snapshot: TextModelRoutingSnapshot,
   hasImages: boolean
 ) {
-  const definition = getAnalysisModelById(
+  const definition = getTextModelDefinition(
     selected,
     textModelCatalogFromRouting(snapshot)
   );

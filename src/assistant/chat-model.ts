@@ -7,12 +7,14 @@
  */
 import {
   DEFAULT_ANALYSIS_MODEL,
-  isSelectableAnalysisModelId,
   isCustomAnalysisModelId,
-  getAnalysisModelById,
   type AnalysisModelDefinition,
   type AnalysisModelId,
 } from '@/models/models.config';
+import {
+  getTextModelDefinition,
+  isSelectableTextModelId,
+} from '@/models/text-model-catalog';
 import { resolveModelForCountry } from '@/models/region-policy';
 import { ValidationError } from '@/platform/errors';
 
@@ -23,13 +25,13 @@ export function chatModelFor(
   defaultModel: AnalysisModelId = DEFAULT_ANALYSIS_MODEL
 ): AnalysisModelId {
   const candidate = requested === undefined ? defaultModel : requested;
-  if (!isSelectableAnalysisModelId(candidate, extraModels)) {
+  if (!isSelectableTextModelId(candidate, extraModels)) {
     throw new ValidationError('model is not one the assistant can run on.');
   }
   const model = extraModels.some((entry) => entry.id === candidate)
     ? candidate
     : resolveModelForCountry(candidate, country);
-  const definition = getAnalysisModelById(model, extraModels);
+  const definition = getTextModelDefinition(model, extraModels);
   if (
     definition?.tools === false ||
     (isCustomAnalysisModelId(model) && !definition?.tools)

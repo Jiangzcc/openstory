@@ -1,13 +1,15 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  getAnalysisModelById,
   isCustomAnalysisModelId,
-  isSelectableAnalysisModelId,
   type AnalysisModelDefinition,
 } from '../models.config';
 import { textModelCatalogQueryOptions } from '../text-channels.queries';
-import { mergeTextModelCatalog } from '../text-model-catalog';
+import {
+  mergeTextModelCatalog,
+  getTextModelDefinition,
+  isSelectableTextModelId,
+} from '../text-model-catalog';
 
 export type TextModelCapability = 'vision' | 'structuredOutput' | 'tools';
 
@@ -41,8 +43,8 @@ export function textModelSelectionError(
         return new Error('Could not load text models. Try again.');
       if (!catalog.isReady) return new Error('Text model catalog is loading.');
     }
-    const model = getAnalysisModelById(id, catalog.models);
-    if (!model || !isSelectableAnalysisModelId(id, catalog.models)) {
+    const model = getTextModelDefinition(id, catalog.models);
+    if (!model || !isSelectableTextModelId(id, catalog.models)) {
       return new Error(
         `Text model "${id}" is unavailable. Select an available model.`
       );

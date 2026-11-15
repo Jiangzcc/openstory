@@ -19,8 +19,10 @@ import {
   ENHANCE_REASONING,
   llmCostFromUsage,
 } from '@/models/server/llm-client';
-import { getAnalysisModelById } from '@/models/models.config';
-import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import {
+  textModelCatalogFromRouting,
+  getTextModelDefinition,
+} from '@/models/text-model-catalog';
 import type { TextModelRoutingSnapshot } from '@/models/text-channels';
 import type { TextModel } from '@/models/models';
 import { isValidImageToVideoModel } from '@/models/models';
@@ -75,7 +77,7 @@ function requestLlmKeyResolver(
 ) {
   const extraModels = textModelCatalogFromRouting(snapshot);
   return async (selected: string) => {
-    const definition = getAnalysisModelById(selected, extraModels);
+    const definition = getTextModelDefinition(selected, extraModels);
     if (
       !definition ||
       (capabilities?.structuredOutput &&

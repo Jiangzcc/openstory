@@ -1,6 +1,6 @@
+import { getTextModelDefinition } from '@/models/text-model-catalog';
 import { Badge } from '@/ui/shadcn/badge';
 import { Skeleton } from '@/ui/shadcn/skeleton';
-import { getAnalysisModelById } from '@/models/models.config';
 import { useTextModelCatalog } from '../use-text-model-catalog';
 
 const PRIMARY_MODEL_MAX_RANK = 4;
@@ -11,7 +11,7 @@ export const ModelBadge = ({ model }: { model?: string }) => {
     return <Skeleton className="w-[100px] h-[20px]" />;
   }
 
-  const definition = getAnalysisModelById(model, models);
+  const definition = getTextModelDefinition(model, models);
   return (
     <Badge
       variant={
