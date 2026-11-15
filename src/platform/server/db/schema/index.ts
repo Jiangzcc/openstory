@@ -50,8 +50,6 @@ import { frames } from './frames';
 import { frameVariants } from './frame-variants';
 import { framePromptVersions } from './frame-prompt-versions';
 import { sequenceEvents } from './sequence-events';
-import { storyboardLaunches } from './storyboard-launches';
-import { storyboardNotifications } from './storyboard-notifications';
 
 import { characterLooks, characterLookVersions } from './character-looks';
 import { sequenceCast } from './sequence-cast';
@@ -246,7 +244,6 @@ export type {
  * @public consumed from #988+, not yet in the app import graph
  */
 export { frames, frameVariants, framePromptVersions, sequenceEvents };
-export { storyboardLaunches, storyboardNotifications };
 
 /** @public used by #988+ (frames = the IMAGE unit; still keyframes per shot) */
 export { FRAME_ROLES } from './frames';
@@ -569,8 +566,6 @@ export const schema = {
   frameVariants,
   framePromptVersions,
   sequenceEvents,
-  storyboardLaunches,
-  storyboardNotifications,
   characterSheetVariants,
   locationSheetVariants,
   shotPromptVersions,

@@ -160,10 +160,6 @@ const EXCEPTIONS: Record<string, string> = {
   // `sequences.workflowRunId` is the pipeline's run slot
   // (`sequences.claimWorkflowSlot`), not a selection.
   sequences: 'run slot, not a selection pointer',
-  storyboard_launches:
-    'durable request for the sequence run slot, not a generated result or selection pointer',
-  storyboard_notifications:
-    'terminal notification delivery receipt, not a generated result or selection pointer',
   // Every studio run is its own asset; nothing selects between them.
   generated_assets: 'no selection pointer',
   // An export is a file per request; nothing selects between them.
