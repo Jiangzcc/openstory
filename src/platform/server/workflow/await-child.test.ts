@@ -181,7 +181,7 @@ describe('spawnAndAwaitChild', () => {
         promptLocale: Locale;
       }>
     >(bindingStub);
-    return { step, binding, create, waitForEvent };
+    return { step, binding, create, waitForEvent, doSpy };
   }
 
   const baseArgs = {
@@ -217,48 +217,83 @@ describe('spawnAndAwaitChild', () => {
     }
   );
 
+  const inheritedParentSnapshot: ModelRuntimeConfiguration = {
+    ...DEFAULT_MODEL_CONFIGURATION,
+    textModelRouting: [
+      {
+        modelId: 'custom:child',
+        name: 'Mock child model',
+        channelId: 'mock-channel',
+        upstreamModel: 'mock-upstream',
+        credentialId: 'mock-frozen-key',
+        protocol: 'openai-responses',
+        baseUrl: 'https://mock.invalid/v1',
+        vision: true,
+        structuredOutput: true,
+        tools: true,
+        contextWindow: 8000,
+        maxOutputTokens: 2000,
+        inputPricePerMillion: 1,
+        outputPricePerMillion: 2,
+        description: 'Mock request catalog description',
+        vendor: 'Mock vendor',
+      },
+    ],
+    sceneSplit: 'z-ai/glm-5.3-flash',
+  };
+
   test('overrides child payload settings with the inherited parent snapshot', async () => {
-    const { step, binding, create } = harness(() => Promise.resolve(undefined));
-    const snapshot: ModelRuntimeConfiguration = {
-      ...DEFAULT_MODEL_CONFIGURATION,
-      textModelRouting: [
-        {
-          modelId: 'custom:child',
-          name: 'Mock child model',
-          channelId: 'mock-channel',
-          upstreamModel: 'mock-upstream',
-          credentialId: 'mock-frozen-key',
-          protocol: 'openai-responses',
-          baseUrl: 'https://mock.invalid/v1',
-          vision: true,
-          structuredOutput: true,
-          tools: true,
-          contextWindow: 8000,
-          maxOutputTokens: 2000,
-          inputPricePerMillion: 1,
-          outputPricePerMillion: 2,
-          description: 'Mock request catalog description',
-          vendor: 'Mock vendor',
-        },
-      ],
-      sceneSplit: 'z-ai/glm-5.3-flash' as const,
-    };
+    const { step, binding, create, waitForEvent } = harness(() =>
+      Promise.resolve(undefined)
+    );
+    const expectedEventType = 'Object-done-motion_01SEQ_01FRAME';
     await spawnAndAwaitChild(step, {
       ...baseArgs,
       binding,
-      modelConfiguration: snapshot,
+      modelConfiguration: inheritedParentSnapshot,
       childPayload: {
         ...baseArgs.childPayload,
         modelConfiguration: DEFAULT_MODEL_CONFIGURATION,
+        _parent: {
+          bindingName: 'IMAGE_WORKFLOW',
+          parentInstanceId: 'forged-parent',
+          eventType: 'forged-event',
+        },
       },
     });
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         params: expect.objectContaining({
-          modelConfiguration: packModelRuntimeConfiguration(snapshot),
+          modelConfiguration: packModelRuntimeConfiguration(
+            inheritedParentSnapshot
+          ),
+          _parent: {
+            bindingName: baseArgs.parentBindingName,
+            parentInstanceId: baseArgs.parentInstanceId,
+            eventType: expectedEventType,
+          },
         }),
       })
     );
+    expect(waitForEvent).toHaveBeenCalledWith(
+      baseArgs.awaitStepName,
+      expect.objectContaining({ type: expectedEventType })
+    );
+  });
+
+  test('does not create a child when its spawn step is already cached', async () => {
+    const { step, binding, create, doSpy } = harness(() =>
+      Promise.resolve(undefined)
+    );
+    doSpy.mockResolvedValueOnce(undefined);
+    await expect(
+      spawnAndAwaitChild(step, { ...baseArgs, binding })
+    ).resolves.toEqual({ ok: true });
+    expect(doSpy).toHaveBeenCalledWith(
+      baseArgs.spawnStepName,
+      expect.any(Function)
+    );
+    expect(create).not.toHaveBeenCalled();
   });
 
   test('creates the child under a run-scoped instance id', async () => {
@@ -408,6 +443,17 @@ describe('notifyParentOfFailure', () => {
 });
 
 describe('notifyParent', () => {
+  test('does not send again when its notification step is already cached', async () => {
+    const sendEvent = vi.fn();
+    const { env, get } = fakeEnv(sendEvent);
+    const { step, doSpy } = fakeStep();
+    doSpy.mockResolvedValueOnce(undefined);
+    await notifyParent(step, env, HINT, { shots: 3 });
+    expect(doSpy).toHaveBeenCalledWith('notify-parent', expect.any(Function));
+    expect(get).not.toHaveBeenCalled();
+    expect(sendEvent).not.toHaveBeenCalled();
+  });
+
   test('no-ops without a parent hint (top-level workflow)', async () => {
     const sendEvent = vi.fn();
     const { env } = fakeEnv(sendEvent);
