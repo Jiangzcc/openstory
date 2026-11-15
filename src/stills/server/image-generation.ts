@@ -1,5 +1,3 @@
-import { usesConfiguredImageChannel } from '@/models/image-channels';
-import { generateConfiguredImage } from './configured-image-generation';
 import { getEnv } from '#env';
 import {
   arkAdapterConfig,
@@ -74,7 +72,6 @@ export type { ImageGenerationParams } from '@/stills/build-image-request';
 
 /** Non-serializable options passed separately from ImageGenerationParams */
 export type ImageGenerationOptions = {
-  configuredAttemptId?: string;
   credentials?: CredentialScopedDb;
   /** PostHog LLM-analytics metadata for the generation span. */
   observability?: AIObservabilityMeta;
@@ -130,13 +127,6 @@ export async function generateImageWithProvider(
 ): Promise<ImageGenerationResult> {
   // Observability wraps the OUTER call, not the `generateImage()` inside —
   // see recordMediaGenerationSpan.
-  if (
-    usesConfiguredImageChannel(
-      params.model,
-      options?.credentials?.imageModelRouting
-    )
-  )
-    return generateConfiguredImage(params, options);
   if (!isBuiltinTextToImageModel(params.model))
     throw new Error('Unknown image model identifier.');
   const builtinParams: BuiltinImageGenerationParams = {

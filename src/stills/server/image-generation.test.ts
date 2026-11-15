@@ -8,6 +8,7 @@ import type {
   CompatibleImageResult,
 } from './compatible-image-types';
 import { generateImageWithProvider } from './image-generation';
+import { generateConfiguredImage } from './configured-image-generation';
 
 const mocks = vi.hoisted(() => ({
   compatible:
@@ -71,7 +72,7 @@ function boundBuiltin(model: BuiltinTextToImageModel = 'gpt_image_2') {
     imageModelRouting,
     credentials,
     run: () =>
-      generateImageWithProvider(
+      generateConfiguredImage(
         { model, prompt: 'Mock bound built-in dispatch' },
         { credentials, configuredAttemptId: 'mock-dispatch-attempt' }
       ),
@@ -174,7 +175,12 @@ it('propagates a compatible provider failure without retrying through native/fal
 it('leaves the same unbound built-in on its existing native/fal dispatch', async () => {
   const test = boundBuiltin();
   test.credentials.imageModelRouting = [];
-  await expect(test.run()).rejects.toBe(NATIVE_DISPATCH_ERROR);
+  await expect(
+    generateImageWithProvider(
+      { model: 'gpt_image_2', prompt: 'Mock unbound native dispatch' },
+      { credentials: test.credentials }
+    )
+  ).rejects.toBe(NATIVE_DISPATCH_ERROR);
   expect(mocks.nativeOrFal).toHaveBeenCalledTimes(1);
   expect(mocks.compatible).not.toHaveBeenCalled();
 });

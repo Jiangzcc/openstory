@@ -4,12 +4,14 @@ import { isEngineAbortError } from '@/platform/server/workflow/errors';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { requireCredits } from '@/billing/server/preflight';
 import { getLogger } from '@/platform/logger';
-import { generateImageWithProvider } from '../image-generation';
 import type {
   ImageGenerationParams,
   ImageGenerationResult,
 } from '../image-generation';
-import { configuredImageGenerationQuote } from '../configured-image-generation';
+import {
+  configuredImageGenerationQuote,
+  generateConfiguredImage,
+} from '../configured-image-generation';
 import { CompatibleImageError } from '../compatible-image-error';
 import {
   COMPATIBLE_IMAGE_LIMITS,
@@ -99,7 +101,7 @@ async function generateAndStore(
 ) {
   const startedAt = Date.now();
   try {
-    const generated = await generateImageWithProvider(args.params, {
+    const generated = await generateConfiguredImage(args.params, {
       credentials: args.scopedDb.credentials,
       configuredAttemptId: identity.id,
     });

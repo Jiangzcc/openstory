@@ -15,7 +15,10 @@ const { generate, requireCredits } = vi.hoisted(() => ({
   generate: vi.fn<() => Promise<ImageGenerationResult>>(),
   requireCredits: vi.fn(async () => undefined),
 }));
-vi.mock('../image-generation', () => ({ generateImageWithProvider: generate }));
+vi.mock('../configured-image-generation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../configured-image-generation')>()),
+  generateConfiguredImage: generate,
+}));
 vi.mock('@/billing/server/preflight', () => ({ requireCredits }));
 
 const ENGINE_ABORT_MESSAGE = 'Aborting engine: Grace period complete';

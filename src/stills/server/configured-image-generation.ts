@@ -24,9 +24,13 @@ const IMAGE_SIZE_RATIOS = {
   landscape_16_9: '16:9',
 } as const;
 
+type ConfiguredImageGenerationOptions = ImageGenerationOptions & {
+  configuredAttemptId?: string;
+};
+
 export async function generateConfiguredImage(
   params: ImageGenerationParams,
-  options?: ImageGenerationOptions
+  options?: ConfiguredImageGenerationOptions
 ): Promise<ImageGenerationResult> {
   const routing = options?.credentials?.imageModelRouting;
   if (!usesConfiguredImageChannel(params.model, routing))
