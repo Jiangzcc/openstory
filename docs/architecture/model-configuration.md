@@ -30,6 +30,26 @@ Each text channel also has an optional `User-Agent` in its administrator editor.
 
 `getTextModelCatalogFn` projects active routing entries into a public catalog without channel IDs, base URLs, upstream model IDs or credential references. `mergeTextModelCatalog` overlays those entries on the built-in registry and adds custom models. Default-slot reads and saves use the same catalog for capability checks. Native video-understanding slots (`talentVideo`, `watchClip`) remain limited to existing native Gemini models.
 
+The static registry helpers in `models.config.ts` retain the upstream lookup,
+selection, context/output-budget and vision contracts. Configured lookup and
+selection belong to the existing `text-model-catalog.ts` functions
+`getTextModelDefinition`, `isKnownTextModelId` and `isSelectableTextModelId`.
+They consume an explicit catalog, preserve overlay priority and built-in
+retirement flags, and do not resolve credentials or mutate the static table.
+Readable stored custom identities remain separate from current selectability.
+
+`textModelSupportsVision` and `resolveTextModelForVision` own snapshot capability
+and administrator vision fallback. After credentials resolve inside a call step,
+both durable call paths still check the actual key: compatible calls use
+`route.vision`, other vias use the static model capability. That later check
+decides whether the final chat input contains an image. Compatible output
+limits belong to `configuredTextOutputBudget` in `server/configured-text.ts`;
+`getLlmMaxOutputTokens` uses that route only when its model ID matches the call.
+Explicit output limits retain their existing fractional-value behavior; derived
+context fractions retain their existing rounding and minimum. See the
+[isolation results](../secondary-development/fork-isolation-results-20261115.md)
+for the fixed I/R comparison and local verification limits.
+
 A route participates only when both its binding and channel are enabled and the channel has a credential reference. This is routing availability, not global model enable/disable governance: disabling a built-in binding returns later calls to its original route, while a custom model without a matching active route is unavailable. Reading saved defaults discards an unavailable custom override and restores that slot's code default; this is configuration resolution, not recovery from a failed bound call.
 
 Administrator channel reads/saves, binding saves and candidate discovery use `systemAdminMiddleware`. Discovery issues only `GET <baseUrl>/models` with the stored credential, returns filtered candidates, and never saves or enables a binding. Choosing a candidate opens a disabled draft whose capabilities, limits and rates must be supplied explicitly. New API endpoint metadata is matched against the selected protocol (`openai` for Chat Completions, `openai-response` for Responses); a plain OpenAI catalog without endpoint metadata remains usable. Input-format guidance lives in placeholders, while credential rules, capabilities and USD cost units stay visible. See the [text-channel implementation record](../secondary-development/text-channels.md).

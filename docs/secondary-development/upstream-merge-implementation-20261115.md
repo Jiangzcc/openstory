@@ -73,7 +73,7 @@
 
 人民币售价、全面禁BYOK、默认私有、真实供应商/邮件、上游skills或npm发布、远程数据库与部署不纳入这次兼容同步。单纯合入后对U得到零冲突只是祖先关系，不计入结构收益；原试点对照与后续I/R/未来V对照按 [重构计划](fork-isolation-refactoring-plan-20261115.md) 分开保留。
 
-## 已写入的上游接管适配（待验证）
+## 已完成的上游接管适配
 
 - 上游 `ui/approvals.ts` 接管审批状态及 composer gate，本地旧 `assistant-approvals.ts` 已移除。typed boolean 与 generic `{ approved }` 两种签名、官方 binding 读取、interrupt/run/generation 匹配、旧快照重复点击保护集中到这一入口；原真实 SDK 测试迁入统一接口，未删去原断言。
 - 上游 `server/resolve-style-source.ts` 接管风格解析职责，移除 `create-sequences.ts` 内旧定义。平台模板按请求语言解析，clone 继续读取来源作品已保存 recipe；空白作品也写入 locale 对应的风格快照，schema 保留平台动态文本/图片模型标识，不预占、不触发生成。
