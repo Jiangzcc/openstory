@@ -4,7 +4,7 @@
 
 本轮[隔离重构](fork-isolation-results-20261115.md)已完成 B2 配置计划估价、C 上游接管，以及 D 的认证接线、动态预算/目录/视觉策略与样例翻译收口；已记录的本地定向、构建与 Workerd/Chrome 验证完成。D 相对固定集成对照 I 让 3 个上游生产文件整文件退出 diff，7 个静态模型函数恢复 U，`models.config.ts` 源码差异块从 13 缩为 2；全部 17 个领域组的实际调整、保留原因与删除条件均单列。原[计划](fork-isolation-refactoring-plan-20261115.md)、[全域盘点](fork-isolation-domain-inventory-20261115.md)、[试点结果](fork-isolation-pilots-20261115.md)和 [C 记录](upstream-merge-implementation-20261115.md)保留各自时点与验证边界。
 
-B1 编译国际化因语义反例和维护门槛未通过而撤出，继续显式翻译。B2 的 40 个固定窗口冲突均未下降；D 的源码退出不冒称未来冲突已下降，待同一未来上游 V 对照。代码在独立分支 `codex/upstream-isolation-20261115`，源码 R 为 `f88e9d9b1`；固定 U `5da052c46` 的 40 项主线及 48 个历史提交均已可达。`develop`/`origin/develop` 仍在 L，未移动、未推送。
+B1 编译国际化因语义反例和维护门槛未通过而撤出，继续显式翻译。B2 的 40 个固定窗口冲突均未下降；D 的源码退出不冒称未来冲突已下降，待同一未来上游 V 对照。D 固定源码 R 为 `f88e9d9b1`；[E 后续收口与 Node 26 复验](fork-isolation-node26-followup-20261115.md)另记录报价投影从核心净退出 31 行、图片候选撤回及配置加载接缝保留。本地 `main` 已快进到 U `5da052c46`，`develop` 已快进到 E 源码 `5c5ded917`，固定 U 的 40 项主线及 48 个历史提交均可达；`origin/develop` 仍在 L，未推送。
 
 覆盖历史二开治理、当前保真缺口、后续功能接入和持续同步的完整路线见 [上游业务保留与二开长期维护计划](upstream-preservation-plan.md)。P0、P1 已完成。P2 的历史范围覆盖及 4 项修复已归档，2026-11-09 补充复核的整改、证据边界与 1 项用户决定暂缓的计费问题单列。P3 未完成，原完成结论撤回：40 个固定上游主线节点均未见冲突文件数下降，最新固定目标为 46→54 个文件、79→94 个文本冲突块，见[冲突实测与目标纠正](p3-conflict-assessment-20261115.md)。60项职责、66个动作及已提交修复保留为[阶段审查与修复记录](p3-completion-20261115.md)，不能代替降低合并冲突的主要目标。P4 及后续阶段未执行。
 
@@ -20,6 +20,7 @@ P0、P1 已完成：固定差异及来源清单、恢复上游执行回归并修
 
 - [二开隔离重构计划（2026-11-15）](fork-isolation-refactoring-plan-20261115.md)：保留初稿基线与验收口径；按用户决定保留显式翻译，先同步上游再收口必要接缝。
 - [二开隔离实施结果（2026-11-15）](fork-isolation-results-20261115.md)：固定 I/R 的 3 个整文件与 7 个静态函数退出证明、5 批 D 收口、全域保留接缝及最终验证。
+- [Node 26 复验与后续收口（2026-11-15）](fork-isolation-node26-followup-20261115.md)：E 报价职责退出、未采用候选、原上游 Windows 失败对照及本地 develop 落地；不改写 D 的固定结果。
 - [二开全域盘点（2026-11-15）](fork-isolation-domain-inventory-20261115.md)：17 个领域组与盘点时全部差异路径、职责和消费链；保留原始时点，最终处置见实施结果。
 - [隔离重构试点结果（2026-11-15）](fork-isolation-pilots-20261115.md)：B2 六文件结构收口、124 项测试及冲突未变化；B1 局部退出收益、三个反例、运行接入撤出与验证边界。
 - [上游整合与兼容检查（2026-11-15）](upstream-merge-implementation-20261115.md)：C 的 B2 正常提交起点、固定 U 一次 merge 策略、40 项兼容依赖与实际状态；已正常提交，保留本机上游对照失败及生产未验证边界。
@@ -85,7 +86,7 @@ P0、P1 已完成：固定差异及来源清单、恢复上游执行回归并修
 | 上游                 | `https://github.com/openstory-so/openstory.git`，remote 为 `upstream`                                          |
 | 本项目               | `https://github.com/Jiangzcc/openstory.git`，remote 为 `origin`                                                |
 | 二开分支             | `develop`                                                                                                      |
-| 当前检出上游合入基线 | `5da052c46d4a9ab232d865781f76e993a7667b2c`（集成分支；develop 尚在 L）                                         |
+| 当前检出上游合入基线 | `5da052c46d4a9ab232d865781f76e993a7667b2c`（本地 main 及 develop 均已包含；远端 develop 仍在 L）               |
 | 最初上游基线（历史） | `1999cb15816bd9f3317b5d7ae2121685ef338663`                                                                     |
 | 初次基线核对（历史） | 初次 fetch 时 develop/main/origin/main/upstream/main 均指向最初基线；后续二开以 Git 日志为准                   |
 | 初次二开差异（历史） | 最初基线核查时为 0；当时 `git rev-list --left-right --count upstream/main...develop` 返回 `0 0`                |

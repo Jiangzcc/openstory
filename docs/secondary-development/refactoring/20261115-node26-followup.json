@@ -1,0 +1,425 @@
+{
+  "recordedAt": "2026-11-15T07:05:37.920Z",
+  "scope": "E source, Node26 verification and local develop activation; documentation-only commits may follow without changing this source tree. D history remains fixed in 20261115-isolation-results.json.",
+  "sourceCommit": "5c5ded917980c34ae958cd73e55479beabe12d7b",
+  "srcTree": "9ba9ed4e1c8f31d98805d1ef8152da26c54ca583",
+  "upstream": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+  "beforeRefactoringI": "3f09e2b424e30eac5adbdb9cb8a12c60d783b573",
+  "dSourceCommit": "f88e9d9b127ef35108a00313d0c873bc0efd9661",
+  "preservedDResults": {
+    "wholeFiles": [
+      {
+        "path": "src/platform/ui/auth/client.ts",
+        "blob": "103db00f97d9ef28d8a96f198ebdb0ba9c322596",
+        "stillIdenticalToU": true
+      },
+      {
+        "path": "src/platform/ui/auth/session-query.ts",
+        "blob": "aeafb8e0fad5dbb80fffa2c06dc4fd6d2d569a9f",
+        "stillIdenticalToU": true
+      },
+      {
+        "path": "src/studio/ui/prompt-shuffle.ts",
+        "blob": "02b8f883759f5c1baefdcefb102b99249a6d373a",
+        "stillIdenticalToU": true
+      }
+    ],
+    "staticFunctionsRemainRestored": 7,
+    "modelsConfigBlobUnchangedFromD": true,
+    "newImageRestorationsClaimed": 0
+  },
+  "billing": {
+    "commit": "5c5ded917980c34ae958cd73e55479beabe12d7b",
+    "files": [
+      "src/billing/cost-estimation.ts",
+      "src/billing/configured-image-billing.ts"
+    ],
+    "coreDiff": {
+      "added": 2,
+      "removed": 33,
+      "netLinesExited": 31
+    },
+    "coreDiffAgainstU": {
+      "before": {
+        "added": 100,
+        "removed": 23
+      },
+      "after": {
+        "added": 69,
+        "removed": 23
+      }
+    },
+    "wholeCommitDiff": {
+      "added": 39,
+      "removed": 33,
+      "netAdded": 6
+    },
+    "equivalence": {
+      "coreFunctionsUnchanged": 15,
+      "existingOwnerFunctionsUnchanged": 5,
+      "helperBodyExact": true,
+      "optionsTypeExact": true,
+      "newRuntimeImportEdges": 0
+    },
+    "tests": {
+      "files": 7,
+      "passed": 119,
+      "failed": 0,
+      "maxWorkers": 2,
+      "fsModuleCachePath": ".tmp/e-billing-vitest-cache",
+      "finalLog": ".tmp/e-billing-tests-final.log"
+    },
+    "limit": "Only configured request projection moved to its existing owner. No whole estimator restoration, native algorithm copy or future merge-conflict reduction claimed."
+  },
+  "rejectedImageCandidate": {
+    "reason": "Partial-map Object.values/keyof public types drifted; global typecheck failed despite 146 candidate tests passing. No casts, original test changes or builder widening adopted.",
+    "files": [
+      {
+        "path": "src/models/models.ts",
+        "blob": "d3eec0bc04b2a0dfaa2cbea6d8bb33508089d21d",
+        "unchangedFromBeforeCandidate": true
+      },
+      {
+        "path": "src/models/image-model-catalog.test.ts",
+        "blob": "3cd6edaf5be91d2ac39daec052155bef0ce72eac",
+        "unchangedFromBeforeCandidate": true
+      }
+    ],
+    "candidateTestsIncludedAsFinalSuccess": false
+  },
+  "retainedLoaders": {
+    "successfulConfigSelectsEach": 3,
+    "supplierSecretReadsInLoaders": 0,
+    "fullVsActiveCatalogAndSerialVsParallelFailureSemanticsRetained": true,
+    "newCaptureServiceAdded": false,
+    "silentStoredCustomImageFallbackBugProven": false
+  },
+  "node": {
+    "version": "v26.13.0",
+    "execPath": "C:\\nvm4w\\nodejs\\node.exe",
+    "realPath": "C:\\Users\\lszhichaoj\\AppData\\Local\\nvm\\v26.13.0\\node.exe",
+    "sqlite": "3.54.0",
+    "abi": "147"
+  },
+  "bun": {
+    "executable": "C:/nvm4w/nodejs/node_modules/bun/bin/bun.exe",
+    "realPath": "C:\\Users\\lszhichaoj\\AppData\\Local\\nvm\\v26.13.0\\node_modules\\bun\\bin\\bun.exe",
+    "version": "1.4.1"
+  },
+  "originalNode26FailureGroup": {
+    "sourceR": "0795fb946ba89c293d8698182c452c3bf409d8a4",
+    "sourceU": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+    "filesEach": 3,
+    "testsEach": 25,
+    "originalTestTimeoutMs": 5000,
+    "r": {
+      "passed": 16,
+      "failed": 9
+    },
+    "u": {
+      "passed": 17,
+      "failed": 8
+    },
+    "sqlitePlannerFailureReproducedOnNode26": false,
+    "extraRFailure": "Original git-grep consumer scan exceeded 5000ms both initially and in isolation; original assertions later passed in an additional 30000ms CLI diagnostic. Initial failure retained."
+  },
+  "finalFullUnit": {
+    "recordedAt": "2026-11-15T07:03:57.709Z",
+    "source": "5c5ded917980c34ae958cd73e55479beabe12d7b",
+    "command": "bun run test --maxWorkers=4 --testTimeout=30000 --fsModuleCachePath=.tmp/e-node26-full-cache --reporter=default --reporter=json --outputFile.json=.tmp/e-node26/full.json",
+    "exitCode": 1,
+    "files": 892,
+    "passedFiles": 890,
+    "failedFiles": 2,
+    "tests": 12205,
+    "passed": 12197,
+    "failed": 8,
+    "skipped": 0,
+    "exactFailureSetMatchesOriginalUpstream": true,
+    "upstreamComparisonScope": "Original U three-file Node26 run at original 5000ms budget; not an upstream full-suite rerun",
+    "failures": [
+      {
+        "path": "packages/cli/src/assets.test.ts",
+        "test": "openstory pull parses its flags"
+      },
+      {
+        "path": "packages/cli/src/assets.test.ts",
+        "test": "openstory pull removes only paths the previous manifest listed"
+      },
+      {
+        "path": "scripts/state-dir.test.ts",
+        "test": "lock refuses a folder a live process holds and takes over a dead one"
+      },
+      {
+        "path": "scripts/state-dir.test.ts",
+        "test": "resolveStateDir gives each consumer the path shape it expects"
+      },
+      {
+        "path": "scripts/state-dir.test.ts",
+        "test": "warns on synced folder /Users/x/Dropbox (Work)/lib"
+      },
+      {
+        "path": "scripts/state-dir.test.ts",
+        "test": "warns on synced folder /Users/x/OneDrive - Acme/lib"
+      },
+      {
+        "path": "scripts/state-dir.test.ts",
+        "test": "warns on synced folder ~/Documents/openstory"
+      },
+      {
+        "path": "scripts/state-dir.test.ts",
+        "test": "warns on synced folder ~/Library/Mobile Documents/x"
+      }
+    ],
+    "finalReport": ".tmp/e-node26/full.json",
+    "upstreamReport": ".tmp/e-node26-20261115/u-original.json"
+  },
+  "runtime": {
+    "build": {
+      "command": "bun run build",
+      "node": "v26.13.0",
+      "bun": "1.4.1",
+      "mode": "production",
+      "bindingEnvironment": "test",
+      "exitCode": 0,
+      "clientSeconds": 39.46,
+      "ssrSeconds": 69,
+      "displayedTimingRaw": ["39.46s", "1m 9s"],
+      "clientModules": 7062,
+      "ssrModules": 13698,
+      "startedAt": "2026-11-15T06:52:00.286Z",
+      "finishedAt": "2026-11-15T06:54:18.897Z"
+    },
+    "browser": {
+      "version": "157.0.8103.52",
+      "node": "v26.13.0",
+      "status": "passed",
+      "firstAttemptPassed": true,
+      "startedAt": "2026-11-15T06:55:27.699Z",
+      "finishedAt": "2026-11-15T06:56:06.351Z",
+      "ssrResponses": 8,
+      "passedGroups": [
+        "Concurrent real SSR round 1 passed",
+        "Concurrent real SSR round 2 passed",
+        "Default Chinese, language switch and English refresh passed",
+        "Public homepage and sign-in dialog rendered",
+        "Local OTP login and public-home redirect preserved style/prefill",
+        "Add Scene, real SceneGroup menu, rename, script save and user-content preservation passed",
+        "Studio image Chinese/English shuffle and user-prompt protection passed",
+        "Studio video Chinese/English shuffle and user-prompt protection passed",
+        "Studio-only actions used no browser POST endpoints"
+      ],
+      "hydrationErrors": 0,
+      "pageErrors": 0,
+      "server5xx": 0,
+      "unexpectedMutationRequests": 0,
+      "postEndpoints": [
+        "/api/auth/sign-in/email-otp",
+        "/_serverFn/createSceneFn",
+        "/_serverFn/updateSceneFn",
+        "/_serverFn/updateSceneScriptFn"
+      ],
+      "studioPostEndpoints": [],
+      "screenshotsVisuallyInspected": [
+        "pricing-zh.png",
+        "scene-group-zh.png",
+        "studio-image-en.png",
+        "studio-image-zh.png",
+        "studio-video-en.png",
+        "studio-video-zh.png"
+      ]
+    },
+    "requestDiagnostics": {
+      "total": 297,
+      "counts": {
+        "cancelled local static asset": 279,
+        "external media blocked by harness": 11,
+        "cancelled realtime stream": 5,
+        "cancelled server query": 2
+      },
+      "uniqueStaticGetPassed": 213,
+      "uniqueStaticGetFailed": []
+    },
+    "cleanup": {
+      "cleanedAt": "2026-11-15T07:01:41.7709608Z",
+      "head": "5c5ded917980c34ae958cd73e55479beabe12d7b",
+      "srcTree": "9ba9ed4e1c8f31d98805d1ef8152da26c54ca583",
+      "sourceDirtyPaths": [],
+      "cachedSourcePaths": [],
+      "nonSourceDirtyPaths": [
+        "docs/secondary-development/README.md",
+        "docs/secondary-development/fork-isolation-refactoring-plan-20261115.md",
+        "docs/secondary-development/fork-isolation-results-20261115.md"
+      ],
+      "nonSourceDirtyOwner": "Root authorized parallel secondary-development documentation edits; runtime worker made no docs/index writes",
+      "servicePid": 31896,
+      "chromePid": 29232,
+      "serviceAlive": false,
+      "chromeAlive": false,
+      "ownedTreeRemaining": [],
+      "listeningPorts": [],
+      "originalCheckoutNodeProcesses": [],
+      "runtimeSourceOrIndexWrites": false,
+      "cleanupHistory": "First post-taskkill WMI snapshot transiently listed PID37716 with null command. Fresh Get-Process and WMI checks both find it absent; initial snapshot and taskkill success log retained. No unrelated process was stopped."
+    },
+    "limitations": [
+      "Request.cf geographic metadata uses the Miniflare built-in fallback (Mock); geographic/provider routing is unverified.",
+      "No model generation, actual provider, payment, credit spending, real mail or deployment exercised.",
+      "External browser requests blocked; remote marketing assets not visually accepted.",
+      "No model generation/Workflows/provider, actual billing/payment/mail, remote DB or deployment acceptance; fixture wallet is test data.",
+      "Cancelled requests retain raw evidence; local fresh GET success does not replay identical server-query payloads.",
+      "Existing SceneGroup shot/duration English summary and remote marketing media remain outside this acceptance.",
+      "No remote marketing/media display acceptance; harness blocks external requests.",
+      "Chinese video gallery loading skeleton and fixture scene player loading are disclosed; runtime functional checks cover editor/shuffle/CRUD, not generated media playback.",
+      "Fixture wallet balance and user/email records are test data."
+    ]
+  },
+  "mainActivation": {
+    "root": "D:/code/github/openstory",
+    "validatedSource": "5c5ded917980c34ae958cd73e55479beabe12d7b",
+    "environmentPassed": true,
+    "dependencies": {
+      "total": 147,
+      "passed": 147
+    },
+    "dependencyRealPath": "E:\\codex-workspace-dependencies\\openstory-develop-node26-20261115\\node_modules",
+    "workspaceTargets": [
+      {
+        "name": "stitch",
+        "realPath": "D:\\code\\github\\openstory\\packages\\stitch",
+        "nestedNodeModules": false,
+        "builtCliExists": false
+      },
+      {
+        "name": "cli",
+        "realPath": "D:\\code\\github\\openstory\\packages\\cli",
+        "nestedNodeModules": false,
+        "builtCliExists": false
+      }
+    ],
+    "manifests": [
+      {
+        "name": "package.json",
+        "byteIdentical": false,
+        "newlineNormalizedEqual": true
+      },
+      {
+        "name": "bun.lock",
+        "byteIdentical": true,
+        "newlineNormalizedEqual": true
+      },
+      {
+        "name": "bunfig.toml",
+        "byteIdentical": true,
+        "newlineNormalizedEqual": true
+      }
+    ],
+    "typecheck": {
+      "command": "bun typecheck",
+      "exitCode": 0,
+      "durationSeconds": 90.634,
+      "naturalExit": true,
+      "terminated": false
+    },
+    "compilerInputs": {
+      "ExitCode": 0,
+      "StartedAt": "2026-11-15T07:01:36.9348384Z",
+      "CompletedAt": "2026-11-15T07:01:39.6549530Z",
+      "FileCount": 2648,
+      "BackupFileCount": 0,
+      "BackupExamples": []
+    },
+    "regression": {
+      "Command": "bun run test src/platform/server/db/latest-version-indexes.test.ts packages/stitch/src/bundle.test.ts src/billing/configured-image-plan-billing.test.ts src/billing/configured-image-plan-billing-balance.test.ts --config .tmp/e-main-dependencies/vitest.main.config.mts --configLoader runner --maxWorkers 1 --no-file-parallelism --reporter=json --outputFile=.tmp/e-main-dependencies/main-regression.json",
+      "Cwd": "D:\\code\\github\\openstory",
+      "StartedAt": "2026-11-15T07:00:27.1902530Z",
+      "CompletedAt": "2026-11-15T07:01:04.3042470Z",
+      "ExitCode": 0,
+      "durationSeconds": 37.114,
+      "files": [
+        {
+          "path": "src/billing/configured-image-plan-billing-balance.test.ts",
+          "status": "passed",
+          "tests": 4,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/billing/configured-image-plan-billing.test.ts",
+          "status": "passed",
+          "tests": 29,
+          "passed": 29,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "packages/stitch/src/bundle.test.ts",
+          "status": "passed",
+          "tests": 2,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "path": "src/platform/server/db/latest-version-indexes.test.ts",
+          "status": "passed",
+          "tests": 2,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        }
+      ],
+      "totalFiles": 4,
+      "totalTests": 37,
+      "passedTests": 37,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "isolatedCache": ".tmp/e-main-dependencies/{vite-cache,fs-module-cache}",
+      "config": ".tmp/e-main-dependencies/vitest.main.config.mts"
+    },
+    "preservedOldDependencies": "D:\\code\\github\\openstory\\.tmp\\node_modules-before-node26-20261115",
+    "backupScanHypothesisDisproved": true
+  },
+  "localBranchActivation": {
+    "StartedAt": "2026-11-15T06:51:15.3061754Z",
+    "Root": "D:\\code\\github\\openstory",
+    "OriginalBranch": "codex/fork-isolation-pilots-20261115",
+    "OriginalHead": "ac9b56d913549e14c413d3c761531e69a1a9a12f",
+    "MainBefore": "1672af37e796bdb09501e868f922678201b9c043",
+    "DevelopBefore": "fbf4396c6c241b834cf73fd7695a0b8cfa92fe2d",
+    "IntegrationSource": "5c5ded917980c34ae958cd73e55479beabe12d7b",
+    "OriginMain": "1672af37e796bdb09501e868f922678201b9c043",
+    "OriginDevelop": "fbf4396c6c241b834cf73fd7695a0b8cfa92fe2d",
+    "MainAfter": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+    "DevelopAfter": "5c5ded917980c34ae958cd73e55479beabe12d7b",
+    "Status": [],
+    "CompletedAt": "2026-11-15T06:55:15.5679262Z"
+  },
+  "latestUpstream": {
+    "checkedAt": "2026-11-15T07:01:09.7279736Z",
+    "fetchExit": 0,
+    "firstAdditionalLsRemoteExit": 128,
+    "firstAdditionalLsRemoteError": "TLS unexpected EOF; preserved in temporary logs",
+    "retryExit": 0,
+    "remoteMain": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+    "newV": false,
+    "futureIRConflictComparisonPerformed": false
+  },
+  "limits": [
+    "8 original-upstream Windows failures remain; final full suite exits 1.",
+    "Original 5s scan timeout remains recorded; final full run used only a CLI 30s test budget.",
+    "No future conflict decrease has been measured because no new upstream V exists.",
+    "No paid provider, real mail/payment, remote database writes or deployment acceptance.",
+    "Workspace CLI dist is absent; .bin path validation is not CLI runtime acceptance."
+  ],
+  "evidence": {
+    "dFixed": "refactoring/20261115-isolation-results.json",
+    "billing": ".tmp/e-billing-validation.json",
+    "independentReview": ".tmp/e-independent-review.json",
+    "fullComparison": ".tmp/e-full-failure-comparison.json",
+    "runtime": ".tmp/e-runtime-20261115/E-runtime-result.json",
+    "mainActivation": "D:/code/github/openstory/.tmp/e-main-dependencies/main-activation-result.json",
+    "upstream": ".tmp/e-upstream-remote-retry.json"
+  }
+}
