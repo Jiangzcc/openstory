@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Locale } from '@/platform/i18n/locale';
+import { translateStaticLabel } from '@/platform/i18n/labels';
 import { createApplicationI18n } from '@/ui/i18n/runtime';
 import { pickShufflePrompt, studioShufflePrompts } from './prompt-shuffle';
 
@@ -17,9 +18,11 @@ describe('studioShufflePrompts', () => {
 
   describe.each(activities)('%s sample translations', (activity) => {
     it.each(locales)('has a complete, distinct pool in %s', (locale) => {
-      const t = createApplicationI18n(locale).getFixedT(locale, 'studio');
+      const i18n = createApplicationI18n(locale);
       const samples = studioShufflePrompts(activity);
-      const translated = samples.map((sample) => t(sample));
+      const translated = samples.map((sample) =>
+        translateStaticLabel(i18n, 'studio', sample)
+      );
 
       expect(new Set(translated).size).toBe(samples.length);
       for (const [index, sample] of samples.entries()) {
@@ -32,8 +35,10 @@ describe('studioShufflePrompts', () => {
     });
 
     it('avoids repeating the current translated sample', () => {
-      const t = createApplicationI18n('zh-CN').getFixedT('zh-CN', 'studio');
-      const prompts = studioShufflePrompts(activity).map((sample) => t(sample));
+      const i18n = createApplicationI18n('zh-CN');
+      const prompts = studioShufflePrompts(activity).map((sample) =>
+        translateStaticLabel(i18n, 'studio', sample)
+      );
 
       for (const current of prompts) {
         expect(pickShufflePrompt(prompts, ` ${current} `, () => 0)).not.toBe(

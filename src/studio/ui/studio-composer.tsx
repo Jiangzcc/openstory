@@ -1213,7 +1213,7 @@ export function StudioComposer({
 
   const applyShuffle = () => {
     const next = pickShufflePrompt(
-      studioShufflePrompts(activity).map((sample) => t(sample)),
+      studioShufflePrompts(activity).map((sample) => translateLabel(sample)),
       prompt,
       Math.random
     );
