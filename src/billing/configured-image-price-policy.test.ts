@@ -62,9 +62,9 @@ it.each([0, -0, 0.000001, 1_000_000])(
   'preserves enabled saving and quotes at the sales price boundary %s',
   (unitPriceUsd) => {
     const model = pricedModel(unitPriceUsd);
-    expect(
-      saveChannelImageModelSchema.safeParse({ ...model, revision: 1 }).success
-    ).toBe(true);
+    expect(saveChannelImageModelSchema.safeParse({ ...model }).success).toBe(
+      true
+    );
     expect(
       quoteConfiguredImagePrice(model.priceCards, 'generate', {}, 2)
     ).toEqual({
@@ -82,9 +82,9 @@ it('keeps the sales price maximum separate from wallet precision', () => {
   expect(
     imageChannelPriceCardSchema.safeParse(model.priceCards[0]).success
   ).toBe(false);
-  expect(
-    saveChannelImageModelSchema.safeParse({ ...model, revision: 1 }).success
-  ).toBe(false);
+  expect(saveChannelImageModelSchema.safeParse({ ...model }).success).toBe(
+    false
+  );
   expect(() =>
     quoteConfiguredImagePrice(model.priceCards, 'generate', {}, 1)
   ).toThrow();
@@ -101,7 +101,6 @@ it.each([0.0000003, 0.0000005, 0.0000015, 0.0123456])(
     ).toBe(true);
     const save = saveChannelImageModelSchema.safeParse({
       ...model,
-      revision: 1,
     });
     expect(save.success).toBe(false);
     if (save.success)
@@ -114,14 +113,12 @@ it.each([0.0000003, 0.0000005, 0.0000015, 0.0123456])(
     expect(
       saveChannelImageModelSchema.safeParse({
         ...model,
-        revision: 1,
         enabled: false,
       }).success
     ).toBe(true);
     expect(
       saveChannelImageModelSchema.safeParse({
         ...pricedModel(0.000001),
-        revision: 1,
       }).success
     ).toBe(true);
     expect(() =>
@@ -137,7 +134,7 @@ it('does not apply sales wallet precision to supplier cost or currency', () => {
     ...card,
     supplierCost,
   }));
-  const saved = saveChannelImageModelSchema.parse({ ...model, revision: 1 });
+  const saved = saveChannelImageModelSchema.parse({ ...model });
   expect(saved.priceCards[0]?.supplierCost).toEqual(supplierCost);
   expect(
     quoteConfiguredImagePrice(model.priceCards, 'generate', {}, 2)

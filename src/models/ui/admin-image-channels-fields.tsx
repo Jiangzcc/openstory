@@ -154,7 +154,6 @@ export function AdminImageCheckbox(props: {
 export function AdminImageFeedback(props: {
   issues: ImageFormIssue[];
   error: Error | null;
-  stale: boolean;
   onReload: () => void;
   busy: boolean;
 }) {
@@ -169,23 +168,11 @@ export function AdminImageFeedback(props: {
             {translate(imageSaveErrorMessage(props.error))}
           </AlertTitle>
           <AlertDescription>
-            {t(
-              'Your draft is still in the form. Reload the configuration to resolve a conflict, or review the fields and try again.'
-            )}
+            {t('Your draft is still in the form. Review it and try again.')}
           </AlertDescription>
         </Alert>
       )}
-      {props.stale && (
-        <Alert>
-          <AlertTitle>{t('Saved configuration changed')}</AlertTitle>
-          <AlertDescription>
-            {t(
-              'Reload the saved revision and review this draft before saving again.'
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-      {(props.error || props.stale) && (
+      {props.error && (
         <Button
           className="min-h-11 sm:min-h-8"
           type="button"

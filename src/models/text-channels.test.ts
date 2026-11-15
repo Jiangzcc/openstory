@@ -5,7 +5,6 @@ import {
   TEXT_CHANNEL_PROTOCOL,
   TEXT_CHANNEL_PROTOCOLS,
   TEXT_CHANNEL_LIMITS,
-  channelTextModelSchema,
   createTextModelRoutingSnapshot,
   emptyTextChannelsConfiguration,
   isCustomTextModelId,
@@ -74,7 +73,6 @@ it('normalizes trailing slashes without dropping an API path prefix', () => {
 
 it('reads older channel settings and snapshots the default product User-Agent', () => {
   const configuration = textChannelsConfigurationSchema.parse({
-    revision: 1,
     channels: [channel],
     models: [model],
   });
@@ -89,7 +87,6 @@ it.each(['', '   '])(
   'keeps a cleared User-Agent explicit and resolves %j to the product default',
   (userAgent) => {
     const configuration = textChannelsConfigurationSchema.parse({
-      revision: 1,
       channels: [{ ...channel, userAgent }],
       models: [model],
     });
@@ -103,7 +100,6 @@ it.each(['', '   '])(
 it('trims and freezes a custom User-Agent into a new routing snapshot', () => {
   const source = { ...channel, userAgent: '  OpenStory-Deployment/2.0  ' };
   const configuration = textChannelsConfigurationSchema.parse({
-    revision: 1,
     channels: [source],
     models: [model],
   });
@@ -124,7 +120,6 @@ it.each([
   { name: 'oversized', value: 'a'.repeat(TEXT_CHANNEL_LIMITS.userAgent + 1) },
 ])('rejects a $name User-Agent before persistence', ({ value }) => {
   const input = {
-    revision: 0,
     id: channel.id,
     name: channel.name,
     baseUrl: channel.baseUrl,
@@ -135,7 +130,6 @@ it.each([
   expect(saveTextChannelSchema.safeParse(input).success).toBe(false);
   expect(
     textChannelsConfigurationSchema.safeParse({
-      revision: 1,
       channels: [{ ...channel, userAgent: value }],
       models: [model],
     }).success
@@ -145,7 +139,6 @@ it.each([
 it('accepts a printable User-Agent at the length limit', () => {
   const userAgent = 'a'.repeat(TEXT_CHANNEL_LIMITS.userAgent);
   const configuration = textChannelsConfigurationSchema.parse({
-    revision: 1,
     channels: [{ ...channel, userAgent }],
     models: [model],
   });
@@ -156,43 +149,41 @@ it('accepts a printable User-Agent at the length limit', () => {
 
 it('requires explicit rates and rejects negative and nonfinite rates', () => {
   const { inputPricePerMillion: _rate, ...missingRate } = model;
-  expect(channelTextModelSchema.safeParse(missingRate).success).toBe(false);
+  expect(saveChannelTextModelSchema.safeParse(missingRate).success).toBe(false);
   for (const rate of [-1, Infinity, NaN]) {
     expect(
-      channelTextModelSchema.safeParse({
+      saveChannelTextModelSchema.safeParse({
         ...model,
         outputPricePerMillion: rate,
       }).success
     ).toBe(false);
   }
   expect(
-    channelTextModelSchema.parse({ ...model, inputPricePerMillion: 0 })
+    saveChannelTextModelSchema.parse({ ...model, inputPricePerMillion: 0 })
       .inputPricePerMillion
   ).toBe(0);
 });
 
 it('requires explicit capabilities and safe token limits', () => {
   const { tools: _tools, ...missingCapabilities } = model;
-  expect(channelTextModelSchema.safeParse(missingCapabilities).success).toBe(
-    false
-  );
+  expect(
+    saveChannelTextModelSchema.safeParse(missingCapabilities).success
+  ).toBe(false);
   for (const contextWindow of [0, -1, 1.5, Infinity]) {
     expect(
-      channelTextModelSchema.safeParse({ ...model, contextWindow }).success
+      saveChannelTextModelSchema.safeParse({ ...model, contextWindow }).success
     ).toBe(false);
   }
   expect(
-    channelTextModelSchema.safeParse({ ...model, maxOutputTokens: 64_000 })
+    saveChannelTextModelSchema.safeParse({ ...model, maxOutputTokens: 64_000 })
       .success
   ).toBe(false);
-  expect(
-    saveChannelTextModelSchema.safeParse({ ...model, revision: 0 }).success
-  ).toBe(true);
+  expect(saveChannelTextModelSchema.safeParse({ ...model }).success).toBe(true);
 });
 
 it('only accepts built-in IDs or local custom IDs for bindings', () => {
   expect(
-    channelTextModelSchema.parse({
+    saveChannelTextModelSchema.parse({
       ...model,
       id: 'anthropic/claude-sonnet-5.5',
       tools: true,
@@ -205,7 +196,7 @@ it('only accepts built-in IDs or local custom IDs for bindings', () => {
     'custom:with spaces',
     'custom:../model',
   ]) {
-    expect(channelTextModelSchema.safeParse({ ...model, id }).success).toBe(
+    expect(saveChannelTextModelSchema.safeParse({ ...model, id }).success).toBe(
       false
     );
   }
@@ -218,7 +209,6 @@ it('cannot save client-forged credential metadata or protocols', () => {
     baseUrl: channel.baseUrl,
     protocol: channel.protocol,
     enabled: true,
-    revision: 0,
   };
   expect(
     saveTextChannelSchema.safeParse({ ...input, credentialId: 'forged' })
@@ -249,7 +239,7 @@ it('preserves routes for an empty configuration and rejects unavailable custom m
 });
 
 it('includes only enabled models with enabled credential-bearing channels', () => {
-  const configuration = { revision: 3, channels: [channel], models: [model] };
+  const configuration = { channels: [channel], models: [model] };
   const [route] = createTextModelRoutingSnapshot(configuration);
   expect(route).toMatchObject({
     modelId: model.id,
@@ -282,7 +272,6 @@ it('includes only enabled models with enabled credential-bearing channels', () =
 
 it('projects only public model metadata into the incremental catalog', () => {
   const snapshot = createTextModelRoutingSnapshot({
-    revision: 2,
     channels: [{ ...channel, userAgent: 'Private-Deployment/2.0' }],
     models: [model],
   });
@@ -313,28 +302,24 @@ it('projects only public model metadata into the incremental catalog', () => {
 it('rejects duplicate records, dangling bindings, and forged key hints in persisted settings', () => {
   expect(
     textChannelsConfigurationSchema.safeParse({
-      revision: 0,
       channels: [channel, channel],
       models: [],
     }).success
   ).toBe(false);
   expect(
     textChannelsConfigurationSchema.safeParse({
-      revision: 0,
       channels: [channel],
       models: [model, model],
     }).success
   ).toBe(false);
   expect(
     textChannelsConfigurationSchema.safeParse({
-      revision: 0,
       channels: [],
       models: [model],
     }).success
   ).toBe(false);
   expect(
     textChannelsConfigurationSchema.safeParse({
-      revision: 0,
       channels: [{ ...channel, hasKey: false }],
       models: [],
     }).success
@@ -350,18 +335,18 @@ it.each(['structuredOutput', 'tools', 'vision'] as const)(
       tools: true,
     };
     expect(
-      channelTextModelSchema.safeParse({ ...builtin, [capability]: false })
+      saveChannelTextModelSchema.safeParse({ ...builtin, [capability]: false })
         .success
     ).toBe(false);
     expect(
-      channelTextModelSchema.safeParse({
+      saveChannelTextModelSchema.safeParse({
         ...builtin,
         [capability]: false,
         enabled: false,
       }).success
     ).toBe(true);
     expect(
-      channelTextModelSchema.safeParse({ ...model, [capability]: false })
+      saveChannelTextModelSchema.safeParse({ ...model, [capability]: false })
         .success
     ).toBe(true);
   }
@@ -377,7 +362,6 @@ it('limits configured bindings so routing snapshots remain bounded', () => {
   );
   expect(
     textChannelsConfigurationSchema.safeParse({
-      revision: 0,
       channels: [channel],
       models,
     }).success
@@ -403,7 +387,6 @@ it.each(Object.values(TEXT_CHANNEL_PROTOCOLS))(
   'validates and snapshots the selected protocol %s',
   (protocol) => {
     const parsed = saveTextChannelSchema.parse({
-      revision: 0,
       id: channel.id,
       name: channel.name,
       baseUrl: channel.baseUrl,
@@ -412,7 +395,6 @@ it.each(Object.values(TEXT_CHANNEL_PROTOCOLS))(
     });
     expect(parsed.protocol).toBe(protocol);
     const configuration = textChannelsConfigurationSchema.parse({
-      revision: 1,
       channels: [{ ...channel, protocol }],
       models: [model],
     });

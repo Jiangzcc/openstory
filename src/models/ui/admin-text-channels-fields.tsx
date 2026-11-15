@@ -223,13 +223,11 @@ export function AdminTextDescription(props: {
 type EditorFeedbackProps = {
   errors: TextChannelFieldErrors;
   saveError: Error | null;
-  isStale: boolean;
   onRefresh: () => void;
   isRefreshing: boolean;
 };
 
 export function AdminTextEditorFeedback(props: EditorFeedbackProps) {
-  const { t } = useTranslation('admin');
   const translate = useLabelTranslation('admin');
   return (
     <div className="flex flex-col gap-3" aria-live="polite">
@@ -239,26 +237,6 @@ export function AdminTextEditorFeedback(props: EditorFeedbackProps) {
         </Alert>
       )}
       {props.saveError && <TextSaveFailure {...props} />}
-      {props.isStale && (
-        <Alert>
-          <AlertTitle>{t('Saved configuration changed')}</AlertTitle>
-          <AlertDescription>
-            <p>
-              {t(
-                'Reload the saved configuration and review your draft before saving again.'
-              )}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={props.onRefresh}
-              disabled={props.isRefreshing}
-            >
-              {t('Reload configuration')}
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 }
@@ -273,16 +251,14 @@ function TextSaveFailure(props: EditorFeedbackProps) {
       <AlertDescription className="break-words">
         <p>{translate(props.saveError.message)}</p>
         <p>{t('Your draft is still in the form. Review it and try again.')}</p>
-        {!props.isStale && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={props.onRefresh}
-            disabled={props.isRefreshing}
-          >
-            {t('Reload configuration')}
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={props.onRefresh}
+          disabled={props.isRefreshing}
+        >
+          {t('Reload configuration')}
+        </Button>
       </AlertDescription>
     </Alert>
   );

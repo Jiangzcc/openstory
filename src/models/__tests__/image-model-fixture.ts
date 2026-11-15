@@ -47,7 +47,6 @@ export function imageCatalogFixture(
 export function imageConfigurationFixture(): ImageChannelsConfiguration {
   const catalog = imageCatalogFixture();
   return {
-    revision: 1,
     channels: [
       {
         id: 'image-channel',

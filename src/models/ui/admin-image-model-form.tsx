@@ -88,13 +88,12 @@ function ImageModelFormBody({ state }: ModelProps) {
       <AdminImageFeedback
         issues={editor.issues}
         error={editor.error}
-        stale={editor.stale}
         onReload={state.reload}
         busy={state.busy}
       />
       <AdminImageEditorActions
         saving={editor.saving}
-        disabled={state.busy || editor.stale}
+        disabled={state.busy}
         onCancel={editor.close}
         label="Save model"
       />

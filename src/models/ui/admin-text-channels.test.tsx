@@ -82,7 +82,6 @@ import type {
 
 // Reserved example addresses and metadata are test fixtures only.
 const configuration: TextChannelsConfiguration = {
-  revision: 2,
   channels: [
     {
       id: 'channel-test',
@@ -123,7 +122,6 @@ function setup(
   clients.push(client);
   if (saved) client.setQueryData(adminTextChannelsQueryOptions.queryKey, saved);
   client.setQueryData(adminImageChannelsQueryOptions.queryKey, {
-    revision: 0,
     channels: [],
     models: [],
   });
@@ -188,7 +186,6 @@ describe('admin text channels UI', () => {
   });
   it('shows an actionable empty state and one page scroll container', () => {
     const html = setup('en', {
-      revision: 0,
       channels: [],
       models: [],
     }).render();
@@ -287,22 +284,22 @@ describe('model configuration tabs integration', () => {
 });
 
 describe('text channel save feedback', () => {
-  it('offers reload for a server revision conflict and translates the server reason', () => {
+  it('translates a save failure and keeps draft retry guidance', () => {
     const i18n = createApplicationI18n('zh-CN');
     const html = renderToStaticMarkup(
       <I18nextProvider i18n={i18n}>
         <AdminTextEditorFeedback
           errors={{}}
           saveError={
-            new Error('Text channel settings changed. Reload before saving.')
+            new Error('Provide a new API key when changing a channel base URL.')
           }
-          isStale={false}
+
           onRefresh={() => {}}
           isRefreshing={false}
         />
       </I18nextProvider>
     );
-    expect(html).toContain('文本渠道配置已发生变化，请重新加载后再保存。');
+    expect(html).toContain('修改渠道基础 URL 时请重新输入 API 密钥。');
     expect(html).toContain('重新加载配置');
     expect(html).toContain('草稿仍保留在表单中');
   });
@@ -314,7 +311,6 @@ function channelEditor(original?: TextChannel): AdminTextChannelEditor {
       values: original
         ? textChannelToDraft(original)
         : createTextChannelDraft(),
-      revision: configuration.revision,
       isNew: !original,
       errors: {},
     },
@@ -324,11 +320,9 @@ function channelEditor(original?: TextChannel): AdminTextChannelEditor {
     change: vi.fn(),
     replace: vi.fn(),
     setErrors: vi.fn(),
-    adoptRevision: vi.fn(),
     onSubmit: vi.fn(),
     isSaving: false,
     saveError: null,
-    isStale: false,
     original,
   };
 }
@@ -337,7 +331,6 @@ function modelEditor(): AdminTextModelEditor {
   return {
     draft: {
       values: createTextModelDraft(),
-      revision: configuration.revision,
       isNew: true,
       errors: {},
     },
@@ -347,11 +340,9 @@ function modelEditor(): AdminTextModelEditor {
     change: vi.fn(),
     replace: vi.fn(),
     setErrors: vi.fn(),
-    adoptRevision: vi.fn(),
     onSubmit: vi.fn(),
     isSaving: false,
     saveError: null,
-    isStale: false,
     options: [],
     choice: CUSTOM_TEXT_MODEL_OPTION,
     isCustom: true,

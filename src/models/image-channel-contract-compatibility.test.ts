@@ -57,14 +57,13 @@ it.each(['gpt_image_2', 'custom-image:qwen'] as const)(
     expect(() =>
       validateImageChannelParameters(model.parameters, 'edit', {})
     ).toThrow('unavailable');
-    expect(
-      saveChannelImageModelSchema.safeParse({ ...model, revision: 1 }).success
-    ).toBe(false);
+    expect(saveChannelImageModelSchema.safeParse({ ...model }).success).toBe(
+      false
+    );
     expect(
       saveChannelImageModelSchema.parse({
         ...model,
         enabled: false,
-        revision: 1,
       }).enabled
     ).toBe(false);
   }
@@ -95,7 +94,6 @@ it('keeps a broken built-in binding instead of publishing its original fal capab
   expect(
     saveChannelImageModelSchema.safeParse({
       ...model,
-      revision: 1,
       enabled: false,
     }).success
   ).toBe(true);
@@ -114,7 +112,6 @@ it.each([0.0000001, 0.0000014, 0.1234567])(
     ).toBe(true);
     const active = saveChannelImageModelSchema.safeParse({
       ...model,
-      revision: 1,
     });
     expect(active.success).toBe(false);
     if (!active.success)
@@ -128,7 +125,6 @@ it.each([0.0000001, 0.0000014, 0.1234567])(
       saveChannelImageModelSchema.safeParse({
         ...model,
         enabled: false,
-        revision: 1,
       }).success
     ).toBe(true);
   }
@@ -142,8 +138,8 @@ it('allows zero and integer-microdollar sale prices without constraining supplie
     if (!model || !price) throw new Error('Missing synthetic price.');
     price.unitPriceUsd = unitPriceUsd;
     price.supplierCost = { currency: 'USD', unitPrice: 0.0000001 };
-    expect(
-      saveChannelImageModelSchema.safeParse({ ...model, revision: 1 }).success
-    ).toBe(true);
+    expect(saveChannelImageModelSchema.safeParse({ ...model }).success).toBe(
+      true
+    );
   }
 });

@@ -19,7 +19,6 @@ import type {
 
 export const IMAGE_CHANNEL_PROTOCOL = 'openai-images' as const;
 export const IMAGE_CHANNEL_LIMITS = {
-  initialRevision: 0,
   requiredLength: 1,
   id: 200,
   name: 200,
@@ -46,7 +45,6 @@ const labelSchema = z
   .trim()
   .min(IMAGE_CHANNEL_LIMITS.requiredLength)
   .max(IMAGE_CHANNEL_LIMITS.name);
-const revisionSchema = z.number().int().nonnegative().safe();
 const ASCII_SPACE = 32;
 const ASCII_DELETE = 127;
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
@@ -136,7 +134,6 @@ const imageChannelSchema = z
   );
 export type ImageChannel = z.infer<typeof imageChannelSchema>;
 export const saveImageChannelSchema = z.strictObject({
-  revision: revisionSchema,
   ...channelFields,
   apiKey: z
     .string()
@@ -276,9 +273,6 @@ function validateEnabledImageParameters(
 }
 
 export const saveChannelImageModelSchema = channelImageModelSchema
-  .safeExtend({
-    revision: revisionSchema,
-  })
   .superRefine(validateEnabledImageParameters)
   .refine(
     (model) =>
@@ -302,7 +296,6 @@ export type SyncImageChannelModelsInput = z.infer<
 >;
 export const imageChannelsConfigurationSchema = z
   .strictObject({
-    revision: revisionSchema,
     channels: z.array(imageChannelSchema).max(IMAGE_CHANNEL_LIMITS.channels),
     models: z.array(channelImageModelSchema).max(IMAGE_CHANNEL_LIMITS.models),
   })
@@ -352,7 +345,6 @@ export type ImageChannelModelsSyncResult = {
 
 export function emptyImageChannelsConfiguration(): ImageChannelsConfiguration {
   return {
-    revision: IMAGE_CHANNEL_LIMITS.initialRevision,
     channels: [],
     models: [],
   };

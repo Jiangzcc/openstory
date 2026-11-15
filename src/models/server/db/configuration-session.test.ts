@@ -20,7 +20,6 @@ const { createTextChannelsAdminMethods, createTextChannelsReadMethods } =
   await import('./text-channels');
 
 const channelInput = {
-  revision: 0,
   id: 'mock-channel',
   name: 'Mock channel',
   baseUrl: 'https://mock-provider.example/v1',
@@ -29,7 +28,6 @@ const channelInput = {
   apiKey: 'mock-only-original-channel-key',
 };
 const modelInput = {
-  revision: 1,
   id: 'custom:mock-session' as const,
   name: 'Mock model',
   channelId: channelInput.id,
@@ -110,7 +108,7 @@ it('reads saved defaults after a late response restores an older bookmark', asyn
 });
 
 it('reads a disabled channel and removes its current routes despite an older bookmark', async () => {
-  const initial = await seedRoute();
+  await seedRoute();
   fixture.replicaVersion = fixture.head;
   const late = await browserRequest(() =>
     createTextChannelsReadMethods(fixture.db).getSnapshot()
@@ -118,7 +116,6 @@ it('reads a disabled channel and removes its current routes despite an older boo
   await browserRequest(() =>
     createTextChannelsAdminMethods(fixture.db).saveChannel({
       ...channelInput,
-      revision: initial.revision,
       enabled: false,
       apiKey: '',
     })
@@ -138,13 +135,12 @@ it('reads a disabled channel and removes its current routes despite an older boo
 });
 
 it('resolves rotated immutable credentials in a lagging session while preserving old snapshots', async () => {
-  const initial = await seedRoute();
+  await seedRoute();
   fixture.replicaVersion = fixture.head;
   const reader = createTextChannelsReadMethods(fixture.db);
   const old = requireValue((await reader.getSnapshot())[0]);
   const rotated = await createTextChannelsAdminMethods(fixture.db).saveChannel({
     ...channelInput,
-    revision: initial.revision,
     apiKey: 'mock-only-rotated-channel-key',
   });
   const credentialId = requireValue(rotated.channels[0]?.credentialId);
@@ -206,25 +202,4 @@ it('validates default settings against channels created after the request bookma
     createModelConfigurationReadMethods(fixture.db).get()
   );
   expect(read.value.defaultAnalysis).toBe(modelInput.id);
-});
-
-it('accepts the current channel revision despite a lagging replica without changing revision guards', async () => {
-  const initial = await seedRoute();
-  const saved = await browserRequest(() =>
-    createTextChannelsAdminMethods(fixture.db).saveChannel({
-      ...channelInput,
-      revision: initial.revision,
-      name: 'Updated mock channel',
-      apiKey: '',
-    })
-  );
-  expect(saved.value.revision).toBe(initial.revision + 1);
-  const staleSave = browserRequest(() =>
-    createTextChannelsAdminMethods(fixture.db).saveChannel({
-      ...channelInput,
-      revision: initial.revision,
-      apiKey: 'mock-only-stale-key',
-    })
-  );
-  await expect(staleSave).rejects.toMatchObject({ code: 'CONFLICT' });
 });

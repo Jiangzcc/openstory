@@ -64,7 +64,7 @@ function mockContext() {
   return {
     adminScopedDb: {
       textChannels: {
-        get: vi.fn(async () => ({ revision: 0, channels: [], models: [] })),
+        get: vi.fn(async () => ({ channels: [], models: [] })),
         saveChannel: vi.fn(async (input: unknown) => input),
         saveModel: vi.fn(async (input: unknown) => input),
         syncModels: vi.fn(async () => ({
@@ -94,7 +94,7 @@ it('applies the existing system-admin gate to every administrative server functi
 
 it('delegates administrative operations only to the scoped service surface', async () => {
   const context = mockContext();
-  const data = { revision: 3, id: 'mock-channel' };
+  const data = { id: 'mock-channel' };
   await adminRead.run({ context });
   await saveChannel.run({ context, data });
   await saveModel.run({ context, data });

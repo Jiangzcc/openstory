@@ -7,7 +7,6 @@ export const TEXT_CHANNEL_PROTOCOLS = {
 } as const;
 export const TEXT_CHANNEL_PROTOCOL = TEXT_CHANNEL_PROTOCOLS.chatCompletions;
 export const DEFAULT_TEXT_CHANNEL_USER_AGENT = 'OpenStory/0.1.0';
-const TEXT_CHANNEL_INITIAL_REVISION = 0;
 export const TEXT_CHANNEL_LIMITS = {
   requiredLength: 1,
   id: 200,
@@ -38,7 +37,6 @@ const labelSchema = z
   .trim()
   .min(TEXT_CHANNEL_LIMITS.requiredLength)
   .max(TEXT_CHANNEL_LIMITS.name);
-const revisionSchema = z.number().int().nonnegative().safe();
 const tokenLimitSchema = z.number().int().positive().safe();
 const rateSchema = z.number().finite().nonnegative();
 
@@ -153,7 +151,6 @@ const textChannelSchema = z
 export type TextChannel = z.infer<typeof textChannelSchema>;
 
 export const saveTextChannelSchema = z.strictObject({
-  revision: revisionSchema,
   ...channelFields,
   apiKey: z
     .string()
@@ -191,7 +188,7 @@ function preservesBuiltinCapabilities(model: BindingCapabilities): boolean {
   );
 }
 
-export const channelTextModelSchema = z
+export const saveChannelTextModelSchema = z
   .strictObject({
     id: textModelIdSchema,
     name: labelSchema,
@@ -220,11 +217,8 @@ export const channelTextModelSchema = z
     preservesBuiltinCapabilities,
     'Built-in text model bindings must preserve structured output, tools, and vision support.'
   );
-export type ChannelTextModel = z.infer<typeof channelTextModelSchema>;
+export type ChannelTextModel = z.infer<typeof saveChannelTextModelSchema>;
 
-export const saveChannelTextModelSchema = channelTextModelSchema.safeExtend({
-  revision: revisionSchema,
-});
 export type SaveChannelTextModelInput = z.infer<
   typeof saveChannelTextModelSchema
 >;
@@ -238,9 +232,8 @@ export type SyncTextChannelModelsInput = z.infer<
 
 export const textChannelsConfigurationSchema = z
   .strictObject({
-    revision: revisionSchema,
     channels: z.array(textChannelSchema).max(TEXT_CHANNEL_LIMITS.channels),
-    models: z.array(channelTextModelSchema).max(TEXT_CHANNEL_LIMITS.models),
+    models: z.array(saveChannelTextModelSchema).max(TEXT_CHANNEL_LIMITS.models),
   })
   .refine((configuration) => {
     const channels = new Set(
@@ -282,7 +275,7 @@ export type TextChannelModelsSyncResult = {
 };
 
 export function emptyTextChannelsConfiguration(): TextChannelsConfiguration {
-  return { revision: TEXT_CHANNEL_INITIAL_REVISION, channels: [], models: [] };
+  return { channels: [], models: [] };
 }
 
 export function createTextModelRoutingSnapshot(

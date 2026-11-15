@@ -24,7 +24,7 @@ const BUILTIN_TEXT_MODEL_OPTIONS = SCRIPT_ANALYSIS_MODELS.map(
 
 export type TextChannelDraft = Omit<
   SaveTextChannelInput,
-  'revision' | 'apiKey' | 'userAgent'
+  'apiKey' | 'userAgent'
 > & {
   apiKey: string;
   userAgent: string;
@@ -175,13 +175,11 @@ function validationErrors(
 
 export function validateTextChannelDraft(
   draft: TextChannelDraft,
-  revision: number,
   saved?: TextChannel
 ): DraftValidation<SaveTextChannelInput> {
   const apiKey = draft.apiKey.trim();
   const result = saveTextChannelSchema.safeParse({
     ...draft,
-    revision,
     apiKey: apiKey || undefined,
   });
   if (!result.success)
@@ -212,7 +210,6 @@ function draftNumber(value: string) {
 
 export function validateTextModelDraft(
   draft: TextModelDraft,
-  revision: number,
   channels: readonly TextChannel[],
   existingModels: readonly ChannelTextModel[],
   isNew: boolean
@@ -231,7 +228,6 @@ export function validateTextModelDraft(
     };
   const result = saveChannelTextModelSchema.safeParse({
     ...draft,
-    revision,
     contextWindow: draftNumber(draft.contextWindow),
     maxOutputTokens: draftNumber(draft.maxOutputTokens),
     inputPricePerMillion: draftNumber(draft.inputPricePerMillion),

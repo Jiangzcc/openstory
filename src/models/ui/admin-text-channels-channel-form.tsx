@@ -90,14 +90,13 @@ function ChannelEditorBody(
       <AdminTextEditorFeedback
         errors={editor.draft.errors}
         saveError={editor.saveError}
-        isStale={editor.isStale}
         onRefresh={props.onRefresh}
         isRefreshing={props.isRefreshing || isBusy}
       />
       <AdminTextEditorActions
         label="Save channel"
         isSaving={editor.isSaving}
-        disabled={isBusy || editor.isStale}
+        disabled={isBusy}
         onClose={editor.close}
       />
     </form>

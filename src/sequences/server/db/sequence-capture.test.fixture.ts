@@ -129,8 +129,7 @@ function imageModel(
 
 async function saveText(db: Database, version: CaptureVersion) {
   const writer = createTextChannelsAdminMethods(db);
-  let saved = await writer.saveChannel({
-    revision: (await writer.get()).revision,
+  await writer.saveChannel({
     id: CAPTURE.textChannel,
     name: 'Synthetic text ' + version,
     baseUrl: 'https://capture-' + version.toLowerCase() + '.invalid/v1',
@@ -145,8 +144,7 @@ async function saveText(db: Database, version: CaptureVersion) {
     CAPTURE.helperA,
     CAPTURE.helperB,
   ]) {
-    saved = await writer.saveModel({
-      revision: saved.revision,
+    await writer.saveModel({
       ...textModel(id, version),
     });
   }
@@ -154,8 +152,7 @@ async function saveText(db: Database, version: CaptureVersion) {
 
 async function saveImages(db: Database, version: CaptureVersion) {
   const writer = createImageChannelsAdminMethods(db);
-  let saved = await writer.saveChannel({
-    revision: (await writer.get()).revision,
+  await writer.saveChannel({
     id: CAPTURE.imageChannel,
     name: 'Synthetic image ' + version,
     baseUrl: 'https://capture-images-' + version.toLowerCase() + '.invalid/v1',
@@ -164,8 +161,7 @@ async function saveImages(db: Database, version: CaptureVersion) {
     apiKey: 'synthetic-image-secret-' + version,
   });
   for (const id of [CAPTURE.imageA, CAPTURE.imageB]) {
-    saved = await writer.saveModel({
-      revision: saved.revision,
+    await writer.saveModel({
       ...imageModel(id, version),
     });
   }
@@ -291,7 +287,6 @@ export async function damageCaptureConfiguration(
     if (!model) throw new Error('Missing synthetic text model.');
     await writer.saveModel({
       ...model,
-      revision: saved.revision,
       ...(fault === 'text-capability'
         ? { structuredOutput: false }
         : { enabled: false }),
@@ -305,7 +300,6 @@ export async function damageCaptureConfiguration(
     throw new Error('Missing synthetic image model.');
   await writer.saveModel({
     ...model,
-    revision: saved.revision,
     ...(fault === 'image-price'
       ? {
           priceCards: model.priceCards.filter(

@@ -38,7 +38,6 @@ import type { ImageFormIssue } from './admin-image-channels-state';
 type Saved = (configuration: ImageChannelsConfiguration) => void;
 type EditorDraft<T> = {
   value: T;
-  revision: number;
   formKey: string;
   isNew: boolean;
 };
@@ -52,8 +51,7 @@ function useImageEditorFocus(formKey?: string) {
 }
 
 function useImageEditor<T, I>(
-  saved: ImageChannelsConfiguration,
-  parse: (data: FormData, revision: number) => z.ZodSafeParseResult<I>,
+  parse: (data: FormData) => z.ZodSafeParseResult<I>,
   save: (input: I) => Promise<ImageChannelsConfiguration>,
   onSaved: Saved,
   message: string
@@ -73,13 +71,12 @@ function useImageEditor<T, I>(
   const open = (value: T, isNew: boolean) => {
     mutation.reset();
     setIssues([]);
-    setDraft({ value, revision: saved.revision, formKey: generateId(), isNew });
+    setDraft({ value, formKey: generateId(), isNew });
   };
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!draft || mutation.isPending || draft.revision !== saved.revision)
-      return;
-    const result = parse(new FormData(event.currentTarget), draft.revision);
+    if (!draft || mutation.isPending) return;
+    const result = parse(new FormData(event.currentTarget));
     if (result.success) {
       setIssues([]);
       mutation.mutate(result.data);
@@ -93,7 +90,6 @@ function useImageEditor<T, I>(
     onSubmit,
     error: mutation.error,
     saving: mutation.isPending,
-    stale: !!draft && draft.revision !== saved.revision,
     ...imageEditorActions(setDraft, setIssues, mutation.reset),
   };
 }
@@ -108,11 +104,6 @@ function imageEditorActions<T>(
       reset();
       setDraft(null);
       setIssues([]);
-    },
-    adoptRevision: (revision: number) => {
-      reset();
-      setIssues([]);
-      setDraft((current) => current && { ...current, revision });
     },
   };
 }
@@ -158,16 +149,12 @@ function useImageConfiguration() {
   return { query, update };
 }
 
-function useImageChannelEditor(
-  saved: ImageChannelsConfiguration,
-  onSaved: Saved
-) {
+function useImageChannelEditor(onSaved: Saved) {
   const { t } = useTranslation('imageChannels');
   const editor = useImageEditor<
     ReturnType<typeof createImageChannelDraft>,
     SaveImageChannelInput
   >(
-    saved,
     readImageChannelForm,
     (input) => saveImageChannelFn({ data: input }),
     onSaved,
@@ -186,7 +173,6 @@ function useImageModelEditor(
 ) {
   const { t } = useTranslation('imageChannels');
   const editor = useImageEditor<ChannelImageModel, SaveChannelImageModelInput>(
-    saved,
     readImageModelForm,
     (input) => saveChannelImageModelFn({ data: input }),
     onSaved,
@@ -210,7 +196,7 @@ export function useAdminImageChannels() {
     update(configuration);
     sync.reset();
   };
-  const channelEditor = useImageChannelEditor(query.data, onSaved);
+  const channelEditor = useImageChannelEditor(onSaved);
   const modelEditor = useImageModelEditor(query.data, onSaved);
   const busy =
     channelEditor.saving ||
@@ -221,8 +207,6 @@ export function useAdminImageChannels() {
     if (busy) return;
     const result = await query.refetch();
     if (!result.isSuccess) return;
-    channelEditor.adoptRevision(result.data.revision);
-    modelEditor.adoptRevision(result.data.revision);
     sync.reset();
     toast.success(
       t('Configuration reloaded. Review your draft before saving.')

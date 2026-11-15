@@ -28,7 +28,6 @@ const {
 let db: Database;
 let closeDb: () => Promise<void>;
 const channelInput = {
-  revision: 0,
   id: 'mock-channel',
   name: 'Mock channel',
   baseUrl: 'https://10.0.0.4/v1',
@@ -37,7 +36,6 @@ const channelInput = {
   apiKey: 'mock-provider-secret-for-tests',
 };
 const modelInput: SaveChannelImageModelInput = {
-  revision: 1,
   id: 'custom-image:mock',
   name: 'Mock image',
   channelId: 'mock-channel',
@@ -72,7 +70,7 @@ function requireValue<T>(value: T | null | undefined): T {
 
 it('exposes a read-only scope with no default writes', async () => {
   const reader = createImageChannelsReadMethods(db);
-  expect(await reader.get()).toEqual({ revision: 0, channels: [], models: [] });
+  expect(await reader.get()).toEqual({ channels: [], models: [] });
   expect(await reader.getCatalog()).toEqual([]);
   expect(await reader.getSnapshot()).toEqual([]);
   for (const method of ['saveChannel', 'saveModel', 'syncModels'])
@@ -128,13 +126,11 @@ it('retains immutable references for blank edits and previous runs after rotatio
   const originalId = requireValue(first.channels[0]?.credentialId);
   const second = await writer.saveChannel({
     ...channelInput,
-    revision: 1,
     apiKey: ' ',
   });
   expect(second.channels[0]?.credentialId).toBe(originalId);
   const third = await writer.saveChannel({
     ...channelInput,
-    revision: 2,
     apiKey: 'mock-rotated-secret',
   });
   const newId = requireValue(third.channels[0]?.credentialId);
@@ -148,60 +144,12 @@ it('keeps disabled model names in catalog but removes them from new execution sn
   const writer = createImageChannelsAdminMethods(db);
   await writer.saveChannel(channelInput);
   await writer.saveModel(modelInput);
-  await writer.saveModel({ ...modelInput, revision: 2, enabled: false });
+  await writer.saveModel({ ...modelInput, enabled: false });
   expect(await writer.getSnapshot()).toEqual([]);
   expect((await writer.getCatalog())[0]).toMatchObject({
     name: modelInput.name,
     available: false,
   });
-});
-
-it('permits exactly one concurrent first save and creates no orphaned secret', async () => {
-  const outcomes = await Promise.allSettled([
-    createImageChannelsAdminMethods(db).saveChannel(channelInput),
-    createImageChannelsAdminMethods(db).saveChannel({
-      ...channelInput,
-      id: 'other',
-    }),
-  ]);
-  expect(
-    outcomes.filter((outcome) => outcome.status === 'fulfilled')
-  ).toHaveLength(1);
-  expect(
-    outcomes.find((outcome) => outcome.status === 'rejected')
-  ).toMatchObject({ reason: { code: 'CONFLICT' } });
-  expect((await createImageChannelsReadMethods(db).get()).revision).toBe(1);
-  expect(await db.select().from(appMetadata)).toHaveLength(2);
-});
-
-it('guards concurrent model edits with CAS across separate admin scopes', async () => {
-  await createImageChannelsAdminMethods(db).saveChannel(channelInput);
-  const outcomes = await Promise.allSettled([
-    createImageChannelsAdminMethods(db).saveModel(modelInput),
-    createImageChannelsAdminMethods(db).saveModel({
-      ...modelInput,
-      id: 'custom-image:other',
-    }),
-  ]);
-  expect(
-    outcomes.filter((outcome) => outcome.status === 'fulfilled')
-  ).toHaveLength(1);
-  expect(
-    outcomes.find((outcome) => outcome.status === 'rejected')
-  ).toMatchObject({ reason: { code: 'CONFLICT' } });
-  expect((await createImageChannelsReadMethods(db).get()).models).toHaveLength(
-    1
-  );
-});
-
-it('rejects stale revisions before encrypting or writing', async () => {
-  const writer = createImageChannelsAdminMethods(db);
-  const first = await writer.saveChannel(channelInput);
-  await expect(
-    writer.saveChannel({ ...channelInput, apiKey: 'mock-stale-new-secret' })
-  ).rejects.toMatchObject({ code: 'CONFLICT' });
-  expect(await writer.get()).toEqual(first);
-  expect(await db.select().from(appMetadata)).toHaveLength(2);
 });
 
 it('atomically rolls back config when immutable credential insertion fails', async () => {
@@ -212,7 +160,6 @@ it('atomically rolls back config when immutable credential insertion fails', asy
   await expect(
     writer.saveChannel({
       ...channelInput,
-      revision: 1,
       apiKey: 'mock-collision-secret',
     })
   ).rejects.toThrow();
@@ -227,14 +174,12 @@ it('requires a fresh credential for endpoint changes', async () => {
   await expect(
     writer.saveChannel({
       ...channelInput,
-      revision: 1,
       baseUrl: 'https://other.example/v1',
       apiKey: '',
     })
   ).rejects.toThrow('Provide a new API key');
   const updated = await writer.saveChannel({
     ...channelInput,
-    revision: 1,
     baseUrl: 'https://other.example/v1',
     apiKey: 'mock-new-destination-secret',
   });
@@ -264,7 +209,6 @@ it('preserves logical model identity across label and price edits', async () => 
   await expect(
     writer.saveModel({
       ...modelInput,
-      revision: 2,
       operations: {
         generate: {
           ...requireValue(modelInput.operations.generate),
@@ -275,7 +219,6 @@ it('preserves logical model identity across label and price edits', async () => 
   ).rejects.toThrow('Create a new image model identifier');
   const saved = await writer.saveModel({
     ...modelInput,
-    revision: 2,
     name: 'New display name',
     priceCards: [
       { ...requireValue(modelInput.priceCards[0]), unitPriceUsd: 0.08 },
@@ -319,7 +262,7 @@ it('refuses mismatched metadata references rather than silently dropping configu
   ).rejects.toThrow('Select an existing image channel');
   await db
     .update(appMetadata)
-    .set({ value: '{"revision":1,"channels":[],"models":[{}]}' })
+    .set({ value: '{"channels":[],"models":[{}]}' })
     .where(eq(appMetadata.key, IMAGE_CHANNELS_KEY));
   await expect(writer.get()).rejects.toThrow(
     'Stored image channel settings are invalid.'

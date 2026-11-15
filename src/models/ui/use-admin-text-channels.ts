@@ -45,7 +45,6 @@ import type {
 
 type EditorDraft<T> = {
   values: T;
-  revision: number;
   isNew: boolean;
   errors: TextChannelFieldErrors;
 };
@@ -65,8 +64,8 @@ function useTextEditorFocus(isOpen: boolean) {
 function useTextChannelDraft<T>() {
   const [draft, setDraft] = useState<EditorDraft<T> | null>(null);
   const focus = useTextEditorFocus(!!draft);
-  const open = (values: T, revision: number, isNew: boolean) => {
-    setDraft({ values, revision, isNew, errors: {} });
+  const open = (values: T, isNew: boolean) => {
+    setDraft({ values, isNew, errors: {} });
     focus.requestFocus();
   };
   const change = <K extends keyof T>(key: K, value: T[K]) =>
@@ -82,8 +81,6 @@ function useTextChannelDraft<T>() {
     setDraft((current) => current && { ...current, values, errors: {} });
   const setErrors = (errors: TextChannelFieldErrors) =>
     setDraft((current) => current && { ...current, errors });
-  const adoptRevision = (revision: number) =>
-    setDraft((current) => current && { ...current, revision, errors: {} });
   return {
     draft,
     focusRef: focus.focusRef,
@@ -91,7 +88,6 @@ function useTextChannelDraft<T>() {
     change,
     replace,
     setErrors,
-    adoptRevision,
     close: () => setDraft(null),
   };
 }
@@ -124,10 +120,6 @@ function draftMutationActions<T, I>(
       mutation.reset();
       editor.change(key, value);
     },
-    adoptRevision: (revision: number) => {
-      mutation.reset();
-      editor.adoptRevision(revision);
-    },
     close: () => {
       mutation.reset();
       editor.close();
@@ -144,15 +136,10 @@ function submitChannel(
   event.preventDefault();
   const draft = editor.draft;
   if (!draft || mutation.isPending || !saved) return;
-  if (draft.revision !== saved.revision) return;
   const original = saved.channels.find(
     (channel) => channel.id === draft.values.id
   );
-  const result = validateTextChannelDraft(
-    draft.values,
-    draft.revision,
-    original
-  );
+  const result = validateTextChannelDraft(draft.values, original);
   if (result.success) mutation.mutate(result.data);
   else editor.setErrors(result.errors);
 }
@@ -174,7 +161,6 @@ function useChannelEditor(
     mutation.reset();
     editor.open(
       channel ? textChannelToDraft(channel) : createTextChannelDraft(),
-      saved.revision,
       !channel
     );
   };
@@ -186,7 +172,6 @@ function useChannelEditor(
       submitChannel(event, editor, saved, mutation),
     isSaving: mutation.isPending,
     saveError: mutation.error,
-    isStale: !!editor.draft && editor.draft.revision !== saved?.revision,
     original: saved?.channels.find(
       (channel) => channel.id === editor.draft?.values.id
     ),
@@ -202,10 +187,8 @@ function submitModel(
   event.preventDefault();
   const draft = editor.draft;
   if (!draft || mutation.isPending || !saved) return;
-  if (draft.revision !== saved.revision) return;
   const result = validateTextModelDraft(
     draft.values,
-    draft.revision,
     saved.channels,
     saved.models,
     draft.isNew
@@ -222,7 +205,7 @@ function modelDraftActions(
   const openDraft = (values: TextModelDraft, isNew: boolean) => {
     if (!saved) return;
     mutation.reset();
-    editor.open(values, saved.revision, isNew);
+    editor.open(values, isNew);
   };
   return {
     open: (model?: ChannelTextModel) =>
@@ -284,7 +267,6 @@ function useModelEditor(
       submitModel(event, editor, saved, mutation),
     isSaving: mutation.isPending,
     saveError: mutation.error,
-    isStale: !!editor.draft && editor.draft.revision !== saved?.revision,
   };
 }
 
@@ -373,8 +355,6 @@ export function useAdminTextChannels() {
     if (isSaving || sync.isPending) return;
     const result = await query.refetch();
     if (!result.isSuccess) return;
-    channelEditor.adoptRevision(result.data.revision);
-    modelEditor.adoptRevision(result.data.revision);
     sync.reset();
     toast.success(
       t('Configuration reloaded. Review your draft before saving.')

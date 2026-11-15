@@ -37,7 +37,6 @@ beforeEach(async () => {
 });
 
 const channel = {
-  revision: 0,
   id: 'mock-channel',
   name: 'Mock channel',
   baseUrl: 'https://mock.invalid/v1',
@@ -46,7 +45,6 @@ const channel = {
   apiKey: 'mock-original-credential',
 };
 const model = {
-  revision: 1,
   id: 'custom:mock-model' as const,
   name: 'Mock model',
   channelId: channel.id,
@@ -84,7 +82,6 @@ it('retains a run route and credential after administrator rotation and disablin
   const snapshot = await createTextChannelsReadMethods(db).getSnapshot();
   await admin.saveChannel({
     ...channel,
-    revision: 2,
     enabled: false,
     baseUrl: 'https://replacement.invalid/v1',
     apiKey: 'mock-rotated-credential',
@@ -121,13 +118,11 @@ it('does not put plaintext credentials in the configuration row', async () => {
 async function teamKeys() {
   const organizationId = generateId();
   const userId = generateId();
-  await db
-    .insert(organization)
-    .values({
-      id: organizationId,
-      name: 'Mock team',
-      slug: 'mock-' + organizationId,
-    });
+  await db.insert(organization).values({
+    id: organizationId,
+    name: 'Mock team',
+    slug: 'mock-' + organizationId,
+  });
   await db
     .insert(user)
     .values({ id: userId, name: 'Mock user', email: userId + '@example.test' });

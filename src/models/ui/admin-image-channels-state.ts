@@ -156,10 +156,9 @@ function scalar(value: string, type: string) {
   return value;
 }
 
-export function readImageChannelForm(data: FormData, revision: number) {
+export function readImageChannelForm(data: FormData) {
   const apiKey = text(data, 'apiKey').trim();
   return saveImageChannelSchema.safeParse({
-    revision,
     id: text(data, 'id'),
     name: text(data, 'name'),
     baseUrl: text(data, 'baseUrl'),
@@ -241,9 +240,8 @@ function readPriceCard(data: FormData, id: string) {
   };
 }
 
-export function readImageModelForm(data: FormData, revision: number) {
+export function readImageModelForm(data: FormData) {
   return saveChannelImageModelSchema.safeParse({
-    revision,
     id: text(data, 'id'),
     name: text(data, 'name'),
     description: text(data, 'description').trim() || undefined,
@@ -274,7 +272,6 @@ export function imageFormIssues(error: z.ZodError): ImageFormIssue[] {
 
 const IMAGE_SAVE_ERROR_MESSAGES = new Set([
   WORKFLOW_IMAGE_ROUTING_SIZE_ERROR,
-  'Image channel settings changed. Reload before saving.',
   'Provide a new API key when changing a channel base URL.',
   'Save an API key before enabling an image channel.',
   'Create a new image model identifier when changing an upstream model.',

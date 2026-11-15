@@ -14,7 +14,6 @@ import {
 
 const MOCK_PROVIDER_SECRET = 'mock-secret-never-call-a-real-provider';
 const configuration: TextChannelsConfiguration = {
-  revision: 1,
   models: [],
   channels: [
     {
@@ -33,10 +32,7 @@ const fetchMock = vi.fn<typeof fetch>();
 
 function mockStore(): TextChannelsAdminStore {
   return {
-    read: vi.fn(async () => ({
-      configuration: structuredClone(configuration),
-      serialized: 'mock-registry',
-    })),
+    read: vi.fn(async () => structuredClone(configuration)),
     commit: vi.fn(async () => undefined),
     resolveSecret: vi.fn(async () => MOCK_PROVIDER_SECRET),
   };
@@ -103,7 +99,7 @@ it.each(['OpenStory-Channel/2.0', ''])(
   async (userAgent) => {
     const store = mockStore();
     const read = await store.read();
-    requireValue(read.configuration.channels[0]).userAgent = userAgent;
+    requireValue(read.channels[0]).userAgent = userAgent;
     vi.mocked(store.read).mockResolvedValue(read);
     fetchMock.mockResolvedValue(mockModelsResponse({ data: [] }));
     await createTextChannelsAdminService(store).syncModels({
@@ -276,18 +272,15 @@ it('does not call a provider for missing channels or missing saved keys', async 
     service.syncModels({ channelId: 'unknown-channel' })
   ).rejects.toThrow('Text channel not found.');
   store.read = vi.fn(async () => ({
-    serialized: 'mock-registry',
-    configuration: {
-      ...configuration,
-      channels: [
-        {
-          ...requireValue(configuration.channels[0]),
-          credentialId: null,
-          hasKey: false,
-          keyHint: null,
-        },
-      ],
-    },
+    ...configuration,
+    channels: [
+      {
+        ...requireValue(configuration.channels[0]),
+        credentialId: null,
+        hasKey: false,
+        keyHint: null,
+      },
+    ],
   }));
   await expect(
     service.syncModels({ channelId: 'mock-provider' })
@@ -464,8 +457,8 @@ it.each(Object.values(TEXT_CHANNEL_PROTOCOLS))(
     };
     const store = mockStore();
     store.read = vi.fn(async () => ({
-      configuration: { ...configuration, channels: [selectedChannel] },
-      serialized: 'mock-protocol-registry',
+      ...configuration,
+      channels: [selectedChannel],
     }));
     fetchMock.mockResolvedValue(
       mockModelsResponse({

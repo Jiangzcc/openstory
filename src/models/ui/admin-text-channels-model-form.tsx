@@ -92,14 +92,13 @@ function TextModelEditorBody(props: ModelBodyProps) {
       <AdminTextEditorFeedback
         errors={editor.draft.errors}
         saveError={editor.saveError}
-        isStale={editor.isStale}
         onRefresh={props.onRefresh}
         isRefreshing={props.isBusy}
       />
       <AdminTextEditorActions
         label="Save model binding"
         isSaving={editor.isSaving}
-        disabled={props.isBusy || editor.isStale}
+        disabled={props.isBusy}
         onClose={editor.close}
       />
     </form>

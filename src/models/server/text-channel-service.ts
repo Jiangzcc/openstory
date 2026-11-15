@@ -4,11 +4,7 @@ import {
   encryptApiKey,
   getKeyHint,
 } from '@/platform/server/crypto/api-key-encryption';
-import {
-  ConflictError,
-  NotFoundError,
-  ValidationError,
-} from '@/platform/errors';
+import { NotFoundError, ValidationError } from '@/platform/errors';
 import type {
   ChannelTextModel,
   SaveChannelTextModelInput,
@@ -48,25 +44,20 @@ const TEXT_ENDPOINT_TYPES = {
 } as const;
 const TEXT_MODEL_TASKS = new Set([TEXT_MODALITY, 'chat', 'completion']);
 
-export type StoredTextChannels = {
-  configuration: TextChannelsConfiguration;
-  serialized: string | null;
-};
 export type TextChannelCredential = EncryptedApiKey & { id: string };
 export type TextChannelsReadStore = {
-  read: () => Promise<StoredTextChannels>;
+  read: () => Promise<TextChannelsConfiguration>;
   resolveSecret: (credentialId: string) => Promise<string>;
 };
 export type TextChannelsAdminStore = TextChannelsReadStore & {
   commit: (
-    previous: string | null,
     next: TextChannelsConfiguration,
     credential?: TextChannelCredential
   ) => Promise<void>;
 };
 
 export function createTextChannelsReader(store: TextChannelsReadStore) {
-  const get = async () => (await store.read()).configuration;
+  const get = () => store.read();
   const getSnapshot = async () => createTextModelRoutingSnapshot(await get());
   return {
     get,
@@ -74,17 +65,6 @@ export function createTextChannelsReader(store: TextChannelsReadStore) {
     getCatalog: async () => toTextModelCatalog(await getSnapshot()),
     resolveSecret: (credentialId: string) => store.resolveSecret(credentialId),
   };
-}
-
-function assertRevision(
-  configuration: TextChannelsConfiguration,
-  revision: number
-) {
-  if (configuration.revision !== revision) {
-    throw new ConflictError(
-      'Text channel settings changed. Reload before saving.'
-    );
-  }
 }
 
 function upsertById<T extends { id: string }>(rows: T[], row: T): T[] {
@@ -109,7 +89,7 @@ async function prepareChannel(
   input: SaveTextChannelInput,
   previous?: TextChannel
 ): Promise<{ channel: TextChannel; credential?: TextChannelCredential }> {
-  const { revision: _revision, apiKey, ...metadata } = input;
+  const { apiKey, ...metadata } = input;
   assertCredentialDestination(input, previous);
   if (apiKey) {
     const credential = {
@@ -142,17 +122,13 @@ async function saveChannel(
 ) {
   const input = saveTextChannelSchema.parse(value);
   const saved = await store.read();
-  assertRevision(saved.configuration, input.revision);
-  const previous = saved.configuration.channels.find(
-    (channel) => channel.id === input.id
-  );
+  const previous = saved.channels.find((channel) => channel.id === input.id);
   const { channel, credential } = await prepareChannel(input, previous);
   const next = textChannelsConfigurationSchema.parse({
-    ...saved.configuration,
-    revision: input.revision + 1,
-    channels: upsertById(saved.configuration.channels, channel),
+    ...saved,
+    channels: upsertById(saved.channels, channel),
   });
-  await store.commit(saved.serialized, next, credential);
+  await store.commit(next, credential);
   return next;
 }
 
@@ -160,22 +136,16 @@ async function saveModel(
   store: TextChannelsAdminStore,
   value: SaveChannelTextModelInput
 ) {
-  const { revision, ...model } = saveChannelTextModelSchema.parse(value);
+  const model = saveChannelTextModelSchema.parse(value);
   const saved = await store.read();
-  assertRevision(saved.configuration, revision);
-  if (
-    !saved.configuration.channels.some(
-      (channel) => channel.id === model.channelId
-    )
-  ) {
+  if (!saved.channels.some((channel) => channel.id === model.channelId)) {
     throw new ValidationError('Select an existing text channel.');
   }
   const next = textChannelsConfigurationSchema.parse({
-    ...saved.configuration,
-    revision: revision + 1,
-    models: upsertById<ChannelTextModel>(saved.configuration.models, model),
+    ...saved,
+    models: upsertById<ChannelTextModel>(saved.models, model),
   });
-  await store.commit(saved.serialized, next);
+  await store.commit(next);
   return next;
 }
 
@@ -354,7 +324,7 @@ async function syncModels(
   value: SyncTextChannelModelsInput
 ): Promise<TextChannelModelsSyncResult> {
   const { channelId } = syncTextChannelModelsSchema.parse(value);
-  const { configuration } = await store.read();
+  const configuration = await store.read();
   const channel = configuration.channels.find(
     (entry) => entry.id === channelId
   );

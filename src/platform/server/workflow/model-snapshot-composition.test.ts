@@ -86,7 +86,6 @@ const actor = {
 const textId = 'custom:p3-snapshot' as const;
 const imageId = 'custom-image:p3-snapshot' as const;
 const textChannel = {
-  revision: 0,
   id: 'synthetic-text-channel',
   name: 'Synthetic text channel',
   protocol: 'openai-chat-completions' as const,
@@ -96,7 +95,6 @@ const textChannel = {
   apiKey: 'synthetic-original-text-key',
 };
 const textModel = {
-  revision: 1,
   id: textId,
   name: 'Synthetic text model',
   channelId: textChannel.id,
@@ -111,7 +109,6 @@ const textModel = {
   outputPricePerMillion: 0.75,
 };
 const imageChannel = {
-  revision: 0,
   id: 'synthetic-image-channel',
   name: 'Synthetic image channel',
   protocol: 'openai-images' as const,
@@ -120,7 +117,6 @@ const imageChannel = {
   apiKey: 'synthetic-original-image-key',
 };
 const imageModel: SaveChannelImageModelInput = {
-  revision: 1,
   id: imageId,
   name: 'Synthetic image model',
   channelId: imageChannel.id,
@@ -164,9 +160,8 @@ async function saveOriginal() {
 
 async function replaceAdministratorSettings() {
   const texts = createTextChannelsAdminMethods(database.db);
-  const changedTextChannel = await texts.saveChannel({
+  await texts.saveChannel({
     ...textChannel,
-    revision: 2,
     protocol: 'openai-responses',
     baseUrl: 'https://replacement-text.example.invalid/v1',
     apiKey: 'synthetic-replacement-text-key',
@@ -174,7 +169,6 @@ async function replaceAdministratorSettings() {
   });
   await texts.saveModel({
     ...textModel,
-    revision: changedTextChannel.revision,
     upstreamModel: 'synthetic/replacement-text',
     vision: false,
     tools: false,
@@ -184,15 +178,13 @@ async function replaceAdministratorSettings() {
     outputPricePerMillion: 19,
   });
   const images = createImageChannelsAdminMethods(database.db);
-  const changedImageChannel = await images.saveChannel({
+  await images.saveChannel({
     ...imageChannel,
-    revision: 2,
     baseUrl: 'https://replacement-image.example.invalid/v1',
     apiKey: 'synthetic-replacement-image-key',
   });
   await images.saveModel({
     ...imageModel,
-    revision: changedImageChannel.revision,
     priceCards: [
       { id: 'base', operation: 'generate', match: {}, unitPriceUsd: 0.99 },
     ],

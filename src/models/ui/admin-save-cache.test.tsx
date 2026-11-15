@@ -69,7 +69,6 @@ import { useAdminModelConfiguration } from './use-admin-model-configuration';
 const ADMIN_DEFAULT_KEY = ['model-configuration', 'admin'];
 const ADMIN_CHANNEL_KEY = ['admin', 'text-channels'];
 const channelSnapshot = {
-  revision: 3,
   channels: [
     {
       id: 'mock-channel',
@@ -92,7 +91,6 @@ const imageSyncResult: ImageChannelModelsSyncResult = {
   candidates: [{ upstreamModel: 'mock-upstream', name: 'Mock candidate' }],
 };
 const channelInput = {
-  revision: 2,
   id: 'mock-channel',
   name: 'Mock channel',
   baseUrl: 'https://private.example/v1',
@@ -101,7 +99,6 @@ const channelInput = {
   apiKey: '',
 };
 const modelInput = {
-  revision: 2,
   id: 'custom:mock',
   name: 'Mock model',
   channelId: 'mock-channel',
@@ -172,7 +169,7 @@ function setup() {
   mocks.currentClient.mockReturnValue(client);
   clients.push(client);
   seedSession(client);
-  client.setQueryData(ADMIN_CHANNEL_KEY, { ...channelSnapshot, revision: 2 });
+  client.setQueryData(ADMIN_CHANNEL_KEY, { ...channelSnapshot });
   client.setQueryData(['admin', 'image-channels'], imageConfiguration);
   client.setQueryData(ADMIN_DEFAULT_KEY, defaultConfiguration);
   client.setQueryData(['model-configuration'], defaultConfiguration);

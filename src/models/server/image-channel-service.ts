@@ -5,11 +5,7 @@ import {
   encryptApiKey,
   getKeyHint,
 } from '@/platform/server/crypto/api-key-encryption';
-import {
-  ConflictError,
-  NotFoundError,
-  ValidationError,
-} from '@/platform/errors';
+import { NotFoundError, ValidationError } from '@/platform/errors';
 import type { ChannelImageModel, ImageChannel } from '../image-channels';
 import type {
   ImageChannelsConfiguration,
@@ -52,25 +48,20 @@ const IMAGE_MODEL_TASKS = new Set([
   'text-to-image',
   'image-to-image',
 ]);
-export type StoredImageChannels = {
-  configuration: ImageChannelsConfiguration;
-  serialized: string | null;
-};
 export type ImageChannelCredential = EncryptedApiKey & { id: string };
 export type ImageChannelsReadStore = {
-  read: () => Promise<StoredImageChannels>;
+  read: () => Promise<ImageChannelsConfiguration>;
   resolveSecret: (credentialId: string) => Promise<string>;
 };
 export type ImageChannelsAdminStore = ImageChannelsReadStore & {
   commit: (
-    previous: string | null,
     next: ImageChannelsConfiguration,
     credential?: ImageChannelCredential
   ) => Promise<void>;
 };
 
 export function createImageChannelsReader(store: ImageChannelsReadStore) {
-  const get = async () => (await store.read()).configuration;
+  const get = () => store.read();
   const getSnapshot = async () => createImageModelRoutingSnapshot(await get());
   return {
     get,
@@ -78,16 +69,6 @@ export function createImageChannelsReader(store: ImageChannelsReadStore) {
     getCatalog: async () => imageModelCatalogFromConfiguration(await get()),
     resolveSecret: (credentialId: string) => store.resolveSecret(credentialId),
   };
-}
-
-function assertRevision(
-  configuration: ImageChannelsConfiguration,
-  revision: number
-) {
-  if (configuration.revision !== revision)
-    throw new ConflictError(
-      'Image channel settings changed. Reload before saving.'
-    );
 }
 
 function upsertById<T extends { id: string }>(rows: T[], row: T): T[] {
@@ -110,7 +91,7 @@ async function prepareChannel(
   input: SaveImageChannelInput,
   previous?: ImageChannel
 ): Promise<{ channel: ImageChannel; credential?: ImageChannelCredential }> {
-  const { revision: _revision, apiKey, ...metadata } = input;
+  const { apiKey, ...metadata } = input;
   assertCredentialDestination(input, previous);
   if (apiKey) {
     const credential = { id: generateId(), ...(await encryptApiKey(apiKey)) };
@@ -151,18 +132,14 @@ async function saveChannel(
 ) {
   const input = saveImageChannelSchema.parse(value);
   const saved = await store.read();
-  assertRevision(saved.configuration, input.revision);
-  const previous = saved.configuration.channels.find(
-    (channel) => channel.id === input.id
-  );
+  const previous = saved.channels.find((channel) => channel.id === input.id);
   const { channel, credential } = await prepareChannel(input, previous);
   const next = imageChannelsConfigurationSchema.parse({
-    ...saved.configuration,
-    revision: input.revision + 1,
-    channels: upsertById(saved.configuration.channels, channel),
+    ...saved,
+    channels: upsertById(saved.channels, channel),
   });
   assertWorkflowSnapshotCapacity(next);
-  await store.commit(saved.serialized, next, credential);
+  await store.commit(next, credential);
   return next;
 }
 
@@ -188,26 +165,20 @@ async function saveModel(
   store: ImageChannelsAdminStore,
   value: SaveChannelImageModelInput
 ) {
-  const { revision, ...model } = saveChannelImageModelSchema.parse(value);
+  const model = saveChannelImageModelSchema.parse(value);
   const saved = await store.read();
-  assertRevision(saved.configuration, revision);
-  if (
-    !saved.configuration.channels.some(
-      (channel) => channel.id === model.channelId
-    )
-  )
+  if (!saved.channels.some((channel) => channel.id === model.channelId))
     throw new ValidationError('Select an existing image channel.');
   assertModelIdentity(
-    saved.configuration.models.find((entry) => entry.id === model.id),
+    saved.models.find((entry) => entry.id === model.id),
     model
   );
   const next = imageChannelsConfigurationSchema.parse({
-    ...saved.configuration,
-    revision: revision + 1,
-    models: upsertById<ChannelImageModel>(saved.configuration.models, model),
+    ...saved,
+    models: upsertById<ChannelImageModel>(saved.models, model),
   });
   assertWorkflowSnapshotCapacity(next);
-  await store.commit(saved.serialized, next);
+  await store.commit(next);
   return next;
 }
 
@@ -346,7 +317,7 @@ async function syncModels(
   value: SyncImageChannelModelsInput
 ): Promise<ImageChannelModelsSyncResult> {
   const { channelId } = syncImageChannelModelsSchema.parse(value);
-  const { configuration } = await store.read();
+  const configuration = await store.read();
   const channel = configuration.channels.find(
     (entry) => entry.id === channelId
   );

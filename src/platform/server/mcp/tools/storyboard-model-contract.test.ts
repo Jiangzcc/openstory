@@ -62,7 +62,6 @@ const actor = { id: generateId(), organizationId: generateId() };
 const sourceId = generateId();
 const foreignOrganizationId = generateId();
 const channel = {
-  revision: 0,
   id: 'synthetic-storyboard-channel',
   name: 'Synthetic storyboard channel',
   baseUrl: 'https://storyboard.invalid/v1',
@@ -71,7 +70,6 @@ const channel = {
   apiKey: MOCK_SECRET,
 };
 const model = {
-  revision: 1,
   id: 'custom:storyboard-contract' as const,
   name: 'Synthetic storyboard model',
   channelId: channel.id,

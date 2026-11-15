@@ -28,7 +28,6 @@ import { AdminImageParameterForm } from './admin-image-parameter-form';
 
 // This fixture is synthetic metadata; tests make no network or model calls.
 const saved: ImageChannelsConfiguration = {
-  revision: 3,
   channels: [
     {
       id: 'fixture-channel',
@@ -161,7 +160,6 @@ function ModelEditorFixture({
           ...state.modelEditor,
           draft: {
             value: model,
-            revision: saved.revision,
             formKey: 'fixture-editor',
             isNew,
           },
@@ -230,7 +228,7 @@ it('translates validation for both built-in and custom local model IDs', () => {
         },
       ]}
       error={null}
-      stale={false}
+
       busy={false}
       onReload={() => undefined}
     />

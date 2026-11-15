@@ -81,7 +81,6 @@ function maximalChannels(): TextChannel[] {
 function maximalConfiguration(upstreamCharacter: string) {
   const channels = maximalChannels();
   return textChannelsConfigurationSchema.parse({
-    revision: 1,
     channels,
     models: channels.map((channel, index) => ({
       id: `custom:${index}`.padEnd(TEXT_CHANNEL_LIMITS.id, 'm'),

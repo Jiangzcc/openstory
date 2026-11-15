@@ -45,7 +45,7 @@ const savedModel: ChannelTextModel = {
   inputPricePerMillion: 0.25,
   outputPricePerMillion: 1.5,
 };
-const REVISION = 4;
+
 function validModel(overrides: Partial<TextModelDraft> = {}): TextModelDraft {
   return { ...textModelToDraft(savedModel), ...overrides };
 }
@@ -54,7 +54,7 @@ function validateModel(
   models: ChannelTextModel[] = [],
   isNew = true
 ) {
-  return validateTextModelDraft(draft, REVISION, [channel], models, isNew);
+  return validateTextModelDraft(draft, [channel], models, isNew);
 }
 
 describe('channel initialization and keys', () => {
@@ -66,7 +66,6 @@ describe('channel initialization and keys', () => {
     expect(
       validateTextChannelDraft(
         { ...textChannelToDraft(channel), baseUrl, apiKey: 'test-local-key' },
-        REVISION,
         channel
       ).success
     ).toBe(true);
@@ -86,16 +85,14 @@ describe('channel initialization and keys', () => {
     expect(draft).not.toHaveProperty('keyHint');
     expect(draft).not.toHaveProperty('hasKey');
   });
-  it('retains the saved key for a blank key and submits the captured revision', () => {
+  it('retains the saved key for a blank key', () => {
     const result = validateTextChannelDraft(
       { ...textChannelToDraft(channel), apiKey: '   ' },
-      REVISION,
       channel
     );
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.apiKey).toBeUndefined();
-      expect(result.data.revision).toBe(REVISION);
     }
   });
 });
@@ -104,7 +101,7 @@ describe('channel User-Agent', () => {
   it('uses a blank draft for a saved channel without a User-Agent', () => {
     const draft = textChannelToDraft(channel);
     expect(draft.userAgent).toBe('');
-    expect(validateTextChannelDraft(draft, REVISION, channel)).toMatchObject({
+    expect(validateTextChannelDraft(draft, channel)).toMatchObject({
       success: true,
       data: { userAgent: '' },
     });
@@ -116,7 +113,6 @@ describe('channel User-Agent', () => {
     expect(
       validateTextChannelDraft(
         { ...draft, userAgent: '  Studio/2.0  ' },
-        REVISION,
         original
       )
     ).toMatchObject({ success: true, data: { userAgent: 'Studio/2.0' } });
@@ -126,7 +122,6 @@ describe('channel User-Agent', () => {
     expect(
       validateTextChannelDraft(
         { ...textChannelToDraft(original), userAgent: '   ' },
-        REVISION,
         original
       )
     ).toMatchObject({ success: true, data: { userAgent: '' } });
@@ -140,7 +135,6 @@ describe('channel User-Agent', () => {
     expect(
       validateTextChannelDraft(
         { ...textChannelToDraft(channel), userAgent },
-        REVISION,
         channel
       )
     ).toEqual({
@@ -160,12 +154,10 @@ describe('channel protocols', () => {
       const original = { ...channel, protocol };
       const draft = textChannelToDraft(original);
       expect(draft.protocol).toBe(protocol);
-      expect(validateTextChannelDraft(draft, REVISION, original)).toMatchObject(
-        {
-          success: true,
-          data: { protocol, revision: REVISION, apiKey: undefined },
-        }
-      );
+      expect(validateTextChannelDraft(draft, original)).toMatchObject({
+        success: true,
+        data: { protocol, apiKey: undefined },
+      });
     }
   );
   it.each(Object.values(TEXT_CHANNEL_PROTOCOLS))(
@@ -176,7 +168,7 @@ describe('channel protocols', () => {
         protocol,
         apiKey: 'test-key',
       };
-      expect(validateTextChannelDraft(draft, REVISION)).toMatchObject({
+      expect(validateTextChannelDraft(draft)).toMatchObject({
         success: true,
         data: { protocol, apiKey: 'test-key' },
       });
@@ -185,7 +177,7 @@ describe('channel protocols', () => {
   it('returns an actionable protocol error for an unsupported value', () => {
     const draft = textChannelToDraft(channel);
     Reflect.set(draft, 'protocol', 'unsupported-protocol');
-    expect(validateTextChannelDraft(draft, REVISION, channel)).toEqual({
+    expect(validateTextChannelDraft(draft, channel)).toEqual({
       success: false,
       errors: { protocol: 'Choose Chat Completions or Responses.' },
     });
@@ -195,7 +187,7 @@ describe('channel protocols', () => {
 describe('channel credential and URL changes', () => {
   it('requires a key before enabling a new channel', () => {
     const draft = { ...textChannelToDraft(channel), enabled: true };
-    expect(validateTextChannelDraft(draft, REVISION)).toMatchObject({
+    expect(validateTextChannelDraft(draft)).toMatchObject({
       success: false,
       errors: { apiKey: expect.any(String) },
     });
@@ -205,14 +197,13 @@ describe('channel credential and URL changes', () => {
       ...textChannelToDraft(channel),
       baseUrl: 'https://other.example/v1',
     };
-    expect(validateTextChannelDraft(draft, REVISION, channel)).toMatchObject({
+    expect(validateTextChannelDraft(draft, channel)).toMatchObject({
       success: false,
       errors: { apiKey: expect.any(String) },
     });
     expect(
       validateTextChannelDraft(
         { ...draft, apiKey: 'test-only-new-key' },
-        REVISION,
         channel
       ).success
     ).toBe(true);
@@ -222,9 +213,7 @@ describe('channel credential and URL changes', () => {
       ...textChannelToDraft(channel),
       baseUrl: channel.baseUrl + '/',
     };
-    expect(validateTextChannelDraft(draft, REVISION, channel).success).toBe(
-      true
-    );
+    expect(validateTextChannelDraft(draft, channel).success).toBe(true);
   });
   it.each([
     'http://provider.example/v1',
@@ -234,7 +223,6 @@ describe('channel credential and URL changes', () => {
     expect(
       validateTextChannelDraft(
         { ...textChannelToDraft(channel), baseUrl },
-        REVISION,
         channel
       ).success
     ).toBe(false);
@@ -253,14 +241,13 @@ describe('explicit USD costs', () => {
       });
     }
   });
-  it('accepts explicit zero prices and preserves the USD values and captured revision', () => {
+  it('accepts explicit zero prices and preserves the USD values', () => {
     const result = validateModel(
       validModel({ inputPricePerMillion: '0', outputPricePerMillion: '0' })
     );
     expect(result).toMatchObject({
       success: true,
       data: {
-        revision: REVISION,
         inputPricePerMillion: 0,
         outputPricePerMillion: 0,
       },

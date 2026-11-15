@@ -1,20 +1,17 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Database } from '@/platform/server/db/client';
 import { appMetadata } from '@/platform/server/db/schema';
 import { onPrimary } from '@/platform/server/db/d1-session';
 import { decryptApiKey } from '@/platform/server/crypto/api-key-encryption';
-import { ConflictError, ValidationError } from '@/platform/errors';
+import { ValidationError } from '@/platform/errors';
 import type { ImageChannelsConfiguration } from '@/models/image-channels';
 import {
   emptyImageChannelsConfiguration,
   imageChannelsConfigurationSchema,
   IMAGE_CHANNEL_LIMITS,
 } from '@/models/image-channels';
-import type {
-  StoredImageChannels,
-  ImageChannelCredential,
-} from '../image-channel-service';
+import type { ImageChannelCredential } from '../image-channel-service';
 import {
   createImageChannelsAdminService,
   createImageChannelsReader,
@@ -23,7 +20,6 @@ import {
 export const IMAGE_CHANNELS_KEY = 'secondary-development:image-channels:v1';
 export const IMAGE_CHANNEL_CREDENTIAL_PREFIX =
   'secondary-development:image-channel-credential:v1:';
-const MILLISECONDS_PER_SECOND = 1_000;
 const encryptedCredentialSchema = z.strictObject({
   encryptedKey: z.string().min(IMAGE_CHANNEL_LIMITS.requiredLength),
   keyIv: z.string().min(IMAGE_CHANNEL_LIMITS.requiredLength),
@@ -32,24 +28,17 @@ const encryptedCredentialSchema = z.strictObject({
 
 async function readStoredConfiguration(
   db: Database
-): Promise<StoredImageChannels> {
+): Promise<ImageChannelsConfiguration> {
   const [row] = await db
     .select()
     .from(appMetadata)
     .where(eq(appMetadata.key, IMAGE_CHANNELS_KEY))
     .limit(1);
-  if (!row)
-    return {
-      configuration: emptyImageChannelsConfiguration(),
-      serialized: null,
-    };
+  if (!row) return emptyImageChannelsConfiguration();
   try {
-    return {
-      configuration: imageChannelsConfigurationSchema.parse(
-        JSON.parse(row.value) as unknown
-      ),
-      serialized: row.value,
-    };
+    return imageChannelsConfigurationSchema.parse(
+      JSON.parse(row.value) as unknown
+    );
   } catch {
     throw new ValidationError('Stored image channel settings are invalid.');
   }
@@ -77,54 +66,21 @@ async function resolveStoredSecret(
   }
 }
 
-function configurationWrite(
-  db: Database,
-  previous: string | null,
-  serialized: string,
-  now: Date
-) {
-  if (previous === null)
-    return db
-      .insert(appMetadata)
-      .values({ key: IMAGE_CHANNELS_KEY, value: serialized, updatedAt: now })
-      .onConflictDoNothing()
-      .returning({ key: appMetadata.key });
-  return db
-    .update(appMetadata)
-    .set({ value: serialized, updatedAt: now })
-    .where(
-      and(
-        eq(appMetadata.key, IMAGE_CHANNELS_KEY),
-        eq(appMetadata.value, previous)
-      )
-    )
-    .returning({ key: appMetadata.key });
-}
-
 function credentialWrite(
   db: Database,
   credential: ImageChannelCredential,
   now: Date
 ) {
   const { id, ...encrypted } = credential;
-  return db.insert(appMetadata).select(
-    db
-      .select({
-        key: sql<string>`${IMAGE_CHANNEL_CREDENTIAL_PREFIX + id}`.as('key'),
-        value: sql<string>`${JSON.stringify(encrypted)}`.as('value'),
-        updatedAt:
-          sql<number>`${Math.floor(now.getTime() / MILLISECONDS_PER_SECOND)}`.as(
-            'updated_at'
-          ),
-      })
-      .from(appMetadata)
-      .where(and(eq(appMetadata.key, IMAGE_CHANNELS_KEY), sql`changes() > 0`))
-  );
+  return db.insert(appMetadata).values({
+    key: IMAGE_CHANNEL_CREDENTIAL_PREFIX + id,
+    value: JSON.stringify(encrypted),
+    updatedAt: now,
+  });
 }
 
 async function commitConfiguration(
   db: Database,
-  previous: string | null,
   next: ImageChannelsConfiguration,
   credential?: ImageChannelCredential
 ): Promise<void> {
@@ -132,14 +88,15 @@ async function commitConfiguration(
     imageChannelsConfigurationSchema.parse(next)
   );
   const now = new Date();
-  const write = configurationWrite(db, previous, serialized, now);
-  const rows = credential
-    ? (await db.batch([write, credentialWrite(db, credential, now)]))[0]
-    : await write;
-  if (rows.length === 0)
-    throw new ConflictError(
-      'Image channel settings changed. Reload before saving.'
-    );
+  const write = db
+    .insert(appMetadata)
+    .values({ key: IMAGE_CHANNELS_KEY, value: serialized, updatedAt: now })
+    .onConflictDoUpdate({
+      target: appMetadata.key,
+      set: { value: serialized, updatedAt: now },
+    });
+  if (credential) await db.batch([write, credentialWrite(db, credential, now)]);
+  else await write;
 }
 
 function createReadStore(db: Database) {
@@ -157,7 +114,6 @@ export function createImageChannelsReadMethods(db: Database) {
 export function createImageChannelsAdminMethods(db: Database) {
   return createImageChannelsAdminService({
     ...createReadStore(db),
-    commit: (previous, next, credential) =>
-      commitConfiguration(db, previous, next, credential),
+    commit: (next, credential) => commitConfiguration(db, next, credential),
   });
 }

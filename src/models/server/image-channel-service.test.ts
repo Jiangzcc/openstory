@@ -18,7 +18,6 @@ import {
 
 const MOCK_PROVIDER_SECRET = 'mock-secret-only-never-a-provider-key';
 const configuration: ImageChannelsConfiguration = {
-  revision: 1,
   models: [],
   channels: [
     {
@@ -36,10 +35,7 @@ const configuration: ImageChannelsConfiguration = {
 const fetchMock = vi.fn<typeof fetch>();
 function mockStore(): ImageChannelsAdminStore {
   return {
-    read: vi.fn(async () => ({
-      configuration: structuredClone(configuration),
-      serialized: 'mock-registry',
-    })),
+    read: vi.fn(async () => structuredClone(configuration)),
     commit: vi.fn(async () => undefined),
     resolveSecret: vi.fn(async () => MOCK_PROVIDER_SECRET),
   };
@@ -198,17 +194,14 @@ it('rejects missing channel/credential without making a discovery request', asyn
   channel.credentialId = null;
   channel.hasKey = false;
   channel.keyHint = null;
-  store.read = vi.fn(async () => ({
-    configuration: config,
-    serialized: 'mock',
-  }));
+  store.read = vi.fn(async () => config);
   await expect(
     createImageChannelsAdminService(store).syncModels({ channelId: 'mock' })
   ).rejects.toThrow('Save a channel API key');
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-it('saves a built-in image channel binding through the existing revisioned admin store', async () => {
+it('saves a built-in image channel binding through the existing admin store', async () => {
   const store = mockStore();
   const model = imageConfigurationFixture().models[0];
   if (!model) throw new Error('Missing mock model.');
@@ -216,14 +209,13 @@ it('saves a built-in image channel binding through the existing revisioned admin
     ...model,
     id: 'gpt_image_2',
     channelId: 'mock',
-    revision: configuration.revision,
   });
   expect(saved.models).toHaveLength(1);
   expect(saved.models[0]).toMatchObject({
     id: 'gpt_image_2',
     channelId: 'mock',
   });
-  expect(store.commit).toHaveBeenCalledExactlyOnceWith('mock-registry', saved);
+  expect(store.commit).toHaveBeenCalledExactlyOnceWith(saved);
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
@@ -240,15 +232,11 @@ it('allows built-in upstream/channel rebinding while keeping the old task snapsh
     baseUrl: 'https://new.example.com/v1',
   });
   const store = mockStore();
-  store.read = vi.fn(async () => ({
-    configuration: config,
-    serialized: 'mock',
-  }));
+  store.read = vi.fn(async () => config);
   const service = createImageChannelsAdminService(store);
   const frozen = await service.getSnapshot();
   const saved = await service.saveModel({
     ...model,
-    revision: config.revision,
     channelId: 'new-channel',
     operations: {
       generate: { ...model.operations.generate, upstreamModel: 'new-generate' },
@@ -271,7 +259,7 @@ it('allows built-in upstream/channel rebinding while keeping the old task snapsh
       edit: { upstreamModel: 'mock-edit' },
     },
   });
-  expect(store.commit).toHaveBeenCalledExactlyOnceWith('mock', saved);
+  expect(store.commit).toHaveBeenCalledExactlyOnceWith(saved);
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
@@ -283,14 +271,10 @@ it.each(['generate', 'edit'] as const)(
     const binding = model?.operations[operation];
     if (!model || !binding) throw new Error('Missing mock model binding.');
     const store = mockStore();
-    store.read = vi.fn(async () => ({
-      configuration: config,
-      serialized: 'mock',
-    }));
+    store.read = vi.fn(async () => config);
     await expect(
       createImageChannelsAdminService(store).saveModel({
         ...model,
-        revision: config.revision,
         operations: {
           ...model.operations,
           [operation]: { ...binding, upstreamModel: 'changed-mock' },
@@ -311,10 +295,7 @@ it('keeps the public channel reader free of administration methods', () => {
 
 function storeWithConfiguration(config: ImageChannelsConfiguration) {
   const store = mockStore();
-  store.read = vi.fn(async () => ({
-    configuration: config,
-    serialized: 'mock',
-  }));
+  store.read = vi.fn(async () => config);
   return store;
 }
 
@@ -326,7 +307,6 @@ it('rejects oversized active parameter sets before saving a model or calling the
   await expect(
     createImageChannelsAdminService(store).saveModel({
       ...model,
-      revision: config.revision,
     })
   ).rejects.toThrow(WORKFLOW_IMAGE_ROUTING_SIZE_ERROR);
   expect(store.commit).not.toHaveBeenCalled();
@@ -346,7 +326,6 @@ it('rejects enabling a channel whose active models exceed the snapshot budget', 
       baseUrl: channel.baseUrl,
       protocol: channel.protocol,
       enabled: true,
-      revision: config.revision,
     })
   ).rejects.toThrow(WORKFLOW_IMAGE_ROUTING_SIZE_ERROR);
   expect(store.commit).not.toHaveBeenCalled();
@@ -370,13 +349,11 @@ it.each(['channel', 'model'] as const)(
         baseUrl: channel.baseUrl,
         protocol: channel.protocol,
         enabled: false,
-        revision: config.revision,
       });
     } else {
       await service.saveModel({
         ...model,
         enabled: false,
-        revision: config.revision,
       });
     }
     expect(store.commit).toHaveBeenCalledOnce();
@@ -391,9 +368,8 @@ it('accepts a large registry whose shared parameter and price dictionaries fit t
   const store = storeWithConfiguration(config);
   const saved = await createImageChannelsAdminService(store).saveModel({
     ...model,
-    revision: config.revision,
   });
   expect(saved.models).toHaveLength(120);
-  expect(store.commit).toHaveBeenCalledExactlyOnceWith('mock', saved);
+  expect(store.commit).toHaveBeenCalledExactlyOnceWith(saved);
   expect(fetchMock).not.toHaveBeenCalled();
 });

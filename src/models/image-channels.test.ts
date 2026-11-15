@@ -230,7 +230,6 @@ it('normalizes private HTTPS/loopback endpoints and rejects injected save metada
   const config = mockConfiguration();
   expect(
     saveImageChannelSchema.safeParse({
-      revision: 0,
       ...config.channels[0],
       apiKey: 'mock',
     }).success

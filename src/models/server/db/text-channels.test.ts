@@ -32,7 +32,6 @@ const {
 let db: Database;
 let closeDb: () => Promise<void>;
 const channelInput = {
-  revision: 0,
   id: 'mock-channel',
   name: 'Mock channel',
   baseUrl: 'https://10.0.0.4:8443/v1',
@@ -41,7 +40,6 @@ const channelInput = {
   apiKey: 'mock-provider-secret-for-tests',
 };
 const modelInput = {
-  revision: 1,
   id: 'custom:mock-model' as const,
   name: 'Mock text model',
   channelId: channelInput.id,
@@ -71,7 +69,7 @@ async function saveMockChannel() {
 
 it('has no write surface in request read scopes and creates no default record', async () => {
   const reader = createTextChannelsReadMethods(db);
-  expect(await reader.get()).toEqual({ revision: 0, channels: [], models: [] });
+  expect(await reader.get()).toEqual({ channels: [], models: [] });
   expect(await reader.getSnapshot()).toEqual([]);
   expect(await reader.getCatalog()).toEqual([]);
   expect(reader).not.toHaveProperty('saveChannel');
@@ -111,8 +109,8 @@ it('encrypts credentials and persists only safe metadata in the registry', async
 
 it('persists model bindings and projects a safe incremental catalog across scopes', async () => {
   await saveMockChannel();
-  const saved = await createTextChannelsAdminMethods(db).saveModel(modelInput);
-  expect(saved.revision).toBe(2);
+  await createTextChannelsAdminMethods(db).saveModel(modelInput);
+
   const reader = createTextChannelsReadMethods(db);
   const [route] = await reader.getSnapshot();
   expect(route).toMatchObject({
@@ -139,7 +137,6 @@ it('retains the saved immutable credential when the key input is omitted or blan
   const writer = createTextChannelsAdminMethods(db);
   const second = await writer.saveChannel({
     ...channelInput,
-    revision: first.revision,
     name: 'Renamed mock channel',
     apiKey: '   ',
   });
@@ -149,7 +146,6 @@ it('retains the saved immutable credential when the key input is omitted or blan
   const { apiKey: _apiKey, ...withoutKey } = channelInput;
   const third = await writer.saveChannel({
     ...withoutKey,
-    revision: second.revision,
   });
   expect(third.channels[0]?.credentialId).toBe(first.channels[0]?.credentialId);
   expect(await db.select().from(appMetadata)).toHaveLength(2);
@@ -162,7 +158,6 @@ it('keeps old credentials resolvable after rotation for existing workflow snapsh
   const [oldRoute] = await writer.getSnapshot();
   const rotated = await writer.saveChannel({
     ...channelInput,
-    revision: 2,
     apiKey: 'rotated-mock-provider-secret',
   });
   const credentialId = requireValue(rotated.channels[0]?.credentialId);
@@ -184,12 +179,11 @@ it('removes disabled bindings and channels from fresh snapshots without deleting
   const writer = createTextChannelsAdminMethods(db);
   await writer.saveModel(modelInput);
   const [snapshot] = await writer.getSnapshot();
-  await writer.saveModel({ ...modelInput, revision: 2, enabled: false });
+  await writer.saveModel({ ...modelInput, enabled: false });
   expect(await writer.getCatalog()).toEqual([]);
-  await writer.saveModel({ ...modelInput, revision: 3 });
+  await writer.saveModel({ ...modelInput });
   await writer.saveChannel({
     ...channelInput,
-    revision: 4,
     enabled: false,
     apiKey: '',
   });
@@ -197,56 +191,6 @@ it('removes disabled bindings and channels from fresh snapshots without deleting
   expect(await writer.resolveSecret(requireValue(snapshot).credentialId)).toBe(
     channelInput.apiKey
   );
-});
-
-it('allows exactly one concurrent first save and creates no orphan credentials', async () => {
-  const outcomes = await Promise.allSettled([
-    createTextChannelsAdminMethods(db).saveChannel(channelInput),
-    createTextChannelsAdminMethods(db).saveChannel({
-      ...channelInput,
-      id: 'other-channel',
-    }),
-  ]);
-  expect(
-    outcomes.filter((outcome) => outcome.status === 'fulfilled')
-  ).toHaveLength(1);
-  const failure = outcomes.find((outcome) => outcome.status === 'rejected');
-  expect(failure).toMatchObject({ reason: { code: 'CONFLICT' } });
-  const saved = await createTextChannelsReadMethods(db).get();
-  expect(saved.revision).toBe(1);
-  expect(saved.channels).toHaveLength(1);
-  expect(await db.select().from(appMetadata)).toHaveLength(2);
-});
-
-it('guards concurrent edits across separate scopes at the same revision', async () => {
-  await saveMockChannel();
-  const outcomes = await Promise.allSettled([
-    createTextChannelsAdminMethods(db).saveModel(modelInput),
-    createTextChannelsAdminMethods(db).saveModel({
-      ...modelInput,
-      id: 'custom:other-model',
-    }),
-  ]);
-  expect(
-    outcomes.filter((outcome) => outcome.status === 'fulfilled')
-  ).toHaveLength(1);
-  const saved = await createTextChannelsReadMethods(db).get();
-  expect(saved.revision).toBe(2);
-  expect(saved.models).toHaveLength(1);
-  expect(await db.select().from(appMetadata)).toHaveLength(2);
-});
-
-it('rejects stale saves before adding credentials or changing existing metadata', async () => {
-  const first = await saveMockChannel();
-  await expect(
-    createTextChannelsAdminMethods(db).saveChannel({
-      ...channelInput,
-      name: 'Stale edit',
-      apiKey: 'mock-unused-secret',
-    })
-  ).rejects.toMatchObject({ code: 'CONFLICT' });
-  expect(await createTextChannelsReadMethods(db).get()).toEqual(first);
-  expect(await db.select().from(appMetadata)).toHaveLength(2);
 });
 
 it('atomically rolls back the registry if immutable credential insertion fails', async () => {
@@ -258,7 +202,6 @@ it('atomically rolls back the registry if immutable credential insertion fails',
   await expect(
     createTextChannelsAdminMethods(db).saveChannel({
       ...channelInput,
-      revision: 1,
       apiKey: 'mock-rotation-conflict',
     })
   ).rejects.toThrow();
@@ -275,7 +218,6 @@ it('requires a new key when moving a credential-bearing channel to another URL',
   await expect(
     writer.saveChannel({
       ...channelInput,
-      revision: 1,
       baseUrl: 'https://other.example/v1',
       apiKey: '',
     })
@@ -283,7 +225,6 @@ it('requires a new key when moving a credential-bearing channel to another URL',
   expect(await writer.get()).toEqual(first);
   const second = await writer.saveChannel({
     ...channelInput,
-    revision: 1,
     baseUrl: 'https://other.example/v1',
     apiKey: 'mock-replacement-secret',
   });
@@ -314,7 +255,7 @@ it('allows keyless drafts but prevents enabling them until credentials are saved
 
 it('rejects model bindings to missing channels without writing a registry row', async () => {
   await expect(
-    createTextChannelsAdminMethods(db).saveModel({ ...modelInput, revision: 0 })
+    createTextChannelsAdminMethods(db).saveModel({ ...modelInput })
   ).rejects.toThrow('Select an existing text channel.');
   expect(await db.select().from(appMetadata)).toEqual([]);
 });
@@ -362,7 +303,6 @@ it('persists Responses selection and keeps older run snapshots on their original
   const originalCredential = requireValue(previousSnapshot[0]).credentialId;
   await admin.saveChannel({
     ...channelInput,
-    revision: 2,
     protocol: 'openai-responses',
     apiKey: '',
   });
@@ -392,7 +332,6 @@ it('saves and clears a User-Agent without rotating credentials or changing prior
   expect(legacySnapshot[0]?.userAgent).toBe(DEFAULT_TEXT_CHANNEL_USER_AGENT);
   await admin.saveChannel({
     ...channelInput,
-    revision: 2,
     apiKey: '',
     userAgent: '  OpenStory-Deployment/2.0  ',
   });
@@ -406,7 +345,6 @@ it('saves and clears a User-Agent without rotating credentials or changing prior
   });
   await admin.saveChannel({
     ...channelInput,
-    revision: 3,
     apiKey: '',
     userAgent: '',
   });
@@ -433,7 +371,6 @@ it('preserves an omitted User-Agent during key rotation and supports explicitly 
   const originalCredential = requireValue(originalSnapshot[0]).credentialId;
   await admin.saveChannel({
     ...channelInput,
-    revision: 2,
     apiKey: 'rotated-mock-provider-secret',
   });
   const rotatedSnapshot = await reader.getSnapshot();
@@ -446,7 +383,6 @@ it('preserves an omitted User-Agent during key rotation and supports explicitly 
 
   await admin.saveChannel({
     ...channelInput,
-    revision: 3,
     apiKey: 'cleared-rotated-mock-provider-secret',
     userAgent: '',
   });

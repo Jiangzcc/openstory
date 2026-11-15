@@ -248,7 +248,6 @@ describe('hidden built-in image default recovery', () => {
     const channel = configuration.channels[0];
     if (!channel) throw new Error('Missing mock image channel.');
     await createImageChannelsAdminMethods(db).saveChannel({
-      revision: configuration.revision,
       id: channel.id,
       name: channel.name,
       baseUrl: channel.baseUrl,

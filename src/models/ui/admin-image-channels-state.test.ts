@@ -75,12 +75,12 @@ it('omits a blank replacement key and trims a deliberately entered key', () => {
   data.set('name', 'Fixture');
   data.set('baseUrl', 'https://fixture.example/v1');
   data.set('apiKey', ' ');
-  const unchanged = readImageChannelForm(data, 7);
+  const unchanged = readImageChannelForm(data);
   expect(unchanged.success && unchanged.data).not.toHaveProperty('apiKey');
   data.set('apiKey', ' fixture-new-key ');
-  expect(readImageChannelForm(data, 7)).toMatchObject({
+  expect(readImageChannelForm(data)).toMatchObject({
     success: true,
-    data: { revision: 7, apiKey: 'fixture-new-key' },
+    data: { apiKey: 'fixture-new-key' },
   });
 });
 
@@ -116,7 +116,7 @@ it('round-trips typed defaults, enums, operation scopes and supplier cost separa
   data.set('price.fixture-price.supplierCost', 'on');
   data.set('price.fixture-price.currency', 'CNY');
   data.set('price.fixture-price.unitCost', '0.8');
-  const result = readImageModelForm(data, 9);
+  const result = readImageModelForm(data);
   expect(result.success).toBe(true);
   if (!result.success) return;
   expect(result.data.parameters.map((item) => item.defaultValue)).toEqual([
@@ -142,7 +142,7 @@ it('keeps configurable reference counts and mask status without a two-image cap'
   data.set('edit.minimum', '1');
   data.set('edit.maximum', '12');
   data.set('edit.mask', 'unsupported');
-  const result = readImageModelForm(data, 1);
+  const result = readImageModelForm(data);
   expect(result).toMatchObject({
     success: true,
     data: {
@@ -162,7 +162,7 @@ it.each(['{"size":{"nested":true}}', 'not-json', '["size"]'])(
   (match) => {
     const data = modelForm();
     price(data, match);
-    expect(readImageModelForm(data, 0).success).toBe(false);
+    expect(readImageModelForm(data).success).toBe(false);
   }
 );
 
@@ -173,7 +173,7 @@ it('rejects invalid Boolean defaults and out-of-range integer values', () => {
     default: 'yes',
     useDefault: 'on',
   });
-  expect(readImageModelForm(data, 0).success).toBe(false);
+  expect(readImageModelForm(data).success).toBe(false);
   data.delete('parameterId');
   parameter(data, 'n', {
     type: 'integer',
@@ -182,7 +182,7 @@ it('rejects invalid Boolean defaults and out-of-range integer values', () => {
     minimum: '1',
     maximum: '8',
   });
-  expect(readImageModelForm(data, 0).success).toBe(false);
+  expect(readImageModelForm(data).success).toBe(false);
 });
 
 it('adds useful parameter templates as unverified without hard-coding one requested image', () => {
@@ -258,7 +258,7 @@ it('submits the built-in local ID separately from the exact per-operation upstre
   data.set('id', 'gpt_image_2');
   data.set('name', IMAGE_MODELS.gpt_image_2.name);
   data.set('generate.upstreamModel', 'gpt-image-2');
-  const result = readImageModelForm(data, 3);
+  const result = readImageModelForm(data);
   expect(result).toMatchObject({
     success: true,
     data: {

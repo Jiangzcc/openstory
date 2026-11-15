@@ -15,7 +15,6 @@ import { createModelConfigurationDraftUpdate } from './model-configuration-draft
 // The channel and model below are synthetic fixtures; no provider is contacted.
 const CUSTOM_MODEL = 'custom:mock-draft-model';
 const ACTIVE_CHANNELS: TextChannelsConfiguration = {
-  revision: 1,
   channels: [
     {
       id: 'mock-channel',
