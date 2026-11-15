@@ -4,11 +4,6 @@ import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import type { UpscaleShotVariantWorkflowInput } from '@/platform/server/workflow/types';
 import type { ImageGenerationResult } from '../image-generation';
 import type { ImageModelRoutingSnapshot } from '@/models/image-channels';
-import type {
-  ImageAttemptIdentity,
-  ImageGenerationAttempt,
-  StoredChannelGeneration,
-} from '../configured-image-attempt';
 import { createImageModelRoutingSnapshot } from '@/models/image-channels';
 import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
@@ -140,33 +135,12 @@ function makeStep() {
     step: asStub<WorkflowStep>({ do: doStep }),
   };
 }
-function attemptDb() {
-  const attempts = new Map<string, ImageGenerationAttempt>();
-  const claim = vi.fn(async (identity: ImageAttemptIdentity) => {
-    const attempt = { ...identity, status: 'submitted' as const };
-    attempts.set(identity.id, attempt);
-    return { claimed: true, attempt };
-  });
-  const complete = vi.fn(
-    async (identity: ImageAttemptIdentity, result: StoredChannelGeneration) => {
-      attempts.set(identity.id, { ...identity, status: 'stored', result });
-    }
-  );
-  return {
-    claim,
-    complete,
-    markUnknown: vi.fn(),
-    getById: async (identity: ImageAttemptIdentity) =>
-      attempts.get(identity.id) ?? null,
-  };
-}
 function harness(
   routing: ImageModelRoutingSnapshot = createImageModelRoutingSnapshot(
     imageConfigurationFixture()
   )
 ) {
   const execution = makeStep();
-  const attempts = attemptDb();
   const version = frameVariantFixture({
     id: PAYLOAD.versionId,
     frameId: PAYLOAD.frameId,
@@ -186,16 +160,10 @@ function harness(
     },
     claims: {
       frameVariants: { getById: async () => version },
-      imageGenerationAttempts: { getById: attempts.getById },
     },
     frameVariants: {
       update: vi.fn(async () => version),
       selectIfPendingPromoteIs: vi.fn(async () => version),
-    },
-    imageGenerationAttempts: {
-      claim: attempts.claim,
-      complete: attempts.complete,
-      markUnknown: attempts.markUnknown,
     },
     liveRead: { frames: { getById: async () => frame } },
     provenance: {},
@@ -208,20 +176,17 @@ function harness(
     expect(execution.active()).toBe('upscale-image');
     return STORED_IMAGE;
   });
-  return { ...execution, attempts, scopedDb };
+  return { ...execution, scopedDb };
 }
 beforeEach(() => vi.clearAllMocks());
 
 describe('configured grid tile upscale', () => {
-  it('preserves the model and tracks generation with R2 storage before the step checkpoint', async () => {
+  it('preserves the model and stores the generated image in R2 before the step checkpoint', async () => {
     const run = harness();
     expect(await workflow().execute(run.step, run.scopedDb)).toEqual({
       upscaledUrl: STORED_IMAGE.url,
       upscaledPath: STORED_IMAGE.path,
     });
-    expect(run.attempts.claim).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'mock-run:upscale-image', model: MODEL_ID })
-    );
     expect(mocks.generate).toHaveBeenCalledWith(
       expect.objectContaining({
         model: MODEL_ID,
@@ -230,13 +195,11 @@ describe('configured grid tile upscale', () => {
       }),
       {
         credentials: run.scopedDb.credentials,
-        configuredAttemptId: 'mock-run:upscale-image',
       }
     );
     expect(mocks.upload).toHaveBeenCalledWith(
       expect.objectContaining({ imageUrl: MOCK_INLINE_IMAGE })
     );
-    expect(run.attempts.complete).toHaveBeenCalledOnce();
     expect(JSON.stringify([...run.values.values()])).not.toContain(
       MOCK_INLINE_IMAGE
     );
@@ -267,7 +230,6 @@ describe('configured grid tile upscale', () => {
     expect(mocks.generate).toHaveBeenCalledOnce();
     expect(mocks.upload).toHaveBeenCalledOnce();
     expect(mocks.deduct).toHaveBeenCalledOnce();
-    expect(run.attempts.claim).toHaveBeenCalledOnce();
   });
   it.each(['unverified', 'unsupported'] as const)(
     'fails a %s edit capability without any provider fallback',
@@ -281,7 +243,6 @@ describe('configured grid tile upscale', () => {
       );
       expect(mocks.generate).not.toHaveBeenCalled();
       expect(mocks.upload).not.toHaveBeenCalled();
-      expect(run.attempts.claim).not.toHaveBeenCalled();
     }
   );
   it('fails an absent frozen route without changing to a built-in model', async () => {
@@ -300,7 +261,6 @@ describe('configured grid tile upscale', () => {
     const run = harness(createImageModelRoutingSnapshot(configuration));
     await expect(workflow().execute(run.step, run.scopedDb)).rejects.toThrow();
     expect(mocks.generate).not.toHaveBeenCalled();
-    expect(run.attempts.claim).not.toHaveBeenCalled();
     expect(mocks.deduct).not.toHaveBeenCalled();
   });
 });

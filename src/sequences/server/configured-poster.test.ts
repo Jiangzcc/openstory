@@ -65,6 +65,7 @@ function makeStep(
   checkpoints = new Map<string, unknown>(),
   interruptions: ReadonlyMap<string, unknown> = new Map()
 ) {
+  let active: string | undefined;
   const doStep = vi.fn(
     async (
       name: string,
@@ -75,21 +76,25 @@ function makeStep(
       if (checkpoints.has(name)) return structuredClone(checkpoints.get(name));
       const execute = typeof options === 'function' ? options : callback;
       if (!execute) throw new Error('Missing Mock step callback.');
-      const result = await execute();
-      checkpoints.set(name, structuredClone(result));
-      return result;
+      active = name;
+      try {
+        const result = await execute();
+        checkpoints.set(name, structuredClone(result));
+        return result;
+      } finally {
+        active = undefined;
+      }
     }
   );
-  return { step: asStub<WorkflowStep>({ do: doStep }), checkpoints, doStep };
+  return {
+    step: asStub<WorkflowStep>({ do: doStep }),
+    checkpoints,
+    doStep,
+    active: () => active,
+  };
 }
 
-function makeScope() {
-  const attempts = {
-    getById: vi.fn(async () => undefined),
-    claim: vi.fn(async () => ({ claimed: true })),
-    complete: vi.fn(async () => {}),
-    markUnknown: vi.fn(async () => {}),
-  };
+function makeScope(creditsAvailable = true) {
   const scopedDb = asStub<WorkflowScopedDb>({
     models: {
       ...DEFAULT_MODEL_CONFIGURATION,
@@ -99,11 +104,11 @@ function makeScope() {
       ),
     },
     credentials: {},
-    claims: { imageGenerationAttempts: attempts },
-    imageGenerationAttempts: attempts,
-    liveRead: { billing: { hasEnoughCredits: vi.fn(async () => true) } },
+    liveRead: {
+      billing: { hasEnoughCredits: vi.fn(async () => creditsAvailable) },
+    },
   });
-  return { scopedDb, attempts };
+  return { scopedDb };
 }
 
 function posterInput(step: WorkflowStep, scopedDb: WorkflowScopedDb) {
@@ -129,66 +134,68 @@ it.each(INTERRUPTIONS)(
   async (message) => {
     const abort = new Error(message);
     const run = makeStep(new Map(), new Map([['generate-poster', abort]]));
-    const { scopedDb, attempts } = makeScope();
+    const { scopedDb } = makeScope();
 
     await expect(
       generateConfiguredPoster(posterInput(run.step, scopedDb))
     ).rejects.toBe(abort);
 
     expect(generateImage).not.toHaveBeenCalled();
-    expect(attempts.complete).not.toHaveBeenCalled();
+    expect(uploadPoster).not.toHaveBeenCalled();
   }
 );
 
-it('propagates an interruption during generation without marking the attempt unknown', async () => {
+it('propagates an interruption during generation without storing a poster', async () => {
   const abort = new Error(INTERRUPTIONS[0]);
   generateImage.mockRejectedValueOnce(abort);
   const run = makeStep();
-  const { scopedDb, attempts } = makeScope();
+  const { scopedDb } = makeScope();
 
   await expect(
     generateConfiguredPoster(posterInput(run.step, scopedDb))
   ).rejects.toBe(abort);
 
-  expect(attempts.claim).toHaveBeenCalledOnce();
-  expect(attempts.markUnknown).not.toHaveBeenCalled();
+  expect(generateImage).toHaveBeenCalledOnce();
+  expect(run.checkpoints.has('generate-poster')).toBe(false);
   expect(uploadPoster).not.toHaveBeenCalled();
 });
 
-it('resumes the stored checkpoint after an interrupted metadata write without generating again', async () => {
+it('propagates an interruption during storage without checkpointing an output', async () => {
   const abort = new Error(INTERRUPTIONS[1]);
   const run = makeStep();
-  const { scopedDb, attempts } = makeScope();
-  attempts.complete.mockRejectedValueOnce(abort);
+  const { scopedDb } = makeScope();
+  uploadPoster.mockRejectedValueOnce(abort);
   const input = posterInput(run.step, scopedDb);
 
   await expect(generateConfiguredPoster(input)).rejects.toBe(abort);
+
+  expect(generateImage).toHaveBeenCalledOnce();
+  expect(uploadPoster).toHaveBeenCalledOnce();
+  expect(run.checkpoints.has('generate-poster')).toBe(false);
+});
+
+it('stores the poster inside generation and replays its completed checkpoint unchanged', async () => {
+  const run = makeStep();
+  const { scopedDb } = makeScope();
+  const input = posterInput(run.step, scopedDb);
+  generateImage.mockImplementationOnce(async () => {
+    expect(run.active()).toBe('generate-poster');
+    return GENERATION;
+  });
+  uploadPoster.mockImplementationOnce(async () => {
+    expect(run.active()).toBe('generate-poster');
+    return STORED;
+  });
+
   await expect(generateConfiguredPoster(input)).resolves.toEqual({
     url: STORED.url,
     metadata: GENERATION.metadata,
   });
-
-  expect(generateImage).toHaveBeenCalledOnce();
-  expect(uploadPoster).toHaveBeenCalledOnce();
-  expect(attempts.complete).toHaveBeenCalledTimes(2);
-  expect(attempts.markUnknown).not.toHaveBeenCalled();
-});
-
-it('preserves the configured generate-poster checkpoint format and replays it unchanged', async () => {
-  const checkpoint = {
+  const checkpoint = run.checkpoints.get('generate-poster');
+  expect(checkpoint).toEqual({
     stored: [STORED],
     metadata: GENERATION.metadata,
     via: GENERATION.via,
-  };
-  const run = makeStep(
-    new Map<string, unknown>([['generate-poster', checkpoint]])
-  );
-  const { scopedDb, attempts } = makeScope();
-  const input = posterInput(run.step, scopedDb);
-
-  await expect(generateConfiguredPoster(input)).resolves.toEqual({
-    url: STORED.url,
-    metadata: GENERATION.metadata,
   });
   await expect(generateConfiguredPoster(input)).resolves.toEqual({
     url: STORED.url,
@@ -196,13 +203,22 @@ it('preserves the configured generate-poster checkpoint format and replays it un
   });
 
   expect(run.checkpoints.get('generate-poster')).toEqual(checkpoint);
-  expect(attempts.complete).toHaveBeenCalledExactlyOnceWith(
-    expect.objectContaining({ id: 'mock-poster-run:generate-poster' }),
-    checkpoint
-  );
+  expect(generateImage).toHaveBeenCalledOnce();
+  expect(uploadPoster).toHaveBeenCalledOnce();
+  expect(JSON.stringify(checkpoint)).not.toContain('data:image');
+});
+
+it('does not generate or store a poster when the balance guard fails', async () => {
+  const run = makeStep();
+  const { scopedDb } = makeScope(false);
+
+  await expect(
+    generateConfiguredPoster(posterInput(run.step, scopedDb))
+  ).resolves.toBeNull();
+
   expect(generateImage).not.toHaveBeenCalled();
   expect(uploadPoster).not.toHaveBeenCalled();
-  expect(attempts.claim).not.toHaveBeenCalled();
+  expect(run.checkpoints.has('generate-poster')).toBe(false);
 });
 
 it.each(['generation', 'storage'] as const)(
@@ -213,13 +229,16 @@ it.each(['generation', 'storage'] as const)(
       generateImage.mockRejectedValueOnce(unavailable);
     else uploadPoster.mockRejectedValueOnce(unavailable);
     const run = makeStep();
-    const { scopedDb, attempts } = makeScope();
+    const { scopedDb } = makeScope();
 
     await expect(
       generateConfiguredPoster(posterInput(run.step, scopedDb))
     ).resolves.toBeNull();
 
-    expect(attempts.markUnknown).toHaveBeenCalledOnce();
-    expect(attempts.complete).not.toHaveBeenCalled();
+    expect(generateImage).toHaveBeenCalledOnce();
+    expect(uploadPoster).toHaveBeenCalledTimes(
+      failure === 'generation' ? 0 : 1
+    );
+    expect(run.checkpoints.has('generate-poster')).toBe(false);
   }
 );

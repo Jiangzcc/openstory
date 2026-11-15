@@ -158,22 +158,13 @@ function makeConfiguredImageScope() {
   const imageModelRouting = createImageModelRoutingSnapshot(
     imageConfigurationFixture()
   );
-  // Mock attempt and wallet surfaces; no database or supplier is contacted.
-  const attempts = {
-    getById: vi.fn(async () => undefined),
-    claim: vi.fn(async () => ({ claimed: true })),
-    complete: vi.fn(async () => {}),
-    markUnknown: vi.fn(async () => {}),
-  };
+  // Mock the wallet; no database or supplier is contacted.
   return {
     ...scope,
-    attempts,
     scopedDb: asStub<WorkflowScopedDb>({
       ...scope.scopedDb,
       models: { imageModelRouting },
       liveRead: { billing: { hasEnoughCredits: vi.fn(async () => true) } },
-      imageGenerationAttempts: attempts,
-      claims: { imageGenerationAttempts: attempts },
     }),
   };
 }
@@ -331,7 +322,7 @@ describe('StudioGenerationWorkflow image', () => {
 
 it('configured images use a 15-minute generate/store step and charge after storage', async () => {
   const step = makeStep();
-  const { scopedDb, generatedAssets, attempts } = makeConfiguredImageScope();
+  const { scopedDb, generatedAssets } = makeConfiguredImageScope();
   mockGenerateImageWithProvider.mockResolvedValue(configuredImageResult());
   const input = { ...IMAGE, imageModel: 'custom-image:qwen' as const };
 
@@ -345,16 +336,20 @@ it('configured images use a 15-minute generate/store step and charge after stora
   expect(step.names).toEqual([
     'set-running',
     'generate-image',
-    'generate-image:record',
     'deduct-credits',
     'record-provenance',
     'persist-result',
     'notify-content-feed',
   ]);
-  expect(vi.mocked(uploadStudioImage)).toHaveBeenCalledBefore(
-    attempts.complete
+  expect(mockGenerateImageWithProvider).toHaveBeenCalledBefore(
+    vi.mocked(uploadStudioImage)
   );
-  expect(attempts.complete).toHaveBeenCalledBefore(mockDeductWorkflowCredits);
+  expect(vi.mocked(uploadStudioImage)).toHaveBeenCalledBefore(
+    mockDeductWorkflowCredits
+  );
+  expect(mockDeductWorkflowCredits).toHaveBeenCalledBefore(
+    generatedAssets.markCompleted
+  );
   expect(mockDeductWorkflowCredits).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({
       costMicros: 100_000,
@@ -366,56 +361,48 @@ it('configured images use a 15-minute generate/store step and charge after stora
     'asset-1',
     expect.objectContaining({ provider: 'compatible', costMicros: 100_000 })
   );
-  expect(attempts.markUnknown).not.toHaveBeenCalled();
 });
 
-it.each(['upload', 'uploads'] as const)(
-  'restores a cached %s result without generating or uploading again',
-  async (field) => {
-    const upload = {
-      url: '/r2/thumbnails/mock-cached.png',
-      path: 'mock-cached.png',
-      contentType: 'image/png',
-    };
-    const metadata = {
-      cost: micros(12_000),
-      usedOwnKey: false,
-      endpointId: 'mock-native-image',
-    };
-    const checkpoint = {
-      [field]: field === 'upload' ? upload : [upload],
-      metadata,
-      via: 'fal',
-    };
-    const step = makeStep(
-      new Map<string, unknown>([
-        ['generate-image', checkpoint],
-        ['deduct-credits', undefined],
-      ])
-    );
-    const { scopedDb, generatedAssets } = makeScopedDb();
+it('uses the cached uploads checkpoint without generating or uploading again', async () => {
+  const upload = {
+    url: '/r2/thumbnails/mock-cached.png',
+    path: 'mock-cached.png',
+    contentType: 'image/png',
+  };
+  const metadata = {
+    cost: micros(12_000),
+    usedOwnKey: false,
+    endpointId: 'mock-native-image',
+  };
+  const checkpoint = {
+    uploads: [upload],
+    metadata,
+    via: 'fal',
+  };
+  const step = makeStep(
+    new Map<string, unknown>([
+      ['generate-image', checkpoint],
+      ['deduct-credits', undefined],
+    ])
+  );
+  const { scopedDb, generatedAssets } = makeScopedDb();
 
-    const result = await makeWorkflow().runBody(
-      makeEvent(IMAGE),
-      step,
-      scopedDb
-    );
+  const result = await makeWorkflow().runBody(makeEvent(IMAGE), step, scopedDb);
 
-    expect(result.outputs).toEqual([
-      { url: upload.url, contentType: upload.contentType },
-    ]);
-    expect(generatedAssets.markCompleted).toHaveBeenCalledWith('asset-1', {
-      outputs: result.outputs,
-      costMicros: metadata.cost,
-      provider: 'fal',
-    });
-    expect(mockGenerateImageWithProvider).not.toHaveBeenCalled();
-    expect(uploadStudioImage).not.toHaveBeenCalled();
-    expect(mockDeductWorkflowCredits).not.toHaveBeenCalled();
-  }
-);
+  expect(result.outputs).toEqual([
+    { url: upload.url, contentType: upload.contentType },
+  ]);
+  expect(generatedAssets.markCompleted).toHaveBeenCalledWith('asset-1', {
+    outputs: result.outputs,
+    costMicros: metadata.cost,
+    provider: 'fal',
+  });
+  expect(mockGenerateImageWithProvider).not.toHaveBeenCalled();
+  expect(uploadStudioImage).not.toHaveBeenCalled();
+  expect(mockDeductWorkflowCredits).not.toHaveBeenCalled();
+});
 
-it('restores the configured stored checkpoint and retries only metadata persistence', async () => {
+it('uses the configured stored checkpoint without generating or uploading again', async () => {
   const generation = configuredImageResult();
   const stored = [
     {
@@ -432,17 +419,13 @@ it('restores the configured stored checkpoint and retries only metadata persiste
   const step = makeStep(
     new Map<string, unknown>([['generate-image', checkpoint]])
   );
-  const { scopedDb, attempts, generatedAssets } = makeConfiguredImageScope();
+  const { scopedDb, generatedAssets } = makeConfiguredImageScope();
   const input = { ...IMAGE, imageModel: 'custom-image:qwen' as const };
 
   const result = await makeWorkflow().runBody(makeEvent(input), step, scopedDb);
 
   expect(result.outputs).toEqual(
     stored.map(({ url, contentType }) => ({ url, contentType }))
-  );
-  expect(attempts.complete).toHaveBeenCalledExactlyOnceWith(
-    expect.objectContaining({ id: 'run-1:generate-image' }),
-    checkpoint
   );
   expect(generatedAssets.markCompleted).toHaveBeenCalledWith('asset-1', {
     outputs: result.outputs,
@@ -451,13 +434,11 @@ it('restores the configured stored checkpoint and retries only metadata persiste
   });
   expect(mockGenerateImageWithProvider).not.toHaveBeenCalled();
   expect(uploadStudioImage).not.toHaveBeenCalled();
-  expect(attempts.claim).not.toHaveBeenCalled();
-  expect(attempts.markUnknown).not.toHaveBeenCalled();
 });
 
-it('configured image deadlines remain unknown without charging or persisting output', async () => {
+it('propagates configured image timeouts without charging or persisting output', async () => {
   const step = makeStep();
-  const { scopedDb, generatedAssets, attempts } = makeConfiguredImageScope();
+  const { scopedDb, generatedAssets } = makeConfiguredImageScope();
   mockGenerateImageWithProvider.mockRejectedValueOnce(
     new CompatibleImageError('request_timeout')
   );
@@ -467,9 +448,26 @@ it('configured image deadlines remain unknown without charging or persisting out
     makeWorkflow().runBody(makeEvent(input), step, scopedDb)
   ).rejects.toThrow('Compatible image provider request timed out.');
 
-  expect(attempts.markUnknown).toHaveBeenCalledOnce();
-  expect(attempts.complete).not.toHaveBeenCalled();
   expect(mockGenerateImageWithProvider).toHaveBeenCalledOnce();
+  expect(uploadStudioImage).not.toHaveBeenCalled();
+  expect(mockDeductWorkflowCredits).not.toHaveBeenCalled();
+  expect(generatedAssets.markCompleted).not.toHaveBeenCalled();
+});
+
+it.each([
+  'Aborting engine: Grace period complete',
+  'Durable Object reset because its code was updated',
+])('propagates configured image engine interruptions: %s', async (message) => {
+  const step = makeStep();
+  const { scopedDb, generatedAssets } = makeConfiguredImageScope();
+  const interruption = new Error(message);
+  mockGenerateImageWithProvider.mockRejectedValueOnce(interruption);
+  const input = { ...IMAGE, imageModel: 'custom-image:qwen' as const };
+
+  await expect(
+    makeWorkflow().runBody(makeEvent(input), step, scopedDb)
+  ).rejects.toBe(interruption);
+
   expect(uploadStudioImage).not.toHaveBeenCalled();
   expect(mockDeductWorkflowCredits).not.toHaveBeenCalled();
   expect(generatedAssets.markCompleted).not.toHaveBeenCalled();

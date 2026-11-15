@@ -74,7 +74,7 @@ function boundBuiltin(model: BuiltinTextToImageModel = 'gpt_image_2') {
     run: () =>
       generateConfiguredImage(
         { model, prompt: 'Mock bound built-in dispatch' },
-        { credentials, configuredAttemptId: 'mock-dispatch-attempt' }
+        { credentials }
       ),
   };
 }

@@ -71,7 +71,7 @@ describe('configured image execution', () => {
           prompt: 'Mock prompt',
           imageSize: 'landscape_16_9',
         },
-        { credentials, configuredAttemptId: 'mock-attempt' }
+        { credentials }
       );
       expect(mocks.generate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -106,7 +106,6 @@ describe('configured image execution', () => {
         },
         {
           credentials: mockCredentials(routing),
-          configuredAttemptId: 'mock-attempt',
         }
       )
     ).rejects.toThrow('reference image count');
@@ -147,7 +146,6 @@ describe('configured image execution', () => {
         credentials: mockCredentials(
           createImageModelRoutingSnapshot(configuration)
         ),
-        configuredAttemptId: 'mock-attempt',
       }
     );
     expect(result.metadata.cost).toBe(100_000);
@@ -178,7 +176,6 @@ describe('configured image execution', () => {
         { model: 'custom-image:qwen', prompt: 'Mock prompt' },
         {
           credentials: mockCredentials(routing),
-          configuredAttemptId: 'mock-attempt',
         }
       )
     ).rejects.toThrow('did not honor parameter');
@@ -215,7 +212,7 @@ it('executes a captured built-in edit after its live upstream, price and channel
       imageSize: 'landscape_16_9',
       referenceImageUrls: ['/r2/mock/reference.png'],
     },
-    { credentials, configuredAttemptId: 'mock-edit-attempt' }
+    { credentials }
   );
   expect(mocks.generate).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({
@@ -292,7 +289,6 @@ it('uses verified legacy seed and format for the quote, request and returned met
   const quote = configuredImageGenerationQuote(params, routing);
   const result = await generateConfiguredImage(params, {
     credentials: mockCredentials(routing),
-    configuredAttemptId: 'mock-tracked-attempt',
   });
   expect(quote).toMatchObject({
     parameters: { seed: 4242, output_format: 'png' },
@@ -327,7 +323,6 @@ it('records explicit channel parameter overrides rather than legacy values', asy
     },
     {
       credentials: mockCredentials(routing),
-      configuredAttemptId: 'mock-tracked-attempt',
     }
   );
   expect(mocks.generate).toHaveBeenCalledWith(
@@ -358,7 +353,6 @@ it.each(['unverified', 'unsupported'] as const)(
       },
       {
         credentials: mockCredentials(routing),
-        configuredAttemptId: 'mock-tracked-attempt',
       }
     );
     const sent = mocks.generate.mock.calls[0]?.[0].parameters;
@@ -383,7 +377,6 @@ it('does not inherit generate-only legacy parameters on edit', async () => {
     },
     {
       credentials: mockCredentials(routing),
-      configuredAttemptId: 'mock-tracked-attempt',
     }
   );
   expect(mocks.generate).toHaveBeenCalledWith(
@@ -409,7 +402,7 @@ it('refuses a fixed size outside the budget before references, credentials or su
   await expect(
     generateConfiguredImage(
       { model: 'custom-image:qwen', prompt: 'Mock oversized request' },
-      { credentials, configuredAttemptId: 'mock-oversized-attempt' }
+      { credentials }
     )
   ).rejects.toThrow('supported resource limits');
   expect(mocks.references).not.toHaveBeenCalled();
@@ -450,7 +443,6 @@ it.each(['generate', 'edit'] as const)(
     expect(quote.costMicros).toBe(usdToMicros(0.2));
     const result = await generateConfiguredImage(parameters, {
       credentials: mockCredentials(routing),
-      configuredAttemptId: 'mock-hd-attempt',
     });
     expect(mocks.generate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -492,7 +484,7 @@ it('refuses a fractional-micro unit price before resolving credentials or submit
         imageSize: 'landscape_16_9',
         numImages: 2,
       },
-      { credentials, configuredAttemptId: 'mock-batch-attempt' }
+      { credentials }
     )
   ).rejects.toThrow('precision');
   expect(credentials.resolveImageChannelKey).not.toHaveBeenCalled();
@@ -533,7 +525,6 @@ it('bills one delivered image at one microdollar when a two-image request is par
       credentials: mockCredentials(
         createImageModelRoutingSnapshot(configuration)
       ),
-      configuredAttemptId: 'mock-partial-attempt',
     }
   );
   expect(result.metadata.cost).toBe(1);

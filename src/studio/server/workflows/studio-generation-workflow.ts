@@ -97,23 +97,6 @@ type StudioImageResult = {
   metadata: ImageGenerationResult['metadata'];
   via: ImageGenerationResult['via'];
 };
-type StudioImageCheckpoint =
-  | StudioImageResult
-  | (Omit<StudioImageResult, 'uploads'> & {
-      upload: StudioImageResult['uploads'][number];
-    });
-
-function restoreStudioImageCheckpoint(
-  checkpoint: StudioImageCheckpoint
-): StudioImageResult {
-  if ('uploads' in checkpoint) return checkpoint;
-  return {
-    uploads: [checkpoint.upload],
-    metadata: checkpoint.metadata,
-    via: checkpoint.via,
-  };
-}
-
 export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<StudioGenerationWorkflowInput> {
   protected override readonly failureLabel = 'Studio generation';
 
@@ -147,12 +130,12 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
     // Generate and store in ONE step: a via that answers with inline bytes
     // has no URL to pass on, and the whole image would otherwise ride the
     // 1 MiB checkpoint between the two (#1638, #1645).
-    const checkpoint: StudioImageCheckpoint = usesConfiguredImageChannel(
+    const generated: StudioImageResult = usesConfiguredImageChannel(
       imageModel,
       scopedDb.models.imageModelRouting
     )
       ? await runConfiguredStudioImageStep({ event, input, step, scopedDb })
-      : await step.do<StudioImageCheckpoint>('generate-image', async () => {
+      : await step.do<StudioImageResult>('generate-image', async () => {
           logger.info(
             `[StudioGenerationWorkflow] Generating image ${assetId} with ${imageModel}`
           );
@@ -196,7 +179,6 @@ export class StudioGenerationWorkflow extends OpenStoryWorkflowEntrypoint<Studio
           };
         });
 
-    const generated = restoreStudioImageCheckpoint(checkpoint);
     if (generated.uploads.length === 0)
       throw new Error('Image generation did not store an output.');
     const imageMetadata = generated.metadata;

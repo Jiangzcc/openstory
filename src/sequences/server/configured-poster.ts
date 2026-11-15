@@ -11,7 +11,6 @@ const logger = getLogger(['openstory', 'image-channel', 'poster']);
 export async function generateConfiguredPoster(args: {
   step: WorkflowStep;
   scopedDb: WorkflowScopedDb;
-  workflowRunId: string;
   organizationId: string;
   sequenceId: string;
   prompt: string;

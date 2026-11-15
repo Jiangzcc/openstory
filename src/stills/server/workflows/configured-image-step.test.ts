@@ -7,20 +7,14 @@ import { createImageModelRoutingSnapshot } from '@/models/image-channels';
 import type { ImageChannelModelId } from '@/models/image-channels';
 import { usdToMicros } from '@/billing/money';
 import type { Microdollars } from '@/billing/money';
-import { deductWorkflowCredits } from '@/billing/server/workflow-deduction';
+import {
+  deductWorkflowCredits,
+  extractImageCost,
+} from '@/billing/server/workflow-deduction';
 import { asStub } from '@/test/as-stub';
 import { getLogger } from '@/platform/logger';
 import { CompatibleImageError } from '../compatible-image-error';
 import { COMPATIBLE_IMAGE_LIMITS } from '../compatible-image-limits';
-import {
-  IMAGE_ATTEMPT_STATUS,
-  storedChannelGenerationSchema,
-} from '../configured-image-attempt';
-import type {
-  ImageAttemptIdentity,
-  ImageGenerationAttempt,
-  StoredChannelGeneration,
-} from '../configured-image-attempt';
 import type {
   CompatibleImageInput,
   CompatibleImageResult,
@@ -30,7 +24,10 @@ import {
   runConfiguredImageStep,
   runConfiguredSingleImageStep,
 } from './configured-image-step';
-import type { ConfiguredImageStepInput } from './configured-image-step';
+import type {
+  ConfiguredImageStepInput,
+  StoredChannelGeneration,
+} from './configured-image-step';
 
 const { supplierCall } = vi.hoisted(() => ({
   supplierCall:
@@ -60,7 +57,6 @@ const STORED_IMAGE = {
   path: 'mock-images/result.png',
   contentType: 'image/png',
 };
-type AttemptStatus = ImageGenerationAttempt['status'];
 type StepConfiguration = {
   retries: { limit: number; delay: string };
   timeout: string;
@@ -89,7 +85,7 @@ function supplierResult(): CompatibleImageResult {
 }
 
 function storedResult(): StoredChannelGeneration {
-  return storedChannelGenerationSchema.parse({
+  return {
     stored: [STORED_IMAGE],
     via: 'compatible',
     metadata: {
@@ -110,65 +106,22 @@ function storedResult(): StoredChannelGeneration {
         requestedCount: 1,
       },
     },
-  });
-}
-
-function mockAttempts(initialStatus?: AttemptStatus) {
-  const rows = new Map<string, ImageGenerationAttempt>();
-  const claim = vi.fn(async (identity: ImageAttemptIdentity) => {
-    const existing = rows.get(identity.id);
-    if (existing) return { claimed: false, attempt: structuredClone(existing) };
-    const attempt: ImageGenerationAttempt = {
-      ...identity,
-      status: initialStatus ?? IMAGE_ATTEMPT_STATUS.submitted,
-      ...(initialStatus === IMAGE_ATTEMPT_STATUS.stored && {
-        result: storedResult(),
-      }),
-    };
-    rows.set(identity.id, attempt);
-    return {
-      claimed: initialStatus === undefined,
-      attempt: structuredClone(attempt),
-    };
-  });
-  const complete = vi.fn(
-    async (identity: ImageAttemptIdentity, result: StoredChannelGeneration) => {
-      rows.set(identity.id, {
-        ...identity,
-        status: IMAGE_ATTEMPT_STATUS.stored,
-        result: structuredClone(result),
-      });
-    }
-  );
-  const markUnknown = vi.fn(async (identity: ImageAttemptIdentity) => {
-    rows.set(identity.id, {
-      ...identity,
-      status: IMAGE_ATTEMPT_STATUS.unknown,
-    });
-  });
-  const getById = vi.fn(async (identity: ImageAttemptIdentity) => {
-    if (initialStatus !== undefined && !rows.has(identity.id))
-      await claim(identity);
-    return rows.get(identity.id);
-  });
-  return { rows, methods: { getById, claim, complete, markUnknown } };
+  };
 }
 
 function mockStep(retainCheckpoints = false) {
   const outputs: unknown[] = [];
   const checkpoints = new Map<string, unknown>();
-  // Mock lost-checkpoint replays deliberately execute the callback again.
+  // Mock ordinary completed Cloudflare step checkpoints when requested.
   const doStep = vi.fn(
     async <T>(
       name: string,
       config: StepConfiguration,
       callback: () => Promise<T>
     ) => {
-      expect([STEP_NAME, STEP_NAME + ':record']).toContain(name);
-      expect(config.retries.limit).toBe(name === STEP_NAME ? 0 : 5);
-      expect(config.timeout).toBe(
-        name === STEP_NAME ? '15 minutes' : '1 minute'
-      );
+      expect(name).toBe(STEP_NAME);
+      expect(config.retries.limit).toBe(0);
+      expect(config.timeout).toBe('15 minutes');
       if (retainCheckpoints && checkpoints.has(name))
         return asStub<T>(checkpoints.get(name));
       const result = await callback();
@@ -204,7 +157,6 @@ function mockWallet(trace: string[]) {
 }
 
 function mockScope(
-  attempts: ReturnType<typeof mockAttempts>,
   wallet: ReturnType<typeof mockWallet>,
   modelId: ImageChannelModelId
 ) {
@@ -227,8 +179,6 @@ function mockScope(
       billing: { hasEnoughCredits: wallet.hasEnoughCredits },
     },
     billing: { captureReservation: wallet.captureReservation },
-    imageGenerationAttempts: attempts.methods,
-    claims: { imageGenerationAttempts: attempts.methods },
   });
   return {
     scopedDb,
@@ -240,15 +190,13 @@ function mockScope(
 }
 
 function harness(
-  initialStatus?: AttemptStatus,
   retainCheckpoints = false,
   modelId: ImageChannelModelId = MODEL_ID
 ) {
   const trace: string[] = [];
-  const attempts = mockAttempts(initialStatus);
   const workflow = mockStep(retainCheckpoints);
   const wallet = mockWallet(trace);
-  const scope = mockScope(attempts, wallet, modelId);
+  const scope = mockScope(wallet, modelId);
   const store = vi.fn(async (_result: ImageGenerationResult) => {
     trace.push('store');
     return [structuredClone(STORED_IMAGE)];
@@ -256,7 +204,6 @@ function harness(
   const input: ConfiguredImageStepInput = {
     step: workflow.step,
     stepName: STEP_NAME,
-    workflowRunId: RUN_ID,
     scopedDb: scope.scopedDb,
     params: { model: modelId, prompt: 'Mock image generation prompt' },
     reservationId: RESERVATION_ID,
@@ -266,13 +213,11 @@ function harness(
     ...workflow,
     ...wallet,
     ...scope,
-    attempts,
     trace,
     input,
     store,
     run: (overrides: Partial<ConfiguredImageStepInput> = {}) =>
       runConfiguredImageStep({ ...input, ...overrides }),
-    attempt: () => attempts.rows.get(RUN_ID + ':' + STEP_NAME),
   };
 }
 
@@ -281,7 +226,7 @@ type Harness = ReturnType<typeof harness>;
 async function chargeResult(test: Harness, result: StoredChannelGeneration) {
   await deductWorkflowCredits({
     scopedDb: test.input.scopedDb,
-    costMicros: result.metadata.cost,
+    costMicros: extractImageCost(result.metadata),
     usedOwnKey: result.metadata.usedOwnKey,
     description: 'Mock configured image charge',
     idempotencyKey: RUN_ID + ':mock-image-charge',
@@ -346,33 +291,12 @@ it('checks the frozen quote before one paid call and stores before returning met
   expect(test.resolveImageChannelKey).toHaveBeenCalledExactlyOnceWith(
     test.imageModelRouting[0]?.credentialId
   );
-  expect(test.attempts.methods.complete).toHaveBeenCalledTimes(1);
-  expect(test.attempt()?.status).toBe(IMAGE_ATTEMPT_STATUS.stored);
   expect(result).toEqual(storedResult());
   expect(test.captureReservation).not.toHaveBeenCalled();
 });
 
-it('recovers stored output without checking the now-unavailable balance or resolving keys', async () => {
-  const test = harness(IMAGE_ATTEMPT_STATUS.stored);
-  test.hasEnoughCredits.mockRejectedValue(
-    new Error('A stored result must not read balance.')
-  );
-  const result = await test.run();
-  expect(result).toEqual(storedResult());
-  expect(test.hasEnoughCredits).not.toHaveBeenCalled();
-  expect(test.hasUsableKey).not.toHaveBeenCalled();
-  expect(test.resolveImageChannelKey).not.toHaveBeenCalled();
-  expect(supplierCall).not.toHaveBeenCalled();
-  expect(test.store).not.toHaveBeenCalled();
-  expect(test.attempts.methods.complete).toHaveBeenCalledWith(
-    expect.any(Object),
-    result
-  );
-  expect(test.attempts.methods.markUnknown).not.toHaveBeenCalled();
-});
-
-it('allows a stored replay to reach the existing idempotent charge with no new generation', async () => {
-  const test = harness();
+it('replays a completed step into the existing idempotent charge with no new generation', async () => {
+  const test = harness(true);
   await chargeResult(test, await test.run());
   test.wallet.available = false;
   await chargeResult(test, await test.run());
@@ -382,54 +306,7 @@ it('allows a stored replay to reach the existing idempotent charge with no new g
   expect(test.captureReservation).toHaveBeenCalledTimes(2);
   expect(test.debits.size).toBe(1);
   expect([...test.debits.values()]).toEqual([EXPECTED_COST]);
-  expect(test.outputs).toHaveLength(2);
-});
-
-it.each([IMAGE_ATTEMPT_STATUS.submitted, IMAGE_ATTEMPT_STATUS.unknown])(
-  'never resubmits a %s attempt',
-  async (status) => {
-    const test = harness(status);
-    await expect(test.run()).rejects.toThrow(NonRetryableError);
-    await expect(test.run()).rejects.toThrow(
-      'Automatic resubmission is disabled.'
-    );
-    expect(supplierCall).not.toHaveBeenCalled();
-    expect(test.store).not.toHaveBeenCalled();
-    expect(test.hasEnoughCredits).not.toHaveBeenCalled();
-    expect(test.resolveImageChannelKey).not.toHaveBeenCalled();
-    expect(test.attempt()?.status).toBe(status);
-    expect(test.outputs).toEqual([]);
-  }
-);
-
-function deferred<T>() {
-  let resolve: (value: T) => void = () => {
-    throw new Error('Mock deferred is unavailable.');
-  };
-  const promise = new Promise<T>((finish) => {
-    resolve = finish;
-  });
-  return { promise, resolve };
-}
-
-it('rejects a concurrent replay while the first supplier request is still pending', async () => {
-  const test = harness();
-  const started = deferred<void>();
-  const response = deferred<CompatibleImageResult>();
-  supplierCall.mockImplementationOnce(async () => {
-    started.resolve(undefined);
-    return response.promise;
-  });
-  const first = test.run();
-  await started.promise;
-  await expect(test.run()).rejects.toThrow(
-    'Automatic resubmission is disabled.'
-  );
-  response.resolve(supplierResult());
-  await expect(first).resolves.toEqual(storedResult());
-  expect(supplierCall).toHaveBeenCalledTimes(1);
-  expect(test.hasEnoughCredits).toHaveBeenCalledTimes(1);
-  expect(test.store).toHaveBeenCalledTimes(1);
+  expect(test.outputs).toHaveLength(1);
 });
 
 it('blocks insufficient funds before resolving the key, generating or storing', async () => {
@@ -471,24 +348,22 @@ it('passes an absent parent reservation through to the live balance guard', asyn
   expect(supplierCall).toHaveBeenCalledTimes(1);
 });
 
-it('rejects an operation exceeding its output capacity before claiming or paying', async () => {
+it('rejects an operation exceeding its output capacity before checking balance or paying', async () => {
   const test = harness();
   const params = allowTwoOutputs(test);
   await expect(test.run({ params })).rejects.toThrow(
     'This image operation stores one output per task.'
   );
-  expect(test.attempts.methods.claim).not.toHaveBeenCalled();
   expect(test.hasEnoughCredits).not.toHaveBeenCalled();
   expect(supplierCall).not.toHaveBeenCalled();
 });
 
-it('requires a complete quote before spending or making an attempt', async () => {
+it('requires a complete quote before checking balance or spending', async () => {
   const test = harness();
   const route = test.imageModelRouting[0];
   if (!route) throw new Error('Missing mock image routing fixture.');
   route.priceCards = [];
   await expect(test.run()).rejects.toThrow(/price/i);
-  expect(test.attempts.methods.claim).not.toHaveBeenCalled();
   expect(test.hasEnoughCredits).not.toHaveBeenCalled();
   expect(supplierCall).not.toHaveBeenCalled();
 });
@@ -518,25 +393,19 @@ it('prechecks all requested outputs and charges only a partial result actually s
   expect([...test.debits.values()]).toEqual([EXPECTED_COST]);
 });
 
-it('keeps a failed store unknown and never pays for an automatic second generation', async () => {
+it('rejects a failed store without charging or checkpointing output', async () => {
   const test = harness();
   test.store.mockRejectedValueOnce(new Error('Mock R2 put failure'));
   await expect(test.run()).rejects.toThrow(NonRetryableError);
-  expect(test.attempt()?.status).toBe(IMAGE_ATTEMPT_STATUS.unknown);
-  await expect(test.run()).rejects.toThrow(
-    'Automatic resubmission is disabled.'
-  );
   expect(supplierCall).toHaveBeenCalledTimes(1);
   expect(test.hasEnoughCredits).toHaveBeenCalledTimes(1);
   expect(test.store).toHaveBeenCalledTimes(1);
-  expect(test.attempts.methods.markUnknown).toHaveBeenCalledTimes(1);
-  expect(test.attempts.methods.complete).not.toHaveBeenCalled();
   expect(test.captureReservation).not.toHaveBeenCalled();
   expect(test.outputs).toEqual([]);
 });
 
 it.each([undefined, 200])(
-  'logs a timed-out supplier safely and refuses resubmission (HTTP %s)',
+  'logs a timed-out supplier safely without charging (HTTP %s)',
   async (status) => {
     const test = harness();
     const log = vi
@@ -551,7 +420,6 @@ it.each([undefined, 200])(
     expect(log).toHaveBeenCalledExactlyOnceWith(
       expect.stringContaining('{elapsedMs}'),
       {
-        attemptId: RUN_ID + ':' + STEP_NAME,
         code: 'request_timeout',
         status: status ?? 'no_response',
         submissionState: 'unknown',
@@ -561,32 +429,11 @@ it.each([undefined, 200])(
     );
     expect(JSON.stringify(log.mock.calls)).not.toContain(MOCK_API_KEY);
     expect(JSON.stringify(log.mock.calls)).not.toContain(MOCK_IMAGE_URL);
-    await expect(test.run()).rejects.toThrow(
-      'Automatic resubmission is disabled.'
-    );
-    expect(test.attempt()?.status).toBe(IMAGE_ATTEMPT_STATUS.unknown);
     expect(supplierCall).toHaveBeenCalledTimes(1);
     expect(test.store).not.toHaveBeenCalled();
     expect(test.captureReservation).not.toHaveBeenCalled();
   }
 );
-
-it('recovers a checkpointed R2 result when recording the stored attempt fails', async () => {
-  const test = harness(undefined, true);
-  test.attempts.methods.complete.mockRejectedValueOnce(
-    new Error('Mock D1 write failure')
-  );
-  await expect(test.run()).rejects.toThrow(
-    'Could not persist stored image metadata.'
-  );
-  expect(test.attempt()?.status).toBe(IMAGE_ATTEMPT_STATUS.submitted);
-  const recovered = await test.run();
-  expect(recovered.stored).toEqual([STORED_IMAGE]);
-  expect(supplierCall).toHaveBeenCalledTimes(1);
-  expect(test.store).toHaveBeenCalledTimes(1);
-  expect(test.attempt()?.status).toBe(IMAGE_ATTEMPT_STATUS.stored);
-  expect(test.attempts.methods.markUnknown).not.toHaveBeenCalled();
-});
 
 it('refuses a partial store and never checkpoints unpersisted supplier output', async () => {
   const test = harness();
@@ -594,27 +441,14 @@ it('refuses a partial store and never checkpoints unpersisted supplier output', 
   await expect(test.run()).rejects.toThrow(
     'Not all generated images were stored.'
   );
-  expect(test.attempt()?.status).toBe(IMAGE_ATTEMPT_STATUS.unknown);
   expect(supplierCall).toHaveBeenCalledTimes(1);
-  expect(test.attempts.methods.complete).not.toHaveBeenCalled();
   expect(test.outputs).toEqual([]);
 });
 
-it('only checkpoints storage references and validated billing metadata, never image bytes or keys', async () => {
+it('only checkpoints storage references and billing metadata, never image bytes or keys', async () => {
   const test = harness();
-  const supplier = supplierResult();
-  const usage = {
-    ...MOCK_USAGE,
-    rawImage: MOCK_IMAGE_URL,
-    apiKey: MOCK_API_KEY,
-  };
-  supplier.usage = usage;
-  supplierCall.mockResolvedValueOnce(supplier);
   const result = await test.run();
-  const durable = JSON.stringify({
-    outputs: test.outputs,
-    attempts: [...test.attempts.rows.values()],
-  });
+  const durable = JSON.stringify(test.outputs);
   expect(result.metadata.supplierUsage).toEqual(MOCK_USAGE);
   expect(durable).not.toContain(MOCK_IMAGE_URL);
   expect(durable).not.toContain(MOCK_API_KEY);
@@ -627,22 +461,8 @@ it('only checkpoints storage references and validated billing metadata, never im
   expect(test.outputs).toEqual([result]);
 });
 
-it('rejects extra image bytes or keys added to a storage record', async () => {
+it('stores a configured result through the single-image wrapper', async () => {
   const test = harness();
-  const record = {
-    ...STORED_IMAGE,
-    rawImage: MOCK_IMAGE_URL,
-    apiKey: MOCK_API_KEY,
-  };
-  test.store.mockResolvedValueOnce([record]);
-  await expect(test.run()).rejects.toThrow(NonRetryableError);
-  expect(test.attempts.methods.complete).not.toHaveBeenCalled();
-  expect(test.outputs).toEqual([]);
-  expect(test.attempt()?.status).toBe(IMAGE_ATTEMPT_STATUS.unknown);
-});
-
-it('recovers a stored result through the single-image wrapper without a provider call', async () => {
-  const test = harness(IMAGE_ATTEMPT_STATUS.stored);
   const store = vi.fn(async () => structuredClone(STORED_IMAGE));
   const result = await runConfiguredSingleImageStep({ ...test.input, store });
   expect(result).toEqual({
@@ -650,47 +470,20 @@ it('recovers a stored result through the single-image wrapper without a provider
     metadata: storedResult().metadata,
     via: 'compatible',
   });
-  expect(supplierCall).not.toHaveBeenCalled();
-  expect(test.hasEnoughCredits).not.toHaveBeenCalled();
-  expect(store).not.toHaveBeenCalled();
+  expect(supplierCall).toHaveBeenCalledTimes(1);
+  expect(test.hasEnoughCredits).toHaveBeenCalledTimes(1);
+  expect(store).toHaveBeenCalledTimes(1);
 });
 
 it('leaves insufficient-balance requests unsubmitted and permits replay after top-up', async () => {
   const test = harness();
   test.wallet.available = false;
   await expect(test.run()).rejects.toThrow('Insufficient credits');
-  expect(test.attempt()).toBeUndefined();
-  expect(test.attempts.methods.claim).not.toHaveBeenCalled();
   expect(supplierCall).not.toHaveBeenCalled();
   test.wallet.available = true;
   await test.run();
   expect(supplierCall).toHaveBeenCalledTimes(1);
   expect(test.hasEnoughCredits).toHaveBeenCalledTimes(2);
-});
-
-it('still refuses a repeat when recording unknown also fails', async () => {
-  const test = harness();
-  test.store.mockRejectedValueOnce(new Error('Mock R2 put failure'));
-  test.attempts.methods.markUnknown.mockRejectedValueOnce(
-    new Error('Mock D1 unavailable')
-  );
-  await expect(test.run()).rejects.toThrow(
-    'Image channel generation or storage failed.'
-  );
-  expect(test.attempt()?.status).toBe(IMAGE_ATTEMPT_STATUS.submitted);
-  await expect(test.run()).rejects.toThrow(
-    'Automatic resubmission is disabled.'
-  );
-  expect(supplierCall).toHaveBeenCalledTimes(1);
-  expect(test.outputs).toEqual([]);
-});
-
-it('refuses inline image bytes disguised as a stored URL before checkpointing', async () => {
-  const test = harness();
-  test.store.mockResolvedValueOnce([{ ...STORED_IMAGE, url: MOCK_IMAGE_URL }]);
-  await expect(test.run()).rejects.toThrow(NonRetryableError);
-  expect(test.attempts.methods.complete).not.toHaveBeenCalled();
-  expect(test.outputs).toEqual([]);
 });
 
 it('does not expose image bytes or a supplier key through a failed step message', async () => {
@@ -706,7 +499,7 @@ it('does not expose image bytes or a supplier key through a failed step message'
 });
 
 it('preflights and charges a bound built-in as platform spend despite organization keys', async () => {
-  const test = harness(undefined, false, BOUND_BUILTIN_ID);
+  const test = harness(false, BOUND_BUILTIN_ID);
   test.hasUsableKey.mockResolvedValue(true);
   const result = await test.run();
   await chargeResult(test, result);
@@ -736,13 +529,12 @@ it('preflights and charges a bound built-in as platform spend despite organizati
     })
   );
   expect([...test.debits.values()]).toEqual([EXPECTED_COST]);
-  expect(test.attempt()?.model).toBe(BOUND_BUILTIN_ID);
 });
 
 it.each(['unverified operation', 'missing operation', 'missing price'])(
-  'rejects a bound built-in with %s before claiming, checking balance or invoking any provider',
+  'rejects a bound built-in with %s before checking balance or invoking any provider',
   async (invalid) => {
-    const test = harness(undefined, false, BOUND_BUILTIN_ID);
+    const test = harness(false, BOUND_BUILTIN_ID);
     const route = test.imageModelRouting[0];
     if (!route?.operations.generate) throw new Error('Missing mock binding.');
     if (invalid === 'unverified operation')
@@ -750,7 +542,6 @@ it.each(['unverified operation', 'missing operation', 'missing price'])(
     else if (invalid === 'missing operation') delete route.operations.generate;
     else route.priceCards = [];
     await expect(test.run()).rejects.toThrow(/unavailable|price/i);
-    expect(test.attempts.methods.claim).not.toHaveBeenCalled();
     expect(test.hasEnoughCredits).not.toHaveBeenCalled();
     expect(test.resolveImageChannelKey).not.toHaveBeenCalled();
     expect(supplierCall).not.toHaveBeenCalled();
@@ -760,7 +551,7 @@ it.each(['unverified operation', 'missing operation', 'missing price'])(
 );
 
 it('keeps a built-in task on its captured binding and price after live disable and rebinding', async () => {
-  const test = harness(undefined, false, BOUND_BUILTIN_ID);
+  const test = harness(true, BOUND_BUILTIN_ID);
   const model = test.configuration.models[0];
   const channel = test.configuration.channels[0];
   if (!model?.operations.generate || !channel)

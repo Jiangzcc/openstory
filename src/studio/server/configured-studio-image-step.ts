@@ -20,7 +20,6 @@ export async function runConfiguredStudioImageStep(args: {
     step,
     scopedDb,
     stepName: 'generate-image',
-    workflowRunId: event.instanceId,
     reservationId: event.payload.reservationId,
     maximumOutputs: IMAGE_PARAMETER_LIMITS.maximumImages,
     params: {

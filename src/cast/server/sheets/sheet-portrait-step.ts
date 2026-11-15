@@ -112,7 +112,6 @@ async function runConfiguredPortraitStep(
     const image = await runConfiguredSingleImageStep({
       step: args.step,
       stepName: 'draw-portrait',
-      workflowRunId: args.chargeKey,
       scopedDb: args.scopedDb,
       params: request.params,
       reservationId,

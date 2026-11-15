@@ -389,7 +389,6 @@ async function generateUpscaleImage(
     const result = await runConfiguredSingleImageStep({
       step,
       stepName: 'upscale-image',
-      workflowRunId,
       scopedDb,
       params: upscaleImageParams(input, model),
       reservationId: input.reservationId,

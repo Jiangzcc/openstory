@@ -37,7 +37,6 @@ import {
   createTextChannelsReadMethods,
   createTextChannelsAdminMethods,
 } from '@/models/server/db/text-channels';
-import { createImageGenerationAttemptsMethods } from '@/stills/server/db/image-generation-attempts';
 import {
   createImageChannelsReadMethods,
   createImageChannelsAdminMethods,
@@ -466,10 +465,6 @@ export function createScopedDb(organizationId: string, userId: string) {
     modelConfiguration: createModelConfigurationReadMethods(db),
     textChannels: createTextChannelsReadMethods(db),
     imageChannels: createImageChannelsReadMethods(db),
-    imageGenerationAttempts: createImageGenerationAttemptsMethods(
-      db,
-      organizationId
-    ),
 
     // BytePlus ACR slot ledger (#1361) — also platform-global: the asset
     // slots are per BytePlus ACCOUNT, shared by every organization, so there is

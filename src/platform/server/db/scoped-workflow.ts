@@ -127,8 +127,6 @@ type WorkflowCredentials = Pick<ScopedDb, 'organizationId' | 'userId'> &
  * bug this split exists to make unspellable.
  */
 type WorkflowClaims = {
-  /** This run's own image submission and stored result. */
-  imageGenerationAttempts: Pick<ScopedDb['imageGenerationAttempts'], 'getById'>;
   /** The visual-prompt version this run's frame-prompt child left live. */
   framePromptVersions: Pick<ScopedDb['framePromptVersions'], 'getByIdForFrame'>;
   /** The motion twin. */

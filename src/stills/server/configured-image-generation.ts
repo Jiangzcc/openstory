@@ -24,20 +24,14 @@ const IMAGE_SIZE_RATIOS = {
   landscape_16_9: '16:9',
 } as const;
 
-type ConfiguredImageGenerationOptions = ImageGenerationOptions & {
-  configuredAttemptId?: string;
-};
-
 export async function generateConfiguredImage(
   params: ImageGenerationParams,
-  options?: ConfiguredImageGenerationOptions
+  options?: ImageGenerationOptions
 ): Promise<ImageGenerationResult> {
   const routing = options?.credentials?.imageModelRouting;
   if (!usesConfiguredImageChannel(params.model, routing))
     throw new Error('Expected a configured image model.');
-  if (!options?.configuredAttemptId)
-    throw new Error('Configured images require a tracked generation step.');
-  const credentials = options.credentials;
+  const credentials = options?.credentials;
   const route = resolveImageModelRoute(
     credentials?.imageModelRouting,
     params.model

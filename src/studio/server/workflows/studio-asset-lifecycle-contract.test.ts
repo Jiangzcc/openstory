@@ -23,7 +23,6 @@ import {
 import { createTestDb } from '@/platform/server/db/test-d1';
 import { createProvenanceMethods } from '@/platform/server/db/scoped/compliance';
 import { createGeneratedAssetsMethods } from '@/models/server/db/generated-assets';
-import { createImageGenerationAttemptsMethods } from '@/stills/server/db/image-generation-attempts';
 import {
   createImageModelRoutingSnapshot,
   usesConfiguredImageChannel,
@@ -73,7 +72,7 @@ const doubles = {
   observe: vi.fn(),
 };
 
-// The parent, configured adapter, upload helper, attempts and provenance SQL stay real.
+// The parent, configured adapter, upload helper and provenance SQL stay real.
 vi.doMock('@/stills/server/compatible-image-client', () => ({
   generateCompatibleImages: doubles.supplier,
 }));
@@ -249,7 +248,6 @@ async function owner(configured: boolean, count = 1) {
     slug: organizationId,
   });
   const assets = createGeneratedAssetsMethods(db, organizationId, userId);
-  const attempts = createImageGenerationAttemptsMethods(db, organizationId);
   const configuration = imageConfigurationFixture();
   const model = configuration.models[0];
   if (!model) throw new Error('Missing mock model');
@@ -313,8 +311,6 @@ async function owner(configured: boolean, count = 1) {
         source: 'platform',
       })),
     },
-    imageGenerationAttempts: attempts,
-    claims: { imageGenerationAttempts: attempts },
     liveRead: {
       apiKeys: { hasUsableKey: vi.fn(async () => false) },
       billing: { hasEnoughCredits: vi.fn(async () => true) },

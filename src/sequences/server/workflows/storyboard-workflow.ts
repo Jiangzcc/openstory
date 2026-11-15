@@ -125,7 +125,6 @@ export class StoryboardWorkflow extends OpenStoryWorkflowEntrypoint<StoryboardWo
         ? await generateConfiguredPoster({
             step,
             scopedDb,
-            workflowRunId: event.instanceId,
             organizationId,
             sequenceId,
             aspectRatio,

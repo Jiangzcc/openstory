@@ -213,13 +213,6 @@ type SanctionedRead = {
  * entry may not read at all.
  */
 const ALLOWED_LIVE_READS: Record<string, SanctionedRead[]> = {
-  'configured-image-step.ts': [
-    {
-      read: 'imageGenerationAttempts.getById',
-      bucket: 'CLAIM-BY-ID',
-      why: 'Recovers only the submission named by this workflow instance and generation step.',
-    },
-  ],
   'motion-batch-workflow.ts': [
     {
       read: 'bytePlusAssets.getAdmission',

@@ -6,11 +6,6 @@ import type {
   ImageGenerationParams,
   ImageGenerationOptions,
 } from '@/stills/server/image-generation';
-import type {
-  ImageAttemptIdentity,
-  ImageGenerationAttempt,
-  StoredChannelGeneration,
-} from '@/stills/server/configured-image-attempt';
 import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
 import {
   createImageModelRoutingSnapshot,
@@ -30,7 +25,7 @@ const mocks = vi.hoisted(() => ({
   remove: vi.fn(),
   emit: vi.fn(),
 }));
-// Mock provider, native route, R2 and ledger writes; execute real configured adapter and tracked steps.
+// Mock provider, native route, R2 and ledger writes; execute real configured adapter and durable steps.
 vi.mock('@/stills/server/compatible-image-client', () => ({
   generateCompatibleImages: mocks.supplier,
 }));
@@ -127,30 +122,6 @@ function mockStep() {
     active: () => active,
   };
 }
-function mockAttempts() {
-  const rows = new Map<string, ImageGenerationAttempt>();
-  const getById = async (identity: ImageAttemptIdentity) =>
-    rows.get(identity.id);
-  const claim = vi.fn(async (identity: ImageAttemptIdentity) => {
-    const existing = rows.get(identity.id);
-    if (existing) return { claimed: false, attempt: existing };
-    const attempt: ImageGenerationAttempt = {
-      ...identity,
-      status: 'submitted',
-    };
-    rows.set(identity.id, attempt);
-    return { claimed: true, attempt };
-  });
-  const complete = vi.fn(
-    async (identity: ImageAttemptIdentity, result: StoredChannelGeneration) => {
-      rows.set(identity.id, { ...identity, status: 'stored', result });
-    }
-  );
-  const markUnknown = vi.fn(async (identity: ImageAttemptIdentity) => {
-    rows.set(identity.id, { ...identity, status: 'unknown' });
-  });
-  return { getById, claim, complete, markUnknown, rows };
-}
 function mockPortraitStorage(execution: ReturnType<typeof mockStep>) {
   mocks.supplier.mockImplementation(async () => {
     expect(execution.active()).toBe('draw-portrait');
@@ -191,7 +162,6 @@ function harness(bound = true) {
     ? createImageModelRoutingSnapshot(config)
     : [];
   const execution = mockStep();
-  const attempts = mockAttempts();
   const createReservation = vi.fn(async () => ({
     ok: true as const,
     reservationId: HOLD,
@@ -210,8 +180,6 @@ function harness(bound = true) {
       resolveImageChannelKey: async () => 'mock-platform-secret',
     },
     provenance: {},
-    imageGenerationAttempts: attempts,
-    claims: { imageGenerationAttempts: attempts },
     liveRead: { billing: { hasEnoughCredits: async () => true } },
     billing: { createReservation, zeroReservation },
     characterSheetVariants: { setPortrait: select },
@@ -221,7 +189,6 @@ function harness(bound = true) {
   return {
     ...execution,
     db,
-    attempts,
     createReservation,
     zeroReservation,
     select,
@@ -241,7 +208,7 @@ beforeEach(() => {
     path: 'mock-org/native.png',
   });
 });
-it('draws a bound portrait through a real attempt, stores/audits inside its generation step, then charges and selects', async () => {
+it('draws a bound portrait, stores/audits inside its generation step, then charges and selects', async () => {
   const run = harness();
   const result = await workflow().execute(run.step, run.db);
   expect(result.portraitUrl).toMatch(/^\/r2\/characters\//);
@@ -249,12 +216,6 @@ it('draws a bound portrait through a real attempt, stores/audits inside its gene
     idempotencyKey: EVENT.instanceId + ':portrait-hold',
     sequenceId: undefined,
   });
-  expect(run.attempts.claim).toHaveBeenCalledWith(
-    expect.objectContaining({
-      id: EVENT.instanceId + ':draw-portrait',
-      model: 'nano_banana_2_lite',
-    })
-  );
   expect(mocks.supplier).toHaveBeenCalledTimes(1);
   expect(mocks.native).not.toHaveBeenCalled();
   expect(mocks.upload).toHaveBeenCalledTimes(1);
@@ -289,11 +250,10 @@ it('retries only the existing idempotent charge after a ledger failure', async (
   await workflow().execute(run.step, run.db);
   expect(mocks.supplier).toHaveBeenCalledTimes(1);
   expect(mocks.upload).toHaveBeenCalledTimes(1);
-  expect(run.attempts.claim).toHaveBeenCalledTimes(1);
   expect(mocks.deduct).toHaveBeenCalledTimes(2);
   expect(run.zeroReservation).toHaveBeenCalledWith(HOLD);
 });
-it('returns no portrait and charges nothing after an unknown provider failure', async () => {
+it('returns no portrait and charges nothing after a provider failure', async () => {
   const run = harness();
   mocks.supplier.mockRejectedValueOnce(new Error('Mock connection lost'));
   const result = await workflow().execute(run.step, run.db);
@@ -301,7 +261,7 @@ it('returns no portrait and charges nothing after an unknown provider failure', 
   expect(mocks.deduct).not.toHaveBeenCalled();
   expect(mocks.upload).not.toHaveBeenCalled();
   expect(run.zeroReservation).toHaveBeenCalledWith(HOLD);
-  expect([...run.attempts.rows.values()][0]?.status).toBe('unknown');
+  expect(run.checkpoints.has('draw-portrait')).toBe(false);
 });
 it('deletes an unaudited bound image, releases its hold and does not charge', async () => {
   const run = harness();
@@ -321,7 +281,6 @@ it('keeps an unbound portrait on the original step, provider, storage and charge
   expect(mocks.nativeStore).toHaveBeenCalledTimes(1);
   expect(mocks.supplier).not.toHaveBeenCalled();
   expect(mocks.upload).not.toHaveBeenCalled();
-  expect(run.attempts.claim).not.toHaveBeenCalled();
   expect(run.checkpoints.has('reserve-portrait')).toBe(false);
   expect(mocks.deduct).toHaveBeenCalledTimes(1);
 });
@@ -346,24 +305,38 @@ it('does not submit when a replayed hold has already been released', async () =>
   });
   expect(result).toBeNull();
   expect(mocks.supplier).not.toHaveBeenCalled();
-  expect(run.attempts.claim).not.toHaveBeenCalled();
+  expect(run.checkpoints.has('draw-portrait')).toBe(false);
 });
 
-it('recovers a stored portrait attempt if the draw checkpoint is absent on a charge retry', async () => {
+it('replays completed portrait checkpoints without redrawing, charging or selecting again', async () => {
   const run = harness();
-  mocks.deduct.mockRejectedValueOnce(new Error('Mock ledger unavailable'));
-  await expect(workflow().execute(run.step, run.db)).rejects.toThrow(
-    'Mock ledger unavailable'
-  );
-  run.checkpoints.delete('draw-portrait');
-  run.checkpoints.delete('draw-portrait:record');
+  const first = await workflow().execute(run.step, run.db);
   const result = await workflow().execute(run.step, run.db);
-  expect(result.portraitUrl).toMatch(/^\/r2\/characters\//);
+  expect(result).toEqual(first);
   expect(mocks.supplier).toHaveBeenCalledTimes(1);
   expect(mocks.upload).toHaveBeenCalledTimes(1);
-  expect(run.attempts.claim).toHaveBeenCalledTimes(1);
-  expect(mocks.deduct).toHaveBeenCalledTimes(2);
+  expect(mocks.provenance).toHaveBeenCalledTimes(1);
+  expect(mocks.deduct).toHaveBeenCalledTimes(1);
+  expect(run.select).toHaveBeenCalledTimes(1);
 });
+it.each(['supplier', 'upload', 'provenance'] as const)(
+  'propagates an engine interruption during %s without releasing or charging the portrait',
+  async (stage) => {
+    const run = harness();
+    const interruption = new Error('Aborting engine: Grace period complete');
+    mocks[stage].mockRejectedValueOnce(interruption);
+
+    await expect(workflow().execute(run.step, run.db)).rejects.toBe(
+      interruption
+    );
+
+    expect(run.checkpoints.has('draw-portrait')).toBe(false);
+    expect(run.zeroReservation).not.toHaveBeenCalled();
+    expect(mocks.deduct).not.toHaveBeenCalled();
+    expect(mocks.remove).not.toHaveBeenCalled();
+    expect(run.select).not.toHaveBeenCalled();
+  }
+);
 it.each([
   ['jpeg', 'jpg'],
   ['webp', 'webp'],
@@ -407,7 +380,7 @@ it.each([
     );
   }
 );
-it('uses the same tracked and charged bridge for a location portrait', async () => {
+it('uses the same stored and charged bridge for a location portrait', async () => {
   const run = harness();
   const event: WorkflowEvent<SheetPortraitWorkflowInput> = {
     ...EVENT,
@@ -420,7 +393,7 @@ it('uses the same tracked and charged bridge for a location portrait', async () 
   };
   const result = await workflow().execute(run.step, run.db, event);
   expect(result.portraitUrl).toMatch(/^\/r2\/locations\//);
-  expect(run.attempts.claim).toHaveBeenCalledTimes(1);
+  expect(mocks.supplier).toHaveBeenCalledTimes(1);
   expect(mocks.provenance).toHaveBeenCalledWith(
     run.db.provenance,
     expect.objectContaining({
