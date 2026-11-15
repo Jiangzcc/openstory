@@ -126,11 +126,7 @@ describe('workflow execution model snapshots', () => {
     });
   });
 
-  it('retains legacy flat routes and code defaults without loading current channel settings', async () => {
-    const legacy = toWorkflowScopedDb(mockScope().scopedDb, ORIGINAL);
-    expect(
-      await legacy.credentials.resolveLlmKey(ORIGINAL_ROUTE.modelId)
-    ).toMatchObject({ key: 'mock-original-secret', route: ORIGINAL_ROUTE });
+  it('uses code defaults without loading current channel settings when routing is omitted', async () => {
     const absent = toWorkflowScopedDb(mockScope().scopedDb);
     expect(absent.models).toEqual(DEFAULT_MODEL_CONFIGURATION);
     expect(

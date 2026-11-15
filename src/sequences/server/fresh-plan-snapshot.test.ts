@@ -140,18 +140,18 @@ describe('fresh workflow planning keeps a complete frozen routing decision', () 
   it.each([
     { label: 'no model snapshot', modelConfiguration: undefined },
     {
-      label: 'legacy defaults and text-only snapshot',
-      modelConfiguration: {
+      label: 'defaults and empty text-only snapshot',
+      modelConfiguration: packModelRuntimeConfiguration({
         ...DEFAULT_MODEL_CONFIGURATION,
         textModelRouting: [],
-      },
+      }),
     },
     {
       label: 'explicit empty image routing',
-      modelConfiguration: {
+      modelConfiguration: packModelRuntimeConfiguration({
         ...DEFAULT_MODEL_CONFIGURATION,
         imageModelRouting: [],
-      },
+      }),
     },
   ])(
     'uses built-in pricing without loading current channels for $label',

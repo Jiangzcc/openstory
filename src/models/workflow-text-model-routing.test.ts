@@ -239,7 +239,7 @@ describe('workflow execution routing snapshot', () => {
     expect(toTextModelCatalog(replayed)[0]).not.toHaveProperty('userAgent');
   });
 
-  it('replays version-one snapshots created before User-Agent was configurable', () => {
+  it('round-trips current version-one snapshots without an optional User-Agent', () => {
     const route = mockRoute();
     const packed = packWorkflowTextModelRouting([route]);
     expect(packed.version).toBe(1);
@@ -249,12 +249,7 @@ describe('workflow execution routing snapshot', () => {
     ]);
   });
 
-  it('replays legacy flat arrays and absent snapshots without upgrading their routes', () => {
-    const legacy = {
-      ...DEFAULT_MODEL_CONFIGURATION,
-      textModelRouting: [mockRoute()],
-    };
-    expect(unpackModelRuntimeConfiguration(legacy)).toEqual(legacy);
+  it('preserves omitted text routing separately from an empty routing snapshot', () => {
     expect(
       unpackModelRuntimeConfiguration(DEFAULT_MODEL_CONFIGURATION)
     ).toEqual(DEFAULT_MODEL_CONFIGURATION);

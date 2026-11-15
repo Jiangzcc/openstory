@@ -4,7 +4,6 @@ import type {
 } from './image-channels';
 
 const WORKFLOW_IMAGE_ROUTING_VERSION = 2;
-const LEGACY_WORKFLOW_IMAGE_ROUTING_VERSION = 1;
 const INVALID_SNAPSHOT = 'Invalid workflow image model routing snapshot.';
 export const WORKFLOW_IMAGE_ROUTING_MAX_BYTES = 256 * 1024;
 export const WORKFLOW_IMAGE_ROUTING_SIZE_ERROR =
@@ -13,26 +12,24 @@ type WorkflowImageChannel = Pick<
   ImageModelRoute,
   'channelId' | 'protocol' | 'baseUrl' | 'credentialId'
 >;
-type WorkflowImageModel = Omit<
-  ImageModelRoute,
-  keyof WorkflowImageChannel | 'description'
-> & { channelIndex: number };
 type PackedImageModel = Omit<
-  WorkflowImageModel,
-  'parameters' | 'priceCards'
-> & { parameterSetIndex: number; priceCardSetIndex: number };
+  ImageModelRoute,
+  keyof WorkflowImageChannel | 'description' | 'parameters' | 'priceCards'
+> & {
+  channelIndex: number;
+  parameterSetIndex: number;
+  priceCardSetIndex: number;
+};
 type ParameterSet = ImageModelRoute['parameters'];
 type PriceCardSet = ImageModelRoute['priceCards'];
 export type WorkflowImageModelRoutingSnapshot = Readonly<{
   version: number;
   channels: readonly WorkflowImageChannel[];
-  models: readonly (WorkflowImageModel | PackedImageModel)[];
-  parameterSets?: readonly ParameterSet[];
-  priceCardSets?: readonly PriceCardSet[];
+  models: readonly PackedImageModel[];
+  parameterSets: readonly ParameterSet[];
+  priceCardSets: readonly PriceCardSet[];
 }>;
-export type WorkflowImageModelRouting =
-  | ImageModelRoutingSnapshot
-  | WorkflowImageModelRoutingSnapshot;
+export type WorkflowImageModelRouting = WorkflowImageModelRoutingSnapshot;
 type RoutingDictionaries = {
   channels: WorkflowImageChannel[];
   parameters: ParameterSet[];
@@ -140,17 +137,9 @@ function dictionaryValue<T>(rows: readonly T[] | undefined, index: number): T {
 }
 
 function restoreImageModel(
-  model: WorkflowImageModel | PackedImageModel,
+  model: PackedImageModel,
   routing: WorkflowImageModelRoutingSnapshot
 ) {
-  if ('parameters' in model) {
-    if (routing.version !== LEGACY_WORKFLOW_IMAGE_ROUTING_VERSION)
-      throw new Error(INVALID_SNAPSHOT);
-    const { channelIndex: _channelIndex, ...binding } = model;
-    return binding;
-  }
-  if (routing.version !== WORKFLOW_IMAGE_ROUTING_VERSION)
-    throw new Error(INVALID_SNAPSHOT);
   const {
     channelIndex: _channelIndex,
     parameterSetIndex,
@@ -167,11 +156,7 @@ function restoreImageModel(
 export function unpackWorkflowImageModelRouting(
   routing: WorkflowImageModelRouting
 ): ImageModelRoutingSnapshot {
-  if (isLegacyImageRouting(routing)) return routing;
-  if (
-    routing.version !== WORKFLOW_IMAGE_ROUTING_VERSION &&
-    routing.version !== LEGACY_WORKFLOW_IMAGE_ROUTING_VERSION
-  )
+  if (routing.version !== WORKFLOW_IMAGE_ROUTING_VERSION)
     throw new Error(INVALID_SNAPSHOT);
   return Object.freeze(
     routing.models.map((model) =>
@@ -183,10 +168,4 @@ export function unpackWorkflowImageModelRouting(
       )
     )
   );
-}
-
-function isLegacyImageRouting(
-  routing: WorkflowImageModelRouting
-): routing is ImageModelRoutingSnapshot {
-  return Array.isArray(routing);
 }

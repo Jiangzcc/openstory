@@ -22,9 +22,7 @@ export type WorkflowTextModelRoutingSnapshot = Readonly<{
   models: readonly WorkflowTextModel[];
 }>;
 
-export type WorkflowTextModelRouting =
-  | TextModelRoutingSnapshot
-  | WorkflowTextModelRoutingSnapshot;
+export type WorkflowTextModelRouting = WorkflowTextModelRoutingSnapshot;
 
 function channelIndexFor(
   route: TextModelRoute,
@@ -81,12 +79,6 @@ export function packWorkflowTextModelRouting(
   });
 }
 
-function isLegacyRouting(
-  routing: WorkflowTextModelRouting
-): routing is TextModelRoutingSnapshot {
-  return Array.isArray(routing);
-}
-
 function restoreModel(
   model: WorkflowTextModel,
   channels: readonly WorkflowTextChannel[]
@@ -102,7 +94,6 @@ function restoreModel(
 export function unpackWorkflowTextModelRouting(
   routing: WorkflowTextModelRouting
 ): TextModelRoutingSnapshot {
-  if (isLegacyRouting(routing)) return routing;
   if (routing.version !== WORKFLOW_ROUTING_VERSION) {
     throw new Error(INVALID_SNAPSHOT);
   }

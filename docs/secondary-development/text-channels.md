@@ -4,7 +4,7 @@
 
 ## 当前保存规则（2026-11-15）
 
-按单管理员、配置操作不并发的已确认前提，渠道管理现已撤销配置 revision、草稿过期协调和数据库 CAS，使用普通保存。权限校验、凭证加密、配置与新凭证同批写入、不可变凭证引用、主库读取和任务路由快照保留；图片价格卡、冻结报价及既有计费规则继续保留。下文旧批次中的配置 revision/CAS 与冲突测试属于历史证据，不再代表当前保存协议。
+按单管理员、配置操作不并发的已确认前提，渠道管理现已撤销配置 revision、草稿过期协调和数据库 CAS，使用普通保存。权限校验、凭证加密、配置与新凭证同批写入、不可变凭证引用、主库读取和任务路由快照保留；图片价格卡、冻结报价及既有计费规则继续保留。下文旧批次中的配置 revision/CAS 与冲突测试属于历史证据，不再代表当前保存协议；旧平铺数组路由已于 2026-11-15 退役，现行文本 v1 字典格式继续保留。
 
 ## 原有行为、动机与来源
 
@@ -69,9 +69,9 @@ Base URL 使用 HTTPS；仅本地 loopback 地址允许 HTTP，不接受 URL 内
 
 `ModelRuntimeConfiguration` 在默认/辅助模型配置之上增加 `textModelRouting`。`loadModelRuntimeConfiguration` 先取得路由及对应模型目录，再解析默认配置；`triggerWorkflow` 将服务器决定的快照写入 `modelConfiguration`，覆盖请求 body 中的同名值。服务器显式携带的已有快照、父子任务及失败处理继续继承原配置。
 
-快照包含逻辑模型/渠道 ID、准确上游 ID、协议、Base URL、能力、token 限制、USD 成本单价及不可变 credential ID，**不包含明文 Key 或加密凭证内容**。`WorkflowScopedDb.models` 保存该快照，`credentials.resolveLlmKey` 按快照中的凭证 ID 读取和解密密钥，不在执行中重读当前渠道/绑定来改变路线。
+工作流中的文本路由仅支持现行 v1 字典格式：按完整渠道身份去重，模型通过索引引用渠道；早期平铺路由数组已退役。快照包含逻辑模型/渠道 ID、准确上游 ID、协议、Base URL、能力、token 限制、USD 成本单价及不可变 credential ID，**不包含明文 Key 或加密凭证内容**。`WorkflowScopedDb.models` 保存该快照，`credentials.resolveLlmKey` 按快照中的凭证 ID 读取和解密密钥，不在执行中重读当前渠道/绑定来改变路线。
 
-因此任务启动后修改地址、协议、上游模型、成本单价、启用状态或轮换 Key，不会重定向已有任务。旧 payload 没有快照时使用代码默认和空路由列表，不在重放时读取最新渠道配置。详细契约见 [工作流快照](../architecture/workflow-snapshots-and-content-hash-staleness.md)。
+因此任务启动后修改地址、协议、上游模型、成本单价、启用状态或轮换 Key，不会重定向已有任务。payload 未提供模型配置时仍使用代码默认和空路由列表，不在重放时读取最新渠道配置。详细契约见 [工作流快照](../architecture/workflow-snapshots-and-content-hash-staleness.md)。
 
 ## 供应商 USD 成本边界
 
@@ -111,7 +111,7 @@ Base URL 使用 HTTPS；仅本地 loopback 地址允许 HTTP，不接受 URL 内
 | `analyzeTalentMediaForTeam` / `analyzeTalentClipForTeam` | `analyzeTalentMediaForOrganization` / `analyzeTalentClipForOrganization`           | `src/cast/server/talent/analyze-talent-media.ts`                                 |
 | `watchClipForTeam`                                       | `watchClipForOrganization`                                                         | `src/models/server/watch-clip.ts`                                                |
 
-401 归因继续使用实际失败来源；`src/platform/server/workflow/llm-auth-failure-source.ts` 只在解析历史 durable 错误时将旧 `team` 标记规范化为 `organization`。模型配置缺省及旧快照解码不等于接受缺失 `organizationId` 的旧任务身份。平台渠道管理继续经过 `systemAdminMiddleware`，组织 owner/admin 身份本身不授予平台配置权限。
+401 归因继续使用实际失败来源；`src/platform/server/workflow/llm-auth-failure-source.ts` 只在解析历史 durable 错误时将旧 `team` 标记规范化为 `organization`。模型配置缺省及快照解码不等于接受缺失 `organizationId` 的旧任务身份。平台渠道管理继续经过 `systemAdminMiddleware`，组织 owner/admin 身份本身不授予平台配置权限。
 
 本轮保留上游组织邀请、切换、共享及现有组织凭证优先规则；销售结算和全面禁止 BYOK 仍未实施。2026-11-06 已取消个人独立人民币余额及新增卡密商业改造，复用现有组织钱包与兑换卡，其他商业规划以 [最新规则确认单](confirmation.md) 为准。以下助手修正、凭证优先级、Responses 和预览预算章节保留合入前的术语、测试数字、日志与运行限制，仅作历史证据；本节不新增本轮测试通过声明。
 

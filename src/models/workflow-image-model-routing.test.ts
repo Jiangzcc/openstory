@@ -50,13 +50,17 @@ describe('workflow image routing snapshots', () => {
     ).toThrow('Invalid workflow image');
   });
 
-  it('retains legacy payload behavior without image routing', () => {
+  it('preserves omitted image routing separately from an empty routing snapshot', () => {
     expect(
       unpackModelRuntimeConfiguration(DEFAULT_MODEL_CONFIGURATION)
     ).toEqual(DEFAULT_MODEL_CONFIGURATION);
     expect(
       packModelRuntimeConfiguration(DEFAULT_MODEL_CONFIGURATION)
     ).not.toHaveProperty('imageModelRouting');
+    const empty = { ...DEFAULT_MODEL_CONFIGURATION, imageModelRouting: [] };
+    expect(
+      unpackModelRuntimeConfiguration(packModelRuntimeConfiguration(empty))
+    ).toEqual(empty);
   });
 });
 
@@ -78,28 +82,6 @@ it('roundtrips built-in and custom bindings in version 2 without duplicating cha
     'gpt_image_2',
   ]);
   expect(unpackWorkflowImageModelRouting(packed)).toEqual(routing);
-});
-
-it('reads stored custom-only version 1 and pre-codec array payloads', () => {
-  const routing = createImageModelRoutingSnapshot(imageConfigurationFixture());
-  const route = routing[0];
-  if (!route) throw new Error('Missing mock route.');
-  const {
-    channelId,
-    protocol,
-    baseUrl,
-    credentialId,
-    description: _description,
-    ...model
-  } = route;
-  expect(
-    unpackWorkflowImageModelRouting({
-      version: 1,
-      channels: [{ channelId, protocol, baseUrl, credentialId }],
-      models: [{ ...model, channelIndex: 0 }],
-    })
-  ).toEqual(routing);
-  expect(unpackWorkflowImageModelRouting(routing)).toEqual(routing);
 });
 
 it('keeps captured built-in capabilities and bindings separate from later configuration edits', () => {

@@ -20,7 +20,6 @@ import {
 } from './model-runtime-configuration';
 import type { TextModelRoute } from './text-channels';
 import { TEXT_CHANNEL_PROTOCOLS } from './text-channels';
-import type { WorkflowImageModelRoutingSnapshot } from './workflow-image-model-routing';
 import {
   packWorkflowImageModelRouting,
   WORKFLOW_IMAGE_ROUTING_MAX_BYTES,
@@ -34,7 +33,6 @@ import {
 } from './workflow-text-model-routing';
 
 const IMAGE_WIRE_BUDGET = 256 * 1024;
-const LEGACY_IMAGE_VERSION = 1;
 const PACKED_IMAGE_VERSION = 2;
 const UTF8_PADDING_CHARACTER = '模';
 const UTF8_PADDING_BYTES = new TextEncoder().encode(
@@ -214,44 +212,6 @@ describe('workflow routing JSON wire contract', () => {
     );
   });
 
-  it('decodes stored image v1 JSON alongside pre-codec text arrays', () => {
-    const image = mockImageRoute();
-    const { channelId, protocol, baseUrl, credentialId, ...binding } = image;
-    const legacy: WorkflowImageModelRoutingSnapshot = {
-      version: LEGACY_IMAGE_VERSION,
-      channels: [{ channelId, protocol, baseUrl, credentialId }],
-      models: [{ ...binding, channelIndex: 0 }],
-    };
-    const text = mockTextRoute();
-    expect(
-      decodeJsonConfiguration({
-        ...DEFAULT_MODEL_CONFIGURATION,
-        textModelRouting: [text],
-        imageModelRouting: legacy,
-      })
-    ).toStrictEqual({
-      ...DEFAULT_MODEL_CONFIGURATION,
-      textModelRouting: [text],
-      imageModelRouting: [image],
-    });
-  });
-
-  it('decodes pre-codec image arrays alongside compact text JSON', () => {
-    const text = mockTextRoute();
-    const image = mockImageRoute();
-    expect(
-      decodeJsonConfiguration({
-        ...DEFAULT_MODEL_CONFIGURATION,
-        textModelRouting: packWorkflowTextModelRouting([text]),
-        imageModelRouting: [image],
-      })
-    ).toStrictEqual({
-      ...DEFAULT_MODEL_CONFIGURATION,
-      textModelRouting: [textExecutionFields(text)],
-      imageModelRouting: [image],
-    });
-  });
-
   it.each([
     {
       name: 'both undefined',
@@ -282,9 +242,7 @@ describe('workflow routing JSON wire contract', () => {
         expect(Object.hasOwn(packed, key)).toBe(Object.hasOwn(expected, key));
       }
       const replayed = { ...DEFAULT_MODEL_CONFIGURATION, ...expected };
-      expect(unpackModelRuntimeConfiguration(configuration)).toStrictEqual(
-        replayed
-      );
+      expect(unpackModelRuntimeConfiguration(packed)).toStrictEqual(replayed);
       expect(decodeJsonConfiguration(packed)).toStrictEqual(replayed);
     }
   );

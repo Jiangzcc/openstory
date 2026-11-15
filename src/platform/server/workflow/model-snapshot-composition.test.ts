@@ -19,6 +19,7 @@ import { loadModelRuntimeConfiguration } from '@/platform/server/db/scoped';
 import type { WorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
 import { DEFAULT_MODEL_CONFIGURATION } from '@/models/model-configuration';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
+import { packModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import type { SaveChannelImageModelInput } from '@/models/image-channels';
 import {
   createModelConfigurationAdminMethods,
@@ -374,7 +375,9 @@ describe('real D1 capture through root dispatch, JSON wire and workflow base', (
       'openai-responses'
     );
     queries.length = 0;
-    const result = await trigger(prepared, { modelConfiguration: replacement });
+    const result = await trigger(prepared, {
+      modelConfiguration: packModelRuntimeConfiguration(replacement),
+    });
     expectNoLiveConfigurationRead();
     const output = await makeRunner().run(queuedFor(result.workflowRunId));
     expect(output).toMatchObject({
@@ -534,7 +537,7 @@ describe('real D1 capture through root dispatch, JSON wire and workflow base', (
     };
     queries.length = 0;
     const { workflowRunId } = await trigger(empty, {
-      modelConfiguration: original,
+      modelConfiguration: packModelRuntimeConfiguration(original),
     });
     const output = await makeRunner(async (db) => db.models).run(
       queuedFor(workflowRunId)
