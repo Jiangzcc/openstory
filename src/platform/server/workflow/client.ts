@@ -63,17 +63,6 @@ const WRITE_ONLY_TRIGGERS = new Set(['sequence-export']);
  */
 const RUNS_UNDER_E2E = new Set(['upload-check']);
 
-export function isMockWorkflowTrigger(
-  urlPath: string,
-  env: { E2E_TEST?: string; E2E_FULL_PIPELINE?: string }
-): boolean {
-  return (
-    env.E2E_TEST === 'true' &&
-    env.E2E_FULL_PIPELINE !== 'true' &&
-    !RUNS_UNDER_E2E.has(urlPath.replace(/^\//, ''))
-  );
-}
-
 /**
  * Refuse to start durable work for a restricted account.
  *
@@ -89,7 +78,7 @@ export function isMockWorkflowTrigger(
  * parent with children partly spawned — correct for a ban. Child spawns via
  * `spawnAndAwaitChild` use `binding.create()` directly and are not gated here.
  */
-export async function assertTriggerAllowed(
+async function assertTriggerAllowed(
   urlPath: string,
   body: { userId: string; organizationId: string },
   enforcementRows?: readonly EnforcementRow[]
@@ -105,14 +94,6 @@ export async function assertTriggerAllowed(
   }
   assertCanGenerate(state);
 }
-
-export type TriggerWorkflowOptions = {
-  deduplicationId?: string;
-  /** Trusted server snapshot; never forward this option from client input. */
-  modelConfiguration?: ModelRuntimeConfiguration;
-  /** Mid-run callers provide live enforcement rows; requests load them. */
-  enforcement?: readonly EnforcementRow[];
-};
 
 /**
  * Trigger a durable workflow.
@@ -152,7 +133,16 @@ export async function triggerWorkflowRun<
 >(
   urlPath: string,
   body: T,
-  options?: TriggerWorkflowOptions
+  options?: {
+    deduplicationId?: string;
+    /** Trusted server snapshot; never forward this option from client input. */
+    modelConfiguration?: ModelRuntimeConfiguration;
+    /**
+     * Mid-run: rows from `scopedDb.liveRead.compliance.listEnforcementFor`.
+     * Request-path callers omit this and the gate loads the rows itself.
+     */
+    enforcement?: readonly EnforcementRow[];
+  }
 ): Promise<{ workflowRunId: string; reused: boolean }> {
   logger.info('[TriggerWorkflow]', {
     url: urlPath,
@@ -166,7 +156,11 @@ export async function triggerWorkflowRun<
   await assertTriggerAllowed(urlPath, body, options?.enforcement);
 
   const env = getEnv();
-  if (isMockWorkflowTrigger(urlPath, env)) {
+  if (
+    env.E2E_TEST === 'true' &&
+    env.E2E_FULL_PIPELINE !== 'true' &&
+    !RUNS_UNDER_E2E.has(urlPath.replace(/^\//, ''))
+  ) {
     const mockId = options?.deduplicationId ?? `mock-${Date.now()}`;
     logger.info(`Skipping workflow trigger: ${urlPath} (mock ID: ${mockId})`);
     return { workflowRunId: mockId, reused: false };

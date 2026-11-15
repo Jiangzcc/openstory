@@ -18,7 +18,6 @@
  */
 
 import { getDb } from '#db-client';
-import type { Database } from '@/platform/server/db/client';
 import {
   framePromptVersions,
   frameVariants,
@@ -55,22 +54,8 @@ const MAX_ROWS_PER_PASS = 100;
  */
 const LOOK_SHEET_DEAD_MS = 60 * 60 * 1000;
 
+type Database = ReturnType<typeof getDb>;
 type ReconcileCounts = Record<string, number>;
-
-export type SequenceReconcileRow = {
-  id: string;
-  organizationId: string;
-  runId: string | null;
-};
-type SequenceStateResolver = (
-  db: Database,
-  row: SequenceReconcileRow
-) => ReturnType<typeof resolveRunState>;
-type SequenceDispatch = (db: Database) => Promise<number>;
-type ReconcileAllOptions = {
-  resolveSequenceState?: SequenceStateResolver;
-  dispatchSequences?: SequenceDispatch;
-};
 
 /** Sentinel returned per pass in `ReconcileCounts` when the pass threw. */
 export const PASS_ERRORED = -1;
@@ -86,15 +71,9 @@ export const PASS_ERRORED = -1;
  * (e.g. a binding outage making every per-row check throw) would look
  * identical to a clean sweep with nothing to do.
  */
-export async function reconcileAllStuckJobs(
-  options: ReconcileAllOptions = {}
-): Promise<ReconcileCounts> {
+export async function reconcileAllStuckJobs(): Promise<ReconcileCounts> {
   const db = getDb();
   const counts: ReconcileCounts = {};
-  const dispatchSequences = options.dispatchSequences;
-  const dispatchPass: Array<[string, () => Promise<number>]> = dispatchSequences
-    ? [['sequences.dispatch', () => dispatchSequences(db)]]
-    : [];
 
   const passes: Array<[string, () => Promise<number>]> = [
     // Image lives on frame_variants now (#989); a frame's status is its
@@ -129,11 +108,7 @@ export async function reconcileAllStuckJobs(
       'shot_variants.shot_variant',
       () => reconcileShotVariantsPass(db, 'shotVariant'),
     ],
-    ...dispatchPass,
-    [
-      'sequences.status',
-      () => reconcileSequencesPass(db, options.resolveSequenceState),
-    ],
+    ['sequences.status', () => reconcileSequencesPass(db)],
     ['sequence_music_variants.claims', () => reconcileMusicClaimsPass(db)],
     ['sequence_elements.vision', () => blindFailSequenceElementsPass(db)],
     // Direct model runs (#458) — verified pass plus an orphan pass for rows
@@ -788,18 +763,11 @@ const setSequenceStatus = (next: 'failed' | 'completed') =>
       }
     : { status: 'completed' as const };
 
-async function reconcileSequencesPass(
-  db: Database,
-  resolveSequenceState?: SequenceStateResolver
-): Promise<number> {
+async function reconcileSequencesPass(db: Database): Promise<number> {
   const staleCutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
 
   const stuck = await db
-    .select({
-      id: sequences.id,
-      organizationId: sequences.organizationId,
-      runId: sequences.workflowRunId,
-    })
+    .select({ id: sequences.id, runId: sequences.workflowRunId })
     .from(sequences)
     .where(
       and(
@@ -812,21 +780,12 @@ async function reconcileSequencesPass(
 
   let updated = 0;
   for (const row of stuck) {
-    const next = resolveSequenceState
-      ? await resolveSequenceState(db, row)
-      : await resolveRunState(row.runId ?? '');
+    const next = await resolveRunState(row.runId ?? '');
     if (next === null || next === 'unknown') continue;
     await db
       .update(sequences)
       .set(setSequenceStatus(next))
-      .where(
-        and(
-          eq(sequences.id, row.id),
-          eq(sequences.organizationId, row.organizationId),
-          eq(sequences.workflowRunId, row.runId ?? ''),
-          eq(sequences.status, 'processing')
-        )
-      );
+      .where(and(eq(sequences.id, row.id), eq(sequences.status, 'processing')));
     updated++;
   }
   return updated;

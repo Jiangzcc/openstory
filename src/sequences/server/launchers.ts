@@ -1,8 +1,43 @@
-import { WorkflowLaunchPendingError } from '@/platform/server/workflow/launch-pending';
-import type { PreparedWorkflowRun } from '@/platform/server/workflow/prepared-trigger';
+/**
+ * Centralised top-level workflow launchers.
+ *
+ * Every non-child workflow start belongs here as a named launcher function
+ * that owns the trigger AND its side effects — deduplication id, persisting
+ * the run id, status writes, and cross-cutting policy like the generation
+ * mutex. Feature code calls `triggerStoryboard(...)`, never a bare
+ * `triggerWorkflow('/storyboard', ...)`: duplicated side-effect logic at
+ * call sites is how the four storyboard triggers drifted apart before #839.
+ *
+ * Today only the storyboard launcher lives here; the remaining ~30
+ * `triggerWorkflow` call sites migrate incrementally, after which imports of
+ * `@/platform/server/workflow/client` get lint-restricted to this file.
+ *
+ * ## The storyboard generation mutex (#839)
+ *
+ * CF Workflows has no "singleton instance" mode — instance ids are unique
+ * FOREVER (a completed instance blocks its id for the 30-day retention
+ * window), so a stable `storyboard-<sequenceId>` id would block legitimate
+ * retries, not just concurrent ones. Instead `sequences.workflow_run_id`
+ * doubles as a lock:
+ *
+ *   1. Read the column; if it points at a live instance, reject.
+ *   2. Claim it with a compare-and-swap (`scopedDb.sequences
+ *      .claimWorkflowSlot`) — exactly one of two racing requests wins, even
+ *      when both passed step 1.
+ *   3. Trigger with the claim id as `deduplicationId`, then overwrite the
+ *      column with the real instance id. If the trigger crashes in between,
+ *      the stranded claim resolves as 'failed' on the next acquire (it
+ *      matches no workflow binding), so the slot recovers — never wedges.
+ *
+ * Termination-order caveat: a terminal storyboard does NOT imply its
+ * descendants are dead (children outlive a timed-out parent — see #839).
+ * This mutex guards the storyboard ROOT only; cooperative descendant
+ * cancellation (rootRunId staleness check + user-facing cancel) is tracked
+ * separately.
+ */
+
 import type { Locale } from '@/platform/i18n/locale';
 import { toImageModelCatalog } from '@/models/image-channels';
-// Storyboard roots reserve one final instance ID and its frozen request atomically.
 
 import { resolveLlmSources } from '@/billing/server/preflight';
 import { characterToBible } from '@/cast/server/bibles-from-scoped';
@@ -25,23 +60,24 @@ import type { Sequence } from '@/platform/server/db/schema';
 import { resolveSequenceStyleConfig } from '@/look/style-config';
 import { sequenceScenesUrl } from './notify-sequence-ready';
 import { flagsFromStopAt, resolveStopAt } from '@/sequences/pipeline';
+import type { GenerationStage } from '@/sequences/pipeline';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
-import {
-  prepareWorkflowRun,
-  triggerPreparedWorkflow,
-} from '@/platform/server/workflow/prepared-trigger';
-import { resolveStoryboardRunState } from './storyboard-run-state';
+import { triggerWorkflow } from '@/platform/server/workflow/client';
+import { resolveRunState } from '@/platform/server/workflow/reconcile';
+import { recordTriggerFailure } from '@/sequences/server/db/sequence-events';
 import type {
   StoryboardTriggerInput,
   StoryboardWorkflowInput,
 } from '@/platform/server/workflow/types';
 
-import type { ContinueSettings } from '@/sequences/continue-settings';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import {
   textModelCatalogFromRouting,
   getTextModelDefinition,
 } from '@/models/text-model-catalog';
+import { getLogger } from '@/platform/logger';
+
+const logger = getLogger(['openstory', 'launchers']);
 
 export async function loadStoryboardModelConfiguration(
   scopedDb: ScopedDb
@@ -132,10 +168,7 @@ export async function getSequenceRejectingActiveRun(
 ) {
   const sequence = await scopedDb.sequences.getForUser({ sequenceId });
   if (!sequence.workflowRunId) return sequence; // legacy row or never generated
-  const state = await resolveStoryboardRunState(scopedDb, {
-    id: sequence.id,
-    workflowRunId: sequence.workflowRunId,
-  });
+  const state = await resolveRunState(sequence.workflowRunId);
   if (state === null) throw new GenerationInProgressError();
   if (state === 'unknown') throw new GenerationStatusUnknownError();
   return sequence;
@@ -299,8 +332,7 @@ async function resolveStoryboardPayload(
 export async function triggerStoryboard(
   scopedDb: ScopedDb,
   input: StoryboardTriggerInput,
-  modelConfiguration?: ModelRuntimeConfiguration,
-  continueSettings?: ContinueSettings
+  modelConfiguration?: ModelRuntimeConfiguration
 ): Promise<{ workflowRunId: string }> {
   const { sequenceId } = input;
   if (!sequenceId) {
@@ -309,10 +341,7 @@ export async function triggerStoryboard(
 
   // Mutex step 1: reject while the previous run is still in flight (or its
   // state can't be verified).
-  const current = await getSequenceRejectingActiveRun(scopedDb, sequenceId);
-  const sequence = continueSettings
-    ? { ...current, ...continueSettings }
-    : current;
+  const sequence = await getSequenceRejectingActiveRun(scopedDb, sequenceId);
 
   const configuration =
     modelConfiguration ?? (await loadStoryboardModelConfiguration(scopedDb));
@@ -328,82 +357,49 @@ export async function triggerStoryboard(
     analysisModelId
   );
 
-  return reserveStoryboardLaunch(
-    scopedDb,
-    sequence,
-    payload,
-    configuration,
-    continueSettings
-  );
-}
-
-async function reserveStoryboardLaunch(
-  scopedDb: ScopedDb,
-  sequence: Sequence,
-  payload: StoryboardWorkflowInput,
-  configuration: ModelRuntimeConfiguration,
-  settings?: ContinueSettings
-) {
-  const prepared = await prepareWorkflowRun('/storyboard', payload, {
-    deduplicationId: generateId(),
-    modelConfiguration: configuration,
-  });
-  const workflowRunId = prepared.workflowRunId;
-  const launch = {
-    ...prepared,
-    body: { ...prepared.body, workflowClaimId: workflowRunId },
-  };
-  const claimed = await claimStoryboardLaunch(scopedDb, {
-    id: sequence.id,
+  // Mutex step 2: CAS-claim the slot so two racing requests can't both pass.
+  const claimId = `storyboard-${sequenceId}-${generateId()}`;
+  const claimed = await scopedDb.sequences.claimWorkflowSlot({
+    id: sequenceId,
     expectedRunId: sequence.workflowRunId,
-    claimId: workflowRunId,
-    launch,
-    settings,
+    claimId,
     activity: {
-      summary: payload.resume
-        ? 'Continued generation'
-        : 'Started the storyboard',
+      summary: input.resume ? 'Continued generation' : 'Started the storyboard',
     },
   });
   if (!claimed) throw new GenerationInProgressError();
-  return submitStoryboardLaunch(scopedDb, sequence.id, launch);
-}
 
-async function claimStoryboardLaunch(
-  scopedDb: ScopedDb,
-  params: Parameters<ScopedDb['sequences']['claimWorkflowSlot']>[0]
-) {
-  try {
-    return await scopedDb.sequences.claimWorkflowSlot(params);
-  } catch (cause) {
-    throw new WorkflowLaunchPendingError({
-      workflowRunId: params.launch.workflowRunId,
-      reservationId: params.launch.body.reservationId,
-      cause,
-    });
-  }
-}
+  await scopedDb.sequence(sequenceId).updateStatus('processing');
 
-async function submitStoryboardLaunch(
-  scopedDb: ScopedDb,
-  sequenceId: string,
-  launch: PreparedWorkflowRun<StoryboardWorkflowInput>
-) {
-  const { workflowRunId } = launch;
+  let workflowRunId: string;
   try {
-    await triggerPreparedWorkflow(launch);
-    await scopedDb.sequences.publishWorkflowInstance({
-      id: sequenceId,
-      claimId: workflowRunId,
-      workflowRunId,
+    workflowRunId = await triggerWorkflow(
+      '/storyboard',
+      { ...payload, workflowClaimId: claimId },
+      { deduplicationId: claimId, modelConfiguration: configuration }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    try {
+      await scopedDb.sequence(sequenceId).updateStatus('failed', message);
+    } catch (statusError) {
+      logger.error('Storyboard trigger status was not marked failed', {
+        err: statusError,
+        sequenceId,
+      });
+    }
+    await recordTriggerFailure(scopedDb.sequenceEvents, {
+      sequenceId,
+      actorId: input.userId,
+      kind: 'run.failed',
+      targetType: 'sequence',
+      targetId: sequenceId,
+      summary: 'Storyboard failed',
     });
-  } catch (cause) {
-    throw new WorkflowLaunchPendingError({
-      workflowRunId,
-      reservationId: launch.body.reservationId,
-      cause,
-    });
+    throw error;
   }
+  await scopedDb.sequences.update({ id: sequenceId, workflowRunId });
+
   return { workflowRunId };
 }
 
@@ -421,14 +417,12 @@ export function triggerContinue(
     organizationId: string;
     sequence: Pick<Sequence, 'id' | 'imageModel' | 'videoModel' | 'musicModel'>;
     plan: UpdateStalePlan;
-    settings: ContinueSettings;
+    stopAt: GenerationStage;
     leftoverGrokShotIds?: string[];
     modelConfiguration?: ModelRuntimeConfiguration;
   }
 ): Promise<{ workflowRunId: string }> {
-  const { sequence } = input;
-  const settings = { ...input.settings };
-  const stopAt = settings.generationStopAt;
+  const { sequence, stopAt } = input;
   const { autoGenerateMotion, autoGenerateMusic } = flagsFromStopAt(stopAt);
   return triggerStoryboard(
     scopedDb,
@@ -453,7 +447,6 @@ export function triggerContinue(
         : undefined,
       leftoverGrokShotIds: input.leftoverGrokShotIds,
     },
-    input.modelConfiguration,
-    settings
+    input.modelConfiguration
   );
 }

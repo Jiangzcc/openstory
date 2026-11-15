@@ -53,7 +53,6 @@ import {
   videoVariants,
 } from '@/platform/server/db/schema';
 import { getDb } from '#db-client';
-import { deleteStoryboardLaunchesForSequences } from '@/sequences/server/db/storyboard-launch-reconcile';
 import { deleteCharactersStatements } from '@/cast/server/db/characters';
 import { deleteLocationsStatements } from '@/cast/server/db/locations';
 import { getSequenceByIdUnscoped } from '@/platform/server/db/scoped';
@@ -271,7 +270,6 @@ async function deleteSequenceVersionRows(where: SQL) {
     )}))`
   );
   await db.batch([
-    deleteStoryboardLaunchesForSequences(db, where),
     // `shots.scene_id` has no ON DELETE, so scenes cannot cascade while shots point at them (#2333).
     db.delete(shots).where(inArray(shots.sequenceId, ids)),
     db

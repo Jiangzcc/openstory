@@ -17,7 +17,6 @@ import { unpackModelRuntimeConfiguration } from '@/models/model-runtime-configur
 import { createTestDb } from '@/platform/server/db/test-d1';
 import { appMetadata } from '@/platform/server/db/schema';
 import { TEST_FAL_PRICING } from '@/billing/fal-pricing-fixture';
-import { WorkflowLaunchPendingError } from '@/platform/server/workflow/launch-pending';
 import { quoteConfiguredImageRequest } from '@/billing/configured-image-billing';
 import type {
   CaptureContext,
@@ -523,26 +522,29 @@ it('keeps script-only creation free with no credential resolution or reservation
   expect(dispatched().params.reservationId).toBeUndefined();
 });
 
-it('retains the funded launch when the final binding response is unconfirmed', async () => {
+it('releases the captured hold and preserves the original binding failure', async () => {
   const context = await createCaptureContext(db);
   const prepared = await prepareSequenceCreation(captureInput(context));
   await saveCaptureConfiguration(db, 'B');
-  workflowCreate.mockRejectedValueOnce(new Error('Synthetic binding refusal'));
-  const pending = createSequences(prepared.input, {
-    ...context,
-    modelConfiguration: prepared.modelConfiguration,
-  });
-  await expect(pending).rejects.toBeInstanceOf(WorkflowLaunchPendingError);
-  await expect(pending).rejects.toMatchObject({
-    cause: expect.objectContaining({ message: 'Synthetic binding refusal' }),
-  });
+  const failure = new Error('Synthetic binding refusal');
+  workflowCreate.mockRejectedValueOnce(failure);
+  await expect(
+    createSequences(prepared.input, {
+      ...context,
+      modelConfiguration: prepared.modelConfiguration,
+    })
+  ).rejects.toBe(failure);
   const state = await captureState(db, context);
-  expect(state.rows).toMatchObject([{ status: 'processing' }]);
+  expect(state.rows).toMatchObject([
+    { status: 'failed', statusError: failure.message },
+  ]);
   expect(state.holds).toMatchObject([
-    { originalAmount: holdAmount('A'), remainingAmount: holdAmount('A') },
+    { originalAmount: holdAmount('A'), remainingAmount: 0 },
   ]);
   expect(dispatched().params.reservationId).toBe(state.holds[0]?.id);
-  expect(dispatched().id).toBe(state.rows[0]?.workflowRunId);
+  expect(dispatched().params.workflowClaimId).toBe(
+    state.rows[0]?.workflowRunId
+  );
   expect(dispatched().models).toEqual(prepared.modelConfiguration);
   expect(state.funds[0]?.balance).toBe(CAPTURE.startingBalance);
   expect(state.ledger).toEqual([]);

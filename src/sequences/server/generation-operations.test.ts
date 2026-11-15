@@ -92,8 +92,11 @@ vi.doMock('@/billing/cost-estimation', () => ({
 let mockContinueEstimate: Awaited<
   ReturnType<typeof prepareContinue>
 >['estimate'] = { micros: micros(1_000_000), priced: true };
+const { withContinueSwitches } =
+  await vi.importActual<typeof import('./continue-plan')>('./continue-plan');
 vi.doMock('./continue-plan', () => ({
   CONTINUE_CREDIT_PROVIDERS: ['fal', 'openrouter'],
+  withContinueSwitches,
   prepareContinue: vi.fn(
     async (args: Parameters<typeof prepareContinue>[0]) => {
       await getSequenceRejectingActiveRun(undefined, args.sequence.id);
@@ -472,7 +475,7 @@ describe('execute_generation', () => {
     expect(triggerContinue).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        settings: expect.objectContaining({ generationStopAt: 'images' }),
+        stopAt: 'images',
       })
     );
     expect(requireCredits).toHaveBeenCalledTimes(2);
@@ -492,7 +495,7 @@ describe('execute_generation', () => {
   });
 
   it.each([true, false])(
-    'passes Continue settings to the launcher without saving early (start frames: %s)',
+    'saves Continue settings only when launching (start frames: %s)',
     async (generateStartFrames) => {
       await db
         .update(sequences)
@@ -516,11 +519,15 @@ describe('execute_generation', () => {
       await execute(plan.planToken, scopedDb);
       expect(triggerContinue).toHaveBeenCalledWith(
         scopedDb,
-        expect.objectContaining({ settings })
+        expect.objectContaining({ stopAt: 'images' })
       );
-      expect(triggerContinue.mock.calls[0]?.[1]).not.toHaveProperty('stopAt');
-      expect(update).not.toHaveBeenCalled();
-      expect(await scopedDb.sequences.getById(sequenceId)).toEqual(before);
+      expect(update).toHaveBeenCalledExactlyOnceWith({
+        id: sequenceId,
+        ...settings,
+      });
+      expect(await scopedDb.sequences.getById(sequenceId)).toMatchObject(
+        settings
+      );
       expect(computePlan).toHaveBeenLastCalledWith(
         expect.objectContaining({
           sequenceOverrides: expect.objectContaining({

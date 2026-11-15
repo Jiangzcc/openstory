@@ -1,4 +1,3 @@
-import { WorkflowLaunchPendingError } from '@/platform/server/workflow/launch-pending';
 /**
  * Pre-flight Billing Check
  * Shared utility for server functions to verify credit availability
@@ -175,10 +174,7 @@ export async function releaseReservationOnThrow<T>(
   try {
     return await work();
   } catch (error) {
-    const pendingOwnReservation =
-      error instanceof WorkflowLaunchPendingError &&
-      error.reservationId === reservationId;
-    if (reservationId && !pendingOwnReservation) {
+    if (reservationId) {
       try {
         await scopedDb.billing.zeroReservation(reservationId);
       } catch (releaseError) {

@@ -6,8 +6,16 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import { generateId } from '@/platform/id';
-import type { PreparedWorkflowRun } from '@/platform/server/workflow/prepared-trigger';
+import type { WorkflowModelConfiguration } from '@/models/model-runtime-configuration';
 import type { StoryboardWorkflowInput } from '@/platform/server/workflow/types';
+
+type HistoricalStoryboardLaunch = {
+  readonly workflowRunId: string;
+  readonly triggerPath: string;
+  readonly body: StoryboardWorkflowInput & {
+    readonly modelConfiguration: WorkflowModelConfiguration;
+  };
+};
 
 export const storyboardLaunches = snakeCase.table(
   'storyboard_launches',
@@ -20,7 +28,7 @@ export const storyboardLaunches = snakeCase.table(
     sequenceId: text().notNull(),
     workflowRunId: text({ length: 100 }).notNull(),
     prepared: text({ mode: 'json' })
-      .$type<PreparedWorkflowRun<StoryboardWorkflowInput>>()
+      .$type<HistoricalStoryboardLaunch>()
       .notNull(),
     submittedAt: integer({ mode: 'timestamp' }),
     lastAttemptAt: integer({ mode: 'timestamp' }),

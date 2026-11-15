@@ -51,6 +51,7 @@ import {
   CONTINUE_CREDIT_PROVIDERS,
   prepareContinueEstimate,
   prepareContinue,
+  withContinueSwitches,
 } from '@/sequences/server/continue-plan';
 import { switchStopAt } from '@/sequences/generation-plan';
 import type { StoryboardTriggerInput } from '@/platform/server/workflow/types';
@@ -261,21 +262,27 @@ export const continueGenerationFn = createServerFn({ method: 'POST' })
       errorMessage: 'Insufficient credits to continue generation',
     });
 
-    return triggerContinue(scopedDb, {
-      promptLocale: context.promptLocale,
-      userId: context.user.id,
-      organizationId: context.organizationId,
+    return withContinueSwitches(
+      scopedDb,
       sequence,
-      plan,
-      settings: {
+      {
         generationStopAt: stopAt,
         generateStartFrames: requested.generateStartFrames,
         generateVoices: requested.generateVoices,
         draftMotion: data.draftMotion,
       },
-      leftoverGrokShotIds: data.leftoverGrokShotIds,
-      modelConfiguration,
-    });
+      () =>
+        triggerContinue(scopedDb, {
+          promptLocale: context.promptLocale,
+          userId: context.user.id,
+          organizationId: context.organizationId,
+          sequence,
+          plan,
+          stopAt,
+          leftoverGrokShotIds: data.leftoverGrokShotIds,
+          modelConfiguration,
+        })
+    );
   });
 
 // There is no general update fn: a script, style, aspect ratio or analysis
