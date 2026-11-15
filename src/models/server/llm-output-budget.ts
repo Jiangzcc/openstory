@@ -1,5 +1,5 @@
 import { getMaxOutputTokens } from '@/models/models.config';
-import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import { configuredTextOutputBudget } from './configured-text';
 import type { LlmKeyInfo } from './create-adapter';
 
 export function getLlmMaxOutputTokens(
@@ -7,7 +7,8 @@ export function getLlmMaxOutputTokens(
   key: LlmKeyInfo,
   fraction: number
 ): number {
-  const models =
-    key.via === 'compatible' ? textModelCatalogFromRouting([key.route]) : [];
-  return getMaxOutputTokens(model, fraction, models);
+  if (key.via === 'compatible' && key.route.modelId === model) {
+    return configuredTextOutputBudget(key.route, { fraction });
+  }
+  return getMaxOutputTokens(model, fraction);
 }

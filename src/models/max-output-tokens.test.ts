@@ -53,3 +53,17 @@ describe('getMaxOutputTokens', () => {
     }
   });
 });
+
+describe('static budget fallbacks', () => {
+  it('uses the original context fallback for an unlisted model', () => {
+    expect(getContextWindow('some/unlisted-model')).toBe(128_000);
+    expect(getContextWindow('custom:unlisted-model')).toBe(128_000);
+  });
+
+  it('keeps the unknown output ceiling and fraction clamp', () => {
+    expect(getMaxOutputTokens('some/unlisted-model', 0.1)).toBe(12_800);
+    expect(getMaxOutputTokens('some/unlisted-model', 2)).toBe(32_000);
+    expect(getMaxOutputTokens('some/unlisted-model', 0)).toBe(1);
+    expect(getMaxOutputTokens('some/unlisted-model', -1)).toBe(1);
+  });
+});

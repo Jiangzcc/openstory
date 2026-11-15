@@ -5,6 +5,7 @@ import {
   configuredTextApi,
   assertConfiguredTextCapabilities,
   configuredTextModelOptions,
+  configuredTextOutputBudget,
   configuredTextUsage,
 } from './configured-text';
 import type { TextModelRoute } from '../text-channels';
@@ -143,4 +144,64 @@ it('applies the same default and context ceilings to Responses output', () => {
       { max_tokens: 5_000 }
     )
   ).toEqual({ max_output_tokens: 500 });
+});
+
+describe('configured route output budgets', () => {
+  it.each([
+    { fraction: 0.5, expected: 500 },
+    { fraction: 0.65, expected: 650 },
+    { fraction: 1, expected: 900 },
+    { fraction: 2, expected: 900 },
+    { fraction: 0, expected: 1 },
+    { fraction: -1, expected: 1 },
+  ])(
+    'keeps fraction $fraction within both limits',
+    ({ fraction, expected }) => {
+      expect(
+        configuredTextOutputBudget(
+          { ...route, contextWindow: 1_001, maxOutputTokens: 900 },
+          { fraction }
+        )
+      ).toBe(expected);
+    }
+  );
+
+  it('defaults to half the context and floors a fractional token budget', () => {
+    const configured = { ...route, contextWindow: 1_001, maxOutputTokens: 900 };
+    expect(configuredTextOutputBudget(configured)).toBe(500);
+    expect(configuredTextOutputBudget(configured, { fraction: 0.65 })).toBe(
+      650
+    );
+  });
+
+  it('keeps the context ceiling when output tokens allow more', () => {
+    expect(
+      configuredTextOutputBudget(
+        { ...route, contextWindow: 500, maxOutputTokens: 2_000 },
+        { maxTokens: 9_000 }
+      )
+    ).toBe(500);
+  });
+
+  it('gives an explicit token request precedence without rounding it', () => {
+    expect(
+      configuredTextOutputBudget(route, { fraction: 0, maxTokens: 100.25 })
+    ).toBe(100.25);
+    expect(configuredTextOutputBudget(route, { maxTokens: 0 })).toBe(1);
+  });
+
+  it.each(['openai-chat-completions', 'openai-responses'] as const)(
+    'preserves explicit token values on the %s wire',
+    (protocol) => {
+      const configured = { ...route, protocol };
+      const tokenField =
+        protocol === 'openai-responses' ? 'max_output_tokens' : 'max_tokens';
+      expect(
+        configuredTextModelOptions(configured, { max_tokens: 100.25 })
+      ).toMatchObject({ [tokenField]: 100.25 });
+      expect(
+        configuredTextModelOptions(configured, { max_tokens: 0 })
+      ).toMatchObject({ [tokenField]: 1 });
+    }
+  );
 });

@@ -23,6 +23,23 @@ export function assertConfiguredTextTestHost(
 
 const OUTPUT_CONTEXT_FRACTION = 0.5;
 
+type OutputBudgetOptions = {
+  fraction?: number;
+  maxTokens?: number;
+};
+
+export function configuredTextOutputBudget(
+  route: TextModelRoute,
+  options: OutputBudgetOptions = {}
+): number {
+  const fraction = options.fraction ?? OUTPUT_CONTEXT_FRACTION;
+  const requested =
+    options.maxTokens ??
+    Math.floor(route.contextWindow * Math.min(Math.max(fraction, 0), 1));
+  const ceiling = Math.min(route.maxOutputTokens, route.contextWindow);
+  return Math.max(1, Math.min(requested, ceiling));
+}
+
 type SamplingOptions = {
   max_tokens?: number;
   temperature?: number;
@@ -41,11 +58,9 @@ export function configuredTextModelOptions(
   route: TextModelRoute,
   options: SamplingOptions = {}
 ) {
-  const ceiling = Math.min(route.maxOutputTokens, route.contextWindow);
-  const requested =
-    options.max_tokens ??
-    Math.floor(route.contextWindow * OUTPUT_CONTEXT_FRACTION);
-  const maxTokens = Math.max(1, Math.min(requested, ceiling));
+  const maxTokens = configuredTextOutputBudget(route, {
+    maxTokens: options.max_tokens,
+  });
   const sampling = {
     ...(options.temperature !== undefined && {
       temperature: options.temperature,

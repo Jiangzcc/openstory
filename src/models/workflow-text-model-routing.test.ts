@@ -16,7 +16,8 @@ import {
   toTextModelCatalog,
 } from './text-channels';
 import { textModelCatalogFromRouting } from './text-model-catalog';
-import { getMaxOutputTokens, resolveVisionModel } from './models.config';
+import { resolveVisionModel } from './models.config';
+import { getLlmMaxOutputTokens } from './server/llm-output-budget';
 import { configuredTextModelOptions } from './server/configured-text';
 import {
   packWorkflowTextModelRouting,
@@ -159,9 +160,15 @@ describe('workflow execution routing snapshot', () => {
     expect(
       resolveVisionModel('custom:mock-text', true, 'custom:vision', catalog)
     ).toBe('custom:vision');
-    expect(getMaxOutputTokens('custom:mock-text', 0.5, catalog)).toBe(4_000);
     const route = resolveTextModelRoute(unpacked, 'custom:mock-text');
     if (!route) throw new Error('Mock execution route missing');
+    expect(
+      getLlmMaxOutputTokens(
+        route.modelId,
+        { via: 'compatible', key: 'mock-snapshot-budget-key', route },
+        0.5
+      )
+    ).toBe(4_000);
     expect(configuredTextModelOptions(route, { max_tokens: 100_000 })).toEqual({
       max_output_tokens: 4_000,
     });
@@ -191,16 +198,29 @@ describe('workflow execution routing snapshot', () => {
     route.baseUrl = 'https://replacement.invalid';
     route.inputPricePerMillion = 99;
     route.userAgent = 'Replacement/3.0';
+    route.contextWindow = 2_000;
+    route.maxOutputTokens = 1_000;
     expect(Object.isFrozen(packed)).toBe(true);
     expect(Object.isFrozen(packed.channels)).toBe(true);
     expect(Object.isFrozen(packed.channels[0])).toBe(true);
     expect(Object.isFrozen(packed.models)).toBe(true);
     expect(Object.isFrozen(packed.models[0])).toBe(true);
-    expect(unpackWorkflowTextModelRouting(packed)[0]).toMatchObject({
+    const replayed = unpackWorkflowTextModelRouting(packed)[0];
+    if (!replayed) throw new Error('Mock frozen route missing');
+    expect(replayed).toMatchObject({
       baseUrl: 'https://mock.invalid/v1',
       inputPricePerMillion: 0.5,
       userAgent: 'Deployment/2.0',
+      contextWindow: 32_000,
+      maxOutputTokens: 4_000,
     });
+    expect(
+      getLlmMaxOutputTokens(
+        replayed.modelId,
+        { via: 'compatible', key: 'mock-snapshot-budget-key', route: replayed },
+        0.65
+      )
+    ).toBe(4_000);
   });
 
   it('round-trips custom User-Agents through JSON without exposing them in the catalog', () => {

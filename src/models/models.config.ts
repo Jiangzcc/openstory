@@ -399,11 +399,8 @@ export const ANALYSIS_MODEL_IDS = getAllModelIds();
 /**
  * Get context window size (in tokens) for a model
  */
-export function getContextWindow(
-  modelId: string,
-  extraModels: readonly AnalysisModelDefinition[] = []
-): number {
-  const model = getAnalysisModelById(modelId, extraModels);
+export function getContextWindow(modelId: string): number {
+  const model = SCRIPT_ANALYSIS_MODELS.find((m) => m.id === modelId);
   return model?.contextWindow ?? 128_000;
 }
 
@@ -426,12 +423,8 @@ const DEFAULT_MAX_OUTPUT_TOKENS = 32_000;
  * Ceilings are `top_provider.max_completion_tokens` from OpenRouter's
  * `/api/v1/models`, the same catalogue that serves the calls.
  */
-export function getMaxOutputTokens(
-  modelId: string,
-  fraction = 0.5,
-  extraModels: readonly AnalysisModelDefinition[] = []
-): number {
-  const model = getAnalysisModelById(modelId, extraModels);
+export function getMaxOutputTokens(modelId: string, fraction = 0.5): number {
+  const model = SCRIPT_ANALYSIS_MODELS.find((m) => m.id === modelId);
   const ceiling = model?.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   const budget = Math.floor(
     (model?.contextWindow ?? 128_000) * Math.min(Math.max(fraction, 0), 1)
