@@ -56,7 +56,7 @@ root are not repaired. A caller's separate later write can still change a
 reference. Complete descendant selection/event/preview ownership, parent
 notification, shared eligibility, email and deployed engine/provider/wallet
 acceptance remain open. Exact local evidence is in the
-[element publication batch](../secondary-development/preservation/20261114-p3-g03-element-sheet-publication/README.md).
+[element publication batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-element-sheet-publication/README.md').
 
 ## Analysis cast ownership (secondary development, 2026-11-14)
 
@@ -89,7 +89,7 @@ language, recipe hash, schema or named workflow read hatch is added here.
 Complete descendant/event ownership, changes to sharing eligibility during
 an existing check/write window, cached steps, root cancellation and deployed
 acceptance remain separate. Exact local evidence is in the
-[analysis-cast batch](../secondary-development/preservation/20261114-p3-g03-analysis-cast/README.md).
+[analysis-cast batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-analysis-cast/README.md').
 
 ## Automatic-style ownership (secondary development, 2026-11-14)
 
@@ -118,7 +118,7 @@ This fences persistence, not model spending or all external events. A root
 can still change after the final check and before `generation.style:ready`.
 Cached checkpoints, other shared-resource writers, complete descendant/event
 ownership, root cancellation and deployed acceptance remain open. Exact
-local evidence is in the [automatic-style batch](../secondary-development/preservation/20261114-p3-g03-auto-style/README.md).
+local evidence is in the [automatic-style batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-auto-style/README.md').
 
 ## Analysis output ownership (secondary development, 2026-11-14)
 
@@ -153,7 +153,7 @@ Cast and automatic-style writes have the separate contracts above; every
 other descendant remains outside this slice. A takeover after a successful write/check can still precede a shot
 event, phase signal or callback. Ownerless standalone calls, old cached
 steps, root cancellation and deployed Cloudflare/provider acceptance remain
-open. Exact local evidence is in the [analysis output batch](../secondary-development/preservation/20261114-p3-g03-analysis-output/README.md).
+open. Exact local evidence is in the [analysis output batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-analysis-output/README.md').
 
 ## Scene-split descendant content ownership (secondary development, 2026-11-14)
 
@@ -192,7 +192,7 @@ Ownership can change after a successful write/check and before a realtime
 event or preview dispatch; those external effects still need their own
 protocol. Old cached workflow steps, root cancellation, email and deployed
 Cloudflare replay/concurrency acceptance remain open. Exact local evidence is
-recorded in the [scene-split content batch](../secondary-development/preservation/20261114-p3-g03-scene-split-content/README.md).
+recorded in the [scene-split content batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-scene-split-content/README.md').
 The existing separate tail-shot and tail-scene deletes are each fenced, not
 one atomic trim. Existing unchunked reads of more than 100 scene ids retain
 their previous D1 parameter-limit boundary; this batch only bounds inserts.
@@ -259,7 +259,7 @@ end labels inside the track without truncating them to a single character.
 
 The storyboard's planning hatch reads the rows its analysis just materialized. Model routing is a separate input: it comes from the queued runtime configuration. At this workflow boundary, an older payload with no image-routing field is an explicit empty routing decision. Passing undefined into the shared reference planner would let its request-side fallback load current administrator channels and change the old run's reference-sheet estimate. Explicit packed routes continue to supply the plan and remaining-cost calculation. Request-side computePlan calls can still capture current routing when no frozen choice was supplied.
 
-A smart retry that receives options.modelConfiguration carries that trusted snapshot into motion, music and music-prompt roots as well as its existing full/image paths. The image branch's specifically prepared configuration retains precedence. Without a supplied snapshot, the existing root capture remains; claim, reservation, dry-run, deduplication and status ordering are unchanged. Local red/green regressions and their mock boundaries are recorded in the [G02 record](../secondary-development/preservation/20261112-p3-g02/README.md).
+A smart retry that receives options.modelConfiguration carries that trusted snapshot into motion, music and music-prompt roots as well as its existing full/image paths. The image branch's specifically prepared configuration retains precedence. Without a supplied snapshot, the existing root capture remains; claim, reservation, dry-run, deduplication and status ordering are unchanged. Local red/green regressions and their mock boundaries are recorded in the [G02 record](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261112-p3-g02/README.md').
 
 ## Units
 
@@ -425,10 +425,10 @@ Pending requests rotate by last attempted dispatch, so a failed older batch
 cannot indefinitely hide later requests. Its additive migration is generated
 through Drizzle and checked for D1 safety. Local
 SQLite migration tests do not establish deployed D1 or Cloudflare behavior.
-The [startup exclusion record](../secondary-development/preservation/20261114-p3-g03-startup-exclusion/README.md)
+The [startup exclusion record](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-startup-exclusion/README.md')
 records deterministic races, recovery and the remaining acceptance boundaries.
 
-The [launcher ownership batch](../secondary-development/preservation/20261114-p3-g03-launcher-ownership/README.md) covers claim/processing and instance publication. The [lifecycle branches follow-up](../secondary-development/preservation/20261114-p3-g03-lifecycle-branches/README.md) guards the selected runImpl startup, shot clearing, stop-at/settings activity, credits-short and completion/activity operations, plus parented AnalyzeScript failure using an explicit root owner snapshot. Completion has a stable DB event receipt for retry; a missed start returns before poster/child work and releases only the payload reservation.
+The [launcher ownership batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-launcher-ownership/README.md') covers claim/processing and instance publication. The [lifecycle branches follow-up](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-lifecycle-branches/README.md') guards the selected runImpl startup, shot clearing, stop-at/settings activity, credits-short and completion/activity operations, plus parented AnalyzeScript failure using an explicit root owner snapshot. Completion has a stable DB event receipt for retry; a missed start returns before poster/child work and releases only the payload reservation.
 
 Other content writes and descendant notifications, the standalone AnalyzeScript CLI without a slot protocol, and independent Update all preflight remain open. The durable startup recovery above covers new launches; cancellation and legacy raw claims without a launch record remain outside that protocol. Database commits do not make realtime or email delivery atomic; a takeover after a successful guard or replay of an already-cached successful step still needs event-level ownership. The [failure cleanup contract](workflow-snapshots-and-content-hash-staleness.md#failure-cleanup-and-durable-retries-secondary-development-2026-11-14) records the complete bounded contract and notification/replay limits.
 
@@ -457,7 +457,7 @@ allocated before the start activity's ID. Equal stop-at and boolean-only
 changes add no settings history. The later owner-guarded workflow start
 repeats the same stop-at and therefore adds no duplicate settings activity.
 
-The [Continue settings record](../secondary-development/preservation/20261114-p3-g03-continue-settings-ownership/README.md)
+The [Continue settings record](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-continue-settings-ownership/README.md')
 covers deterministic D1 races and substituted engine failures. Ordinary
 internal `sequences.update` can still write these fields, and the workflow
 start step still repeats stop-at under its owner guard. This batch defines
@@ -472,7 +472,7 @@ A Continue has a sequence-specific pending token shared by its QueryClient subsc
 
 History is parsed through the same leaf schemas, scoped to the current session/request, then followed by live events received while it was pending. An accepted terminal event is retained across hydration and claim-to-instance publication; history and late phases cannot reopen that same owner. A new confirmed owner or explicit launch establishes a new session. The pending live replay buffer is bounded to 2,000 events; overflow abandons hydration and keeps displayed live state.
 
-The [lifecycle notification batch](../secondary-development/preservation/20261114-p3-g03-notification-ownership/README.md) records the source changes, deterministic races and real QueryClient/SQLite/SSE host evidence. The later [terminal delivery batch](../secondary-development/preservation/20261114-p3-g03-notification-delivery-contract/README.md) atomically queues newly executed Storyboard terminal signals with their status writes and retries pending delivery through the existing cron. It is at-least-once, retains client owner checks, and does not repair email, all content writes/events, old cached checkpoints or prove Cloudflare/browser delivery. New-launch startup exclusion and publication-error recovery use the durable protocol above. Independent Update all preflight, cancellation and legacy raw claims without durable requests remain open.
+The [lifecycle notification batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-notification-ownership/README.md') records the source changes, deterministic races and real QueryClient/SQLite/SSE host evidence. The later [terminal delivery batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-notification-delivery-contract/README.md') atomically queues newly executed Storyboard terminal signals with their status writes and retries pending delivery through the existing cron. It is at-least-once, retains client owner checks, and does not repair email, all content writes/events, old cached checkpoints or prove Cloudflare/browser delivery. New-launch startup exclusion and publication-error recovery use the durable protocol above. Independent Update all preflight, cancellation and legacy raw claims without durable requests remain open.
 
 ## Shot specs and prompts (#1923, #1929)
 
@@ -615,7 +615,7 @@ refetch on focus, invalidated by realtime and by any refused continue —
   until three days remain, then the countdown, then "Draft expired".
   Creation persists an explicit `draftMotion` boolean on the sequence;
   omitting it keeps the existing false default. The storyboard launcher reads
-  that saved value into its prepared request. The [creation regression record](../secondary-development/preservation/20261114-p3-g03-create-draft-motion/README.md)
+  that saved value into its prepared request. The [creation regression record](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-create-draft-motion/README.md')
   covers persistence and launch snapshots with their local test boundaries.
 - **Ready email** only sends when the run reached motion: the send is a
   one-shot claim per sequence.

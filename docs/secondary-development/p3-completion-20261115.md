@@ -20,7 +20,7 @@
 
 B→C为1,712个路径：708修改、1,004新增；其中既有src修改661、新src579。原1,219路径逐项重联，Worker类型恢复上游、二开`use-page-title.ts`退出，另外495条进入增量台账，共1,714行（含2条退出）。本次完成文档、当前链接及追加日志另登记为治理增量，不进入应用运行时；不把这些文档反向加入同一次代码验收造成无限递归。
 
-五份冻结inventory字节保持；原59条实施日志前缀保持。其历史`pending`与`responsibilityClosed:false`原样保留，当前状态由新[60项职责台账](preservation/20261115-p3-completion/responsibilities.jsonl)、[66动作处置](preservation/20261115-p3-completion/actions.jsonl)和最终逐路径/逐hunk处置覆盖，不改写历史成绩。[范围记录](preservation/20261115-p3-completion/scope.json)列出版本、blob、退出、严格覆盖及分片。
+五份冻结inventory字节保持；原59条实施日志前缀保持。其历史`pending`与`responsibilityClosed:false`原样保留，当前状态由新[60项职责台账](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-completion/responsibilities.jsonl')、[66动作处置](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-completion/actions.jsonl')和最终逐路径/逐hunk处置覆盖，不改写历史成绩。[范围记录](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-completion/scope.json')列出版本、blob、退出、严格覆盖及分片。
 
 ## K1—K8验收
 
@@ -61,14 +61,14 @@ S→C生产src为153路径、+7,914/-2,501，净增5,413行。共享发布保护
 
 ## 当前验证与限制
 
-[验证台账](preservation/20261115-p3-completion/verification.json)按实际执行分开保留首次失败和复跑，不把若干重叠集合相加成一次全绿运行。
+[验证台账](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-completion/verification.json')按实际执行分开保留首次失败和复跑，不把若干重叠集合相加成一次全绿运行。
 
 - 首轮全量：864文件、11,957测试，11,936通过、10失败、11因setup超时未执行。失败分为扫描/冷SDK/报告准备超时、环境变量、过时入队断言和缺少两项sequence级读取登记；逐项修正或独立复跑，未把首轮报告改绿。
 - 最终受影响16文件470项通过；修正集合11文件124通过、2个报告行为测试因机器并发超时，报告文件单独原时限复跑11/11通过；其它先前失败文件已在该集合通过。正常提交hooks另跑客户端/服务端边界17项通过。
 - 隔离Workerd、新test D1/R2、Chromium：5项通过，覆盖默认中文与保存记忆、中英并发SSR/水合、英文hash直达、模拟拒绝Cookie保存，以及中英登录SSR/水合/返回标题。第一次5项执行中首个导航约36秒挤占总时限；实际hydrated控件就绪后按原30秒预算复跑通过，无任意sleep或放宽产品/断言预算。
-- 最终补证：16个固定时钟中英边界、登录态Docs SSR/前进后退及同源Mermaid节点、真实iframe卡片210px高度/原链接/一次初始化、实际composer/admin/Studio草稿与蒙版revision、真实QueryClient业务hook一次动作/完成提示，以及实际三个播放器的动态语言/时间/字幕/音乐/键盘/375px/reduced-motion/显式retry均完成有限验证。合成上传、识别、失败503及编译边界逐项标注，保留失败的探针准备及修正，不冒称真实供应商或原始全矩阵；详见[补证台账](preservation/20261115-p3-completion/acceptance-supplements.json)。C另对三处公开描述做中英六个真实Workerd SSR响应确认。
+- 最终补证：16个固定时钟中英边界、登录态Docs SSR/前进后退及同源Mermaid节点、真实iframe卡片210px高度/原链接/一次初始化、实际composer/admin/Studio草稿与蒙版revision、真实QueryClient业务hook一次动作/完成提示，以及实际三个播放器的动态语言/时间/字幕/音乐/键盘/375px/reduced-motion/显式retry均完成有限验证。合成上传、识别、失败503及编译边界逐项标注，保留失败的探针准备及修正，不冒称真实供应商或原始全矩阵；详见[补证台账](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-completion/acceptance-supplements.json')。C另对三处公开描述做中英六个真实Workerd SSR响应确认。
 - 最终typecheck、生产build、dead-code、全仓lint及本次文件格式检查、diff检查、正常hooks结果按验证台账登记。最终全仓format:check仍报告2,099个范围外既有格式问题（本任务改动文件交集为0），未批量重写其它上游文件，不称全仓格式通过。
 
 所有数据写入只发生在本地合成D1与隔离测试环境；主工作区原数据库、冻结基线工作树与98份旧本地产物保持。本次未付费调用模型、未真实发邮件、未写远程数据库、未部署、未push。临时原始报告/脚本与暂停快照保存在仓库外的本地证据目录，当前可复查结论与必要指纹纳入正式台账。
 
-原环境边界、未来触发条件与取消/暂缓规划见[独立后续清单](preservation/20261115-p3-completion/independent-followups.json)。包括CONTINUE-LLM-SOURCE、BYOK商业入口、人民币售价/核算、默认私有、真实供应商/邮件/生产Container、Linux与完整durable replay，以及全根子树取消和剩余通知/preview所有权；这些没有在本次变成已实施或已验收。
+原环境边界、未来触发条件与取消/暂缓规划见[独立后续清单](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-completion/independent-followups.json')。包括CONTINUE-LLM-SOURCE、BYOK商业入口、人民币售价/核算、默认私有、真实供应商/邮件/生产Container、Linux与完整durable replay，以及全根子树取消和剩余通知/preview所有权；这些没有在本次变成已实施或已验收。

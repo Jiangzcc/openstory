@@ -108,7 +108,7 @@ its status is failed. Either write failing rolls the batch back and rejects.
 A retry may also clear a failed version's pointer left by an older partial
 write, but still returns null and preserves its original error. Completed
 versions awaiting promotion, a newer claim and a user's selection remain
-untouched. The [voice claim recovery batch](../secondary-development/preservation/20261114-p3-g03-voice-claim-recovery/README.md)
+untouched. The [voice claim recovery batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-voice-claim-recovery/README.md')
 records the host-side SQLite fault injection and its runtime limits.
 
 `CharacterBibleWorkflow` spawns a `CharacterVoiceWorkflow` child per

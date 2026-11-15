@@ -23,11 +23,11 @@
 | P2 范围关联       | 1,128 仍在；另增 91；旧范围内 27 再次变化                                            |
 | 历史来源          | 净路径关联 78 个旧行为编号，结合历史来源共 79 个；277 个合并路径对、7 个历史独有路径 |
 
-完整路径与 B/P/S 指纹、分片校验和、复核命令见[范围证据](preservation/20261109-p3-global-design/README.md)及 [scope.json](preservation/20261109-p3-global-design/scope.json)。分母独立于待合入上游；新增模块、测试、工具和文档全部在内。之后的实施作为 S 之后的交付增量追加。
+完整路径与 B/P/S 指纹、分片校验和、复核命令见[范围证据](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/README.md')及 [scope.json](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/scope.json')。分母独立于待合入上游；新增模块、测试、工具和文档全部在内。之后的实施作为 S 之后的交付增量追加。
 
 所有路径的 `p3Disposition` 初始为 `pending`。P2 历史结论只提供来源；本轮路径扫描、历史编号映射和职责设计均不冒充逐块语义审查或生产行为验收。现有 `src/routeTree.gen.ts` 工作区改动单列保护。
 
-此前四批前后对照及同一上游样本的 18 个冲突归档在 [prior-pilot-comparison.json](preservation/20261109-p3-global-design/prior-pilot-comparison.json)。该样本是收益反证，不是治理范围，也没有在本轮重新运行或合入。
+此前四批前后对照及同一上游样本的 18 个冲突归档在 [prior-pilot-comparison.json](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/prior-pilot-comparison.json')。该样本是收益反证，不是治理范围，也没有在本轮重新运行或合入。
 
 ## 3. 目标职责边界
 
@@ -44,12 +44,12 @@ flowchart TD
   U --> V[展示层：译文、格式化、错误标签]
 ```
 
-| 设计领域       | 当前核对范围与目标                                                               | 详细设计                                                                                   |
-| -------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 展示与语言     | locale/SSR、资源、界面/帮助/邮件、格式化、错误展示、Studio 与 MCP 展示的异步边界 | [presentation-language](preservation/20261109-p3-global-design/presentation-language.md)   |
-| 模型配置与渠道 | 管理员配置、默认模型、内置/自定义渠道、协议、规格、报价、凭证来源                | [model-channels](preservation/20261109-p3-global-design/model-channels.md)                 |
-| 生成与工作流   | 请求→任务→子任务、系统指令/风格、准备与执行、claim/结算/存储及 staleness         | [generation-context](preservation/20261109-p3-global-design/generation-context.md)         |
-| 认证与公共入口 | 组织/session、Assistant、API/MCP、工具恢复、数据库与运行边界、Windows 兼容       | [application-boundaries](preservation/20261109-p3-global-design/application-boundaries.md) |
+| 设计领域       | 当前核对范围与目标                                                               | 详细设计                                                                                                                                                     |
+| -------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 展示与语言     | locale/SSR、资源、界面/帮助/邮件、格式化、错误展示、Studio 与 MCP 展示的异步边界 | [presentation-language](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/presentation-language.md')   |
+| 模型配置与渠道 | 管理员配置、默认模型、内置/自定义渠道、协议、规格、报价、凭证来源                | [model-channels](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/model-channels.md')                 |
+| 生成与工作流   | 请求→任务→子任务、系统指令/风格、准备与执行、claim/结算/存储及 staleness         | [generation-context](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/generation-context.md')         |
+| 认证与公共入口 | 组织/session、Assistant、API/MCP、工具恢复、数据库与运行边界、Windows 兼容       | [application-boundaries](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/application-boundaries.md') |
 
 同一旧行为编号或文件可以关联多个职责。跨组共享输入输出契约，不接管对方的执行生命周期。新增职责优先放回所属领域，不因想隔离二开就移动到 domain-blind 的 platform。
 
@@ -92,7 +92,7 @@ P3 完成须同时满足：
 
 ## 7. 全局职责、批次与真实依赖
 
-四组共59项产品/工程职责，加1项治理职责；映射覆盖79个历史行为编号及全部1,219个固定源码路径。共有66项结构候选、当前验证或未来触发复核动作，**不是66项已批准修改，更不是已经完成的整改**。机器索引见 [roadmap.json](preservation/20261109-p3-global-design/roadmap.json)，每项具体范围/依赖/验收见其批次明细。
+四组共59项产品/工程职责，加1项治理职责；映射覆盖79个历史行为编号及全部1,219个固定源码路径。共有66项结构候选、当前验证或未来触发复核动作，**不是66项已批准修改，更不是已经完成的整改**。机器索引见 [roadmap.json](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/roadmap.json')，每项具体范围/依赖/验收见其批次明细。
 
 | 工作线         | 入口与后续范围                                                                                    | 依赖及结束条件                                                                         |
 | -------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -108,8 +108,8 @@ P3 完成须同时满足：
 
 集成已裁决两处不做形式提取：`loadModelRuntimeConfiguration`（scoped.ts:563）约14行已有 composition root，`assistantRequestModel`（assistant-chat.ts:289）约19行聊天专用组合，均保留当前 owner，不把搬移计收益。网页默认值带模式、比例及保存偏好，API 默认值不能仅因配置/凭证相同就强行统一；具体依据见公共入口设计。
 
-[历史编号映射](preservation/20261109-p3-global-design/behavior-responsibilities.jsonl) 与 [91个补充路径映射](preservation/20261109-p3-global-design/scope-additions-responsibilities.jsonl) 让固定范围没有归属提示孤项；二者都保留待语义处置状态。原始 inventory 仍有1,219项 pending；路由完整不代表实际修改、原断言与验收闭合。
+[历史编号映射](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/behavior-responsibilities.jsonl') 与 [91个补充路径映射](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/scope-additions-responsibilities.jsonl') 让固定范围没有归属提示孤项；二者都保留待语义处置状态。原始 inventory 仍有1,219项 pending；路由完整不代表实际修改、原断言与验收闭合。
 
 ## 8. 本次交付状态
 
-本次完成全量设计、来源/指纹、职责与依赖映射，以及 P3 状态纠正；没有修改应用运行源码。四个历史试点按各自已记录结果保留，当前新增结构批次仍待实施。范围、格式、链接与依赖机械检查见 [交付验证](preservation/20261109-p3-global-design/verification.json)，不作为模型、Workflows 引擎或线上行为验收。
+本次完成全量设计、来源/指纹、职责与依赖映射，以及 P3 状态纠正；没有修改应用运行源码。四个历史试点按各自已记录结果保留，当前新增结构批次仍待实施。范围、格式、链接与依赖机械检查见 [交付验证](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-global-design/verification.json')，不作为模型、Workflows 引擎或线上行为验收。

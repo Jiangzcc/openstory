@@ -1,3 +1,0 @@
-src/motion/server/build-motion-references.test.ts
-src/sequences/smart-retry.test.ts
-src/sequences/server/add-video-model.test.ts

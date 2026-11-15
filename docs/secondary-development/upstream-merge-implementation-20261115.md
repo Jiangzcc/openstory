@@ -106,4 +106,4 @@
 
 本轮临时日志保存在集成检出的 `.tmp/c-*.log`、`.tmp/b2-slug-tests-final-hoisted.log` 和 `.tmp/c-runtime-20261115/`。临时材料不是产品运行机制，也不替代本页保留的结果、限制与最终提交核对。
 
-最终结构核对见 [集成证明](refactoring/20261115-integration.json)：C 第二父为 U，L 与 U 均为 C 祖先，B..U 的 48 个历史提交全部可达。正常 hooks 七项通过（含边界 17 测试），无未完成 merge。`develop` 与 `origin/develop` 仍为 L；本轮提交位于独立集成分支，未推送。此处更新的是该检出的实际上游基线。
+最终结构核对见 [集成证明](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-integration.json')：C 第二父为 U，L 与 U 均为 C 祖先，B..U 的 48 个历史提交全部可达。正常 hooks 七项通过（含边界 17 测试），无未完成 merge。`develop` 与 `origin/develop` 仍为 L；本轮提交位于独立集成分支，未推送。此处更新的是该检出的实际上游基线。

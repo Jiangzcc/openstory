@@ -43,7 +43,7 @@ R 额外一项为消费者 `git grep` 扫描超出原 5 秒预算，隔离原预
 | 视觉与清理     | 六张截图已查看；图库 skeleton 和 fixture player 加载状态不算播放验收。自有服务树及 Chrome 均退出，3002/9233 无监听，源码和 cached-src 无改动；原主树 3000 未启动或停止                                                                                                          |
 | 主工作区       | 新依赖激活后 `bun typecheck` 自然 exit 0；四个回归文件共 37 项通过、0 失败/跳过，覆盖配置计划报价、余额、stitch bundle 和 SQLite 索引；独立缓存、原断言和超时                                                                                                                   |
 
-机器结果见 [E 源码与验证记录](refactoring/20261115-node26-followup.json)。全量 JSON/日志、首次 R/U 失败与预算诊断、独立审查、构建/浏览器/错误审计的原始证据分别保留在集成树 `.tmp/e-node26/`、`.tmp/e-node26-20261115/`、`.tmp/e-independent-review.*`、`.tmp/e-runtime-20261115/`；主树依赖激活证据在主树 `.tmp/e-main-dependencies/`。分组测试有重叠，不叠加为唯一测试总数。
+机器结果见 [E 源码与验证记录](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-node26-followup.json')。全量 JSON/日志、首次 R/U 失败与预算诊断、独立审查、构建/浏览器/错误审计的原始证据分别保留在集成树 `.tmp/e-node26/`、`.tmp/e-node26-20261115/`、`.tmp/e-independent-review.*`、`.tmp/e-runtime-20261115/`；主树依赖激活证据在主树 `.tmp/e-main-dependencies/`。分组测试有重叠，不叠加为唯一测试总数。
 
 ## 本地分支与依赖落地
 

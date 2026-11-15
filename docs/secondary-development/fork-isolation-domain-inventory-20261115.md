@@ -31,7 +31,7 @@
 
 “上游已有”指路径存在于 U，排除语言与测试类后仍有本地修改；“新增扩展”只说明 U 没有该生产路径，不证明它已经低耦合。语言类包括 `locales`、独立 `prompts/zh-CN` 和 `*.zh-cn.ts`，不把含业务 builder 的双语模块算纯译文。测试类含 413 个测试文件、2 个故事及 5 个夹具/支持文件，新增/修改来源仍逐行保留，不能全部记作新增覆盖。
 
-完整路径与读取时内容指纹分别见 [核心修改](refactoring/20261115-domain-inventory-core.tsv)、[新增生产扩展](refactoring/20261115-domain-inventory-extensions.tsv)、[语言资源](refactoring/20261115-domain-inventory-locales.tsv)、[测试及支持](refactoring/20261115-domain-inventory-tests.tsv)。四表互斥且并集等于上述集合；`?` 仅表示尚未跟踪，不表示本盘点创建了应用文件。`routeTree.gen.ts` 属生成文件，应由路由生成，不手工借机重写。
+完整路径与读取时内容指纹分别见 [核心修改](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-domain-inventory-core.tsv')、[新增生产扩展](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-domain-inventory-extensions.tsv')、[语言资源](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-domain-inventory-locales.tsv')、[测试及支持](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-domain-inventory-tests.tsv')。四表互斥且并集等于上述集合；`?` 仅表示尚未跟踪，不表示本盘点创建了应用文件。`routeTree.gen.ts` 属生成文件，应由路由生成，不手工借机重写。
 
 本分母只统计 src。`packages`、scripts、构建/CI、账号邮件相关外部模板、项目配置和文档的职责仍纳入下表与历史台账；未将它们藏在“无 src 差异”后宣布完成。
 
@@ -57,7 +57,7 @@
 | 组合根与测试支持（AB-14/17/22，PL-01/02）                           | Router、server、routeTree 和 test/setup 有固定 owner，生成噪声曾独立恢复                                           | `router.tsx` 的 i18n provider/SSR hydrate 是必要接线；仅生成噪声可由原工具恢复，不能把生成 diff 算架构退出                                                                        | 单请求 i18n、全局测试资源和客户端导入边界继续保留                                                                                                                | 最终生成/类型/构建/边界及有效测试；不复用历史测试总数冒称本轮验收                                        |
 | src 外工程与治理（AB-15/16/18/19/20/21/22，GOV-01）                 | 项目 Hooks/技能、Windows argv/path、preview DB guard、维护报告归工程 owner                                         | 逐项复核上游新版已修的 workaround：例如 Vite inspector 只有真实受影响 Windows 路径测试后才能退出。依赖/包发布不是功能重构                                                         | 上游组织/预览库身份、正常 hooks、hermetic E2E 和本地生成产物边界保留；等价上游行为是删除条件                                                                     | scripts/CLI/preview/Workerd/Storybook 与生产环境区别记录。未授权外部发布、迁移和部署仍不执行             |
 
-上述表覆盖 `AB-01…AB-22`、`GC-01…GC-14`、`MC-01…MC-13`、`PL-01…PL-10`、`GOV-01` 共 60 项；[历史职责](preservation/20261115-p3-completion/responsibilities.jsonl)与 [66 动作](preservation/20261115-p3-completion/actions.jsonl)只用作范围/原断言追溯。原状态 `original-structural-disposition-complete` 不转成 D 已完成，不重新建立一套 60 行逐条打绿台账。
+上述表覆盖 `AB-01…AB-22`、`GC-01…GC-14`、`MC-01…MC-13`、`PL-01…PL-10`、`GOV-01` 共 60 项；[历史职责](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-completion/responsibilities.jsonl')与 [66 动作](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-completion/actions.jsonl')只用作范围/原断言追溯。原状态 `original-structural-disposition-complete` 不转成 D 已完成，不重新建立一套 60 行逐条打绿台账。
 
 ## 模型目录四层边界与消费链
 
@@ -71,7 +71,7 @@
 | `server/configured-text.ts`                   | compatible 协议参数、能力、实际 route 限额、usage 归一及 E2E host guard                                             | 预算 owner 已存在，可先让 route budget 从 static core 退出；普通/流式/助手参数仍各保持原 wire 约定              |
 | `model-runtime-configuration`/workflow codecs | 捕获默认槽位与 text/image routes，显式 pack/unpack 冻结 credentials reference、能力和价格                           | 保留现有 payload/codec 与 snapshot，不为缩小 import 取消精确执行绑定                                            |
 
-全部当前显式符号引用见 [消费点快照](refactoring/20261115-text-model-consumers.tsv)：15 个目标符号，含 production 和 test/story，逐行保存路径、行号和源码。它是检索覆盖，包含 import/定义/注释，不将行数当函数调用数；变动后的行号只供定位，不当最终提交证据。
+全部当前显式符号引用见 [消费点快照](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-text-model-consumers.tsv')：15 个目标符号，含 production 和 test/story，逐行保存路径、行号和源码。它是检索覆盖，包含 import/定义/注释，不将行数当函数调用数；变动后的行号只供定位，不当最终提交证据。
 
 | 消费类别                   | 已核对的实际入口                                                                                                                                                                                         | 必须保持                                                                                                                        |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |

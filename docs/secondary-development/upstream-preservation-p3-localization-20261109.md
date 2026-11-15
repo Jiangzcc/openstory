@@ -1,6 +1,6 @@
 # P3 第四批：翻译维护差异报告
 
-日期：2026-11-09。固定起点：develop 的 2c7853d88ccad1219217c2d2a43d5b154f69c851。本批为本地开发工具；当前结果及源码指纹见 [验证记录](preservation/20261109-p3-localization/verification.json)。
+日期：2026-11-09。固定起点：develop 的 2c7853d88ccad1219217c2d2a43d5b154f69c851。本批为本地开发工具；当前结果及源码指纹见 [验证记录](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-localization/verification.json')。
 
 ## 原有行为与目标
 

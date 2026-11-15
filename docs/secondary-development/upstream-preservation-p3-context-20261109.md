@@ -2,7 +2,7 @@
 
 日期：2026-11-09。状态：用户已授权首批执行，两个候选调用点的评估与定向验证完成；保留现有生产结构，新增契约回归。没有宣称 P3 已完成结构收敛。
 
-起点为 develop 的 d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa，上游 B 保持 2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0。范围沿用[P3 准备记录](upstream-preservation-p3-preparation-20261109.md)，实际命令、源指纹、逐次结果、原测试对应及计数见[验证归档](preservation/20261109-p3-context/verification.json)。
+起点为 develop 的 d9f7547eb1bc30f178cf8cc420b4a65c070ea8aa，上游 B 保持 2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0。范围沿用[P3 准备记录](upstream-preservation-p3-preparation-20261109.md)，实际命令、源指纹、逐次结果、原测试对应及计数见[验证归档](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261109-p3-context/verification.json')。
 
 ## 原行为与本批决定
 

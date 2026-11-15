@@ -25,7 +25,7 @@
 
 B2 的 40 个窗口均无变化，没有新增或退出的冲突路径。B1 的 `scene-group.tsx` 在全部 40 个窗口退出冲突路径；第 1–8 个窗口文本块各减 1，第 9–40 个窗口 `vite.config.ts` 从 1 块增至 2 块，抵消该收益。B1 没有新增冲突路径，但端点文本块没有净下降。不能把 B1 描述成完全没有局部收益，也不能把文件数下降升级成保真与长期维护验收通过。
 
-[持久对照数据](refactoring/20261115-pilots.json)保存同一 40 目标的 B1/B2 结果、源码退出与新增接缝规模。本地原始材料位于 `.tmp/fork-isolation-measure-20261115/`：`before.json`、`b2-snapshot.json`、`b2-after.json`、`b2-comparison.json`、`snapshot.json`、`b1-after.json`、`b1-comparison.json`、`b1-source-exit.diff`；该忽略目录不保证其他检出可用。
+[持久对照数据](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-pilots.json')保存同一 40 目标的 B1/B2 结果、源码退出与新增接缝规模。本地原始材料位于 `.tmp/fork-isolation-measure-20261115/`：`before.json`、`b2-snapshot.json`、`b2-after.json`、`b2-comparison.json`、`snapshot.json`、`b1-after.json`、`b1-comparison.json`、`b1-source-exit.diff`；该忽略目录不保证其他检出可用。
 
 ## B2：配置渠道估价收口
 

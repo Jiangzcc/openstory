@@ -23,7 +23,7 @@ git -c merge.conflictStyle=merge merge-tree --write-tree --name-only --no-messag
 
 每一对共同祖先均核实为 B。同一目标采用相同 Git、配置和合并方向；不在节点之间人工解决冲突。`merge-tree` 仅生成 Git 对象，测量期间 HEAD、索引及工作区未变。读取结果树中的冲突文件，按准确匹配两端 SHA 的成对冲突标记统计文本冲突块；无文本标记的冲突仍保留在文件计数中。本轮两个关键目标的冲突均有文本标记。
 
-40 个节点是相互关联的累计版本，不是 40 个独立发布窗口，不能把各行冲突数相加称为“全局唯一冲突数”。路径并集另行去重；文本块和行数也不等同人工解决工时。完整逐节点计数、结果树和原始材料指纹见[机器证据](preservation/20261115-p3-conflict-assessment/comparison.json)。
+40 个节点是相互关联的累计版本，不是 40 个独立发布窗口，不能把各行冲突数相加称为“全局唯一冲突数”。路径并集另行去重；文本块和行数也不等同人工解决工时。完整逐节点计数、结果树和原始材料指纹见[机器证据](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261115-p3-conflict-assessment/comparison.json')。
 
 ## 实测结果
 

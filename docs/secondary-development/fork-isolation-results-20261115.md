@@ -29,7 +29,7 @@ B/L/U 初始分母、B1 的失败反例、B2 的固定 40 窗口对照分别保�
 | D-M2，动态目录  | 动态 lookup/selection 归已有 `text-model-catalog.ts`；10 个消费者迁移；静态 lookup、valid、selectable 三函数恢复 U                       | overlay 优先、内置退休位、custom 可读与当前可选的区别、公开目录不含秘密、创建时能力校验保留                                        | `06c9ada6d`；14 文件 198 测试，限定 lint/格式、正常 hooks 通过                            |
 | D-M3，视觉选择  | snapshot 视觉能力和管理员 fallback 归同一动态目录；静态 `analysisModelSupportsVision`、`resolveVisionModel` 恢复 U                       | 实际 key 解析后的两处能力检查保留：compatible 用 `route.vision`，native 用静态能力；普通与流式都验证最终 chat 参数                 | `f88e9d9b1`；9 文件 114 测试，含新增实际 key 边界 8 项；限定 lint/格式、正常 hooks 通过   |
 
-D 复用已有生产模块承接配置职责；没有新增生产模块、全局 registry、通用插件系统或另一套工作流执行器。完整文件与函数文本对照已保存于[结构证据](refactoring/20261115-isolation-results.json)，不以 helper 数或测试数代替退出证明。
+D 复用已有生产模块承接配置职责；没有新增生产模块、全局 registry、通用插件系统或另一套工作流执行器。完整文件与函数文本对照已保存于[结构证据](history-archive.md#records 'c572b906d:docs/secondary-development/refactoring/20261115-isolation-results.json')，不以 helper 数或测试数代替退出证明。
 
 ## 可核验的结构收益
 

@@ -8,7 +8,7 @@
 
 fetch 成功后将观察目标固定为 `6a9dcadb33d915fbedf80720a844968a6a8bea62`，比基线多 7 个主线节点、9 个历史提交。本批只登记，不开始 P5 评估与合入。B 的全部历史可从执行起点到达，不能据此证明所有合并解决及业务逻辑正确。
 
-[固定清单](preservation/20261108-p0/README.md) 包含全部 1,117 个净差异路径、46 个本地独有提交、26 个第一父链 merge 及其 15 个非空 remerge 差异、7 个额外历史路径。直接引用扫描另补 471 个自身未变动的引用者路径。候选均为 `unreviewed`；P2 的逐行为块审查和传递契约验证仍待执行。
+[固定清单](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261108-p0/README.md') 包含全部 1,117 个净差异路径、46 个本地独有提交、26 个第一父链 merge 及其 15 个非空 remerge 差异、7 个额外历史路径。直接引用扫描另补 471 个自身未变动的引用者路径。候选均为 `unreviewed`；P2 的逐行为块审查和传递契约验证仍待执行。
 
 开始时无 staged 文件和未完成 Git 操作。原有 `vite.config.ts` 与未跟踪的 Windows 启动说明已备份并记录 SHA-256，排除本批提交；收尾复核两文件字节均未变化。原字节和 index 仅保存在本地忽略目录 `.tmp/upstream-preservation-p0-p1-20261108/`，便携来源与范围保存在正式 JSON。独立复核的 28 项结构检查通过，包含全部路径/blob/行数/来源、merge 身份、规范化 remerge 指纹及引用候选。
 

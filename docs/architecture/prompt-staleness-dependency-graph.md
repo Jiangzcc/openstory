@@ -1094,6 +1094,6 @@ The Chinese interface translates graph labels, summaries, field lists and edge n
 
 ### Unicode location membership (secondary development, 2026-11-13)
 
-The [G09 repair](../secondary-development/preservation/20261113-p3-g09-repair/README.md) fills an empty canonical tag from Unicode letters/numbers only after the stored tag and original ASCII slug. Location prose fallback recognizes complete Han names, preserving explicit tag/slugline precedence and English candidate priority. Mixed Han/Latin names require the complete name.
+The [G09 repair](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261113-p3-g09-repair/README.md') fills an empty canonical tag from Unicode letters/numbers only after the stored tag and original ASCII slug. Location prose fallback recognizes complete Han names, preserving explicit tag/slugline precedence and English candidate priority. Mixed Han/Latin names require the complete name.
 
 Stamp, verify, causes and rendered reference lists still use the same per-shot, per-channel resolver and the same input fields. No dependency node or edge changes, so the interactive graph retains the same structure. Correcting a previously missing Chinese location or narrowing several tagged locations with Chinese prompt text can change membership and therefore prompt/still/clip digests. Persisted hashes, hash versions and legacy-hash acceptance are not rewritten; existing explicit single-location and English digest fixtures remain unchanged.

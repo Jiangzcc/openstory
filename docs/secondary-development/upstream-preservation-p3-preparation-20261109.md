@@ -8,9 +8,9 @@
 
 可以开始准备。主计划要求 P1 已关闭、拟整理领域具备对应 P2 审查与验证依据，允许按领域逐步进入 P3；不要求先完成 P4、P5 或全部商业规划。见[阶段依赖及顺序](upstream-preservation-plan.md#3-分阶段交付与依赖)。
 
-P2 的[补充记录](preservation/20261108-p2/followup-20261109/README.md)修正了已发现的台账和证据缺口，但没有重新证明所有候选路径的全部业务状态。首批仍须在当前源码上建立改前基线，不能只凭阶段标签或测试总数进入批量重构。
+P2 的[补充记录](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261108-p2/followup-20261109/README.md')修正了已发现的台账和证据缺口，但没有重新证明所有候选路径的全部业务状态。首批仍须在当前源码上建立改前基线，不能只凭阶段标签或测试总数进入批量重构。
 
-CONTINUE-LLM-SOURCE 按[用户暂缓决定](preservation/20261108-p2/followup-20261109/deferred-decisions.json)保持未修复。它不阻断这次准备；首批范围不涉及 Continue 的余额豁免判断、凭证优先级或全面禁止 BYOK。后续若整理实际触及该调用链，重新列明受影响契约和暂缓边界，不借纯重构改变收费行为。
+CONTINUE-LLM-SOURCE 按[用户暂缓决定](history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261108-p2/followup-20261109/deferred-decisions.json')保持未修复。它不阻断这次准备；首批范围不涉及 Continue 的余额豁免判断、凭证优先级或全面禁止 BYOK。后续若整理实际触及该调用链，重新列明受影响契约和暂缓边界，不借纯重构改变收费行为。
 
 ## 当前实现与收敛价值
 

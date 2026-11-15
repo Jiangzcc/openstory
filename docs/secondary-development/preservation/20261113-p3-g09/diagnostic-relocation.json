@@ -1,9 +1,0 @@
-{
-  "originalPath": "src/cast/server/db/location-ownership-contract.test.ts",
-  "archivedPath": "docs/secondary-development/preservation/20261113-p3-g09/location-ownership-contract.test.ts.txt",
-  "originalSha256": "68ad46088cc4728e689b764153442ec831c4ac0fd370dfa83bacc92be07d638c",
-  "archivedSha256": "68ad46088cc4728e689b764153442ec831c4ac0fd370dfa83bacc92be07d638c",
-  "assertionsAndImportsUnchanged": true,
-  "runner": "run-location-diagnostic.mjs",
-  "onlyChanges": "The original file is archived byte-for-byte as text. The runner exclusively creates one temporary test in the original db directory, runs the unchanged root Vitest configuration against it, and removes only its own created file in finally. No test skip/xfail/timeout/production config change."
-}
