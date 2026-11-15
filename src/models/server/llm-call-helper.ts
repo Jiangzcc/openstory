@@ -18,7 +18,10 @@ import type { ResolvedLlmKey } from './db/api-keys';
 import { llmCallStream } from './llm-call-stream';
 import { resolveLlmCallRoute } from './llm-call-route';
 import { llmtrCompatibleApi } from '@/models/llmtr';
-import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import {
+  textModelCatalogFromRouting,
+  resolveTextModelForVision,
+} from '@/models/text-model-catalog';
 import {
   assertConfiguredTextCapabilities,
   configuredTextModelOptions,
@@ -43,7 +46,6 @@ import type { TextModel } from '@/models/models';
 import {
   analysisModelSupportsVision,
   getMaxOutputTokens,
-  resolveVisionModel,
 } from '@/models/models.config';
 import { withRegionFallback } from '@/models/region-policy';
 import { isGoogleRegionBlockedHere } from '@/models/google-region';
@@ -383,7 +385,7 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
   // cost; callers keep storing/hashing the requested model.
   const hasImageInput = (config.visionImageUrls?.length ?? 0) > 0;
   const models = callContext.scopedDb?.models;
-  const modelId = resolveVisionModel(
+  const modelId = resolveTextModelForVision(
     config.modelId,
     hasImageInput,
     models?.vision,
@@ -431,7 +433,7 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
         });
 
         // Only attach the still when the effective model accepts image input.
-        // resolveVisionModel routes text-only models to the vision default, so
+        // The selected vision policy routes text-only models to the default, so
         // reaching here with an image but no vision support means that default is
         // misconfigured to a text-only model. Warn and drop the image (don't fail
         // — text-only is a supported mode) rather than send it to a text model.
@@ -588,7 +590,7 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
   // the snapshotted vision model; the effective model drives adapter/window/cost.
   const hasImageInput = (config.visionImageUrls?.length ?? 0) > 0;
   const models = callContext.scopedDb?.models;
-  const modelId = resolveVisionModel(
+  const modelId = resolveTextModelForVision(
     config.modelId,
     hasImageInput,
     models?.vision,

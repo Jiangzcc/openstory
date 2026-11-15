@@ -2,6 +2,7 @@ import {
   SCRIPT_ANALYSIS_MODELS,
   isCustomAnalysisModelId,
   getAnalysisModelById,
+  DEFAULT_VISION_MODEL,
 } from './models.config';
 import type { AnalysisModelDefinition, AnalysisModelId } from './models.config';
 import { toTextModelCatalog } from './text-channels';
@@ -84,4 +85,22 @@ export function isSelectableTextModelId(
   const model = getTextModelDefinition(value, extraModels);
   if (!model) return false;
   return !('hidden' in model && model.hidden);
+}
+
+export function textModelSupportsVision(
+  modelId: string,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): boolean {
+  return getTextModelDefinition(modelId, extraModels)?.vision ?? false;
+}
+
+export function resolveTextModelForVision(
+  modelId: AnalysisModelId,
+  hasImageInput: boolean,
+  visionModel: AnalysisModelId = DEFAULT_VISION_MODEL,
+  extraModels: readonly AnalysisModelDefinition[] = []
+): AnalysisModelId {
+  if (!hasImageInput || textModelSupportsVision(modelId, extraModels))
+    return modelId;
+  return visionModel;
 }

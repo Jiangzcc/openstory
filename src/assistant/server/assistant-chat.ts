@@ -37,8 +37,10 @@ import type { User } from '@/platform/server/auth/config';
 import type { OpenStoryMcpContext } from '@/platform/server/mcp/tool-context';
 import { ulidSchema } from '@/platform/server/schemas/id.schemas';
 import { ValidationError } from '@/platform/errors';
-import { analysisModelSupportsVision } from '@/models/models.config';
-import { textModelCatalogFromRouting } from '@/models/text-model-catalog';
+import {
+  textModelCatalogFromRouting,
+  textModelSupportsVision,
+} from '@/models/text-model-catalog';
 import {
   describePageContext,
   hasDraft,
@@ -299,7 +301,7 @@ async function assistantRequestModel(
     extraModels,
     configuration.defaultAnalysis
   );
-  const supportsVision = analysisModelSupportsVision(model, extraModels);
+  const supportsVision = textModelSupportsVision(model, extraModels);
   requireAssistantVision(messages, items, supportsVision);
   const llmKey = await scopedDb.apiKeys.resolveLlmKey(model, snapshot);
   return { model, llmKey, supportsVision };

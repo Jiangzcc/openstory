@@ -15,8 +15,10 @@ import {
   textChannelsConfigurationSchema,
   toTextModelCatalog,
 } from './text-channels';
-import { textModelCatalogFromRouting } from './text-model-catalog';
-import { resolveVisionModel } from './models.config';
+import {
+  textModelCatalogFromRouting,
+  resolveTextModelForVision,
+} from './text-model-catalog';
 import { getLlmMaxOutputTokens } from './server/llm-output-budget';
 import { configuredTextModelOptions } from './server/configured-text';
 import {
@@ -158,7 +160,12 @@ describe('workflow execution routing snapshot', () => {
       maxOutputTokens: 4_000,
     });
     expect(
-      resolveVisionModel('custom:mock-text', true, 'custom:vision', catalog)
+      resolveTextModelForVision(
+        'custom:mock-text',
+        true,
+        'custom:vision',
+        catalog
+      )
     ).toBe('custom:vision');
     const route = resolveTextModelRoute(unpacked, 'custom:mock-text');
     if (!route) throw new Error('Mock execution route missing');

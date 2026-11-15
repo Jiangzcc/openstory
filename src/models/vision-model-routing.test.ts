@@ -1,3 +1,8 @@
+import {
+  mergeTextModelCatalog,
+  textModelSupportsVision,
+  resolveTextModelForVision,
+} from './text-model-catalog';
 import { describe, expect, it } from 'vitest';
 import {
   analysisModelSupportsVision,
@@ -39,23 +44,70 @@ describe('configured vision fallback', () => {
 
   it('uses the supplied model only for a text-only model carrying images', () => {
     expect(
-      resolveVisionModel('deepseek/deepseek-v3.2', true, visionModel)
+      resolveTextModelForVision('deepseek/deepseek-v3.2', true, visionModel)
     ).toBe(visionModel);
     expect(
-      resolveVisionModel('deepseek/deepseek-v3.2', false, visionModel)
+      resolveTextModelForVision('deepseek/deepseek-v3.2', false, visionModel)
     ).toBe('deepseek/deepseek-v3.2');
   });
 
   it('keeps the vision-capable model chosen by the user', () => {
-    expect(resolveVisionModel('x-ai/grok-4.7', true, visionModel)).toBe(
+    expect(resolveTextModelForVision('x-ai/grok-4.7', true, visionModel)).toBe(
       'x-ai/grok-4.7'
     );
   });
 
   it('does not change the default of later calls', () => {
-    resolveVisionModel('deepseek/deepseek-v3.2', true, visionModel);
-    expect(resolveVisionModel('deepseek/deepseek-v3.2', true)).toBe(
+    resolveTextModelForVision('deepseek/deepseek-v3.2', true, visionModel);
+    expect(resolveTextModelForVision('deepseek/deepseek-v3.2', true)).toBe(
       DEFAULT_VISION_MODEL
     );
+  });
+});
+
+const MOCK_CONFIGURED_VISION_MODEL = {
+  name: 'Mock deployment',
+  vision: false,
+  structuredOutput: true,
+  tools: true,
+  contextWindow: 16_000,
+  maxOutputTokens: 4_000,
+  inputPricePerMillion: 0.1,
+  outputPricePerMillion: 0.2,
+};
+
+describe('vision policy on a supplied text catalog', () => {
+  const fallback = 'custom:mock-vision';
+
+  it('uses the configured vision capability without changing the static registry', () => {
+    const id = 'x-ai/grok-4.7';
+    const catalog = mergeTextModelCatalog([
+      { ...MOCK_CONFIGURED_VISION_MODEL, id },
+    ]);
+    expect(textModelSupportsVision(id, catalog)).toBe(false);
+    expect(resolveTextModelForVision(id, true, fallback, catalog)).toBe(
+      fallback
+    );
+    expect(analysisModelSupportsVision(id)).toBe(true);
+    expect(resolveVisionModel(id, true)).toBe(id);
+  });
+
+  it('preserves custom choices when no image is sent or the custom model accepts images', () => {
+    const textOnly = 'custom:mock-text';
+    const visual = 'custom:mock-visual';
+    const catalog = mergeTextModelCatalog([
+      { ...MOCK_CONFIGURED_VISION_MODEL, id: textOnly },
+      { ...MOCK_CONFIGURED_VISION_MODEL, id: visual, vision: true },
+    ]);
+    expect(resolveTextModelForVision(textOnly, false, fallback, catalog)).toBe(
+      textOnly
+    );
+    expect(resolveTextModelForVision(textOnly, true, fallback, catalog)).toBe(
+      fallback
+    );
+    expect(resolveTextModelForVision(visual, true, fallback, catalog)).toBe(
+      visual
+    );
+    expect(textModelSupportsVision('custom:missing', catalog)).toBe(false);
   });
 });

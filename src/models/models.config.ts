@@ -431,14 +431,8 @@ export function getMaxOutputTokens(modelId: string, fraction = 0.5): number {
  * to a model that can't accept one — the motion prompt simply falls back to
  * the text-only path.
  */
-export function analysisModelSupportsVision(
-  modelId: string,
-  extraModels: readonly AnalysisModelDefinition[] = []
-): boolean {
-  const model =
-    extraModels.find((entry) => entry.id === modelId) ??
-    getAnalysisModelById(modelId);
-  return model?.vision ?? false;
+export function analysisModelSupportsVision(modelId: string): boolean {
+  return getAnalysisModelById(modelId)?.vision ?? false;
 }
 
 /**
@@ -455,20 +449,17 @@ export const DEFAULT_VISION_MODEL: AnalysisModelId =
 
 /**
  * Resolve which model should actually run a call given whether it carries image
- * input. A text-only model with image input uses the supplied vision model
- * (or `DEFAULT_VISION_MODEL`) so the image can be used; everything else runs as chosen. The effective model
+ * input. A text-only model with image input is swapped to `DEFAULT_VISION_MODEL`
+ * so the image can be used; everything else runs as chosen. The effective model
  * drives the adapter, context window, and cost; callers keep storing/hashing the
  * requested model.
  */
 export function resolveVisionModel(
   modelId: AnalysisModelId,
-  hasImageInput: boolean,
-  visionModel: AnalysisModelId = DEFAULT_VISION_MODEL,
-  extraModels: readonly AnalysisModelDefinition[] = []
+  hasImageInput: boolean
 ): AnalysisModelId {
-  if (!hasImageInput || analysisModelSupportsVision(modelId, extraModels))
-    return modelId;
-  return visionModel;
+  if (!hasImageInput || analysisModelSupportsVision(modelId)) return modelId;
+  return DEFAULT_VISION_MODEL;
 }
 /**
  * Default model when none is specified (API callers, unknown stored ids,
