@@ -92,13 +92,13 @@ describe('generation default provenance (1)', () => {
 });
 
 describe('generation default provenance (2)', () => {
-  it('keeps explicit legacy model preferences even when equal to an old default', () => {
+  it('keeps explicit model arrays even when equal to a default', () => {
     const prefs = parseGenerationPreferences({
       aspectRatio: '16:9',
       analysisModels: ['anthropic/claude-sonnet-5.5'],
-      imageModel: 'gpt_image_2',
-      motionModel: 'seedance_v2',
-      musicModel: 'elevenlabs_music',
+      imageModels: ['gpt_image_2'],
+      videoModels: ['seedance_v2'],
+      audioModels: ['elevenlabs_music'],
     });
     expect(resolveGenerationSettings(configured, prefs, vias)).toMatchObject({
       analysisModels: ['anthropic/claude-sonnet-5.5'],
@@ -190,22 +190,29 @@ describe('generation default provenance (4)', () => {
     expect(result.audioModels).toEqual([configured.turboMusic]);
   });
 
-  it('validates partial settings and migrates old generation flags', () => {
+  it('validates current partial settings', () => {
     expect(parseGenerationPreferences(null)).toEqual({});
     expect(parseGenerationPreferences([])).toEqual({});
     expect(
       parseGenerationPreferences({
-        imageModel: 'retired',
+        imageModels: ['retired'],
         videoModels: [],
         rememberStopAt: true,
+        stopAt: 'music',
       })
-    ).toEqual({ rememberStopAt: true });
+    ).toEqual({ stopAt: 'music', rememberStopAt: true });
+  });
+
+  it('ignores retired scalar models and auto-generation flags', () => {
     expect(
       parseGenerationPreferences({
+        imageModel: 'gpt_image_2',
+        motionModel: 'seedance_v2',
+        musicModel: 'elevenlabs_music',
         autoGenerateMotion: false,
         autoGenerateMusic: false,
-      }).stopAt
-    ).toBe('images');
+      })
+    ).toEqual({});
   });
 });
 

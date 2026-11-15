@@ -39,14 +39,12 @@ import {
 import {
   isGenerationStage,
   NEW_SEQUENCE_STOP_AT,
-  stopAtFromFlags,
   type GenerationStage,
 } from '@/sequences/pipeline';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getLogger } from '@/platform/logger';
 
 const logger = getLogger(['openstory', 'ui', 'use-generation-settings']);
-// Keep the key: legacy snapshots are explicit preferences; new writes contain only overrides.
 const STORAGE_KEY = 'openstory:generation-settings:v6';
 
 export type GenerationSettings = {
@@ -67,7 +65,9 @@ export type GenerationSettings = {
   audioModels: AudioModel[];
 };
 
-type GenerationPreferences = Partial<GenerationSettings>;
+type GenerationPreferences = Partial<
+  Omit<GenerationSettings, 'imageModel' | 'motionModel' | 'musicModel'>
+>;
 type GenerationVias = {
   byteplus?: boolean;
   referenceOnlyModels?: readonly ImageToVideoModel[];
@@ -93,16 +93,10 @@ function modelPreferences(raw: Record<string, unknown>): GenerationPreferences {
   if (analysis.length > 0) prefs.analysisModels = analysis;
   const images = validList(raw.imageModels, isValidTextToImageModel);
   if (images) prefs.imageModels = images;
-  else if (isValidTextToImageModel(raw.imageModel))
-    prefs.imageModels = [raw.imageModel];
   const videos = validList(raw.videoModels, isValidImageToVideoModel);
   if (videos) prefs.videoModels = videos;
-  else if (isValidImageToVideoModel(raw.motionModel))
-    prefs.videoModels = [raw.motionModel];
   const audio = validList(raw.audioModels, isValidAudioModel);
   if (audio) prefs.audioModels = audio;
-  else if (isValidAudioModel(raw.musicModel))
-    prefs.audioModels = [raw.musicModel];
   return prefs;
 }
 
@@ -122,12 +116,6 @@ export function parseGenerationPreferences(
   if (aspect.success) prefs.aspectRatio = aspect.data;
   if (isResolution(bag.resolution)) prefs.resolution = bag.resolution;
   if (isGenerationStage(bag.stopAt)) prefs.stopAt = bag.stopAt;
-  else if ('autoGenerateMotion' in bag || 'autoGenerateMusic' in bag) {
-    prefs.stopAt = stopAtFromFlags({
-      autoGenerateMotion: bag.autoGenerateMotion !== false,
-      autoGenerateMusic: bag.autoGenerateMusic !== false,
-    });
-  }
   const flags = [
     'rememberStopAt',
     'generateStartFrames',

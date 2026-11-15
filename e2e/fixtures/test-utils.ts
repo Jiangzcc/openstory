@@ -37,23 +37,19 @@ export const RECORDED_PIPELINE_SETTINGS = {
   generationMode: 'quality',
   aspectRatio: '16:9',
   analysisModels: ['openai/gpt-6-luna'],
-  imageModel: 'grok_imagine_image',
   imageModels: ['grok_imagine_image'],
-  motionModel: 'minimax_h3_max',
   videoModels: ['minimax_h3_max'],
   // Pinned, not defaulted: the tier picks each model's resolution token, and
   // the fixtures were recorded at H3 Max 720p / Grok Imagine 1k (#1449).
   resolution: '720p',
-  autoGenerateMotion: true,
+  stopAt: 'music',
   // The fixtures were recorded on the frame-based workflow; reference-only
   // is the product default now, so opt back in explicitly.
   generateStartFrames: true,
   // No voice-design fixtures were recorded; the app has no switch for this
   // (#2004), so the pin is the only way to keep the replay off that call.
   generateVoices: false,
-  musicModel: 'elevenlabs_music',
   audioModels: ['elevenlabs_music'],
-  autoGenerateMusic: true,
 } as const;
 
 /** Stamp recorded-pipeline settings before the first navigation. */
