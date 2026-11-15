@@ -1,66 +1,20 @@
 # Workflow snapshots and content-hash staleness
 
-## Generated element references (secondary development, 2026-11-14)
+## Retired Storyboard extensions (2026-11-15)
 
-The element-sheet descendant inherits its explicit Storyboard root through
-Update-all and publishes through `storyboardElementSheets`. Its atomic
-conditional UPDATE/INSERT/result batch checks organization, actual sequence,
-current root/explicit trusted claim and `processing` in SQL. Immutable ID
-precedence survives rename, uploads win over generated storage, and deleted
-identities are not resurrected. Ordinary ownerless publication uses the same
-atomic candidate rules with organization/sequence admission.
+Additional root-owned output facades and SQL processing predicates were
+removed from analysis, cast, automatic styles, reference/element sheets,
+posters and root lifecycle writes. Workflows again use ordinary scoped
+writers. Upstream organization/sequence permissions, artifact claims,
+selection pointers and content hashes keep their original responsibilities.
+Generated element id/token and uploaded-reference rules remain independent
+of a Storyboard root.
 
-Preflight retains the existing live existence hatches, now in
-`element-sheet-output.ts`, and validates sequence access before returning a
-minimal row. The input content remains frozen. Incurred usage, deduction and
-provenance keep their original durable steps and precede publication refusal;
-inline bytes remain stored within the generate step. The
-[generation-plan contract](generation-plan.md#generated-element-reference-publication-secondary-development-2026-11-14)
-records the final check, cached-step limits, independent callers and remaining
-descendant/event/cancellation acceptance. No hash, schema or read hatch changes.
-
-## Storyboard poster publication (secondary development, 2026-11-14)
-
-The poster's selection write now requires its active Storyboard root in the
-actual UPDATE, after incurred usage/debit steps. A stale root cannot publish or
-continue from that refusal. Its realtime event requests authoritative detail
-rather than installing a URL from an old run. The client cancels stale reads,
-coalesces signals with a trailing read and defers to pending-launch confirmation.
-The [poster publication contract](generation-plan.md#storyboard-poster-publication-secondary-development-2026-11-14)
-records the legacy checkpoint, retry, delivery and remaining acceptance limits.
-
-## Analysis cast write fences (secondary development, 2026-11-14)
-
-The `createCastRecords` service binds its five writers through
-`storyboardCast` when AnalyzeScript supplies its trusted root. Root-aware
-SQL guards extend into character/look/location initialization and histories,
-selection/claim writes, voice-description fill, look backfill and legacy
-features, activity and cleanup. Generated element INSERTs use the same
-root predicate and keep schema defaults and encoding.
-
-The shared organization/cast/link predicates distinguish an existing parent
-from an initial row or an orphan eligible for cleanup. A method-boundary
-check cannot authorize later SQL; an outer `withOwnership` bracket only adds
-checks for empty/reused results and failures. Existing atomic batches remain
-atomic, but the whole cast loop is not. Ordinary ownerless entry points and
-all hashes retain their original behavior. See the
-[cast ownership contract](generation-plan.md#analysis-cast-ownership-secondary-development-2026-11-14)
-for sharing, retry and remaining concurrency/acceptance boundaries.
-
-## Analysis output and scene splitting (secondary development, 2026-11-15)
-
-AnalyzeScript and SceneSplit again use ordinary scoped writers after the user
-chose to retire their additional root-owned output facades. Scene, shot,
-script, dialogue, spec and derived-prompt writes follow upstream behavior;
-completion history is best effort except for upstream engine interruptions.
-The extra root/processing SQL predicates, source/spec-bound prompt deduplication
-and split-seed/pointer batching are no longer active on these paths.
-
-Input snapshots, required promptLocale, model/channel resolution and cost
-attribution are unchanged. Separate cast, automatic-style, reference/element/
-poster and root-lifecycle guards remain. The current
-[generation-plan contract](generation-plan.md#analysis-output-and-scene-splitting-secondary-development-2026-11-15)
-records this retirement; the earlier ownership records are historical.
+Client progress, history and poster cache updates follow upstream behavior
+again. Extra root-owner event fields and pending-launch coordination are
+retired. Required promptLocale, model/channel snapshots, credential-source
+cost attribution and in-step media storage remain. See the current
+[generation contract](generation-plan.md#secondary-development-boundaries-2026-11-15).
 
 > **Scene → Shot → Frame.** The still-image surface, version pointers, and retired image `divergedAt` path are defined in [scene-shot-frame-redesign.md](./scene-shot-frame-redesign.md) (#989). This doc covers input-hash staleness and workflow snapshots on top of that model.
 
@@ -83,45 +37,24 @@ For an awaited child, the domain parent chooses the child DTO, identity, require
 
 A workflow that starts an independent variant-image root passes the trusted model configuration through the root trigger option. Its original deduplication and charging remain separate from an awaited child. A freshly requested framing grid remains an independent enrichment operation; snapshot propagation is not permission to copy the parent reservation or attach a generic parent envelope. See the [G03 caller and verification record](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261112-p3-g03/README.md') for each actual edge and the test-double boundaries.
 
-## Failure cleanup and durable retries (secondary development, 2026-11-14)
+## Failure cleanup and cancellation (2026-11-15)
 
-The base owns the durable `step.do('emit-failure')` and catches ordinary hook errors only after that step exhausts its retries. Required cleanup writes reject on failure, and hooks propagate notification errors that their adapters surface. Logging and returning inside the step would checkpoint incomplete work as successful. Existing optional best-effort work is reviewed separately rather than mechanically promoted to a required action. The base then preserves the original generation error. An engine abort or deployment reset remains a transient interruption and must escape unchanged before later failure actions or parent notification run.
+The upstream base owns `step.do('emit-failure')`, its durable retry and
+engine-interruption handling. Domain hooks again execute their upstream
+failure-action order. The extra `runFailureActions` helper and Bible
+claim-to-spawn compensation were retired: an ordinary failure in an earlier
+required action can prevent later actions in that attempt; the existing
+failure step governs retry. Upstream best-effort notification behavior stays
+with the realtime adapter.
 
-`runFailureActions` sequences independent failure actions. After an ordinary error it attempts the remaining actions, including realtime notification, and then rejects with the first error so the existing step can retry. An engine interruption stops the sequence immediately and takes precedence over an earlier ordinary error. The helper owns error propagation only; the domain still owns claim guards, child failure ownership, terminal-state checks and primary/variant payloads.
-
-Storyboard's failure action calls `failWorkflowIfCurrent` before emitting the terminal signal through the existing sequence channel. The guard returns `Promise<boolean>` and scopes its conditional status write to the sequence, organization and actual instance ID or trusted snapshotted claim, excluding `failed` / `completed`. No pre-read authorizes the transition. The [launcher contract](generation-plan.md#storyboard-mutex-and-failure-ownership-secondary-development-2026-11-14) establishes the raw claim before dispatch, so it identifies this run before instance publication too.
-
-Terminal signals keep their explicit root identity and existing client owner checks. Notification delivery uses the upstream best-effort channel; a missed signal has no separate database receipt or cron redelivery. `runFailureActions` still attempts independent actions after an ordinary database error, then propagates the first error; an engine abort stops immediately. Reservation release retains its existing ordinary-error behavior.
-
-Launcher acquisition and publication follow upstream behavior again: the raw-claim CAS and optional start activity precede a separate processing-status write, the ordinary trigger, and the normal sequence instance-ID update. The launcher passes the acquired raw claim as workflowClaimId, preserving the independent workflow failure/content guards. The additional atomic processing/publication protections and durable startup-recovery protocol were retired by user choice on 2026-11-15.
-
-Storyboard's selected lifecycle writes now share the sequence-domain DB module `storyboard-lifecycle.ts`. `startWorkflowIfCurrent` checks organization, sequence, the actual instance or trusted raw claim, and `processing` in the SQL predicates. A changed stop-at retains the existing settings activity, with its actual previous value read by the conditional insert-select, in the same batch as the status/error/stop-at update. Repeating the same stop-at or missing the owner writes no settings activity. A fresh run includes the conditional shot deletion in that batch; a resume keeps its shots. A miss returns before poster or child work and releases only this payload's reservation. The initial existence read remains an existence check, not an ownership check.
-
-`completeWorkflowIfCurrent` conditionally inserts the stable `storyboard.completed` event, changes processing to completed, and tests its activity receipt in one D1 batch. The same owner, completed state and event ID identify a database commit whose workflow checkpoint was lost, so repeating it returns true without another event or state write. A different owner, failure, or completion without that receipt returns false; the parent then skips complete emission and ready email. Credits-short and completion retain their durable state writes and existing realtime events, without a notification outbox. Notification transport failure does not undo the persisted terminal state.
-
-Analyze-script receives an explicit `storyboardOwner` snapshot from the parent instance and its trusted claim. Its failure hook uses that identity rather than the child's instance ID and retains the specific user-facing credential message. A missed guard skips its sequence failure emission while credential/reservation actions still run. A legacy child with only a real Storyboard `_parent` hint can match that parent instance ID, but cannot guess a raw claim. An unknown parent with no proven owner cannot write the sequence terminal state. A truly standalone CLI call with neither owner nor parent retains its prior failure path; that path has no slot protocol and remains outside this concurrent-root protection. The generic parent-notify envelope and descendant parent IDs are unchanged.
-
-On 2026-11-15 the user chose to retire the extra Storyboard startup journal and automatic redelivery. Launchers again use the upstream raw-claim, status-write, ordinary-trigger and instance-update flow; trigger failures follow upstream failure/activity handling and reservation cleanup. Continue uses the upstream settings save/rollback helper. Language, trusted model snapshots and the raw claim passed to the independent lifecycle/content guards remain. The historical launch table and migrations remain without runtime readers or writers. Current launch behavior and limits are documented in [generation-plan](generation-plan.md#storyboard-mutex-and-failure-ownership-secondary-development-2026-11-14); the archived startup and Continue ownership records describe retired guarantees. No new durable restart, provider or wallet acceptance is claimed.
-
-Retrying the step can repeat a notification or an already completed cleanup, so actions retain their existing guarded/idempotent writes. An acknowledged channel response still does not prove browser delivery. The helper and real workflow base are tested with explicit host-side action, channel and retry substitutes; these tests do not exercise Cloudflare durable replay or restart. The correction scope and remaining hooks are recorded in the [failure retry contract batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-failure-retry-contract/README.md'). The selected Storyboard guard and its remaining ownership and delivery limits are recorded in the [Storyboard failure guard batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-storyboard-failure-guard/README.md'). Retired launcher claim/publication protections are recorded in the [launcher ownership batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-launcher-ownership/README.md'). The selected root and analysis transitions and their replay limits are recorded in the [lifecycle branches batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-lifecycle-branches/README.md').
-
-### Terminal notification delivery (secondary development, 2026-11-14)
-
-On 2026-11-15 the user chose to retire the secondary-development terminal-notification outbox and return to the upstream notification mechanism. Terminal status, the completion activity receipt, root ownership, credit handling and existing realtime DO history remain. Newly executed terminal writes no longer enqueue notifications, and cron no longer sends pending notifications after a workflow ends. A lost realtime signal can leave an open page waiting until a later successful detail read exposes the persisted terminal status; that read does not recreate a missed toast or event.
-
-The outbox's additional owner check immediately before delivery is also retired. A takeover after a committed terminal write can precede its signal; the signal retains `workflowOwner` and the client filters obsolete roots. The upstream realtime adapter logs and absorbs fetch failures, including errors with engine-interruption text. `runFailureActions` retains engine-interruption priority for errors its actions actually propagate.
-
-The generated `storyboard_notifications` schema, its payload type and migration history remain as historical database metadata; this retirement does not drop a table, rewrite applied migrations or clear existing rows. Existing receipts are no longer delivered. The [delivery batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-notification-delivery-contract/README.md') describes the retired implementation, not the current delivery guarantee. Email remains a separate protocol.
-
-### Pending artifact cancellation (secondary development, 2026-11-14)
-
-The existing shot cancellation API keeps its three artifact kinds and the existing version/target checks. Visual-prompt cancellation now commits the source terminal state, cancellation of its live dependent image rows, and clearing of their exact frame promote pointers in one organization-scoped D1 batch (`artifactCancellations.cancelVisualPrompt`). Direct image cancellation commits its terminal state and exact promote clear together (`cancelImage`). Completion wins if it made the source terminal before the cancellation write; another kickoff's pointer is never cleared. Motion-prompt cancellation retains its existing single guarded write. Both frame claim setters and conditional handovers require their destination version to still exist and remain uncancelled in the pointer UPDATE itself. A delayed preparation or fallback cannot re-install a cancelled destination after the cancellation batch; null clearing and their existing return contracts remain unchanged.
-
-The service attempts best-effort workflow termination only after the data batch returns. Its `cancelled` boolean still reports whether the requested source row transitioned. A repeated request can return false while repairing dependents or a promote pointer left by an earlier partial cancellation. The repair is conditional on that exact source/image remaining cancelled and preserves a newer claim. If the batch fails, every data change rolls back; if it commits but its reply is lost, the data cancellation is already complete even though a termination RPC may never be attempted.
-
-A child claim admitted after cancellation is handled at the insert too. `frameVariants.createPendingClaim` evaluates a supplied visual dependency's cancelled status in the image INSERT itself, only when its owning frame and the target frame belong to the same organization. An already-cancelled source produces a cancelled, non-primary image row, no `image.started` activity, and `claimForGeneration` cannot start it. The non-primary row cannot hide a newer active render in the max-id primary projection. If the image INSERT wins first, the cancellation batch sees and cancels that dependent. This preserves the return-row contract while making either serial order safe; the method does not newly validate missing dependency ids or treat every other upstream failure as a cancellation.
-
-The [artifact cancellation batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-artifact-cancellation/README.md') records migrated D1 fault/race tests and service substitutes. This does not introduce a whole-Storyboard cancel endpoint, make provider termination reliable or recover its RPC after a lost commit reply. Root-descendant content-write ownership, complete event ownership and real Cloudflare/provider acceptance remain open. No new workflow read hatch, schema, migration or cron is introduced.
+The additional startup-recovery journal and terminal-notification outbox,
+including their unused schema and fork migrations, are retired.
+Launchers and Continue follow their upstream start and rollback flow.
+Artifact cancellation also uses upstream sequential writes, dependency
+cancellation and best-effort termination; the extra whole-chain atomic
+batch and late cancelled-claim/pointer protections are retired. These
+choices accept upstream failure and late-result behavior without adding a
+separate restart or redelivery protocol.
 
 ## The two failure modes we're closing
 
@@ -307,16 +240,9 @@ no snapshot (an automatic style still deriving) stays pointer-less.
 `sequences.style_config` survives as `legacyStyleConfig`, read only for a
 sequence with no version and never written.
 
-Automatic-style persistence is extracted to `sequence-style-writes.ts` and
-`look/server/db/automatic-style-write.ts`, reused by the original ordinary
-methods and the narrow `storyboardAutoStyle` facade. A root-bound run checks
-organization/sequence/root-or-explicit-claim/processing in each actual recipe,
-history and pointer mutation. The existing config-read order, history/pointer
-batch and selector-switch semantics are retained. Earlier authorized recipe
-updates are not rolled back when a later snapshot loses ownership. No style
-hash input, recipe schema or sheet-claim policy changes. See the
-[automatic-style ownership contract](generation-plan.md#automatic-style-ownership-secondary-development-2026-11-14)
-for retry, standalone and external-effect boundaries.
+Automatic-style publication uses the ordinary style and sequence writers
+again. The additional root-owned facade and SQL predicates were retired on
+2026-11-15; upstream history/pointer and selector-switch behavior applies.
 
 A stale artifact's cause names the knobs that moved between the snapshot live
 when it was made and the live one, over the same body the hashes read:

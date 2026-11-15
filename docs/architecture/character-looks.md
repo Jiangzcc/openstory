@@ -359,46 +359,6 @@ before `persist-scene-looks` writes the picks. Only persisted ids are stored.
   name she lacks. No look of hers is rewritten or
   removed by another sequence's analysis. See `organization-characters.md`.
 
-## Secondary development: GC-03 storyboard look fencing (2026-11-14)
-
-The upstream analysis matching, sharing and retirement rules above remain the
-behavior. GC-03 supplies an optional `StoryboardCastScope` to
-`createCharacterLooksMethods` for `syncFromAnalysis` and `linkFromAnalysis`, and
-passes it into `requireLook`/`backfillDefaultLook`, `newLookRow`,
-`lookDefinitionWrite` and `legacyFeaturesMove`. Unbound public methods continue
-using the existing helpers without an ownership predicate.
-
-Each conditional INSERT uses `insertWithStoryboardGuard` to retain ULID/time
-defaults and JSON/boolean encoders. A new look requires its character's real
-organization/cast-link chain; its version requires the inserted look's real
-parent chain. Existing definition/pointer changes, claim demotions, revival,
-retirement and events carry the active storyboard root and actual parent guards.
-The default-look legacy move also fences its bible INSERT, character pointer,
-all-look claim demotion and event in the same existing batch. Backfill's two
-conflict-safe INSERTs are fenced too, even when they precede the caller's main
-batch. Each INSERT is single-row and retains D1's parameter budget.
-
-The checks do not widen retirement eligibility or make all analysis writes one
-transaction. Ownership lost before a later nested batch blocks that batch while
-retaining earlier authorized versions and events. Shared/attached characters
-still link looks without rewriting or retiring existing ones, including the
-removed-link and archived-sequence cases documented above. Concurrent sharing
-continues to use the existing `analysisMayNotRewrite` read boundaries.
-
-The migrated D1-adapter tests in
-`src/cast/server/db/storyboard-character-writes.test.ts` schedule ownership changes
-at actual transport boundaries for definition/legacy writes, missing-default
-backfill, shared status, revival, new look creation and retirement. They compare
-stored rows and claims with the state at handover and check that prior authorized
-history survives. This is local SQL evidence, not remote D1 or workflow replay
-acceptance; no schema migration or provider call is part of GC-03.
-
-The multi-look regression links seven missing looks in one fourteen-statement
-D1 batch, with the adapter enforcing the 100-bound-parameter limit on each
-statement. A synthetic trigger refusing the final look version proves that all
-preceding look/version INSERTs roll back together. Sync retains its existing
-per-look batches; linking retains its single batch across all missing looks.
-
 ## Editing
 
 - Remove is soft and undoable. The default look cannot be removed. A look a
@@ -428,23 +388,10 @@ per-look batches; linking retains its single batch across all missing looks.
 
 ## Storyboard sheet publication
 
-Sheet jobs carrying a trusted `storyboardOwner` (or a direct Storyboard parent)
-use `storyboardReferenceSheets`. The root must still own the processing sequence,
-and the character and look must remain live through its cast link. Attached or
-shared organization characters remain valid sheet targets; this does not give
-analysis permission to rewrite their bibles.
-
-The landing batch guards the version insert, pointer, divergent parking, status
-and generated event together. A lost root or mismatched parent/version rolls
-the batch back. An input edit still parks the result, and a newer sheet claim
-still wins. Failure cleanup matches only that run's non-null claim and the
-organization, so it may release its own claim after the root stops without
-failing a newer or demoted claim. Standalone jobs retain their existing path.
-
-Portraits remain independent enrichment of the stored sheet version. They do not
-inherit this processing-root gate or the parent's reservation. Local D1 tests
-cover publication races and cleanup; they do not establish a deployed engine's
-restart, provider termination or every later progress-event interleaving.
+Character sheet workflows use ordinary organization-scoped writers and
+upstream artifact claims again. The additional Storyboard-root publication
+and cleanup facade was retired on 2026-11-15. Existing look selection,
+divergence and independent portrait behavior retain their upstream owners.
 
 ## Traps
 
