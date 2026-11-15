@@ -42,6 +42,11 @@ Incurred usage, deduction and provenance precede publication, even if a later
 root check refuses it. The generated object's original ID and storage key
 remain its provenance when a competing upload wins the reference.
 
+`ElementSheetWorkflow` owns the upstream generation, usage, deduction and
+provenance steps. The output module owns reuse validation, guarded publication
+and completion checks. On 2026-11-15 the duplicate entry execution module was
+removed and those upstream steps returned to their original workflow.
+
 Confirmed root loss becomes non-retryable inside the affected step. Unknown
 checks retain their retryable error and cause. All entries settle before an
 ordinary failure is aggregated; engine interruption takes priority and keeps
@@ -472,7 +477,7 @@ A Continue has a sequence-specific pending token shared by its QueryClient subsc
 
 History is parsed through the same leaf schemas, scoped to the current session/request, then followed by live events received while it was pending. An accepted terminal event is retained across hydration and claim-to-instance publication; history and late phases cannot reopen that same owner. A new confirmed owner or explicit launch establishes a new session. The pending live replay buffer is bounded to 2,000 events; overflow abandons hydration and keeps displayed live state.
 
-The [lifecycle notification batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-notification-ownership/README.md') records the source changes, deterministic races and real QueryClient/SQLite/SSE host evidence. The later [terminal delivery batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-notification-delivery-contract/README.md') atomically queues newly executed Storyboard terminal signals with their status writes and retries pending delivery through the existing cron. It is at-least-once, retains client owner checks, and does not repair email, all content writes/events, old cached checkpoints or prove Cloudflare/browser delivery. New-launch startup exclusion and publication-error recovery use the durable protocol above. Independent Update all preflight, cancellation and legacy raw claims without durable requests remain open.
+The [lifecycle notification batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-notification-ownership/README.md') records the retained owner checks and real QueryClient/SQLite/SSE host evidence. On 2026-11-15 the user chose to retire the separate terminal-notification outbox and cron redelivery, returning delivery to the upstream best-effort channel. Terminal database writes and client owner checks remain; the [terminal delivery batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-notification-delivery-contract/README.md') is historical. New-launch startup exclusion and publication-error recovery use the durable protocol above. Independent Update all preflight, cancellation and legacy raw claims without durable requests remain open.
 
 ## Shot specs and prompts (#1923, #1929)
 
