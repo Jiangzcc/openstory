@@ -1,0 +1,304 @@
+{
+  "date": "2026-11-15",
+  "purpose": "Planning baseline only; no application refactoring or upstream integration performed.",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "local": "fbf4396c6c241b834cf73fd7695a0b8cfa92fe2d",
+  "target": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+  "sourceTree": "dd3faeca026529dffedc408efa9ed5381473e2a9",
+  "refs": {
+    "main": "1672af37e796bdb09501e868f922678201b9c043",
+    "originMain": "1672af37e796bdb09501e868f922678201b9c043",
+    "originDevelop": "fbf4396c6c241b834cf73fd7695a0b8cfa92fe2d"
+  },
+  "verification": {
+    "upstreamRemote": "https://github.com/openstory-so/openstory.git",
+    "upstreamLsRemote": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+    "fetch": "git -c http.sslBackend=schannel -c gc.auto=0 fetch upstream main",
+    "fetchSucceeded": true,
+    "commonAncestor": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+    "pendingMainline": 40,
+    "pendingHistory": 48,
+    "worktreeInitiallyClean": true
+  },
+  "footprint": {
+    "all": {
+      "paths": 1732,
+      "added": 1024,
+      "modified": 708,
+      "deleted": 0
+    },
+    "src": {
+      "paths": 1240,
+      "added": 579,
+      "modified": 661,
+      "deleted": 0
+    },
+    "productionSrc": {
+      "paths": 841,
+      "added": 317,
+      "modified": 524,
+      "deleted": 0
+    },
+    "tests": {
+      "paths": 411,
+      "added": 266,
+      "modified": 145,
+      "deleted": 0
+    }
+  },
+  "mergeProbe": {
+    "command": "git -c merge.conflictStyle=merge merge-tree --write-tree --name-only --no-messages <local> <target>",
+    "gitVersion": "git version 2.53.0.windows.2",
+    "expectedExitCode": 1,
+    "resultTree": "0cb531842300bcdf56efd2c6a8e609d5365730cb",
+    "files": 54,
+    "textBlocks": 94,
+    "groups": {
+      "e2e-path": {
+        "files": 2,
+        "textBlocks": 2
+      },
+      "ui-path": {
+        "files": 19,
+        "textBlocks": 35
+      },
+      "other-src-path": {
+        "files": 26,
+        "textBlocks": 44
+      },
+      "src-test-path": {
+        "files": 6,
+        "textBlocks": 12
+      },
+      "build-path": {
+        "files": 1,
+        "textBlocks": 1
+      }
+    },
+    "conflicts": [
+      {
+        "path": "e2e/tests/editing-dialogue-cast.spec.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "e2e/tests/editing-shots.spec.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/assistant/ui/assistant-conversation.tsx",
+        "textBlocks": 5
+      },
+      {
+        "path": "src/assistant/ui/scripted-connection.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/assistant/ui/tool-call-card.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/audio/ui/music-view.tsx",
+        "textBlocks": 3
+      },
+      {
+        "path": "src/cast/sequence-elements.fn.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/cast/server/db/characters.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/cast/server/db/locations.ts",
+        "textBlocks": 3
+      },
+      {
+        "path": "src/cast/server/sheets/location-sheet-trigger.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/cast/server/workflows/character-bible-workflow.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/cast/server/workflows/sheet-snapshots.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/look/server/db/styles.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/models/models.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/models/server/llm-call-helper.ts",
+        "textBlocks": 3
+      },
+      {
+        "path": "src/platform/server/test/seed.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/sequences/sequences.fn.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/sequences/server/add-video-model.test.ts",
+        "textBlocks": 3
+      },
+      {
+        "path": "src/sequences/server/create-sequences.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/sequences/server/db/sequences.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/sequences/server/poster-prompt.ts",
+        "textBlocks": 3
+      },
+      {
+        "path": "src/sequences/server/resolve-style-source.test.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/sequences/server/script-enhancement.test.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/sequences/server/script-enhancement.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/sequences/server/sequence-models.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/sequences/server/smart-retry.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/sequences/server/workflows/scene-split-workflow.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/sequences/ui/script/new-sequence-page.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/sequences/ui/script/script-view.tsx",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/shots/server/persist-shot-spec.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/shots/server/regenerate-shot-prompt.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/server/shot-content-edit.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/server/shot-preview.test.ts",
+        "textBlocks": 4
+      },
+      {
+        "path": "src/shots/server/shot-preview.ts",
+        "textBlocks": 4
+      },
+      {
+        "path": "src/shots/server/update-stale-plan.test.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/server/workflows/shot-spec-rewrite-workflow.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/shots/server/workflows/update-stale-plan-run.test.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/dialogue-lines.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/mobile-scene-drawer.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/prompts/prompt-history-sheet.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/scene-elements-tab.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/scene-group.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/scene-list-item.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/scene-list.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/scene-script-prompts.tsx",
+        "textBlocks": 7
+      },
+      {
+        "path": "src/shots/ui/scene-stale-shots.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/sequence-dialogue-lines.tsx",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/shots/ui/shot-spec-form.tsx",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/shots/ui/staleness/staleness-indicator.tsx",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/stills/server/build-shot-image-input.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/stills/server/shot-image-generation.ts",
+        "textBlocks": 1
+      },
+      {
+        "path": "src/stills/server/workflows/shot-variant-workflow.ts",
+        "textBlocks": 2
+      },
+      {
+        "path": "src/studio/ui/studio-gallery.tsx",
+        "textBlocks": 2
+      },
+      {
+        "path": "vite.config.ts",
+        "textBlocks": 1
+      }
+    ]
+  },
+  "limitations": [
+    "Counts are textual merge measurements, not semantic compatibility or person-hours.",
+    "Path groups do not attribute conflict causes; UI paths also contain non-localization behavior.",
+    "The earlier 40-node E/C comparison is historical evidence; only this current endpoint was remeasured here.",
+    "Production source excludes test/spec/stories and __tests__; it includes resources and generated source.",
+    "Planning changes are excluded from this frozen HEAD baseline."
+  ]
+}

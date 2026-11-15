@@ -1,0 +1,305 @@
+{
+  "date": "2026-11-15",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "local": "fbf4396c6c241b834cf73fd7695a0b8cfa92fe2d",
+  "target": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+  "method": "Exact 40-target pairing of independent cumulative merge-tree measurements; counts are not summed.",
+  "limitation": "Measures merge-conflict syntax only; no behavioral, complete coverage, or lower-maintenance claim.",
+  "b1": {
+    "status": "rejected; explicit source translations restored",
+    "measurementObject": "1cb330603239b044ba71b06f21ff4ef2ecfc72ff",
+    "endpoint": {
+      "window": 40,
+      "target": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+      "before": {
+        "files": 54,
+        "textBlocks": 94
+      },
+      "after": {
+        "files": 53,
+        "textBlocks": 94
+      },
+      "delta": {
+        "files": -1,
+        "textBlocks": 0
+      },
+      "resolvedPaths": ["src/shots/ui/scene-group.tsx"],
+      "introducedPaths": [],
+      "changedBlocks": [
+        {
+          "path": "src/shots/ui/scene-group.tsx",
+          "before": 1,
+          "after": 0,
+          "delta": -1
+        },
+        {
+          "path": "vite.config.ts",
+          "before": 1,
+          "after": 2,
+          "delta": 1
+        }
+      ]
+    },
+    "distribution": {
+      "files": {
+        "decreased": 40,
+        "equal": 0,
+        "increased": 0
+      },
+      "textBlocks": {
+        "decreased": 8,
+        "equal": 32,
+        "increased": 0
+      }
+    },
+    "pathUnion": {
+      "before": 55,
+      "after": 54,
+      "resolved": ["src/shots/ui/scene-group.tsx"],
+      "introduced": []
+    },
+    "sourceEvidence": [
+      {
+        "path": "src/ui/error/default-not-found.tsx",
+        "blobs": {
+          "base": "3cb6ccca355d1105fb9a07cfe34e7797277f2b9a",
+          "local": "536d3b4db94938968565c1d8beef9fda35cef2f7",
+          "target": "3cb6ccca355d1105fb9a07cfe34e7797277f2b9a",
+          "snapshot": "3cb6ccca355d1105fb9a07cfe34e7797277f2b9a"
+        },
+        "snapshotEqualsBase": true,
+        "snapshotEqualsLocal": false,
+        "snapshotEqualsTarget": true,
+        "baseToLocal": {
+          "path": "src/ui/error/default-not-found.tsx",
+          "added": 8,
+          "removed": 4
+        },
+        "baseToSnapshot": {
+          "path": "src/ui/error/default-not-found.tsx",
+          "added": 0,
+          "removed": 0
+        },
+        "localToSnapshot": {
+          "path": "src/ui/error/default-not-found.tsx",
+          "added": 4,
+          "removed": 8
+        }
+      },
+      {
+        "path": "src/shots/ui/scene-group.tsx",
+        "blobs": {
+          "base": "620f3c058aa8b8d860745e119093022ce3368d2a",
+          "local": "80a072f68c18bceb590509347c40d07d67e77076",
+          "target": "bb0e066ecad6339b4e647a333a35fd45eebffe6a",
+          "snapshot": "620f3c058aa8b8d860745e119093022ce3368d2a"
+        },
+        "snapshotEqualsBase": true,
+        "snapshotEqualsLocal": false,
+        "snapshotEqualsTarget": false,
+        "baseToLocal": {
+          "path": "src/shots/ui/scene-group.tsx",
+          "added": 104,
+          "removed": 58
+        },
+        "baseToSnapshot": {
+          "path": "src/shots/ui/scene-group.tsx",
+          "added": 0,
+          "removed": 0
+        },
+        "localToSnapshot": {
+          "path": "src/shots/ui/scene-group.tsx",
+          "added": 58,
+          "removed": 104
+        }
+      },
+      {
+        "path": "src/routes/_app/pricing.tsx",
+        "blobs": {
+          "base": "b0a0cab33625b7fef5d23146d7be174a766badc0",
+          "local": "238208efc886c9fd39d7f0b03f1d6ae403383e35",
+          "target": "b0a0cab33625b7fef5d23146d7be174a766badc0",
+          "snapshot": "161d05caf689c9276b73d835d7f4dc04ab27061c"
+        },
+        "snapshotEqualsBase": false,
+        "snapshotEqualsLocal": false,
+        "snapshotEqualsTarget": false,
+        "baseToLocal": {
+          "path": "src/routes/_app/pricing.tsx",
+          "added": 65,
+          "removed": 44
+        },
+        "baseToSnapshot": {
+          "path": "src/routes/_app/pricing.tsx",
+          "added": 22,
+          "removed": 13
+        },
+        "localToSnapshot": {
+          "path": "src/routes/_app/pricing.tsx",
+          "added": 36,
+          "removed": 48
+        }
+      }
+    ],
+    "seamFootprint": [
+      {
+        "path": "scripts/localization/compiler-plugin.test.ts",
+        "added": 98,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler-plugin.ts",
+        "added": 76,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/adversarial.test.ts",
+        "added": 141,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/bindings.ts",
+        "added": 113,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/compile.test.ts",
+        "added": 145,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/compile.ts",
+        "added": 91,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/display-bindings.ts",
+        "added": 83,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/events.ts",
+        "added": 63,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/fixture-module.ts",
+        "added": 35,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/jsx.ts",
+        "added": 244,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/messages.ts",
+        "added": 143,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/nodes.ts",
+        "added": 61,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/runtime-fixture.ts",
+        "added": 79,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/runtime.test.ts",
+        "added": 139,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/scope.ts",
+        "added": 115,
+        "removed": 0
+      },
+      {
+        "path": "scripts/localization/compiler/types.ts",
+        "added": 47,
+        "removed": 0
+      },
+      {
+        "path": "vite.config.ts",
+        "added": 2,
+        "removed": 0
+      },
+      {
+        "path": "vitest.config.ts",
+        "added": 2,
+        "removed": 1
+      }
+    ]
+  },
+  "b2": {
+    "status": "accepted structural isolation; no measured conflict reduction",
+    "commit": "3b8d8616e9ce6552ca175cb2db80ad58589334aa",
+    "measurementObject": "4290e81a2b890fbfad0221a32925e510b5175cce",
+    "changedWindows": 0,
+    "endpoint": {
+      "target": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+      "before": {
+        "files": 54,
+        "blocks": 94
+      },
+      "after": {
+        "files": 54,
+        "blocks": 94
+      }
+    }
+  },
+  "columns": [
+    "target",
+    "beforeFiles",
+    "beforeBlocks",
+    "b1Files",
+    "b1Blocks",
+    "b2Files",
+    "b2Blocks"
+  ],
+  "windows": [
+    ["4470e2627aa6a2806c7c4936659cb31b8a7cc091", 5, 5, 4, 4, 5, 5],
+    ["a20428facf319fc77df68eb3602aefe354d579c8", 7, 7, 6, 6, 7, 7],
+    ["e5b95c453beb97d05a3f895cfbfdcb533ffb3bda", 11, 12, 10, 11, 11, 12],
+    ["5603a43b3a82a6f88142fa950c9f1849dd642279", 14, 19, 13, 18, 14, 19],
+    ["92f5bea2159d4e53d4ccedf7908a01c9b11a6ec0", 14, 19, 13, 18, 14, 19],
+    ["66416dfa1dfa2da480b0bf3eadf3f26ad3188650", 15, 20, 14, 19, 15, 20],
+    ["6a9dcadb33d915fbedf80720a844968a6a8bea62", 15, 21, 14, 20, 15, 21],
+    ["ad0e7fbe6fd9e2d06905725e48a6296cef1abca7", 16, 23, 15, 22, 16, 23],
+    ["02ba7c7873e2f72327d5108d6cb51f67b37f41c0", 21, 32, 20, 32, 21, 32],
+    ["83e522b63e15e47263d7fa8a59aab378ad3769f2", 21, 32, 20, 32, 21, 32],
+    ["505f9535da05b82d04230138ae4089b00cff6204", 21, 32, 20, 32, 21, 32],
+    ["b4d79df557e7b1a6bc7efd67ffb40070948c2673", 21, 32, 20, 32, 21, 32],
+    ["189c0b334c5aad0f1d0f1fbd0a624fe42f0dd1b4", 21, 32, 20, 32, 21, 32],
+    ["afff085fc13c15d6d0f030ca8f09cb961ee1597a", 24, 37, 23, 37, 24, 37],
+    ["5fa7ded6447464193294e2426a04d89aec2daca1", 24, 37, 23, 37, 24, 37],
+    ["a7ad595ec41f717b57cbeace01342aae9d190719", 24, 37, 23, 37, 24, 37],
+    ["d436445bc7906aa3914d8a7a7c7c813e028573d3", 24, 37, 23, 37, 24, 37],
+    ["27d8770f1c97125037e025bf95a4a6b8a857f370", 35, 52, 34, 52, 35, 52],
+    ["a19a605c6aac1f446c0c22e8c9db1d3acde124f8", 35, 52, 34, 52, 35, 52],
+    ["2fd2ff48ff11ceab11ec51dd55bdbdb9a61f09bd", 44, 72, 43, 72, 44, 72],
+    ["8fef2925cfac9c04fc4d20eb148d6dc39ba0ce31", 44, 72, 43, 72, 44, 72],
+    ["756159c6f790daa9a0e3465caada70c2cd5c0f32", 44, 72, 43, 72, 44, 72],
+    ["86599736b3864345717feb4b9557cd6e646cecd6", 44, 72, 43, 72, 44, 72],
+    ["92990f10912f2f7b4762ebe9c04889413762dcdf", 44, 72, 43, 72, 44, 72],
+    ["729b3f512743c773c56ab327dc8b9fc0fb0e0241", 45, 75, 44, 75, 45, 75],
+    ["7a1037539c51492a681703b3df24255c4d158258", 46, 76, 45, 76, 46, 76],
+    ["10b99fa2db968405ad7b0bf796c40a64c8698eb6", 46, 76, 45, 76, 46, 76],
+    ["9c2d857734531479855d240bd4392c07c3830b4e", 47, 77, 46, 77, 47, 77],
+    ["186f225983c5b013fb95688289321c856cc71bea", 48, 83, 47, 83, 48, 83],
+    ["5ea49552c67ecbb45144ff9ffdc42a28eac35aed", 50, 86, 49, 86, 50, 86],
+    ["ea576885654b2971a3e89b7c696cf136eb084887", 50, 86, 49, 86, 50, 86],
+    ["9d6e81e4bd74fe35c03df4e55c27f4e04013577b", 50, 86, 49, 86, 50, 86],
+    ["c0daa397965c0db0eb45699594c3aaf7b15bb475", 50, 86, 49, 86, 50, 86],
+    ["c60a0e767f1d402fb04c77d7dbbe9cde0750f5b8", 50, 86, 49, 86, 50, 86],
+    ["69a9a5e850eb8bfd2a0416143a053e7ac3568852", 50, 86, 49, 86, 50, 86],
+    ["edf79fc5d205e04465229582071634de953d4a8e", 50, 86, 49, 86, 50, 86],
+    ["bf11c4cbe76ce93e935cd1b4f2123c972f2cd134", 50, 86, 49, 86, 50, 86],
+    ["e3ac7313df07a77828f0f50b3263067fe2acdfb6", 52, 88, 51, 88, 52, 88],
+    ["1672af37e796bdb09501e868f922678201b9c043", 55, 95, 54, 95, 55, 95],
+    ["5da052c46d4a9ab232d865781f76e993a7667b2c", 54, 94, 53, 94, 54, 94]
+  ]
+}
