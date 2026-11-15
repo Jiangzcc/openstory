@@ -67,6 +67,15 @@ vi.doMock('@/billing/cost-estimation', () => ({
   ...realCostEstimation,
   estimatePlanCost,
 }));
+const realConfiguredPlanBilling =
+  await import('@/billing/configured-image-plan-billing');
+const estimatePlanCostWithConfiguredImages = vi.fn(
+  realConfiguredPlanBilling.estimatePlanCostWithConfiguredImages
+);
+vi.doMock('@/billing/configured-image-plan-billing', () => ({
+  ...realConfiguredPlanBilling,
+  estimatePlanCostWithConfiguredImages,
+}));
 const { freezeFreshGenerationPlan } =
   await import('./freeze-fresh-generation-plan');
 
@@ -347,9 +356,19 @@ describe('fresh planning checkpoint', () => {
             spec: 1,
             clip: 1,
           }),
-          imageModelRouting: mockImageRouting,
           pricing: mockPricing,
         })
+      );
+      expect(
+        estimatePlanCostWithConfiguredImages
+      ).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ imageModelRouting: mockImageRouting })
+      );
+      expect(estimatePlanCost.mock.calls[0]?.[0]).not.toHaveProperty(
+        'imageModelRouting'
+      );
+      expect(estimatePlanCost.mock.calls[0]?.[0]).not.toHaveProperty(
+        'imageParameters'
       );
       expect(result.plan).toBe(plan);
       expect(result.remainingCost).toBe(
@@ -471,8 +490,18 @@ it.each([
         imageModelCount: 2,
         videoModels: ['seedance_v2_5'],
         videoDurationSeconds: 5,
-        imageModelRouting: mockImageRouting,
       })
+    );
+    expect(
+      estimatePlanCostWithConfiguredImages
+    ).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ imageModelRouting: mockImageRouting })
+    );
+    expect(estimatePlanCost.mock.calls[0]?.[0]).not.toHaveProperty(
+      'imageModelRouting'
+    );
+    expect(estimatePlanCost.mock.calls[0]?.[0]).not.toHaveProperty(
+      'imageParameters'
     );
     expect(globalThis.fetch).not.toHaveBeenCalled();
   }

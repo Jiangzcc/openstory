@@ -1,9 +1,11 @@
 import {
   quoteConfiguredImageRequest,
   configuredImageSource,
+  estimateConfiguredImageCost,
 } from './configured-image-billing';
 import {
   estimateImageCost,
+  estimatePlanCost,
   estimateReferenceSheetCost,
   gateEstimate,
 } from './cost-estimation';
@@ -20,7 +22,7 @@ import type { TextToImageModel } from '@/models/models';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import type { PlanUnitKind } from '@/sequences/generation-plan';
 import type { PlanReferences } from '@/shots/server/update-stale-references';
-import { ZERO_MICROS, addMicros, micros } from './money';
+import { ZERO_MICROS, addMicros, micros, multiplyMicros } from './money';
 import type { Microdollars } from './money';
 import type { EffectiveFalPricing } from './fal-cost';
 
@@ -46,6 +48,11 @@ type PlanImageSelection = Pick<
 
 type PlanImageEstimateInput = PlanImageSelection &
   Pick<UpdateStalePlan, 'aspectRatio' | 'sequence'>;
+
+type ConfiguredPlanEstimateInput = Parameters<typeof estimatePlanCost>[0] & {
+  plan: PlanImageEstimateInput;
+  imageModelRouting?: ImageModelRoutingSnapshot;
+};
 
 function targetImageModels(
   plan: Pick<UpdateStalePlan, 'renderOptions'>,
@@ -246,17 +253,101 @@ export function partitionPlanImageEstimate(args: {
     ? estimatePlanImageCost(plan, imageModelRouting, pricing)
     : undefined;
   return {
-    counts: quote
-      ? {
-          ...counts,
-          still: 0,
-          'sheet:character': 0,
-          'sheet:location': 0,
-          'ref:element': 0,
-        }
-      : counts,
+    counts: quote ? withoutImageCounts(counts) : counts,
     costMicros: quote?.costMicros ?? ZERO_MICROS,
     priced: quote?.priced,
     imageSource: quote?.imageSource,
+  };
+}
+
+function withoutImageCounts(counts: Record<PlanUnitKind, number>) {
+  return {
+    ...counts,
+    still: 0,
+    'sheet:character': 0,
+    'sheet:location': 0,
+    'ref:element': 0,
+  };
+}
+
+function estimateCountedConfiguredImages(
+  args: ConfiguredPlanEstimateInput
+): Microdollars {
+  const { counts } = args;
+  const sheets = [
+    counts['sheet:character'],
+    counts['sheet:location'],
+    counts['ref:element'],
+  ].reduce<Microdollars>(
+    (total, count) =>
+      addMicros(total, estimateCountedConfiguredImage(args, count, '16:9')),
+    ZERO_MICROS
+  );
+  const stills =
+    counts.still > 0
+      ? multiplyMicros(
+          estimateCountedConfiguredImage(
+            args,
+            counts.still,
+            args.aspectRatio,
+            args.resolution
+          ),
+          args.imageModelCount ?? 1
+        )
+      : ZERO_MICROS;
+  return addMicros(sheets, stills);
+}
+
+function estimateCountedConfiguredImage(
+  args: ConfiguredPlanEstimateInput,
+  count: number,
+  aspectRatio: AspectRatio,
+  resolution?: Resolution
+) {
+  if (count <= 0) return ZERO_MICROS;
+  return estimateConfiguredImageCost(
+    {
+      model: args.imageModel,
+      imageModelRouting: args.imageModelRouting,
+      operation: 'generate',
+      imageCount: 1,
+      referenceImageCount: 0,
+      aspectRatio,
+      resolution,
+    },
+    count
+  );
+}
+
+function partitionCountedConfiguredImages(args: ConfiguredPlanEstimateInput) {
+  const image = partitionPlanImageEstimate(args);
+  if (
+    image.priced !== undefined ||
+    !configuredImageSource(args.imageModel, args.imageModelRouting)
+  )
+    return image;
+  return {
+    ...image,
+    counts: withoutImageCounts(args.counts),
+    costMicros: estimateCountedConfiguredImages(args),
+  };
+}
+
+export function estimatePlanCostWithConfiguredImages({
+  plan,
+  imageModelRouting,
+  ...native
+}: ConfiguredPlanEstimateInput) {
+  const image = partitionCountedConfiguredImages({
+    ...native,
+    plan,
+    imageModelRouting,
+  });
+  return {
+    ...image,
+    costMicros: addMicros(
+      estimatePlanCost({ ...native, counts: image.counts }),
+      image.costMicros
+    ),
   };
 }

@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { partitionPlanImageEstimate } from './configured-image-plan-billing';
+import {
+  estimatePlanCostWithConfiguredImages,
+  partitionPlanImageEstimate,
+} from './configured-image-plan-billing';
 import { estimatePlanCost } from './cost-estimation';
-import { usdToMicros, ZERO_MICROS } from './money';
+import { addMicros, usdToMicros, ZERO_MICROS } from './money';
 import type { EffectiveFalPricing } from './fal-cost';
 import { imageConfigurationFixture } from '@/models/__tests__/image-model-fixture';
 import { createImageModelRoutingSnapshot } from '@/models/image-channels';
@@ -74,6 +77,28 @@ function mixedReferences(): NonNullable<ImagePlan['references']> {
       entries: [{ elementId: 'mock-element' }],
     },
   });
+}
+
+function nativeReferences(): NonNullable<ImagePlan['references']> {
+  const references = mixedReferences();
+  return {
+    ...references,
+    characterSheets: references.characterSheets.map((sheet) => ({
+      ...sheet,
+      imageModel: BUILTIN_MODEL,
+    })),
+    lookSheetsAfterDefault: references.lookSheetsAfterDefault.map((sheet) => ({
+      ...sheet,
+      imageModel: BUILTIN_MODEL,
+    })),
+    locationSheets: references.locationSheets.map((sheet) => ({
+      ...sheet,
+      imageModel: BUILTIN_MODEL,
+    })),
+    elementSheets: references.elementSheets
+      ? { ...references.elementSheets, imageModel: BUILTIN_MODEL }
+      : null,
+  };
 }
 
 function countBasedCost(
@@ -275,4 +300,118 @@ it('refuses missing configured routes and missing configured prices before exclu
     })
   ).toThrow(/price/i);
   expect(args.counts.still).toBe(1);
+});
+
+function estimatePlanWithImages(
+  overrides: Partial<
+    Parameters<typeof estimatePlanCostWithConfiguredImages>[0]
+  > = {}
+) {
+  return estimatePlanCostWithConfiguredImages({
+    plan: mockPlan(),
+    counts: MIXED_COUNTS,
+    imageModel: BUILTIN_MODEL,
+    aspectRatio: '16:9',
+    videoModels: [],
+    videoDurationSeconds: 5,
+    referenceOnly: false,
+    draftMotion: false,
+    audioModels: [],
+    audioDurationSeconds: 0,
+    imageModelRouting: MOCK_ROUTING,
+    pricing: MOCK_PRICING,
+    ...overrides,
+  });
+}
+
+it.each([
+  { pricing: MOCK_PRICING, imageUsd: 0.66, priced: true },
+  { pricing: {}, imageUsd: 0.8, priced: false },
+])(
+  'combines mixed image quotes with the native non-image estimate ($imageUsd)',
+  ({ pricing, imageUsd, priced }) => {
+    const result = estimatePlanWithImages({
+      plan: { ...mockPlan(), references: mixedReferences() },
+      pricing,
+    });
+    expect(result).toMatchObject({
+      costMicros: addMicros(
+        countBasedCost(OTHER_COUNTS, pricing),
+        usdToMicros(imageUsd)
+      ),
+      priced,
+      imageSource: 'platform',
+    });
+    expect(result.counts).toEqual(OTHER_COUNTS);
+  }
+);
+
+it.each([
+  { model: CONFIGURED_MODEL, unitPriceUsd: 0.1, imageUsd: 0.8 },
+  { model: CONFIGURED_MODEL, unitPriceUsd: 0, imageUsd: 0 },
+  { model: 'qwen_image', unitPriceUsd: 0.1, imageUsd: 0.8 },
+] satisfies {
+  model: TextToImageModel;
+  unitPriceUsd: number;
+  imageUsd: number;
+}[])(
+  'preserves primary-model count pricing when all actual requests are native ($model/$unitPriceUsd)',
+  ({ model, unitPriceUsd, imageUsd }) => {
+    const plan = mockPlan([BUILTIN_MODEL, BUILTIN_MODEL]);
+    plan.references = nativeReferences();
+    const routing = [
+      {
+        ...MOCK_ROUTE,
+        modelId: model,
+        priceCards: MOCK_ROUTE.priceCards.map((card) => ({
+          ...card,
+          unitPriceUsd,
+        })),
+      },
+    ];
+    const result = estimatePlanWithImages({
+      plan,
+      imageModel: model,
+      imageModelCount: 2,
+      imageModelRouting: routing,
+    });
+    expect(result.costMicros).toBe(
+      addMicros(countBasedCost(OTHER_COUNTS), usdToMicros(imageUsd))
+    );
+    expect(result.counts).toEqual(OTHER_COUNTS);
+    expect(
+      plan.targets.every((target) => target.imageModel === BUILTIN_MODEL)
+    ).toBe(true);
+    expect(MIXED_COUNTS.still).toBe(2);
+  }
+);
+
+it('keeps native count estimates and unknown-price floors unchanged', () => {
+  const plan = mockPlan([BUILTIN_MODEL]);
+  for (const pricing of [MOCK_PRICING, {}]) {
+    const result = estimatePlanWithImages({ plan, pricing });
+    expect(result.costMicros).toBe(countBasedCost(MIXED_COUNTS, pricing));
+    expect(result.counts).toBe(MIXED_COUNTS);
+  }
+});
+
+it('does not validate an unused configured route when no image units are owed', () => {
+  const result = estimatePlanWithImages({
+    plan: mockPlan([]),
+    counts: OTHER_COUNTS,
+    imageModel: CONFIGURED_MODEL,
+    imageModelRouting: [],
+  });
+  expect(result.costMicros).toBe(countBasedCost(OTHER_COUNTS));
+});
+
+it('refuses an unavailable primary route before excluding count-based images', () => {
+  expect(() =>
+    estimatePlanWithImages({
+      plan: mockPlan([BUILTIN_MODEL]),
+      imageModel: CONFIGURED_MODEL,
+      imageModelRouting: [],
+    })
+  ).toThrow('unavailable');
+  expect(MIXED_COUNTS.still).toBe(2);
 });

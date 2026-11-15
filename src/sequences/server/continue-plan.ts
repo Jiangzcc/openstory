@@ -1,8 +1,7 @@
-import { partitionPlanImageEstimate } from '@/billing/configured-image-plan-billing';
+import { estimatePlanCostWithConfiguredImages } from '@/billing/configured-image-plan-billing';
 import { computePlan } from '@/shots/server/update-stale-plan';
 import type { Locale } from '@/platform/i18n/locale';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
-import { addMicros } from '@/billing/money';
 import type { ModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
 import { loadStoryboardModelConfiguration } from './launchers';
 import { configuredImageSource } from '@/billing/configured-image-billing';
@@ -13,7 +12,7 @@ import { configuredImageSource } from '@/billing/configured-image-billing';
  */
 
 import { musicRequestDurationSeconds } from '@/audio/server/music-staleness';
-import { estimateImageCost, estimatePlanCost } from '@/billing/cost-estimation';
+import { estimateImageCost } from '@/billing/cost-estimation';
 import type { Microdollars } from '@/billing/money';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import {
@@ -90,7 +89,8 @@ type ContinueEstimateInput = {
 
 function continueImageEstimate(
   args: ContinueEstimateInput,
-  pricing: Awaited<ReturnType<typeof getEffectiveFalPricing>>
+  pricing: Awaited<ReturnType<typeof getEffectiveFalPricing>>,
+  image: ReturnType<typeof estimatePlanCostWithConfiguredImages>
 ) {
   const model = safeTextToImageModel(
     args.sequence.imageModel,
@@ -98,12 +98,6 @@ function continueImageEstimate(
   );
   const routing = args.modelConfiguration.imageModelRouting;
   const counts = planCounts(args.work);
-  const image = partitionPlanImageEstimate({
-    plan: args.imagePlan,
-    counts,
-    imageModelRouting: routing,
-    pricing,
-  });
   const priced =
     image.priced ??
     (counts.still === 0 ||
@@ -119,11 +113,8 @@ function continueImageEstimate(
       counts['ref:element'] >
     0;
   return {
-    imageModel: model,
-    imageModelRouting: routing,
+    micros: image.costMicros,
     priced,
-    counts: image.counts,
-    costMicros: image.costMicros,
     imageSource:
       image.imageSource ??
       (hasImages ? configuredImageSource(model, routing) : undefined),
@@ -137,15 +128,15 @@ async function estimateContinueCost(args: ContinueEstimateInput): Promise<{
 }> {
   const { sequence, shots } = args;
   const pricing = await getEffectiveFalPricing();
-  const image = continueImageEstimate(args, pricing);
   const videoModel = safeImageToVideoModel(
     sequence.videoModel,
     DEFAULT_VIDEO_MODEL
   );
-  const cost = estimatePlanCost({
-    counts: image.counts,
-    imageModel: image.imageModel,
-    imageModelRouting: image.imageModelRouting,
+  const cost = estimatePlanCostWithConfiguredImages({
+    plan: args.imagePlan,
+    counts: planCounts(args.work),
+    imageModel: safeTextToImageModel(sequence.imageModel, DEFAULT_IMAGE_MODEL),
+    imageModelRouting: args.modelConfiguration.imageModelRouting,
     aspectRatio: sequence.aspectRatio,
     resolution: sequence.resolution,
     videoModels: [videoModel],
@@ -159,11 +150,7 @@ async function estimateContinueCost(args: ContinueEstimateInput): Promise<{
     audioDurationSeconds: musicRequestDurationSeconds(shots),
     pricing,
   });
-  return {
-    micros: addMicros(cost, image.costMicros),
-    priced: image.priced,
-    imageSource: image.imageSource,
-  };
+  return continueImageEstimate(args, pricing, cost);
 }
 
 export async function prepareContinueEstimate(args: {

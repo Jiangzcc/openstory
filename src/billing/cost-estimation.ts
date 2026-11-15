@@ -636,23 +636,21 @@ export function estimateStoryboardCost(opts: StoryboardCostOpts): Microdollars {
  * a heuristic cast. A shot rewrite is one LLM call. Rebuilding a still or
  * motion prompt from the spec is free. Music prompts stay one call each.
  */
-export function estimatePlanCost(
-  opts: ConfiguredImageEstimateOptions & {
-    counts: Record<PlanUnitKind, number>;
-    imageModel: TextToImageModel;
-    imageModelCount?: number;
-    aspectRatio: AspectRatio;
-    resolution?: Resolution;
-    videoModels: readonly ImageToVideoModel[];
-    videoDurationSeconds: number;
-    /** Reference-only clips price on the reference-to-video route. */
-    referenceOnly: boolean;
-    draftMotion: boolean;
-    audioModels: readonly AudioModel[];
-    audioDurationSeconds: number;
-    pricing: FalPricingMap;
-  }
-): Microdollars {
+export function estimatePlanCost(opts: {
+  counts: Record<PlanUnitKind, number>;
+  imageModel: TextToImageModel;
+  imageModelCount?: number;
+  aspectRatio: AspectRatio;
+  resolution?: Resolution;
+  videoModels: readonly ImageToVideoModel[];
+  videoDurationSeconds: number;
+  /** Reference-only clips price on the reference-to-video route. */
+  referenceOnly: boolean;
+  draftMotion: boolean;
+  audioModels: readonly AudioModel[];
+  audioDurationSeconds: number;
+  pricing: FalPricingMap;
+}): Microdollars {
   const { counts, pricing } = opts;
   const prompts = counts.spec + counts['prompt:music'];
   let total = addMicros(
@@ -660,8 +658,6 @@ export function estimatePlanCost(
     addMicros(
       estimateReferenceSheetCost({
         imageModel: opts.imageModel,
-        imageModelRouting: opts.imageModelRouting,
-        imageParameters: opts.imageParameters,
         characterSheets: counts['sheet:character'],
         locationSheets: counts['sheet:location'],
         elementSheets: counts['ref:element'],
@@ -681,8 +677,6 @@ export function estimatePlanCost(
           estimateImageCost(opts.imageModel, opts.aspectRatio, counts.still, {
             pricing,
             resolution: opts.resolution,
-            imageModelRouting: opts.imageModelRouting,
-            imageParameters: opts.imageParameters,
           }),
           { model: opts.imageModel, operation: 'storyboard:shot-images' },
           counts.still

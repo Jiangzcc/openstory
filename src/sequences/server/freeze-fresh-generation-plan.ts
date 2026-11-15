@@ -5,9 +5,7 @@ import { planCounts, planWork } from '@/sequences/generation-plan';
 import { computePlan } from '@/shots/server/update-stale-plan';
 import type { UpdateStalePlan } from '@/shots/server/update-stale-plan';
 import { unpackModelRuntimeConfiguration } from '@/models/model-runtime-configuration';
-import { partitionPlanImageEstimate } from '@/billing/configured-image-plan-billing';
-import { addMicros } from '@/billing/money';
-import { estimatePlanCost } from '@/billing/cost-estimation';
+import { estimatePlanCostWithConfiguredImages } from '@/billing/configured-image-plan-billing';
 import { getEffectiveFalPricing } from '@/billing/server/fal-pricing-live';
 import { resolveImageModels } from '@/models/resolve-image-models';
 import { resolveVideoModels } from '@/models/resolve-video-models';
@@ -87,14 +85,9 @@ async function remainingPlanCost(
     getEffectiveFalPricing(),
   ]);
   const imageModelRouting = frozenImageRouting(input);
-  const image = partitionPlanImageEstimate({
+  const remaining = estimatePlanCostWithConfiguredImages({
     plan,
     counts,
-    imageModelRouting,
-    pricing,
-  });
-  const remaining = estimatePlanCost({
-    counts: image.counts,
     imageModel: input.imageModel,
     imageModelCount: models.imageModels.length,
     imageModelRouting,
@@ -111,7 +104,7 @@ async function remainingPlanCost(
     audioDurationSeconds: musicRequestDurationSeconds(shots),
     pricing,
   });
-  return addMicros(remaining, image.costMicros);
+  return remaining.costMicros;
 }
 
 function frozenImageRouting(input: StoryboardWorkflowInput) {
