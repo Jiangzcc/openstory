@@ -1,0 +1,49 @@
+{
+  "observedAt": "2026-11-15T05:46:38.310Z",
+  "base": "2f38e52c1548708b8a6ba30fb9c0d01cdd3896a0",
+  "localStart": "fbf4396c6c241b834cf73fd7695a0b8cfa92fe2d",
+  "upstream": "5da052c46d4a9ab232d865781f76e993a7667b2c",
+  "merge": "5b99a43a8b5e927f2c3ccb590752a614b225a1ab",
+  "parents": [
+    "ac9b56d913549e14c413d3c761531e69a1a9a12f",
+    "5da052c46d4a9ab232d865781f76e993a7667b2c"
+  ],
+  "tree": "63b50b176f5c5ce7cc5904991a1012833023d0c5",
+  "firstParentNodes": 40,
+  "historicalCommits": 48,
+  "upstreamHistoryUnreachable": [],
+  "hooks": [
+    "client-server-boundary",
+    "dead-code",
+    "format",
+    "lint",
+    "migration-safety",
+    "typecheck",
+    "workflow-trigger-safety"
+  ],
+  "initialFullUnit": {
+    "files": 890,
+    "tests": 12154,
+    "passed": 12114,
+    "failed": 40
+  },
+  "correctedIntegrationSuites": {
+    "files": 9,
+    "tests": 521,
+    "passed": 521
+  },
+  "unchangedUpstreamLocalFailures": {
+    "files": 3,
+    "tests": 10
+  },
+  "localRuntime": {
+    "node": "22.22.2",
+    "requiredNode": ">=26 <27",
+    "bun": "1.4.1",
+    "bindings": "test",
+    "browser": "Chrome 157.0.8103.52"
+  },
+  "pushed": false,
+  "develop": "fbf4396c6c241b834cf73fd7695a0b8cfa92fe2d",
+  "originDevelop": "fbf4396c6c241b834cf73fd7695a0b8cfa92fe2d"
+}
