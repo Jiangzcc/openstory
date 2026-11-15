@@ -16,11 +16,14 @@ and upstream version, claim and selection behavior again. Organization and
 sequence access checks remain. An older run is no longer rejected by the
 retired root/processing predicates.
 
-Generated element publication retains its independent id/token and uploaded
-reference rules through `sequenceElements.publishGenerated`; it carries no
-Storyboard owner facade. Required promptLocale, frozen model/channel routing,
-usage attribution, billing and in-step media storage keep their existing
-owners. Archived ownership records describe retired guarantees.
+Generated elements use the upstream workflow's id/token lookups and ordinary
+`sequenceElements.create` / `update` calls again. An image found before the
+write is reused; the additional atomic publication batch and its identity,
+deletion and organization predicates are retired. The upstream checks and
+writes remain separate, including their upload/delete race windows. Required
+promptLocale, frozen model/channel routing, usage attribution, billing and
+in-step media storage keep their existing owners. Archived ownership records
+describe retired guarantees.
 
 - Pure half (units, requires graph, cascade, Update all's filter, footer
   copy): `src/sequences/generation-plan.ts`.

@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm';
 import { vi } from 'vitest';
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { micros } from '@/billing/money';
@@ -32,7 +31,6 @@ export const UPLOADED = {
   imagePath: 'mock/upload.mp4',
 };
 export const INITIAL_DATE = new Date('2026-11-14T05:00:00.000Z');
-const ROOT_REPLACEMENT = 'synthetic-replacement-storyboard';
 export const faults = { afterGeneration: async () => {} };
 let database: Database;
 
@@ -115,10 +113,6 @@ async function seedWorkflowGraph(db: Database) {
   const space = await seedSpace(db);
   const userId = generateId();
   const sequenceId = generateId();
-  const owner = {
-    workflowRunId: 'storyboard-' + generateId(),
-    workflowClaimId: generateId(),
-  };
   await db.insert(user).values({
     id: userId,
     name: 'Synthetic element writer',
@@ -129,10 +123,9 @@ async function seedWorkflowGraph(db: Database) {
     ...space,
     title: 'Synthetic element sequence',
     status: 'processing',
-    workflowRunId: owner.workflowRunId,
     updatedAt: INITIAL_DATE,
   });
-  return { ...space, userId, sequenceId, owner };
+  return { ...space, userId, sequenceId };
 }
 
 function checkpoints() {
@@ -200,13 +193,6 @@ export async function elementWorkflowFixture() {
 
 export type ElementFixture = Awaited<ReturnType<typeof elementWorkflowFixture>>;
 
-export function changeRoot(fixture: ElementFixture) {
-  return fixture.db
-    .update(sequences)
-    .set({ workflowRunId: ROOT_REPLACEMENT })
-    .where(eq(sequences.id, fixture.sequenceId));
-}
-
 export function seedElement(
   fixture: ElementFixture,
   data: Partial<typeof sequenceElements.$inferInsert> = {}
@@ -237,51 +223,4 @@ export function resetElementMocks() {
   generation.mockClear();
   store.mockClear();
   faults.afterGeneration = async () => {};
-}
-
-function beforeStatement(
-  statement: D1PreparedStatement,
-  before: () => Promise<void>
-): D1PreparedStatement {
-  return new Proxy(statement, {
-    get(target, key) {
-      if (key === 'bind')
-        return (...args: unknown[]) =>
-          beforeStatement(target.bind(...args), before);
-      if (key === 'raw' || key === 'all' || key === 'run') {
-        return async () => {
-          await before();
-          return target[key]();
-        };
-      }
-      const value = Reflect.get(target, key);
-      return typeof value === 'function' ? value.bind(target) : value;
-    },
-  });
-}
-
-export function beforeElementPublicationSql(
-  fixture: ElementFixture,
-  change: () => Promise<unknown>
-) {
-  const state = { fired: false };
-  const before = async () => {
-    if (state.fired) return;
-    state.fired = true;
-    await change();
-  };
-  const client = fixture.db.$client;
-  const batch = client.batch.bind(client);
-  const prepare = client.prepare.bind(client);
-  vi.spyOn(client, 'batch').mockImplementationOnce(async (statements) => {
-    await before();
-    return batch(statements);
-  });
-  vi.spyOn(client, 'prepare').mockImplementation((query) => {
-    const statement = prepare(query);
-    return /^(update|insert into) "sequence_elements"/i.test(query)
-      ? beforeStatement(statement, before)
-      : statement;
-  });
-  return state;
 }

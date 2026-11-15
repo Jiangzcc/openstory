@@ -7,8 +7,9 @@ removed from analysis, cast, automatic styles, reference/element sheets,
 posters and root lifecycle writes. Workflows again use ordinary scoped
 writers. Upstream organization/sequence permissions, artifact claims,
 selection pointers and content hashes keep their original responsibilities.
-Generated element id/token and uploaded-reference rules remain independent
-of a Storyboard root.
+Generated element lookup and persistence also follow upstream again; the
+additional atomic publisher and its SQL guards are retired. Voice failure
+cleanup uses the original separate writes without failed-pointer repair.
 
 Client progress, history and poster cache updates follow upstream behavior
 again. Extra root-owner event fields and pending-launch coordination are

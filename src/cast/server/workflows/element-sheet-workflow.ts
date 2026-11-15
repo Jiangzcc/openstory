@@ -48,9 +48,21 @@ import type {
 import type { WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
 import { getLogger } from '@/platform/logger';
 import { isEngineAbortError } from '@/platform/server/workflow/errors';
-import { bindElementSheetOutput } from './element-sheet-output';
 
 const logger = getLogger(['openstory', 'workflow', 'element-sheet']);
+
+function toMinimalElement(row: SequenceElementMinimal): SequenceElementMinimal {
+  return {
+    id: row.id,
+    token: row.token,
+    description: row.description,
+    imageUrl: row.imageUrl,
+    consistencyTag: row.consistencyTag,
+    kind: row.kind,
+    durationSeconds: row.durationSeconds,
+    personInMedia: row.personInMedia,
+  };
+}
 
 /**
  * Reduce the per-entry settled outcomes to the generated elements, failing
@@ -98,7 +110,6 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
     const input = event.payload;
     const { sequenceId, styleConfig } = input;
     const imageModel = input.imageModel ?? DEFAULT_IMAGE_MODEL;
-    const output = bindElementSheetOutput(scopedDb, input);
 
     const entries = input.entries.slice(0, MAX_AUTO_ELEMENTS);
     if (input.entries.length > entries.length) {
@@ -132,7 +143,15 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
         const existing = await step.do(
           `check-existing-element-${index}`,
           async () => {
-            return output.readExisting(entry);
+            const row =
+              (await scopedDb.liveRead.sequenceElements.getById(
+                entry.elementId
+              )) ??
+              (await scopedDb.liveRead.sequenceElements.getByToken(
+                sequenceId,
+                entry.token
+              ));
+            return row ? toMinimalElement(row) : null;
           }
         );
         if (existing?.imageUrl) {
@@ -219,9 +238,53 @@ export class ElementSheetWorkflow extends OpenStoryWorkflowEntrypoint<ElementShe
           });
         });
 
-        return await step.do(`ingest-element-${index}`, () =>
-          output.publish(entry, storageResult)
-        );
+        return await step.do(`ingest-element-${index}`, async () => {
+          // Re-check inside the durable step: this step's own retry would hit
+          // the primary key, and the unique (sequenceId, token) index makes a
+          // race with a concurrent upload a hard failure — prefer the existing
+          // row over our generated one either way. The Script-stage
+          // placeholder (no image) is filled in rather than replaced.
+          const raced =
+            (await scopedDb.liveRead.sequenceElements.getById(
+              entry.elementId
+            )) ??
+            (await scopedDb.liveRead.sequenceElements.getByToken(
+              sequenceId,
+              entry.token
+            ));
+          if (raced?.imageUrl) {
+            return toMinimalElement(raced);
+          }
+          if (raced) {
+            return toMinimalElement(
+              await scopedDb.sequenceElements.update(raced.id, {
+                imageUrl: storageResult.url,
+                imagePath: storageResult.path,
+              })
+            );
+          }
+
+          const created = await scopedDb.sequenceElements.create({
+            id: entry.elementId,
+            sequenceId,
+            uploadedFilename: `generated-${entry.token.toLowerCase()}.png`,
+            token: entry.token,
+            imageUrl: storageResult.url,
+            imagePath: storageResult.path,
+            // The bible entry already carries what vision would produce —
+            // mark completed so the analyze-script vision gate passes on
+            // regeneration runs.
+            description: entry.description,
+            consistencyTag: entry.consistencyTag,
+            visionStatus: 'completed',
+            visionGeneratedAt: new Date(),
+            firstMentionSceneId: entry.firstMention.sceneId,
+            firstMentionText: entry.firstMention.text,
+            firstMentionLine: entry.firstMention.lineNumber,
+          });
+
+          return toMinimalElement(created);
+        });
       })
     );
 

@@ -102,14 +102,14 @@ spawn timeout is protected by the in-flight skip, not the blind timer.
 The card shows a Pending take while a generating husk exists; history lists
 completed rows that have a `voiceId`.
 
-Voice failure updates use one D1 batch: fail only a live version owned by the
-scoped organization, then clear only that version's own pending pointer once
-its status is failed. Either write failing rolls the batch back and rejects.
-A retry may also clear a failed version's pointer left by an older partial
-write, but still returns null and preserves its original error. Completed
-versions awaiting promotion, a newer claim and a user's selection remain
-untouched. The [voice claim recovery batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-voice-claim-recovery/README.md')
-records the host-side SQLite fault injection and its runtime limits.
+Voice failure updates follow upstream again: mark a live version failed,
+then clear the pending pointer only when that first update returned a row.
+These are separate writes. The additional atomic batch, failed-pointer repair
+and database organization predicates were retired on 2026-11-15. A failure
+between writes can leave a failed version's pending pointer, and repeating
+this method does not repair it. Existing version, selection and claim behavior
+is upstream's. The [voice claim recovery batch](../secondary-development/history-archive.md#records 'c572b906d:docs/secondary-development/preservation/20261114-p3-g03-voice-claim-recovery/README.md')
+describes the retired enhancement and its historical local evidence.
 
 `CharacterBibleWorkflow` spawns a `CharacterVoiceWorkflow` child per
 _speaking_ character (`speakingCharacterIds()`: a bible name sharing a

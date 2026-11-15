@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { eq } from 'drizzle-orm';
 import { generateId } from '@/platform/id';
-import { sequenceElements, sequences } from '@/platform/server/db/schema';
 import { STORAGE_BUCKETS } from '@/platform/server/storage/buckets';
 import { MAX_AUTO_ELEMENTS } from './cast-records';
 import {
@@ -9,8 +7,6 @@ import {
   INITIAL_DATE,
   STORED,
   UPLOADED,
-  beforeElementPublicationSql,
-  changeRoot,
   debit,
   elementFacts,
   elementWorkflowFixture,
@@ -198,62 +194,6 @@ it.each(['id', 'token'] as const)(
   }
 );
 
-it('rejects a deleted identity after spend without resurrecting it', async () => {
-  await seedElement(fixture);
-  faults.afterGeneration = async () => {
-    await fixture.db
-      .update(sequenceElements)
-      .set({ deletedAt: new Date() })
-      .where(eq(sequenceElements.id, fixture.entry.elementId));
-  };
-  await expect(fixture.run()).rejects.toThrow();
-  const facts = await elementFacts(fixture);
-  expect(facts.elements[0]?.imageUrl).toBeNull();
-  expect(facts.elements[0]?.deletedAt).toBeInstanceOf(Date);
-  expectCostAndProvenance(facts);
-});
-
-it('rejects a tombstoned ID rather than falling back to an uploaded token', async () => {
-  await seedElement(fixture, { deletedAt: new Date(), token: 'OLD' });
-  await seedElement(fixture, { id: generateId(), ...UPLOADED });
-  await expect(fixture.run()).rejects.toThrow(
-    'Generated sequence element is unavailable'
-  );
-  expect(generation).not.toHaveBeenCalled();
-});
-
-it('validates sequence organization before returning an uploaded element', async () => {
-  await seedElement(fixture, UPLOADED);
-  fixture.input.sequenceId = generateId();
-  await expect(fixture.run()).rejects.toThrow('Sequence not found');
-  expect(generation).not.toHaveBeenCalled();
-  expect(debit).not.toHaveBeenCalled();
-});
-
-it('rejects a foreign-sequence ID even when the requested token exists locally', async () => {
-  await seedElement(fixture, { id: generateId(), ...UPLOADED });
-  const otherSequenceId = generateId();
-  await fixture.db.insert(sequences).values({
-    id: otherSequenceId,
-    organizationId: fixture.organizationId,
-    styleId: fixture.styleId,
-    title: 'Synthetic other sequence',
-  });
-  await seedElement(fixture, { sequenceId: otherSequenceId, ...UPLOADED });
-  await expect(fixture.run()).rejects.toThrow(
-    'Generated sequence element is unavailable'
-  );
-  expect(generation).not.toHaveBeenCalled();
-});
-
-it('keeps the ownerless standalone entry point while using atomic publication', async () => {
-  await changeRoot(fixture);
-  await expect(fixture.run()).resolves.toEqual({
-    elements: [expect.objectContaining({ imageUrl: STORED.url })],
-  });
-  expect(fixture.steps).not.toContain('check-element-sheet-completion');
-});
-
 it('stops publication when provenance fails after debit', async () => {
   vi.spyOn(fixture.scope.provenance, 'record').mockRejectedValueOnce(
     new Error('Synthetic provenance interruption')
@@ -284,40 +224,4 @@ it('caps entries and lets sibling pipelines finish before ordinary failure aggre
     MAX_AUTO_ELEMENTS - 1
   );
   expect(debit).toHaveBeenCalledTimes(MAX_AUTO_ELEMENTS - 1);
-});
-
-it('preserves an upload arriving after the last empty read at publication SQL', async () => {
-  await seedElement(fixture);
-  const boundary = beforeElementPublicationSql(fixture, () =>
-    fixture.db
-      .update(sequenceElements)
-      .set({ ...UPLOADED, kind: 'video', personInMedia: true })
-      .where(eq(sequenceElements.id, fixture.entry.elementId))
-  );
-  await expect(fixture.run()).resolves.toHaveProperty(
-    'elements.0.imageUrl',
-    UPLOADED.imageUrl
-  );
-  expect(boundary.fired).toBe(true);
-  const facts = await elementFacts(fixture);
-  expect(facts.elements[0]).toEqual(
-    expect.objectContaining({ ...UPLOADED, kind: 'video', personInMedia: true })
-  );
-  expectCostAndProvenance(facts);
-});
-
-it('reuses a token uploaded after the last missing read at publication SQL', async () => {
-  const uploadId = generateId();
-  const boundary = beforeElementPublicationSql(fixture, () =>
-    seedElement(fixture, { id: uploadId, ...UPLOADED })
-  );
-  await expect(fixture.run()).resolves.toHaveProperty(
-    'elements.0.id',
-    uploadId
-  );
-  expect(boundary.fired).toBe(true);
-  const facts = await elementFacts(fixture);
-  expect(facts.elements).toHaveLength(1);
-  expect(facts.elements[0]?.imageUrl).toBe(UPLOADED.imageUrl);
-  expectCostAndProvenance(facts);
 });

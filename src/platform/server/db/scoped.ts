@@ -76,7 +76,6 @@ import { createLocationSheetVariantsMethods } from '@/cast/server/db/location-sh
 import { createBytePlusAssetsMethods } from '@/models/server/db/byteplus-assets';
 import { createModelUsageMethods } from '@/billing/server/db/model-usage';
 import { createSequenceElementsMethods } from '@/cast/server/db/sequence-elements';
-import { createElementSheetPublicationMethods } from '@/cast/server/db/element-sheet-publication';
 import { createSequenceExportsMethods } from '@/sequences/server/db/sequence-exports';
 import {
   createPublicStitchReads,
@@ -451,10 +450,7 @@ export function createScopedDb(organizationId: string, userId: string) {
     assistant: createAssistantMethods(db, organizationId, userId),
 
     characters: createCharactersMethods(db, organizationId),
-    sequenceElements: {
-      ...createSequenceElementsMethods(db),
-      ...createElementSheetPublicationMethods(db, organizationId),
-    },
+    sequenceElements: createSequenceElementsMethods(db),
 
     // Direct model access (#458) — flat organization-scoped runs of arbitrary fal
     // endpoints, decoupled from the sequence graph.
