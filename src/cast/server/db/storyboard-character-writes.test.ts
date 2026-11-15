@@ -23,6 +23,7 @@ import {
   user,
 } from '@/platform/server/db/schema';
 import { generateId } from '@/platform/id';
+import { PHOTOREAL_RENDERING } from '@/cast/rendering';
 import { StoryboardContentOwnershipError } from '@/sequences/server/db/storyboard-content-scope';
 import { createCharactersMethods } from './characters';
 import {
@@ -70,7 +71,103 @@ const SQL_FAULT = 'synthetic_character_failure';
 const SQL_FAILURE = 'synthetic character write refused';
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   await db.run(sql.raw('DROP TRIGGER IF EXISTS ' + SQL_FAULT));
+});
+
+it('writes real slugs on guarded inserts without the test-only default', async () => {
+  vi.stubEnv('VITEST', '');
+  const bound = bindCast(db, graph);
+  const first = await bound.create(
+    input(graph.sequenceId, { characterId: 'slug-one', name: 'Café Ada' }),
+    OPTIONS
+  );
+  const second = await bound.create(
+    input(graph.sequenceId, { characterId: 'slug-two', name: 'Cafe-Ada' }),
+    OPTIONS
+  );
+  const rows = await db.select().from(characters);
+  expect(rows.find((row) => row.id === first.id)?.slug).toBe('cafe-ada');
+  expect(rows.find((row) => row.id === second.id)?.slug).toBe('cafe-ada-2');
+});
+
+it('renames a guarded character slug with its selected bible version', async () => {
+  vi.stubEnv('VITEST', '');
+  const bound = bindCast(db, graph);
+  await bound.create(input(graph.sequenceId, { name: 'Café Ada' }), OPTIONS);
+  await bound.create(input(graph.sequenceId, { name: 'Cafe-Ada' }), OPTIONS);
+  const [row] = await db
+    .select()
+    .from(characters)
+    .where(eq(characters.id, graph.character.id));
+  expect(row?.slug).toBe('cafe-ada');
+  expect(
+    (
+      await createCharactersMethods(db, graph.organizationId).getCurrent(
+        graph.character.id
+      )
+    )?.name
+  ).toBe('Cafe-Ada');
+});
+
+it('creates and renames organization character slugs without test-only defaults', async () => {
+  vi.stubEnv('VITEST', '');
+  const actorId = generateId();
+  await db.insert(user).values({
+    id: actorId,
+    name: 'Synthetic slug writer',
+    email: actorId + '@example.invalid',
+  });
+  const methods = createCharactersMethods(db, graph.organizationId);
+  const character = await methods.createForOrganization(
+    {
+      name: 'Café Portrait',
+      rendering: PHOTOREAL_RENDERING,
+      standardClothing: 'coat',
+    },
+    { createdBy: actorId }
+  );
+  expect(await methods.resolveId('cafe-portrait')).toBe(character.id);
+  await methods.updateBible(
+    null,
+    character.id,
+    { name: 'Moved Portrait' },
+    { source: 'edit', actorId }
+  );
+  expect(await methods.resolveId('moved-portrait')).toBe(character.id);
+  expect(await methods.resolveId('cafe-portrait')).toBeNull();
+});
+
+it('retries a concurrent organization slug collision without partial version rows', async () => {
+  vi.stubEnv('VITEST', '');
+  const actorId = generateId();
+  await db.insert(user).values({
+    id: actorId,
+    name: 'Synthetic collision writer',
+    email: actorId + '@example.invalid',
+  });
+  const methods = createCharactersMethods(db, graph.organizationId);
+  const created = await Promise.all(
+    ['Café Twin', 'Cafe-Twin'].map((name) =>
+      methods.createForOrganization(
+        { name, rendering: PHOTOREAL_RENDERING, standardClothing: 'coat' },
+        { createdBy: actorId }
+      )
+    )
+  );
+  expect(new Set(created.map((character) => character.id)).size).toBe(2);
+  expect(
+    new Set([
+      await methods.resolveId('cafe-twin'),
+      await methods.resolveId('cafe-twin-2'),
+    ])
+  ).toEqual(new Set(created.map((character) => character.id)));
+  const versions = await db.select().from(characterBibleVersions);
+  expect(
+    versions.filter((version) =>
+      created.some((character) => character.id === version.characterId)
+    )
+  ).toHaveLength(2);
 });
 
 it.each(MUTATIONS)(

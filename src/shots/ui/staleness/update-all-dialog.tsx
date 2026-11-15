@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useLabelTranslation } from '@/ui/i18n/use-label-translation';
 import { useTranslation } from 'react-i18next';
+import { localizeCauses } from './localize-causes';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,8 +57,9 @@ export const describeCauses = (
 ): string | null => {
   const causes = [...new Set(staleShots.flatMap((s) => s.causes))];
   if (causes.length === 0) return null;
+  const display = translate ? localizeCauses(causes, translate) : causes;
   return (
-    translate?.('Changed: {{value1}}', { value1: causes.join(', ') }) ??
+    translate?.('Changed: {{value1}}', { value1: display.join(', ') }) ??
     `Changed: ${causes.join(', ')}`
   );
 };

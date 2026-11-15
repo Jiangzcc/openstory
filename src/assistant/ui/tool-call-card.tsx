@@ -10,6 +10,7 @@ import type { ToolCallPart, ToolResultPart } from '@tanstack/ai';
 import { viewForChatTool } from '@/platform/mcp-views';
 import { Button } from '@/ui/shadcn/button';
 import { cn } from '@/ui/utils';
+import type { ApprovalState } from './approvals';
 import { McpAppFrame } from './mcp-app-frame';
 import { toolInputLabel } from './tool-input-labels';
 
@@ -93,8 +94,12 @@ export type ToolCallCardProps = {
   result?: ToolResultPart;
   /** "$1.20" from the plan that came before an execute call. */
   estimate?: string;
-  onApprove?: () => void;
-  onDeny?: () => void;
+  /** Where this card's approval stands; read only while the card is waiting. */
+  approval: ApprovalState;
+  approvalError: string | undefined;
+  onApprove: () => void;
+  onDeny: () => void;
+  onReload: () => void;
   /** Text a tool's view posts into the thread (`ui/message`). */
   onViewMessage?: (text: string) => void;
 };
@@ -103,8 +108,11 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
   part,
   result,
   estimate,
+  approval,
+  approvalError,
   onApprove,
   onDeny,
+  onReload,
   onViewMessage,
 }) => {
   const { t } = useTranslation('assistant');
@@ -171,14 +179,47 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
               {t('Estimated cost {{value1}}', { value1: estimate })}
             </p>
           )}
-          <div className="flex gap-2">
-            <Button size="sm" onClick={onApprove}>
-              {t('Allow')}
-            </Button>
-            <Button size="sm" variant="outline" onClick={onDeny}>
-              {t('Deny')}
-            </Button>
-          </div>
+          {approval === 'gone' ? (
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground">
+                {t('This request is no longer open in this tab.')}
+              </p>
+              <Button size="sm" variant="outline" onClick={onReload}>
+                {t('Reload chat')}
+              </Button>
+            </div>
+          ) : approval === 'stuck' ? (
+            <p className="text-xs text-muted-foreground">
+              {t('This request cannot be answered here. Start a new chat.')}
+            </p>
+          ) : approval === 'staged' ? (
+            <p className="text-xs text-muted-foreground">
+              {t('Answered. Answer the other request to continue.')}
+            </p>
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                disabled={approval === 'busy'}
+                onClick={onApprove}
+              >
+                {t('Allow')}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={approval === 'busy'}
+                onClick={onDeny}
+              >
+                {t('Deny')}
+              </Button>
+            </div>
+          )}
+          {approvalError && (
+            <p role="alert" className="text-xs text-destructive">
+              {approvalError}
+            </p>
+          )}
         </div>
       )}
       {viewUri && status === 'done' && result && (

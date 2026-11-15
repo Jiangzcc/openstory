@@ -11,7 +11,10 @@ vi.mock('./use-assistant-chat', () => ({
   useAssistantChat: () => ({
     messages: [],
     interrupts: [],
+    interruptErrors: [],
     isLoading: false,
+    isHydrating: false,
+    resuming: false,
     error: state.error,
     sendMessage: vi.fn(),
     stop: vi.fn(),

@@ -36,6 +36,7 @@ import {
 } from '@/assistant/server/assistant-tools';
 import { toolContext } from '@/assistant/server/assistant-chat';
 import * as stills from '@/stills/server/shot-image-generation';
+import * as previews from '@/shots/server/shot-preview';
 import * as motion from '@/motion/server/shot-motion-generation';
 import * as lipsync from '@/motion/server/lipsync-shot';
 import * as models from '@/sequences/server/sequence-models';
@@ -208,6 +209,10 @@ async function seedCast() {
 }
 function observeShots() {
   const started = { workflowRunId: run, shotId: ids.shot };
+  vi.spyOn(previews, 'regenerateShotStoryboard').mockResolvedValue({
+    workflowRunId: run,
+    alreadyInFlight: false,
+  });
   vi.spyOn(stills, 'generateShotImage').mockResolvedValue({
     ...started,
     alreadyInFlight: false,
@@ -444,6 +449,13 @@ type Contract = readonly [
 const contracts: Contract[] = [
   ['list_models', 'sequences:read', () => ({})],
   ['get_shot_variant_grid', 'sequences:read', shot],
+  [
+    'regenerate_shot_storyboard',
+    'generate',
+    shot,
+    () => vi.mocked(previews.regenerateShotStoryboard),
+    'shot',
+  ],
   [
     'generate_shot_image',
     'generate',

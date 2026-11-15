@@ -11,7 +11,7 @@ The per-via reference for the vias that are not BytePlus (`byteplus-ark.md`) or 
 A **hard** ceiling is declared separately, and only where a via documents and enforces one:
 
 - `enforcesPromptLimit: true` in `src/models/models.ts` — Grok 4096 (xAI answers 400 `Prompt length exceeds the maximum allowed length of 4096`), Kling, Omni Flash, H3 Max (fal's schemas). The flag says the model's `maxPromptLength` is enforced; read it through `videoPromptHardLimit(model)`, which returns the number only for those, never `maxPromptLength` directly.
-- a fal endpoint schema's `prompt.maxLength`, asserted inside `motionTransform`. A packed Kling job ships `multi_prompt[]` and its `prompt` is dropped, so `promptForSchema` hands the assert the longest element — the string fal actually length-checks — never the combined text. Kling 4.0 caps each element at 512 chars (fal's `KlingV4Shot`), below its 26000 whole prompt, so its packed payload carries `maxElementLength` and `packedPromptFitsLimit` packs to that. Its reference-to-video and text-to-video siblings share the same 512-char shot cap.
+- a fal endpoint schema's `prompt.maxLength`, asserted inside `motionTransform`. A packed Kling job ships `multi_prompt[]`. The parsed request keeps the longest element as `prompt` — that is what `generateVideo` is given and what the schema length-checks — and `klingWireInput` drops it from the queue body, because Kling rejects `prompt` together with `multi_prompt` (#2271). The fal adapter copies the prompt back onto the body, so the queue fetch strips it again. Kling 4.0 caps each element at 512 chars (fal's `KlingV4Shot`), below its 26000 whole prompt, so its packed payload carries `maxElementLength` and `packedPromptFitsLimit` packs to that. Its reference-to-video and text-to-video siblings share the same 512-char shot cap.
 
 Seedance has neither: Ark documents no limit, only a style recommendation ("no more than 500 Chinese characters or 1,000 English words"), and no fal Seedance schema declares `maxLength`. The 4096 we carried was our own number and was quietly cutting prompts. The counter warns above **5,500 characters** — about 1,000 English words — so Seedance uses the same unit as every other model (#1763). `measurePrompt` in `src/models/prompt-length.ts` is the reader, so the counter, the warning and the log all agree. H3 Max's 2500 was invented the same way and is now fal's 50000.
 
@@ -106,7 +106,8 @@ same catalog keys stay on fal (`google/nano-banana-2.1`,
 Nano Banana 2.1 is its own key, `nano_banana_2_1` (#2063). `nano_banana_2`
 is hidden but keeps its v2 endpoints, so a stored variant still names the
 model that drew it and an old sequence still renders on v2. 2.1's tiers are
-1K/2K/4K only (no 0.5K), and both vias send minimal thinking (`thinking_level:
+1K/2K/4K only (no 0.5K). A storyboard sketch passes `resolution: '720p'`,
+which resolves to 1K; omitting it draws 2K. Both vias send minimal thinking (`thinking_level:
 'minimal'` on fal, whose enum has no `low`; `ThinkingLevel.MINIMAL` native),
 because 2.1 thinks at `medium` by default. On fal it is token-billed, reported
 as `units` at $1 like GPT Image, so it estimates per call from the typical
@@ -132,6 +133,25 @@ Data-URI stills must be decomposed to inline base64 on the native path —
 Google won't fetch`data:`as a URI. Chat vision (motion prompts) and
 native image refs must also inline stored stills: Google's`fileData.fileUri`HTTP fetch (CDN / fal URLs) sits on a separate quota
 that 429s while the same bytes as`inlineData`succeed.`toVisionImageSource(..., { inline: true })` is that path.
+
+**Large stills go through the Files API (#2400).** A stored still over
+`GEMINI_INLINE_STILL_MAX_BYTES` (4 MiB) streams out of R2 into one Files API
+upload, the same path as a watched clip, and the request carries Google's
+file URI. A whole 20 MB still inline costs about 47 MB of isolate heap (bytes
+plus base64). The URI fetch quota above does not apply: the file is already
+Google's. `geminiStillSource` (`src/models/server/gemini-files.ts`) makes the
+choice for image refs, workflow chat vision and script enhancement; small
+stills, `data:` URIs and non-stored URLs inline as before, and e2e replay
+passes the `/r2/` URL through. Each call uploads again and deletes its files
+when the request ends (`releaseGeminiFiles`), rather than caching a URI that
+expires in 48 hours. The upload runs in the `step.do` that spends it. A
+location refusal at upload re-runs the call on the no-key via, where the
+still goes by URL as any off-Google still does; if only the generate call is
+refused, the re-run resolves its sources again for the new via. Script
+enhancement cannot resolve again inside `callLLMStream`'s re-run, so with an
+uploaded still it refuses the re-run and says "Gemini isn't available from
+this region." A still with no image type in its bytes or its stored
+metadata fails rather than being labelled PNG.
 
 **Google refuses some locations.** Gemini judges the caller's address, and a Worker runs in the colo nearest the user, so Hong Kong and mainland China calls get `400 User location is not supported for the API use.`
 

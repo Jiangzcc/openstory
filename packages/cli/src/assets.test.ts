@@ -1,0 +1,404 @@
+import { createHash } from 'node:crypto';
+import {
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+  mkdir,
+  symlink,
+} from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+import { downloadSequenceAssets } from './assets.js';
+import { main } from './cli.js';
+import { parsePull } from './pull.js';
+
+const origin = 'https://os.test';
+
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
+function manifest(assets: unknown[]) {
+  return {
+    sequenceId: 'SEQ',
+    title: 'Room',
+    scope: 'selected',
+    includeExports: false,
+    assets,
+  };
+}
+
+describe('openstory pull', () => {
+  it('parses its flags', () => {
+    const cwd = '/work';
+    expect(
+      parsePull(
+        [
+          'SEQ',
+          '--history',
+          '--exports',
+          '--origin',
+          'http://localhost:3000/ignored',
+          '--dir',
+          'out',
+        ],
+        cwd
+      )
+    ).toEqual({
+      sequenceId: 'SEQ',
+      origin: 'http://localhost:3000',
+      dir: join(cwd, 'out'),
+      history: true,
+      exports: true,
+    });
+    expect(() => parsePull([], cwd)).toThrow('sequence id');
+  });
+
+  it('writes files, links a shared file, skips a second run, and refuses ..', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'openstory-assets-'));
+    try {
+      const home = join(cwd, 'home');
+      const dest = join(cwd, 'out');
+      const calls: string[] = [];
+      let token = 'old';
+      const fetchFn: typeof fetch = async (input, init) => {
+        const url = new URL(requestUrl(input));
+        calls.push(url.pathname);
+        const auth = new Headers(init?.headers).get('authorization');
+        if (auth === 'Bearer old') return new Response('no', { status: 401 });
+        if (auth !== 'Bearer new') return new Response('no', { status: 401 });
+        if (url.pathname === '/api/v1/sequences/SEQ/assets') {
+          return Response.json(
+            manifest([
+              {
+                relativePath: 'script.txt',
+                versionId: 'script-1',
+                url: null,
+                text: 'INT. ROOM',
+                shared: false,
+              },
+              {
+                relativePath: 'cast/c/looks/c/sheet.png',
+                versionId: 'sheet:1',
+                url: '/r2/organization/sheet.png?download',
+                text: null,
+                shared: true,
+              },
+            ])
+          );
+        }
+        if (url.pathname === '/r2/organization/sheet.png') {
+          return new Response('png-bytes');
+        }
+        return new Response('missing', { status: 404 });
+      };
+      const first = await downloadSequenceAssets({
+        sequenceId: 'SEQ',
+        origin,
+        cacheDir: join(home, '.openstory', 'assets'),
+        dest,
+        history: false,
+        includeExports: false,
+        fetch: fetchFn,
+        key: async () => token,
+        refresh: async () => {
+          token = 'new';
+          return token;
+        },
+      });
+      expect(first).toEqual({ saved: 2, skipped: 0, removed: 0 });
+      expect(await readFile(join(dest, 'script.txt'), 'utf8')).toBe(
+        'INT. ROOM'
+      );
+      expect(
+        await readFile(join(dest, 'cast/c/looks/c/sheet.png'), 'utf8')
+      ).toBe('png-bytes');
+      const cache = join(
+        home,
+        '.openstory',
+        'assets',
+        `${createHash('sha256').update('/r2/organization/sheet.png').digest('hex')}.png`
+      );
+      const cached = await stat(cache);
+      const linked = await stat(join(dest, 'cast/c/looks/c/sheet.png'));
+      expect(linked.ino).toBe(cached.ino);
+      const downloads = calls.filter((path) => path.startsWith('/r2/'));
+      expect(downloads).toEqual(['/r2/organization/sheet.png']);
+
+      calls.length = 0;
+      const second = await downloadSequenceAssets({
+        sequenceId: 'SEQ',
+        origin,
+        cacheDir: join(home, '.openstory', 'assets'),
+        dest,
+        history: false,
+        includeExports: false,
+        fetch: fetchFn,
+        key: async () => 'new',
+        refresh: async () => 'newer',
+      });
+      expect(second).toEqual({ saved: 0, skipped: 2, removed: 0 });
+      expect(calls.filter((path) => path.startsWith('/r2/'))).toEqual([]);
+
+      await expect(
+        downloadSequenceAssets({
+          sequenceId: 'SEQ',
+          origin,
+          cacheDir: join(home, '.openstory', 'assets'),
+          dest,
+          history: false,
+          includeExports: false,
+          fetch: async () =>
+            Response.json(
+              manifest([
+                {
+                  relativePath: '../secret.txt',
+                  versionId: 'x',
+                  url: null,
+                  text: 'no',
+                  shared: false,
+                },
+              ])
+            ),
+          key: async () => 'new',
+          refresh: async () => 'new',
+        })
+      ).rejects.toThrow('Refusing to write ../secret.txt');
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('removes only paths the previous manifest listed', async () => {
+    const dest = await mkdtemp(join(tmpdir(), 'openstory-assets-'));
+    try {
+      let listed = [
+        { relativePath: 'scenes/01-old/prompt.txt', versionId: 'a', text: 'a' },
+        { relativePath: 'keep.txt', versionId: 'k', text: 'k' },
+      ];
+      const fetchFn: typeof fetch = async () => Response.json(manifest(listed));
+      const run = () =>
+        downloadSequenceAssets({
+          sequenceId: 'SEQ',
+          origin,
+          cacheDir: join(dest, 'cache'),
+          dest,
+          history: false,
+          includeExports: false,
+          fetch: fetchFn,
+          key: async () => 'key',
+          refresh: async () => 'key',
+        });
+      await run();
+      await writeFile(join(dest, 'scenes', '01-old', 'notes.md'), 'mine');
+      await writeFile(join(dest, 'mine.txt'), 'mine');
+      listed = [
+        { relativePath: 'scenes/02-old/prompt.txt', versionId: 'a', text: 'a' },
+        { relativePath: 'keep.txt', versionId: 'k', text: 'k' },
+      ];
+      expect((await run()).removed).toBe(1);
+      await expect(
+        stat(join(dest, 'scenes', '01-old', 'prompt.txt'))
+      ).rejects.toThrow();
+      // The user's files, and the folder holding one, stay.
+      expect(
+        await readFile(join(dest, 'scenes', '01-old', 'notes.md'), 'utf8')
+      ).toBe('mine');
+      expect(await readFile(join(dest, 'mine.txt'), 'utf8')).toBe('mine');
+      // A listed path reached through a symlink out of the folder stays put.
+      const outside = await mkdtemp(join(tmpdir(), 'openstory-outside-'));
+      await writeFile(join(outside, 'prompt.txt'), 'theirs');
+      await rm(join(dest, 'scenes', '02-old'), { recursive: true });
+      await symlink(outside, join(dest, 'scenes', '02-old'));
+      listed = [{ relativePath: 'keep.txt', versionId: 'k', text: 'k' }];
+      await run();
+      expect(await readFile(join(outside, 'prompt.txt'), 'utf8')).toBe(
+        'theirs'
+      );
+      await rm(outside, { recursive: true });
+      await rm(join(dest, 'scenes', '02-old'));
+      listed = [
+        { relativePath: 'scenes/02-old/prompt.txt', versionId: 'a', text: 'a' },
+        { relativePath: 'keep.txt', versionId: 'k', text: 'k' },
+      ];
+      await run();
+      listed = [{ relativePath: 'keep.txt', versionId: 'k', text: 'k' }];
+      await rm(join(dest, 'scenes', '01-old', 'notes.md'));
+      await run();
+      await expect(stat(join(dest, 'scenes', '02-old'))).rejects.toThrow();
+    } finally {
+      await rm(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('runs from main with a key stitch stored, and moves that key file', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'openstory-assets-'));
+    try {
+      const home = join(cwd, 'home');
+      await mkdir(join(home, '.openstory'), { recursive: true });
+      await writeFile(
+        join(home, '.openstory', 'stitch.json'),
+        JSON.stringify({ keys: { 'https://openstory.so': 'osk_1' } })
+      );
+      const stdout: string[] = [];
+      const stderr: string[] = [];
+      await main(['pull', 'SEQ', '--dir', 'out'], {
+        cwd,
+        home,
+        stdout: { write: (text) => stdout.push(text) },
+        stderr: { write: (text) => stderr.push(text) },
+        open: () => {},
+        fetch: async (input) => {
+          const url = new URL(requestUrl(input));
+          if (url.pathname === '/api/v1/sequences/SEQ/assets') {
+            expect(url.searchParams.get('scope')).toBe('selected');
+            return Response.json(manifest([]));
+          }
+          return new Response('missing', { status: 404 });
+        },
+      });
+      expect(stdout.join('')).toBe('Saved 0 files. Skipped 0 already there.\n');
+      expect(stderr).toEqual([]);
+      await main(['pull', 'SEQ', '--history', '--exports', '--dir', 'out'], {
+        cwd,
+        home,
+        stdout: { write: () => {} },
+        stderr: { write: () => {} },
+        open: () => {},
+        fetch: async (input) => {
+          const url = new URL(requestUrl(input));
+          expect(url.searchParams.get('scope')).toBe('history');
+          expect(url.searchParams.get('exports')).toBe('true');
+          return Response.json(manifest([]));
+        },
+      });
+      expect(
+        await readFile(join(cwd, 'out', 'manifest.json'), 'utf8')
+      ).toContain('"assets": []');
+      expect(
+        await readFile(join(home, '.openstory', 'credentials.json'), 'utf8')
+      ).toContain('osk_1');
+      await expect(
+        stat(join(home, '.openstory', 'stitch.json'))
+      ).rejects.toThrow();
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps a portrait out of the sheet cache and refuses a path that leaves the folder', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'openstory-assets-'));
+    try {
+      const home = join(cwd, 'home');
+      const dest = join(cwd, 'out');
+      const fetched: string[] = [];
+      const fetchFn: typeof fetch = async (input) => {
+        const url = new URL(requestUrl(input));
+        fetched.push(url.href);
+        if (url.pathname === '/api/v1/sequences/SEQ/assets') {
+          return Response.json(
+            manifest([
+              {
+                relativePath: 'cast/c/portrait.png',
+                versionId: 'sheet-1',
+                url: '/r2/organization/portrait.png?download',
+                text: null,
+                shared: true,
+              },
+              {
+                relativePath: 'cast/c/sheet.png',
+                versionId: 'sheet-1',
+                url: '/r2/organization/sheet.png?download',
+                text: null,
+                shared: true,
+              },
+            ])
+          );
+        }
+        if (url.pathname === '/r2/organization/portrait.png') {
+          return new Response('portrait-bytes');
+        }
+        if (url.pathname === '/r2/organization/sheet.png') {
+          return new Response('sheet-bytes');
+        }
+        return new Response('missing', { status: 404 });
+      };
+      await downloadSequenceAssets({
+        sequenceId: 'SEQ',
+        origin,
+        cacheDir: join(home, '.openstory', 'assets'),
+        dest,
+        history: false,
+        includeExports: false,
+        fetch: fetchFn,
+        key: async () => 'new',
+        refresh: async () => 'new',
+      });
+      expect(await readFile(join(dest, 'cast/c/portrait.png'), 'utf8')).toBe(
+        'portrait-bytes'
+      );
+      expect(await readFile(join(dest, 'cast/c/sheet.png'), 'utf8')).toBe(
+        'sheet-bytes'
+      );
+
+      await expect(
+        downloadSequenceAssets({
+          sequenceId: 'SEQ',
+          origin,
+          cacheDir: join(home, '.openstory', 'assets'),
+          dest,
+          history: false,
+          includeExports: false,
+          fetch: async () =>
+            Response.json(
+              manifest([
+                {
+                  relativePath: '/etc/passwd',
+                  versionId: 'x',
+                  url: null,
+                  text: 'no',
+                  shared: false,
+                },
+              ])
+            ),
+          key: async () => 'new',
+          refresh: async () => 'new',
+        })
+      ).rejects.toThrow('Refusing to write /etc/passwd');
+
+      await expect(
+        downloadSequenceAssets({
+          sequenceId: 'SEQ',
+          origin,
+          cacheDir: join(home, '.openstory', 'assets'),
+          dest,
+          history: false,
+          includeExports: false,
+          fetch: async () =>
+            Response.json(
+              manifest([
+                {
+                  relativePath: 'cast/c/sheet.png',
+                  versionId: 'x',
+                  url: 'https://evil.example/sheet.png',
+                  text: null,
+                  shared: false,
+                },
+              ])
+            ),
+          key: async () => 'new',
+          refresh: async () => 'new',
+        })
+      ).rejects.toThrow('Refusing https://evil.example/sheet.png');
+      expect(fetched.some((url) => url.includes('evil.example'))).toBe(false);
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+});

@@ -18,7 +18,7 @@ import {
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { createAssistantConnection } from './assistant-connection';
-import { resolveAssistantToolApproval } from './assistant-approvals';
+import { answerOpenApproval } from './approvals';
 
 const THREAD_ID = 'mock-approval-thread';
 const RUN_ID = 'mock-interrupted-run';
@@ -103,12 +103,12 @@ describe('server-only assistant tool approval resumes', () => {
       const client = harness.createClient();
       await client.sendMessage('Delete the mock character.');
       const captured = client.getInterrupts();
-      expect(
-        resolveAssistantToolApproval(captured, TOOL_CALL_ID, approved)
-      ).toBe(true);
-      expect(
-        resolveAssistantToolApproval(captured, TOOL_CALL_ID, approved)
-      ).toBe(false);
+      expect(answerOpenApproval(captured, TOOL_CALL_ID, false, approved)).toBe(
+        true
+      );
+      expect(answerOpenApproval(captured, TOOL_CALL_ID, false, approved)).toBe(
+        false
+      );
       await waitForCompletion(client);
       expect(harness.execute).toHaveBeenCalledTimes(approved ? 1 : 0);
       expect(
@@ -132,9 +132,10 @@ describe('server-only assistant tool approval resumes', () => {
       });
 
       expect(
-        resolveAssistantToolApproval(
+        answerOpenApproval(
           client.getInterrupts(),
           TOOL_CALL_ID,
+          false,
           approved
         )
       ).toBe(true);
@@ -164,9 +165,10 @@ describe('server-only assistant tool approval resumes', () => {
       expect(restored.getInterrupts()[0]?.kind).toBe('generic');
 
       expect(
-        resolveAssistantToolApproval(
+        answerOpenApproval(
           restored.getInterrupts(),
           TOOL_CALL_ID,
+          false,
           approved
         )
       ).toBe(true);
@@ -185,17 +187,17 @@ describe('server-only assistant tool approval resumes', () => {
     await client.sendMessage('Delete two mock characters.');
     expect(client.getInterrupts()).toHaveLength(2);
     expect(
-      resolveAssistantToolApproval(client.getInterrupts(), TOOL_CALL_ID, true)
+      answerOpenApproval(client.getInterrupts(), TOOL_CALL_ID, false, true)
     ).toBe(true);
     expect(harness.execute).not.toHaveBeenCalled();
     expect(
-      resolveAssistantToolApproval(client.getInterrupts(), TOOL_CALL_ID, true)
+      answerOpenApproval(client.getInterrupts(), TOOL_CALL_ID, false, true)
     ).toBe(false);
     expect(
-      resolveAssistantToolApproval(client.getInterrupts(), otherCallId, false)
+      answerOpenApproval(client.getInterrupts(), otherCallId, false, false)
     ).toBe(true);
     expect(
-      resolveAssistantToolApproval(client.getInterrupts(), otherCallId, false)
+      answerOpenApproval(client.getInterrupts(), otherCallId, false, false)
     ).toBe(false);
 
     await waitForCompletion(client);
@@ -269,15 +271,13 @@ describe('approval binding guards', () => {
     const { manager, submit } = createManager();
     submit.mockRejectedValueOnce(new Error('Mock connection failure.'));
     const initial = manager.getInterrupts();
-    expect(resolveAssistantToolApproval(initial, TOOL_CALL_ID, true)).toBe(
-      true
-    );
+    expect(answerOpenApproval(initial, TOOL_CALL_ID, false, true)).toBe(true);
     await vi.waitFor(() => {
       expect(manager.getInterrupts()[0]?.status).toBe('error');
     });
     const retry = manager.getInterrupts();
     expect(retry[0]).not.toBe(initial[0]);
-    expect(resolveAssistantToolApproval(retry, TOOL_CALL_ID, false)).toBe(true);
+    expect(answerOpenApproval(retry, TOOL_CALL_ID, false, false)).toBe(true);
     await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
     expect(submit.mock.calls[1]?.[0]).toMatchObject({
       resolutions: [
@@ -292,9 +292,10 @@ describe('approval binding guards', () => {
       const { manager, submit } = createManager(undefined, true);
       expect(manager.getInterrupts()[0]?.kind).toBe('tool-approval');
       expect(
-        resolveAssistantToolApproval(
+        answerOpenApproval(
           manager.getInterrupts(),
           TOOL_CALL_ID,
+          false,
           approved
         )
       ).toBe(true);
@@ -308,11 +309,7 @@ describe('approval binding guards', () => {
   it('ignores tool calls without a matching approval', () => {
     const { manager, submit } = createManager();
     expect(
-      resolveAssistantToolApproval(
-        manager.getInterrupts(),
-        'unknown-call',
-        true
-      )
+      answerOpenApproval(manager.getInterrupts(), 'unknown-call', false, true)
     ).toBe(false);
     expect(submit).not.toHaveBeenCalled();
   });
@@ -339,7 +336,7 @@ describe('approval binding guards', () => {
       canResolve: true,
     });
     expect(
-      resolveAssistantToolApproval(manager.getInterrupts(), TOOL_CALL_ID, true)
+      answerOpenApproval(manager.getInterrupts(), TOOL_CALL_ID, false, true)
     ).toBe(false);
     expect(submit).not.toHaveBeenCalled();
   });
@@ -359,11 +356,7 @@ describe('approval binding guards', () => {
         { ...descriptor, ...(metadata === undefined ? {} : { metadata }) },
       ]);
       expect(
-        resolveAssistantToolApproval(
-          manager.getInterrupts(),
-          TOOL_CALL_ID,
-          true
-        )
+        answerOpenApproval(manager.getInterrupts(), TOOL_CALL_ID, false, true)
       ).toBe(false);
       expect(submit).not.toHaveBeenCalled();
     }
@@ -379,7 +372,7 @@ describe('approval binding guards', () => {
         field === 'generation'
           ? { ...item, generation: item.generation + 1 }
           : { ...item, [field]: 'another-interrupt-or-run' };
-      expect(resolveAssistantToolApproval([stale], TOOL_CALL_ID, true)).toBe(
+      expect(answerOpenApproval([stale], TOOL_CALL_ID, false, true)).toBe(
         false
       );
       expect(submit).not.toHaveBeenCalled();

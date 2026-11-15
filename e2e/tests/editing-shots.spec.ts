@@ -77,6 +77,7 @@ const Staleness = z.object({
       motionPrompt: z.string(),
       dialogue: z.string(),
       video: z.string(),
+      causes: z.array(z.string()),
     })
   ),
 });
@@ -132,6 +133,7 @@ type ShotState = Verdicts & {
   number: number;
   still: string | null;
   lines: string[];
+  causes: string[];
 };
 
 let user: Awaited<ReturnType<typeof createTestUser>>;
@@ -178,6 +180,7 @@ async function readShots(): Promise<ShotState[]> {
       );
       out.push({
         ...verdict,
+        causes: verdict.causes,
         id: shot.id,
         frameId: shot.anchorFrame?.id ?? '',
         scene: scene.title ?? `Scene ${index + 1}`,
@@ -468,7 +471,10 @@ test.describe('Editing shots', () => {
 
   test('saving a shot action rebuilds its motion prompt for free and leaves every still current', async () => {
     await openShot(neighbour);
-    const action = page.getByRole('textbox', { name: 'Action' }).first();
+    // The spec is on the Shot tab, the default; its fields are prompt editors.
+    const action = page
+      .getByRole('tabpanel', { name: 'Shot' })
+      .getByLabel('Action', { exact: true });
     await expect(action).toBeVisible({ timeout: 15_000 });
     await action.fill('She stops mid-motion and listens to the street.');
     await page
@@ -551,15 +557,10 @@ test.describe('Editing shots', () => {
     const optimised = page.getByRole('button', { name: /Optimised prompt/ });
     const openOptimised = async () => {
       await page.getByRole('tab', { name: 'Video' }).click();
-      // A click before hydration does nothing, so retry until it opens.
-      await expect(async () => {
-        if ((await optimised.getAttribute('aria-expanded')) !== 'true') {
-          await optimised.click();
-        }
-        await expect(optimised).toHaveAttribute('aria-expanded', 'true', {
-          timeout: 2_000,
-        });
-      }).toPass({ timeout: 20_000 });
+      if ((await optimised.getAttribute('aria-expanded')) !== 'true') {
+        await optimised.click();
+      }
+      await expect(optimised).toHaveAttribute('aria-expanded', 'true');
     };
     await openOptimised();
     const panel = page.getByRole('tabpanel', { name: 'Video' });
@@ -614,6 +615,23 @@ test.describe('Editing shots', () => {
     await settleVersions('image', row.frameId, 2);
     await expectShot(target.id, { thumbnail: 'fresh', video: 'stale' });
     await expectOthers(target.id, { video: 'untracked' });
+    // The variant grid is a later image version. Wait until it has finished
+    // so it cannot re-select a still after the restore below.
+    await settleVersions('image', row.frameId, 2);
+    await expect
+      .poll(
+        async () => {
+          const { versions } = await call(
+            request,
+            'list_versions',
+            { ...s(), kind: 'image', entityId: row.frameId },
+            Versions
+          );
+          return versions.every((v) => v.status === 'completed');
+        },
+        { timeout: E2E_RECORDING ? 600_000 : 60_000 }
+      )
+      .toBe(true);
 
     // Picking the earlier still brings the clip back in step.
     await call(request, 'select_shot_image_version', {
@@ -621,7 +639,15 @@ test.describe('Editing shots', () => {
       shotId: target.id,
       versionId: freshStill,
     });
-    await expectShot(target.id, { video: 'fresh' });
+    await expect
+      .poll(
+        async () => {
+          const current = byId(await readShots(), target.id);
+          return `${current.still} ${current.video} ${current.causes.join(' | ')}`;
+        },
+        { timeout: 60_000, intervals: [1_000, 2_000, 5_000] }
+      )
+      .toBe(`${freshStill} fresh `);
   });
 
   test('a retime stales the clip, never the shot prompts', async () => {
@@ -645,11 +671,8 @@ test.describe('Editing shots', () => {
       useStartFrame: true,
     });
     await openShot(target);
-    const toggle = page.getByRole('checkbox', { name: 'Use start frame' });
-    await expect(async () => {
-      await page.getByRole('tab', { name: 'Video' }).click();
-      await expect(toggle).toBeVisible({ timeout: 2_000 });
-    }).toPass({ timeout: 30_000 });
+    await page.getByRole('tab', { name: 'Image' }).click();
+    const toggle = page.getByRole('switch', { name: 'Use start frame' });
     await expect(toggle).toBeChecked();
     await setStartFrame(toggle, false);
 
@@ -769,8 +792,8 @@ test.describe('Editing shots', () => {
     const row = byId(await readShots(), target.id);
     expect(row.lines.length).toBeGreaterThan(0);
     await openShot(row);
-    await page.getByRole('tab', { name: 'Start Frame' }).click();
-    const prompt = page.getByRole('tabpanel', { name: 'Start Frame' });
+    await page.getByRole('tab', { name: 'Image' }).click();
+    const prompt = page.getByRole('tabpanel', { name: 'Image' });
     await expect(prompt).toContainText('eye level', { timeout: 15_000 });
     for (const line of row.lines) {
       await expect(prompt).not.toContainText(line);

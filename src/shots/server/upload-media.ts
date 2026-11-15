@@ -10,9 +10,10 @@
  * tier wherever a real model is required.
  */
 
+import { ValidationError } from '@/platform/errors';
 import { organizationKeyPrefix } from '@/platform/server/storage/buckets';
 import { DEFAULT_IMAGE_MODEL, safeTextToImageModel } from '@/models/models';
-import type { ShotImageInputHash } from '@/shots/input-hash';
+import type { ShotImageInputHash, Stamped } from '@/shots/input-hash';
 import type { Scene } from '@/shots/scene-analysis.schema';
 import type { AspectRatio } from '@/models/aspect-ratios';
 import type {
@@ -60,8 +61,46 @@ export function resolveUploadExtension(
 }
 
 /** Human-readable accepted list, for the rejection message. */
-export function uploadExtensionList(surface: UploadMediaSurface): string {
+function uploadExtensionList(surface: UploadMediaSurface): string {
   return UPLOAD_EXTENSIONS[surface].join(', ');
+}
+
+/**
+ * Extension for an upload, rejecting anything outside the surface's allow-list.
+ * The PUT route trusts its `contentType` query param, so this is the only
+ * server-side control over what lands in a bucket the worker serves
+ * same-origin — an `.svg` still would be a stored-XSS vector on `/r2/`.
+ */
+export function requireUploadExtension(
+  filename: string,
+  surface: UploadMediaSurface
+): string {
+  const ext = resolveUploadExtension(filename, surface);
+  if (!ext) {
+    throw new ValidationError(
+      `Unsupported ${surface} file type. Accepted: ${uploadExtensionList(surface)}`
+    );
+  }
+  return ext;
+}
+
+/** What a surface that takes stills, clips and audio stores. FLAC is re-encoded by the caller. */
+const MIXED_UPLOAD_EXTENSIONS: readonly string[] = [
+  ...UPLOAD_EXTENSIONS.image,
+  ...UPLOAD_EXTENSIONS.video,
+  ...UPLOAD_EXTENSIONS.audio,
+  'flac',
+];
+
+/** The storage extension for a mixed-media upload; the one parse the path and the type both use. */
+export function requireMixedUploadExtension(filename: string): string {
+  const ext = /\.([a-zA-Z0-9]+)$/.exec(filename)?.[1]?.toLowerCase();
+  if (!ext || !MIXED_UPLOAD_EXTENSIONS.includes(ext)) {
+    throw new ValidationError(
+      `Unsupported file type. Accepted: ${MIXED_UPLOAD_EXTENSIONS.join(', ')}`
+    );
+  }
+  return ext;
 }
 
 /**
@@ -106,7 +145,7 @@ export function parseUploadedStoragePath(
  * → the app default — the same resolution the verify applies to the stored
  * row's `user-upload` model.
  */
-export async function computeUploadedStillInputHash(args: {
+export async function stampUploadedStillInput(args: {
   shotId: string;
   frameId: string;
   scene: Scene | null;
@@ -115,9 +154,9 @@ export async function computeUploadedStillInputHash(args: {
   locations: SequenceLocationWithReference[];
   elements: SequenceElement[];
   aspectRatio: AspectRatio;
-}): Promise<ShotImageInputHash | null> {
+}): Promise<Stamped<ShotImageInputHash> | null> {
   if (!args.promptText || args.promptText.length === 0) return null;
-  const snapshot = await buildRegenerateShotSnapshot({
+  const { stamp } = await buildRegenerateShotSnapshot({
     shot: { id: args.shotId },
     scene: args.scene,
     frameId: args.frameId,
@@ -128,5 +167,5 @@ export async function computeUploadedStillInputHash(args: {
     imageModel: safeTextToImageModel(USER_UPLOAD_MODEL, DEFAULT_IMAGE_MODEL),
     aspectRatio: args.aspectRatio,
   });
-  return snapshot.snapshotInputHash;
+  return stamp;
 }

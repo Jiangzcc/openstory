@@ -21,6 +21,19 @@ only assistant-side work per tool happens in
   with Allow / Deny. A spend does not ask: the user is inside the app, the
   page shows the generation as it starts, and it can be cancelled there.
   A read never asks. `assistant-tools.test.ts` pins this against the catalog.
+  The server tools are not registered on the client, so an approval reaches
+  the browser as a generic interrupt, not a `tool-approval` one. The card finds
+  it by the tool call id on its binding (`approvalFor` in
+  `src/assistant/ui/approvals.ts`) and answers `{ approved }`. The card
+  enables Allow / Deny while its interrupt waits, disables them while the
+  chat loads, hydrates or resumes, and says "answered" once staged: with
+  two approvals in one step the client sends nothing until both are
+  answered. With no matching interrupt it offers Reload (hydrate again).
+  An interrupt this tab cannot answer (unbound, or `canResolve` false)
+  gets no Reload, which would hydrate the same state: the card and the
+  composer say to start a new chat. While any interrupt waits the client
+  throws on a new message, so the composer and a view's `ui/message` refuse
+  one first, with that reason.
 - Tools outside `EAGER_TOOLS` are `lazy`: the model sees the name and the
   first sentence, and discovers a schema when it needs one.
 - The model calls a tool by `chatToolName`: `openstory_get_shot`, the MCP
@@ -199,6 +212,11 @@ A clip is never attached. The model watches one on request through the
 Argon call over the Files API, so the chat model stays whatever the user
 picked and the cost is one call, not every turn.
 
+A whole sequence is watched as one export (`start_export`, then the ready
+export's URL), never shot by shot (#2370). TanStack AI runs a turn's tool
+calls in parallel, and 27 `watch_clip` calls at once ran the isolate out of
+memory, so `uploadClipToGemini` also streams one clip at a time per isolate. A slot\nheld past the five-minute upload deadline counts as free, because a\ntorn-down request may never release it. Where no export can render (plain\n`bun dev`, Deploy-button installs), the model says so and watches only the\nshots the question needs.
+
 ## Shell
 
 `AssistantPanel` is mounted once in `AppLayout`, right of the page on
@@ -311,7 +329,7 @@ look at the image and talk about it at once. A click in the panel is not
 
 ## Stories
 
-Tool approval cards resolve through `ui/assistant-approvals.ts`. Server tools
+Tool approval cards and composer hold share upstream `ui/approvals.ts`; the local duplicate helper is removed. Server tools
 are not registered as browser tools, so the client can expose their approval
 as a generic interrupt. Read its original binding with the public
 `@tanstack/ai/client` entry, match its tool call, interrupt id, interrupted run

@@ -38,8 +38,15 @@ export default {
         'src/export.ts',
         // The stitch bin. Knip does not follow the plain JS shim.
         'src/cli.ts',
+        // Node-only cut pieces for @openstory/cli.
+        'src/bundle.ts',
       ],
       project: ['src/**/*.{ts,tsx}'],
+    },
+    // @openstory/cli: the bin is plain JS, so its entry is the module it imports.
+    'packages/cli': {
+      entry: ['src/cli.ts'],
+      project: ['src/**/*.ts'],
     },
   },
   ignore: [
@@ -61,6 +68,8 @@ export default {
     '@testing-library/jest-dom',
     '@testing-library/react',
     '@testing-library/user-event',
+    // Pinned so Dependabot moves it with @better-auth/mcp (#2393).
+    '@better-auth/oauth-provider',
     // shadcn CLI.
     'shadcn',
     // Local binary spawned from scripts/pull-motion-schemas.ts

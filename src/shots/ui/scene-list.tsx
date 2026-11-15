@@ -216,6 +216,10 @@ export type SceneListProps = {
   styleName?: string;
   /** Shots with stale prompts/image (#1077) — amber dots on every rail thumbnail. */
   staleShotIds?: Set<string>;
+  /** Shots whose clip is out of date — the batch re-renders them (#2274). */
+  staleVideoShotIds?: Set<string>;
+  /** The staleness read failed, so completed clips stay out of this batch. */
+  videoStalenessFailed?: boolean;
   /** Desktop sidebar only: fold the list to the thumbnail rail (#1713). */
   onCollapse?: () => void;
   /** Sizing from the host — sidebar width on desktop, `w-full` in a sheet. */
@@ -275,6 +279,8 @@ const SceneListComponent: React.FC<SceneListProps> = ({
   generateVoices = false,
   styleName,
   staleShotIds,
+  staleVideoShotIds,
+  videoStalenessFailed = false,
   onCollapse,
   className,
   scrollToSelection = false,
@@ -418,9 +424,16 @@ const SceneListComponent: React.FC<SceneListProps> = ({
   const notStartedShots = useMemo(() => {
     if (!shots) return [];
     return shots.filter((f) =>
-      isBatchMotionEligible(f, rendersReferenceOnly(f, { generateStartFrames }))
+      isBatchMotionEligible(
+        f,
+        rendersReferenceOnly(f, { generateStartFrames }),
+        staleVideoShotIds?.has(f.id) ?? false
+      )
     );
-  }, [shots, generateStartFrames]);
+  }, [shots, generateStartFrames, staleVideoShotIds]);
+  const onlyStaleShots =
+    notStartedShots.length > 0 &&
+    notStartedShots.every((f) => f.videoStatus === 'completed');
 
   // The batch's mode: one reference-only shot in it decides the model list,
   // because submit checks the picked model against every such shot.
@@ -1161,7 +1174,8 @@ const SceneListComponent: React.FC<SceneListProps> = ({
         showButton ||
         showMusicFooter ||
         showDraftFooter ||
-        speakerConflicts.length > 0) && (
+        speakerConflicts.length > 0 ||
+        videoStalenessFailed) && (
         <div className="sticky bottom-0 border-t bg-background p-4 flex flex-col gap-4 max-md:gap-2 max-md:p-3">
           {speakerConflicts.map((line) => (
             <p key={line} className="text-xs text-muted-foreground">
@@ -1172,6 +1186,11 @@ const SceneListComponent: React.FC<SceneListProps> = ({
               )}
             </p>
           ))}
+          {videoStalenessFailed && (
+            <p className="text-xs text-muted-foreground">
+              {t('Couldn’t check which clips are out of date')}
+            </p>
+          )}
           {showSteps && (
             <div className="flex flex-col gap-3 max-md:gap-2">
               {stepsSection}
@@ -1230,11 +1249,20 @@ const SceneListComponent: React.FC<SceneListProps> = ({
                         ? t('Writing motion prompts…')
                         : includeMusic && !musicPromptsReady
                           ? t('Composing music…')
-                          : t('Generate {{value1}} / {{value2}} {{value3}}', {
-                              value1: notStartedShots.length,
-                              value2: totalShots,
-                              value3: totalShots === 1 ? t('shot') : t('shots'),
-                            })}
+                          : onlyStaleShots
+                            ? t('Regenerate {{value1}} stale {{value2}}', {
+                                value1: notStartedShots.length,
+                                value2:
+                                  notStartedShots.length === 1
+                                    ? t('shot')
+                                    : t('shots'),
+                              })
+                            : t('Generate {{value1}} / {{value2}} {{value3}}', {
+                                value1: notStartedShots.length,
+                                value2: totalShots,
+                                value3:
+                                  totalShots === 1 ? t('shot') : t('shots'),
+                              })}
                   </InButtonCost>
                 </Button>
               </div>
@@ -1322,6 +1350,8 @@ const areEqual = (
     prevProps.styleCategory !== nextProps.styleCategory ||
     prevProps.styleName !== nextProps.styleName ||
     prevProps.staleShotIds !== nextProps.staleShotIds ||
+    prevProps.staleVideoShotIds !== nextProps.staleVideoShotIds ||
+    prevProps.videoStalenessFailed !== nextProps.videoStalenessFailed ||
     prevProps.leftoverGrokShotIds !== nextProps.leftoverGrokShotIds ||
     prevProps.className !== nextProps.className
   ) {

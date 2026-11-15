@@ -25,6 +25,8 @@ import {
 } from '@/ui/shadcn/alert-dialog';
 import { Button } from '@/ui/shadcn/button';
 import { Checkbox } from '@/ui/shadcn/checkbox';
+import { Switch } from '@/ui/shadcn/switch';
+import { cn } from '@/ui/utils';
 import { setShotUseStartFrameFn } from '@/shots/shots.fn';
 import {
   EMPTY_GENERATION_PROMPT_MESSAGE,
@@ -39,6 +41,11 @@ import {
   SelectValue,
 } from '@/ui/shadcn/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/shadcn/tabs';
+import {
+  ShotSpecHistorySheet,
+  ShotStoryboardPanel,
+  storyboardQuery,
+} from './shot-storyboard-panel';
 import { MarkdownEditor } from '@/ui/text-editor/markdown-editor';
 import { VoiceInputButton } from '@/ui/voice/voice-input-button';
 import { useEditorDictation } from '@/ui/use-dictation';
@@ -189,12 +196,13 @@ export function tabsForScope(scope: SelectionScope): TabDescriptor[] {
   if (scope === 'shot') {
     // No Script tab: the script is scene-scoped (`scene_script_versions` is
     // keyed by sceneId), so editing it from a shot would silently rewrite every
-    // sibling shot's text. Shot scope keeps only what a shot actually owns — its
-    // image and motion prompts. Video leads: it is the deliverable, and in
-    // the default reference-only mode the start frame is optional.
+    // sibling shot's text. Shot scope keeps only what a shot actually owns.
+    // In the order a clip is made: the spec and its sketch, the optional
+    // still, then the video (#2350).
     return [
+      { value: 'shot', label: 'Shot' },
+      { value: 'image-prompt', label: 'Image' },
       { value: 'motion-prompt', label: 'Video' },
-      { value: 'image-prompt', label: 'Start Frame' },
       { value: 'cast', label: 'Cast' },
       { value: 'location', label: 'Locations' },
       { value: 'elements', label: 'Elements' },
@@ -221,7 +229,7 @@ export function tabsForScope(scope: SelectionScope): TabDescriptor[] {
  *
  * `picked` is the user's last explicit choice (a click, or a `facet` in the
  * URL). No pick → first tab of the current scope: Cast at sequence, Script
- * at scene, Video at shot. An implicit sequence Cast must not stick when
+ * at scene, Shot at shot. An implicit sequence Cast must not stick when
  * the user clicks a shot (#1624).
  */
 export function effectiveTabFor(
@@ -417,9 +425,9 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
     [shotDivergentVariants]
   );
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
-  const [historyOpen, setHistoryOpen] = useState<'visual' | 'motion' | null>(
-    null
-  );
+  const [historyOpen, setHistoryOpen] = useState<
+    'visual' | 'motion' | 'spec' | null
+  >(null);
   const [shortenStatus, setShortenStatus] = useState<{
     loading: boolean;
     error: string | null;
@@ -1376,7 +1384,14 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
     !shotUsesStartFrame &&
     promptPreview !== undefined &&
     !promptPreview.motionHasReferenceImages;
-  const startFrameAvailable = !!shot && canUseStartFrame(shot);
+  // On with no still: the still is owed before the clip.
+  const startFrameMissing =
+    !!shot && shotUsesStartFrame && !canUseStartFrame(shot);
+  const { data: storyboard } = useQuery({
+    ...storyboardQuery(sequenceId, shot?.id ?? ''),
+    enabled: !!shot,
+  });
+  const storyboardStale = !!shot && !!storyboard?.staleReason;
   const setUseStartFrame = useMutation({
     mutationFn: (next: boolean) =>
       setShotUseStartFrameFn({
@@ -1676,6 +1691,14 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
         {visibleTabs.map((t) => (
           <TabsTrigger key={t.value} value={t.value} disabled={!hydrated}>
             {translateLabel(t.label)}
+            {t.value === 'shot' && storyboardStale && (
+              <StalenessIndicator
+                artifact="storyboard"
+                entityType="shot"
+                density="corner-dot"
+                isRegenerating={storyboard?.generating ?? false}
+              />
+            )}
             {t.value === 'image-prompt' &&
               (staleness?.visualPrompt === 'stale' ||
                 staleness?.visualPrompt === 'updating') && (
@@ -1742,334 +1765,371 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
         />
       </TabsContent>
 
-      <TabsContent value="image-prompt">
-        <div className="space-y-4">
-          {/* Thinking bar while the model reasons, before the regenerated
-              prompt starts streaming back ('pending' → first delta). */}
-          <ThinkingBar active={shotPromptStream.visual.status === 'pending'} />
-
-          {/* Error/Success Messages */}
-          {shortenStatus.error && (
-            <Alert variant="destructive">
-              <AlertDescription>{shortenStatus.error}</AlertDescription>
-            </Alert>
-          )}
-
-          {shortenStatus.success && (
-            <Alert>
-              <AlertDescription>{shortenStatus.success}</AlertDescription>
-            </Alert>
-          )}
-
-          {shot && (
-            <ShotSpecForm
+      <TabsContent value="shot">
+        {shot && (
+          <div className="flex flex-col gap-6">
+            <ShotStoryboardPanel
               sequenceId={sequenceId}
               shotId={shot.id}
-              part="still"
+              onOpenHistory={() => setHistoryOpen('spec')}
             />
-          )}
+            <ShotSpecForm sequenceId={sequenceId} shotId={shot.id} />
+          </div>
+        )}
+      </TabsContent>
 
-          {/* Editable prompt */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <label
-                  htmlFor="image-prompt-input"
-                  className="text-sm font-medium"
-                >
-                  {t('Prompt')}
-                </label>
-                {/* Quiet stale chip on the artifact itself (#1077); the
+      <TabsContent value="image-prompt">
+        <div className="space-y-4">
+          {/* Off, the shot renders from its reference sheets; on with no still, the still is owed first. */}
+          <div className="flex items-center justify-between gap-2">
+            <label
+              htmlFor="scene-use-start-frame"
+              className="text-sm font-medium"
+            >
+              {t('Use start frame')}
+            </label>
+            <Switch
+              id="scene-use-start-frame"
+              checked={shotUsesStartFrame}
+              onCheckedChange={(checked) => setUseStartFrame.mutate(checked)}
+              disabled={
+                !hydrated ||
+                !shot ||
+                setUseStartFrame.isPending ||
+                isGeneratingMotion
+              }
+            />
+          </div>
+          {/* Nothing below applies while the shot renders without a start frame. */}
+          <div
+            inert={!shotUsesStartFrame}
+            className={cn('space-y-4', !shotUsesStartFrame && 'opacity-50')}
+          >
+            {/* Thinking bar while the model reasons, before the regenerated
+              prompt starts streaming back ('pending' → first delta). */}
+            <ThinkingBar
+              active={shotPromptStream.visual.status === 'pending'}
+            />
+
+            {/* Error/Success Messages */}
+            {shortenStatus.error && (
+              <Alert variant="destructive">
+                <AlertDescription>{shortenStatus.error}</AlertDescription>
+              </Alert>
+            )}
+
+            {shortenStatus.success && (
+              <Alert>
+                <AlertDescription>{shortenStatus.success}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Editable prompt */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <label
+                    htmlFor="image-prompt-input"
+                    className="text-sm font-medium"
+                  >
+                    {t('Prompt')}
+                  </label>
+                  {/* Quiet stale chip on the artifact itself (#1077); the
                     optimistic 'fresh' write clears it the moment Regenerate
                     is clicked. */}
-                {(staleness?.visualPrompt === 'stale' ||
-                  staleness?.visualPrompt === 'updating') && (
-                  <StalenessIndicator
-                    artifact="visual-prompt"
-                    entityType="shot"
-                    density="header-chip"
-                    isRegenerating={visualBusy}
-                    onRegenerate={() =>
-                      regeneratePromptMutation.mutate({
-                        promptType: 'visual',
-                      })
-                    }
-                  />
-                )}
-              </span>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">
-                  {t('{{value1}} characters', {
-                    value1: (isAwaitingVisualPrompt
-                      ? shotPromptStream.visual.text
-                      : editedImagePrompt || imagePrompt || ''
-                    ).length,
-                  })}
-                </span>
-                <PromptCopyButton
-                  text={editedImagePrompt || imagePrompt || ''}
-                  copyKey="image-prompt-field"
-                  copiedTab={copiedTab}
-                  onCopy={(text, key) => void handleCopy(text, key)}
-                  label={t('Copy image prompt')}
-                />
-                <VoiceInputButton
-                  key={shot?.id}
-                  label={t('image prompt')}
-                  size="icon-xs"
-                  disabled={isAwaitingVisualPrompt}
-                  {...imageVoice}
-                  onStart={() => {
-                    // Treat dictation as a user edit even though the mic
-                    // never focuses the editor (so Escape still hits the button).
-                    const started = imageVoice.onStart();
-                    if (started) imageFocusedRef.current = true;
-                    return started;
-                  }}
-                />
-              </div>
-            </div>
-            <MarkdownEditor
-              id="image-prompt-input"
-              ref={imagePromptRef}
-              value={
-                isAwaitingVisualPrompt
-                  ? shotPromptStream.visual.text
-                  : editedImagePrompt || imagePrompt || ''
-              }
-              onValueChange={(value) => {
-                setEditedImagePrompt(value);
-                // Only a change made after the user focused the editor is a real
-                // edit; the editor's on-mount normalization emit is ignored.
-                if (imageFocusedRef.current) dirtyImageRef.current = true;
-              }}
-              onFocus={() => {
-                imageFocusedRef.current = true;
-              }}
-              placeholder={
-                isAwaitingVisualPrompt
-                  ? isStreamingVisualPrompt
-                    ? t('Streaming prompt…')
-                    : t('Regenerating prompt…')
-                  : t(
-                      'Enter image prompt… (type @ to insert elements, cast, locations)'
-                    )
-              }
-              className="min-h-[120px]"
-              // Lock while streaming so local edits can't fight the LLM.
-              disabled={isAwaitingVisualPrompt}
-              mentionItems={mentionItems}
-              onMentionRename={onMentionRename}
-            />
-            {visualPromptDirty && (
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setEditedImagePrompt(imagePrompt || '');
-                    dirtyImageRef.current = false;
-                  }}
-                  disabled={saveVisualPrompt.isPending}
-                >
-                  {t('Cancel')}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleSaveVisualPrompt(editedImagePrompt)}
-                  disabled={saveVisualPrompt.isPending}
-                >
-                  {saveVisualPrompt.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {(staleness?.visualPrompt === 'stale' ||
+                    staleness?.visualPrompt === 'updating') && (
+                    <StalenessIndicator
+                      artifact="visual-prompt"
+                      entityType="shot"
+                      density="header-chip"
+                      isRegenerating={visualBusy}
+                      onRegenerate={() =>
+                        regeneratePromptMutation.mutate({
+                          promptType: 'visual',
+                        })
+                      }
+                    />
                   )}
-                  {saveVisualPrompt.isPending ? t('Saving…') : t('Save')}
-                </Button>
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">
+                    {t('{{value1}} characters', {
+                      value1: (isAwaitingVisualPrompt
+                        ? shotPromptStream.visual.text
+                        : editedImagePrompt || imagePrompt || ''
+                      ).length,
+                    })}
+                  </span>
+                  <PromptCopyButton
+                    text={editedImagePrompt || imagePrompt || ''}
+                    copyKey="image-prompt-field"
+                    copiedTab={copiedTab}
+                    onCopy={(text, key) => void handleCopy(text, key)}
+                    label={t('Copy image prompt')}
+                  />
+                  <VoiceInputButton
+                    key={shot?.id}
+                    label={t('image prompt')}
+                    size="icon-xs"
+                    disabled={isAwaitingVisualPrompt}
+                    {...imageVoice}
+                    onStart={() => {
+                      // Treat dictation as a user edit even though the mic
+                      // never focuses the editor (so Escape still hits the button).
+                      const started = imageVoice.onStart();
+                      if (started) imageFocusedRef.current = true;
+                      return started;
+                    }}
+                  />
+                </div>
               </div>
-            )}
-          </div>
+              <MarkdownEditor
+                id="image-prompt-input"
+                ref={imagePromptRef}
+                value={
+                  isAwaitingVisualPrompt
+                    ? shotPromptStream.visual.text
+                    : editedImagePrompt || imagePrompt || ''
+                }
+                onValueChange={(value) => {
+                  setEditedImagePrompt(value);
+                  // Only a change made after the user focused the editor is a real
+                  // edit; the editor's on-mount normalization emit is ignored.
+                  if (imageFocusedRef.current) dirtyImageRef.current = true;
+                }}
+                onFocus={() => {
+                  imageFocusedRef.current = true;
+                }}
+                placeholder={
+                  isAwaitingVisualPrompt
+                    ? isStreamingVisualPrompt
+                      ? t('Streaming prompt…')
+                      : t('Regenerating prompt…')
+                    : t(
+                        'Enter image prompt… (type @ to insert elements, cast, locations)'
+                      )
+                }
+                className="min-h-[120px]"
+                // Lock while streaming so local edits can't fight the LLM.
+                disabled={isAwaitingVisualPrompt}
+                mentionItems={mentionItems}
+                onMentionRename={onMentionRename}
+              />
+              {visualPromptDirty && (
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditedImagePrompt(imagePrompt || '');
+                      dirtyImageRef.current = false;
+                    }}
+                    disabled={saveVisualPrompt.isPending}
+                  >
+                    {t('Cancel')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleSaveVisualPrompt(editedImagePrompt)}
+                    disabled={saveVisualPrompt.isPending}
+                  >
+                    {saveVisualPrompt.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {saveVisualPrompt.isPending ? t('Saving…') : t('Save')}
+                  </Button>
+                </div>
+              )}
+            </div>
 
-          {/* Model selector — the model is per-asset (#1066): this is seeded
+            {/* Model selector — the model is per-asset (#1066): this is seeded
               from the shot's selected image version and picking a different one
               applies to the next generation. */}
-          <div className="space-y-2">
-            <span className="text-sm font-medium">{t('Model')}</span>
-            <ImageModelSelector
-              selectedModel={effectiveImageModel}
-              onModelChange={(model) => onImageModelChange?.(model)}
-              recommendedImageModel={recommendedImageModel}
-              styleName={styleName}
-              generatedStatuses={imageModelStatuses}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t(
-                'Changing the model applies to the next generation. In-flight gens still finish into history.'
-              )}
-            </p>
-          </div>
+            <div className="space-y-2">
+              <span className="text-sm font-medium">{t('Model')}</span>
+              <ImageModelSelector
+                selectedModel={effectiveImageModel}
+                onModelChange={(model) => onImageModelChange?.(model)}
+                recommendedImageModel={recommendedImageModel}
+                styleName={styleName}
+                generatedStatuses={imageModelStatuses}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  'Changing the model applies to the next generation. In-flight gens still finish into history.'
+                )}
+              </p>
+            </div>
 
-          {/* Always in the inspector layout (#1242) so SSR / first paint
+            {/* Always in the inspector layout (#1242) so SSR / first paint
               reserve the collapsed header instead of popping it in after
               the preview query resolves. */}
-          <output
-            className={
-              isConfiguredImageModelId(imageModel) ||
-              promptPreview?.imageUsesConfiguredChannel
-                ? 'text-sm text-muted-foreground'
-                : 'hidden'
-            }
-          >
-            {t('Request preview is not configured for this image channel.')}
-          </output>
-          <OptimisedPromptPanel
-            idPrefix="image-request"
-            preview={imageRequestPreview}
-            copiedKey={copiedTab}
-            onCopy={(text, key) => void handleCopy(text, key)}
-            footnote={
-              !storageDomain
-                ? t(
-                    'Relative /r2/ image URLs are made publicly fetchable at submit'
-                  )
-                : null
-            }
-          />
-
-          {/* Shorten + History buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => void handleShortenPrompt()}
-              disabled={
-                shortenStatus.loading ||
-                !editedImagePrompt ||
-                editedImagePrompt.length < 20
+            <output
+              className={
+                isConfiguredImageModelId(imageModel) ||
+                promptPreview?.imageUsesConfiguredChannel
+                  ? 'text-sm text-muted-foreground'
+                  : 'hidden'
               }
-              className="flex-1"
             >
-              {shortenStatus.loading && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {!shortenStatus.loading && <Minimize2 className="mr-2 h-4 w-4" />}
-              {shortenStatus.loading ? t('Shortening…') : t('Shorten Prompt')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setHistoryOpen('visual')}
-              disabled={!shot}
-              aria-label={t('Show visual history')}
-            >
-              <History className="mr-2 h-4 w-4" />
-              {t('History')}
-            </Button>
-          </div>
+              {t('Request preview is not configured for this image channel.')}
+            </output>
+            <OptimisedPromptPanel
+              idPrefix="image-request"
+              preview={imageRequestPreview}
+              copiedKey={copiedTab}
+              onCopy={(text, key) => void handleCopy(text, key)}
+              footnote={
+                !storageDomain
+                  ? t(
+                      'Relative /r2/ image URLs are made publicly fetchable at submit'
+                    )
+                  : null
+              }
+            />
 
-          {/* Explicit regenerate-prompt button — streams a fresh LLM
+            {/* Shorten + History buttons */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => void handleShortenPrompt()}
+                disabled={
+                  shortenStatus.loading ||
+                  !editedImagePrompt ||
+                  editedImagePrompt.length < 20
+                }
+                className="flex-1"
+              >
+                {shortenStatus.loading && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {!shortenStatus.loading && (
+                  <Minimize2 className="mr-2 h-4 w-4" />
+                )}
+                {shortenStatus.loading ? t('Shortening…') : t('Shorten Prompt')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setHistoryOpen('visual')}
+                disabled={!shot}
+                aria-label={t('Show visual history')}
+              >
+                <History className="mr-2 h-4 w-4" />
+                {t('History')}
+              </Button>
+            </div>
+
+            {/* Explicit regenerate-prompt button — streams a fresh LLM
               completion straight into the textarea so the user sees the
               prompt forming. Routed through the shared mutation so
               `isPending` flips synchronously on click and the busy state
               shows instantly, instead of waiting for the realtime channel's
               first delta. */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => requestPromptRebuild('visual')}
-            disabled={!shot || isRegeneratingVisualPrompt}
-            className="w-full"
-          >
-            {isRegeneratingVisualPrompt ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            {isRegeneratingVisualPrompt
-              ? promptAction.busy
-              : promptAction.label}
-          </Button>
-
-          {divergentImageVariant && (
-            <DivergentAlternateBanner
-              variantId={divergentImageVariant.id}
-              artifact="thumbnail"
-              entityType="shot"
-              onCompare={() => onCompareDivergent?.(divergentImageVariant)}
-            />
-          )}
-
-          {/* Image action button. Switching to another model's existing
-              still is a history pick, like any other version. */}
-          <div className="flex flex-col gap-1">
-            {imageCostIssue && (
-              <output className="block text-sm text-muted-foreground">
-                {imageCostIssue}
-              </output>
-            )}
             <Button
-              onClick={() => {
-                if (falNeedsBillingSetup) {
-                  showFalGate();
-                  return;
-                }
-                void handleRegenerate();
-              }}
-              disabled={
-                isGenerating ||
-                variantIsGenerating ||
-                !shot ||
-                !hasVisualPrompt ||
-                Boolean(imageCostIssue)
-              }
-              className={costButtonClassName}
+              type="button"
+              variant="outline"
+              onClick={() => requestPromptRebuild('visual')}
+              disabled={!shot || isRegeneratingVisualPrompt}
+              className="w-full"
             >
-              <InButtonCost estimate={imageCostEstimate}>
-                {(isGenerating || variantIsGenerating) && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {isGenerating || variantIsGenerating
-                  ? t('Generating…')
-                  : imageModelGenerated
-                    ? t('Regenerate Image')
-                    : t('Generate Image')}
-              </InButtonCost>
+              {isRegeneratingVisualPrompt ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              {isRegeneratingVisualPrompt
+                ? promptAction.busy
+                : promptAction.label}
             </Button>
-            <p
-              className={
-                shot &&
-                !hasVisualPrompt &&
-                !isGenerating &&
-                !variantIsGenerating
-                  ? 'text-xs text-muted-foreground'
-                  : 'hidden'
-              }
-            >
-              {EMPTY_GENERATION_PROMPT_MESSAGE}
-            </p>
-          </div>
 
-          {/* Manual still inject (#1108) — upload replaces the selected image;
-              a pending prompt edit is saved atomically with it (§4.3 C). */}
-          <UploadMediaButton
-            label={t('Replace Image')}
-            pendingLabel="Uploading…"
-            accept="image/*"
-            isPending={replaceFrameImage.isPending}
-            disabled={!shot || isGenerating}
-            onFile={handleReplaceImageFile}
-            className="w-full"
-          />
-          <p className="text-xs text-muted-foreground">
-            {t(
-              'Off-ratio stills are cropped to {{value1}} so video models get a matching start frame.',
-              { value1: aspectRatio ?? DEFAULT_ASPECT_RATIO }
+            {divergentImageVariant && (
+              <DivergentAlternateBanner
+                variantId={divergentImageVariant.id}
+                artifact="thumbnail"
+                entityType="shot"
+                onCompare={() => onCompareDivergent?.(divergentImageVariant)}
+              />
             )}
-          </p>
-          {visualPromptDirty ? (
+
+            {/* Image action button. Switching to another model's existing
+              still is a history pick, like any other version. */}
+            <div className="flex flex-col gap-1">
+              {imageCostIssue && (
+                <output className="block text-sm text-muted-foreground">
+                  {imageCostIssue}
+                </output>
+              )}
+              <Button
+                onClick={() => {
+                  if (falNeedsBillingSetup) {
+                    showFalGate();
+                    return;
+                  }
+                  void handleRegenerate();
+                }}
+                disabled={
+                  isGenerating ||
+                  variantIsGenerating ||
+                  !shot ||
+                  !hasVisualPrompt ||
+                  Boolean(imageCostIssue)
+                }
+                className={costButtonClassName}
+              >
+                <InButtonCost estimate={imageCostEstimate}>
+                  {(isGenerating || variantIsGenerating) && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isGenerating || variantIsGenerating
+                    ? t('Generating…')
+                    : imageModelGenerated
+                      ? t('Regenerate Image')
+                      : t('Generate Image')}
+                </InButtonCost>
+              </Button>
+              <p
+                className={
+                  shot &&
+                  !hasVisualPrompt &&
+                  !isGenerating &&
+                  !variantIsGenerating
+                    ? 'text-xs text-muted-foreground'
+                    : 'hidden'
+                }
+              >
+                {EMPTY_GENERATION_PROMPT_MESSAGE}
+              </p>
+            </div>
+
+            {/* Manual still inject (#1108) — upload replaces the selected image;
+              a pending prompt edit is saved atomically with it (§4.3 C). */}
+            <UploadMediaButton
+              label={t('Replace Image')}
+              pendingLabel={t('Uploading…')}
+              accept="image/*"
+              isPending={replaceFrameImage.isPending}
+              disabled={!shot || isGenerating}
+              onFile={handleReplaceImageFile}
+              className="w-full"
+            />
             <p className="text-xs text-muted-foreground">
               {t(
-                'Replacing the image will also save your edited prompt with it.'
+                'Off-ratio stills are cropped to {{value1}} so video models get a matching start frame.',
+                {
+                  value1: aspectRatio ?? DEFAULT_ASPECT_RATIO,
+                }
               )}
             </p>
-          ) : null}
+            {visualPromptDirty ? (
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  'Replacing the image will also save your edited prompt with it.'
+                )}
+              </p>
+            ) : null}
+          </div>
         </div>
       </TabsContent>
 
@@ -2113,14 +2173,6 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
           {/* Thinking bar while the model reasons, before the regenerated
               prompt starts streaming back ('pending' → first delta). */}
           <ThinkingBar active={shotPromptStream.motion.status === 'pending'} />
-
-          {shot && (
-            <ShotSpecForm
-              sequenceId={sequenceId}
-              shotId={shot.id}
-              part="motion"
-            />
-          )}
 
           {/* Editable raw motion prompt */}
           <div className="space-y-2">
@@ -2299,7 +2351,9 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                   : null,
                 promptPreview?.packedLimitWarning,
                 !storageDomain
-                  ? 'Relative /r2/ image URLs are made publicly fetchable at submit'
+                  ? t(
+                      'Relative /r2/ image URLs are made publicly fetchable at submit'
+                    )
                   : null,
               ]
                 .filter((line): line is string => line != null)
@@ -2367,46 +2421,21 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
             </label>
           )}
 
-          {/* Start-frame switch. Unticked, the shot renders straight from its
-              reference sheets — the same thing the sequence-wide reference-only
-              setting does, decided per shot. Disabled without a still to point
-              at: ticking it must never trigger image generation. */}
-          <label
-            htmlFor="scene-use-start-frame"
-            className="flex items-center gap-2 text-sm text-muted-foreground"
-          >
-            <Checkbox
-              id="scene-use-start-frame"
-              checked={shotUsesStartFrame}
-              onCheckedChange={(checked) =>
-                setUseStartFrame.mutate(checked === true)
-              }
-              disabled={
-                !shot ||
-                setUseStartFrame.isPending ||
-                isGeneratingMotion ||
-                (!startFrameAvailable && !shotUsesStartFrame)
-              }
-            />
-            <span>
-              {
-                <>
-                  {t('Use start frame')}
-                  {!startFrameAvailable && !shotUsesStartFrame && (
-                    <span className="text-muted-foreground/70">
-                      {t('— generate one first')}
-                    </span>
-                  )}
-                </>
-              }
-            </span>
-          </label>
+          {startFrameMissing && (
+            <p className="text-xs text-muted-foreground">
+              {t(
+                'Generate a start frame on the Image tab first, or turn Use start frame off.'
+              )}
+            </p>
+          )}
 
           {modelCannotRenderReferenceOnly && (
             <p className="text-xs text-muted-foreground">
               {t(
-                '{{value1}} needs a start frame. Pick another model, or tick Use start frame.',
-                { value1: IMAGE_TO_VIDEO_MODELS[effectiveMotionModel].name }
+                '{{value1}} needs a start frame. Pick another model, or turn on Use start frame on the Image tab.',
+                {
+                  value1: IMAGE_TO_VIDEO_MODELS[effectiveMotionModel].name,
+                }
               )}
             </p>
           )}
@@ -2490,7 +2519,8 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
                 unusableElementLines.length > 0 ||
                 Boolean(promptPreview?.packedPromptOverflow) ||
                 !shot ||
-                !hasMotionPrompt
+                !hasMotionPrompt ||
+                startFrameMissing
               }
               className={costButtonClassName}
             >
@@ -2612,7 +2642,14 @@ export const SceneScriptPrompts: React.FC<SceneScriptPromptsProps> = ({
         <SceneMusicFacet sequenceId={sequenceId} editable={musicEditable} />
       </TabsContent>
 
-      {shot?.id && historyOpen && (
+      {shot?.id && historyOpen === 'spec' && (
+        <ShotSpecHistorySheet
+          onOpenChange={(open) => !open && setHistoryOpen(null)}
+          sequenceId={sequenceId}
+          shotId={shot.id}
+        />
+      )}
+      {shot?.id && (historyOpen === 'visual' || historyOpen === 'motion') && (
         <PromptHistorySheet
           open
           onOpenChange={(open) => !open && setHistoryOpen(null)}

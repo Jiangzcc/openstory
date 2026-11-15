@@ -297,6 +297,7 @@ async function triggerPreviewImage({
           characterBible,
           input.promptLocale
         ),
+        specVersionId: null,
       },
       {
         deduplicationId: previewImageDedupId(parentInstanceId, shot.id),

@@ -17,6 +17,7 @@ import type {
 } from '@tanstack/ai';
 import { Markdown } from '@tanstack/markdown/react';
 import { cn } from '@/ui/utils';
+import type { ApprovalState } from './approvals';
 import {
   STATUS_LABEL,
   ToolCallCard,
@@ -62,8 +63,12 @@ function ModelLink({
 const MARKDOWN_COMPONENTS = { img: () => null, a: ModelLink };
 
 export type ApprovalHandlers = {
+  stateOf: (toolCallId: string) => ApprovalState;
+  errorOf: (toolCallId: string) => string | undefined;
   approve: (toolCallId: string) => void;
   deny: (toolCallId: string) => void;
+  /** Hydrates the thread again when a card has no interrupt to answer. */
+  reload: () => void;
 };
 
 type Block =
@@ -243,8 +248,11 @@ export const AssistantMessage: React.FC<{
       part={part}
       result={results.get(part.id)}
       estimate={estimate}
+      approval={approvals.stateOf(part.id)}
+      approvalError={approvals.errorOf(part.id)}
       onApprove={() => approvals.approve(part.id)}
       onDeny={() => approvals.deny(part.id)}
+      onReload={approvals.reload}
       onViewMessage={onViewMessage}
     />
   );

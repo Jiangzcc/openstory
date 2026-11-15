@@ -7,8 +7,8 @@ import {
   usesStartFrame,
 } from '@/shots/use-start-frame';
 import {
-  hashVisualPromptInput,
-  hashMotionPromptInput,
+  stampVisualPromptInput,
+  stampMotionPromptInput,
 } from '@/shots/input-hash';
 import {
   loadShotPromptContext,
@@ -17,7 +17,6 @@ import {
 import { getFrameImageUrl } from './frame-image';
 import { loadShotPromptDialogue } from './shot-dialogue';
 import { emitLinesMoved } from './dialogue-edit';
-import { redrawShotPreview } from './shot-preview';
 import { rescanContinuityFromPrompt } from './rescan-continuity-from-prompt';
 import { dbSceneId } from '@/shots/scene-id';
 import { getLogger } from '@/platform/logger';
@@ -123,12 +122,12 @@ export async function saveShotPrompt(
           : await getFrameImageUrl(scopedDb, frame.id),
       });
       // The digest narrows its bibles by the text being saved (#2012).
-      inputHash =
+      const stamp =
         data.promptType === 'visual'
-          ? await hashVisualPromptInput(
+          ? await stampVisualPromptInput(
               narrowShotPromptContext(ctx, { channel: 'visual', prompt: text })
             )
-          : await hashMotionPromptInput({
+          : await stampMotionPromptInput({
               ...narrowShotPromptContext(ctx, {
                 channel: 'motion',
                 prompt: text,
@@ -140,6 +139,8 @@ export async function saveShotPrompt(
                 await loadShotPromptDialogue(scopedDb, sequence.id, shot)
               ).dialogue,
             });
+      await scopedDb.inputManifests.record([stamp]);
+      inputHash = stamp.hash;
       analysisModel = ctx.analysisModel;
     } catch (error) {
       logger.warn(
@@ -176,6 +177,5 @@ export async function saveShotPrompt(
     analysisModel,
     createdBy: user.id,
   });
-  await redrawShotPreview({ ...context, scene }, text);
   return { unchanged: false, versionId: inserted.id, scene } as const;
 }

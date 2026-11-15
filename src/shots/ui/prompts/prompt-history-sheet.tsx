@@ -129,14 +129,18 @@ type MediaRow = {
   createdAt: Date;
   selected: boolean;
   /** Image rows: how the still was made. */
-  kind?: 'model' | 'framing' | 'upload';
+  kind?: 'model' | 'framing' | 'upload' | 'sketch';
   /** Video rows: `lipsync` is a sync-3 pass over a render (#2263). */
   source?: 'lipsync' | null;
 };
 
-const KIND_LABEL: Record<'framing' | 'upload', 'Framing' | 'Upload'> = {
+const KIND_LABEL: Record<
+  'framing' | 'upload' | 'sketch',
+  'Framing' | 'Upload' | 'Sketch'
+> = {
   framing: 'Framing',
   upload: 'Upload',
+  sketch: 'Sketch',
 };
 
 function formatTimestamp(d: Date, locale: Locale): string {
@@ -265,7 +269,11 @@ const MediaHistoryList: React.FC<MediaHistoryListProps> = ({
             ? imageModelDisplayName(row.model)
             : videoModelDisplayName(row.model);
         const selectable =
-          row.status === 'completed' && !!row.url && !row.selected;
+          row.status === 'completed' &&
+          !!row.url &&
+          !row.selected &&
+          // A sketch is never the still (#2350).
+          row.kind !== 'sketch';
 
         return (
           <li

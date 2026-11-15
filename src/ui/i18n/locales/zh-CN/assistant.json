@@ -399,5 +399,13 @@
   "This shot": "当前镜头",
   "This character": "当前角色",
   "This location": "当前地点",
-  "Shot {{number}}": "镜头 {{number}}"
+  "Shot {{number}}": "镜头 {{number}}",
+  "Allow or deny the request above to send a message.": "请先允许或拒绝上方请求，再发送消息。",
+  "This chat is paused on a request it cannot answer. Start a new chat.": "此聊天因无法处理的请求而暂停。请开始新聊天。",
+  "This request is no longer open in this tab.": "此请求已不再在当前标签页中等待处理。",
+  "Reload chat": "重新加载聊天",
+  "This request cannot be answered here. Start a new chat.": "无法在此处答复该请求。请开始新聊天。",
+  "Answered. Answer the other request to continue.": "已答复。请答复另一个请求以继续。",
+  "Get shot storyboard": "查看镜头分镜草图",
+  "Regenerate shot storyboard": "重新生成镜头分镜草图"
 }

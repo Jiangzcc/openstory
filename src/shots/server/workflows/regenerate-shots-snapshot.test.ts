@@ -24,7 +24,7 @@ import type {
   SequenceLocationWithReference,
 } from '@/platform/server/db/schema';
 import {
-  buildRegenerateShotSnapshot,
+  buildRegenerateShotSnapshot as buildRegenerateShotStamp,
   computeRegenerateShotsBatchHash,
 } from './regenerate-shots-snapshot';
 
@@ -37,6 +37,7 @@ function makeCharacter(
   overrides: Partial<CastCharacterWithSheet> = {}
 ): CastCharacterWithSheet {
   const character: CastCharacterWithSheet = {
+    slug: 'fixture',
     id: 'c1',
     sequenceId: 'seq1',
     characterId: 'jack',
@@ -155,6 +156,11 @@ function makeElement(
   };
   return { ...element, ...overrides };
 }
+
+/** The snapshot half; these tests never read the stamp. */
+const buildRegenerateShotSnapshot = async (
+  params: Parameters<typeof buildRegenerateShotStamp>[0]
+) => (await buildRegenerateShotStamp(params)).snapshot;
 
 describe('buildRegenerateShotSnapshot', () => {
   it('produces a deterministic snapshotInputHash for identical inputs', async () => {

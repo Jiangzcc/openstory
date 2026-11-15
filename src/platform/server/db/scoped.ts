@@ -72,6 +72,7 @@ import { createProductionReadMethods } from '@/shots/server/db/production-reads'
 import { createSceneScriptVersionsMethods } from '@/shots/server/db/scene-script-versions';
 import { createShotDialogueMethods } from '@/shots/server/db/shot-dialogue';
 import { createShotSpecVersionsMethods } from '@/shots/server/db/shot-spec-versions';
+import { createInputManifestsMethods } from '@/shots/server/db/input-manifests';
 import { createSequenceEventsMethods } from '@/sequences/server/db/sequence-events';
 import { createShotPromptVersionsMethods } from '@/shots/server/db/shot-prompt-versions';
 import { createRenderSegmentsMethods } from '@/motion/server/db/render-segments';
@@ -366,7 +367,7 @@ export async function createDefaultOrganization(input: {
     .insert(organization)
     .values({
       name: input.organizationName,
-      slug: `org-${input.userId.slice(0, 8)}`,
+      slug: `org-${input.userId.toLowerCase()}`,
     })
     .returning();
   // oxlint-disable-next-line typescript-eslint/no-unnecessary-condition -- runtime guard: DB query may return undefined
@@ -445,6 +446,8 @@ export function createScopedDb(organizationId: string, userId: string) {
     shotPromptVersions: createShotPromptVersionsMethods(db),
     // #1915 — the structured shot spec its prompts are derived from.
     shotSpecVersions: createShotSpecVersionsMethods(db),
+    // #2344 — what each stamped hash read, by hash; the exact staleness cause.
+    inputManifests: createInputManifestsMethods(db),
     // SSF redesign (#988) — frames are the IMAGE unit (still keyframes per
     // shot); frame_variants the flat image versions; frame_prompt_versions the
     // visual-prompt history; sequence_events the append-only activity log.

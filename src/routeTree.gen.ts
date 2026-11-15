@@ -11,13 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
+import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known/$'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAdminRouteRouteImport } from './routes/_app/admin/route'
 import { Route as AppConnectRouteImport } from './routes/_app/connect'
 import { Route as AppCreditsRouteImport } from './routes/_app/credits'
@@ -29,6 +29,7 @@ import { Route as AppSettingsRouteRouteImport } from './routes/_app/settings/rou
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthVerifyRouteImport } from './routes/_auth/verify'
+import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as ApiRealtimeRouteImport } from './routes/api/realtime'
 import { Route as ApiTestRouteRouteImport } from './routes/api/test/route'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
@@ -85,6 +86,7 @@ import { Route as ApiTestUserRouteImport } from './routes/api/test/user'
 import { Route as ApiTestVerifyRouteImport } from './routes/api/test/verify'
 import { Route as ApiV1IndexRouteImport } from './routes/api/v1/index'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
+import { Route as ApiV1OrganizationRouteImport } from './routes/api/v1/organization'
 import { Route as ApiV1SequencesRouteImport } from './routes/api/v1/sequences'
 import { Route as ApiV1StitchesRouteImport } from './routes/api/v1/stitches'
 import { Route as ApiV1StylesRouteImport } from './routes/api/v1/styles'
@@ -122,6 +124,10 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PublicRouteRoute = PublicRouteRouteImport.update({
+  id: '/_public',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
@@ -151,11 +157,6 @@ const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
   id: '/.well-known/$',
   path: '/.well-known/$',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppIndexRoute = AppIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppAdminRouteRoute = AppAdminRouteRouteImport.update({
   id: '/admin',
@@ -211,6 +212,11 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
   getParentRoute: () => AuthRouteRoute,
+} as any)
+const PublicIndexRoute = PublicIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
 const ApiRealtimeRoute = ApiRealtimeRouteImport.update({
   id: '/api/realtime',
@@ -493,6 +499,11 @@ const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
   path: '/api/v1/openapi.json',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1OrganizationRoute = ApiV1OrganizationRouteImport.update({
+  id: '/api/v1/organization',
+  path: '/api/v1/organization',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1SequencesRoute = ApiV1SequencesRouteImport.update({
   id: '/api/v1/sequences',
   path: '/api/v1/sequences',
@@ -642,7 +653,7 @@ const ApiSequencesSequenceIdShotsShotIdSubtitlesRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof PublicIndexRoute
   '/docs': typeof DocsRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
@@ -704,6 +715,7 @@ export interface FileRoutesByFullPath {
   '/api/test/user': typeof ApiTestUserRoute
   '/api/test/verify': typeof ApiTestVerifyRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/api/v1/organization': typeof ApiV1OrganizationRoute
   '/api/v1/sequences': typeof ApiV1SequencesRouteWithChildren
   '/api/v1/stitches': typeof ApiV1StitchesRouteWithChildren
   '/api/v1/styles': typeof ApiV1StylesRouteWithChildren
@@ -745,7 +757,7 @@ export interface FileRoutesByFullPath {
   '/api/sequences/$sequenceId/shots/$shotId/subtitles': typeof ApiSequencesSequenceIdShotsShotIdSubtitlesRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof AppIndexRoute
+  '/': typeof PublicIndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -805,6 +817,7 @@ export interface FileRoutesByTo {
   '/api/test/user': typeof ApiTestUserRoute
   '/api/test/verify': typeof ApiTestVerifyRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/api/v1/organization': typeof ApiV1OrganizationRoute
   '/api/v1/sequences': typeof ApiV1SequencesRouteWithChildren
   '/api/v1/stitches': typeof ApiV1StitchesRouteWithChildren
   '/api/v1/styles': typeof ApiV1StylesRouteWithChildren
@@ -849,6 +862,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteRouteWithChildren
   '/_auth': typeof AuthRouteRouteWithChildren
+  '/_public': typeof PublicRouteRouteWithChildren
   '/docs': typeof DocsRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
@@ -880,7 +894,7 @@ export interface FileRoutesById {
   '/oauth/login': typeof OauthLoginRoute
   '/r2/$': typeof R2SplatRoute
   '/stitch/$id': typeof StitchIdRoute
-  '/_app/': typeof AppIndexRoute
+  '/_public/': typeof PublicIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/_app/sequences/$id': typeof AppSequencesIdRouteRouteWithChildren
   '/_app/admin/models': typeof AppAdminModelsRoute
@@ -911,6 +925,7 @@ export interface FileRoutesById {
   '/api/test/user': typeof ApiTestUserRoute
   '/api/test/verify': typeof ApiTestVerifyRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/api/v1/organization': typeof ApiV1OrganizationRoute
   '/api/v1/sequences': typeof ApiV1SequencesRouteWithChildren
   '/api/v1/stitches': typeof ApiV1StitchesRouteWithChildren
   '/api/v1/styles': typeof ApiV1StylesRouteWithChildren
@@ -1017,6 +1032,7 @@ export interface FileRouteTypes {
     | '/api/test/user'
     | '/api/test/verify'
     | '/api/v1/openapi.json'
+    | '/api/v1/organization'
     | '/api/v1/sequences'
     | '/api/v1/stitches'
     | '/api/v1/styles'
@@ -1118,6 +1134,7 @@ export interface FileRouteTypes {
     | '/api/test/user'
     | '/api/test/verify'
     | '/api/v1/openapi.json'
+    | '/api/v1/organization'
     | '/api/v1/sequences'
     | '/api/v1/stitches'
     | '/api/v1/styles'
@@ -1161,6 +1178,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_auth'
+    | '/_public'
     | '/docs'
     | '/llms.txt'
     | '/mcp'
@@ -1192,7 +1210,7 @@ export interface FileRouteTypes {
     | '/oauth/login'
     | '/r2/$'
     | '/stitch/$id'
-    | '/_app/'
+    | '/_public/'
     | '/docs/'
     | '/_app/sequences/$id'
     | '/_app/admin/models'
@@ -1223,6 +1241,7 @@ export interface FileRouteTypes {
     | '/api/test/user'
     | '/api/test/verify'
     | '/api/v1/openapi.json'
+    | '/api/v1/organization'
     | '/api/v1/sequences'
     | '/api/v1/stitches'
     | '/api/v1/styles'
@@ -1268,6 +1287,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  PublicRouteRoute: typeof PublicRouteRouteWithChildren
   DocsRoute: typeof DocsRouteWithChildren
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   McpRoute: typeof McpRoute
@@ -1291,6 +1311,7 @@ export interface RootRouteChildren {
   ApiStorageMultipartRoute: typeof ApiStorageMultipartRoute
   ApiStorageUploadRoute: typeof ApiStorageUploadRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
+  ApiV1OrganizationRoute: typeof ApiV1OrganizationRoute
   ApiV1SequencesRoute: typeof ApiV1SequencesRouteWithChildren
   ApiV1StitchesRoute: typeof ApiV1StitchesRouteWithChildren
   ApiV1StylesRoute: typeof ApiV1StylesRouteWithChildren
@@ -1315,6 +1336,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public': {
+      id: '/_public'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -1358,13 +1386,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/.well-known/$'
       preLoaderRoute: typeof DotwellKnownSplatRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_app/': {
-      id: '/_app/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRouteRoute
     }
     '/_app/admin': {
       id: '/_app/admin'
@@ -1442,6 +1463,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/verify'
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof AuthRouteRoute
+    }
+    '/_public/': {
+      id: '/_public/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
     '/api/realtime': {
       id: '/api/realtime'
@@ -1835,6 +1863,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1OpenapiDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/organization': {
+      id: '/api/v1/organization'
+      path: '/api/v1/organization'
+      fullPath: '/api/v1/organization'
+      preLoaderRoute: typeof ApiV1OrganizationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/sequences': {
       id: '/api/v1/sequences'
       path: '/api/v1/sequences'
@@ -2130,7 +2165,6 @@ interface AppRouteRouteChildren {
   AppPrivacyRoute: typeof AppPrivacyRoute
   AppReportRoute: typeof AppReportRoute
   AppTermsRoute: typeof AppTermsRoute
-  AppIndexRoute: typeof AppIndexRoute
   AppSequencesIdRouteRoute: typeof AppSequencesIdRouteRouteWithChildren
   AppCharactersIdRoute: typeof AppCharactersIdRoute
   AppLocationsLocationIdRoute: typeof AppLocationsLocationIdRoute
@@ -2162,7 +2196,6 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppPrivacyRoute: AppPrivacyRoute,
   AppReportRoute: AppReportRoute,
   AppTermsRoute: AppTermsRoute,
-  AppIndexRoute: AppIndexRoute,
   AppSequencesIdRouteRoute: AppSequencesIdRouteRouteWithChildren,
   AppCharactersIdRoute: AppCharactersIdRoute,
   AppLocationsLocationIdRoute: AppLocationsLocationIdRoute,
@@ -2200,6 +2233,18 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
+)
+
+interface PublicRouteRouteChildren {
+  PublicIndexRoute: typeof PublicIndexRoute
+}
+
+const PublicRouteRouteChildren: PublicRouteRouteChildren = {
+  PublicIndexRoute: PublicIndexRoute,
+}
+
+const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
+  PublicRouteRouteChildren,
 )
 
 interface DocsRouteChildren {
@@ -2300,6 +2345,7 @@ const ApiV1StylesRouteWithChildren = ApiV1StylesRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  PublicRouteRoute: PublicRouteRouteWithChildren,
   DocsRoute: DocsRouteWithChildren,
   LlmsDottxtRoute: LlmsDottxtRoute,
   McpRoute: McpRoute,
@@ -2323,6 +2369,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStorageMultipartRoute: ApiStorageMultipartRoute,
   ApiStorageUploadRoute: ApiStorageUploadRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
+  ApiV1OrganizationRoute: ApiV1OrganizationRoute,
   ApiV1SequencesRoute: ApiV1SequencesRouteWithChildren,
   ApiV1StitchesRoute: ApiV1StitchesRouteWithChildren,
   ApiV1StylesRoute: ApiV1StylesRouteWithChildren,

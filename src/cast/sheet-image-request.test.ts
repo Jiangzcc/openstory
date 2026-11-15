@@ -227,7 +227,10 @@ describe('deferred look reference projection', () => {
         aspectRatio: '16:9',
         referenceImageCount: 1,
       });
-      const finished = await finishCharacterSheetPayload(draft, FACE);
+      const { payload: finished } = await finishCharacterSheetPayload(
+        draft,
+        FACE
+      );
       const { referenceUrls } = buildCharacterSheetPrompt(
         finished.characterMetadata,
         finished.lookStyling,

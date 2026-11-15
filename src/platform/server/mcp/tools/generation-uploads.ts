@@ -42,7 +42,10 @@ import {
 } from '@/motion/server/shot-motion-generation';
 import { ValidationError } from '@/platform/errors';
 import { VARIANT_TYPES } from '@/platform/server/db/schema/shot-variants';
-import { ulidSchema } from '@/platform/server/schemas/id.schemas';
+import {
+  idOrSlugSchema,
+  ulidSchema,
+} from '@/platform/server/schemas/id.schemas';
 import {
   fromShareableUrl,
   r2KeyFromUrl,
@@ -77,6 +80,7 @@ import {
 import { openstoryTool, productionRead } from '../tool-context';
 import { uploadSceneDialogue } from '@/shots/server/scene-dialogue-upload';
 import { shotEdit } from './shot-content-edits';
+import { regenerateShotStoryboard } from '@/shots/server/shot-preview';
 
 const writeAnnotations = {
   readOnlyHint: false,
@@ -87,7 +91,7 @@ const writeAnnotations = {
 /** Starts paid provider work. */
 const paid = { ...writeAnnotations, openWorldHint: true };
 
-const sequenceId = ulidSchema;
+const sequenceId = idOrSlugSchema;
 const shotInput = z.strictObject({
   sequenceId,
   shotId: ulidSchema.describe('Shot ID (list_shots / get_shot).'),
@@ -276,6 +280,30 @@ const generateShotImageTool = openstoryTool({
       summary: result.alreadyInFlight
         ? 'That still is already rendering.'
         : 'Started the still.',
+    };
+  },
+});
+
+const regenerateShotStoryboardTool = openstoryTool({
+  name: 'regenerate_shot_storyboard',
+  description:
+    'Redraw a shot’s storyboard sketch from its selected spec and cast (uses credits; one small image). Use when get_shot_storyboard reads stale. A sketch already drawing is returned (alreadyInFlight) and nothing is charged. The sketch lands when the run finishes (get_shot_storyboard).',
+  scope: 'generate',
+  annotations: paid,
+  inputSchema: shotInput,
+  outputSchema: z.object({
+    workflowRunId: z.string().nullable(),
+    alreadyInFlight: z.boolean(),
+  }),
+  run: async (input, { scopedDb, userId, promptLocale }) => {
+    const result = await regenerateShotStoryboard(
+      await shotEdit(scopedDb, userId, input, promptLocale)
+    );
+    return {
+      data: result,
+      summary: result.alreadyInFlight
+        ? 'That sketch is already drawing.'
+        : 'Started the sketch.',
     };
   },
 });
@@ -746,7 +774,7 @@ const setCharacterSheetFromUploadTool = openstoryTool({
   annotations: writeAnnotations,
   inputSchema: z.strictObject({
     sequenceId,
-    characterId: ulidSchema.describe(
+    characterId: idOrSlugSchema.describe(
       'Database character ID (list_characters).'
     ),
     lookId: ulidSchema
@@ -792,7 +820,9 @@ const setLocationSheetFromUploadTool = openstoryTool({
   annotations: writeAnnotations,
   inputSchema: z.strictObject({
     sequenceId,
-    locationId: ulidSchema.describe('Database location ID (list_locations).'),
+    locationId: idOrSlugSchema.describe(
+      'Database location ID (list_locations).'
+    ),
     upload: uploadRef,
   }),
   outputSchema: z.object({ locationId: z.string() }),
@@ -912,6 +942,7 @@ export const generationUploadTools = [
   listModels,
   getShotVariantGrid,
   generateShotImageTool,
+  regenerateShotStoryboardTool,
   generateShotImageVariantsTool,
   selectShotImageVariantTool,
   generateShotVideoTool,

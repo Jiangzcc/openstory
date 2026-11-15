@@ -9,7 +9,8 @@ import {
   AlertTitle,
 } from '@/ui/shadcn/alert';
 import { Button } from '@/ui/shadcn/button';
-import { UpdateAllDialog } from './update-all-dialog';
+import { UpdateAllDialog, describeCauses } from './update-all-dialog';
+import { localizeCauses } from './localize-causes';
 import type { ShotStaleness } from '@/shots/ui/use-shot-staleness';
 import type { UpdateStaleDepth } from '@/shots/update-stale-depth';
 import { cn } from '@/ui/utils';
@@ -22,7 +23,8 @@ export type StalenessArtifact =
   | 'visual-prompt'
   | 'motion-prompt'
   | 'music-prompt'
-  | 'music';
+  | 'music'
+  | 'storyboard';
 
 export type StalenessEntityType =
   | 'shot'
@@ -44,6 +46,8 @@ export type BannerDensity = Extract<
 
 type StalenessIndicatorBaseProps = {
   entityType: StalenessEntityType;
+  /** What moved (#2344), as labels; shown under the inline banner. */
+  causes?: readonly string[];
   /** Workflow currently in flight — disables the regenerate trigger and shows a spinner so rapid clicks don't enqueue duplicate runs. */
   isRegenerating?: boolean;
   className?: string;
@@ -115,6 +119,7 @@ const ARTIFACT_LABEL: Record<StalenessArtifact, string> = {
   'motion-prompt': 'motion prompt',
   'music-prompt': 'music prompt',
   music: 'music',
+  storyboard: 'storyboard sketch',
 };
 
 export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
@@ -188,7 +193,10 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
   }
 
   if (props.density === 'status-line') {
-    const message = props.message ?? t('Out of date since your last edit');
+    const message =
+      props.message ??
+      (props.staleness && describeCauses([props.staleness], t)) ??
+      t('Out of date since your last edit');
     const actionLabel = props.actionLabel ?? t('Update all');
     const unknown = props.tone === 'unknown';
     return (
@@ -209,7 +217,9 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
             unknown ? 'bg-muted-foreground/50' : 'bg-amber-500'
           )}
         />
-        <span className="min-w-0 truncate">{message}</span>
+        <span className="min-w-0 truncate" title={message}>
+          {message}
+        </span>
         {props.children}
         {props.onRegenerateDepth ? (
           <>
@@ -329,6 +339,13 @@ export const StalenessIndicator: React.FC<StalenessIndicatorProps> = (
         {t('This {{value1}} was generated from earlier inputs.', {
           value1: translateLabel(ARTIFACT_LABEL[inlineArtifact]),
         })}
+        {props.causes && props.causes.length > 0 ? (
+          <span className="block">
+            {t('Changed: {{value1}}', {
+              value1: localizeCauses(props.causes, t).join(', '),
+            })}
+          </span>
+        ) : null}
       </AlertDescription>
       <AlertAction className="flex items-center gap-1">
         <Button

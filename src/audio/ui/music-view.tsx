@@ -59,6 +59,9 @@ type MusicViewProps = {
   /** Banner rendered above the audio player while `musicStatus === 'completed'`. */
   divergentBanner?: React.ReactNode;
   isMusicPromptStale?: boolean;
+  /** What moved under each stale verdict (#2344). */
+  musicPromptCauses?: readonly string[];
+  musicTrackCauses?: readonly string[];
   /**
    * The playing track's `sequence_music_variants.inputHash` no longer matches
    * the sequence's prompt / tags / shot durations (#1657). Regenerating is
@@ -67,6 +70,10 @@ type MusicViewProps = {
   isMusicTrackStale?: boolean;
   onRegenerateMusicPrompt?: () => void;
   isRegeneratingMusicPrompt?: boolean;
+  /** Who is making the missing prompt: the run (`queued`), a click (`writing`), or nobody. */
+  musicPromptRun: 'none' | 'queued' | 'writing';
+  /** The prompt is written from the shots; none yet, nothing to write from. */
+  hasShots: boolean;
   /**
    * Toggle whether this sequence's music plays in the theatre and is bundled
    * into MP4 exports (#834). Bound to `sequence.includeMusic`; persisted by the
@@ -95,7 +102,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
   children,
   ...props
 }) => (
-  <Button disabled={isLoading || props.disabled} {...props}>
+  <Button {...props} disabled={isLoading || props.disabled}>
     {isLoading ? (
       <>
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -188,8 +195,12 @@ export const MusicView: React.FC<MusicViewProps> = ({
   divergentBanner,
   isMusicPromptStale,
   isMusicTrackStale,
+  musicPromptCauses,
+  musicTrackCauses,
   onRegenerateMusicPrompt,
   isRegeneratingMusicPrompt,
+  musicPromptRun,
+  hasShots,
   onIncludeMusicChange,
   onSaveMusicPrompt,
   isSavingMusicPrompt = false,
@@ -227,6 +238,7 @@ export const MusicView: React.FC<MusicViewProps> = ({
         artifact="music-prompt"
         entityType="sequence"
         density="inline"
+        causes={musicPromptCauses}
         onRegenerate={onRegenerateMusicPrompt}
         isRegenerating={isRegeneratingMusicPrompt}
       />
@@ -237,6 +249,7 @@ export const MusicView: React.FC<MusicViewProps> = ({
       artifact="music"
       entityType="sequence"
       density="inline"
+      causes={musicTrackCauses}
       onRegenerate={handleGenerate}
       isRegenerating={isGeneratingMusic}
     />
@@ -473,15 +486,35 @@ export const MusicView: React.FC<MusicViewProps> = ({
     );
   }
 
-  const promptPending = !musicPrompt;
+  const promptPending = !musicPrompt && musicPromptRun !== 'none';
+  const message = musicPrompt
+    ? t('Music prompt ready')
+    : musicPromptRun === 'writing'
+      ? t('Writing music prompt…')
+      : musicPromptRun === 'queued'
+        ? t('Music prompt comes with the images')
+        : t('No music prompt yet');
 
   return (
     <StatusPanel
       icon={<Music className="h-8 w-8 text-muted-foreground" />}
-      message={promptPending ? t('Preparing music…') : t('Music prompt ready')}
+      message={message}
     >
       {stalenessBanner}
       {trackStalenessBanner}
+      {!musicPrompt && musicPromptRun === 'none' && onRegenerateMusicPrompt && (
+        <div className="flex justify-center">
+          <LoadingButton
+            variant="outline"
+            onClick={onRegenerateMusicPrompt}
+            isLoading={isRegeneratingMusicPrompt ?? false}
+            disabled={!hasShots}
+            loadingText={t('Writing…')}
+          >
+            {t('Write Music Prompt')}
+          </LoadingButton>
+        </div>
+      )}
       <FormField
         label={t('Prompt')}
         htmlFor="music-prompt"
@@ -501,7 +534,7 @@ export const MusicView: React.FC<MusicViewProps> = ({
           disabled={promptPending}
           placeholder={
             promptPending
-              ? t('Generating music prompt…')
+              ? t('Writing music prompt…')
               : t('Descriptive music prompt…')
           }
         />
@@ -511,7 +544,9 @@ export const MusicView: React.FC<MusicViewProps> = ({
         {musicTags ? (
           <p className="text-sm text-muted-foreground">{musicTags}</p>
         ) : (
-          <p className="text-sm text-muted-foreground/60">{t('Generating…')}</p>
+          <p className="text-sm text-muted-foreground/60">
+            {promptPending ? t('Writing…') : t('None yet')}
+          </p>
         )}
       </FormField>
 

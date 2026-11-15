@@ -389,10 +389,19 @@ Key consequences of the shape:
   `model` (`resolveSheetImageModel`), and the clip pointer compare ignores the
   video model entirely. So a model id only ever differs when the artifact
   itself was re-made. A sequence switch applies to
-  the next generation. `findStalenessCauses` therefore never names "Image
-  model" or "Script model" (they are not in `SETTINGS_CHANGED_LABELS`). One
+  the next generation. A manifest diff therefore never names "Image
+  model" or "Script model", and neither does the legacy `findStalenessCauses`
+  guess (they are not in `SETTINGS_CHANGED_LABELS`). One
   exception: an uploaded sheet has no model of its own, so its verify uses
   the sequence model and a switch does re-stale it.
+
+**Causes are exact (#2344).** Each hash also stores what it read, keyed by
+the hash (`input_manifests`), and a stale verdict names the leaf paths whose
+digest moved. Every node on this page that is "in the hash" is a manifest
+key, so the chips name exactly the edges of this graph that fired. The
+timestamp guess answers only for rows stamped before the table existed.
+See `workflow-snapshots-and-content-hash-staleness.md` § Causes are a
+manifest diff.
 
 ---
 
@@ -779,6 +788,38 @@ sha256Hex({
 });
 ```
 
+#### 9. Storyboard sketch — `readShotStoryboard` (#2350)
+
+Every shot, start-frame ones included. Not a manifest hash: a sketch row
+records the spec version it was drawn from (`frame_variants.specVersionId`)
+and its `promptHash`. Staleness reads the hash only: the sketch on show is
+the newest whose hash equals the one below, else the newest of any.
+
+```ts
+cast = charactersToBible(
+  dressForScene(characters, scene.continuity.characterLooks)
+);
+fresh = simpleHash(buildPreviewPrompt(previewTextForShot(spec), cast));
+```
+
+The prompt stages the action in the bodies. Direction, sound and dialogue
+are not in it, so a direction-only edit does not move the hash (#2379).
+
+`missing` is none drawn. A sketch of the fresh hash is fresh, whatever
+version it is stamped with, so a rename that leaves the drawn text alone and
+a picked old version stay fresh. Otherwise `failed` if the newest row failed,
+else `changed`. While `sequences.status` is `processing` a mismatch is not
+`changed`: scene split draws the sketch from the bible before the cast rows
+exist, so a read in that gap rebuilds the prompt with no cast (#2369).
+`missing` and `failed` still report. Every spec save, Rewrite and analysis draws its own
+(`drawSpecSketch`, skipped when a sketch of that prompt exists), so what
+reads stale is a cast or look edit, a rename that changes the drawn text, and
+a draw that did not start. The stamp only groups sketches in History: a
+version's sketch is the newest stamped with it, else the newest of its
+prompt, which is how scene split's sketch (drawn before the analysis spec,
+so unstamped) finds its version. A shot with no spec (before #1915) is held
+to its motion prompt instead. Regenerate draws from the selected spec.
+
 ### 4.2 Hashed surface vs. actual prompt inputs — are we over-hashing? (history)
 
 > **This subsection is the #867 analysis as written, kept for the reasoning.**
@@ -1016,24 +1057,26 @@ Ordered by value / risk. **1, 2, 4 and 5 shipped; 3 is still open** (see C).
 
 ## 7. Quick reference — file map
 
-| Concern                                  | File                                                                                                                              |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Hash helpers + `sceneInputContext`       | `src/shots/input-hash.ts`                                                                                                         |
-| Prompt context load + narrowing          | `src/shots/server/prompt-context.ts`                                                                                              |
-| Bible builders (DB → bible, verify side) | `src/cast/server/bibles-from-scoped.ts`                                                                                           |
-| Casting transform                        | `src/cast/character-prompt.ts` (`buildCastingAttributes`, `buildCastCharacterBible`)                                              |
-| Prompt stamp — derived                   | `src/shots/server/persist-shot-spec.ts`, `src/shots/server/rebuild-shot-prompts.ts`, `src/shots/server/regenerate-shot-prompt.ts` |
-| Rewrite shot                             | `src/shots/server/workflows/shot-spec-rewrite-workflow.ts`                                                                        |
-| Spec edit (inspector)                    | `src/shots/shot-spec.fn.ts` (`saveShotSpecFn`)                                                                                    |
-| Bible persistence (cast)                 | `src/cast/server/workflows/character-bible-workflow.ts`, `location-bible-workflow.ts`                                             |
-| Pipeline orchestration                   | `src/sequences/server/workflows/analyze-script-workflow.ts`                                                                       |
-| Staleness verify (prompts + still)       | `src/shots/server/shot-staleness.ts` (`computeShotStaleness`, `findStalenessCauses`)                                              |
-| Staleness verify (clip)                  | `src/shots/scene-segments.ts` (`isSelectedVersionStale`)                                                                          |
-| Staleness verify (sheets)                | `src/cast/server/production-staleness.ts` (`readReferenceStaleness`)                                                              |
-| Staleness verify (music)                 | `src/audio/server/music-staleness.ts` (`readMusicPromptStaleness`)                                                                |
-| Verdict matrix (every edge, as verdicts) | `src/shots/server/staleness-matrix.test.ts`                                                                                       |
-| Still snapshot hash                      | `src/stills/server/workflows/image-workflow-snapshot.ts`, `src/shots/server/workflows/regenerate-shots-snapshot.ts`               |
-| Design rationale                         | `docs/architecture/workflow-snapshots-and-content-hash-staleness.md`                                                              |
+| Concern                                  | File                                                                                                                                                |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hash helpers + `sceneInputContext`       | `src/shots/input-hash.ts`                                                                                                                           |
+| Prompt context load + narrowing          | `src/shots/server/prompt-context.ts`                                                                                                                |
+| Bible builders (DB → bible, verify side) | `src/cast/server/bibles-from-scoped.ts`                                                                                                             |
+| Casting transform                        | `src/cast/character-prompt.ts` (`buildCastingAttributes`, `buildCastCharacterBible`)                                                                |
+| Prompt stamp — derived                   | `src/shots/server/persist-shot-spec.ts`, `src/shots/server/rebuild-shot-prompts.ts`, `src/shots/server/regenerate-shot-prompt.ts`                   |
+| Rewrite shot                             | `src/shots/server/workflows/shot-spec-rewrite-workflow.ts`                                                                                          |
+| Spec edit (inspector)                    | `src/shots/shot-spec.fn.ts` (`saveShotSpecFn`)                                                                                                      |
+| Bible persistence (cast)                 | `src/cast/server/workflows/character-bible-workflow.ts`, `location-bible-workflow.ts`                                                               |
+| Pipeline orchestration                   | `src/sequences/server/workflows/analyze-script-workflow.ts`                                                                                         |
+| Staleness verify (prompts + still)       | `src/shots/server/shot-staleness.ts` (`computeShotStaleness`; `findStalenessCauses` only for pre-manifest rows)                                     |
+| Staleness causes (manifest diff)         | `src/shots/input-hash.ts` (`stampInputHash`, `Stamped`, `diffManifests`), `src/shots/staleness-causes.ts`, `src/shots/server/db/input-manifests.ts` |
+| Staleness verify (clip)                  | `src/shots/scene-segments.ts` (`isSelectedVersionStale`, `selectedVersionDriftDetail` for causes)                                                   |
+| Staleness verify (sheets)                | `src/cast/server/production-staleness.ts` (`readReferenceStaleness`)                                                                                |
+| Staleness verify (music)                 | `src/audio/server/music-staleness.ts` (`readMusicPromptStaleness`)                                                                                  |
+| Staleness verify (storyboard sketch)     | `src/shots/server/shot-preview.ts` (`readShotStoryboard`)                                                                                           |
+| Verdict matrix (every edge, as verdicts) | `src/shots/server/staleness-matrix.test.ts`                                                                                                         |
+| Still snapshot hash                      | `src/stills/server/workflows/image-workflow-snapshot.ts`, `src/shots/server/workflows/regenerate-shots-snapshot.ts`                                 |
+| Design rationale                         | `docs/architecture/workflow-snapshots-and-content-hash-staleness.md`                                                                                |
 
 ### Field ownership update (#1889)
 

@@ -48,7 +48,7 @@ vi.mock('@/billing/server/fal-pricing-live', () => ({
 import { freezeFreshGenerationPlan } from './freeze-fresh-generation-plan';
 import { computePlan } from '@/shots/server/update-stale-plan';
 
-// Synthetic row readers; freeze, computePlan, reference construction and routing/billing helpers are real.
+// Synthetic row readers and manifest sink; planning, references and billing are real.
 const input: StoryboardWorkflowInput & { sequenceId: string } = {
   promptLocale: 'en',
   userId: 'synthetic-user',
@@ -110,6 +110,7 @@ const scope = asStub<ScopedDb>({
   sequences: { getById: async () => sequence },
   shots: { listBySequence: async () => [] },
   sequenceElements: { list: async () => [element] },
+  inputManifests: { record: vi.fn(async () => undefined) },
 });
 const units: PlanUnit[] = [
   {

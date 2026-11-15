@@ -33,6 +33,7 @@ const ARTIFACT_LABEL: Record<StalenessArtifact, string> = {
   'motion-prompt': 'motion prompt',
   'music-prompt': 'music prompt',
   music: 'music',
+  storyboard: 'storyboard sketch',
 };
 
 export const DivergentAlternateBanner: React.FC<

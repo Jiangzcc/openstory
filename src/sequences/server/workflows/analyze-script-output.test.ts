@@ -117,6 +117,11 @@ function makeFixture() {
     organizationId: 'mock-organization',
     userId: 'mock-user',
     models: DEFAULT_MODEL_CONFIGURATION,
+    inputManifests: {
+      record: vi.fn<WorkflowScopedDb['inputManifests']['record']>(
+        async () => undefined
+      ),
+    },
     credentials: { resolveLlmKey: vi.fn() },
     claims: { frameVariants: { getById: vi.fn() } },
     liveRead: { sequenceElements: { listByIds: vi.fn() } },
@@ -561,6 +566,7 @@ function expectOwnedAnalysisWrites(output: Output) {
       source: 'derived',
       specVersionId: SPEC_VERSION_ID,
       text: expect.any(String),
+      inputHash: expect.any(String),
     })
   );
   expect(output.shotPromptVersions.write).toHaveBeenCalledExactlyOnceWith(
@@ -569,6 +575,7 @@ function expectOwnedAnalysisWrites(output: Output) {
       source: 'derived',
       specVersionId: SPEC_VERSION_ID,
       text: expect.any(String),
+      inputHash: expect.any(String),
     })
   );
   expect(output.sequenceEvents.recordOnce).toHaveBeenCalledExactlyOnceWith(
@@ -580,6 +587,22 @@ function expectOwnedAnalysisWrites(output: Output) {
   expect(
     output.sequences.updateAnalysisDurationMs
   ).toHaveBeenCalledExactlyOnceWith(SEQUENCE_ID, ANALYSIS_DURATION_MS);
+}
+
+function expectRecordedAnalysisInputs(
+  db: WorkflowScopedDb,
+  output: ReturnType<typeof makeOutputDouble>
+) {
+  const artifactWrites = [
+    output.shotSpecVersions.write.mock.calls,
+    output.framePromptVersions.write.mock.calls,
+    output.shotPromptVersions.write.mock.calls,
+  ];
+  expect(vi.mocked(db.inputManifests.record).mock.calls).toEqual(
+    artifactWrites.map((calls) => [
+      [{ hash: calls[0]?.[0].inputHash, manifest: expect.any(Object) }],
+    ])
+  );
 }
 
 async function verifyOwnedAnalysisRun() {
@@ -606,6 +629,7 @@ async function verifyOwnedAnalysisRun() {
   });
   expect(run.storyboardContent).not.toHaveBeenCalled();
   expectOwnedAnalysisWrites(run.output);
+  expectRecordedAnalysisInputs(run.db, run.output);
   for (const path of WRITERS)
     expect(writerAt(run.domains, path)).not.toHaveBeenCalled();
   expect(spawnAndAwaitChild).toHaveBeenCalledTimes(2);
@@ -654,6 +678,7 @@ async function verifyFactoryRefusal() {
   expect(createCastRecords).not.toHaveBeenCalled();
   expect(waitForElementVision).not.toHaveBeenCalled();
   expect(deriveAutoStyle).not.toHaveBeenCalled();
+  expect(run.db.inputManifests.record).not.toHaveBeenCalled();
   expect(emit).not.toHaveBeenCalled();
   for (const path of WRITERS) {
     expect(writerAt(run.domains, path)).not.toHaveBeenCalled();

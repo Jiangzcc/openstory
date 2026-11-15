@@ -22,7 +22,7 @@ import type {
 import { buildInstanceId } from '@/platform/server/workflow/instance-id';
 import { shotVariantDedupId } from '@/platform/server/workflow/dedup-ids';
 import {
-  computeShotImageSceneHash,
+  stampShotImageScene,
   computeShotImagesHashFromDto,
 } from '@/cast/server/workflows/sheet-snapshots';
 import type { Scene } from '@/shots/scene-analysis.schema';
@@ -269,10 +269,11 @@ function contextFor(promptLocale: Locale, parentInstanceId: string): Context {
       ownsReservation: true,
     },
     models,
-    // Explicit DB mock: the selected image claim and two existence guards only.
+    // Explicit DB mock: manifest writes, the image claim and two existence guards.
     db: asStub<WorkflowScopedDb>({
       models,
       stalenessPlanning: {},
+      inputManifests: { record: vi.fn(async () => undefined) },
       liveRead: {
         compliance: { listEnforcementFor },
         shots: { getById: vi.fn(async () => ({ id: shotId, sceneId })) },
@@ -302,11 +303,12 @@ function eventFor<T>(payload: T, instanceId: string): WorkflowEvent<T> {
 }
 
 async function runRegenerate(context: Context) {
-  const snapshotInputHash = await computeShotImageSceneHash(
+  const snapshotStamp = await stampShotImageScene(
     sceneSnapshot,
     imageModel,
     '16:9'
   );
+  const snapshotInputHash = snapshotStamp.hash;
   const payload: RegenerateShotsWorkflowInput = {
     ...context.payload,
     shotIds: [shotId],

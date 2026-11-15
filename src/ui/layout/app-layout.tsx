@@ -139,10 +139,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   <Breadcrumbs />
                 </div>
                 {/* Sequence generation progress portals in here (#1427,
-                    #2102). `@container` so the chip sizes its label against
-                    the room it has, which needs the slot to be `flex-1`;
-                    `empty:hidden` so an idle slot takes nothing from the
-                    breadcrumb. */}
+                  #2102). `@container` so the chip sizes its label against
+                  the room it has, which needs the slot to be `flex-1`;
+                  `empty:hidden` so an idle slot takes nothing from the
+                  breadcrumb. */}
                 <div
                   id={SEQUENCE_HEADER_SLOT_ID}
                   className="@container flex min-w-0 flex-1 items-center justify-end empty:hidden"

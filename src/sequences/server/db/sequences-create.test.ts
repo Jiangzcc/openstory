@@ -14,7 +14,16 @@
 import { clearVersionRows } from '@/platform/server/test/clear-version-rows';
 import { createTestDb } from '@/platform/server/db/test-d1';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import type { Database } from '@/platform/server/db/client';
 import { generateId } from '@/platform/id';
 import {
@@ -74,6 +83,30 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await seed();
+});
+
+afterEach(() => vi.unstubAllEnvs());
+
+it('creates and renames real sequence slugs without test-only defaults', async () => {
+  vi.stubEnv('VITEST', '');
+  const methods = createSequencesMethods(db, organizationId, userId);
+  const first = await methods.create({
+    title: 'Café Story',
+    styleId,
+    generationStopAt: 'images',
+  });
+  const second = await methods.create({
+    title: 'Cafe-Story',
+    styleId,
+    generationStopAt: 'images',
+  });
+  expect(await methods.resolveId('cafe-story')).toBe(first.id);
+  expect(await methods.resolveId('cafe-story-2')).toBe(second.id);
+  await methods.update({ id: first.id, title: 'Moved Story' });
+  expect(await methods.resolveId('moved-story')).toBe(first.id);
+  await methods.updateTitle(first.id, 'Final Story');
+  expect(await methods.resolveId('final-story')).toBe(first.id);
+  expect(await methods.resolveId('moved-story')).toBeNull();
 });
 
 describe('sequences.create persists the chosen settings', () => {
@@ -179,5 +212,25 @@ describe('sequences.update persists continue generation flags', () => {
     const [row] = await db.select().from(sequences);
     expect(row?.generateStartFrames).toBe(true);
     expect(row?.generateVoices).toBe(true);
+  });
+});
+
+describe('sequences.create slugs', () => {
+  it('gives same-titled sequences created at once distinct slugs (one per analysis model)', async () => {
+    const methods = createSequencesMethods(db, organizationId, userId);
+    const created = await Promise.all(
+      [1, 2, 3].map(() =>
+        methods.create({
+          title: 'The Chase',
+          styleId,
+          generationStopAt: 'images',
+        })
+      )
+    );
+    expect(created.map((s) => s.slug).sort()).toEqual([
+      'the-chase',
+      'the-chase-2',
+      'the-chase-3',
+    ]);
   });
 });

@@ -65,6 +65,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   await db.run(sql.raw('DROP TRIGGER IF EXISTS ' + SQL_FAULT.trigger));
 });
 
@@ -103,6 +104,26 @@ function pickLibrary() {
 function replaceRoot() {
   return setRoot(db, graph, { workflowRunId: REPLACEMENT_RUN });
 }
+
+it('updates the guarded automatic-style slug and keeps its collision suffix', async () => {
+  await db.insert(styles).values({
+    ...DRAFT,
+    organizationId: graph.organizationId,
+    name: 'Synthetic occupied slug',
+    slug: 'untitled',
+  });
+  vi.stubEnv('VITEST', '');
+  expect(await generate()).toBe(true);
+  expect((await styleFor(db, graph)).slug).toBe('untitled-2');
+  expect(
+    await bound().styles.setGeneratedForSequence({
+      styleId: graph.styleId,
+      sequenceId: graph.sequenceId,
+      draft: { ...DRAFT, name: '另一种合成风格' },
+    })
+  ).toBe(true);
+  expect((await styleFor(db, graph)).slug).toBe('untitled-2');
+});
 
 it.each(MUTATIONS)(
   'allows $name for its active processing root',

@@ -624,5 +624,9 @@
   "Prompts, images + dialogue": "提示词、静帧 + 对白",
   "Prompts, images, dialogue + videos": "提示词、静帧、对白 + 视频",
   "Everything, incl. music": "全部内容（含配乐）",
-  "Organization": "组织"
+  "Organization": "组织",
+  "storyboard sketch": "分镜草图",
+  "Films, microdramas and brand episodes with consistent characters. Iterate until you nail it.": "创作角色一致的电影、微短剧和品牌系列短片。反复打磨，直到满意。",
+  "Films, microdramas and brand episodes with consistent characters. Iterate until you nail it. Open source and free to self-host.": "创作角色一致的电影、微短剧和品牌系列短片。反复打磨，直到满意。开源，可免费自行托管。",
+  "OpenStory is an open source AI video production platform. Paste a script or a one-liner and it builds a multi-scene film — consistent characters, locations, and look across every shot. Iterate on scenes until you nail it, then export. Free to self-host.": "OpenStory 是一个开源的 AI 视频制作平台。粘贴剧本或一句创意，即可生成多场景影片，在各个镜头中保持角色、地点和视觉风格一致。反复打磨场景，直到满意后导出。可免费自行部署。"
 }

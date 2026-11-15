@@ -4,10 +4,7 @@ import { loadSequenceStyle } from '@/look/server/sequence-style';
  * Shot motion (image-to-video) generation operations.
  */
 
-import {
-  missingVoiceLines,
-  unusableShotReferenceLines,
-} from '@/motion/reference-support';
+import { batchRefusalLines } from '@/motion/reference-support';
 import { seedanceEditSeconds } from '@/motion/seedance-edit';
 import { withMeasuredDurations } from '@/cast/server/sequence-elements/media-duration';
 import { createServerFn } from '@tanstack/react-start';
@@ -60,7 +57,12 @@ import {
   resolveMotionPromptFromVersion,
 } from '@/motion/server/resolve-motion-prompt';
 import { rendersReferenceOnly } from '@/shots/use-start-frame';
-import { isBatchMotionEligible, toShotView } from '@/shots/shot-view';
+import {
+  completedClipIsStaleForBatch,
+  isBatchMotionEligible,
+  toShotView,
+} from '@/shots/shot-view';
+import { loadShotMediaStaleness } from '@/shots/server/shot-media-staleness';
 
 import { sequenceAccessMiddleware } from '@/platform/middleware.fn';
 import { shotAccessMiddleware } from '@/shots/shot-access.fn';
@@ -102,6 +104,8 @@ const batchGenerateMotionInputSchema = z.object({
   /** Ark draft mode for the batch (#1756); persisted like the model pick. */
   draftMotion: z.boolean().optional(),
   leftoverGrokShotIds: z.array(ulidSchema).optional(),
+  /** Completed stale clips. False until the client has a staleness result (#2274). */
+  includeStaleClips: z.boolean(),
 });
 
 export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
@@ -130,6 +134,7 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
       selectedVideoByShot,
       primaryVideoByShot,
       primaryImageByFrame,
+      mediaStaleness,
     ] = await Promise.all([
       context.scopedDb.frameVariants.getSelectedByFrameIds(
         [...anchorsByShot.values()].map((f) => f.id)
@@ -146,6 +151,8 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
       context.scopedDb.frameVariants.getPrimaryByFrameIds(
         [...anchorsByShot.values()].map((f) => f.id)
       ),
+      // The rail's video verdict, so a stale clip the user sees is eligible.
+      loadShotMediaStaleness(context.scopedDb, sequence, rawShots),
     ]);
     const allShots = rawShots.flatMap((s) => {
       const frame = anchorsByShot.get(s.id);
@@ -165,12 +172,13 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
         : [];
     });
     // Server determines eligible shots: still done, video pending/failed/
-    // cancelled. 'cancelled' (#1108) belongs here because THIS is the
-    // user-driven batch — a cancel only excludes a shot from AUTO retry
-    // (smart retry, which matches 'failed' alone). The clients compute the
-    // same set optimistically (scenes-view, mobile-scene-drawer); leaving it
-    // out here made them disagree, so a cancelled shot showed an optimistic
-    // spinner the server then silently skipped.
+    // cancelled, or completed and stale (#2274). 'cancelled' (#1108) belongs
+    // here because THIS is the user-driven batch — a cancel only excludes a
+    // shot from AUTO retry (smart retry, which matches 'failed' alone). The
+    // clients compute the same set optimistically (scenes-view,
+    // mobile-scene-drawer); leaving it out here made them disagree, so a
+    // cancelled shot showed an optimistic spinner the server then silently
+    // skipped.
     // Reference-only sequences render no stills, so the still-done half of the
     // filter would exclude every shot; there the video status alone decides.
     // Per shot now, not per sequence: a shot can override the sequence default
@@ -179,7 +187,14 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
     const shotIsReferenceOnly = (shot: { useStartFrame?: boolean | null }) =>
       rendersReferenceOnly(shot, sequence);
     const eligibleShots = allShots.filter((f) =>
-      isBatchMotionEligible(f, shotIsReferenceOnly(f))
+      isBatchMotionEligible(
+        f,
+        shotIsReferenceOnly(f),
+        completedClipIsStaleForBatch(
+          mediaStaleness.get(f.id)?.video,
+          data.includeStaleClips
+        )
+      )
     );
     // Location sheets are loaded once for the batch, so ANY reference-only
     // shot pulls them; `referenceOnly` below still decides per shot.
@@ -341,26 +356,20 @@ export const batchGenerateMotionFn = createServerFn({ method: 'POST' })
     // No fallback (#1559): refuse the batch before reserving if any shot's
     // model cannot use a clip or voice line it attaches. The same element
     // usually sits on several shots, so each problem is named once.
-    const unusable = new Set(
-      eligibleShots.flatMap((shot) =>
-        unusableShotReferenceLines(
-          resolveShotVideoModel(shot),
-          referencesFor(shot),
-          {
-            hasStartFrame: !shotIsReferenceOnly(shot),
-            prompt: payloadPromptFor(shot),
-            onArk: seedanceOnArk,
-          }
-        ).concat(
-          missingVoiceLines(
-            resolveShotVideoModel(shot),
-            batchDialogueOf(shot),
-            elements
-          )
-        )
-      )
+    const unusable = batchRefusalLines(
+      eligibleShots.map((shot) => ({
+        model: resolveShotVideoModel(shot),
+        references: referencesFor(shot),
+        job: {
+          hasStartFrame: !shotIsReferenceOnly(shot),
+          prompt: payloadPromptFor(shot),
+          onArk: seedanceOnArk,
+        },
+        dialogue: batchDialogueOf(shot),
+        elements,
+      }))
     );
-    if (unusable.size > 0) throw new Error([...unusable].join(' '));
+    if (unusable.length > 0) throw new Error(unusable.join(' '));
 
     // Dialogue is recorded ONCE PER SCENE, before the fan-out (#1657): every
     // shot that speaks and holds no matching clip puts its scene on the list,

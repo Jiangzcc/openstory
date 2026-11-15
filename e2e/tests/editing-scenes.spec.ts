@@ -219,11 +219,17 @@ async function expectDialogueOrder(
   await openScenes();
   const block = page.getByRole('region', { name: 'Dialogue' }).first();
   await expect(block).toBeVisible({ timeout: 15_000 });
-  const text = (await block.innerText()).replace(/\s+/g, ' ').toLowerCase();
   let at = -1;
   for (const id of order) {
-    const heading = text.indexOf((await labelOf(id)).toLowerCase(), at + 1);
-    expect(heading, `${id} heading after offset ${at}`).toBeGreaterThan(at);
+    const label = await labelOf(id);
+    // The region mounts before its headings. Match the scene list's spelling.
+    await expect(block).toContainText(label, { timeout: 15_000 });
+    const text = (await block.innerText()).replace(/\s+/g, ' ').toLowerCase();
+    const heading = text.indexOf(label.toLowerCase(), at + 1);
+    expect(
+      heading,
+      `${id} (${label}) heading after offset ${at}`
+    ).toBeGreaterThan(at);
     at = heading;
     for (const line of inScene(rows, id).flatMap((r) => r.lines)) {
       const found = text.indexOf(line.toLowerCase(), at);
@@ -244,28 +250,22 @@ async function openScenes(): Promise<void> {
 
 async function sceneAction(id: string, item: string): Promise<void> {
   const menuItem = page.getByRole('menuitem', { name: item });
-  // A click before hydration opens nothing; retry until the menu is there.
-  await expect(async () => {
-    if (!(await menuItem.isVisible())) {
-      await group(id)
-        .getByRole('button', { name: /^Scene actions for / })
-        .click();
-    }
-    await expect(menuItem).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 30_000 });
+  await group(id)
+    .getByRole('button', { name: /^Scene actions for / })
+    .click({ timeout: 30_000 });
   await menuItem.click();
 }
 
 /** Selects the scene and returns its Script tab. */
 async function openSceneScript(id: string) {
   const title = await labelOf(id);
-  // The first click right after load can be swallowed, so click until selected.
-  await expect(async () => {
-    if (!(await group(id).getAttribute('class'))?.includes('border-primary')) {
-      await group(id).getByRole('button', { name: title, exact: true }).click();
-    }
-    await expect(group(id)).toHaveClass(/border-primary/, { timeout: 2_000 });
-  }).toPass({ timeout: 20_000 });
+  const button = group(id).getByRole('button', { name: title, exact: true });
+  await expect(button).toBeEnabled({ timeout: 20_000 });
+  // A click on the selected scene deselects it.
+  if (!(await group(id).getAttribute('class'))?.includes('border-primary')) {
+    await button.click();
+  }
+  await expect(group(id)).toHaveClass(/border-primary/);
   const panel = page.getByRole('tabpanel', { name: 'Script' });
   await expect(panel).toBeVisible();
   return panel;

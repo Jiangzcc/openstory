@@ -341,7 +341,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
       (location?.referenceStatus === 'failed'
         ? location.referenceError
         : null));
-  const isSheetStale = sheetStaleness === 'stale';
+  const isSheetStale = sheetStaleness?.status === 'stale';
   const hasPriorSheet = Boolean(
     location?.referenceGeneratedAt || location?.selectedReferenceVersionId
   );
@@ -492,6 +492,7 @@ export const LocationDetailView: React.FC<LocationDetailViewProps> = ({
             entityType="location"
             divergentVariantId={locationDivergentVariant?.id}
             isStale={isSheetStale}
+            causes={sheetStaleness?.causes}
             onRegenerate={handleRegenerateSheet}
             onCompareDivergent={
               locationDivergentVariant

@@ -198,6 +198,10 @@ function makeScopedDb(): WorkflowScopedDb {
   // minimal stub for the paths under test
   return asStub<WorkflowScopedDb>({
     models: workflowModels,
+    inputManifests: {
+      record: async () => undefined,
+      getByHashes: async () => new Map(),
+    },
     characterLooks: { claimSheet, failSheetClaim },
     storyboardReferenceSheets: bindReferenceSheets,
     characters: {

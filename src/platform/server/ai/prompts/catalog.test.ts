@@ -111,6 +111,13 @@ describe('bilingual workflow prompt catalog', () => {
     expect(chinese).toContain('逐字复制的实际话语');
     expect(chinese).toContain('每秒 {{dialogueWordsPerSecond}} 词');
     expect(chinese).toContain('不要虚构供应商语法');
+    expect(chinese).toContain('在每个提及角色的规格字段中');
+    expect(chinese).toContain(
+      'dialogue.character 仍保持 <CHARACTERS> 使用的原始拼写'
+    );
+    expect(
+      CHAT_PROMPTS_ZH_CN['phase/shot-spec-rewrite-chat']?.[0]?.content
+    ).toContain('在每个字段中把角色姓名写成全大写形式');
   });
 
   it('keeps native voice and instrumental output requirements', () => {

@@ -16,8 +16,8 @@ import {
   storedAnalysisModelId,
 } from '@/models/models.config';
 import {
-  hashMotionPromptInput,
-  hashVisualPromptInput,
+  stampMotionPromptInput,
+  stampVisualPromptInput,
   motionPromptInputHashMatches,
   visualPromptInputHashMatches,
   voiceOnlyMovedSince,
@@ -28,7 +28,7 @@ import {
   deriveStillPrompt,
 } from '@/shots/shot-list.derive';
 import {
-  hashShotSpecInput,
+  stampShotSpecInput,
   specCurrencyFromScene,
 } from '@/shots/shot-spec-currency';
 import {
@@ -44,7 +44,6 @@ import {
   loadShotPromptDialogue,
   type ShotPromptDialogue,
 } from './shot-dialogue';
-import { redrawShotPreview } from './shot-preview';
 
 type RegenerateContext = Pick<
   ShotEditContext,
@@ -80,9 +79,11 @@ export async function loadShotSpecState(
     loadShotPromptDialogue(scopedDb, sequence.id, shot),
     scopedDb.shotSpecVersions.getSelected(shot.id),
   ]);
-  const currencyHash = await hashShotSpecInput(
+  const currencyStamp = await stampShotSpecInput(
     specCurrencyFromScene(scene, promptDialogue.dialogue.lines)
   );
+  await scopedDb.inputManifests.record([currencyStamp]);
+  const currencyHash = currencyStamp.hash;
   // A null stamp predates the column: read as current, not as a Rewrite.
   const verdict: ShotSpecVerdict = shot.pendingSpecVersionId
     ? 'updating'
@@ -183,9 +184,13 @@ export async function regenerateShotPrompt(
     });
     const narrowedVisual = narrowVisual(stillText);
     const narrowedMotion = narrowMotion(motion.text);
-    const visualHash = await hashVisualPromptInput(narrowedVisual);
-    const motionHash = await hashMotionPromptInput(narrowedMotion);
-    const writeVisual = !shotReferenceOnly && !visualKept;
+    const visualStamp = await stampVisualPromptInput(narrowedVisual);
+    const motionStamp = await stampMotionPromptInput(narrowedMotion);
+    await scopedDb.inputManifests.record([visualStamp, motionStamp]);
+    const visualHash = visualStamp.hash;
+    const motionHash = motionStamp.hash;
+    // Free, and ready if the shot turns its start frame on (#2350).
+    const writeVisual = !visualKept;
     const writeMotion = !motionKept;
     if (!writeVisual && !writeMotion) return result({ alreadyUpToDate: true });
 
@@ -252,13 +257,6 @@ export async function regenerateShotPrompt(
         analysisModel,
         createdBy: user.id,
       });
-      await redrawShotPreview(
-        {
-          ...context,
-          scene,
-        },
-        motion.text
-      );
     }
     return result({ rebuilt: true });
   }
@@ -266,17 +264,20 @@ export async function regenerateShotPrompt(
   // The claim's pending hash is what the verdict computes from the selected
   // text, so the 'updating' overlay and the plan's claim reuse find it. The
   // rewrite stamps its own hash from the text it writes.
-  const visualHash = await hashVisualPromptInput(
+  const visualStamp = await stampVisualPromptInput(
     narrowVisual(visualSelected?.text ?? null)
   );
-  const motionHash = await hashMotionPromptInput(
+  const motionStamp = await stampMotionPromptInput(
     narrowMotion(motionSelected?.text ?? null)
   );
+  await scopedDb.inputManifests.record([visualStamp, motionStamp]);
+  const visualHash = visualStamp.hash;
+  const motionHash = motionStamp.hash;
   const claimId = await scopedDb.shotSpecVersions.claim(shot.id);
   let visualClaimId: string | null = null;
   let motionClaimId: string | null = null;
   try {
-    if (!shotReferenceOnly && !visualKept) {
+    if (!visualKept) {
       const row = await scopedDb.framePromptVersions.createPending({
         frameId: frame.id,
         pendingInputHash: visualHash,

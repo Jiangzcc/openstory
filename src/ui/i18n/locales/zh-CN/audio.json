@@ -26,5 +26,11 @@
   "max is": "最长支持",
   "s — music will be clamped.": "秒，音乐时长将按上限调整。",
   "music prompt": "配乐提示词",
-  "Regenerating…": "正在重新生成…"
+  "Regenerating…": "正在重新生成…",
+  "Writing music prompt…": "正在编写音乐提示词…",
+  "Music prompt comes with the images": "音乐提示词会随图片一并生成",
+  "No music prompt yet": "暂无音乐提示词",
+  "Writing…": "正在编写…",
+  "Write Music Prompt": "编写音乐提示词",
+  "None yet": "暂无"
 }

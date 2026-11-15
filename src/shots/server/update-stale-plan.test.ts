@@ -34,21 +34,26 @@ import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { Scene } from '@/shots/scene-analysis.schema';
 import type { ShotStalenessResult } from './shot-staleness';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Stamped } from '@/shots/input-hash';
 import { asStub } from '@/test/as-stub';
 
-const FRESH: ShotStalenessResult = {
+// Branded hashes are opaque strings; a stub stamp needs no real digest.
+const stamp = <H extends string>(hash: string) =>
+  asStub<Stamped<H>>({ hash, manifest: {} });
+
+const FRESH = {
   thumbnail: 'fresh',
   visualPrompt: 'fresh',
   motionPrompt: 'fresh',
   spec: 'fresh',
   causes: [],
-  liveHashes: {
-    thumbnail: 'live-thumb',
-    visualPrompt: 'live-visual',
-    motionPrompt: 'live-motion',
-    spec: 'live-spec',
+  liveStamps: {
+    thumbnail: stamp('live-thumb'),
+    visualPrompt: stamp('live-visual'),
+    motionPrompt: stamp('live-motion'),
+    spec: stamp('live-spec'),
   },
-};
+} satisfies ShotStalenessResult;
 
 // test stub; computePlan only reads sceneId off the scene
 const scene = asStub<Scene>({
@@ -201,6 +206,10 @@ function buildScopedDb(
   } = {}
 ): ScopedDb {
   return asScopedDb({
+    inputManifests: {
+      record: async () => undefined,
+      getByHashes: async () => new Map(),
+    },
     sequences: {
       getById: () =>
         Promise.resolve({
@@ -407,7 +416,7 @@ describe('computePlan — still references for billing', () => {
     expect(result.targets[0]).toMatchObject({
       referenceIds: ['narrator-look', 'clip', 'audio'],
       imageReferenceCount: 0,
-      imageLiveHash: FRESH.liveHashes.thumbnail,
+      imageLiveHash: FRESH.liveStamps.thumbnail.hash,
     });
     expect(
       JSON.parse(JSON.stringify(result)).targets[0].imageReferenceCount
@@ -469,7 +478,7 @@ describe('computePlan — still references for billing', () => {
     expect(result.targets[0]).toMatchObject({
       referenceIds: ['uniform', 'studio', 'logo'],
       imageReferenceCount: 3,
-      imageLiveHash: FRESH.liveHashes.thumbnail,
+      imageLiveHash: FRESH.liveStamps.thumbnail.hash,
     });
     expect(result.references).toBe(references);
     expect(

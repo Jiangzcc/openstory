@@ -336,5 +336,10 @@
   "All organizations": "全部组织",
   "loaded across all organizations": "已从全部组织加载",
   "Open link": "打开链接",
-  "Adding character images…": "正在添加角色图片…"
+  "Adding character images…": "正在添加角色图片…",
+  "Sample clips": "示例片段",
+  "Choose a style": "选择风格",
+  "Could not start a blank sequence": "无法创建空白序列",
+  "Starting…": "正在创建…",
+  "Start blank": "从空白开始"
 }

@@ -19,7 +19,7 @@ import {
   storedAnalysisModelId,
 } from '@/models/models.config';
 import {
-  computeMusicPromptInputHash,
+  stampMusicPromptInput,
   musicPromptInputHashMatches,
 } from '@/shots/input-hash';
 import { triggerWorkflow } from '@/platform/server/workflow/client';
@@ -302,10 +302,12 @@ export async function rewriteMusicPrompt(
     DEFAULT_ANALYSIS_MODEL
   );
 
-  const liveHash = await computeMusicPromptInputHash({
+  const liveStamp = await stampMusicPromptInput({
     sceneSummaries,
     analysisModel: analysisModelId,
   });
+  await scopedDb.inputManifests.record([liveStamp]);
+  const liveHash = liveStamp.hash;
   if (
     await musicPromptInputHashMatches(
       sequence.musicPromptInputHash,

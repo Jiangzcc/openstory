@@ -204,6 +204,7 @@ describe('tools/list and whoami', () => {
       'openstory.restore_shot',
       'openstory.apply_sequence_edits',
       'openstory.get_shot_spec',
+      'openstory.get_shot_storyboard',
       'openstory.list_shot_dialogue',
       'openstory.update_shot_prompt',
       'openstory.restore_shot_prompt_version',
@@ -254,6 +255,7 @@ describe('tools/list and whoami', () => {
       'openstory.list_models',
       'openstory.get_shot_variant_grid',
       'openstory.generate_shot_image',
+      'openstory.regenerate_shot_storyboard',
       'openstory.generate_shot_image_variants',
       'openstory.select_shot_image_variant',
       'openstory.generate_shot_video',
@@ -375,6 +377,7 @@ describe('tools/list and whoami', () => {
       'openstory.discard_music_track',
       'openstory.undiscard_music_track',
       'openstory.generate_shot_image',
+      'openstory.regenerate_shot_storyboard',
       'openstory.generate_shot_image_variants',
       'openstory.select_shot_image_variant',
       'openstory.generate_shot_video',
@@ -845,6 +848,7 @@ describe('generation and upload tool authorization (#1979)', () => {
   const upload = '/r2/thumbnails/teams/x/still.png';
   it.each([
     ['generate_shot_image', { sequenceId, shotId }],
+    ['regenerate_shot_storyboard', { sequenceId, shotId }],
     ['generate_shot_image_variants', { sequenceId, shotId }],
     ['select_shot_image_variant', { sequenceId, shotId, variantIndex: 0 }],
     ['generate_shot_video', { sequenceId, shotId }],

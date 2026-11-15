@@ -10,6 +10,7 @@ import { ChevronUp, Settings } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { SceneList, type SceneListProps } from './scene-list';
 import { SceneThumbnail } from './scene-thumbnail';
+import { useHydrated } from '@/ui/use-hydrated';
 
 /**
  * Phone stand-in for the desktop sidebar: a bottom bar that names the
@@ -35,6 +36,8 @@ export const MobileSceneDrawer: React.FC<
   // back), and `selection` is a new object after any of them — so the drawer
   // closes itself without wiring a close into each row.
   const [openFor, setOpenFor] = useState<SceneSelection | null>(null);
+  // A click before hydration does nothing; disabled until it can.
+  const hydrated = useHydrated();
   const jumpOpen = openFor === selection;
 
   const scenesById = useMemo(() => {
@@ -126,6 +129,7 @@ export const MobileSceneDrawer: React.FC<
           size="icon"
           className="size-11 shrink-0"
           aria-label={t('Open settings')}
+          disabled={!hydrated}
           aria-haspopup="dialog"
           aria-expanded={settingsOpen}
           onClick={() => onSettingsOpenChange(!settingsOpen)}

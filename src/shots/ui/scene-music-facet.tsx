@@ -38,6 +38,7 @@ import type {
   Sequence,
 } from '@/platform/server/db/schema';
 import { useGenerationStream } from '@/sequences/ui/use-generation-stream';
+import { useGenerationPlan } from '@/sequences/ui/use-generation-plan';
 import { useSequenceStaleDetected } from '@/sequences/ui/use-sequence-stale-detected';
 import { Music } from 'lucide-react';
 import { usePostHog } from '@posthog/react';
@@ -439,6 +440,20 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
     },
   });
 
+  const { data: plan } = useGenerationPlan(sequenceId);
+  const promptQueued = plan?.units.some(
+    (u) => u.kind === 'prompt:music' && u.state === 'running'
+  );
+  // A click's run has no claim: it reads as writing until the prompt lands or the track fails.
+  const promptClicked =
+    regenerateMusicPrompt.isPending ||
+    regenerateMusicPrompt.data?.alreadyUpToDate === false;
+  const musicPromptRun = promptClicked
+    ? 'writing'
+    : promptQueued
+      ? 'queued'
+      : 'none';
+
   if (isLoading || !sequence) {
     return <MusicViewSkeleton />;
   }
@@ -500,8 +515,12 @@ export const SceneMusicFacet: React.FC<SceneMusicFacetProps> = ({
         divergentBanner={divergentBanner}
         isMusicPromptStale={musicPromptStaleness?.musicPrompt === 'stale'}
         isMusicTrackStale={musicPromptStaleness?.musicTrack === 'stale'}
+        musicPromptCauses={musicPromptStaleness?.musicPromptCauses}
+        musicTrackCauses={musicPromptStaleness?.musicTrackCauses}
         onRegenerateMusicPrompt={() => regenerateMusicPrompt.mutate()}
         isRegeneratingMusicPrompt={regenerateMusicPrompt.isPending}
+        musicPromptRun={musicPromptRun}
+        hasShots={!!shots?.length}
         onSaveMusicPrompt={(prompt) => saveMusicPrompt.mutate(prompt)}
         isSavingMusicPrompt={saveMusicPrompt.isPending}
         promptEditedSinceTrack={promptEditedSinceTrack}

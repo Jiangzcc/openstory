@@ -13,12 +13,17 @@ import type { ScopedDb } from '@/platform/server/db/scoped';
 import type { PlanReferences } from '@/shots/server/update-stale-references';
 import {
   computeCharacterSheetHashFromDto,
-  computeLocationSheetHashFromDto,
+  stampLocationSheetFromDto,
 } from '@/cast/server/workflows/sheet-snapshots';
 import { asStub } from '@/test/as-stub';
 
 type CharacterPayload = PlanReferences['characterSheets'][number];
 type LocationPayload = PlanReferences['locationSheets'][number];
+type LocationSheetBuild = Awaited<
+  ReturnType<
+    typeof import('@/cast/server/sheets/location-sheet-trigger').buildRegenerateLocationSheetPayload
+  >
+>;
 type SheetCase = {
   name: string;
   referenceCount: number;
@@ -57,7 +62,13 @@ const FACE = { url: '/r2/default-sheet.png', versionId: 'default-sheet-1' };
 const ACTOR = { promptLocale: 'en', userId: 'user-1' } as const;
 const mockLoadModels = vi.fn();
 const mockBuildCharacterPayload = vi.fn();
-const mockBuildLocationPayload = vi.fn();
+const mockBuildLocationPayload =
+  vi.fn<
+    typeof import('@/cast/server/sheets/location-sheet-trigger').buildRegenerateLocationSheetPayload
+  >();
+const mockRecordInputManifests = vi.fn<ScopedDb['inputManifests']['record']>(
+  async () => undefined
+);
 const mockRequireCharacter = vi.fn();
 const mockRequireLocation = vi.fn();
 const mockRequireLook = vi.fn();
@@ -273,7 +284,7 @@ async function characterPayload(
   };
 }
 
-async function locationPayload(photos: string[]): Promise<LocationPayload> {
+async function locationPayload(photos: string[]): Promise<LocationSheetBuild> {
   const fields: Omit<LocationPayload, 'snapshotInputHash'> = {
     userId: ACTOR.userId,
     organizationId: 'org-1',
@@ -285,10 +296,8 @@ async function locationPayload(photos: string[]): Promise<LocationPayload> {
     imageModel: MODEL,
     referencePhotoUrls: photos,
   };
-  return {
-    ...fields,
-    snapshotInputHash: await computeLocationSheetHashFromDto(fields),
-  };
+  const stamp = await stampLocationSheetFromDto(fields);
+  return { payload: { ...fields, snapshotInputHash: stamp.hash }, stamp };
 }
 
 function emptyReferences(): PlanReferences {
@@ -306,6 +315,7 @@ function makeScopedDb(): ScopedDb {
   // Mock only the scoped DB surfaces used by direct actions and real preflight.
   return asStub<ScopedDb>({
     organizationId: 'org-1',
+    inputManifests: { record: mockRecordInputManifests },
     characterLooks: {
       claimSheet: mockClaimSheet,
       failSheetClaim: mockFailSheetClaim,
@@ -356,9 +366,10 @@ async function prepareCharacter(
 }
 
 async function prepareLocation(photos: string[]): Promise<PreparedSheet> {
-  const payload = await locationPayload(photos);
+  const built = await locationPayload(photos);
+  const { payload } = built;
   const scopedDb = makeScopedDb();
-  mockBuildLocationPayload.mockResolvedValue(payload);
+  mockBuildLocationPayload.mockResolvedValue(built);
   return {
     payload,
     references: { ...emptyReferences(), locationSheets: [payload] },
@@ -416,8 +427,18 @@ function firstCallOrder(mock: Mock): number {
   return order;
 }
 
+function expectRecordedLocationInputs(sheet: PreparedSheet) {
+  expect(mockRecordInputManifests).toHaveBeenCalledExactlyOnceWith([
+    { hash: sheet.payload.snapshotInputHash, manifest: expect.any(Object) },
+  ]);
+  expect(firstCallOrder(mockRecordInputManifests)).toBeLessThan(
+    firstCallOrder(mockHasEnoughCredits)
+  );
+}
+
 function expectStarted(sheet: PreparedSheet, testCase: SheetCase) {
   const quote = expectPlanQuote(sheet, testCase);
+  if (testCase.kind === 'location') expectRecordedLocationInputs(sheet);
   expect(mockHasEnoughCredits).toHaveBeenCalledExactlyOnceWith(
     quote.costMicros,
     undefined
@@ -510,8 +531,8 @@ describe('cast sheet direct entry and configured plan quote agreement', () => {
 });
 
 it('uses a supplied runtime configuration for a location sheet', async () => {
-  const payload = await locationPayload([]);
-  mockBuildLocationPayload.mockResolvedValue(payload);
+  const built = await locationPayload([]);
+  mockBuildLocationPayload.mockResolvedValue(built);
   mockLoadModels.mockClear();
   const configuration = models();
 
@@ -522,6 +543,9 @@ it('uses a supplied runtime configuration for a location sheet', async () => {
   });
 
   expect(mockLoadModels).not.toHaveBeenCalled();
+  expect(mockRecordInputManifests).toHaveBeenCalledExactlyOnceWith([
+    built.stamp,
+  ]);
   expect(mockTrigger).toHaveBeenCalledWith(
     '/location-sheet',
     expect.anything(),

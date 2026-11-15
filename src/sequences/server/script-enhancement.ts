@@ -48,6 +48,12 @@ import {
 } from '@/platform/server/ai/prompts-index';
 import { toVisionImageSource } from '@/platform/server/storage/external-url';
 import { shouldInlineVisionForVia } from '@/models/server/llm-call-helper';
+import { GEMINI_REGION_REFUSED_MESSAGE } from '@/models/google-region';
+import {
+  geminiStillSource,
+  releaseGeminiFiles,
+  type GeminiFile,
+} from '@/models/server/gemini-files';
 import { createServerOnlyFn } from '@tanstack/react-start';
 import { getRequestCountry } from '@/platform/server/request-country';
 
@@ -253,14 +259,15 @@ export async function* streamScriptEnhancement(
   // attached failed outright on a Gemini analysis model while working fine
   // with none.
   const inlineForProvider = shouldInlineVisionForVia(llmKey.via);
+  const uploadedStills: GeminiFile[] = [];
   const imageParts = await Promise.all(
     visualElements.map<Promise<ChatMessageContentPart>>(async (el) => {
       try {
         return {
           type: 'image',
-          source: await toVisionImageSource(el.imageUrl, undefined, {
-            inline: inlineForProvider,
-          }),
+          source: inlineForProvider
+            ? await geminiStillSource(el.imageUrl, llmKey.key, uploadedStills)
+            : await toVisionImageSource(el.imageUrl),
         };
       } catch (cause) {
         logger.error('Script enhancement: failed to load element image', {
@@ -314,7 +321,11 @@ export async function* streamScriptEnhancement(
       tags: ['script-enhance', model],
       userId: ctx.userId,
       apiKey: llmKey,
-      resolveApiKey: resolveLlmKey,
+      resolveApiKey:
+        uploadedStills.length > 0
+          ? () =>
+              Promise.reject(new ValidationError(GEMINI_REGION_REFUSED_MESSAGE))
+          : resolveLlmKey,
       metadata: {
         organizationId: ctx.organizationId,
         elementCount: elements.length,
@@ -336,12 +347,16 @@ export async function* streamScriptEnhancement(
     }
   }
 
-  yield* runEnhanceScriptTurns({
-    promptLocale: ctx.promptLocale,
-    messages,
-    targetSeconds,
-    generate,
-  });
+  try {
+    yield* runEnhanceScriptTurns({
+      promptLocale: ctx.promptLocale,
+      messages,
+      targetSeconds,
+      generate,
+    });
+  } finally {
+    await releaseGeminiFiles(uploadedStills, llmKey.key);
+  }
 
   await deduct?.(totalCost);
 }

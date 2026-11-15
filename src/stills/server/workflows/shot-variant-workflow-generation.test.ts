@@ -44,6 +44,7 @@ it.each(['mock-parent-hold', undefined])(
     });
     const db = asStub<WorkflowScopedDb>({
       models: {},
+      inputManifests: { record: vi.fn(async () => undefined) },
       liveRead: { frames: { getById: async () => ({ id: 'mock-frame' }) } },
       frameVariants: { appendVersion: async () => ({ id: 'mock-version' }) },
     });

@@ -73,6 +73,7 @@ import {
   seedanceRunsOnArk,
 } from '@/motion/server/motion-generation';
 import { seedanceEditSeconds } from '@/motion/seedance-edit';
+import { batchRefusalLines } from '@/motion/reference-support';
 import { resolveMotionHoldDuration } from '@/motion/resolve-shot-duration';
 import { withMeasuredDurations } from '@/cast/server/sequence-elements/media-duration';
 import { toWorkflowScopedDb } from '@/platform/server/db/scoped-workflow';
@@ -532,6 +533,23 @@ export async function addModelToSequence(
       };
     });
 
+    // No fallback (#1559, #2272): refuse before reserving if the added model
+    // cannot use a clip or voice line a shot attaches.
+    const unusable = batchRefusalLines(
+      shots.map((s) => ({
+        model,
+        references: s.referenceImages ?? [],
+        job: {
+          hasStartFrame: !s.referenceOnly,
+          prompt: s.prompt,
+          onArk: seedanceOnArk,
+        },
+        dialogue: dialogueOf({ id: s.shotId }),
+        elements,
+      }))
+    );
+    if (unusable.length > 0) throw new ValidationError(unusable.join(' '));
+
     const pricing = await getEffectiveFalPricing();
     const reservationId = await reserveRunCredits(
       scopedDb,
@@ -663,7 +681,7 @@ export async function addModelToSequence(
 
   const inputs: NonNullable<
     Awaited<ReturnType<typeof buildShotImageWorkflowInput>>
-  >[] = [];
+  >['input'][] = [];
   const styleConfig = lazySequenceStyle(scopedDb, sequence);
   // Shots with no still prompt and no spec to derive one from (#2291).
   let skipped = 0;
@@ -673,7 +691,7 @@ export async function addModelToSequence(
       ? promptByFrameId.get(anchorFrame.id)
       : undefined;
     const scene = resolveSceneForShot(f, imageSceneContext).scene;
-    const input = await buildShotImageWorkflowInput({
+    const built = await buildShotImageWorkflowInput({
       promptLocale: context.promptLocale,
       shot: f,
       scene,
@@ -701,12 +719,13 @@ export async function addModelToSequence(
     // The anchor + the prompt version this render is built from, snapshotted
     // here so the workflow stamps the variant with the prompt it actually
     // rendered rather than whatever the pointer says when it runs (#1070).
-    if (!input) {
+    if (!built) {
       skipped++;
       continue;
     }
+    await scopedDb.inputManifests.record([built.stamp]);
     inputs.push({
-      ...input,
+      ...built.input,
       frameId: anchorFrame?.id,
       promptVersionId: selectedPrompt?.id ?? null,
     });

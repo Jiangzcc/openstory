@@ -17,7 +17,16 @@ import { createPublicStylesReadMethods, createStylesMethods } from './styles';
 import { placeholderAutoStyleDraft } from '@/look/auto-style';
 import { parseStyleConfig } from '@/look/style-config';
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 let closeDb: () => Promise<void>;
 let db: Database;
@@ -31,6 +40,8 @@ beforeAll(async () => {
 afterAll(async () => {
   await closeDb();
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 beforeEach(async () => {
   await clearVersionRows(db);
@@ -88,6 +99,29 @@ async function createAutoSequence() {
   });
   return { stylesDb, sequencesDb, style, sequence };
 }
+
+it('creates and renames style slugs without test-only defaults', async () => {
+  vi.stubEnv('VITEST', '');
+  const { stylesDb, style, sequence } = await createAutoSequence();
+  const library = await stylesDb.create({ ...derived(), name: 'Café Noir' });
+  expect(await stylesDb.resolveId('cafe-noir')).toBe(library.id);
+  await stylesDb.update(library.id, { name: 'Moved Noir' });
+  expect(await stylesDb.resolveId('moved-noir')).toBe(library.id);
+  expect(
+    await stylesDb.setGeneratedForSequence({
+      styleId: style.id,
+      sequenceId: sequence.id,
+      draft: { ...derived(), name: 'Moved Noir' },
+    })
+  ).toBe(true);
+  expect(await stylesDb.resolveId('moved-noir-2')).toBe(style.id);
+  await stylesDb.promoteToLibrary({
+    styleId: style.id,
+    name: 'Final Noir',
+    previewUrl: null,
+  });
+  expect(await stylesDb.resolveId('final-noir')).toBe(style.id);
+});
 
 describe('automatic styles', () => {
   it('are excluded from the organization and public library lists', async () => {

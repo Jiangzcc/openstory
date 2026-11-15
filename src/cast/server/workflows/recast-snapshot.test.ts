@@ -17,7 +17,12 @@ import type {
   SequenceLocationWithReference,
   Shot,
 } from '@/platform/server/db/schema';
-import { buildRegenerateShotSnapshot } from '@/shots/server/workflows/regenerate-shots-snapshot';
+import { buildRegenerateShotSnapshot as buildRegenerateShotStamp } from '@/shots/server/workflows/regenerate-shots-snapshot';
+
+/** The snapshot half; these tests never read the stamp. */
+const buildRegenerateShotSnapshot = async (
+  params: Parameters<typeof buildRegenerateShotStamp>[0]
+) => (await buildRegenerateShotStamp(params)).snapshot;
 import {
   mergeRecastSheetIntoSnapshots,
   PENDING_SHEET_HASH,
@@ -33,6 +38,7 @@ function makeCharacter(
   overrides: Partial<CastCharacterWithSheet> = {}
 ): CastCharacterWithSheet {
   const character: CastCharacterWithSheet = {
+    slug: 'fixture',
     id: 'c1',
     sequenceId: 'seq1',
     characterId: 'jack',
@@ -88,6 +94,7 @@ function makeLocation(
   overrides: Partial<SequenceLocationWithReference> = {}
 ): SequenceLocationWithReference {
   const location: SequenceLocationWithReference = {
+    slug: 'fixture',
     id: 'l1',
     organizationId: 'organization-1',
     legacyLibraryReferenceHash: null,

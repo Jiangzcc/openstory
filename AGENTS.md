@@ -44,6 +44,8 @@ bun explorer                       # Open the local CF Explorer (KV/R2/D1/DOs/Wo
 bun db:studio:local                # Inspect local D1 tables (wrangler d1 execute)
 bun tunnel:provision               # Once per laptop: 10 random *.openstory.so names → ports 3000–3009
 bun tunnel                         # Print ~/.openstory/dev-tunnels.json + Google OAuth URIs
+bun setup                          # AI keys + the data folder (default ~/openstory)
+npx @openstory/cli@latest login --origin http://localhost:3000   # Once: lets bun dev mirror the library
 
 # Quality
 bun lint                           # oxlint (type-aware)
@@ -271,7 +273,11 @@ changing the area, and update it in the same PR.**
   motion render all resolve references per shot and per prompt channel
   through `resolveShotReferences` (`src/shots/scene-matching.ts`), never
   from the scene roster; `narrowShotPromptContext` takes a required
-  `ShotPromptView` so a stamp site cannot hash the wrong set. Continuity
+  `ShotPromptView` so a stamp site cannot hash the wrong set. A hash is
+  stamped with `stampInputHash`, never bare `sha256Hex`, and the stamp site
+  records its manifest (`scopedDb.inputManifests.record`) in the same pass;
+  causes are the manifest diff (`describeManifestCauses`), the timestamp
+  guess only for pre-manifest shot rows (#2344). Continuity
   tags apply only while the prompt is unwritten. A digest stamped on the
   scene roster before #2012 is accepted until `LEGACY_HASH_UNTIL`. Design
   rationale:
@@ -359,7 +365,7 @@ changing the area, and update it in the same PR.**
   `list_sequence_assets`). Default scope is the current cut; `scope=history`
   adds every completed stored version, including discarded. Rendered MP4s
   stay off unless `exports=true`. The asset page and
-  `npx @openstory/stitch pull` write that list. Do not zip in the Worker
+  `npx @openstory/cli@latest pull` write that list. Do not zip in the Worker
   and do not hand out R2 credentials. Preview frames and provider-CDN urls
   stay out. Dialogue is the speech file plus a cuts JSON. A scene reorder
   leaves the old files on disk.
@@ -376,8 +382,10 @@ changing the area, and update it in the same PR.**
   the current cut; "Render MP4 on server" makes one. The player itself is
   `packages/stitch` (#1853, published as `@openstory/stitch`): it knows clips and cues, never shots —
   the shot mapping and subtitles (`shotCues`) live in
-  `src/sequences/ui/theatre/playback-clips.ts`. A CLI cut is shared without
-  the CLI (#2127): `stitch bundle` writes a static folder, `stitch share`
+  `src/sequences/ui/theatre/playback-clips.ts`. stitch never talks to
+  openstory.so: `login`, `pull`, `share` and `sync` live in `packages/cli`
+  (`@openstory/cli`, bin `openstory`; docs say `npx @openstory/cli@latest`). A CLI cut is shared without
+  the CLI (#2127): `stitch bundle` writes a static folder, `openstory share`
   uploads it (`POST /api/v1/stitches`, media names only, rewritten to
   `/r2/stitches/<organization>/<id>/…`, then one PUT per file, then
   `POST …/$id/publish`, which checks every file is there and every image
@@ -411,7 +419,7 @@ Read the via's doc before touching it, and update it in the same PR:
 - **ElevenLabs (character voices, dialogue audio, music, fitting the section)** — `docs/architecture/elevenlabs.md`. Platform key only. Music is native too (`elevenlabs-music` / `music_v1`, never the retired `fal-ai/elevenlabs/music` proxy), and its inline bytes are parked in R2 before the step returns. A saved voice is an account-wide slot: free it only through `releaseVoiceIfUnreferenced` (provider delete first, row write second), never a bare delete. Voices are versioned with an explicit `source`; a released version cannot be selected. Dialogue lines live on the SHOT (`shot_dialogue_versions`; speaking order is shot order, then line order). What a shot says is resolved ONLY through `shotDialogueResolver` — never read or write `shot_prompt_versions.dialogue` (unwritten since #1657; the resolver's fallback for old rows), and never treat the motion-prompt LLM's `dialogue` output as lines; `motionPromptFromVersion` takes the resolved dialogue as a required argument. Speeches (`dialogue_speeches`) are whole files, one per call, never joined — the one file we make is a mic take (#1802, `DialogueTakeWorkflow`), a recorded line spliced into one shot's current section, which is its own speech. A shot's audio is its selected `shot_dialogue_sections` row — a time range of a speech — and `shots.audioClips` mirrors its cut. A scene is recorded ONCE: batch-style triggers send `dialogueSpeech` (`snapshotBatchDialogue`) and the batch records before it fans out — never let N children each record a window. A speech lands through a claim (`shot_dialogue_claims`): `appendSpeech` promotes pointer + `shots.audioClips` in one transaction guarded by the claim, and user writes demote live claims in their own batch — never write a shot's dialogue clip on its own. Record wide, adopt narrow: the call speaks the whole conversation, but never re-point a shot whose lines did not move. The cut (`cutAudioSection`) must stay ranged + streamed — never `readStorageObject` a whole speech. Voice changes fold into the video manifest (`audioSourceKey`, `audioClipIds`, `referenceKeys`), not the motion-prompt hash, and only when present so no stored digest moves. No time-compression rung when fitting a section. Bytes never cross a `step.do`.
 - **Seed Speech (Seed Audio voices + dialogue, #1765)** — `docs/architecture/seed-voices.md`. Platform key only (`SEED_SPEECH_API_KEY`). New character voices are Seed voices when Seed AND ElevenLabs are configured (isolation + Scribe run on ElevenLabs); a voice keeps its provider for life — `seed:` ids record on Seed, the rest on ElevenLabs, never both in one call; ask `voiceProviderOf(voiceId)`, never read the prefix. Every Seed take is transcribed and its lines found by letter alignment (`recordCheckedTake`, `take-check.ts`) — never by word lists, never by Seed's subtitles. Normal spelling only in Seed prompts.
 - **Native Grok (xAI)** — `docs/architecture/media-vias.md`. xAI speaks the Responses API; `resolveNativeGrokModel` keeps `llm-client` and the adapter on the same route.
-- **Native Google (Gemini)** — `docs/architecture/media-vias.md`. Omni Flash submit must request `response_format.delivery: "uri"` and must NOT pass top-level `duration`/`size`; stills go inline as base64 (`toVisionImageSource(..., { inline: true })`), never as a fetched URI.
+- **Native Google (Gemini)** — `docs/architecture/media-vias.md`. Omni Flash submit must request `response_format.delivery: "uri"` and must NOT pass top-level `duration`/`size`; stills go through `geminiStillSource`: inline base64 up to 4 MiB, a Files API upload above it (#2400), never as a fetched URI.
 - **LLMTR gateway** — `docs/architecture/media-vias.md`. Organization BYOK only. A registry id absent from `LLMTR_TEXT_MODELS` is not routable — never guess a neighbour slug, never send the LLMTR key to OpenRouter, and send native wire names, not OpenRouter plugins.
 - **LLMTR must not block model upgrades.** Missing support, an unreachable catalog, or unverified LLMTR pricing is not a reason to delay an upgrade or keep its PR in draft. Put unsupported or unverified ids in `LLMTR_UNMAPPED_MODEL_IDS` so existing OpenRouter/fal resolution handles them; add LLMTR mappings and rates only after verification. Keep LLMTR last in Settings → API Keys, below OpenRouter.
 - **fal** — `docs/architecture/media-vias.md`. Check `https://fal.ai/models/{model-path}/llms.txt` before updating a model; new motion models go through `bun motion:codegen`, never inline schemas. Pricing is DB-only (`model_pricing`, empty locally until `bun scripts/refresh-fal-pricing.ts` runs) and fal's bill, not its pricing API, is the ground truth. Pre-flight estimates read the stored modelschemas rate card on that row (#1605); a refusal stays null and never copies a sibling endpoint's price.
@@ -453,7 +461,9 @@ bun db:migrate   # Apply migrations to local.db
 - Production deploys run on **Workers Builds** (dashboard-connected to `main`, #900): build command `bun run build` with `CLOUDFLARE_ENV=production` as a build env var, deploy command `bun run deploy:production`. Manual fallback: `bun cf:deploy:prd`. Don't deploy a build made without `CLOUDFLARE_ENV=production` — it bakes the default block (placeholder D1) and fails loudly.
 - PR-preview deploys patch the default block at runtime in `.github/workflows/deploy-cloudflare.yml` and deploy without `--env`. Each PR gets its own real D1 named `openstory-pr-<n>`.
 
-**Local guardrail:** `bun dev` prints a wrangler-bindings banner on startup showing each binding's `local` / `REMOTE` status. If `DB` ever shows REMOTE, kill the server immediately and fix the config before any write lands in prod.
+**Local guardrail:** `bun dev` prints a wrangler-bindings banner on startup showing each binding's `local` / `REMOTE` status and the full local state path (`DATA state`). If `DB` ever shows REMOTE, kill the server immediately and fix the config before any write lands in prod.
+
+**Local state (#2222)** — `docs/architecture/local-library.md`. A main checkout keeps D1/R2/DO state in `~/openstory/.openstory/state` (or `OPENSTORY_DATA_DIR`), so `git clean -fdx` cannot wipe it; a worktree, CI and e2e keep `.wrangler/state`, and a worktree ignores `OPENSTORY_DATA_DIR`. Only `scripts/state-dir.ts` picks a persist path (pinned by its test): a new script that opens local D1 goes through `getLocalPlatformProxy`, never a hard-coded `.wrangler/state`. `~/openstory` is the library (state plus the `openstory sync` mirror); `~/.openstory` is per-machine (logins, tunnels) and does not move. `bun dev` refuses a data folder another live dev server holds.
 
 **Reproducing a prod bug locally:** temporarily set the default D1's `database_id` to the real prod value, restart `bun dev`, and revert when done. **Never commit a real prod D1 id into the default block.**
 
@@ -566,6 +576,10 @@ Before editing files for a substantial task:
 <!-- intent-skills:end -->
 
 ## Agent skills
+
+### Published skills (#2357)
+
+The OpenStory plugin's skills are written here: `skills/` (setup, create-sequence, create-style) and `packages/stitch/skills/` (stitch, stitch-player). `scripts/publish-skills.ts` (run by `.github/workflows/publish-skills.yml`) copies them into `openstory-so/skills` and bumps its version after Test passes on main; never edit that repo's `skills/` by hand. Name MCP tools as clients list them (`openstory_create_stitch`, `whoami`); `src/platform/server/mcp/skill-tool-names.test.ts` fails when a skill names a tool that is not in `MCP_TOOLS`, so rename a tool and its skills in the same PR.
 
 ### Issue tracker
 

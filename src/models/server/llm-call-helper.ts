@@ -34,6 +34,11 @@ import {
 } from './llm-client';
 import { generateId } from '@/platform/id';
 import { withLlmRateLimitRetry } from './quota-retry';
+import {
+  geminiStillSource,
+  releaseGeminiFiles,
+  type GeminiFile,
+} from './gemini-files';
 import type { TextModel } from '@/models/models';
 import {
   analysisModelSupportsVision,
@@ -98,22 +103,34 @@ export function shouldInlineVisionForVia(via: LlmKeyInfo['via']): boolean {
 }
 
 /**
- * Resolve the configured vision image URLs into chat content sources. Returns
- * `undefined` when none are configured so non-vision calls are untouched.
- * MUST be awaited inside the LLM `step.do` so inlined bytes never cross a step
- * boundary.
+ * Resolve the configured vision image URLs into chat content sources;
+ * `undefined` when none are configured. MUST be awaited inside the LLM
+ * `step.do` so bytes never cross a step boundary; `release` after the call
+ * deletes any still sent through the Gemini Files API.
  */
 async function resolveVisionImageSources(
   visionImageUrls: string[] | undefined,
-  via: LlmKeyInfo['via']
-): Promise<ChatMessageImagePart['source'][] | undefined> {
-  if (!visionImageUrls || visionImageUrls.length === 0) return undefined;
-  const inline = shouldInlineVisionForVia(via);
-  return Promise.all(
+  llmKey: LlmKeyInfo
+): Promise<{
+  sources: ChatMessageImagePart['source'][] | undefined;
+  release: () => Promise<void>;
+}> {
+  const uploaded: GeminiFile[] = [];
+  const release = () => releaseGeminiFiles(uploaded, llmKey.key);
+  if (!visionImageUrls || visionImageUrls.length === 0) {
+    return { sources: undefined, release };
+  }
+  const sources = await Promise.all(
     visionImageUrls.map((url) =>
-      toVisionImageSource(url, undefined, inline ? { inline: true } : undefined)
+      shouldInlineVisionForVia(llmKey.via)
+        ? geminiStillSource(url, llmKey.key, uploaded)
+        : toVisionImageSource(url)
     )
-  );
+  ).catch(async (error: unknown) => {
+    await release();
+    throw error;
+  });
+  return { sources, release };
 }
 
 /**
@@ -427,99 +444,101 @@ export async function durableLLMCallCf<TSchema extends z.ZodType>(
             `[LLM:${logName}:cf] Dropping vision image(s): effective model ${model} (requested ${config.modelId}) is text-only; vision model may be misconfigured — running text-only`
           );
         }
-        const visionImageSources = effectiveSupportsVision
-          ? await resolveVisionImageSources(
-              config.visionImageUrls,
-              llmKeyInfo.via
-            )
-          : undefined;
+        const vision = await resolveVisionImageSources(
+          effectiveSupportsVision ? config.visionImageUrls : undefined,
+          llmKeyInfo
+        );
         const { systemPrompts, chatMessages } = buildChatMessages(
           messages,
-          visionImageSources
+          vision.sources
         );
 
         // Always stream structured output so OpenRouter attaches usage.cost
         // (TanStack/ai#1076). No live channel here — drain for result + usage.
         // Gemini/OpenRouter 429s a parallel scene fan-out; backoff inside the
         // step so siblings that all 429'd together can stagger through.
-        return withLlmRateLimitRetry(logName, async () => {
-          const abortController = new AbortController();
-          const timeout = setTimeout(
-            () => abortController.abort(),
-            LLM_CALL_TIMEOUT_MS
-          );
-          const usageCapture = createUsageCapture();
-          try {
-            const commonOptions = {
-              adapter,
-              messages: chatMessages,
-              stream: true as const,
-              abortController,
-              modelOptions: chatModelOptionsForCall(
-                model,
-                llmKeyInfo,
-                config.reasoning
-              ),
-              middleware: [
-                ...aiObservabilityMiddleware({
-                  observationName: logName,
-                  tags: logTags,
-                  metadata: logMetadata,
-                  sessionId: callContext.sequenceId,
-                  // Fall back to the scoped db's user. Callers reliably pass
-                  // `scopedDb` (it resolves the LLM key and books the credit
-                  // deduction) but often not `userId`, which silently produced
-                  // anonymous generations — see the media-side note in
-                  // image-generation.ts.
-                  userId: callContext.userId ?? callContext.scopedDb?.userId,
-                }),
-                ...usageCapture.middleware,
-              ],
-              debug: false,
-              threadId: generateId(),
-              promptCache: 'none' as const,
-            };
-            const eventStream = llmCallStream(model, llmKeyInfo, () =>
-              chat({
-                ...commonOptions,
-                systemPrompts,
-                outputSchema: config.responseSchema,
-              })
+        try {
+          return await withLlmRateLimitRetry(logName, async () => {
+            const abortController = new AbortController();
+            const timeout = setTimeout(
+              () => abortController.abort(),
+              LLM_CALL_TIMEOUT_MS
             );
+            const usageCapture = createUsageCapture();
+            try {
+              const commonOptions = {
+                adapter,
+                messages: chatMessages,
+                stream: true as const,
+                abortController,
+                modelOptions: chatModelOptionsForCall(
+                  model,
+                  llmKeyInfo,
+                  config.reasoning
+                ),
+                middleware: [
+                  ...aiObservabilityMiddleware({
+                    observationName: logName,
+                    tags: logTags,
+                    metadata: logMetadata,
+                    sessionId: callContext.sequenceId,
+                    // Fall back to the scoped db's user. Callers reliably pass
+                    // `scopedDb` (it resolves the LLM key and books the credit
+                    // deduction) but often not `userId`, which silently produced
+                    // anonymous generations — see the media-side note in
+                    // image-generation.ts.
+                    userId: callContext.userId ?? callContext.scopedDb?.userId,
+                  }),
+                  ...usageCapture.middleware,
+                ],
+                debug: false,
+                threadId: generateId(),
+                promptCache: 'none' as const,
+              };
+              const eventStream = llmCallStream(model, llmKeyInfo, () =>
+                chat({
+                  ...commonOptions,
+                  systemPrompts,
+                  outputSchema: config.responseSchema,
+                })
+              );
 
-            let structuredObject: unknown;
-            for await (const event of eventStream) {
-              usageCapture.noteFromStreamEvent(event);
-              if (
-                event.type === 'CUSTOM' &&
-                event.name === 'structured-output.complete'
-              ) {
-                structuredObject = event.value.object;
-                continue;
+              let structuredObject: unknown;
+              for await (const event of eventStream) {
+                usageCapture.noteFromStreamEvent(event);
+                if (
+                  event.type === 'CUSTOM' &&
+                  event.name === 'structured-output.complete'
+                ) {
+                  structuredObject = event.value.object;
+                  continue;
+                }
               }
+              assertStructuredOutput(
+                structuredObject,
+                logName,
+                abortController.signal.aborted,
+                'Call'
+              );
+              logger.info(`[LLM:${logName}:cf] Call succeeded`);
+              // Return as JSON string — round-trips through step.do without hitting
+              // CF's Rpc.Serializable constraint on the Zod-inferred shape.
+              return {
+                jsonText: JSON.stringify(structuredObject),
+                costMicros: llmCostFromUsage(
+                  usageCapture.get(),
+                  model,
+                  llmKeyInfo
+                ),
+                keySource: llmKeyInfo.source,
+              };
+            } finally {
+              clearTimeout(timeout);
             }
-            assertStructuredOutput(
-              structuredObject,
-              logName,
-              abortController.signal.aborted,
-              'Call'
-            );
-            logger.info(`[LLM:${logName}:cf] Call succeeded`);
-            // Return as JSON string — round-trips through step.do without hitting
-            // CF's Rpc.Serializable constraint on the Zod-inferred shape.
-            return {
-              jsonText: JSON.stringify(structuredObject),
-              costMicros: llmCostFromUsage(
-                usageCapture.get(),
-                model,
-                llmKeyInfo
-              ),
-              keySource: llmKeyInfo.source,
-            };
-          } finally {
-            clearTimeout(timeout);
-          }
-        });
+          });
+        } finally {
+          await vision.release();
+        }
       });
     }
   );
@@ -632,129 +651,131 @@ export async function durableStreamingLLMCallCf<TSchema extends z.ZodType>(
             `[LLM:${logName}:cf] Dropping vision image(s): effective model ${model} (requested ${config.modelId}) is text-only with no vision companion; running text-only`
           );
         }
-        const visionImageSources = effectiveSupportsVision
-          ? await resolveVisionImageSources(
-              config.visionImageUrls,
-              llmKeyInfo.via
-            )
-          : undefined;
+        const vision = await resolveVisionImageSources(
+          effectiveSupportsVision ? config.visionImageUrls : undefined,
+          llmKeyInfo
+        );
         const { systemPrompts, chatMessages } = buildChatMessages(
           messages,
-          visionImageSources
+          vision.sources
         );
 
         const channel = getShotPromptChannel(shotId);
 
-        return withLlmRateLimitRetry(logName, async () => {
-          const abortController = new AbortController();
-          const timeout = setTimeout(
-            () => abortController.abort(),
-            LLM_CALL_TIMEOUT_MS
-          );
-          let accumulated = '';
-          let lastExtracted = '';
-          let pendingDelta = '';
-          let lastEmitAt = 0;
-          const usageCapture = createUsageCapture();
+        try {
+          return await withLlmRateLimitRetry(logName, async () => {
+            const abortController = new AbortController();
+            const timeout = setTimeout(
+              () => abortController.abort(),
+              LLM_CALL_TIMEOUT_MS
+            );
+            let accumulated = '';
+            let lastExtracted = '';
+            let pendingDelta = '';
+            let lastEmitAt = 0;
+            const usageCapture = createUsageCapture();
 
-          const flushDelta = async () => {
-            if (!pendingDelta) return;
-            const delta = pendingDelta;
-            pendingDelta = '';
-            lastEmitAt = Date.now();
-            await channel.emit('shotPrompt.streaming', { promptType, delta });
-          };
+            const flushDelta = async () => {
+              if (!pendingDelta) return;
+              const delta = pendingDelta;
+              pendingDelta = '';
+              lastEmitAt = Date.now();
+              await channel.emit('shotPrompt.streaming', { promptType, delta });
+            };
 
-          const commonOptions = {
-            adapter,
-            messages: chatMessages,
-            stream: true as const,
-            abortController,
-            modelOptions: chatModelOptionsForCall(
-              model,
-              llmKeyInfo,
-              config.reasoning
-            ),
-            middleware: [
-              ...aiObservabilityMiddleware({
-                observationName: logName,
-                tags: logTags,
-                metadata: logMetadata,
-                sessionId: callContext.sequenceId,
-                // Same scopedDb fallback as the non-streaming path above.
-                userId: callContext.userId ?? callContext.scopedDb?.userId,
-              }),
-              ...usageCapture.middleware,
-            ],
-            debug: false,
-            threadId: generateId(),
-            promptCache: 'none' as const,
-          };
-          const eventStream = llmCallStream(model, llmKeyInfo, () =>
-            chat({
-              ...commonOptions,
-              systemPrompts,
-              outputSchema: config.responseSchema,
-            })
-          );
-          // The orchestrator-validated result from the terminal
-          // `structured-output.complete` event. Preferred over the
-          // hand-accumulated text: it's what the library validated, and it
-          // survives any delta-assembly drift.
-          let structuredJson: string | null = null;
-          try {
-            for await (const event of eventStream) {
-              usageCapture.noteFromStreamEvent(event);
-              if (
-                event.type === 'TEXT_MESSAGE_CONTENT' &&
-                typeof event.delta === 'string'
-              ) {
-                accumulated += event.delta;
-                const next = extractStreamingStringField(
-                  accumulated,
-                  'fullPrompt'
-                );
-                if (next.length > lastExtracted.length) {
-                  pendingDelta += next.slice(lastExtracted.length);
-                  lastExtracted = next;
+            const commonOptions = {
+              adapter,
+              messages: chatMessages,
+              stream: true as const,
+              abortController,
+              modelOptions: chatModelOptionsForCall(
+                model,
+                llmKeyInfo,
+                config.reasoning
+              ),
+              middleware: [
+                ...aiObservabilityMiddleware({
+                  observationName: logName,
+                  tags: logTags,
+                  metadata: logMetadata,
+                  sessionId: callContext.sequenceId,
+                  // Same scopedDb fallback as the non-streaming path above.
+                  userId: callContext.userId ?? callContext.scopedDb?.userId,
+                }),
+                ...usageCapture.middleware,
+              ],
+              debug: false,
+              threadId: generateId(),
+              promptCache: 'none' as const,
+            };
+            const eventStream = llmCallStream(model, llmKeyInfo, () =>
+              chat({
+                ...commonOptions,
+                systemPrompts,
+                outputSchema: config.responseSchema,
+              })
+            );
+            // The orchestrator-validated result from the terminal
+            // `structured-output.complete` event. Preferred over the
+            // hand-accumulated text: it's what the library validated, and it
+            // survives any delta-assembly drift.
+            let structuredJson: string | null = null;
+            try {
+              for await (const event of eventStream) {
+                usageCapture.noteFromStreamEvent(event);
+                if (
+                  event.type === 'TEXT_MESSAGE_CONTENT' &&
+                  typeof event.delta === 'string'
+                ) {
+                  accumulated += event.delta;
+                  const next = extractStreamingStringField(
+                    accumulated,
+                    'fullPrompt'
+                  );
+                  if (next.length > lastExtracted.length) {
+                    pendingDelta += next.slice(lastExtracted.length);
+                    lastExtracted = next;
+                  }
+                  if (
+                    pendingDelta &&
+                    Date.now() - lastEmitAt >= flushIntervalMs
+                  ) {
+                    await flushDelta();
+                  }
+                  continue;
                 }
                 if (
-                  pendingDelta &&
-                  Date.now() - lastEmitAt >= flushIntervalMs
+                  event.type === 'CUSTOM' &&
+                  event.name === 'structured-output.complete'
                 ) {
-                  await flushDelta();
+                  structuredJson = JSON.stringify(event.value.object);
+                  continue;
                 }
-                continue;
               }
-              if (
-                event.type === 'CUSTOM' &&
-                event.name === 'structured-output.complete'
-              ) {
-                structuredJson = JSON.stringify(event.value.object);
-                continue;
-              }
+              await flushDelta();
+              assertStructuredOutput(
+                structuredJson,
+                logName,
+                abortController.signal.aborted,
+                'Stream'
+              );
+              logger.info(`[LLM:${logName}:cf] Streaming call succeeded`);
+              return {
+                jsonText: structuredJson,
+                costMicros: llmCostFromUsage(
+                  usageCapture.get(),
+                  model,
+                  llmKeyInfo
+                ),
+                keySource: llmKeyInfo.source,
+              };
+            } finally {
+              clearTimeout(timeout);
             }
-            await flushDelta();
-            assertStructuredOutput(
-              structuredJson,
-              logName,
-              abortController.signal.aborted,
-              'Stream'
-            );
-            logger.info(`[LLM:${logName}:cf] Streaming call succeeded`);
-            return {
-              jsonText: structuredJson,
-              costMicros: llmCostFromUsage(
-                usageCapture.get(),
-                model,
-                llmKeyInfo
-              ),
-              keySource: llmKeyInfo.source,
-            };
-          } finally {
-            clearTimeout(timeout);
-          }
-        });
+          });
+        } finally {
+          await vision.release();
+        }
       });
     }
   );

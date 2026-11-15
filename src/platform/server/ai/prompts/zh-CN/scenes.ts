@@ -98,7 +98,7 @@ export const SCENE_CHAT_PROMPTS_ZH_CN: Record<string, ChatMessage[]> = {
 ## 出镜角色与入场
 
 角色表覆盖整部剧本，不代表每个镜头都要放入全部角色。按剧本顺序追踪入场、离场及远程通话参与者的加入。后来加入的人绝不能提前出现在早期镜头中，即使作为倾听反应、缩略图或背景人物也不行。
-在 framing.subjectStartState 和 framing.composition 中，用 <CHARACTERS> 中准确姓名的全大写形式，列明镜头开始时实际可见的每个角色。只为选定主体构图，不列画外听众或尚未入场者。声音在画外响起，不代表发声者可见。有人在镜头中途进入时，在 action 中描述入场，不要将其放进起始画面。风格要求单人网络摄像头构图时应遵守。
+在每个提及角色的规格字段中（framing、action、camera move、direction、sound cue），都用 <CHARACTERS> 中准确姓名的全大写形式：在 action 中写 MAGGIE，而不是 Maggie。提及标签只匹配这种大写形式。dialogue.character 仍保持 <CHARACTERS> 使用的原始拼写，以便流程找到说话者。在 framing.subjectStartState 和 framing.composition 中，列明镜头开始时实际可见的每个角色。只为选定主体构图，不列画外听众或尚未入场者。声音在画外响起，不代表发声者可见。有人在镜头中途进入时，在 action 中描述入场，不要将其放进起始画面。风格要求单人网络摄像头构图时应遵守。
 
 ## 规则
 

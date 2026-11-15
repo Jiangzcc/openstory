@@ -68,6 +68,7 @@ import {
 } from '@/shots/media-upload.fn';
 import { putToR2 } from '@/ui/upload';
 import { shotPromptPreviewShotKey } from './shot-prompt-preview-query';
+import { useHydrated } from '@/ui/use-hydrated';
 
 /**
  * Everything that reads a shot's lines, after they moved (a restore or an
@@ -603,6 +604,8 @@ export const DialogueLineRows: React.FC<{
   const { t } = useTranslation('shots');
 
   const [editing, setEditing] = useState<number | 'new' | null>(null);
+  // A click before hydration does nothing; disabled until it can.
+  const hydrated = useHydrated();
   const save = (next: DialogueLine[]) => {
     onSave(next);
     setEditing(null);
@@ -677,7 +680,7 @@ export const DialogueLineRows: React.FC<{
                           aria-label={t("Edit {{value1}}'s line", {
                             value1: name,
                           })}
-                          disabled={editing !== null}
+                          disabled={!hydrated || editing !== null}
                           onClick={() => setEditing(index)}
                         >
                           <Pencil />
@@ -727,7 +730,7 @@ export const DialogueLineRows: React.FC<{
           size="sm"
           variant="ghost"
           className="self-start"
-          disabled={editing !== null}
+          disabled={!hydrated || editing !== null}
           onClick={() => setEditing('new')}
         >
           {t('Add line')}

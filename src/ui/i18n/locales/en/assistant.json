@@ -399,5 +399,13 @@
   "This shot": "This shot",
   "This character": "This character",
   "This location": "This location",
-  "Shot {{number}}": "Shot {{number}}"
+  "Shot {{number}}": "Shot {{number}}",
+  "Allow or deny the request above to send a message.": "Allow or deny the request above to send a message.",
+  "This chat is paused on a request it cannot answer. Start a new chat.": "This chat is paused on a request it cannot answer. Start a new chat.",
+  "This request is no longer open in this tab.": "This request is no longer open in this tab.",
+  "Reload chat": "Reload chat",
+  "This request cannot be answered here. Start a new chat.": "This request cannot be answered here. Start a new chat.",
+  "Answered. Answer the other request to continue.": "Answered. Answer the other request to continue.",
+  "Get shot storyboard": "Get shot storyboard",
+  "Regenerate shot storyboard": "Regenerate shot storyboard"
 }

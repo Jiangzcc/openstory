@@ -2,13 +2,15 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { localizeDialogueTakeLabel } from './localize-dialogue-take-label';
 /**
- * Every line of the scenes on the canvas, under the sequence player (#1802),
- * with Record and Edit on each. The line of the shot being heard is marked —
- * the player's playhead, or a scene's own dialogue played back on its own
- * (its shots' clips in order).
+ * Every shot of the scenes on the canvas, under the sequence player (#1802),
+ * including shots with no lines yet (#2375). Record and Edit sit on each
+ * line, and Add line sits under each shot. The line of the shot being heard
+ * is marked — the player's playhead, or a scene's own dialogue played back
+ * on its own (its shots' clips in order).
  */
 
 import { estimateTtsCost } from '@/billing/elevenlabs-pricing';
+import { plainSceneTitle } from '@/platform/markdown-plain';
 import {
   ttsCharacterCount,
   voicedDialogueLines,
@@ -18,7 +20,8 @@ import { dialogueTakeRuns } from '@/shots/dialogue-take-runs';
 import { clipSpeechId } from '@/shots/shot-dialogue';
 import { getDialogueSpeechUrlsFn } from '@/shots/shot-dialogue.fn';
 import { useQuery } from '@tanstack/react-query';
-import type { ShotView } from '@/shots/shot-view';
+import type { MotionAudioClip } from '@/platform/server/db/schema';
+import type { MotionDialogue } from '@/shots/scene-analysis.schema';
 import { useSequenceCharacters } from '@/cast/ui/use-sequence-characters';
 import {
   DialogueLineRows,
@@ -31,23 +34,31 @@ import {
   useLineTake,
   useSaveShotLines,
 } from './dialogue-lines';
-import type { SceneWithScript } from './use-scenes';
+/** What the list reads off a shot. A full shot view assigns to this. */
+type CanvasShot = {
+  id: string;
+  sceneId: string | null;
+  deletedAt: Date | null;
+  dialogue: MotionDialogue | null;
+  audioClips: MotionAudioClip[] | null;
+};
+
+type CanvasScene = { id: string; title: string | null };
 
 type SceneLines = {
   sceneId: string;
   title: string;
-  shots: ShotView[];
+  shots: CanvasShot[];
 };
 
-/** Consecutive shots of one scene that say something, in shot order. */
+/** Consecutive shots of one scene, silent shots included (#2375). */
 function sceneLines(
-  shots: readonly ShotView[],
-  scenes: readonly SceneWithScript[] | undefined,
+  shots: readonly CanvasShot[],
+  scenes: readonly CanvasScene[] | undefined,
   translate?: TFunction<'shots'>
 ): SceneLines[] {
   const groups: SceneLines[] = [];
   for (const shot of shots) {
-    if (!shot.dialogue?.presence || shot.dialogue.lines.length === 0) continue;
     const sceneId = shot.sceneId ?? shot.id;
     const last = groups.at(-1);
     if (last?.sceneId === sceneId) {
@@ -59,7 +70,7 @@ function sceneLines(
     groups.push({
       sceneId,
       title:
-        scene?.title ||
+        plainSceneTitle(scene?.title) ||
         (translate?.('Scene {{value1}}', { ns: 'shots', value1: index + 1 }) ??
           `Scene ${index + 1}`),
       shots: [shot],
@@ -68,7 +79,7 @@ function sceneLines(
   return groups;
 }
 
-const shotByShotClips = (shots: readonly ShotView[]) =>
+const shotByShotClips = (shots: readonly CanvasShot[]) =>
   shots.flatMap((shot) =>
     (shot.audioClips ?? []).map((clip) => ({
       shotIds: [shot.id],
@@ -76,7 +87,7 @@ const shotByShotClips = (shots: readonly ShotView[]) =>
     }))
   );
 
-const speaks = (shot: ShotView) =>
+const speaks = (shot: CanvasShot) =>
   Boolean(shot.dialogue?.presence && shot.dialogue.lines.length > 0);
 
 /**
@@ -85,8 +96,8 @@ const speaks = (shot: ShotView) =>
  * mixes takes, or a shot has no audio yet — it then plays shot by shot.
  */
 const oneTakeOf = (
-  shown: readonly ShotView[],
-  sceneShots: readonly ShotView[]
+  shown: readonly CanvasShot[],
+  sceneShots: readonly CanvasShot[]
 ): string | undefined => {
   const voiced = sceneShots.filter(speaks);
   if (voiced.length === 0 || shown.length !== voiced.length) return undefined;
@@ -105,7 +116,7 @@ const oneTakeOf = (
  * conversation in one call and reserves exactly this (`regenerateShotDialogueFn`).
  */
 const sceneRecordingCost = (
-  sceneShots: readonly ShotView[],
+  sceneShots: readonly CanvasShot[],
   characters: readonly VoiceCharacter[]
 ) =>
   estimateTtsCost(
@@ -118,10 +129,10 @@ const sceneRecordingCost = (
 
 export const SequenceDialogueLines: React.FC<{
   sequenceId: string;
-  shots: readonly ShotView[];
+  shots: readonly CanvasShot[];
   /** Every shot of the sequence: a scene records whole, seen or not. */
-  sequenceShots: readonly ShotView[];
-  scenes: readonly SceneWithScript[] | undefined;
+  sequenceShots: readonly CanvasShot[];
+  scenes: readonly CanvasScene[] | undefined;
   /** The shot under the sequence player's playhead. */
   playingShotId: string | undefined;
   /** A line was clicked: go to its shot. */
@@ -146,9 +157,14 @@ export const SequenceDialogueLines: React.FC<{
   const groups = sceneLines(shots, scenes, t);
   const sceneShotsOf = (sceneId: string) =>
     sequenceShots.filter((shot) => shot.sceneId === sceneId && !shot.deletedAt);
+  // A silent shot in the list must not split a scene's one take.
+  const speakingOf = (group: SceneLines) => group.shots.filter(speaks);
   const oneTakeBySceneId = new Map(
     groups.flatMap((group) => {
-      const speechId = oneTakeOf(group.shots, sceneShotsOf(group.sceneId));
+      const speechId = oneTakeOf(
+        speakingOf(group),
+        sceneShotsOf(group.sceneId)
+      );
       return speechId ? [[group.sceneId, speechId] as const] : [];
     })
   );
@@ -162,11 +178,12 @@ export const SequenceDialogueLines: React.FC<{
   if (groups.length === 0) return null;
 
   const sceneClips = (group: SceneLines) => {
+    const speaking = speakingOf(group);
     const speechId = oneTakeBySceneId.get(group.sceneId);
     const url = speechId ? speechUrls?.[speechId] : undefined;
     return url
-      ? [{ shotIds: group.shots.map((shot) => shot.id), url }]
-      : shotByShotClips(group.shots);
+      ? [{ shotIds: speaking.map((shot) => shot.id), url }]
+      : shotByShotClips(speaking);
   };
   const listening = player.audio !== null;
   const speakers = (characters ?? []).map((character) => character.name);
@@ -178,6 +195,7 @@ export const SequenceDialogueLines: React.FC<{
         // A shot with no scene groups under its own id; it has no scene to
         // open or record as one.
         const isScene = group.sceneId !== group.shots[0]?.id;
+        const speaking = speakingOf(group);
         return (
           <div key={group.sceneId} className="flex flex-col gap-1">
             <div className="flex items-center justify-between gap-2">
@@ -193,18 +211,18 @@ export const SequenceDialogueLines: React.FC<{
                 <span className="text-sm font-medium">{group.title}</span>
               )}
               <div className="flex shrink-0 items-center gap-1">
-                {isScene ? (
+                {isScene && speaking.length > 0 ? (
                   <UploadSceneDialogueButton
                     sequenceId={sequenceId}
                     sceneId={group.sceneId}
-                    shotIds={group.shots.map((shot) => shot.id)}
+                    shotIds={speaking.map((shot) => shot.id)}
                     label={group.title}
                   />
                 ) : null}
-                {isScene ? (
+                {isScene && speaking.length > 0 ? (
                   <RegenerateSceneDialogueButton
                     sequenceId={sequenceId}
-                    shotIds={group.shots.map((shot) => shot.id)}
+                    shotIds={speaking.map((shot) => shot.id)}
                     label={group.title}
                     estimate={
                       characters
@@ -236,7 +254,9 @@ export const SequenceDialogueLines: React.FC<{
                   {localizeDialogueTakeLabel(i18n, run.label)}
                 </span>
                 {run.shots.map((shot) => {
-                  const lines = shot.dialogue?.lines ?? [];
+                  const lines = shot.dialogue?.presence
+                    ? shot.dialogue.lines
+                    : [];
                   return (
                     <DialogueLineRows
                       key={shot.id}
@@ -264,6 +284,7 @@ export const SequenceDialogueLines: React.FC<{
                         shot.audioClips,
                         characters ?? []
                       )}
+                      canAdd
                     />
                   );
                 })}

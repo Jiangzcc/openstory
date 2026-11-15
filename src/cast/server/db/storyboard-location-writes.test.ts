@@ -11,6 +11,7 @@ import {
 import { createTestDb } from '@/platform/server/db/test-d1';
 import type { Database } from '@/platform/server/db/client';
 import { generateId } from '@/platform/id';
+import { PHOTOREAL_RENDERING } from '@/cast/rendering';
 import {
   locationBibleVersions,
   locationReferencePhotos,
@@ -61,6 +62,7 @@ beforeEach(async () => {
 });
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 const ordinary = () => createLocationsMethods(db, graph.organizationId);
@@ -81,6 +83,37 @@ const linksOf = () =>
     .select()
     .from(sequenceLocationLinks)
     .where(eq(sequenceLocationLinks.sequenceId, graph.sequenceId));
+
+it('writes and renames guarded location slugs without test-only defaults', async () => {
+  vi.stubEnv('VITEST', '');
+  const [first, second] = await write([
+    locationEntry(graph, 'slug-one', { name: 'Café Street' }),
+    locationEntry(graph, 'slug-two', { name: 'Cafe-Street' }),
+  ]);
+  if (!first || !second) throw new Error('Missing synthetic slug locations');
+  expect((await identityOf(first.id)).slug).toBe('cafe-street');
+  expect((await identityOf(second.id)).slug).toBe('cafe-street-2');
+  await write([locationEntry(graph, 'slug-one', { name: 'Moved Street' })]);
+  expect((await identityOf(first.id)).slug).toBe('moved-street');
+});
+
+it('creates and renames organization location slugs without test-only defaults', async () => {
+  vi.stubEnv('VITEST', '');
+  const methods = ordinary();
+  const location = await methods.createForOrganization(
+    { name: 'Café Dock', rendering: PHOTOREAL_RENDERING },
+    { createdBy: graph.actorId }
+  );
+  expect(await methods.resolveId('cafe-dock')).toBe(location.id);
+  await methods.updateBible(
+    null,
+    location.id,
+    { name: 'Moved Dock' },
+    { actorId: graph.actorId }
+  );
+  expect(await methods.resolveId('moved-dock')).toBe(location.id);
+  expect(await methods.resolveId('cafe-dock')).toBeNull();
+});
 
 async function protectLocation(id: string, sequenceId: string) {
   if (sequenceId === graph.sequenceId)

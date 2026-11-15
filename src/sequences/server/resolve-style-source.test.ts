@@ -21,7 +21,7 @@ import {
   placeholderAutoStyleDraft,
 } from '@/look/auto-style';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { resolveStyleSource } from './create-sequences';
+import { resolveStyleSource } from './resolve-style-source';
 import { DEFAULT_STYLE_TEMPLATES } from '@/look/style-templates';
 import { parseStyleConfig } from '@/look/style-config';
 import { eq } from 'drizzle-orm';

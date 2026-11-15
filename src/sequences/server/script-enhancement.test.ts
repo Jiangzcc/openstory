@@ -60,6 +60,17 @@ vi.doMock('@/models/server/llm-client', () => ({
   llmCostFromUsage: mockCost,
 }));
 
+const releaseGeminiFiles = vi.fn(async () => {});
+vi.doMock('@/models/server/gemini-files', () => ({
+  geminiStillSource: vi.fn(
+    async (_url: string, _key: string, uploaded: Array<{ name: string }>) => {
+      uploaded.push({ name: 'files/big' });
+      return { type: 'url', value: 'https://files.example/big' };
+    }
+  ),
+  releaseGeminiFiles,
+}));
+
 const { streamScriptEnhancement, enhanceScriptToString } =
   await import('./script-enhancement');
 
@@ -294,4 +305,34 @@ it('rejects image inputs when the custom model has no vision capability', async 
   ).rejects.toThrow('required capabilities');
   expect(c.resolveLlmKey).not.toHaveBeenCalled();
   expect(callLLMStream).not.toHaveBeenCalled();
+});
+
+it('keeps a Gemini Files still on Google and releases the uploaded file', async () => {
+  const c = context();
+  const nativeModel = 'google/gemini-4-argon' as const;
+  const scopedDb = asStub<ScopedDb>({
+    ...c.scopedDb,
+    apiKeys: {
+      resolveLlmKey: vi.fn(async () => ({
+        source: 'organization',
+        via: 'google',
+        key: 'g',
+      })),
+    },
+  });
+  await enhanceScriptToString(
+    {
+      script: 'A cyclist races home.',
+      analysisModel: nativeModel,
+      elements: [
+        { token: 'BIKE', imageUrl: '/r2/stills/bike.png', kind: 'image' },
+      ],
+    },
+    { ...c, scopedDb }
+  );
+  const params = callLLMStream.mock.calls[0]?.[0];
+  await expect(params?.resolveApiKey?.(nativeModel)).rejects.toThrow(
+    "Gemini isn't available from this region."
+  );
+  expect(releaseGeminiFiles).toHaveBeenCalledWith([{ name: 'files/big' }], 'g');
 });
