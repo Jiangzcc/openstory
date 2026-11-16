@@ -305,6 +305,7 @@ export default defineConfig({
     ],
     watch: {
       ignored: [
+        '**/.tmp/**',
         '**/e2e/.auth/**',
         '**/e2e/results/**',
         '**/playwright-report/**',
@@ -386,6 +387,9 @@ export default defineConfig({
   },
   environments: {
     ssr: {
+      optimizeDeps: {
+        exclude: ['mermaid'],
+      },
       build: {
         rolldownOptions: {
           output: {
