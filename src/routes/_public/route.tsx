@@ -13,6 +13,7 @@ import { Button } from '@/ui/shadcn/button';
 import { SITE_CONFIG } from '@/ui/marketing/constants';
 import { GitHubIcon } from '@/ui/icons/github-icon';
 import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/ui/i18n/language-switcher';
 
 // Signed-out pages: no sidebar, links and Sign in top right (#2372).
 export const Route = createFileRoute('/_public')({
@@ -56,6 +57,7 @@ function PublicLayout() {
                     GitHub
                   </a>
                 </Button>
+                <LanguageSwitcher />
                 <Button asChild size="lg" className="px-5">
                   <Link
                     to="/login"

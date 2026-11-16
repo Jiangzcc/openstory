@@ -30,7 +30,7 @@ export function LanguageSwitcher() {
             type="button"
             variant="ghost"
             size="icon"
-            className="size-11 sm:size-8"
+            className="size-11 enabled:cursor-pointer sm:size-8"
             aria-label="语言 / Language"
             title={t('Language')}
             disabled={!hydrated}
@@ -45,7 +45,7 @@ export function LanguageSwitcher() {
                 key={value}
                 value={value}
                 lang={value}
-                className="min-h-11 sm:min-h-8"
+                className="min-h-11 cursor-pointer sm:min-h-8"
                 onSelect={() => void changeLocale(value)}
               >
                 {label}
