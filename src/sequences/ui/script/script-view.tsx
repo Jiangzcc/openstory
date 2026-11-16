@@ -1911,7 +1911,7 @@ export const ScriptView: FC<{
                   type="submit"
                   disabled={isDisabled}
                   aria-label={
-                    isAuthenticated ? undefined : 'Sign in to Generate'
+                    isAuthenticated ? undefined : t('Sign in to Generate')
                   }
                   variant={isAuthenticated ? 'default' : 'outline'}
                   className={cn(

@@ -77,6 +77,8 @@ bun scripts/check-localization-changes.ts --base HEAD~1 --head HEAD --out .tmp/l
 
 同步上游时核对新增文案、动态格式、模板身份、邮件入口、Markdown 解析、播放器的客户端/SSR 边界与父子任务语言；保留现有公开接口及领域边界，不借翻译复制业务流程。
 
+2026-11-16 补齐新版未登录首页漏译：上游新增 `_public/route.tsx` 的导航直接显示英文，`SampleClipRow` 未传入已有样片名称翻译回调，生成按钮的未登录无障碍标签也未翻译。二开仅在这三处接入现有 `interface`、`presets`、`sequences` 资源；平台风格以 `isTemplate === true` 为界，自定义名称、源记录及试用链接 slug 保持原值。`script-view.tsx` 是既有超长文件，本次只修改标签，不附带拆分。后续上游调整公开布局、样片组装及匿名生成入口时须复核这些接入点。
+
 ## 验收与证据边界
 
 | 编号 | 现行检查项                                                             |
@@ -92,6 +94,8 @@ bun scripts/check-localization-changes.ts --base HEAD~1 --head HEAD --out .tmp/l
 | L09  | 邮件发起时语言、并发隔离及验证码/邀请链接保真；Mock 与真实投递分开记录 |
 
 已有本地自动化覆盖资源、SSR、邮件 Mock、帮助、风格与用户内容边界；历史浏览器检查覆盖公开页、部分管理员页面、语言记忆、草稿、风格及面包屑。面包屑浏览器证据使用真实组件与合成路由元数据，不能替代完整 Start/Workerd 页面验收。
+
+2026-11-16 首页补漏验证：本地 Workerd 未登录桌面页确认中英文导航、生成按钮无障碍标签、三张样片名称及链接；中文截图位于 `.tmp/localization-home-20261116/home-zh.jpg`（本地忽略产物）。`src/platform/i18n`、`src/ui/i18n`、`sample-entries.test.ts`、`style-content.test.ts` 共 11 文件/166 项通过，类型及定向格式检查通过；定向 lint 无错误，既有 React refs/effect/memo 警告仍在。此轮未重新验收手机布局或真实生成。
 
 仍待真实环境验证：完整中文创作与供应商生成质量、带业务数据的全部状态、真实邮件投递、支付/发布及正式部署；Cookie 被禁用的实际浏览器反馈也未单独验收。各批次定向结果不能累加为全量通过，本次整理未重跑它们。
 

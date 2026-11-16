@@ -12,6 +12,7 @@ import { TooltipProvider } from '@/ui/shadcn/tooltip';
 import { Button } from '@/ui/shadcn/button';
 import { SITE_CONFIG } from '@/ui/marketing/constants';
 import { GitHubIcon } from '@/ui/icons/github-icon';
+import { useTranslation } from 'react-i18next';
 
 // Signed-out pages: no sidebar, links and Sign in top right (#2372).
 export const Route = createFileRoute('/_public')({
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/_public')({
 });
 
 function PublicLayout() {
+  const { t } = useTranslation('interface');
   const searchStr = useRouterState({ select: (s) => s.location.searchStr });
   return (
     <AuthGateProvider>
@@ -34,7 +36,7 @@ function PublicLayout() {
                   variant="ghost"
                   className="hidden sm:inline-flex"
                 >
-                  <Link to="/docs">Docs</Link>
+                  <Link to="/docs">{t('Docs')}</Link>
                 </Button>
                 <Button
                   asChild
@@ -42,7 +44,7 @@ function PublicLayout() {
                   variant="ghost"
                   className="hidden sm:inline-flex"
                 >
-                  <Link to="/pricing">Pricing</Link>
+                  <Link to="/pricing">{t('Pricing')}</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="px-5">
                   <a
@@ -59,7 +61,7 @@ function PublicLayout() {
                     to="/login"
                     onClick={() => rememberLastPage(`/${searchStr}`)}
                   >
-                    Sign in
+                    {t('Sign in')}
                   </Link>
                 </Button>
               </div>

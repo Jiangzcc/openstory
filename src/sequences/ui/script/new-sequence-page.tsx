@@ -64,9 +64,12 @@ function GalleryLink() {
 // Style sample clips until the front-page films exist (#2372).
 function SampleClipRow() {
   const { t } = useTranslation('sequences');
+  const translateTemplate = useLabelTranslation('presets');
   const { data: styles } = useStyles();
   const entries = buildSampleEntries(
-    stylesForComposerCategory(styles ?? [], DEFAULT_COMPOSER_STYLE_CATEGORY)
+    stylesForComposerCategory(styles ?? [], DEFAULT_COMPOSER_STYLE_CATEGORY),
+    (style) =>
+      style.isTemplate === true ? translateTemplate(style.name) : style.name
   )
     .filter((entry) => entry.aspectRatio === '16:9')
     .slice(0, 3);
