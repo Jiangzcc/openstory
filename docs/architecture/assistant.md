@@ -295,7 +295,7 @@ keyed by style id. It uses the existing read-only style lookup and translates
 through `presets` only when the server row has `isTemplate === true`. A custom
 style named `Animated` stays `Animated`. Tool results, user titles, unknown
 states and provider diagnostics remain verbatim. See the
-[implementation record](../secondary-development/assistant-mcp-localization-20261107.md)
+[implementation record](../secondary-development/history-archive.md#records 'c92b2f5cb:docs/secondary-development/assistant-mcp-localization-20261107.md')
 for coverage and verification limits.
 
 ## Unsaved work as context
@@ -350,7 +350,7 @@ Streaming, tool errors, confirm-before-delete, uploads and long threads use
 the same event types as the server.
 
 The 2026-11-07 local compatibility fix and verification boundaries are recorded
-in [assistant approval fix](../secondary-development/assistant-approval-fix.md).
+in [assistant approval fix](../secondary-development/history-archive.md#records 'c92b2f5cb:docs/secondary-development/assistant-approval-fix.md').
 
 ## Secondary-development localization
 

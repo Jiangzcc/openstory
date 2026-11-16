@@ -55,7 +55,7 @@ response coercion chooses missing-field prose in the task's language
 before saving the generated recipe, without translating existing fields.
 Local mock and assembly
 tests cover the language and syntax boundaries, not real-provider Chinese
-generation quality. See the [style localization record](../secondary-development/style-localization.md).
+generation quality. See the [style localization record](../secondary-development/history-archive.md#records 'c92b2f5cb:docs/secondary-development/style-localization.md').
 
 ## Fal.ai Integration
 
@@ -292,7 +292,7 @@ still applies to images and video; it is not a separate video-only setting.
 
 Costs use the frozen configurable USD card and existing organization wallet precision. Supplier-reported token usage and separately maintained supplier costs are not treated as verified invoices. E2E replay accepts local mock image endpoints only. See [model configuration](model-configuration.md) and the [image channel implementation](../secondary-development/image-channels.md).
 
-Studio uses the current `uploads` collection for both native and configured image checkpoints. The project has not launched, so the former single `upload` checkpoint format is no longer supported. The configured poster bridge also rethrows engine interruptions at the step boundary; only ordinary optional-poster failures become an absent poster. The 2026-11-07 repairs and local verification are recorded in [image channel review repairs](../secondary-development/image-channel-review-fixes.md).
+Studio uses the current `uploads` collection for both native and configured image checkpoints. The project has not launched, so the former single `upload` checkpoint format is no longer supported. The configured poster bridge also rethrows engine interruptions at the step boundary; only ordinary optional-poster failures become an absent poster. The 2026-11-07 repairs and local verification are recorded in [image channel review repairs](../secondary-development/history-archive.md#records 'c92b2f5cb:docs/secondary-development/image-channel-review-fixes.md').
 
 ## Sync lipsync (#2263)
 

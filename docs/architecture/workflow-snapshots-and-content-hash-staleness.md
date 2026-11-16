@@ -276,7 +276,7 @@ the content plan DTO and hash structure gain no locale field. Automatic
 style response coercion also chooses missing-field prose by the task locale
 before the resulting authored recipe is saved. Rebuilding an English spec
 does not translate its prose. See
-the [style localization implementation and verification record](../secondary-development/style-localization.md)
+the [style localization implementation and verification record](../secondary-development/history-archive.md#records 'c92b2f5cb:docs/secondary-development/style-localization.md')
 for the exact boundaries and real-database freshness regression.
 
 ### Where the helpers live
