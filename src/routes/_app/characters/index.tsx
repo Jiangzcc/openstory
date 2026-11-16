@@ -26,7 +26,7 @@ export const Route = createFileRoute('/_app/characters/')({
   validateSearch: searchParamsSchema,
   component: CharactersPage,
   staticData: {
-    breadcrumb: { label: 'Characters', translationKey: 'Characters' },
+    breadcrumb: 'Characters',
   },
 });
 

@@ -94,7 +94,7 @@ export const Route = createFileRoute('/_app/oauth/consent')({
   },
   component: ConsentPage,
   staticData: {
-    breadcrumb: { label: 'Authorize app', translationKey: 'Authorize app' },
+    breadcrumb: 'Authorize app',
   },
 });
 

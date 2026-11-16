@@ -62,7 +62,7 @@ export const Route = createFileRoute('/_app/sequences/')({
   },
   component: SequencesPage,
   staticData: {
-    breadcrumb: { label: 'Sequences', translationKey: 'Sequences' },
+    breadcrumb: 'Sequences',
   },
 });
 

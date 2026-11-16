@@ -22,5 +22,5 @@ export const Route = createFileRoute('/_app/studio/')({
     });
   },
   component: () => null,
-  staticData: { breadcrumb: { label: 'Images', translationKey: 'Images' } },
+  staticData: { breadcrumb: 'Images' },
 });

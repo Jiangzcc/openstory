@@ -94,7 +94,7 @@ export const Route = createFileRoute('/_app/connect')({
   validateSearch: searchSchema,
   component: ConnectPage,
   staticData: {
-    breadcrumb: { label: 'Skills & MCP', translationKey: 'Skills & MCP' },
+    breadcrumb: 'Skills & MCP',
   },
   head: ({ match }) => ({
     meta: localizeMeta(match.context.i18n, 'pages', [

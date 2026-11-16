@@ -23,7 +23,7 @@ export const Route = createFileRoute('/_app/models/family/$')({
   validateSearch: searchParamsSchema,
   component: ModelFamilyPage,
   staticData: {
-    breadcrumb: { label: 'Model family', translationKey: 'Model family' },
+    breadcrumb: 'Model family',
   },
 });
 

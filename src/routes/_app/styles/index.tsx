@@ -8,7 +8,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/styles/')({
   component: StylesPage,
-  staticData: { breadcrumb: { label: 'Styles', translationKey: 'Styles' } },
+  staticData: { breadcrumb: 'Styles' },
 });
 
 function StylesPage() {

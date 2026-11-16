@@ -14,7 +14,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute('/_app/settings/passkeys')({
   validateSearch: searchSchema,
   component: PasskeysPage,
-  staticData: { breadcrumb: { label: 'Passkeys', translationKey: 'Passkeys' } },
+  staticData: { breadcrumb: 'Passkeys' },
 });
 
 function PasskeysPage() {

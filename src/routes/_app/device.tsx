@@ -42,7 +42,7 @@ export const Route = createFileRoute('/_app/device')({
   },
   component: DevicePage,
   staticData: {
-    breadcrumb: { label: 'Device login', translationKey: 'Device login' },
+    breadcrumb: 'Device login',
   },
 });
 

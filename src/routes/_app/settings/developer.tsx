@@ -10,9 +10,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/settings/developer')({
   component: DeveloperPage,
-  staticData: {
-    breadcrumb: { label: 'Developer', translationKey: 'Developer' },
-  },
+  staticData: { breadcrumb: 'Developer' },
 });
 
 function DeveloperPage() {

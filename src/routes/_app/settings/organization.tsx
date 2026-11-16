@@ -7,9 +7,7 @@ import { OrganizationSettings } from '@/ui/settings/organization-settings';
 
 export const Route = createFileRoute('/_app/settings/organization')({
   component: OrganizationPage,
-  staticData: {
-    breadcrumb: { label: 'Organization', translationKey: 'Organization' },
-  },
+  staticData: { breadcrumb: 'Organization' },
 });
 
 function OrganizationPage() {

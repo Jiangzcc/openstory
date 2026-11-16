@@ -26,11 +26,7 @@ export const Route = createFileRoute('/_app/settings')({
     await requireSessionOrRedirect(queryClient, location.href);
   },
   staticData: {
-    breadcrumb: {
-      translationKey: 'Settings',
-      label: 'Settings',
-      to: '/settings',
-    },
+    breadcrumb: { label: 'Settings', to: '/settings' },
   },
   errorComponent: function RouteComponent(props) {
     const { t } = useTranslation('pages');

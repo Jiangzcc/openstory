@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 
 export const Route = createFileRoute('/_app/sequences/$id/history')({
   component: HistoryRoute,
-  staticData: { breadcrumb: { label: 'History', translationKey: 'History' } },
+  staticData: { breadcrumb: 'History' },
 });
 
 function HistoryRoute() {

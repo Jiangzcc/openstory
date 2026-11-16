@@ -18,7 +18,7 @@ export const Route = createFileRoute('/_app/locations/')({
   validateSearch: z.object({ search: z.string().optional() }),
   component: LocationsPage,
   staticData: {
-    breadcrumb: { label: 'Locations', translationKey: 'Locations' },
+    breadcrumb: 'Locations',
   },
 });
 

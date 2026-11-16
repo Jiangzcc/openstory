@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_app/admin')({
   },
   component: AdminLayout,
   staticData: {
-    breadcrumb: { translationKey: 'Admin', label: 'Admin', to: '/admin/usage' },
+    breadcrumb: { label: 'Admin', to: '/admin/usage' },
   },
   errorComponent: function RouteComponent(props) {
     const { t } = useTranslation('admin');

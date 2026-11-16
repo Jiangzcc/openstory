@@ -21,7 +21,7 @@ export const Route = createFileRoute('/_app/models/$')({
   },
   validateSearch: searchParamsSchema,
   component: ModelDetailPage,
-  staticData: { breadcrumb: { label: 'Model', translationKey: 'Model' } },
+  staticData: { breadcrumb: 'Model' },
 });
 
 function ModelDetailPage() {

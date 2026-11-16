@@ -51,7 +51,7 @@ export const Route = createFileRoute('/_app/admin/moderation')({
   validateSearch: searchSchema,
   component: ModerationPage,
   staticData: {
-    breadcrumb: { label: 'Moderation', translationKey: 'Moderation' },
+    breadcrumb: 'Moderation',
   },
 });
 

@@ -22,8 +22,8 @@ export const Route = createFileRoute('/_app/sequences/new/')({
   component: NewSequenceRoutePage,
   staticData: {
     breadcrumb: [
-      { translationKey: 'Sequences', label: 'Sequences', to: '/sequences' },
-      { translationKey: 'New sequence', label: 'New sequence' },
+      { label: 'Sequences', to: '/sequences' },
+      { label: 'New sequence' },
     ],
   },
 });

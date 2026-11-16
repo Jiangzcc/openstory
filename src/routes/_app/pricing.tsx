@@ -26,7 +26,7 @@ const description =
 export const Route = createFileRoute('/_app/pricing')({
   component: PricingPage,
   loader: () => getPricingCatalogFn(),
-  staticData: { breadcrumb: { label: 'Pricing', translationKey: 'Pricing' } },
+  staticData: { breadcrumb: 'Pricing' },
   head: ({ match }) => ({
     meta: localizeMeta(match.context.i18n, 'pages', [
       { title },

@@ -11,7 +11,7 @@ import { Clapperboard } from 'lucide-react';
 
 export const Route = createFileRoute('/_app/gallery/')({
   component: GalleryPage,
-  staticData: { breadcrumb: { label: 'Gallery', translationKey: 'Gallery' } },
+  staticData: { breadcrumb: 'Gallery' },
 });
 
 function GalleryPage() {

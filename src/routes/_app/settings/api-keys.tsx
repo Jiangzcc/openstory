@@ -27,7 +27,7 @@ export const Route = createFileRoute('/_app/settings/api-keys')({
     }
   },
   component: ApiKeysPage,
-  staticData: { breadcrumb: { label: 'API Keys', translationKey: 'API Keys' } },
+  staticData: { breadcrumb: 'API Keys' },
 });
 
 function ApiKeysPage() {

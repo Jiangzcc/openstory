@@ -22,10 +22,7 @@ export const Route = createFileRoute('/_app/organization/accept-invitation')({
     await requireSessionOrRedirect(queryClient, location.href);
   },
   staticData: {
-    breadcrumb: {
-      label: 'Join organization',
-      translationKey: 'Join organization',
-    },
+    breadcrumb: 'Join organization',
   },
   component: AcceptInvitationPage,
 });

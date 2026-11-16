@@ -31,7 +31,7 @@ export const Route = createFileRoute('/_app/credits')({
   beforeLoad: async ({ context: { queryClient }, location }) => {
     await requireSessionOrRedirect(queryClient, location.href);
   },
-  staticData: { breadcrumb: { label: 'Credits', translationKey: 'Credits' } },
+  staticData: { breadcrumb: 'Credits' },
   errorComponent: function RouteComponent(props) {
     const { t } = useTranslation('pages');
     return <RouteErrorFallback {...props} heading={t('Credits error')} />;

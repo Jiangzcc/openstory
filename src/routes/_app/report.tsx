@@ -49,11 +49,7 @@ export const Route = createFileRoute('/_app/report')({
     ]),
   }),
   staticData: {
-    breadcrumb: {
-      translationKey: 'Report content',
-      label: 'Report content',
-      to: '/report',
-    },
+    breadcrumb: { label: 'Report content', to: '/report' },
   },
 });
 

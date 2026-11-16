@@ -9,7 +9,5 @@ export const Route = createFileRoute('/_app/sequences/$id/locations/')({
       search: { facet: 'location' },
     });
   },
-  staticData: {
-    breadcrumb: { label: 'Locations', translationKey: 'Locations' },
-  },
+  staticData: { breadcrumb: 'Locations' },
 });

@@ -14,7 +14,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute('/_app/sequences/$id/assets')({
   validateSearch: searchSchema,
   component: AssetsPage,
-  staticData: { breadcrumb: { label: 'Assets', translationKey: 'Assets' } },
+  staticData: { breadcrumb: 'Assets' },
 });
 
 function AssetsPage() {

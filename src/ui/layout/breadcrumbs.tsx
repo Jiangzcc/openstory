@@ -76,6 +76,19 @@ export function resolveCrumbs(match: BreadcrumbMatch): BreadcrumbCrumb[] {
   return [resolved];
 }
 
+export function resolveLocalizedCrumbs(
+  match: BreadcrumbMatch,
+  translateLabel: (source: string) => string
+): BreadcrumbCrumb[] {
+  const isStatic = typeof match.staticData.breadcrumb !== 'function';
+  return resolveCrumbs(match).map((crumb) => {
+    const key =
+      crumb.translationKey ??
+      (isStatic && typeof crumb.label === 'string' ? crumb.label : undefined);
+    return key ? { ...crumb, label: translateLabel(key) } : crumb;
+  });
+}
+
 /**
  * The one crumb a phone shows: the deepest that asks (`keepOnMobile`), else
  * the current page.
@@ -88,12 +101,9 @@ export function mobileCrumbIndex(crumbs: BreadcrumbCrumb[]): number {
 export const Breadcrumbs: React.FC = () => {
   const translateLabel = useLabelTranslation('labels');
   const matches = useMatches();
-  const crumbs = matches.flatMap(resolveCrumbs).map((crumb) => ({
-    ...crumb,
-    label: crumb.translationKey
-      ? translateLabel(crumb.translationKey)
-      : crumb.label,
-  }));
+  const crumbs = matches.flatMap((match) =>
+    resolveLocalizedCrumbs(match, translateLabel)
+  );
 
   if (crumbs.length === 0) return null;
   const mobileIndex = mobileCrumbIndex(crumbs);

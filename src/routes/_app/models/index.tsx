@@ -20,7 +20,7 @@ export const Route = createFileRoute('/_app/models/')({
   },
   validateSearch: searchParamsSchema,
   component: ModelsPage,
-  staticData: { breadcrumb: { label: 'Models', translationKey: 'Models' } },
+  staticData: { breadcrumb: 'Models' },
 });
 
 function ModelsPage() {

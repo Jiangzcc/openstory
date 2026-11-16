@@ -22,7 +22,7 @@ import { Suspense, useMemo, useState } from 'react';
 
 export const Route = createFileRoute('/_app/admin/usage')({
   component: AdminUsagePage,
-  staticData: { breadcrumb: { label: 'Usage', translationKey: 'Usage' } },
+  staticData: { breadcrumb: 'Usage' },
 });
 
 type SortField =
