@@ -363,14 +363,7 @@
       // `openstory-production`, which is a DIFFERENT worker — the deploy
       // would succeed but the live site would never update.
       "name": "openstory",
-      // Replaces the top-level block wholesale (inheritable keys are not
-      // merged), so logs are restated. Traces also go to PostHog Tracing via
-      // the `posthog-traces-openstory-prd` destination (Cloudflare dashboard →
-      // Workers → Observability → Destinations). Logs go to PostHog Logs via
-      // `posthog-openstory-prd` with trace and span ids; PostHog's "JSON parse
-      // logs" turns the LogTape line into attributes (#2280).
-      // Traces sample 100% so every error has a trace. Every span is a billed
-      // event from 2026-10-01; ~4M/month measured (Sep 2026) vs 20M included.
+      // Keep production logs and traces in Cloudflare Observability.
       "observability": {
         "enabled": true,
         "head_sampling_rate": 1,
@@ -379,28 +372,19 @@
           "head_sampling_rate": 1,
           "persist": true,
           "invocation_logs": false,
-          "destinations": ["posthog-openstory-prd"],
         },
         "traces": {
           "enabled": true,
           "persist": true,
           "head_sampling_rate": 1,
-          "destinations": ["posthog-traces-openstory-prd"],
         },
       },
       "d1_databases": [
         {
           "binding": "DB",
-          // `database_id` is authoritative — it's what wrangler binds and
-          // deploys against (`database_name` is just a label, and wrangler
-          // requires the id; name-only resolution doesn't exist outside
-          // auto-provisioning). The underlying D1 is still the pre-rename
-          // `velro-prd` — D1 has NO rename, so the #897 cutover runbook
-          // (docs/deployment/cloudflare.md) recreates it as `openstory-prd`:
-          // create fresh → run all migrations → import data → update the
-          // name + id here.
+          // `database_id` selects this fork's production D1.
           "database_name": "openstory-prd",
-          "database_id": "d5981bee-ef84-4006-b585-d1f2ebc81114",
+          "database_id": "33b532ad-0fb3-46a5-9637-0728486b0aa0",
           "migrations_dir": "drizzle/migrations-wrangler",
         },
       ],

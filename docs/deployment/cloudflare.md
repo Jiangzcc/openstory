@@ -39,7 +39,7 @@ The Worker entry point is `src/server.ts`. `nodejs_compat` is listed and, from c
 
 ## Logs
 
-Worker logs reach PostHog Logs through Cloudflare's native OTLP log export (#2280). Production sets `observability.logs.destinations` to `posthog-openstory-prd`; PR previews are patched to `posthog-openstory-stg` in `.github/workflows/deploy-cloudflare.yml`. The default block (local dev, Deploy-button installs) and the test block export nothing. Destinations live in the Cloudflare dashboard under Workers → Observability → Destinations.
+This fork keeps production logs and traces in Cloudflare Observability. The upstream production deployment exports logs and traces to PostHog. The inherited PR preview workflow names its own PostHog destination. External destinations are configured for each account under Workers → Observability → Destinations.
 
 Each record carries trace and span ids, so a log links to its trace. The body is the LogTape JSON line; with PostHog's **JSON parse logs** on, it becomes attributes (`message`, `logger`, `level`, `properties.*`). Keep the JSON-lines formatter: Cloudflare merges console arguments into one JSON body either way. `service.name` is the Worker name (`openstory`, `pr-<n>`).
 
